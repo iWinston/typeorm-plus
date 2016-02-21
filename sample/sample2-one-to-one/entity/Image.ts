@@ -2,6 +2,7 @@ import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
 import {ManyToOne, OneToMany, OneToOne} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
+import {ImageDetails} from "./ImageDetails";
 
 @Table("sample2_image")
 export class Image {
@@ -12,21 +13,13 @@ export class Image {
     @Column()
     name: string;
     
-    @ManyToOne<Post>(() => Post, post => post.images, {
-        //isAlwaysLeftJoin: true
-    })
+    @ManyToOne<Post>(() => Post, post => post.images)
     post: Post;
     
-    @ManyToOne<Post>(() => Post, post => post.secondaryImages, {
-        // isAlwaysLeftJoin: true
-    })
+    @ManyToOne<Post>(() => Post, post => post.secondaryImages)
     secondaryPost: Post;
 
-    /*
-
-    @OneToOne<ImageDetails>(true, () => ImageDetails, details => details.image, {
-        isAlwaysInnerJoin: true
-    })
-    details: ImageDetails;*/
+    @OneToOne<ImageDetails>(true, () => ImageDetails, details => details.image)
+    details: ImageDetails;
 
 }

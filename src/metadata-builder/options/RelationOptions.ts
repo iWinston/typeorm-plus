@@ -21,16 +21,6 @@ export interface RelationOptions {
     isCascadeRemove?: boolean;
 
     /**
-     * If set to true then it means that related object always will be left-joined when this object is being loaded.
-     */
-    isAlwaysLeftJoin?: boolean;
-
-    /**
-     * If set to true then it means that related object always will be inner-joined when this object is being loaded.
-     */
-    isAlwaysInnerJoin?: boolean;
-
-    /**
      * Old column name. Used to make safe schema updates.
      */
     oldColumnName?: string;

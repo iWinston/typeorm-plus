@@ -62,7 +62,7 @@ export class DocumentHydrator<Document> {
 
             let relationId = dbObject[relation.name];
             let canLoadRelation = this.canLoadRelation(relation, joinFields);
-            let isLoadInnerTyped = this.isInnerJoin(joinFields, relation.name) || relation.isAlwaysInnerJoin;
+            let isLoadInnerTyped = this.isInnerJoin(joinFields, relation.name);
 
             if (!canLoadRelation)
                 return;
@@ -90,7 +90,7 @@ export class DocumentHydrator<Document> {
         schema.relationWithManies.forEach(relation => {
 
             let canLoadRelation = this.canLoadRelation(relation, joinFields);
-            let isLoadInnerTyped = this.isInnerJoin(joinFields, relation.name) || relation.isAlwaysInnerJoin;
+            let isLoadInnerTyped = this.isInnerJoin(joinFields, relation.name);
 
             if (!canLoadRelation)
                 return;
@@ -129,9 +129,7 @@ export class DocumentHydrator<Document> {
     // -------------------------------------------------------------------------
 
     private canLoadRelation(relation: RelationSchema, joinFields?: JoinFieldOption[]|any[]): boolean {
-        return this.hasKey(joinFields, relation.propertyName)
-            || relation.isAlwaysLeftJoin
-            || relation.isAlwaysInnerJoin;
+        return this.hasKey(joinFields, relation.propertyName);
     }
 
     private hasKey(joinFields: JoinFieldOption[]|any[], key: string) {

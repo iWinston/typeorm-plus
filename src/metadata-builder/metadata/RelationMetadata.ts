@@ -72,16 +72,6 @@ export class RelationMetadata extends PropertyMetadata {
     private _isCascadeRemove: boolean;
 
     /**
-     * If set to true then it means that related object always will be left-joined when this object is being loaded.
-     */
-    private _isAlwaysLeftJoin: boolean;
-
-    /**
-     * If set to true then it means that related object always will be inner-joined when this object is being loaded.
-     */
-    private _isAlwaysInnerJoin: boolean;
-
-    /**
      * Indicates if relation column value can be nullable or not.
      */
     private _isNullable: boolean = true;
@@ -115,10 +105,6 @@ export class RelationMetadata extends PropertyMetadata {
 
         if (options.name)
             this._name = options.name;
-        if (options.isAlwaysInnerJoin)
-            this._isAlwaysInnerJoin = options.isAlwaysInnerJoin;
-        if (options.isAlwaysLeftJoin)
-            this._isAlwaysLeftJoin = options.isAlwaysLeftJoin;
         if (options.isCascadeInsert)
             this._isCascadeInsert = options.isCascadeInsert;
         if (options.isCascadeUpdate)
@@ -176,14 +162,6 @@ export class RelationMetadata extends PropertyMetadata {
 
     get isCascadeRemove(): boolean {
         return this._isCascadeRemove;
-    }
-
-    get isAlwaysLeftJoin(): boolean {
-        return this._isAlwaysLeftJoin;
-    }
-
-    get isAlwaysInnerJoin(): boolean {
-        return this._isAlwaysInnerJoin;
     }
 
     get isOneToOne(): boolean {

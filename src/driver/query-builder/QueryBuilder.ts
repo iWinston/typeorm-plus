@@ -1,5 +1,52 @@
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
-import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
+
+export class Alias {
+    isMain: boolean;
+    entityMetadata: EntityMetadata;
+    name: string;
+    parentPropertyName: string;
+    parentAliasName: string;
+
+    constructor(name: string, entityMetadata: EntityMetadata, parentAliasName?: string, parentPropertyName?: string) {
+        this.name = name;
+        this.entityMetadata = entityMetadata;
+        this.parentAliasName = parentAliasName;
+        this.parentPropertyName = parentPropertyName;
+    }
+}
+
+export class AliasMap {
+    constructor(public aliases: Alias[] = []) {
+    }
+
+    addMainAlias(alias: Alias) {
+        const mainAlias = this.getMainAlias();
+        if (mainAlias)
+            this.aliases.splice(this.aliases.indexOf(mainAlias), 1);
+
+        alias.isMain = true;
+        this.aliases.push(alias);
+    }
+
+    addAlias(alias: Alias) {
+        this.aliases.push(alias);
+    }
+
+    getMainAlias() {
+        return this.aliases.find(alias => alias.isMain);
+    }
+
+    findAliasByName(name: string) {
+        return this.aliases.find(alias => alias.name === name);
+    }
+
+    findAliasByParent(parentAliasName: string, parentPropertyName: string) {
+        return this.aliases.find(alias => {
+            return alias.parentAliasName === parentAliasName && alias.parentPropertyName === parentPropertyName;
+        });
+    }
+}
+
 /**
  * @author Umed Khudoiberdiev <info@zar.tj>
  */
@@ -18,9 +65,9 @@ export class QueryBuilder {
 
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
-    private froms: { entity: Function, alias: string };
-    private leftJoins: { join: Function, alias: string, conditionType: string, condition: string }[] = [];
-    private innerJoins: { join: Function, alias: string, conditionType: string, condition: string }[] = [];
+    private froms: { alias: Alias };
+    private leftJoins: { alias: Alias, conditionType: string, condition: string }[] = [];
+    private innerJoins: { alias: Alias, conditionType: string, condition: string }[] = [];
     private groupBys: string[] = [];
     private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
     private havings: { type: "simple"|"and"|"or", condition: string }[] = [];
@@ -28,6 +75,8 @@ export class QueryBuilder {
     private parameters: { [key: string]: string } = {};
     private limit: number;
     private offset: number;
+
+    private aliasMap = new AliasMap();
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -74,17 +123,49 @@ export class QueryBuilder {
     //from(tableName: string, alias: string): this;
     from(entity: Function, alias?: string): this {
     //from(entityOrTableName: Function|string, alias: string): this {
-        this.froms = { entity: entity, alias: alias };
+        const aliasObj = new Alias(alias, this.findMetadata(entity));
+        this.aliasMap.addMainAlias(aliasObj);
+        this.froms = { alias: aliasObj };
         return this;
     }
 
-    innerJoin(target: Function, alias: string, conditionType: string, condition: string): this {
-        this.innerJoins.push({ join: target, alias: alias, conditionType: conditionType, condition: condition });
+    innerJoin(property: string, alias: string, conditionType: string, condition: string): this;
+    innerJoin(entity: Function, alias: string, conditionType: string, condition: string): this;
+    innerJoin(entityOrProperty: Function|string, alias: string, conditionType: string, condition: string): this {
+        let parentPropertyName = "", parentAliasName = "";
+        let entityMetadata: EntityMetadata;
+        if (entityOrProperty instanceof Function) {
+            entityMetadata = this.findMetadata(entityOrProperty);
+        } else {
+            parentAliasName = (<string> entityOrProperty).split(".")[0];
+            parentPropertyName = (<string> entityOrProperty).split(".")[1];
+            const parentAliasMetadata = this.aliasMap.findAliasByName(parentAliasName).entityMetadata;
+            entityMetadata = parentAliasMetadata.findRelationWithDbName(parentPropertyName).relatedEntityMetadata;
+        }
+
+        const aliasObj = new Alias(alias, entityMetadata, parentAliasName, parentPropertyName);
+        this.aliasMap.addAlias(aliasObj);
+        this.innerJoins.push({ alias: aliasObj, conditionType: conditionType, condition: condition });
         return this;
     }
 
-    leftJoin(target: Function, alias: string, conditionType: string, condition: string): this {
-        this.leftJoins.push({ join: target, alias: alias, conditionType: conditionType, condition: condition });
+    leftJoin(property: string, alias: string, conditionType: string, condition: string): this;
+    leftJoin(entity: Function, alias: string, conditionType: string, condition: string): this;
+    leftJoin(entityOrProperty: Function|string, alias: string, conditionType: string, condition: string): this {
+        let parentPropertyName = "", parentAliasName = "";
+        let entityMetadata: EntityMetadata;
+        if (entityOrProperty instanceof Function) {
+            entityMetadata = this.findMetadata(entityOrProperty);
+        } else {
+            parentAliasName = (<string> entityOrProperty).split(".")[0];
+            parentPropertyName = (<string> entityOrProperty).split(".")[1];
+            const parentAliasMetadata = this.aliasMap.findAliasByName(parentAliasName).entityMetadata;
+            entityMetadata = parentAliasMetadata.findRelationByPropertyName(parentPropertyName).relatedEntityMetadata;
+        }
+
+        const aliasObj = new Alias(alias, entityMetadata, parentAliasName, parentPropertyName);
+        this.aliasMap.addAlias(aliasObj);
+        this.leftJoins.push({ alias: aliasObj, conditionType: conditionType, condition: condition });
         return this;
     }
 
@@ -148,7 +229,7 @@ export class QueryBuilder {
         return this;
     }
 
-    setParameter(key: string, value: string): this {
+    setParameter(key: string, value: any): this {
         this.parameters[key] = value;
         return this;
     }
@@ -170,6 +251,13 @@ export class QueryBuilder {
         sql += this.createOffsetExpression();
         sql  = this.replaceParameters(sql);
         return sql;
+    }
+    
+    generateAliasMap(): AliasMap {
+        return this.aliasMap;
+       /* const aliasesFromInnerJoins = this.innerJoins.map(join => join.alias);
+        const aliasesFromLeftJoins = this.leftJoins.map(join => join.alias);
+        return new AliasMap([this.froms.alias, ...aliasesFromLeftJoins, ...aliasesFromInnerJoins]);*/
     }
 
     // -------------------------------------------------------------------------
@@ -196,7 +284,7 @@ export class QueryBuilder {
     protected findMetadata(target: Function) {
         const metadata = this.entityMetadatas.find(metadata => metadata.target === target);
         if (!metadata)
-            throw new Error("Metadata for " + this.froms.entity + " was not found.");
+            throw new Error("Metadata for " + (<any>target).name + " was not found.");
         
         return metadata;
     }
@@ -204,24 +292,24 @@ export class QueryBuilder {
     protected createSelectExpression() {
         // todo throw exception if selects or from is missing
 
-        const metadata = this.findMetadata(this.froms.entity);
+        const metadata = this.froms.alias.entityMetadata;
         const tableName = metadata.table.name;
-        const alias = this.froms.alias ? this.froms.alias : metadata.table.name;
+        const alias = this.froms.alias.name;
         const columns: string[] = [];
 
         // add select from the main table
-        if (this.selects.indexOf(this.froms.alias) !== -1)
+        if (this.selects.indexOf(alias) !== -1)
             metadata.columns.forEach(column => {
-                columns.push(this.froms.alias + "." + column.name + " AS " + this.froms.alias + "_" + column.name);
+                columns.push(alias + "." + column.name + " AS " + alias + "_" + column.name);
             });
 
         // add selects from left and inner joins
         this.leftJoins.concat(this.innerJoins)
-            .filter(join => this.selects.indexOf(join.alias) !== -1)
+            .filter(join => this.selects.indexOf(join.alias.name) !== -1)
             .forEach(join => {
-                const joinMetadata = this.findMetadata(join.join);
+                const joinMetadata = join.alias.entityMetadata;
                 joinMetadata.columns.forEach(column => {
-                    columns.push(join.alias + "." + column.name + " AS " + join.alias + "_" + column.name);
+                    columns.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.name);
                 });
             });
         
@@ -255,9 +343,9 @@ export class QueryBuilder {
         if (!this.innerJoins || !this.innerJoins.length) return "";
 
         return this.innerJoins.map(join => {
-            const joinMetadata = this.entityMetadatas.find(metadata => metadata.target === join.join); // todo: throw exception if not found
+            const joinMetadata = join.alias.entityMetadata; // todo: throw exception if not found
             const relationTable = joinMetadata.table.name;
-            return " INNER JOIN " + relationTable + " " + join.alias + " " + join.conditionType + " " + join.condition;
+            return " INNER JOIN " + relationTable + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
         }).join(" ");
     }
 
@@ -265,9 +353,9 @@ export class QueryBuilder {
         if (!this.leftJoins || !this.leftJoins.length) return "";
 
         return this.leftJoins.map(join => {
-            const joinMetadata = this.findMetadata(join.join);
+            const joinMetadata = join.alias.entityMetadata;
             const relationTable = joinMetadata.table.name;
-            return " LEFT JOIN " + relationTable + " " + join.alias + " " + join.conditionType + " " + join.condition;
+            return " LEFT JOIN " + relationTable + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
         }).join(" ");
     }
 
@@ -310,10 +398,6 @@ export class QueryBuilder {
             sql = sql.replace(":" + key, '"' + this.parameters[key] + '"'); // .replace('"', '')
         });
         return sql;
-    }
-    
-    protected replaceTableNames(sql: string) {
-        return sql.replace("\$\$", "");
     }
 
 }

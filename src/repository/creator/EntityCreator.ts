@@ -1,6 +1,8 @@
 import {Connection} from "../../connection/Connection";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
+import {AliasMap, Alias} from "../../driver/query-builder/QueryBuilder";
+import * as _ from "lodash";
 
 export class EntityCreator {
 
@@ -25,14 +27,24 @@ export class EntityCreator {
     createFromJson<Entity>(object: any, metadata: EntityMetadata, fetchProperty?: boolean): Promise<Entity>;
     createFromJson<Entity>(object: any, metadata: EntityMetadata, fetchProperty?: Object): Promise<Entity>;
     createFromJson<Entity>(object: any, metadata: EntityMetadata, fetchOption?: boolean|Object): Promise<Entity> {
-        return this.objectToEntity(object, metadata, fetchOption);
+        
+        return Promise.resolve(this.objectToEntity(object, metadata, fetchOption));
+        //return this.objectToEntity(object, metadata, fetchOption);
+    }
+
+    objectToEntity<Entity>(objects: any[], metadata: EntityMetadata, aliasMap: AliasMap, fetchProperty?: boolean): Entity;
+    objectToEntity<Entity>(objects: any[], metadata: EntityMetadata, aliasMap: AliasMap,fetchProperty?: Object): Entity;
+    objectToEntity<Entity>(objects: any[], metadata: EntityMetadata, aliasMap: AliasMap, fetchOption?: boolean|Object): Entity {
+
+        return this.toEntity(objects, metadata, aliasMap.getMainAlias(), aliasMap);
+        //return this.objectToEntity(object, metadata, fetchOption);
     }
 
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
 
-    getLoadMap(metadata: EntityMetadata) {
+    /*getLoadMap(metadata: EntityMetadata) {
 
         const postId = 1;
         const postJson = {
@@ -59,7 +71,7 @@ export class EntityCreator {
         const joinRelations = (parentTableAlias: string, entityMetadata: EntityMetadata) => {
             if (visitedMetadatas.find(metadata => metadata === entityMetadata))
                 return;
-            
+
             visitedMetadatas.push(metadata);
             entityMetadata.relations.filter(relation => relation.isAlwaysLeftJoin || relation.isAlwaysInnerJoin).forEach(relation => {
                 let relationAlias = relation.relatedEntityMetadata.table.name;
@@ -81,7 +93,7 @@ export class EntityCreator {
                 } else { // else can be only always inner join
                     qb.addSelect(relationAlias).innerJoin(relation.type, relationAlias, "ON", condition);
                 }
-                
+
                 // now recursively go throw its relations
                 joinRelations(relationAlias, relation.relatedEntityMetadata);
             });
@@ -101,15 +113,73 @@ export class EntityCreator {
 
     private convertTableResultToJsonTree() {
 
+    }*/
+
+
+    private toEntity(sqlResult: any[], metadata: EntityMetadata, mainAlias: Alias, aliasMap: AliasMap): any[] {
+
+        const objects = _.groupBy(sqlResult, result => {
+            return result[mainAlias.name + "_" + metadata.primaryColumn.name];
+        });
+        
+        return Object.keys(objects).map(key => {
+            //if (id && id != key) return null;
+            
+            let isAnythingLoaded = false;
+            const object = objects[key][0];
+            //const entity = metadata.create();
+            const jsonObject: any = {};
+
+            metadata.columns.forEach(column => {
+                const valueInObject = object[mainAlias.name + "_" + column.name];
+                if (valueInObject && column.propertyName) { // todo: add check for property relation with id as a column
+                    jsonObject[column.propertyName] = valueInObject;
+                    isAnythingLoaded = true;
+                }
+            });
+
+            metadata.relations.forEach(relation => {
+                const alias = aliasMap.findAliasByParent(mainAlias.name, relation.propertyName);
+                if (alias) {
+                    //const id = relation.isManyToOne || relation.isOneToOne ? object[mainAlias.name + "_" + relation.name] : null;
+                    const relatedEntities = this.toEntity(sqlResult, relation.relatedEntityMetadata, alias, aliasMap);
+                    if (relation.isManyToOne || relation.isOneToOne) {
+                        const relatedObject = relatedEntities.find(obj => {
+                            return obj[relation.relatedEntityMetadata.primaryColumn.name] === object[mainAlias.name + "_" + relation.name];
+                        });
+
+                        if (relatedObject) {
+                            jsonObject[relation.propertyName] = relatedObject;
+                            isAnythingLoaded = true;
+                        }
+                        
+                    } else if (relation.isOneToMany) {
+                        const relatedObjects = relatedEntities.filter(obj => {
+                            return obj[relation.inverseSideProperty] === object[mainAlias.name + "_" + metadata.primaryColumn.name];
+                        });
+
+                        //if (relatedObjects) {
+                            jsonObject[relation.propertyName] = relatedObjects;
+                            isAnythingLoaded = true;
+                        //}
+                    }
+                }
+            });
+            
+            return isAnythingLoaded ? jsonObject : null;   
+            
+        }).filter(res => res !== null);
+        
+        //return id ? final[0] : final;
     }
 
-    private objectToEntity(object: any, metadata: EntityMetadata, doFetchProperties?: boolean): Promise<any>;
-    private objectToEntity(object: any, metadata: EntityMetadata, fetchConditions?: Object): Promise<any>;
-    private objectToEntity(object: any, metadata: EntityMetadata, fetchOption?: boolean|Object): Promise<any> {
+    private objectToEntity2(object: any, metadata: EntityMetadata, doFetchProperties?: boolean): Promise<any>;
+    private objectToEntity2(object: any, metadata: EntityMetadata, fetchConditions?: Object): Promise<any>;
+    private objectToEntity2(object: any, metadata: EntityMetadata, fetchOption?: boolean|Object): Promise<any> {
         if (!object)
             throw new Error("Given object is empty, cannot initialize empty object.");
 
-        this.getLoadMap(metadata);
+        //this.getLoadMap(metadata);
 
         const doFetch = !!fetchOption;
         const entityPromise = this.loadDependOnFetchOption(object, metadata, fetchOption);

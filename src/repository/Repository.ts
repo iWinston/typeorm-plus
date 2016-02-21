@@ -1,7 +1,7 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
-import {QueryBuilder} from "../driver/query-builder/QueryBuilder";
+import {QueryBuilder, AliasMap} from "../driver/query-builder/QueryBuilder";
 import {DynamicCascadeOptions} from "./cascade/CascadeOption";
 import {EntityCreator} from "./creator/EntityCreator";
 
@@ -87,34 +87,33 @@ export class Repository<Entity> {
     /**
      * Creates a new query builder that can be used to build an sql query.
      */
-    createQueryBuilder(alias?: string): QueryBuilder {
-        const queryBuilder = this.connection.driver.createQueryBuilder(this.connection.metadatas);
-        if (alias)
-            queryBuilder.select(alias).from(this.metadata.target, alias);
-
-        return queryBuilder;
+    createQueryBuilder(alias: string): QueryBuilder {
+        return this.connection.driver
+            .createQueryBuilder(this.connection.metadatas)
+            .select(alias)
+            .from(this.metadata.target, alias);
     }
 
     /**
      * Executes query. Expects query will return object in Entity format and creates Entity object from that result.
      */
-    queryOne(query: string): Promise<Entity> {
+    queryOne(query: string, aliasMap: AliasMap): Promise<Entity> {
         return this.connection.driver
             .query<any[]>(query)
-            .then(results => this.createFromJson(results[0]))
-            .then(entity => {
-                this.broadcaster.broadcastAfterLoaded(entity);
-                return entity;
+            .then(results => this.objectToEntity(results, aliasMap))
+            .then(entities => {
+                this.broadcaster.broadcastAfterLoaded(entities[0]);
+                return entities[0];
             });
     }
 
     /**
      * Executes query. Expects query will return objects in Entity format and creates Entity objects from that result.
      */
-    queryMany(query: string): Promise<Entity[]> {
+    queryMany(query: string, aliasMap: AliasMap): Promise<Entity[]> {
         return this.connection.driver
             .query<any[]>(query)
-            .then(results => this.createManyFromJson(results))
+            .then(results => this.objectToEntity(results, aliasMap))
             .then(entities => {
                 this.broadcaster.broadcastAfterLoadedAll(entities);
                 return entities;
@@ -141,34 +140,37 @@ export class Repository<Entity> {
      * Finds entities that match given conditions.
      */
     find(conditions?: Object): Promise<Entity[]> {
-        const builder = this.createQueryBuilder("entity");
+        const alias = this.metadata.table.name;
+        const builder = this.createQueryBuilder(alias);
         Object.keys(conditions).forEach(key => {
-            builder.where("entity." + key + "=:" + key).setParameter(key, (<any> conditions)[key]);
+            builder.where(alias + "." + key + "=:" + key).setParameter(key, (<any> conditions)[key]);
         });
-        return this.queryMany(builder.getSql());
+        return this.queryMany(builder.getSql(), builder.generateAliasMap());
     }
 
     /**
      * Finds one entity that matches given condition.
      */
     findOne(conditions: Object): Promise<Entity> {
-        const builder = this.createQueryBuilder("entity");
+        const alias = this.metadata.table.name;
+        const builder = this.createQueryBuilder(alias);
         Object.keys(conditions).forEach(key => {
-            builder.where("entity." + key + "=:" + key).setParameter(key, (<any> conditions)[key]);
+            builder.where(alias + "." + key + "=:" + key).setParameter(key, (<any> conditions)[key]);
         });
-        return this.queryOne(builder.getSql());
+        return this.queryOne(builder.getSql(), builder.generateAliasMap());
     }
 
     /**
      * Finds entity with given id.
      */
     findById(id: any): Promise<Entity> {
-        const builder = this.createQueryBuilder("entity")
-            .where("entity." + this.metadata.primaryColumn.name + "=:id")
+        const alias = this.metadata.table.name;
+        const builder = this.createQueryBuilder(alias)
+            .where(alias + "." + this.metadata.primaryColumn.name + "=:id")
             .setParameter("id", id);
         
 
-        return this.queryOne(builder.getSql());
+        return this.queryOne(builder.getSql(), builder.generateAliasMap());
     }
 
     // -------------------------------------------------------------------------
@@ -268,6 +270,16 @@ export class Repository<Entity> {
     // Private Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Creates entity from the given json data. If fetchAllData param is specified then entity data will be
+     * loaded from the database first, then filled with given json data.
+     */
+    private objectToEntity(objects: any, aliasMap: AliasMap) {
+        const creator = new EntityCreator(this.connection);
+        return creator.objectToEntity<Entity>(objects, this.metadata, aliasMap);
+    }
+
+    
     /*private dbObjectToEntity(dbObject: any): Promise<Entity> {
         const hydrator = new EntityHydrator<Entity>(this.connection);
         return hydrator.hydrate(this.metadata, dbObject, joinFields);

@@ -1,13 +1,14 @@
 {
   "ambientDevDependencies": {
-    "mocha": "github:DefinitelyTyped/DefinitelyTyped/mocha/mocha.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
     "assertion-error": "github:DefinitelyTyped/DefinitelyTyped/assertion-error/assertion-error.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
     "chai": "github:DefinitelyTyped/DefinitelyTyped/chai/chai.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
-    "sinon": "github:DefinitelyTyped/DefinitelyTyped/sinon/sinon.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
-    "mockery": "github:DefinitelyTyped/DefinitelyTyped/mockery/mockery.d.ts#6f6e5c7dd9effe21fee14eb65fe340ecbbc8580a"
+    "mocha": "github:DefinitelyTyped/DefinitelyTyped/mocha/mocha.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
+    "mockery": "github:DefinitelyTyped/DefinitelyTyped/mockery/mockery.d.ts#6f6e5c7dd9effe21fee14eb65fe340ecbbc8580a",
+    "sinon": "github:DefinitelyTyped/DefinitelyTyped/sinon/sinon.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645"
   },
   "ambientDependencies": {
-    "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#cf7f980ba6cf09f75aaa9b5e53010db3c00b9aaf",
-    "es6-shim": "github:DefinitelyTyped/DefinitelyTyped/es6-shim/es6-shim.d.ts#6697d6f7dadbf5773cb40ecda35a76027e0783b2"
+    "es6-shim": "github:DefinitelyTyped/DefinitelyTyped/es6-shim/es6-shim.d.ts#6697d6f7dadbf5773cb40ecda35a76027e0783b2",
+    "lodash": "github:DefinitelyTyped/DefinitelyTyped/lodash/lodash.d.ts#7b7aa2027a8fb6219a8bcf1b6bb12bcd0ff9539d",
+    "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#cf7f980ba6cf09f75aaa9b5e53010db3c00b9aaf"
   }
 }
