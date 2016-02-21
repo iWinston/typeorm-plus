@@ -20,14 +20,19 @@ export class Post {
     })
     text: string;
 
-    @OneToOne<PostDetails>(true, () => PostDetails, details => details.post, {
-        isAlwaysInnerJoin: true
+   /* @OneToOne<PostDetails>(true, () => PostDetails, details => details.post, {
+        //isAlwaysInnerJoin: true
     })
-    details: PostDetails;
+    details: PostDetails;*/
 
     @OneToMany<Image>(() => Image, image => image.post, {
         isAlwaysLeftJoin: true
     })
     images: Image[];
+
+    @OneToMany<Image>(() => Image, image => image.secondaryPost, {
+        isAlwaysLeftJoin: true
+    })
+    secondaryImages: Image[];
 
 }

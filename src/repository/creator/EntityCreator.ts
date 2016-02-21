@@ -1,5 +1,6 @@
 import {Connection} from "../../connection/Connection";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
+import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 
 export class EntityCreator {
 
@@ -32,33 +33,74 @@ export class EntityCreator {
     // -------------------------------------------------------------------------
 
     getLoadMap(metadata: EntityMetadata) {
-        // let tableUsageIndices = 0;
-        const columns = metadata.columns.map(column => {
-            return metadata.table.name + "." + column.name + " as " + metadata.table.name + "_" + column.name;
-        });
 
-        const qb = this.connection.driver
-            .createQueryBuilder()
-            .select(columns)
-            .from(metadata.table.name, metadata.table.name);
-        
-        metadata.relations.filter(relation => relation.isAlwaysLeftJoin || relation.isAlwaysInnerJoin).map(relation => {
-            const table = metadata.table.name;
-            const column = metadata.primaryColumn.name;
-            const relationTable = relation.relatedEntityMetadata.table.name;
-            const relationColumn = relation.relatedEntityMetadata.primaryColumn.name;
-            const condition = table + "." + column + "=" + relationTable + "." + relationColumn;
-            const selectedColumns = relation.relatedEntityMetadata.columns.map(column => {
-                return relationTable + "." + column.name + " as " + relationTable + "_" + column.name;
-            });
-            if (relation.isAlwaysLeftJoin) {
-                return qb.addSelect(selectedColumns).leftJoin(relationTable, relationTable, "ON", condition);
-            } else { // else can be only always inner join
-                return qb.addSelect(selectedColumns).innerJoin(relationTable, relationTable, "ON", condition);
+        const postId = 1;
+        const postJson = {
+            id: 1,
+            text: "This is post about hello",
+            title: "hello",
+            details: {
+                id: 1,
+                comment: "This is post about hello",
+                meta: "about-hello"
             }
+        };
+
+        // let tableUsageIndices = 0;
+
+        const mainTableAlias = metadata.table.name + "_1";
+        const visitedMetadatas: EntityMetadata[] = [];
+        const qb = this.connection.driver
+            .createQueryBuilder(this.connection.metadatas)
+            .select(mainTableAlias)
+            .from(metadata.target, mainTableAlias);
+
+        const aliasesCounter: { [type: string]: number } = { [mainTableAlias]: 0 };
+        const joinRelations = (parentTableAlias: string, entityMetadata: EntityMetadata) => {
+            if (visitedMetadatas.find(metadata => metadata === entityMetadata))
+                return;
+            
+            visitedMetadatas.push(metadata);
+            entityMetadata.relations.filter(relation => relation.isAlwaysLeftJoin || relation.isAlwaysInnerJoin).forEach(relation => {
+                let relationAlias = relation.relatedEntityMetadata.table.name;
+                if (!aliasesCounter[relationAlias]) aliasesCounter[relationAlias] = 0;
+                aliasesCounter[relationAlias] += 1;
+                relationAlias += "_" + aliasesCounter[relationAlias];
+                let condition = "";
+                const relationColumn = relation.relatedEntityMetadata.primaryColumn.name;
+
+                if (relation.isOwning) {
+                    condition = relationAlias + "." + relationColumn + "=" + parentTableAlias + "." + relation.inverseSideProperty;
+                } else {
+                    condition = relationAlias + "." + relation.inverseSideProperty + "=" + parentTableAlias + "." + relationColumn;
+                }
+
+                if (relation.isAlwaysLeftJoin) {
+                    qb.addSelect(relationAlias).leftJoin(relation.type, relationAlias, "ON", condition);
+
+                } else { // else can be only always inner join
+                    qb.addSelect(relationAlias).innerJoin(relation.type, relationAlias, "ON", condition);
+                }
+                
+                // now recursively go throw its relations
+                joinRelations(relationAlias, relation.relatedEntityMetadata);
+            });
+        };
+
+        joinRelations(mainTableAlias, metadata);
+
+
+        Object.keys(postJson).forEach(key => {
+
         });
+        
+        qb.where(mainTableAlias + "." + metadata.primaryColumn.name + "='" + postId + "'");
 
         console.log(qb.getSql());
+    }
+
+    private convertTableResultToJsonTree() {
+
     }
 
     private objectToEntity(object: any, metadata: EntityMetadata, doFetchProperties?: boolean): Promise<any>;

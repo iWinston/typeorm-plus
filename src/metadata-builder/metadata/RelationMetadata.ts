@@ -25,7 +25,7 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     namingStrategy: NamingStrategy;
-    ownerEntityPropertiesMap: Object;
+   // ownerEntityPropertiesMap: Object;
 
     // ---------------------------------------------------------------------
     // Private Properties
@@ -215,8 +215,9 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     private computeInverseSide(inverseSide: PropertyTypeInFunction<any>): string {
+        const ownerEntityPropertiesMap = this.relatedEntityMetadata.createPropertiesMap();
         if (typeof inverseSide === "function")
-            return (<Function> inverseSide)(this.ownerEntityPropertiesMap);
+            return (<Function> inverseSide)(ownerEntityPropertiesMap);
         if (typeof inverseSide === "string")
             return <string> inverseSide;
 

@@ -2,6 +2,7 @@ import {TypeORM} from "../../src/TypeORM";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {Image} from "./entity/Image";
+import {ImageDetails} from "./entity/ImageDetails";
 
 // first create a connection
 let options = {
@@ -13,8 +14,19 @@ let options = {
     autoSchemaCreate: true
 };
 
-TypeORM.createMysqlConnection(options, [Post, PostDetails, Image]).then(connection => {
+TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails]).then(connection => {
 
+    const postJson = {
+        id: 1,
+        text: "This is post about hello",
+        title: "hello",
+        details: {
+            id: 1,
+            comment: "This is post about hello",
+            meta: "about-hello"
+        }
+    };
+    
     let postRepository = connection.getRepository<Post>(Post);
     return postRepository.findById(1).then(post => {
         console.log(post);

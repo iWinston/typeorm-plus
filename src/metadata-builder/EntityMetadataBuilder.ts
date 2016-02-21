@@ -91,9 +91,6 @@ export class EntityMetadataBuilder {
             entityColumns.forEach(column => column.namingStrategy = this.namingStrategy);
             entityRelations.forEach(relation => relation.namingStrategy = this.namingStrategy);
 
-            // set properties map for relations
-            entityRelations.forEach(relation => relation.ownerEntityPropertiesMap = entityMetadata.createPropertiesMap());
-
             return entityMetadata;
         });
 
@@ -153,7 +150,7 @@ export class EntityMetadataBuilder {
         });
 
         const allEntityMetadatas = entityMetadatas.concat(junctionEntityMetadatas);
-        
+
         // set inverse side (related) entity metadatas for all relation metadatas
         allEntityMetadatas.forEach(entityMetadata => {
             entityMetadata.relations.forEach(relation => {

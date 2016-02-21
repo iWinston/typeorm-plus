@@ -1,13 +1,16 @@
+import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
+import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
 /**
  * @author Umed Khudoiberdiev <info@zar.tj>
  */
 export class QueryBuilder {
 
     // -------------------------------------------------------------------------
-    // Public properties
+    // Constructor
     // -------------------------------------------------------------------------
 
-    getTableNameFromEntityCallback: (entity: Function) => string;
+    constructor(private entityMetadatas: EntityMetadata[]) {
+    }
 
     // -------------------------------------------------------------------------
     // Pirvate properties
@@ -15,9 +18,9 @@ export class QueryBuilder {
 
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
-    private froms: { entityOrTableName: Function|string, alias: string };
-    private leftJoins: { join: string, alias: string, conditionType: string, condition: string }[] = [];
-    private innerJoins: { join: string, alias: string, conditionType: string, condition: string }[] = [];
+    private froms: { entity: Function, alias: string };
+    private leftJoins: { join: Function, alias: string, conditionType: string, condition: string }[] = [];
+    private innerJoins: { join: Function, alias: string, conditionType: string, condition: string }[] = [];
     private groupBys: string[] = [];
     private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
     private havings: { type: "simple"|"and"|"or", condition: string }[] = [];
@@ -48,11 +51,12 @@ export class QueryBuilder {
         return this;
     }
 
-    select(selection: string): this;
-    select(selection: string[]): this;
-    select(selection: string|string[]): this {
+    select(selection?: string): this;
+    select(selection?: string[]): this;
+    select(selection?: string|string[]): this {
         this.type = "select";
-        this.addSelection(selection);
+        if (selection)
+            this.addSelection(selection);
         return this;
     }
 
@@ -67,20 +71,20 @@ export class QueryBuilder {
         return this;
     }
 
-    from(tableName: string, alias: string): this;
-    from(entity: Function, alias: string): this;
-    from(entityOrTableName: Function|string, alias: string): this {
-        this.froms = { entityOrTableName: entityOrTableName, alias: alias };
+    //from(tableName: string, alias: string): this;
+    from(entity: Function, alias?: string): this {
+    //from(entityOrTableName: Function|string, alias: string): this {
+        this.froms = { entity: entity, alias: alias };
         return this;
     }
 
-    innerJoin(join: string, alias: string, conditionType: string, condition: string): this {
-        this.innerJoins.push({ join: join, alias: alias, conditionType: conditionType, condition: condition });
+    innerJoin(target: Function, alias: string, conditionType: string, condition: string): this {
+        this.innerJoins.push({ join: target, alias: alias, conditionType: conditionType, condition: condition });
         return this;
     }
 
-    leftJoin(join: string, alias: string, conditionType: string, condition: string): this {
-        this.leftJoins.push({ join: join, alias: alias, conditionType: conditionType, condition: condition });
+    leftJoin(target: Function, alias: string, conditionType: string, condition: string): this {
+        this.leftJoins.push({ join: target, alias: alias, conditionType: conditionType, condition: condition });
         return this;
     }
 
@@ -156,9 +160,9 @@ export class QueryBuilder {
 
     getSql(): string {
         let sql = this.createSelectExpression();
-        sql += this.createWhereExpression();
         sql += this.createLeftJoinExpression();
         sql += this.createInnerJoinExpression();
+        sql += this.createWhereExpression();
         sql += this.createGroupByExpression();
         sql += this.createHavingExpression();
         sql += this.createOrderByExpression();
@@ -189,25 +193,45 @@ export class QueryBuilder {
          }*/
     }
 
-    protected getTableName() {
-        if (this.froms.entityOrTableName instanceof Function) {
-            return this.getTableNameFromEntityCallback(this.froms.entityOrTableName);
-        } else {
-            return <string> this.froms.entityOrTableName;
-        }
-
+    protected findMetadata(target: Function) {
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === target);
+        if (!metadata)
+            throw new Error("Metadata for " + this.froms.entity + " was not found.");
+        
+        return metadata;
     }
 
     protected createSelectExpression() {
-        // todo throw exception if selects or from missing
-        const tableName = this.getTableName();
+        // todo throw exception if selects or from is missing
+
+        const metadata = this.findMetadata(this.froms.entity);
+        const tableName = metadata.table.name;
+        const alias = this.froms.alias ? this.froms.alias : metadata.table.name;
+        const columns: string[] = [];
+
+        // add select from the main table
+        if (this.selects.indexOf(this.froms.alias) !== -1)
+            metadata.columns.forEach(column => {
+                columns.push(this.froms.alias + "." + column.name + " AS " + this.froms.alias + "_" + column.name);
+            });
+
+        // add selects from left and inner joins
+        this.leftJoins.concat(this.innerJoins)
+            .filter(join => this.selects.indexOf(join.alias) !== -1)
+            .forEach(join => {
+                const joinMetadata = this.findMetadata(join.join);
+                joinMetadata.columns.forEach(column => {
+                    columns.push(join.alias + "." + column.name + " AS " + join.alias + "_" + column.name);
+                });
+            });
+        
         switch (this.type) {
             case "select":
-                return "SELECT " + this.selects.join(", ") + " FROM " + tableName + " " + this.froms.alias;// + " ";
+                return "SELECT " + columns.join(", ") + " FROM " + tableName + " " + alias;
             case "update":
-                return "UPDATE " + tableName + " " + this.froms.alias;// + " ";
+                return "UPDATE " + tableName + " " + alias;
             case "delete":
-                return "DELETE " + tableName + " " + this.froms.alias;// + " ";
+                return "DELETE " + tableName + " " + alias;
         }
         return "";
     }
@@ -231,7 +255,9 @@ export class QueryBuilder {
         if (!this.innerJoins || !this.innerJoins.length) return "";
 
         return this.innerJoins.map(join => {
-            return " INNER JOIN " + join.join + " " + join.alias + " " + join.conditionType + " " + join.condition;
+            const joinMetadata = this.entityMetadatas.find(metadata => metadata.target === join.join); // todo: throw exception if not found
+            const relationTable = joinMetadata.table.name;
+            return " INNER JOIN " + relationTable + " " + join.alias + " " + join.conditionType + " " + join.condition;
         }).join(" ");
     }
 
@@ -239,7 +265,9 @@ export class QueryBuilder {
         if (!this.leftJoins || !this.leftJoins.length) return "";
 
         return this.leftJoins.map(join => {
-            return " LEFT JOIN " + join.join + " " + join.alias + " " + join.conditionType + " " + join.condition;
+            const joinMetadata = this.findMetadata(join.join);
+            const relationTable = joinMetadata.table.name;
+            return " LEFT JOIN " + relationTable + " " + join.alias + " " + join.conditionType + " " + join.condition;
         }).join(" ");
     }
 
@@ -282,6 +310,10 @@ export class QueryBuilder {
             sql = sql.replace(":" + key, '"' + this.parameters[key] + '"'); // .replace('"', '')
         });
         return sql;
+    }
+    
+    protected replaceTableNames(sql: string) {
+        return sql.replace("\$\$", "");
     }
 
 }

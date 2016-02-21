@@ -3,6 +3,7 @@ import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {SchemaBuilder} from "./schema-builder/SchemaBuilder";
 import {QueryBuilder} from "./query-builder/QueryBuilder";
 import {MysqlSchemaBuilder} from "./schema-builder/MysqlSchemaBuilder";
+import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 
 /**
  * This driver organizes work with mongodb database.
@@ -44,8 +45,8 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a query builder which can be used to build an sql queries.
      */
-    createQueryBuilder(): QueryBuilder {
-        return new QueryBuilder();
+    createQueryBuilder(entityMetadatas: EntityMetadata[]): QueryBuilder {
+        return new QueryBuilder(entityMetadatas);
     }
 
     /**

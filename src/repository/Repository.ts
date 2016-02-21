@@ -88,10 +88,9 @@ export class Repository<Entity> {
      * Creates a new query builder that can be used to build an sql query.
      */
     createQueryBuilder(alias?: string): QueryBuilder {
-        const queryBuilder = this.connection.driver.createQueryBuilder();
-        queryBuilder.getTableNameFromEntityCallback = entity => this.getTableNameFromEntityCallback(entity);
+        const queryBuilder = this.connection.driver.createQueryBuilder(this.connection.metadatas);
         if (alias)
-            queryBuilder.select("*").from(this.metadata.target, alias);
+            queryBuilder.select(alias).from(this.metadata.target, alias);
 
         return queryBuilder;
     }
@@ -273,11 +272,5 @@ export class Repository<Entity> {
         const hydrator = new EntityHydrator<Entity>(this.connection);
         return hydrator.hydrate(this.metadata, dbObject, joinFields);
     }*/
-
-    private getTableNameFromEntityCallback(entity: Function) {
-        const metadata = this.connection.getMetadata(entity);
-        // todo throw exception if metadata is missing
-        return metadata.table.name;
-    }
 
 }

@@ -1,6 +1,7 @@
 import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {SchemaBuilder} from "./schema-builder/SchemaBuilder";
 import {QueryBuilder} from "./query-builder/QueryBuilder";
+import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 
 /**
  * Driver communicates with specific database.
@@ -20,7 +21,7 @@ export interface Driver {
     /**
      * Creates a query builder which can be used to build an sql queries.
      */
-    createQueryBuilder(): QueryBuilder;
+    createQueryBuilder(entityMetadatas: EntityMetadata[]): QueryBuilder;
     
     /**
      * Creates a schema builder which can be used to build database/table schemas.
