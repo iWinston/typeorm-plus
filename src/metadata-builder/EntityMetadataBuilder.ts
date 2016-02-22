@@ -118,6 +118,13 @@ export class EntityMetadataBuilder {
             });
         });
 
+        // set inverse side (related) entity metadatas for all relation metadatas
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.relations.forEach(relation => {
+                relation.relatedEntityMetadata = entityMetadatas.find(m => m.target === relation.type);
+            });
+        });
+
         // generate junction tables with its columns and foreign keys
         const junctionEntityMetadatas: EntityMetadata[] = [];
         entityMetadatas.forEach(metadata => {
@@ -130,7 +137,7 @@ export class EntityMetadataBuilder {
                 const column1options: ColumnOptions = {
                     length: metadata.primaryColumn.length,
                     type: metadata.primaryColumn.type,
-                    name: metadata.table.name + "_" + relation.name
+                    name: metadata.table.name + "_" + metadata.primaryColumn.name
                 };
                 const column2options: ColumnOptions = {
                     length: inverseSideMetadata.primaryColumn.length,
@@ -145,20 +152,14 @@ export class EntityMetadataBuilder {
                     new ForeignKeyMetadata(tableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),
                     new ForeignKeyMetadata(tableMetadata, [columns[1]], inverseSideMetadata.table, [inverseSideMetadata.primaryColumn]),
                 ];
-                junctionEntityMetadatas.push(new EntityMetadata(tableMetadata, columns, [], [], [], foreignKeys));
+                const junctionEntityMetadata = new EntityMetadata(tableMetadata, columns, [], [], [], foreignKeys);
+                junctionEntityMetadatas.push(junctionEntityMetadata);
+                relation.junctionEntityMetadata = junctionEntityMetadata;
+                relation.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
             });
         });
 
-        const allEntityMetadatas = entityMetadatas.concat(junctionEntityMetadatas);
-
-        // set inverse side (related) entity metadatas for all relation metadatas
-        allEntityMetadatas.forEach(entityMetadata => {
-            entityMetadata.relations.forEach(relation => {
-                relation.relatedEntityMetadata = allEntityMetadatas.find(m => m.target === relation.type);
-            })
-        });
-
-        return allEntityMetadatas;
+        return entityMetadatas.concat(junctionEntityMetadatas);
     }
 
     // -------------------------------------------------------------------------

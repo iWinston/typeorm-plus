@@ -108,6 +108,10 @@ export class EntityMetadata {
         return this._columns.find(column => column.isUpdateDate);
     }
 
+    get hasPrimaryKey(): boolean {
+        return !!this.primaryColumn;
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------

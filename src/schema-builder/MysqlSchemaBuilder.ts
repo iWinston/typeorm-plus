@@ -1,8 +1,8 @@
 import {SchemaBuilder} from "./SchemaBuilder";
-import {MysqlDriver} from "../MysqlDriver";
-import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
-import {ForeignKeyMetadata} from "../../metadata-builder/metadata/ForeignKeyMetadata";
-import {TableMetadata} from "../../metadata-builder/metadata/TableMetadata";
+import {MysqlDriver} from "../driver/MysqlDriver";
+import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
+import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
+import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
 
 export class MysqlSchemaBuilder extends SchemaBuilder {
     

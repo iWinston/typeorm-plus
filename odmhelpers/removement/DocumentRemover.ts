@@ -2,10 +2,10 @@ import {DocumentSchema} from "../../schema/DocumentSchema";
 import {Connection} from "../../connection/Connection";
 import {RelationSchema} from "../../schema/RelationSchema";
 import {CascadeOption, DynamicCascadeOptions} from "./../cascade/CascadeOption";
-import {RemoveOperation} from "./../operation/RemoveOperation";
-import {InverseSideUpdateOperation} from "./../operation/InverseSideUpdateOperation";
+import {RemoveOperation} from "../../../odmhelpers/operation/RemoveOperation";
+import {InverseSideUpdateOperation} from "../../../odmhelpers/operation/InverseSideUpdateOperation";
 import {CascadeOptionUtils} from "../cascade/CascadeOptionUtils";
-import {NoDocumentWithSuchIdError} from "../error/NoDocumentWithSuchIdError";
+import {NoDocumentWithSuchIdError} from "../../../odmhelpers/error/NoDocumentWithSuchIdError";
 import {ObjectID} from "mongodb";
 
 /**

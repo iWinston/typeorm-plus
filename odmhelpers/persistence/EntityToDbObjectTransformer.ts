@@ -1,10 +1,10 @@
 import {Connection} from "../../connection/Connection";
 import {CascadeOption, DynamicCascadeOptions} from "./../cascade/CascadeOption";
 import {DbObjectColumnValidator} from "./DbObjectColumnValidator";
-import {ColumnTypeNotSupportedError} from "../error/ColumnTypeNotSupportedError";
-import {PersistOperation} from "./../operation/PersistOperation";
+import {ColumnTypeNotSupportedError} from "../../../odmhelpers/error/ColumnTypeNotSupportedError";
+import {PersistOperation} from "../../../odmhelpers/operation/PersistOperation";
 import {CascadeOptionUtils} from "../cascade/CascadeOptionUtils";
-import {InverseSideUpdateOperation} from "../operation/InverseSideUpdateOperation";
+import {InverseSideUpdateOperation} from "../../../odmhelpers/operation/InverseSideUpdateOperation";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 

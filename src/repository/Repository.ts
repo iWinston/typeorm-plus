@@ -1,9 +1,10 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
-import {QueryBuilder, AliasMap} from "../driver/query-builder/QueryBuilder";
-import {DynamicCascadeOptions} from "./cascade/CascadeOption";
-import {EntityCreator} from "./creator/EntityCreator";
+import {QueryBuilder} from "../query-builder/QueryBuilder";
+
+// todo: think how we can implement queryCount, queryManyAndCount
+// todo: extract non safe methods from repository (removeById, removeByConditions)
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -67,8 +68,9 @@ export class Repository<Entity> {
     createFromJson(json: any, fetchProperty?: boolean): Promise<Entity>;
     createFromJson(json: any, fetchConditions?: Object): Promise<Entity>;
     createFromJson(json: any, fetchOption?: boolean|Object): Promise<Entity> {
-        const creator = new EntityCreator(this.connection);
-        return creator.createFromJson<Entity>(json, this.metadata, fetchOption);
+        return Promise.resolve<Entity>(null); // todo
+       /* const creator = new EntityCreator(this.connection);
+        return creator.createFromJson<Entity>(json, this.metadata, fetchOption);*/
     }
 
     /**
@@ -78,62 +80,28 @@ export class Repository<Entity> {
     createManyFromJson(objects: any[], fetchProperties?: boolean[]): Promise<Entity[]>;
     createManyFromJson(objects: any[], fetchConditions?: Object[]): Promise<Entity[]>;
     createManyFromJson(objects: any[], fetchOption?: boolean[]|Object[]): Promise<Entity[]> {
-        return Promise.all(objects.map((object, key) => {
+        return Promise.resolve<Entity[]>(null); // todo
+        /*return Promise.all(objects.map((object, key) => {
             const fetchConditions = (fetchOption && fetchOption[key]) ? fetchOption[key] : undefined;
             return this.createFromJson(object, fetchConditions);
-        }));
+        }));*/
     }
 
     /**
      * Creates a new query builder that can be used to build an sql query.
      */
-    createQueryBuilder(alias: string): QueryBuilder {
+    createQueryBuilder(alias: string): QueryBuilder<Entity> {
         return this.connection.driver
-            .createQueryBuilder(this.connection.metadatas)
+            .createQueryBuilder<Entity>(this.connection)
             .select(alias)
             .from(this.metadata.target, alias);
     }
 
     /**
-     * Executes query. Expects query will return object in Entity format and creates Entity object from that result.
-     */
-    queryOne(query: string, aliasMap: AliasMap): Promise<Entity> {
-        return this.connection.driver
-            .query<any[]>(query)
-            .then(results => this.objectToEntity(results, aliasMap))
-            .then(entities => {
-                this.broadcaster.broadcastAfterLoaded(entities[0]);
-                return entities[0];
-            });
-    }
-
-    /**
-     * Executes query. Expects query will return objects in Entity format and creates Entity objects from that result.
-     */
-    queryMany(query: string, aliasMap: AliasMap): Promise<Entity[]> {
-        return this.connection.driver
-            .query<any[]>(query)
-            .then(results => this.objectToEntity(results, aliasMap))
-            .then(entities => {
-                this.broadcaster.broadcastAfterLoadedAll(entities);
-                return entities;
-            });
-    }
-
-    /**
-     * Executes query and returns raw result.
+     * Executes query and returns raw database results.
      */
     query(query: string): Promise<any> {
         return this.connection.driver.query(query);
-    }
-
-    /**
-     * Gives number of rows found by a given query.
-     */
-    queryCount(query: any): Promise<number> {
-        return this.connection.driver
-            .query(query)
-            .then(result => parseInt(result));
     }
 
     /**
@@ -142,10 +110,8 @@ export class Repository<Entity> {
     find(conditions?: Object): Promise<Entity[]> {
         const alias = this.metadata.table.name;
         const builder = this.createQueryBuilder(alias);
-        Object.keys(conditions).forEach(key => {
-            builder.where(alias + "." + key + "=:" + key).setParameter(key, (<any> conditions)[key]);
-        });
-        return this.queryMany(builder.getSql(), builder.generateAliasMap());
+        Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
+        return builder.setParameters(conditions).getResults();
     }
 
     /**
@@ -154,10 +120,8 @@ export class Repository<Entity> {
     findOne(conditions: Object): Promise<Entity> {
         const alias = this.metadata.table.name;
         const builder = this.createQueryBuilder(alias);
-        Object.keys(conditions).forEach(key => {
-            builder.where(alias + "." + key + "=:" + key).setParameter(key, (<any> conditions)[key]);
-        });
-        return this.queryOne(builder.getSql(), builder.generateAliasMap());
+        Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
+        return builder.setParameters(conditions).getSingleResult();
     }
 
     /**
@@ -165,12 +129,10 @@ export class Repository<Entity> {
      */
     findById(id: any): Promise<Entity> {
         const alias = this.metadata.table.name;
-        const builder = this.createQueryBuilder(alias)
+        return this.createQueryBuilder(alias)
             .where(alias + "." + this.metadata.primaryColumn.name + "=:id")
-            .setParameter("id", id);
-        
-
-        return this.queryOne(builder.getSql(), builder.generateAliasMap());
+            .setParameter("id", id)
+            .getSingleResult();
     }
 
     // -------------------------------------------------------------------------
@@ -181,9 +143,9 @@ export class Repository<Entity> {
      * Saves a given entity. If entity is not inserted yet then it inserts a new entity.
      * If entity already inserted then performs its update.
      */
-    persist(entity: Entity, dynamicCascadeOptions?: DynamicCascadeOptions<Entity>): Promise<Entity> {
-        
-        
+    persist(entity: Entity/*, dynamicCascadeOptions?: DynamicCascadeOptions<Entity>*/): Promise<Entity> {
+        // todo
+        return Promise.resolve<Entity>(null);
         
         // if (!this.schema.isEntityTypeCorrect(entity))
         //    throw new BadEntityInstanceException(entity, this.schema.entityClass);
@@ -191,14 +153,14 @@ export class Repository<Entity> {
 //        const remover     = new EntityRemover<Entity>(this.connection);
   //      const persister   = new EntityPersister<Entity>(this.connection);
 
-        return remover.computeRemovedRelations(this.metadata, entity, dynamicCascadeOptions)
+       /* return remover.computeRemovedRelations(this.metadata, entity, dynamicCascadeOptions)
             .then(result => persister.persist(this.metadata, entity, dynamicCascadeOptions))
             .then(result => remover.executeRemoveOperations())
             .then(result => remover.executeUpdateInverseSideRelationRemoveIds())
-            .then(result => entity);
+            .then(result => entity);*/
     }
     
-    computeChangeSet(entity: Entity) {
+    /*computeChangeSet(entity: Entity) {
         // if there is no primary key - there is no way to determine if object needs to be updated or insert
         // since we cannot get the target object without identifier, that's why we always do insert for such objects
         if (!this.metadata.primaryColumn)
@@ -208,11 +170,7 @@ export class Repository<Entity> {
         this.findById(this.metadata.getEntityId(entity)).then(dbEntity => {
             
         });
-    }
-
-    insert(entity: Entity) {
-        
-    }
+    }*/
 
     // -------------------------------------------------------------------------
     // Persist ends
@@ -221,68 +179,45 @@ export class Repository<Entity> {
     /**
      * Removes a given entity.
      */
-    remove(entity: Entity, dynamicCascadeOptions?: DynamicCascadeOptions<Entity>): Promise<void> {
+    remove(entity: Entity/*, dynamicCascadeOptions?: DynamicCascadeOptions<Entity>*/): Promise<void> {
+        // todo
+        return Promise.resolve();
         // if (!this.schema.isEntityTypeCorrect(entity))
         //    throw new BadEntityInstanceException(entity, this.schema.entityClass);
-
-        const remover = new EntityRemover<Entity>(this.connection);
+        /*const remover = new EntityRemover<Entity>(this.connection);
         return remover.registerEntityRemoveOperation(this.metadata, this.metadata.getEntityId(entity), dynamicCascadeOptions)
             .then(results => remover.executeRemoveOperations())
-            .then(results => remover.executeUpdateInverseSideRelationRemoveIds());
+            .then(results => remover.executeUpdateInverseSideRelationRemoveIds());*/
     }
 
     /**
-     * Removes entity by a given id.
+     * Removes entity by a given id. Does not take care about cascade remove operations.
      */
     removeById(id: string): Promise<void> {
-        const builder = this.createQueryBuilder("entity")
+        const alias = this.metadata.table.name;
+        return this.createQueryBuilder(alias)
             .delete()
-            .where("entity." + this.metadata.primaryColumn.name + "=:id")
-            .setParameter("id", id);
-
-        return this.query(builder.getSql());
+            .where(alias + "." + this.metadata.primaryColumn.name + "=:id")
+            .setParameter("id", id)
+            .execute()
+            .then(() => {});
     }
 
     /**
-     * Removes entities by a given simple conditions.
+     * Removes entities by a given simple conditions. Does not take care about cascade remove operations.
      */
-    removeByConditions(conditions: Object): Promise<any> {
-        const builder = this.createQueryBuilder("entity").delete();
-        Object.keys(conditions).forEach(key => {
-            builder.where("entity." + key + "=:" + key).setParameter(key, (<any> conditions)[key]);
-        });
-        return this.query(builder.getSql());
+    removeByConditions(conditions: Object): Promise<void> {
+        const alias = this.metadata.table.name;
+        const builder = this.createQueryBuilder(alias).delete();
+        Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
+        return builder
+            .setParameters(conditions)
+            .execute()
+            .then(() => {});
     }
-
-    /**
-     * Finds entities by given criteria and returns them with the total number of
-     */
-    queryManyAndCount(query: string, countQuery: string): Promise<{ entities: Entity[] }> {
-        return Promise.all<any>([
-            this.queryMany(query),
-            this.queryCount(countQuery)
-        ]).then(([entities, count]) => {
-            return { entities: <Entity[]> entities, count: <number> count };
-        });
-    }
-
+    
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Creates entity from the given json data. If fetchAllData param is specified then entity data will be
-     * loaded from the database first, then filled with given json data.
-     */
-    private objectToEntity(objects: any, aliasMap: AliasMap) {
-        const creator = new EntityCreator(this.connection);
-        return creator.objectToEntity<Entity>(objects, this.metadata, aliasMap);
-    }
-
-    
-    /*private dbObjectToEntity(dbObject: any): Promise<Entity> {
-        const hydrator = new EntityHydrator<Entity>(this.connection);
-        return hydrator.hydrate(this.metadata, dbObject, joinFields);
-    }*/
 
 }

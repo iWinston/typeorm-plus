@@ -3,7 +3,7 @@ import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
-import {SchemaBuilder} from "../driver/schema-builder/SchemaBuilder";
+import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 
 /**
  * Creates indexes based on the given metadata

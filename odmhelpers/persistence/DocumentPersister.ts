@@ -2,9 +2,9 @@ import {Connection} from "../../connection/Connection";
 import {CascadeOption, DynamicCascadeOptions} from "./../cascade/CascadeOption";
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 import {DocumentToDbObjectTransformer} from "./DocumentToDbObjectTransformer";
-import {PersistOperation} from "./../operation/PersistOperation";
-import {InverseSideUpdateOperation} from "./../operation/InverseSideUpdateOperation";
-import {PersistOperationGrouppedByDeepness} from "../operation/PersistOperationGrouppedByDeepness";
+import {PersistOperation} from "../../../odmhelpers/operation/PersistOperation";
+import {InverseSideUpdateOperation} from "../../../odmhelpers/operation/InverseSideUpdateOperation";
+import {PersistOperationGrouppedByDeepness} from "../../../odmhelpers/operation/PersistOperationGrouppedByDeepness";
 
 export class EntityPersister {
 

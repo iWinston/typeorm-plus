@@ -1,8 +1,10 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {OneToMany, ManyToOne} from "../../../src/decorator/Relations";
+import {OneToMany, ManyToOne, ManyToMany, OneToOne} from "../../../src/decorator/Relations";
 import {Image} from "./Image";
 import {Cover} from "./Cover";
+import {Category} from "./Category";
+import {PostDetails} from "./PostDetails";
 
 @Table("sample2_post")
 export class Post {
@@ -20,16 +22,19 @@ export class Post {
     })
     text: string;
 
-   /* @OneToOne<PostDetails>(true, () => PostDetails, details => details.post)
-    details: PostDetails;*/
+    @OneToOne<PostDetails>(true, () => PostDetails, details => details.post)
+    details: PostDetails;
 
-    @OneToMany<Image>(() => Image, image => image.post)
+    @OneToMany<Image>(type => Image, image => image.post)
     images: Image[];
 
-    @OneToMany<Image>(() => Image, image => image.secondaryPost)
+    @OneToMany<Image>(type => Image, image => image.secondaryPost)
     secondaryImages: Image[];
 
-    @ManyToOne<Cover>(() => Cover, cover => cover.posts)
+    @ManyToOne<Cover>(type => Cover, cover => cover.posts)
     cover: Cover;
+
+    @ManyToMany<Category>(true, type => Category, category => category.posts)
+    categories: Category;
 
 }

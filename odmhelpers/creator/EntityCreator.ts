@@ -1,7 +1,7 @@
 import {Connection} from "../../connection/Connection";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
-import {AliasMap, Alias} from "../../driver/query-builder/QueryBuilder";
+import {AliasMap, Alias} from "../../query-builder/QueryBuilder";
 import * as _ from "lodash";
 
 export class EntityCreator {
@@ -142,26 +142,12 @@ export class EntityCreator {
                 const alias = aliasMap.findAliasByParent(mainAlias.name, relation.propertyName);
                 if (alias) {
                     //const id = relation.isManyToOne || relation.isOneToOne ? object[mainAlias.name + "_" + relation.name] : null;
-                    const relatedEntities = this.toEntity(sqlResult, relation.relatedEntityMetadata, alias, aliasMap);
-                    if (relation.isManyToOne || relation.isOneToOne) {
-                        const relatedObject = relatedEntities.find(obj => {
-                            return obj[relation.relatedEntityMetadata.primaryColumn.name] === object[mainAlias.name + "_" + relation.name];
-                        });
-
-                        if (relatedObject) {
-                            jsonObject[relation.propertyName] = relatedObject;
-                            isAnythingLoaded = true;
-                        }
-                        
-                    } else if (relation.isOneToMany) {
-                        const relatedObjects = relatedEntities.filter(obj => {
-                            return obj[relation.inverseSideProperty] === object[mainAlias.name + "_" + metadata.primaryColumn.name];
-                        });
-
-                        //if (relatedObjects) {
-                            jsonObject[relation.propertyName] = relatedObjects;
-                            isAnythingLoaded = true;
-                        //}
+                    const subSqlResult = sqlResult.filter(result => String(result[mainAlias.name + "_" + metadata.primaryColumn.name]) === key);
+                    const relatedEntities = this.toEntity(subSqlResult, relation.relatedEntityMetadata, alias, aliasMap);
+                    const res = relation.isManyToOne || relation.isOneToOne ? relatedEntities[0] : relatedEntities;
+                    if (res) {
+                        jsonObject[relation.propertyName] = res;
+                        isAnythingLoaded = true;
                     }
                 }
             });
@@ -169,8 +155,6 @@ export class EntityCreator {
             return isAnythingLoaded ? jsonObject : null;   
             
         }).filter(res => res !== null);
-        
-        //return id ? final[0] : final;
     }
 
     private objectToEntity2(object: any, metadata: EntityMetadata, doFetchProperties?: boolean): Promise<any>;

@@ -49,7 +49,7 @@ export class ColumnTypes {
         if (!type)
             return false;
 
-        if (typeof type === "string" && !ColumnTypes.isTypeSupported(type))
+        if (typeof type === "string" && !ColumnTypes.isTypeSupported(String(type)))
             return false;
 
         return true;

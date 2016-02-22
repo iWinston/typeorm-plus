@@ -4,6 +4,7 @@ import {PostDetails} from "./entity/PostDetails";
 import {Image} from "./entity/Image";
 import {ImageDetails} from "./entity/ImageDetails";
 import {Cover} from "./entity/Cover";
+import {Category} from "./entity/Category";
 
 // first create a connection
 let options = {
@@ -15,7 +16,7 @@ let options = {
     autoSchemaCreate: true
 };
 
-TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover]).then(connection => {
+TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover, Category]).then(connection => {
 
     const postJson = {
         id: 1,
@@ -35,22 +36,24 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
         .addSelect("imageDetails")
         .addSelect("secondaryImage")
         .addSelect("cover")
-        .leftJoin("post.images", "image", "on", "image.post=post.id")
-        .leftJoin("post.secondaryImages", "secondaryImage", "on", "secondaryImage.secondaryPost=post.id")
-        .leftJoin("image.details", "imageDetails", "on", "imageDetails.id=image.details")
-        .innerJoin("post.cover", "cover", "on", "cover.id=post.cover")
+        .addSelect("category")
+        .leftJoin("post.images", "image")
+        .leftJoin("post.secondaryImages", "secondaryImage")
+        .leftJoin("image.details", "imageDetails", "on", "imageDetails.meta=:meta")
+        .innerJoin("post.cover", "cover")
+        .leftJoin("post.categories", "category", "on", "category.description=:description")
         //.leftJoin(Image, "image", "on", "image.post=post.id")
         //.where("post.id=:id")
-        .setParameter("id", 1);
+        .setParameter("id", 1)
+        .setParameter("description", "cat2")
+        .setParameter("meta", "sec image");
     
-    return postRepository
-        .queryMany(qb.getSql(), qb.generateAliasMap())
+    return qb
+        .getSingleResult()
         .then(result => console.log(JSON.stringify(result, null, 4)))
-        .catch(err => console.log(err));
+        .catch(error => console.log(error.stack ? error.stack : error));
 
-    return;
-
-    let details = new PostDetails();
+    /*let details = new PostDetails();
     details.comment = "This is post about hello";
     details.meta = "about-hello";
 
@@ -62,6 +65,6 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
     postRepository
         .persist(post)
         .then(post => console.log("Post has been saved"))
-        .catch(error => console.log("Cannot save. Error: ", error));
+        .catch(error => console.log("Cannot save. Error: ", error));*/
 
-}).catch(error => console.log("Cannot connect: ", error));
+}).catch(error => console.log(error.stack ? error.stack : error));

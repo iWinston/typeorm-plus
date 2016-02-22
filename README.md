@@ -12,3 +12,6 @@ Take a look on samples in [./sample](https://github.com/pleerock/typeorm/tree/ma
 usages.
 
 ## Todos
+
+* add partial selection support
+* in query builder should we use property names or table names? (right now its mixed)

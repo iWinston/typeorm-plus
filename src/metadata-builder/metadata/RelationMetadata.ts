@@ -86,6 +86,11 @@ export class RelationMetadata extends PropertyMetadata {
      */
     private _relatedEntityMetadata: EntityMetadata;
 
+    /**
+     * Junction entity metadata.
+     */
+    private _junctionEntityMetadata: EntityMetadata;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -136,6 +141,14 @@ export class RelationMetadata extends PropertyMetadata {
         this._relatedEntityMetadata = metadata;
     }
 
+    get junctionEntityMetadata(): EntityMetadata {
+        return this._junctionEntityMetadata;
+    }
+    
+    set junctionEntityMetadata(metadata: EntityMetadata) {
+        this._junctionEntityMetadata = metadata;
+    }
+
     get relationType(): RelationTypes {
         return this._relationType;
     }
@@ -146,6 +159,10 @@ export class RelationMetadata extends PropertyMetadata {
 
     get inverseSideProperty(): string {
         return this.computeInverseSide(this._inverseSideProperty);
+    }
+
+    get inverseRelation(): RelationMetadata {
+        return this._relatedEntityMetadata.findRelationByPropertyName(this.computeInverseSide(this._inverseSideProperty));
     }
 
     get isOwning(): boolean {
