@@ -4,7 +4,7 @@ import {Table} from "../../../src/decorator/Tables";
 @Table("sample1_post")
 export class Post {
 
-    @PrimaryColumn("int", { isAutoIncrement: true })
+    @PrimaryColumn("int", { autoIncrement: true })
     id: number;
 
     @Column()

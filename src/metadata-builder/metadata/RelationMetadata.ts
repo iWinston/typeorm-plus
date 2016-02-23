@@ -118,8 +118,8 @@ export class RelationMetadata extends PropertyMetadata {
             this._isCascadeRemove = options.isCascadeRemove;
         if (options.oldColumnName)
             this._oldColumnName = options.oldColumnName;
-        if (options.isNullable)
-            this._isNullable = options.isNullable;
+        if (options.nullable)
+            this._isNullable = options.nullable;
 
         if (!this._name)
             this._name = propertyName;
@@ -162,7 +162,7 @@ export class RelationMetadata extends PropertyMetadata {
     }
 
     get inverseRelation(): RelationMetadata {
-        return this._relatedEntityMetadata.findRelationByPropertyName(this.computeInverseSide(this._inverseSideProperty));
+        return this._relatedEntityMetadata.findRelationWithPropertyName(this.computeInverseSide(this._inverseSideProperty));
     }
 
     get isOwning(): boolean {

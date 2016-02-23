@@ -106,7 +106,7 @@ export class EntityMetadataBuilder {
                     const options: ColumnOptions = {
                         type: inverseSideMetadata.primaryColumn.type,
                         oldColumnName: relation.oldColumnName,
-                        isNullable: relation.isNullable
+                        nullable: relation.isNullable
                     };
                     relationalColumn = new ColumnMetadata(metadata.target, relation.name, false, false, false, options);
                     metadata.columns.push(relationalColumn);

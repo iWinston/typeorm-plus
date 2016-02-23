@@ -104,7 +104,7 @@ export class EntityToDbObjectTransformer {
                                  columnName: any,
                                  cascadeOption?: CascadeOption) {
 
-        const relation = metadata.findRelationWithOneByPropertyName(columnName);
+        const relation = metadata.findRelationWithOneWithPropertyName(columnName);
         const addFunction = (id: any) => dbObject[relation.name] = id;
         this.parseRelation(deepness, metadata, entity, relation, entity[columnName], addFunction, cascadeOption);
     }
@@ -117,7 +117,7 @@ export class EntityToDbObjectTransformer {
                                     columnName: any,
                                     cascadeOption?: CascadeOption) {
 
-        const relation = metadata.findRelationWithManyByPropertyName(columnName);
+        const relation = metadata.findRelationWithManyWithPropertyName(columnName);
         const addFunction = (id: any) => dbObject[relation.name].push(id);
 
         dbObject[relation.name] = [];
@@ -150,7 +150,7 @@ export class EntityToDbObjectTransformer {
             let afterExecution = (insertedRelationEntity: any) => {
                 let id = relationTypeMetadata.getEntityId(insertedRelationEntity);
                 addFunction(this.createObjectId(id, relationTypeMetadata));
-                const inverseSideRelationMetadata = relationTypeMetadata.findRelationByPropertyName(relation.inverseSideProperty);
+                const inverseSideRelationMetadata = relationTypeMetadata.findRelationWithPropertyName(relation.inverseSideProperty);
                 return <InverseSideUpdateOperation> {
                     inverseSideEntityId: id,
                     inverseSideEntityMetadata: relationTypeMetadata,

@@ -28,6 +28,6 @@ export interface RelationOptions {
     /**
      * Indicates if relation column value can be nullable or not.
      */
-    isNullable?: boolean;
+    nullable?: boolean;
 
 }

@@ -40,7 +40,7 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
         .leftJoin("post.images", "image")
         .leftJoin("post.secondaryImages", "secondaryImage")
         .leftJoin("image.details", "imageDetails", "on", "imageDetails.meta=:meta")
-        .innerJoin("post.cover", "cover")
+        .innerJoin("post.coverId", "cover")
         .leftJoin("post.categories", "category", "on", "category.description=:description")
         //.leftJoin(Image, "image", "on", "image.post=post.id")
         //.where("post.id=:id")
@@ -50,7 +50,8 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
     
     return qb
         .getSingleResult()
-        .then(result => console.log(JSON.stringify(result, null, 4)))
+        .then(result => console.log(result))
+        // .then(result => console.log(JSON.stringify(result, null, 4)))
         .catch(error => console.log(error.stack ? error.stack : error));
 
     /*let details = new PostDetails();

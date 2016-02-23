@@ -201,7 +201,7 @@ export class DocumentRemover<Document> {
 
         // add new inverse side update operation
         if (relation.inverseSideProperty) {
-            const inverseSideRelationSchema = relatedSchema.findRelationByPropertyName(relation.inverseSideProperty);
+            const inverseSideRelationSchema = relatedSchema.findRelationWithPropertyName(relation.inverseSideProperty);
             this.inverseSideUpdateOperations.push({
                 inverseSideDocumentId: id,
                 inverseSideDocumentSchema: relatedSchema,

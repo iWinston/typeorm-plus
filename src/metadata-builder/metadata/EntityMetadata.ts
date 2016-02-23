@@ -166,40 +166,36 @@ export class EntityMetadata {
         return this._relations.find(relation => relation.name === propertyName);
     }
 
-    findRelationWithOneByPropertyName(propertyName: string): RelationMetadata {
+    findRelationWithOneWithPropertyName(propertyName: string): RelationMetadata {
         return this._relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
     }
 
-    findRelationWithOneByDbName(name: string): RelationMetadata {
+    findRelationWithOneWithDbName(name: string): RelationMetadata {
         return this._relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
     }
 
-    findRelationWithManyByPropertyName(propertyName: string): RelationMetadata {
+    findRelationWithManyWithPropertyName(propertyName: string): RelationMetadata {
         return this._relations.find(relation => relation.propertyName === propertyName && (relation.isManyToOne || relation.isManyToMany));
     }
 
-    findRelationWithManyByDbName(name: string): RelationMetadata {
+    findRelationWithManyWithDbName(name: string): RelationMetadata {
         return this._relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
     }
 
-    findRelationByPropertyName(name: string): RelationMetadata {
-        return this.findRelationWithOneByPropertyName(name) || this.findRelationWithManyByPropertyName(name);
-    }
-
     hasRelationWithOneWithPropertyName(propertyName: string): boolean {
-        return !!this.findRelationWithOneByPropertyName(propertyName);
+        return !!this.findRelationWithOneWithPropertyName(propertyName);
     }
 
     hasRelationWithManyWithPropertyName(propertyName: string): boolean {
-        return !!this.findRelationWithManyByPropertyName(propertyName);
+        return !!this.findRelationWithManyWithPropertyName(propertyName);
     }
 
     hasRelationWithOneWithName(name: string): boolean {
-        return !!this.findRelationWithOneByDbName(name);
+        return !!this.findRelationWithOneWithDbName(name);
     }
 
     hasRelationWithManyWithName(name: string): boolean {
-        return !!this.findRelationWithManyByDbName(name);
+        return !!this.findRelationWithManyWithDbName(name);
     }
-
+    
 }

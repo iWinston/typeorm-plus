@@ -97,12 +97,12 @@ export class ColumnMetadata extends PropertyMetadata {
 
         if (options.length)
             this._length = options.length;
-        if (options.isAutoIncrement)
-            this._isAutoIncrement = options.isAutoIncrement;
-        if (options.isUnique)
-            this._isUnique = options.isUnique;
-        if (options.isNullable)
-            this._isNullable = options.isNullable;
+        if (options.autoIncrement)
+            this._isAutoIncrement = options.autoIncrement;
+        if (options.unique)
+            this._isUnique = options.unique;
+        if (options.nullable)
+            this._isNullable = options.nullable;
         if (options.columnDefinition)
             this._columnDefinition = options.columnDefinition;
         if (options.comment)

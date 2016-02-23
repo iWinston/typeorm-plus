@@ -2,9 +2,9 @@ export interface ColumnOptions {
     name?: string;
     type?: string;
     length?: string;
-    isAutoIncrement?: boolean;
-    isUnique?: boolean;
-    isNullable?: boolean;
+    autoIncrement?: boolean;
+    unique?: boolean;
+    nullable?: boolean;
     columnDefinition?: string;
     comment?: string;
     oldColumnName?: string;

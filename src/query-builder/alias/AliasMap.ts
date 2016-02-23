@@ -54,13 +54,13 @@ export class AliasMap {
         } else if (alias.parentAliasName && alias.parentPropertyName) {
             const parentAlias = this.findAliasByName(alias.parentAliasName); // todo: throw exceptions everywhere
             const parentEntityMetadata = this.getEntityMetadataByAlias(parentAlias);
-            const relation = parentEntityMetadata.findRelationByPropertyName(alias.parentPropertyName);
+            const relation = parentEntityMetadata.findRelationWithDbName(alias.parentPropertyName);
             return relation.relatedEntityMetadata;
         }
 
         throw new Error("Cannot get entity metadata for the given alias " + alias.name);
     }
-
+    
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------

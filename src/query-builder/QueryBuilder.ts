@@ -204,12 +204,12 @@ export class QueryBuilder<Entity> {
         return sql;
     }
     
-    execute(): Promise<any[]> {
-        return this.connection.driver.query<any[]>(this.getSql())
+    execute<T>(): Promise<T> {
+        return this.connection.driver.query<T>(this.getSql());
     }
     
     getScalarResults(): Promise<any[]> {
-        return this.execute().then(results => this.rawResultsToObjects(results));
+        return this.execute<any[]>().then(results => this.rawResultsToObjects(results));
 
     }
 
@@ -257,7 +257,7 @@ export class QueryBuilder<Entity> {
             .forEach(join => {
                 const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
                 joinMetadata.columns.forEach(column => {
-                    allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.name);
+                    allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
                 });
             });
         
@@ -300,7 +300,7 @@ export class QueryBuilder<Entity> {
             const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.findAliasByName(parentAlias));
             const parentTable = parentMetadata.table.name;
             const parentTableColumn = parentMetadata.primaryColumn.name;
-            const relation = parentMetadata.findRelationByPropertyName(join.alias.parentPropertyName);
+            const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
             const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
             const joinTable = joinMetadata.table.name;

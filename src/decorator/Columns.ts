@@ -27,7 +27,7 @@ export function Column(typeOrOptions?: string|ColumnOptions, options?: ColumnOpt
         if (!options.type)
             options.type = type;
 
-        if (options.isAutoIncrement)
+        if (options.autoIncrement)
             throw new Error(`Column for property ${propertyName} in ${(<any>object.constructor).name} cannot have auto increment. To have this ability you need to use @PrimaryColumn decorator.`);
 
         // todo: need proper type validation here
@@ -61,7 +61,7 @@ export function PrimaryColumn(typeOrOptions?: string|ColumnOptions, options?: Co
         if (!options.type)
             options.type = type;
 
-        if (options.isNullable)
+        if (options.nullable)
             throw new Error(`Primary column for property ${propertyName} in ${(<any>object.constructor).name} cannot be nullable. Its not allowed for primary keys. Please remove isNullable option.`);
 
         // todo: need proper type validation here

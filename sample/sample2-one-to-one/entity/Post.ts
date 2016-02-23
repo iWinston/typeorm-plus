@@ -9,16 +9,16 @@ import {PostDetails} from "./PostDetails";
 @Table("sample2_post")
 export class Post {
 
-    @PrimaryColumn("int", { isAutoIncrement: true })
+    @PrimaryColumn("int", { autoIncrement: true })
     id: number;
 
     @Column({
-        isNullable: false
+        nullable: false
     })
     title: string;
     
     @Column({
-        isNullable: false
+        nullable: false
     })
     text: string;
 
@@ -31,8 +31,16 @@ export class Post {
     @OneToMany<Image>(type => Image, image => image.secondaryPost)
     secondaryImages: Image[];
 
-    @ManyToOne<Cover>(type => Cover, cover => cover.posts)
+    @ManyToOne<Cover>(type => Cover, cover => cover.posts, {
+        name: "coverId"
+    })
     cover: Cover;
+
+    /*@Column({
+        nullable: true,
+        type: "int"
+    })
+    coverId: number;*/
 
     @ManyToMany<Category>(true, type => Category, category => category.posts)
     categories: Category;
