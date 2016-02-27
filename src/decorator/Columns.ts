@@ -32,7 +32,7 @@ export function Column(typeOrOptions?: string|ColumnOptions, options?: ColumnOpt
 
         // todo: need proper type validation here
 
-        const metadata = new ColumnMetadata(object.constructor, propertyName, false, false, false, options);
+        const metadata = new ColumnMetadata(object.constructor, propertyName, false, false, false, false, options);
         defaultMetadataStorage.addColumnMetadata(metadata);
     };
 }
@@ -66,7 +66,7 @@ export function PrimaryColumn(typeOrOptions?: string|ColumnOptions, options?: Co
 
         // todo: need proper type validation here
 
-        const metadata = new ColumnMetadata(object.constructor, propertyName, true, false, false, options);
+        const metadata = new ColumnMetadata(object.constructor, propertyName, true, false, false, false, options);
         defaultMetadataStorage.addColumnMetadata(metadata);
     };
 }

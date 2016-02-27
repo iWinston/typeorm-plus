@@ -4,13 +4,10 @@ import * as _ from "lodash";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 
 /**
- * Transforms raw sql results returned from the database into object. Object is constructed for entity 
- * based on the entity metadata.
+ * Transforms raw sql results returned from the database into entity object. 
+ * Entity is constructed based on its entity metadata.
  */
-export class RawSqlResultsToObjectTransformer {
-
-    // todo: add check for property relation with id as a column
-    // todo: create metadata or do it later?
+export class RawSqlResultsToEntityTransformer {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -24,7 +21,7 @@ export class RawSqlResultsToObjectTransformer {
     // -------------------------------------------------------------------------
 
     transform(rawSqlResults: any[]): any[] {
-        return this.groupAndTransform(rawSqlResults, this.aliasMap.getMainAlias());
+        return this.groupAndTransform(rawSqlResults, this.aliasMap.mainAlias);
     }
 
     // -------------------------------------------------------------------------
@@ -48,30 +45,35 @@ export class RawSqlResultsToObjectTransformer {
     }
 
     /**
-     * Transforms set of data results of the single value.
+     * Transforms set of data results into single entity.
      */
     private transformIntoSingleResult(rawSqlResults: any[], alias: Alias, metadata: EntityMetadata) {
-        const jsonObject: any = {};
+        const entity: any = metadata.create();
+        let hasData = false;
 
         // get value from columns selections and put them into object
         metadata.columns.forEach(column => {
             const valueInObject = alias.getColumnValue(rawSqlResults[0], column); // we use zero index since its grouped data
-            if (valueInObject && column.propertyName)
-                jsonObject[column.propertyName] = valueInObject;
+            if (valueInObject && column.propertyName && !column.isVirtual) {
+                entity[column.propertyName] = valueInObject;
+                hasData = true;
+            }
         });
 
         // if relation is loaded then go into it recursively and transform its values too
         metadata.relations.forEach(relation => {
-            const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.propertyName);
+            const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.name);
             if (relationAlias) {
-                const relatedObjects = this.groupAndTransform(rawSqlResults, relationAlias);
-                const result = (relation.isManyToOne || relation.isOneToOne) ? relatedObjects[0] : relatedObjects;
-                if (result)
-                    jsonObject[relation.propertyName] = result;
+                const relatedEntities = this.groupAndTransform(rawSqlResults, relationAlias);
+                const result = (relation.isManyToOne || relation.isOneToOne) ? relatedEntities[0] : relatedEntities;
+                if (result) {
+                    entity[relation.propertyName] = result;
+                    hasData = true;
+                }
             }
         });
 
-        return Object.keys(jsonObject).length > 0 ? jsonObject : null;
+        return hasData ? entity : null;
     }
 
 }

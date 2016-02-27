@@ -36,7 +36,7 @@ export class EntityCreator {
     objectToEntity<Entity>(objects: any[], metadata: EntityMetadata, aliasMap: AliasMap,fetchProperty?: Object): Entity;
     objectToEntity<Entity>(objects: any[], metadata: EntityMetadata, aliasMap: AliasMap, fetchOption?: boolean|Object): Entity {
 
-        return this.toEntity(objects, metadata, aliasMap.getMainAlias(), aliasMap);
+        return this.toEntity(objects, metadata, aliasMap.mainAlias(), aliasMap);
         //return this.objectToEntity(object, metadata, fetchOption);
     }
 

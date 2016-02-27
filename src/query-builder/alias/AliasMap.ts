@@ -21,7 +21,7 @@ export class AliasMap {
     // -------------------------------------------------------------------------
 
     addMainAlias(alias: Alias) {
-        const mainAlias = this.getMainAlias();
+        const mainAlias = this.mainAlias;
         if (mainAlias)
             this.aliases.splice(this.aliases.indexOf(mainAlias), 1);
 
@@ -33,7 +33,7 @@ export class AliasMap {
         this.aliases.push(alias);
     }
 
-    getMainAlias() {
+    get mainAlias() {
         return this.aliases.find(alias => alias.isMain);
     }
 

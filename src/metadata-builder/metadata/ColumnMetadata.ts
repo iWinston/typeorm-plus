@@ -63,6 +63,11 @@ export class ColumnMetadata extends PropertyMetadata {
     private _isUpdateDate: boolean = false;
 
     /**
+     * Indicates if column will contain an updated date or not.
+     */
+    private _isVirtual: boolean = false;
+
+    /**
      * Extra sql definition for the given column.
      */
     private _columnDefinition: string = "";
@@ -86,14 +91,22 @@ export class ColumnMetadata extends PropertyMetadata {
                 isPrimaryKey: boolean,
                 isCreateDate: boolean,
                 isUpdateDate: boolean,
+                isVirtual: boolean,
                 options: ColumnOptions) {
         super(target, propertyName);
 
-        this._isPrimary = isPrimaryKey;
-        this._isCreateDate = isCreateDate;
-        this._isUpdateDate = isUpdateDate;
-        this._name = options.name;
-        this._type = this.convertType(options.type);
+        if (isPrimaryKey)
+            this._isPrimary = isPrimaryKey;
+        if (isCreateDate)
+            this._isCreateDate = isCreateDate;
+        if (isUpdateDate)
+            this._isUpdateDate = isUpdateDate;
+        if (isVirtual)
+            this._isVirtual = isVirtual;
+        if (options.name)
+            this._name = options.name;
+        if (options.type)
+            this._type = this.convertType(options.type);
 
         if (options.length)
             this._length = options.length;
@@ -155,6 +168,10 @@ export class ColumnMetadata extends PropertyMetadata {
 
     get isUpdateDate(): boolean {
         return this._isUpdateDate;
+    }
+
+    get isVirtual(): boolean {
+        return this._isVirtual;
     }
 
     get columnDefinition(): string {

@@ -16,10 +16,16 @@ export class Image {
     @ManyToOne<Post>(() => Post, post => post.images)
     post: Post;
     
-    @ManyToOne<Post>(() => Post, post => post.secondaryImages)
+    @ManyToOne<Post>(() => Post, post => post.secondaryImages, {
+        isCascadeInsert: true
+    })
     secondaryPost: Post;
 
-    @OneToOne<ImageDetails>(true, () => ImageDetails, details => details.image)
+    @OneToOne<ImageDetails>(true, () => ImageDetails, details => details.image, {
+        isCascadeInsert: true,
+        isCascadeUpdate: true,
+        isCascadeRemove: true
+    })
     details: ImageDetails;
 
 }

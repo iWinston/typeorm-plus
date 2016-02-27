@@ -5,6 +5,7 @@ import {Image} from "./entity/Image";
 import {ImageDetails} from "./entity/ImageDetails";
 import {Cover} from "./entity/Cover";
 import {Category} from "./entity/Category";
+import {Chapter} from "./entity/Chapter";
 
 // first create a connection
 let options = {
@@ -16,31 +17,73 @@ let options = {
     autoSchemaCreate: true
 };
 
-TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover, Category]).then(connection => {
+TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover, Category, Chapter]).then(connection => {
 
     const postJson = {
-        id: 1,
-        text: "This is post about hello",
-        title: "hello",
-        details: {
-            id: 1,
+        id: 1,  // changed
+        text: "This is post about hello", // changed
+        title: "hello", // changed
+        details: { // new relation added
+            id: 10, // new object persisted
             comment: "This is post about hello",
-            meta: "about-hello"
-        }
+            meta: "about-hello!",
+            chapter: {
+                id: 1, // new object persisted
+                about: "part I"
+            },
+            categories: [{
+                id: 5, // new object persisted
+                description: "cat5"
+            }]
+        },
+        cover: null, // relation removed
+        images: [{  // new relation added
+            id: 4, // new object persisted
+            name: "post!.jpg",
+            secondaryPost: {
+                id: 2,
+                title: "secondary post"
+            }
+        }, { // secondaryPost relation removed
+            id: 3,
+            name: "post_2!.jpg", // changed
+            details: { // new relation added
+                id: 3, // new object persisted
+                meta: "sec image",
+                comment: "image sec"
+            }
+        }],
+        categories: [{ // two categories removed, new category added
+            id: 4, // new persisted
+            description: "cat2"
+        }]
     };
 
     let postRepository = connection.getRepository<Post>(Post);
+    let entity = postRepository.create(postJson);
+    return postRepository.initialize(postJson)
+        .then(result => {
+            const mergedEntity = postRepository.merge(result, entity);
+            console.log("entity created from json: ", entity);
+            console.log("entity initialized from db: ", result);
+            console.log("entity merged: ", mergedEntity);
+            const diff = postRepository.difference(result, mergedEntity);
+            console.log("diff: ", diff);
+           //console.log("diff[0]: ", diff[0].removedRelations);
+        })
+        .catch(error => console.log(error.stack ? error.stack : error));
+    
     let qb = postRepository
         .createQueryBuilder("post")
+        .addSelect("cover")
         .addSelect("image")
         .addSelect("imageDetails")
         .addSelect("secondaryImage")
-        .addSelect("cover")
         .addSelect("category")
+        .innerJoin("post.coverId", "cover")
         .leftJoin("post.images", "image")
         .leftJoin("post.secondaryImages", "secondaryImage")
         .leftJoin("image.details", "imageDetails", "on", "imageDetails.meta=:meta")
-        .innerJoin("post.coverId", "cover")
         .leftJoin("post.categories", "category", "on", "category.description=:description")
         //.leftJoin(Image, "image", "on", "image.post=post.id")
         //.where("post.id=:id")
@@ -50,7 +93,7 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
     
     return qb
         .getSingleResult()
-        .then(result => console.log(result))
+        .then(post => console.log(post))
         // .then(result => console.log(JSON.stringify(result, null, 4)))
         .catch(error => console.log(error.stack ? error.stack : error));
 

@@ -28,6 +28,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
                     dbData.IS_NULLABLE !== isNullable ||
                     hasDbColumnAutoIncrement !== column.isAutoIncrement ||
                     hasDbColumnPrimaryIndex !== column.isPrimary;
+                
             }).map(column => {
                 const dbData = results.find(result => result.COLUMN_NAME === column.name);
                 const hasDbColumnPrimaryIndex = dbData.COLUMN_KEY.indexOf("PRI") !== -1;
@@ -111,7 +112,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     createTableQuery(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
-        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, true)).join(", ");
+        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
         return this.query(sql).then(() => {});
     }
@@ -130,7 +131,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
             c += " NOT NULL";
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
-        if (column.isAutoIncrement === true && !skipPrimary)
+        if (column.isAutoIncrement === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";

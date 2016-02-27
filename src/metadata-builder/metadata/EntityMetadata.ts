@@ -44,6 +44,10 @@ export class EntityMetadata {
     // Accessors
     // -------------------------------------------------------------------------
 
+    get name(): string {
+        return (<any> this._table.target).name;
+    }
+
     get target(): Function {
         return this._table.target;
     }

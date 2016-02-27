@@ -1,7 +1,7 @@
 import {Alias} from "./alias/Alias";
 import {AliasMap} from "./alias/AliasMap";
 import {Connection} from "../connection/Connection";
-import {RawSqlResultsToObjectTransformer} from "./transformer/RawSqlResultsToObjectTransformer";
+import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 
 export interface Join {
     alias: Alias;
@@ -16,7 +16,7 @@ export class QueryBuilder<Entity> {
     // Pirvate properties
     // -------------------------------------------------------------------------
 
-    private aliasMap: AliasMap;
+    private _aliasMap: AliasMap;
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
     private froms: { alias: Alias };
@@ -34,7 +34,15 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     constructor(private connection: Connection) {
-        this.aliasMap = new AliasMap(connection.metadatas);
+        this._aliasMap = new AliasMap(connection.metadatas);
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    get aliasMap() {
+        return this._aliasMap;
     }
 
     // -------------------------------------------------------------------------
@@ -83,15 +91,29 @@ export class QueryBuilder<Entity> {
     //from(entityOrTableName: Function|string, alias: string): this {
         const aliasObj = new Alias(alias);
         aliasObj.target = entity;
-        this.aliasMap.addMainAlias(aliasObj);
+        this._aliasMap.addMainAlias(aliasObj);
         this.froms = { alias: aliasObj };
         return this;
+    }
+
+    innerJoinAndSelect(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
+    innerJoinAndSelect(entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
+    innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType?: "on"|"with", condition?: string): this {
+        this.addSelect(alias);
+        return this.join("inner", entityOrProperty, alias, conditionType, condition);
     }
 
     innerJoin(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
     innerJoin(entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
     innerJoin(entityOrProperty: Function|string, alias: string, conditionType?: "on"|"with", condition?: string): this {
         return this.join("inner", entityOrProperty, alias, conditionType, condition);
+    }
+
+    leftJoinAndSelect(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
+    leftJoinAndSelect(entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
+    leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition?: string): this {
+        this.addSelect(alias);
+        return this.join("left", entityOrProperty, alias, conditionType, condition);
     }
 
     leftJoin(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
@@ -106,7 +128,7 @@ export class QueryBuilder<Entity> {
     join(joinType: "inner"|"left", entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition?: string): this {
 
         const aliasObj = new Alias(alias);
-        this.aliasMap.addAlias(aliasObj);
+        this._aliasMap.addAlias(aliasObj);
         if (entityOrProperty instanceof Function) {
             aliasObj.target = entityOrProperty;
 
@@ -204,21 +226,22 @@ export class QueryBuilder<Entity> {
         return sql;
     }
     
-    execute<T>(): Promise<T> {
-        return this.connection.driver.query<T>(this.getSql());
+    execute(): Promise<void> {
+        return this.connection.driver.query(this.getSql()).then(() => {});
     }
     
-    getScalarResults(): Promise<any[]> {
-        return this.execute<any[]>().then(results => this.rawResultsToObjects(results));
-
+    getScalarResults<T>(): Promise<T[]> {
+        return this.connection.driver.query<T[]>(this.getSql());
     }
 
-    getSingleScalarResult(): Promise<any> {
+    getSingleScalarResult<T>(): Promise<T> {
         return this.getScalarResults().then(results => results[0]);
     }
 
     getResults(): Promise<Entity[]> {
-        return this.getScalarResults().then(objects => this.objectsToEntities(objects));
+        return this.connection.driver
+            .query<any[]>(this.getSql())
+            .then(results => this.rawResultsToEntities(results));
     }
 
     getSingleResult(): Promise<Entity> {
@@ -229,18 +252,14 @@ export class QueryBuilder<Entity> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected rawResultsToObjects(results: any[]) {
-        const transformer = new RawSqlResultsToObjectTransformer(this.aliasMap);
+    protected rawResultsToEntities(results: any[]) {
+        const transformer = new RawSqlResultsToEntityTransformer(this._aliasMap);
         return transformer.transform(results);
-    }
-
-    protected objectsToEntities(entities: any[]) {
-        return entities;
     }
     
     protected createSelectExpression() {
         // todo throw exception if selects or from is missing
-        const metadata =  this.aliasMap.getEntityMetadataByAlias(this.froms.alias);
+        const metadata =  this._aliasMap.getEntityMetadataByAlias(this.froms.alias);
         const tableName = metadata.table.name;
         const alias = this.froms.alias.name;
         const allSelects: string[] = [];
@@ -255,7 +274,7 @@ export class QueryBuilder<Entity> {
         this.joins
             .filter(join => this.selects.indexOf(join.alias.name) !== -1)
             .forEach(join => {
-                const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
+                const joinMetadata = this._aliasMap.getEntityMetadataByAlias(join.alias);
                 joinMetadata.columns.forEach(column => {
                     allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
                 });
@@ -297,12 +316,12 @@ export class QueryBuilder<Entity> {
             const joinType = join.type === "inner" ? "INNER" : "LEFT";
             const appendedCondition = join.condition ? " AND " + join.condition : ""; 
             const parentAlias = join.alias.parentAliasName;
-            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.findAliasByName(parentAlias));
+            const parentMetadata = this._aliasMap.getEntityMetadataByAlias(this._aliasMap.findAliasByName(parentAlias));
             const parentTable = parentMetadata.table.name;
             const parentTableColumn = parentMetadata.primaryColumn.name;
             const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
-            const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
+            const joinMetadata = this._aliasMap.getEntityMetadataByAlias(join.alias);
             const joinTable = joinMetadata.table.name;
             const joinTableColumn = joinMetadata.primaryColumn.name;
             
