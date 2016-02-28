@@ -1,7 +1,6 @@
 import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 
 /**

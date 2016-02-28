@@ -34,7 +34,7 @@ export class Post {
         isCascadeUpdate: true,
         isCascadeRemove: true
     })
-    images: Image[];
+    images: Image[] = [];
 
     @OneToMany<Image>(type => Image, image => image.secondaryPost)
     secondaryImages: Image[];
@@ -53,6 +53,7 @@ export class Post {
 
     @ManyToMany<Category>(true, type => Category, category => category.posts, {
         isCascadeInsert: true,
+        isCascadeUpdate: true,
         isCascadeRemove: true
     })
     categories: Category[];

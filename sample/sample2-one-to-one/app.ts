@@ -19,6 +19,74 @@ let options = {
 
 TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover, Category, Chapter]).then(connection => {
 
+    let postRepository = connection.getRepository<Post>(Post);
+
+    let postCover = new Cover();
+    postCover.url = "http://covers.com/post.jpg";
+    
+    let details = new PostDetails();
+    details.meta = "hello";
+    details.comment = "wow";
+    
+    let category1 = new Category();
+    category1.description = "about post1";
+    
+    let category2 = new Category();
+    category2.description = "about post2";
+    
+    let image = new Image();
+    image.name = "post.jpg";
+
+    let post = new Post();
+    post.title = "Hello post";
+    post.text = "Hello world of post#1";
+    post.cover = postCover;
+    post.details = details;
+    post.images.push(image);
+    post.categories = [category1, category2];
+    
+    postRepository.persist(post).then(result => {
+
+        const qb = postRepository.createQueryBuilder("post")
+            .leftJoinAndSelect("post.details", "details")
+            .leftJoinAndSelect("post.images", "images")
+           // .leftJoinAndSelect("post.coverId", "coverId")
+            .leftJoinAndSelect("post.categories", "categories")
+            .where("post.id=:id")
+            .setParameter("id", 6);
+        
+        return qb
+            .getSingleResult()
+            .then(post => {
+                console.log("loaded post: ", post);
+
+                let category1 = new Category();
+                category1.id = 12;
+                category1.description = "about cat#12";
+                
+                let category2 = new Category();
+                category2.id = 52;
+                category2.description = "about cat#52";
+                
+                let image = new Image();
+                image.name = "second image of the post";
+
+                //post
+                post.title = "This! is updated post$";
+                post.text = "Hello world of post#4";
+                post.categories = [category2, category1];
+                post.images.push(image);
+                return postRepository.persist(post);
+
+            })
+            .then(() => qb.getSingleResult())
+            .then(reloadedPost => console.log("reloadedPost: ", reloadedPost));
+    })
+        .then(result => console.log(result))
+        .catch(error => console.log(error.stack ? error.stack : error));
+    
+    return;
+    
     const postJson = {
         id: 1,  // changed
         text: "This is post about hello", // changed
@@ -59,7 +127,6 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
         }]
     };
 
-    let postRepository = connection.getRepository<Post>(Post);
     let entity = postRepository.create(postJson);
     return postRepository.initialize(postJson)
         .then(result => {

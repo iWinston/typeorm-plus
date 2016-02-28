@@ -4,35 +4,14 @@ import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata-builder/metadata/RelationMetadata";
-import {EntityPersistOperationsBuilder} from "./EntityPersistOperationsBuilder";
+import {
+    EntityPersistOperationsBuilder, PersistOperation, JunctionInsertOperation,
+    InsertOperation, JunctionRemoveOperation, UpdateOperation
+} from "./EntityPersistOperationsBuilder";
 
 // todo: think how we can implement queryCount, queryManyAndCount
 // todo: extract non safe methods from repository (removeById, removeByConditions)
-
-interface RelationDifference {
-    value: any;
-    relation: RelationMetadata;
-}
-
-export interface EntityDifferenceMap {
-    entity: any;
-    columns: ColumnMetadata[];
-    changedRelations: RelationDifference[];
-    removedRelations: RelationDifference[];
-    addedRelations: RelationDifference[];
-}
-
-interface EntityWithId {
-    id: any;
-    entity: any;
-}
-
-interface UpdateOperation {
-    entity: any;
-    columns: ColumnMetadata[];
-}
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -96,125 +75,166 @@ export class Repository<Entity> {
         return Object.assign(this.metadata.create(), entity1, entity2);
     }
 
-    // 1. collect all exist objects from the db entity
-    // 2. collect all objects from the new entity
-    // 3. first need to go throw all relations of the new entity and:
-    //      3.1. find all objects that are new (e.g. cascade="insert") by comparing ids from the exist objects
-    //      3.2. check if relation has rights to do cascade operation and throw exception if it cannot
-    //      3.3. save new objects for insert operation
-    // 4. second need to go throw all relations of the db entity and:
-    //      4.1. find all objects that are removed (e.g. cascade="remove") by comparing data with collected objects of the new entity
-    //      4.2. check if relation has rights to do cascade operation and throw exception if it cannot
-    //      4.3. save new objects for remove operation
-    // 5. third need to go throw collection of all new entities
-    //      5.1. compare with entities from the collection of db entities, find difference and generate a change set
-    //      5.2. check if relation has rights to do cascade operation and throw exception if it cannot
-    //      5.3.
-
-    // if relation has "all" then all of above:
-    // if relation has "insert" it can insert a new entity
-    // if relation has "update" it can only update related entity
-    // if relation has "remove" it can only remove related entity
-
     /**
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
-    difference(entity1: Entity, entity2: Entity): EntityDifferenceMap[] {
+    difference(entity1: Entity, entity2: Entity): PersistOperation {
         const builder = new EntityPersistOperationsBuilder();
         return builder.difference(this.metadata, entity1, entity2);
     }
     
-    findDifference(e1: any, e2: any, metadata: EntityMetadata, diffMaps: EntityDifferenceMap[]) {
-        const diffColumns = metadata.columns
-            .filter(column => !column.isVirtual)
-            .filter(column => e1[column.propertyName] !== e2[column.propertyName]);
-
-        const changedRelations = metadata.relations
-            .filter(relation => relation.isOneToOne || relation.isManyToOne)
-            .filter(relation => e1[relation.propertyName] && e2[relation.propertyName])
-            .filter(relation => {
-                const relationId = relation.relatedEntityMetadata.primaryColumn.name;
-                return e1[relation.propertyName][relationId] !== e2[relation.propertyName][relationId];
-            })
-            .map(relation => ({ value: e2[relation.propertyName], relation: relation }));
-
-        const removedRelations = metadata.relations
-            .filter(relation => relation.isOneToOne || relation.isManyToOne)
-            .filter(relation => e1[relation.propertyName] && !e2[relation.propertyName])
-            .map(relation => ({ value: e2[relation.propertyName], relation: relation }));
-
-        const addedRelations = metadata.relations
-            .filter(relation => relation.isOneToOne || relation.isManyToOne)
-            .filter(relation => !e1[relation.propertyName] && e2[relation.propertyName])
-            .map(relation => ({ value: e2[relation.propertyName], relation: relation }));
-
-        const addedManyRelations = metadata.relations
-            .filter(relation => relation.isManyToMany || relation.isOneToMany)
-            .filter(relation => e2[relation.propertyName] instanceof Array)
-            .map(relation => {
-                const relationId = relation.relatedEntityMetadata.primaryColumn.name;
-                return e2[relation.propertyName].filter((e2Item: any) => {
-                    if (!e1[relation.propertyName]) return false;
-                    return !e1[relation.propertyName].find((e1Item: any) => e1Item[relationId] === e2Item[relationId]);
-                }).map((e2Item: any) => {
-                    return { value: e2Item, relation: relation };
+    persist(entity: Entity) {
+        const promise = !this.hasId(entity) ? Promise.resolve(null) : this.initialize(entity);
+        //if (!this.hasId(entity)) { // do insert
+        return promise.then(dbEntity => {
+            const persistOperations = this.difference(dbEntity, entity);
+            // create update queries based on diff map
+            return Promise.all(persistOperations.inserts.map(operation => {
+                return this.insert(operation.entity).then((result: any) => {
+                    operation.entityId = result.insertId;
                 });
-            }).reduce((a: EntityDifferenceMap[], b: EntityDifferenceMap[]) => a.concat(b), []);
-        
-        const removedManyRelations = metadata.relations
-            .filter(relation => relation.isManyToMany || relation.isOneToMany)
-            .filter(relation => e2[relation.propertyName] instanceof Array)
-            .map(relation => {
-                const relationId = relation.relatedEntityMetadata.primaryColumn.name;
-                return e1[relation.propertyName].filter((e1Item: any) => {
-                    if (!e2[relation.propertyName]) return false;
-                    return !e2[relation.propertyName].find((e2Item: any) => e2Item[relationId] === e1Item[relationId]);
-                }).map((e1Item: any) => {
-                    return { value: e1Item, relation: relation };
-                });
-            }).reduce((a: EntityDifferenceMap[], b: EntityDifferenceMap[]) => a.concat(b), []);
+            })).then(() => { // insert junction table insertions
 
-        metadata.relations
-            .filter(relation => e2[relation.propertyName])
-            .filter(relation => relation.isOneToOne || relation.isManyToOne)
-            .forEach(relation => {
-                const property = relation.propertyName;
-                this.findDifference(e1[property] || {}, e2[property], relation.relatedEntityMetadata, diffMaps);
-            });
+                return Promise.all(persistOperations.junctionInserts.map(junctionOperation => {
+                    return this.insertJunctions(junctionOperation, persistOperations.inserts);
+                }));
+            }).then(() => { // remove junction table insertions
 
-        metadata.relations
-            .filter(relation => /*e1[relation.propertyName] && */e2[relation.propertyName] instanceof Array)
-            .filter(relation => relation.isManyToMany || relation.isOneToMany)
-            .forEach(relation => {
-                const relationId = relation.relatedEntityMetadata.primaryColumn.name;
-                const e1Items = e1[relation.propertyName] || [];
-                e2[relation.propertyName].map((e2Item: any) => {
-                    const e1Item = e1Items.find((e1Item: any) => e1Item[relationId] === e2Item[relationId]);
-                    this.findDifference(e1Item || {}, e2Item, relation.relatedEntityMetadata, diffMaps);
-                });
-            });
+                return Promise.all(persistOperations.junctionRemoves.map(junctionOperation => {
+                    return this.removeJunctions(junctionOperation);
+                }));
+                
+            }).then(() => {
+                return Promise.all(persistOperations.inserts.map(operation => {
 
-        if (diffColumns.length > 0 || changedRelations.length > 0 || removedRelations.length > 0 || addedRelations.length > 0)
-            diffMaps.push({
-                entity: e2,
-                columns: diffColumns,
-                changedRelations: changedRelations,
-                removedRelations: removedRelations.concat(removedManyRelations),
-                addedRelations: addedRelations.concat(addedManyRelations)
+                    const meta = this.connection.getMetadata(operation.entity.constructor);
+                    const oneToOneManyToOneUpdates = Promise.all(meta.relations.map(relation => {
+                        
+                        let insertOperationUpdates: Promise<any>, updateOperationUpdates: Promise<any>;
+                       
+                        if (operation.entity[relation.propertyName] instanceof Array && relation.isOneToMany) {
+
+                            insertOperationUpdates = Promise.all(persistOperations.inserts.filter(o => {
+                                return operation.entity[relation.propertyName].indexOf(o.entity) !== -1;
+                            }).map(o => {
+                                const oMetadata = this.connection.getMetadata(o.entity.constructor);
+                                const inverseRelation = relation.inverseRelation;
+                                const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${operation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${o.entityId}'`;
+                                return this.connection.driver.query(query);
+                            }));
+
+                            updateOperationUpdates = Promise.all(persistOperations.updates.filter(o => {
+                                return operation.entity[relation.propertyName].indexOf(o.entity) !== -1;
+                            }).map(o => {
+                                const oMetadata = this.connection.getMetadata(o.entity.constructor);
+                                const inverseRelation = relation.inverseRelation;
+                                const id = operation.entity[meta.primaryColumn.name];
+                                const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${operation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${id}'`;
+                                return this.connection.driver.query(query);
+                            }));
+                            
+                        } else {
+                            
+                            insertOperationUpdates = Promise.all(persistOperations.inserts.filter(o => {
+                                return operation.entity[relation.propertyName] === o.entity; // only one-to-one and many-to-one
+                            }).map(o => {
+                                const query = `UPDATE ${meta.table.name} SET ${relation.name}='${o.entityId}' WHERE ${meta.primaryColumn.name}='${operation.entityId}'`;
+                                return this.connection.driver.query(query);
+                            }));
+
+                            updateOperationUpdates = Promise.all(persistOperations.updates.filter(o => {
+                                return operation.entity[relation.propertyName] === o.entity; // only one-to-one and many-to-one
+                            }).map(o => {
+                                const reverseMeta = this.connection.getMetadata(o.entity.constructor);
+                                const id = o.entity[reverseMeta.primaryColumn.name];
+                                const query = `UPDATE ${meta.table.name} SET ${relation.name}='${id}' WHERE ${meta.primaryColumn.name}='${operation.entityId}'`;
+                                return this.connection.driver.query(query);
+                            }));
+                        }
+                        
+                        return Promise.all([insertOperationUpdates, updateOperationUpdates]);
+                    }));
+
+                    return Promise.all([oneToOneManyToOneUpdates]);
+                }));
+            }).then(() => { // perform updates
+
+                return Promise.all(persistOperations.updates.map(updateOperation => {
+                    return this.update(updateOperation);
+                }));
+
             });
+        //} else {
+            // do update
+            /*return this.initialize(entity).then(dbEntity => {
+                const persistOperations = this.difference(dbEntity, entity);
+                // create update queries based on diff map
+                return Promise.all(persistOperations.inserts.map(operation => {
+                    return this.insert(operation.entity);
+                }));
+            });*/
+        //}
+        });
+    }
+
+    private update(updateOperation: UpdateOperation) {
+        const entity = updateOperation.entity;
+        const metadata = this.connection.getMetadata(entity.constructor);
+        const values = updateOperation.columns.map(column => {
+            return column.name + "='" + entity[column.propertyName] + "'";
+        });
+
+        const query = `UPDATE ${metadata.table.name} SET ${values} WHERE ${metadata.primaryColumn.name}='${metadata.getEntityId(entity)}'` ;
+        return this.connection.driver.query(query);
     }
     
-    persist(entity: Entity) {
-        if (!this.hasId(entity)) {
-            // do insert
-        } else {
-            // do update
-            this.initialize(entity)
-                .then(dbEntity => {
-                    const diffMap = this.difference(dbEntity, entity);
-                    // create update queries based on diff map
-                });
-        }
+    private insert(entity: any) {
+        const metadata = this.connection.getMetadata(entity.constructor);
+        const columns = metadata.columns
+            .filter(column => !column.isVirtual)
+            .filter(column => entity.hasOwnProperty(column.propertyName))
+            .map(column => column.name);
+        /*const virtualColumns = metadata.columns
+            .filter(column => column.isVirtual)
+            .filter(column => entity.hasOwnProperty(column.propertyName))
+            .map(column => column.name);*/
+        const values = metadata.columns
+            .filter(column => !column.isVirtual)
+            .filter(column => entity.hasOwnProperty(column.propertyName))
+            .map(column => "'" + entity[column.propertyName] + "'");
+        /*const virtualValues = metadata.columns
+            .filter(column => column.isVirtual)
+            .filter(column => entity.hasOwnProperty(column.propertyName))
+            .map(column => "'" + entity[column.propertyName] + "'");
+        const allColumns = columns.concat(virtualColumns);
+        const allVolumes = values.concat(virtualValues);*/
+        
+        const query = `INSERT INTO ${metadata.table.name}(${columns.join(",")}) VALUES (${values.join(",")})`;
+        return this.connection.driver.query(query);
+    }
+
+    private insertJunctions(junctionOperation: JunctionInsertOperation, insertOperations: InsertOperation[]) {
+        const junctionMetadata = junctionOperation.metadata;
+        const metadata1 = this.connection.getMetadata(junctionOperation.entity1.constructor);
+        const metadata2 = this.connection.getMetadata(junctionOperation.entity2.constructor);
+        const columns = junctionMetadata.columns.map(column => column.name);
+        const id1 = junctionOperation.entity1[metadata1.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity1).entityId;
+        const id2 = junctionOperation.entity2[metadata2.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity2).entityId;
+        const values = [id1, id2]; // todo: order may differ, find solution (column.table to compare with entity metadata table?)
+
+        const query = `INSERT INTO ${junctionMetadata.table.name}(${columns.join(",")}) VALUES (${values.join(",")})`;
+        return this.connection.driver.query(query);
+    }
+    
+    private removeJunctions(junctionOperation: JunctionRemoveOperation) {
+        const junctionMetadata = junctionOperation.metadata;
+        const metadata1 = this.connection.getMetadata(junctionOperation.entity1.constructor);
+        const metadata2 = this.connection.getMetadata(junctionOperation.entity2.constructor);
+        const columns = junctionMetadata.columns.map(column => column.name);
+        const id1 = junctionOperation.entity1[metadata1.primaryColumn.name];
+        const id2 = junctionOperation.entity2[metadata2.primaryColumn.name];
+        const query = `DELETE FROM ${junctionMetadata.table.name} WHERE ${columns[0]}='${id1}' AND ${columns[1]}='${id2}'`;
+        return this.connection.driver.query(query);
     }
 
     /*copyEntity(entity1: Entity, entity2: Entity) {
