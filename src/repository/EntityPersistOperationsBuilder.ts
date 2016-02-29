@@ -2,6 +2,7 @@ import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata-builder/metadata/RelationMetadata";
 import metadata = Reflect.metadata;
+import {Connection} from "../connection/Connection";
 
 export interface EntityWithId {
     id: any;
@@ -30,24 +31,34 @@ export interface JunctionRemoveOperation {
     entity2: any;
 }
 
+export class UpdateByRelationOperation {
+    constructor(public targetEntity: any,
+                public insertOperation: InsertOperation,
+                public updatedRelation: RelationMetadata) {
+    }
+}
+
 export class PersistOperation {
     inserts: InsertOperation[];
     removes: any[];
     updates: UpdateOperation[];
     junctionInserts: JunctionInsertOperation[];
     junctionRemoves: JunctionRemoveOperation[];
+    updatesByRelations: UpdateByRelationOperation[];
     
     constructor(inserts: any[], 
                 removes: any[], 
                 updates: UpdateOperation[],
                 junctionInserts: JunctionInsertOperation[],
-                junctionRemoves: JunctionRemoveOperation[]) {
+                junctionRemoves: JunctionRemoveOperation[],
+                updatesByRelations: UpdateByRelationOperation[]) {
         
         this.inserts = inserts;
         this.removes = removes;
         this.updates = updates;
         this.junctionInserts = junctionInserts;
         this.junctionRemoves = junctionRemoves;
+        this.updatesByRelations = updatesByRelations;
     }
 }
 
@@ -81,6 +92,9 @@ export class EntityPersistOperationsBuilder {
     // if relation has "update" it can only update related entity
     // if relation has "remove" it can only remove related entity
 
+    constructor(private connection: Connection) {
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -96,6 +110,7 @@ export class EntityPersistOperationsBuilder {
         const updateOperations = this.findCascadeUpdateEntities(metadata, entity1, entity2, null);
         const junctionInsertOperations = this.findJunctionInsertOperations(metadata, entity2, dbEntities);
         const junctionRemoveOperations = this.findJunctionRemoveOperations(metadata, entity1, allEntities);
+        const updatesByRelationsOperations = this.updateRelations(insertOperations, entity2);
         //const insertJunctionOperations = ;//this.a();
         console.log("---------------------------------------------------------");
         console.log("DB ENTITIES");
@@ -126,6 +141,10 @@ export class EntityPersistOperationsBuilder {
         console.log("---------------------------------------------------------");
         console.log(junctionRemoveOperations);
         console.log("---------------------------------------------------------");
+        console.log("UPDATES BY RELATIONS");
+        console.log("---------------------------------------------------------");
+        console.log(updatesByRelationsOperations);
+        console.log("---------------------------------------------------------");
 
         // now normalize inserted entities
         // no need probably, since we cant rely on deepness because of recursion: insertOperations.sort((a, b) => a.deepness + b.deepness);
@@ -149,7 +168,8 @@ export class EntityPersistOperationsBuilder {
             removeOperations, 
             updateOperations, 
             junctionInsertOperations, 
-            junctionRemoveOperations
+            junctionRemoveOperations,
+            updatesByRelationsOperations
         );
     }
 
@@ -157,6 +177,92 @@ export class EntityPersistOperationsBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
+    private updateIdsAfterPersist(insertOperations: InsertOperation[]) {
+        insertOperations.forEach(insertOperation => {
+            const metadata = this.connection.getMetadata(insertOperation.entity.constructor);
+            insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
+        });
+    }
+
+    private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchIn: any) {
+        const metadata = this.connection.getMetadata(entityToSearchIn.constructor);
+
+        return metadata.relations.reduce((operations, relation) => {
+            const value = entityToSearchIn[relation.propertyName];
+            if (value instanceof Array) {
+                value.forEach((sub: any) => {
+                    if (!relation.isManyToMany && sub === insertOperation.entity)
+                        operations.push(new UpdateByRelationOperation(entityToSearchIn, insertOperation, relation));
+
+                    const subOperations = this.findRelationsWithEntityInside(insertOperation, sub);
+                    operations.concat(subOperations);
+                });
+            } else if (value) {
+                if (value === insertOperation.entity)
+                    operations.push(new UpdateByRelationOperation(entityToSearchIn, insertOperation, relation));
+
+                const subOperations = this.findRelationsWithEntityInside(insertOperation, value);
+                operations.concat(subOperations);
+            }
+
+            return operations;
+        }, <UpdateByRelationOperation[]> []);
+    }
+
+    /**
+     * To update relation, you need:
+     *   update table where this relation (owner side)
+     *   set its relation property to inserted id
+     *   where
+     *
+     */
+
+    private updateRelations(insertOperations: InsertOperation[], newEntity: any): UpdateByRelationOperation[] {
+        return insertOperations.reduce((operations, insertOperation) => {
+            return operations.concat(this.findRelationsWithEntityInside(insertOperation, newEntity));
+        }, <UpdateByRelationOperation[]> []);
+
+        /*const entitiesWithoutIds = allEntities
+         .filter(entityWithId => !!entityWithId.id)
+         .map(entityWithId => entityWithId.entity);*/
+/*
+            entitiesWithoutIds.find(entity => entity === insertOperation.entity);
+
+            metadata.relations.map(relation => {
+
+            });
+
+            const oneToOneManyToOneUpdates = Promise.all(meta.relations.map(relation => {
+
+                let insertOperationUpdates: Promise<any>, updateOperationUpdates: Promise<any>;
+
+                if (insertOperation.entity[relation.propertyName] instanceof Array && relation.isOneToMany) {
+
+                    insertOperationUpdates = Promise.all(persistOperations.inserts.filter(o => {
+                        return insertOperation.entity[relation.propertyName].indexOf(o.entity) !== -1;
+                    }).map(o => {
+                        const oMetadata = this.connection.getMetadata(o.entity.constructor);
+                        const inverseRelation = relation.inverseRelation;
+                        const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${insertOperation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${o.entityId}'`;
+                        return this.connection.driver.query(query);
+                    }));
+
+                    updateOperationUpdates = Promise.all(persistOperations.updates.filter(o => {
+                        return insertOperation.entity[relation.propertyName].indexOf(o.entity) !== -1;
+                    }).map(o => {
+                        const oMetadata = this.connection.getMetadata(o.entity.constructor);
+                        const inverseRelation = relation.inverseRelation;
+                        const id = insertOperation.entity[meta.primaryColumn.name];
+                        const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${insertOperation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${id}'`;
+                        return this.connection.driver.query(query);
+                    }));
+
+                }
+                //return Promise.all([insertOperationUpdates, updateOperationUpdates]);
+            }));
+        });*/
+    }
+    
     private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[]): JunctionInsertOperation[] {
         const dbEntity = dbEntities.find(dbEntity => {
             return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor.name === metadata.name;

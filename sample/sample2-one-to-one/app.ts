@@ -47,7 +47,7 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
     
     postRepository.persist(post).then(result => {
 
-        const qb = postRepository.createQueryBuilder("post")
+        /*const qb = postRepository.createQueryBuilder("post")
             .leftJoinAndSelect("post.details", "details")
             .leftJoinAndSelect("post.images", "images")
            // .leftJoinAndSelect("post.coverId", "coverId")
@@ -80,7 +80,7 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
 
             })
             .then(() => qb.getSingleResult())
-            .then(reloadedPost => console.log("reloadedPost: ", reloadedPost));
+            .then(reloadedPost => console.log("reloadedPost: ", reloadedPost));*/
     })
         .then(result => console.log(result))
         .catch(error => console.log(error.stack ? error.stack : error));

@@ -4,10 +4,9 @@ import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {RelationMetadata} from "../metadata-builder/metadata/RelationMetadata";
 import {
     EntityPersistOperationsBuilder, PersistOperation, JunctionInsertOperation,
-    InsertOperation, JunctionRemoveOperation, UpdateOperation
+    InsertOperation, JunctionRemoveOperation, UpdateOperation, UpdateByRelationOperation
 } from "./EntityPersistOperationsBuilder";
 
 // todo: think how we can implement queryCount, queryManyAndCount
@@ -79,7 +78,7 @@ export class Repository<Entity> {
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
     difference(entity1: Entity, entity2: Entity): PersistOperation {
-        const builder = new EntityPersistOperationsBuilder();
+        const builder = new EntityPersistOperationsBuilder(this.connection);
         return builder.difference(this.metadata, entity1, entity2);
     }
     
@@ -105,7 +104,12 @@ export class Repository<Entity> {
                 }));
                 
             }).then(() => {
-                return Promise.all(persistOperations.inserts.map(operation => {
+                
+                return Promise.all(persistOperations.updatesByRelations.map(updateByRelation => {
+                    this.updateByRelation(updateByRelation, persistOperations.inserts);
+                }));
+                
+                /*return Promise.all(persistOperations.inserts.map(operation => {
 
                     const meta = this.connection.getMetadata(operation.entity.constructor);
                     const oneToOneManyToOneUpdates = Promise.all(meta.relations.map(relation => {
@@ -156,7 +160,7 @@ export class Repository<Entity> {
                     }));
 
                     return Promise.all([oneToOneManyToOneUpdates]);
-                }));
+                }));*/
             }).then(() => { // perform updates
 
                 return Promise.all(persistOperations.updates.map(updateOperation => {
@@ -175,6 +179,29 @@ export class Repository<Entity> {
             });*/
         //}
         });
+    }
+    
+    private updateByRelation(operation: UpdateByRelationOperation, insertOperations: InsertOperation[]) {
+        let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
+        const idInInserts = insertOperations.find(o => o.entity === operation.targetEntity).entityId;
+        if (operation.updatedRelation.isOneToMany) {
+            const metadata = this.connection.getMetadata(operation.insertOperation.entity.constructor);
+            tableName = metadata.table.name;
+            relationName = operation.updatedRelation.inverseRelation.name;
+            relationId = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
+            idColumn = metadata.primaryColumn.name;
+            id = operation.insertOperation.entityId;
+            
+        } else {
+            const metadata = this.connection.getMetadata(operation.targetEntity.constructor);
+            tableName = metadata.table.name;
+            relationName = operation.updatedRelation.name;
+            relationId = operation.insertOperation.entityId;
+            idColumn = metadata.primaryColumn.name;
+            id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
+        }
+        const query = `UPDATE ${tableName} SET ${relationName}='${relationId}' WHERE ${idColumn}='${id}'`;
+        return this.connection.driver.query(query);
     }
 
     private update(updateOperation: UpdateOperation) {
