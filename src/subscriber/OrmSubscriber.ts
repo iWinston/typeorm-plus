@@ -3,7 +3,7 @@ import {RemoveEvent} from "./event/RemoveEvent";
 import {InsertEvent} from "./event/InsertEvent";
 
 /**
- * Classes that implement this interface are subscribers that subscribe for the specific events of the ODM.
+ * Classes that implement this interface are subscribers that subscribe for the specific events of the ORM.
  */
 export interface OrmSubscriber<Entity> {
 

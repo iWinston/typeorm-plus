@@ -3,9 +3,9 @@ import {defaultMetadataStorage} from "../metadata-builder/MetadataStorage";
 import {OrmEventSubscriberMetadata} from "../metadata-builder/metadata/OrmEventSubscriberMetadata";
 
 /**
- * Subscribers that gonna listen to odm events must be annotated with this annotation.
+ * Subscribers that gonna listen to orm events must be annotated with this annotation.
  */
-export function OdmEventSubscriber() {
+export function OrmEventSubscriber() {
     return function (target: Function) {
         const metadata = new OrmEventSubscriberMetadata(target);
         defaultMetadataStorage.addOrmEventSubscriberMetadata(metadata);
@@ -19,7 +19,7 @@ export function OrmRepository(className: Function, connectionName?: string): Fun
         try {
             container = require("typedi/Container").Container;
         } catch (err) {
-            throw new Error("OdmRepository cannot be used because typedi extension is not installed.");
+            throw new Error("OrmRepository cannot be used because typedi extension is not installed.");
         }
 
         container.registerParamHandler({

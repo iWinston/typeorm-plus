@@ -1,8 +1,8 @@
 {
-  "name": "typeodm",
+  "name": "typeorm",
   "private": true,
-  "version": "0.2.0",
-  "description": "ODM for MongoDB used Typescript",
+  "version": "0.0.1",
+  "description": "Data-mapper ORM for Typescript",
   "license": "Apache-2.0",
   "readmeFilename": "README.md",
   "author": {
@@ -11,17 +11,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PLEEROCK/typeodm.git"
+    "url": "https://github.com/pleerock/typeorm.git"
   },
   "bugs": {
-    "url": "https://github.com/PLEEROCK/typeodm/issues"
+    "url": "https://github.com/pleerock/typeorm/issues"
   },
   "tags": [
-    "odm",
+    "orm",
     "typescript",
-    "typescript-odm",
-    "mongodb",
-    "mongodb-odm"
+    "typescript-orm",
+    "mysql",
+    "mysql-orm"
   ],
   "devDependencies": {
     "chai": "^3.4.1",
@@ -33,7 +33,6 @@
     "gulp-tslint": "^4.3.1",
     "gulpclass": "0.1.0",
     "mocha": "^2.3.2",
-    "mysql": "^2.10.2",
     "sinon": "^1.17.2",
     "sinon-chai": "^2.8.0",
     "tslint": "^3.3.0",
@@ -44,11 +43,11 @@
   "dependencies": {
     "fs": "^0.0.2",
     "lodash": "^4.5.0",
-    "mongodb": ">=2.0.0",
     "path": "^0.11.14",
     "reflect-metadata": "^0.1.3",
     "sha1": "^1.1.1",
-    "typedi": "~0.2.0"
+    "typedi": "~0.2.0",
+    "mysql": "^2.10.2"
   },
   "scripts": {
     "postversion": "./node_modules/.bin/gulp package",

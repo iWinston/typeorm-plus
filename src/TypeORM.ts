@@ -16,7 +16,7 @@ export class TypeORM {
     static connectionManager = new ConnectionManager();
 
     /**
-     * Creates a new connection to mongodb. Imports documents and subscribers from the given directories.
+     * Creates a new connection to mysql. Imports documents and subscribers from the given directories.
      */
     static createMysqlConnection(options: string, documentDirectories: string[]|Function[], subscriberDirectories?: string[]): Promise<Connection>;
     static createMysqlConnection(options: ConnectionOptions, documentDirectories: string[]|Function[], subscriberDirectories?: string[]): Promise<Connection>;

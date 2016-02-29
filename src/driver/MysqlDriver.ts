@@ -7,7 +7,7 @@ import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 
 /**
- * This driver organizes work with mongodb database.
+ * This driver organizes work with mysql database.
  */
 export class MysqlDriver implements Driver {
 
