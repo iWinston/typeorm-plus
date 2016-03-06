@@ -8,17 +8,17 @@ export interface RelationOptions {
     /**
      * If set to true then it means that related object can be allowed to be inserted to the db.
      */
-    isCascadeInsert?: boolean;
+    cascadeInsert?: boolean;
 
     /**
      * If set to true then it means that related object can be allowed to be updated in the db.
      */
-    isCascadeUpdate?: boolean;
+    cascadeUpdate?: boolean;
 
     /**
      * If set to true then it means that related object can be allowed to be remove from the db.
      */
-    isCascadeRemove?: boolean;
+    cascadeRemove?: boolean;
 
     /**
      * Old column name. Used to make safe schema updates.

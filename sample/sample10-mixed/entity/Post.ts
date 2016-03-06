@@ -23,16 +23,16 @@ export class Post {
     text: string;
 
     @OneToOne<PostDetails>(true, () => PostDetails, details => details.post, {
-        isCascadeInsert: true,
-        isCascadeUpdate: true,
-        isCascadeRemove: true
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
     })
     details: PostDetails;
 
     @OneToMany<Image>(type => Image, image => image.post, {
-        isCascadeInsert: true,
-        isCascadeUpdate: true,
-        isCascadeRemove: true
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
     })
     images: Image[] = [];
 
@@ -41,8 +41,8 @@ export class Post {
 
     @ManyToOne<Cover>(type => Cover, cover => cover.posts, {
         name: "coverId",
-        isCascadeInsert: true,
-        isCascadeRemove: true
+        cascadeInsert: true,
+        cascadeRemove: true
     })
     cover: Cover;
 
@@ -52,9 +52,9 @@ export class Post {
     coverId: number;
 
     @ManyToMany<Category>(true, type => Category, category => category.posts, {
-        isCascadeInsert: true,
-        isCascadeUpdate: true,
-        isCascadeRemove: true
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
     })
     categories: Category[];
 

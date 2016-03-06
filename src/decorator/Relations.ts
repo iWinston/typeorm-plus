@@ -5,7 +5,8 @@ import {RelationTypes} from "../metadata-builder/types/RelationTypes";
 
 export function OneToOne<T>(isOwning: boolean, typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
 export function OneToOne<T>(isOwning: boolean, typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
-export function OneToOne<T>(isOwning: boolean, typeFunction: RelationTypeInFunction,
+export function OneToOne<T>(isOwning: boolean, 
+                            typeFunction: RelationTypeInFunction,
                             inverseSideOrOptions: PropertyTypeInFunction<T>|RelationOptions,
                             options?: RelationOptions): Function {
     let inverseSideProperty: PropertyTypeInFunction<T>;

@@ -21,14 +21,14 @@ export class PostDetails {
     post: Post;
 
     @OneToMany<Category>(type => Category, category => category.details, {
-        isCascadeInsert: true,
-        isCascadeRemove: true
+        cascadeInsert: true,
+        cascadeRemove: true
     })
     categories: Category[];
 
     @ManyToOne<Chapter>(_ => Chapter, chapter => chapter.postDetails, {
-        isCascadeInsert: true,
-        isCascadeRemove: true
+        cascadeInsert: true,
+        cascadeRemove: true
     })
     chapter: Chapter;
 

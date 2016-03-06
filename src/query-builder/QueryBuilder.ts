@@ -25,7 +25,7 @@ export class QueryBuilder<Entity> {
     private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
     private havings: { type: "simple"|"and"|"or", condition: string }[] = [];
     private orderBys: { sort: string, order: "ASC"|"DESC" }[] = [];
-    private parameters: { [key: string]: string } = {};
+    private parameters: { [key: string]: any } = {};
     private limit: number;
     private offset: number;
 
@@ -142,18 +142,21 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    where(where: string): this {
+    where(where: string, parameters?: { [key: string]: any }): this {
         this.wheres.push({ type: "simple", condition: where });
+        if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    andWhere(where: string): this {
+    andWhere(where: string, parameters?: { [key: string]: any }): this {
         this.wheres.push({ type: "and", condition: where });
+        if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    orWhere(where: string): this {
+    orWhere(where: string, parameters?: { [key: string]: any }): this {
         this.wheres.push({ type: "or", condition: where });
+        if (parameters) this.addParameters(parameters);
         return this;
     }
 
@@ -207,8 +210,13 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    setParameters(parameters: Object): this {
-        Object.keys(parameters).forEach(key => this.parameters[key] = (<any> parameters)[key]);
+    setParameters(parameters: { [key: string]: any }): this {
+        this.parameters = parameters;
+        return this;
+    }
+
+    addParameters(parameters: { [key: string]: any }): this {
+        Object.keys(parameters).forEach(key => this.parameters[key] = parameters[key]);
         return this;
     }
 
@@ -339,11 +347,11 @@ export class QueryBuilder<Entity> {
                 return " " + joinType + " JOIN " + junctionTable + " " + junctionAlias + " " + join.conditionType + " " + condition1 +
                        " " + joinType + " JOIN " + joinTable + " " + joinAlias + " " + join.conditionType + " " + condition2 + appendedCondition;
                 
-            } else if (relation.isOneToOne || relation.isManyToOne) {
+            } else if (relation.isManyToOne || (relation.isOneToOne && relation.isOwning)) {
                 const condition = join.alias.name + "." + joinTableColumn + "=" + parentAlias + "." + join.alias.parentPropertyName;
                 return " " + joinType + " JOIN " + joinTable + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
 
-            } else if (relation.isOneToMany) {
+            } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {
                 const condition = join.alias.name + "." + relation.inverseSideProperty + "=" + parentAlias + "." + joinTableColumn;
                 return " " + joinType + " JOIN " + joinTable + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
        

@@ -55,6 +55,9 @@ export class AliasMap {
             const parentAlias = this.findAliasByName(alias.parentAliasName); // todo: throw exceptions everywhere
             const parentEntityMetadata = this.getEntityMetadataByAlias(parentAlias);
             const relation = parentEntityMetadata.findRelationWithDbName(alias.parentPropertyName);
+            if (!relation)
+                throw new Error("Related entity metadata was not found.");
+            
             return relation.relatedEntityMetadata;
         }
 

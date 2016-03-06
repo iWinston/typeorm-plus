@@ -244,8 +244,19 @@ export class Repository<Entity> {
             .map(column => "'" + entity[column.propertyName] + "'");
         const allColumns = columns.concat(virtualColumns);
         const allVolumes = values.concat(virtualValues);*/
+        const relationColumns = metadata.relations
+            .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
+            .filter(relation => entity.hasOwnProperty(relation.propertyName))
+            .filter(relation => entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name])
+            .map(relation => relation.name);
         
-        const query = `INSERT INTO ${metadata.table.name}(${columns.join(",")}) VALUES (${values.join(",")})`;
+        const relationValues = metadata.relations
+            .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
+            .filter(relation => entity.hasOwnProperty(relation.propertyName))
+            .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.relatedEntityMetadata.primaryColumn.name))
+            .map(relation => "'" + entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name] + "'");
+
+        const query = `INSERT INTO ${metadata.table.name}(${columns.concat(relationColumns).join(",")}) VALUES (${values.concat(relationValues).join(",")})`;
         return this.connection.driver.query(query);
     }
 

@@ -5,6 +5,7 @@
     "chai-as-promised": "github:DefinitelyTyped/DefinitelyTyped/chai-as-promised/chai-as-promised.d.ts#d6e3f732183ca0ee4c4b438323253b384f5b4091",
     "mocha": "github:DefinitelyTyped/DefinitelyTyped/mocha/mocha.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
     "mockery": "github:DefinitelyTyped/DefinitelyTyped/mockery/mockery.d.ts#6f6e5c7dd9effe21fee14eb65fe340ecbbc8580a",
+    "promises-a-plus": "github:DefinitelyTyped/DefinitelyTyped/promises-a-plus/promises-a-plus.d.ts#56068d3354648384ff32db20b6fcda4262856f33",
     "sinon": "github:DefinitelyTyped/DefinitelyTyped/sinon/sinon.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645"
   },
   "ambientDependencies": {

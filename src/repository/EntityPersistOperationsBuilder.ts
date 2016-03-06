@@ -91,6 +91,8 @@ export class EntityPersistOperationsBuilder {
     // if relation has "insert" it can insert a new entity
     // if relation has "update" it can only update related entity
     // if relation has "remove" it can only remove related entity
+    
+    private strictCascadesMode = false;
 
     constructor(private connection: Connection) {
     }
@@ -329,8 +331,13 @@ export class EntityPersistOperationsBuilder {
             return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor.name === metadata.name;
         });
 
-        if (isObjectNew && fromRelation && !fromRelation.isCascadeInsert)
-            throw new Error("Cascade inserts are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
+        if (isObjectNew && fromRelation && !fromRelation.isCascadeInsert) {
+            if (this.strictCascadesMode) {
+                throw new Error("Cascade inserts are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
+            } else {
+                return [];
+            }
+        }
 
         if (isObjectNew)
             insertedEntities.push({
@@ -422,8 +429,13 @@ export class EntityPersistOperationsBuilder {
 
         const updatedEntities: any[] = [];
         const diff = this.diffColumns(metadata, newEntity, dbEntity);
-        if (diff.length && fromRelation && !fromRelation.isCascadeUpdate)
-            throw new Error("Cascade updates are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
+        if (diff.length && fromRelation && !fromRelation.isCascadeUpdate) {
+            if (this.strictCascadesMode) {
+                throw new Error("Cascade updates are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
+            } else {
+                return [];
+            }
+        }
 
         if (diff.length) {
             updatedEntities.push({

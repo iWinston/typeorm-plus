@@ -2,6 +2,11 @@ import {TypeORM} from "../../src/TypeORM";
 import {Post} from "./entity/Post";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {PostDetails} from "./entity/PostDetails";
+import {PostCategory} from "./entity/PostCategory";
+import {PostMetadata} from "./entity/PostMetadata";
+import {PostImage} from "./entity/PostImage";
+import {PostInformation} from "./entity/PostInformation";
+import {PostAuthor} from "./entity/PostAuthor";
 
 // first create a connection
 let options: ConnectionOptions = {
@@ -13,7 +18,7 @@ let options: ConnectionOptions = {
     autoSchemaCreate: true
 };
 
-TypeORM.createMysqlConnection(options, [Post, PostDetails]).then(connection => {
+TypeORM.createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(connection => {
 
     let details = new PostDetails();
     details.authorName = "Umed";

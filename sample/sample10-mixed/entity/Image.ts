@@ -17,14 +17,14 @@ export class Image {
     post: Post;
     
     @ManyToOne<Post>(() => Post, post => post.secondaryImages, {
-        isCascadeInsert: true
+        cascadeInsert: true
     })
     secondaryPost: Post;
 
     @OneToOne<ImageDetails>(true, () => ImageDetails, details => details.image, {
-        isCascadeInsert: true,
-        isCascadeUpdate: true,
-        isCascadeRemove: true
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
     })
     details: ImageDetails;
 

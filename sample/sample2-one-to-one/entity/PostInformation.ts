@@ -3,25 +3,17 @@ import {Table} from "../../../src/decorator/Tables";
 import {OneToOne} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
 
-@Table("sample2_post_details")
-export class PostDetails {
+@Table("sample2_post_information")
+export class PostInformation {
 
     @PrimaryColumn("int", { autoIncrement: true })
     id: number;
 
     @Column()
-    authorName: string;
-
-    @Column()
-    comment: string;
-
-    @Column()
-    metadata: string;
+    text: string;
     
-    @OneToOne<Post>(false, () => Post, post => post.details, {
-        cascadeInsert: true,
+    @OneToOne<Post>(false, () => Post, post => post.information, {
         cascadeUpdate: true,
-        cascadeRemove: true
     })
     post: Post;
 

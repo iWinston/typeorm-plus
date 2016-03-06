@@ -110,12 +110,12 @@ export class RelationMetadata extends PropertyMetadata {
 
         if (options.name)
             this._name = options.name;
-        if (options.isCascadeInsert)
-            this._isCascadeInsert = options.isCascadeInsert;
-        if (options.isCascadeUpdate)
-            this._isCascadeUpdate = options.isCascadeUpdate;
-        if (options.isCascadeRemove)
-            this._isCascadeRemove = options.isCascadeRemove;
+        if (options.cascadeInsert)
+            this._isCascadeInsert = options.cascadeInsert;
+        if (options.cascadeUpdate)
+            this._isCascadeUpdate = options.cascadeUpdate;
+        if (options.cascadeRemove)
+            this._isCascadeRemove = options.cascadeRemove;
         if (options.oldColumnName)
             this._oldColumnName = options.oldColumnName;
         if (options.nullable)
