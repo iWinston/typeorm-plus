@@ -167,6 +167,15 @@ export class Repository<Entity> {
                     return this.update(updateOperation);
                 }));
 
+            }).then(() => { // update ids
+                
+                persistOperations.inserts.forEach(insertOperation => {
+                    const metadata = this.connection.getMetadata(insertOperation.entity.constructor);
+                    insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
+                });
+                
+                return entity;
+
             });
         //} else {
             // do update

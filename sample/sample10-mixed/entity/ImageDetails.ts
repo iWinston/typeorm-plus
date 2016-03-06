@@ -3,7 +3,7 @@ import {Table} from "../../../src/decorator/Tables";
 import {OneToOne} from "../../../src/decorator/Relations";
 import {Image} from "./Image";
 
-@Table("sample2_image_details")
+@Table("sample10_image_details")
 export class ImageDetails {
 
     @PrimaryColumn("int", { autoIncrement: true })

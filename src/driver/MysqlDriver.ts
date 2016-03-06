@@ -92,4 +92,26 @@ export class MysqlDriver implements Driver {
         return new Promise<any>((ok, fail) => this.connection.query(query, (err: any, result: any) => err ? fail(err) : ok(result)));
     }
 
+    /**
+     * Clears all tables in the currently connected database.
+     */
+    clearDatabase(): Promise<void> {
+        if (!this.connection) throw new Error("Connection is not established, cannot execute a query.");
+        
+        // todo: omprize and make coder better
+        
+        const query1 = `SET FOREIGN_KEY_CHECKS = 0;`;
+        const query2 = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS q FROM information_schema.tables WHERE table_schema = '${this.connectionOptions.database}';`;
+        const query3 = `SET FOREIGN_KEY_CHECKS = 1;`;
+
+        return this.query(query1)
+            .then(() => this.query<any[]>(query2))
+            .then(results => {
+                const dropQueries = results.map(q => this.query(q['q']));
+                return Promise.all(dropQueries);
+            })
+            .then(() => this.query(query3))
+            .then(() => {});
+    }
+
 }

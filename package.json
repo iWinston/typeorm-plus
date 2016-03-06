@@ -25,6 +25,7 @@
   ],
   "devDependencies": {
     "chai": "^3.4.1",
+    "chai-as-promised": "^5.2.0",
     "del": "^2.2.0",
     "gulp": "^3.9.0",
     "gulp-mocha": "^2.2.0",

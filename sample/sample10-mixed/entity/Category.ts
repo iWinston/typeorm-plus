@@ -4,7 +4,7 @@ import {OneToMany, ManyToMany, ManyToOne} from "../../../src/decorator/Relations
 import {Post} from "./Post";
 import {PostDetails} from "./PostDetails";
 
-@Table("sample2_category")
+@Table("sample10_category")
 export class Category {
 
     @PrimaryColumn("int", { autoIncrement: true })

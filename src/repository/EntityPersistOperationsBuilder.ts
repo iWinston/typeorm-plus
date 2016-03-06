@@ -172,17 +172,11 @@ export class EntityPersistOperationsBuilder {
             updatesByRelationsOperations
         );
     }
-
+    
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private updateIdsAfterPersist(insertOperations: InsertOperation[]) {
-        insertOperations.forEach(insertOperation => {
-            const metadata = this.connection.getMetadata(insertOperation.entity.constructor);
-            insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
-        });
-    }
 
     private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchIn: any) {
         const metadata = this.connection.getMetadata(entityToSearchIn.constructor);

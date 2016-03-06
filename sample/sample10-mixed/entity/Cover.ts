@@ -1,18 +1,18 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
 import {OneToMany} from "../../../src/decorator/Relations";
-import {PostDetails} from "./PostDetails";
+import {Post} from "./Post";
 
-@Table("sample2_chapter")
-export class Chapter {
+@Table("sample10_cover")
+export class Cover {
 
     @PrimaryColumn("int", { autoIncrement: true })
     id: number;
 
     @Column()
-    about: string;
+    url: string;
 
-    @OneToMany<PostDetails>(type => PostDetails, postDetails => postDetails.chapter)
-    postDetails: PostDetails[];
+    @OneToMany<Post>(() => Post, post => post.cover)
+    posts: Post[];
 
 }

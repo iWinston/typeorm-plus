@@ -132,6 +132,7 @@ export class Gulpfile {
     integration() {
         chai.should();
         chai.use(require("sinon-chai"));
+        chai.use(require("chai-as-promised"));
         return gulp.src("./build/es5/test/integration/**/*.js")
             .pipe(mocha());
     }

@@ -18,7 +18,6 @@ TypeORM.createMysqlConnection(options, [Post]).then(connection => {
     post.text = "Hello how are you?";
     post.title = "hello";
 
-    // finally save it
     let postRepository = connection.getRepository<Post>(Post);
 
     postRepository

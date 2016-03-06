@@ -43,4 +43,9 @@ export interface Driver {
      */
     query<T>(query: string): Promise<T>;
 
+    /**
+     * Clears all tables in the currently connected database.
+     */
+    clearDatabase(): Promise<void>;
+
 }

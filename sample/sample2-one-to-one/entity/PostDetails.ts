@@ -1,9 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {OneToOne, OneToMany, ManyToOne} from "../../../src/decorator/Relations";
+import {OneToOne} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
-import {Chapter} from "./Chapter";
-import {Category} from "./Category";
 
 @Table("sample2_post_details")
 export class PostDetails {
@@ -12,24 +10,19 @@ export class PostDetails {
     id: number;
 
     @Column()
-    meta: string;
+    authorName: string;
 
     @Column()
     comment: string;
 
-    @OneToOne<Post>(false, type => Post, post => post.details)
+    @Column()
+    metadata: string;
+    
+    @OneToOne<Post>(true, () => Post, post => post.details, {
+        isCascadeInsert: true,
+        isCascadeUpdate: true,
+        isCascadeRemove: true
+    })
     post: Post;
-
-    @OneToMany<Category>(type => Category, category => category.details, {
-        isCascadeInsert: true,
-        isCascadeRemove: true
-    })
-    categories: Category[];
-
-    @ManyToOne<Chapter>(_ => Chapter, chapter => chapter.postDetails, {
-        isCascadeInsert: true,
-        isCascadeRemove: true
-    })
-    chapter: Chapter;
 
 }
