@@ -201,7 +201,7 @@ describe("many-to-many", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
-            newPost.category.push(category);
+            newPost.categories.push(category);
 
             return postRepository.persist(newPost).then(post => savedPost = post);
         });
@@ -211,12 +211,12 @@ describe("many-to-many", function() {
         });
 
         it("should return the same post category instance after its created", function () {
-            savedPost.category.should.be.equal(newPost.category);
+            savedPost.categories.should.be.equal(newPost.categories);
         });
 
         it("should have a new generated id after post is created", function () {
             expect(savedPost.id).not.to.be.empty;
-            expect(savedPost.category[0].id).not.to.be.empty;
+            expect(savedPost.categories[0].id).not.to.be.empty;
         });
 
         it("should have inserted post in the database", function() {
@@ -229,9 +229,9 @@ describe("many-to-many", function() {
 
         it("should have inserted category in the database", function() {
             const expectedPost = new PostCategory();
-            expectedPost.id = savedPost.category[0].id;
+            expectedPost.id = savedPost.categories[0].id;
             expectedPost.name = "technology";
-            return postCategoryRepository.findById(savedPost.category[0].id).should.eventually.eql(expectedPost);
+            return postCategoryRepository.findById(savedPost.categories[0].id).should.eventually.eql(expectedPost);
         });
 
         it("should load post and its category if left join used", function() {
@@ -239,13 +239,13 @@ describe("many-to-many", function() {
             expectedPost.id = savedPost.id;
             expectedPost.title = savedPost.title;
             expectedPost.text = savedPost.text;
-            expectedPost.category.push(new PostCategory());
-            expectedPost.category[0].id = savedPost.category[0].id;
-            expectedPost.category[0].name = savedPost.category[0].name;
+            expectedPost.categories.push(new PostCategory());
+            expectedPost.categories[0].id = savedPost.categories[0].id;
+            expectedPost.categories[0].name = savedPost.categories[0].name;
 
             return postRepository
                 .createQueryBuilder("post")
-                .leftJoinAndSelect("post.category", "category")
+                .leftJoinAndSelect("post.categories", "categories")
                 .where("post.id=:id", { id: savedPost.id })
                 .getSingleResult()
                 .should.eventually.eql(expectedPost);
@@ -347,8 +347,6 @@ describe("many-to-many", function() {
             });
         });
     });
-    
-    return;
 
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
         let newPost: Post, newImage: PostImage, savedImage: PostImage;
@@ -368,32 +366,32 @@ describe("many-to-many", function() {
                 .persist(newImage)
                 .then(image => {
                     savedImage = image;
-                    newPost.image.push(image);
+                    newPost.images.push(image);
                     return postRepository.persist(newPost);
 
                 }).then(post => {
                     newPost = post;
                     return postRepository
                         .createQueryBuilder("post")
-                        .leftJoinAndSelect("post.image", "image")
+                        .leftJoinAndSelect("post.images", "images")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    loadedPost.image[0].url = "new-logo.png";
+                    loadedPost.images[0].url = "new-logo.png";
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {
                     return postRepository
                         .createQueryBuilder("post")
-                        .leftJoinAndSelect("post.image", "image")
+                        .leftJoinAndSelect("post.images", "images")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
                         .getSingleResult();
                     
                 }).then(reloadedPost => {
-                    reloadedPost.image[0].url.should.be.equal("new-logo.png");
+                    reloadedPost.images[0].url.should.be.equal("new-logo.png");
                 });
         });
 
@@ -417,32 +415,32 @@ describe("many-to-many", function() {
                 .persist(newMetadata)
                 .then(metadata => {
                     savedMetadata = metadata;
-                    newPost.metadata.push(metadata);
+                    newPost.metadatas.push(metadata);
                     return postRepository.persist(newPost);
 
                 }).then(post => {
                     newPost = post;
                     return postRepository
                         .createQueryBuilder("post")
-                        .leftJoinAndSelect("post.metadata", "metadata")
+                        .leftJoinAndSelect("post.metadatas", "metadatas")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    loadedPost.metadata = null;
+                    loadedPost.metadatas = null;
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {
                     return postRepository
                         .createQueryBuilder("post")
-                        .leftJoinAndSelect("post.metadata", "metadata")
+                        .leftJoinAndSelect("post.metadatas", "metadatas")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
                         .getSingleResult();
 
                 }).then(reloadedPost => {
-                    expect(reloadedPost.metadata).to.be.empty;
+                    expect(reloadedPost.metadatas).to.be.empty;
                 });
         });
 

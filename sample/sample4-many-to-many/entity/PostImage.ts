@@ -12,7 +12,7 @@ export class PostImage {
     @Column()
     url: string;
 
-    @ManyToMany<Post>(false, () => Post, post => post.image)
+    @ManyToMany<Post>(false, () => Post, post => post.images)
     posts: Post[];
 
 }

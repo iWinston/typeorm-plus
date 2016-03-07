@@ -12,7 +12,7 @@ export class PostAuthor {
     @Column()
     name: string;
 
-    @ManyToMany<Post>(false, () => Post, post => post.author)
+    @ManyToMany<Post>(false, () => Post, post => post.authors)
     posts: Post[];
 
 }

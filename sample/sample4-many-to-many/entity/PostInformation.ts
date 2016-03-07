@@ -12,7 +12,7 @@ export class PostInformation {
     @Column()
     text: string;
     
-    @ManyToMany<Post>(false, () => Post, post => post.information, {
+    @ManyToMany<Post>(false, () => Post, post => post.informations, {
         cascadeUpdate: true,
     })
     posts: Post[];
