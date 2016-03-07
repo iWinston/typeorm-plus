@@ -1,6 +1,11 @@
 import {TypeORM} from "../../src/TypeORM";
 import {Post} from "./entity/Post";
-import {Comment} from "./entity/Comment";
+import {PostDetails} from "./entity/PostDetails";
+import {PostCategory} from "./entity/PostCategory";
+import {PostMetadata} from "./entity/PostMetadata";
+import {PostImage} from "./entity/PostImage";
+import {PostInformation} from "./entity/PostInformation";
+import {PostAuthor} from "./entity/PostAuthor";
 
 // first create a connection
 let options = {
@@ -12,19 +17,18 @@ let options = {
     autoSchemaCreate: true
 };
 
-TypeORM.createMysqlConnection(options, [Post, Comment]).then(connection => {
+TypeORM.createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(connection => {
 
-    let comment1 = new Comment();
-    comment1.text = "Hello world";
-    let comment2 = new Comment();
-    comment2.text = "Bye world";
+    let details = new PostDetails();
+    details.authorName = "Umed";
+    details.comment = "about post";
+    details.metadata = "post,details,one-to-one";
 
     let post = new Post();
     post.text = "Hello how are you?";
     post.title = "hello";
-    post.comments = [comment1, comment2];
+    post.details = details;
 
-    // finally save it
     let postRepository = connection.getRepository<Post>(Post);
 
     postRepository

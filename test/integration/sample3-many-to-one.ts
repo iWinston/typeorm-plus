@@ -5,16 +5,16 @@ import {TypeORM} from "../../src/TypeORM";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
-import {PostDetails} from "../../sample/sample2-one-to-one/entity/PostDetails";
-import {Post} from "../../sample/sample2-one-to-one/entity/Post";
-import {PostCategory} from "../../sample/sample2-one-to-one/entity/PostCategory";
-import {PostAuthor} from "../../sample/sample2-one-to-one/entity/PostAuthor";
-import {PostMetadata} from "../../sample/sample2-one-to-one/entity/PostMetadata";
-import {PostImage} from "../../sample/sample2-one-to-one/entity/PostImage";
-import {PostInformation} from "../../sample/sample2-one-to-one/entity/PostInformation";
+import {PostDetails} from "../../sample/sample3-many-to-one/entity/PostDetails";
+import {Post} from "../../sample/sample3-many-to-one/entity/Post";
+import {PostCategory} from "../../sample/sample3-many-to-one/entity/PostCategory";
+import {PostAuthor} from "../../sample/sample3-many-to-one/entity/PostAuthor";
+import {PostMetadata} from "../../sample/sample3-many-to-one/entity/PostMetadata";
+import {PostImage} from "../../sample/sample3-many-to-one/entity/PostImage";
+import {PostInformation} from "../../sample/sample3-many-to-one/entity/PostInformation";
 
 chai.should();
-describe("one-to-one", function() {
+describe("many-to-one", function() {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -135,7 +135,7 @@ describe("one-to-one", function() {
                 .should.eventually.eql(expectedPost);
         });
 
-        it("should load details and its post if left join used (from reverse side)", function() {
+       /* it("should load details and its post if left join used (from reverse side)", function() {
 
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details.id;
@@ -155,7 +155,7 @@ describe("one-to-one", function() {
                 .setParameter("id", savedPost.id)
                 .getSingleResult()
                 .should.eventually.eql(expectedDetails);
-        });
+        });*/
 
         it("should load saved post without details if left joins are not specified", function() {
             const expectedPost = new Post();

@@ -1,18 +1,18 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {ManyToOne} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
+import {OneToMany} from "../../../src/decorator/Relations";
 
-@Table("sample3-comment")
-export class Comment {
+@Table("sample3_post_image")
+export class PostImage {
 
     @PrimaryColumn("int", { autoIncrement: true })
     id: number;
 
     @Column()
-    text: string;
+    url: string;
 
-    @ManyToOne<Post>(_ => Post, post => post.comments)
-    post: Post;
+    @OneToMany<Post>(() => Post, post => post.image)
+    post: Post[];
 
 }
