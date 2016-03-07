@@ -14,6 +14,13 @@ export interface InsertOperation {
     entityId: number;
 }
 
+export interface RemoveOperation {
+    entity: any;
+    fromEntityId: any;
+    metadata: EntityMetadata;
+    relation: RelationMetadata;
+}
+
 export interface UpdateOperation {
     entity: any;
     columns: ColumnMetadata[];
@@ -40,14 +47,14 @@ export class UpdateByRelationOperation {
 
 export class PersistOperation {
     inserts: InsertOperation[];
-    removes: any[];
+    removes: RemoveOperation[];
     updates: UpdateOperation[];
     junctionInserts: JunctionInsertOperation[];
     junctionRemoves: JunctionRemoveOperation[];
     updatesByRelations: UpdateByRelationOperation[];
     
-    constructor(inserts: any[], 
-                removes: any[], 
+    constructor(inserts: InsertOperation[], 
+                removes: RemoveOperation[], 
                 updates: UpdateOperation[],
                 junctionInserts: JunctionInsertOperation[],
                 junctionRemoves: JunctionRemoveOperation[],
@@ -372,13 +379,18 @@ export class EntityPersistOperationsBuilder {
             .reduce((removedEntities, relation) => {
                 const relationIdColumnName = relation.relatedEntityMetadata.primaryColumn.name;
                 const relMetadata = relation.relatedEntityMetadata;
-                if (dbEntity[relation.propertyName] instanceof Array) {
+                if (dbEntity[relation.propertyName] instanceof Array) { // todo: propertyName or name here?
                     dbEntity[relation.propertyName].forEach((subEntity: any) => {
                         const isObjectRemoved = !newEntities.find(newEntity => {
                             return newEntity.id === subEntity[relationIdColumnName] && newEntity.entity.constructor.name === relMetadata.name;
                         });
                         if (isObjectRemoved && relation.isCascadeRemove)
-                            removedEntities.push(subEntity);
+                            removedEntities.push({
+                                entity: subEntity,
+                                fromEntityId: dbEntity[metadata.primaryColumn.name],
+                                metadata: metadata,
+                                relation: relation
+                            });
 
                         removedEntities = removedEntities.concat(this.findCascadeRemovedEntities(relMetadata, subEntity, newEntities));
                     });
@@ -388,7 +400,12 @@ export class EntityPersistOperationsBuilder {
                         return newEntity.id === relationId && newEntity.entity.constructor.name === relMetadata.name;
                     });
                     if (isObjectRemoved && relation.isCascadeRemove)
-                        removedEntities.push(dbEntity[relation.propertyName]);
+                        removedEntities.push({
+                            entity: dbEntity[relation.propertyName],
+                            fromEntityId: dbEntity[metadata.primaryColumn.name],
+                            metadata: metadata,
+                            relation: relation
+                        });
 
                     removedEntities = removedEntities.concat(this.findCascadeRemovedEntities(relMetadata, dbEntity[relation.propertyName], newEntities));
                 }

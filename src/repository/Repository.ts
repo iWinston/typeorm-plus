@@ -6,7 +6,7 @@ import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/Pl
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {
     EntityPersistOperationsBuilder, PersistOperation, JunctionInsertOperation,
-    InsertOperation, JunctionRemoveOperation, UpdateOperation, UpdateByRelationOperation
+    InsertOperation, JunctionRemoveOperation, UpdateOperation, UpdateByRelationOperation, RemoveOperation
 } from "./EntityPersistOperationsBuilder";
 
 // todo: think how we can implement queryCount, queryManyAndCount
@@ -88,11 +88,17 @@ export class Repository<Entity> {
         return promise.then(dbEntity => {
             const persistOperations = this.difference(dbEntity, entity);
             // create update queries based on diff map
-            return Promise.all(persistOperations.inserts.map(operation => {
-                return this.insert(operation.entity).then((result: any) => {
-                    operation.entityId = result.insertId;
-                });
-            })).then(() => { // insert junction table insertions
+            // return Promise.resolve()
+            return Promise.resolve()
+
+                .then(() => { // insert new relations
+                    return Promise.all(persistOperations.inserts.map(operation => {
+                        return this.insert(operation.entity).then((result: any) => {
+                            operation.entityId = result.insertId;
+                        });
+                    }));
+
+                }).then(() => { // insert junction table insertions
 
                 return Promise.all(persistOperations.junctionInserts.map(junctionOperation => {
                     return this.insertJunctions(junctionOperation, persistOperations.inserts);
@@ -108,63 +114,21 @@ export class Repository<Entity> {
                 return Promise.all(persistOperations.updatesByRelations.map(updateByRelation => {
                     this.updateByRelation(updateByRelation, persistOperations.inserts);
                 }));
-                
-                /*return Promise.all(persistOperations.inserts.map(operation => {
 
-                    const meta = this.connection.getMetadata(operation.entity.constructor);
-                    const oneToOneManyToOneUpdates = Promise.all(meta.relations.map(relation => {
-                        
-                        let insertOperationUpdates: Promise<any>, updateOperationUpdates: Promise<any>;
-                       
-                        if (operation.entity[relation.propertyName] instanceof Array && relation.isOneToMany) {
-
-                            insertOperationUpdates = Promise.all(persistOperations.inserts.filter(o => {
-                                return operation.entity[relation.propertyName].indexOf(o.entity) !== -1;
-                            }).map(o => {
-                                const oMetadata = this.connection.getMetadata(o.entity.constructor);
-                                const inverseRelation = relation.inverseRelation;
-                                const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${operation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${o.entityId}'`;
-                                return this.connection.driver.query(query);
-                            }));
-
-                            updateOperationUpdates = Promise.all(persistOperations.updates.filter(o => {
-                                return operation.entity[relation.propertyName].indexOf(o.entity) !== -1;
-                            }).map(o => {
-                                const oMetadata = this.connection.getMetadata(o.entity.constructor);
-                                const inverseRelation = relation.inverseRelation;
-                                const id = operation.entity[meta.primaryColumn.name];
-                                const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${operation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${id}'`;
-                                return this.connection.driver.query(query);
-                            }));
-                            
-                        } else {
-                            
-                            insertOperationUpdates = Promise.all(persistOperations.inserts.filter(o => {
-                                return operation.entity[relation.propertyName] === o.entity; // only one-to-one and many-to-one
-                            }).map(o => {
-                                const query = `UPDATE ${meta.table.name} SET ${relation.name}='${o.entityId}' WHERE ${meta.primaryColumn.name}='${operation.entityId}'`;
-                                return this.connection.driver.query(query);
-                            }));
-
-                            updateOperationUpdates = Promise.all(persistOperations.updates.filter(o => {
-                                return operation.entity[relation.propertyName] === o.entity; // only one-to-one and many-to-one
-                            }).map(o => {
-                                const reverseMeta = this.connection.getMetadata(o.entity.constructor);
-                                const id = o.entity[reverseMeta.primaryColumn.name];
-                                const query = `UPDATE ${meta.table.name} SET ${relation.name}='${id}' WHERE ${meta.primaryColumn.name}='${operation.entityId}'`;
-                                return this.connection.driver.query(query);
-                            }));
-                        }
-                        
-                        return Promise.all([insertOperationUpdates, updateOperationUpdates]);
-                    }));
-
-                    return Promise.all([oneToOneManyToOneUpdates]);
-                }));*/
             }).then(() => { // perform updates
 
-                return Promise.all(persistOperations.updates.map(updateOperation => {
-                    return this.update(updateOperation);
+            return Promise.all(persistOperations.updates.map(updateOperation => {
+                return this.update(updateOperation);
+            }));
+
+        }).then(() => { // remove removed relations
+                return Promise.all(persistOperations.removes.map(operation => {
+                    return this.updateDeletedRelations(operation);
+                }));
+
+        }).then(() => { // remove removed entities
+                return Promise.all(persistOperations.removes.map(operation => {
+                    return this.delete(operation.entity);
                 }));
 
             }).then(() => { // update ids
@@ -177,16 +141,6 @@ export class Repository<Entity> {
                 return entity;
 
             });
-        //} else {
-            // do update
-            /*return this.initialize(entity).then(dbEntity => {
-                const persistOperations = this.difference(dbEntity, entity);
-                // create update queries based on diff map
-                return Promise.all(persistOperations.inserts.map(operation => {
-                    return this.insert(operation.entity);
-                }));
-            });*/
-        //}
         });
     }
     
@@ -221,6 +175,18 @@ export class Repository<Entity> {
         });
 
         const query = `UPDATE ${metadata.table.name} SET ${values} WHERE ${metadata.primaryColumn.name}='${metadata.getEntityId(entity)}'` ;
+        return this.connection.driver.query(query);
+    }
+
+    private updateDeletedRelations(removeOperation: RemoveOperation) { // todo: check if both many-to-one deletions work too
+        const value = removeOperation.relation.name + "=NULL";
+        const query = `UPDATE ${removeOperation.metadata.table.name} SET ${value} WHERE ${removeOperation.metadata.primaryColumn.name}='${removeOperation.fromEntityId}'` ;
+        return this.connection.driver.query(query);
+    }
+    
+    private delete(entity: any) {
+        const metadata = this.connection.getMetadata(entity.constructor);
+        const query = `DELETE FROM ${metadata.table.name} WHERE ${metadata.primaryColumn.name}='${entity[metadata.primaryColumn.propertyName]}'`;
         return this.connection.driver.query(query);
     }
     

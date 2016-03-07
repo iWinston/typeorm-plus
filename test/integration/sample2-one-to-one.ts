@@ -51,12 +51,14 @@ describe("insertion", function() {
     let postRepository: Repository<Post>,
         postDetailsRepository: Repository<PostDetails>,
         postCategoryRepository: Repository<PostCategory>,
-        postImageRepository: Repository<PostImage>;
+        postImageRepository: Repository<PostImage>,
+        postMetadataRepository: Repository<PostMetadata>;
     before(function() {
         postRepository = connection.getRepository<Post>(Post);
         postDetailsRepository = connection.getRepository<PostDetails>(PostDetails);
         postCategoryRepository = connection.getRepository<PostCategory>(PostCategory);
         postImageRepository = connection.getRepository<PostImage>(PostImage);
+        postMetadataRepository = connection.getRepository<PostMetadata>(PostMetadata);
     });
 
     // -------------------------------------------------------------------------
@@ -334,11 +336,11 @@ describe("insertion", function() {
     });
 
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
-        let newPost: Post, newImage: PostImage, savedPost: Post, savedImage: PostImage;
+        let newPost: Post, newImage: PostImage, savedImage: PostImage;
 
         before(reloadDatabase);
 
-        it("should ignore updates in the model and do not update the db when entity is updated", function () {
+        it("should update a relation successfully when updated", function () {
 
             newImage = new PostImage();
             newImage.url = "logo.png";
@@ -377,6 +379,55 @@ describe("insertion", function() {
                     
                 }).then(reloadedPost => {
                     reloadedPost.image.url.should.be.equal("new-logo.png");
+                });
+        });
+
+    });
+
+    describe("cascade remove should be executed when cascadeRemove option is set", function() {
+        let newPost: Post, newMetadata: PostMetadata, savedMetadata: PostMetadata;
+
+        before(reloadDatabase);
+
+        it("should remove a relation entity successfully when removed", function () {
+
+            newMetadata = new PostMetadata();
+            newMetadata.description = "this is post metadata";
+
+            newPost = new Post();
+            newPost.text = "Hello post";
+            newPost.title = "this is post title";
+
+            return postMetadataRepository
+                .persist(newMetadata)
+                .then(metadata => {
+                    savedMetadata = metadata;
+                    newPost.metadata = metadata;
+                    return postRepository.persist(newPost);
+
+                }).then(post => {
+                    newPost = post;
+                    return postRepository
+                        .createQueryBuilder("post")
+                        .leftJoinAndSelect("post.metadata", "metadata")
+                        .where("post.id=:id")
+                        .setParameter("id", post.id)
+                        .getSingleResult();
+
+                }).then(loadedPost => {
+                    loadedPost.metadata = null;
+                    return postRepository.persist(loadedPost);
+
+                }).then(() => {
+                    return postRepository
+                        .createQueryBuilder("post")
+                        .leftJoinAndSelect("post.metadata", "metadata")
+                        .where("post.id=:id")
+                        .setParameter("id", newPost.id)
+                        .getSingleResult();
+
+                }).then(reloadedPost => {
+                    expect(reloadedPost.metadata).to.be.empty;
                 });
         });
 

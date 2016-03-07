@@ -10,7 +10,7 @@ export class PostMetadata {
     id: number;
 
     @Column()
-    url: string;
+    description: string;
 
     @OneToOne<Post>(false, () => Post, post => post.metadata)
     post: Post;
