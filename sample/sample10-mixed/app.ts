@@ -87,7 +87,7 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
     
     return;
     
-    const postJson = {
+    /*const postJson = {
         id: 1,  // changed
         text: "This is post about hello", // changed
         title: "hello", // changed
@@ -162,7 +162,7 @@ TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, 
         .getSingleResult()
         .then(post => console.log(post))
         // .then(result => console.log(JSON.stringify(result, null, 4)))
-        .catch(error => console.log(error.stack ? error.stack : error));
+        .catch(error => console.log(error.stack ? error.stack : error));*/
 
     /*let details = new PostDetails();
     details.comment = "This is post about hello";

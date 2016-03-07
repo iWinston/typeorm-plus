@@ -22,14 +22,14 @@ export class Post {
     })
     text: string;
 
-    @OneToOne<PostDetails>(true, () => PostDetails, details => details.posts, {
+    @OneToOne<PostDetails>(true, () => PostDetails, details => details.post, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
     })
     details: PostDetails;
 
-    @OneToMany<Image>(type => Image, image => image.posts, {
+    @OneToMany<Image>(type => Image, image => image.post, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
