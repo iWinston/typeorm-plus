@@ -253,11 +253,7 @@ export class QueryBuilder<Entity> {
     }
 
     getSingleResult(): Promise<Entity> {
-        return this.getResults().then(entities => {
-            console.log(this.getSql());
-            console.log(entities);
-            return entities[0];
-        });
+        return this.getResults().then(entities => entities[0]);
     }
 
     // -------------------------------------------------------------------------

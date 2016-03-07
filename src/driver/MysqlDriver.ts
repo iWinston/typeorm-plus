@@ -88,8 +88,15 @@ export class MysqlDriver implements Driver {
      */
     query<T>(query: string): Promise<T> {
         if (!this.connection) throw new Error("Connection is not established, cannot execute a query.");
-        console.info("executing:", query);
-        return new Promise<any>((ok, fail) => this.connection.query(query, (err: any, result: any) => err ? fail(err) : ok(result)));
+        // console.info("executing:", query);
+        return new Promise<any>((ok, fail) => this.connection.query(query, (err: any, result: any) => {
+            if (err) {
+                console.error("query failed: ", query);
+                fail(err);
+                return;
+            }
+            ok(result);
+        }));
     }
 
     /**

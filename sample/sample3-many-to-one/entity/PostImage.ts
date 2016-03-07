@@ -13,6 +13,6 @@ export class PostImage {
     url: string;
 
     @OneToMany<Post>(() => Post, post => post.image)
-    post: Post[];
+    posts: Post[];
 
 }

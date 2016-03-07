@@ -15,6 +15,6 @@ export class PostInformation {
     @OneToMany<Post>(() => Post, post => post.information, {
         cascadeUpdate: true,
     })
-    post: Post[];
+    posts: Post[];
 
 }

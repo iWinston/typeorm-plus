@@ -121,7 +121,7 @@ export class EntityPersistOperationsBuilder {
         const junctionRemoveOperations = this.findJunctionRemoveOperations(metadata, entity1, allEntities);
         const updatesByRelationsOperations = this.updateRelations(insertOperations, entity2);
         //const insertJunctionOperations = ;//this.a();
-        console.log("---------------------------------------------------------");
+        /*console.log("---------------------------------------------------------");
         console.log("DB ENTITIES");
         console.log("---------------------------------------------------------");
         console.log(dbEntities);
@@ -153,7 +153,7 @@ export class EntityPersistOperationsBuilder {
         console.log("UPDATES BY RELATIONS");
         console.log("---------------------------------------------------------");
         console.log(updatesByRelationsOperations);
-        console.log("---------------------------------------------------------");
+        console.log("---------------------------------------------------------");*/
 
         // now normalize inserted entities
         // no need probably, since we cant rely on deepness because of recursion: insertOperations.sort((a, b) => a.deepness + b.deepness);

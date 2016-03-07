@@ -3,16 +3,18 @@ import {Table} from "../../../src/decorator/Tables";
 import {ManyToMany} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
 
-@Table("sample4-category")
-export class Category {
+@Table("sample4_post_information")
+export class PostInformation {
 
-    @PrimaryColumn()
+    @PrimaryColumn("int", { autoIncrement: true })
     id: number;
 
     @Column()
-    name: string;
-
-    @ManyToMany<Post>(false, _ => Post, post => post.categories)
+    text: string;
+    
+    @ManyToMany<Post>(false, () => Post, post => post.information, {
+        cascadeUpdate: true,
+    })
     posts: Post[];
 
 }

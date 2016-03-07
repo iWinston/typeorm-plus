@@ -1,9 +1,9 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {OneToMany} from "../../../src/decorator/Relations";
+import {ManyToMany} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
 
-@Table("sample3_post_details")
+@Table("sample4_post_details")
 export class PostDetails {
 
     @PrimaryColumn("int", { autoIncrement: true })
@@ -24,7 +24,7 @@ export class PostDetails {
     })
     metadata: string;
     
-    @OneToMany<Post>(() => Post, post => post.details, {
+    @ManyToMany<Post>(false, () => Post, post => post.details, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

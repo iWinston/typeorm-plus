@@ -179,6 +179,7 @@ export class Repository<Entity> {
     }
 
     private updateDeletedRelations(removeOperation: RemoveOperation) { // todo: check if both many-to-one deletions work too
+        if (removeOperation.relation.isManyToMany || removeOperation.relation.isOneToMany) return;
         const value = removeOperation.relation.name + "=NULL";
         const query = `UPDATE ${removeOperation.metadata.table.name} SET ${value} WHERE ${removeOperation.metadata.primaryColumn.name}='${removeOperation.fromEntityId}'` ;
         return this.connection.driver.query(query);
