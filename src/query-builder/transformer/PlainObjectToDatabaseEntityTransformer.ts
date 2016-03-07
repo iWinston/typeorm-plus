@@ -48,6 +48,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
     private buildLoadMap(object: any, metadata: EntityMetadata): LoadMap[] {
         return metadata.relations
             .filter(relation => object.hasOwnProperty(relation.propertyName))
+            .filter(relation => !(object[relation.propertyName] instanceof Array) || object[relation.propertyName].length > 0) // this is very important check that prevents building additional query for empty relations
             .map(relation => {
                 let value = object[relation.propertyName];
                 if (value instanceof Array)

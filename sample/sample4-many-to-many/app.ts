@@ -19,25 +19,22 @@ let options = {
 
 TypeORM.createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(connection => {
 
-    /*
-        let category1 = new Category();
-        category1.name = "People";
-    
-        let category2 = new Category();
-        category2.name = "Human";
-    
-        let post = new Post();
-        post.text = "Hello how are you?";
-        post.title = "hello";
-        post.categories = [category1, category2];
-    */
+    let details1 = new PostDetails();
+    details1.comment = "People";
 
-    // finally save it
-    /*let postRepository = connection.getRepository<Post>(Post);
+    let details2 = new PostDetails();
+    details2.comment = "Human";
+
+    let post = new Post();
+    post.text = "Hello how are you?";
+    post.title = "hello";
+    post.details = [details1, details2];
+
+    let postRepository = connection.getRepository<Post>(Post);
 
     postRepository
         .persist(post)
         .then(post => console.log("Post has been saved"))
-        .catch(error => console.log("Cannot save. Error: ", error));*/
+        .catch(error => console.log("Cannot save. Error: ", error));
 
 }, error => console.log("Cannot connect: ", error));

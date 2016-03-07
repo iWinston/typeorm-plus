@@ -247,6 +247,7 @@ export class QueryBuilder<Entity> {
     }
 
     getResults(): Promise<Entity[]> {
+        console.log(this.getSql());
         return this.connection.driver
             .query<any[]>(this.getSql())
             .then(results => this.rawResultsToEntities(results));

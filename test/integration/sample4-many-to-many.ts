@@ -294,9 +294,8 @@ describe("many-to-many", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult()
+                    .getSingleResult();
             }).then(updatedPostReloaded => {
-                console.log("updatedPost: ", updatedPostReloaded);
                 updatedPostReloaded.details[0].comment.should.be.equal("this is post");
             });
         }); // todo: also check that updates throw exception in strict cascades mode
@@ -334,7 +333,7 @@ describe("many-to-many", function() {
                     .setParameter("id", updatedPost.id)
                     .getSingleResult();
             }).then(updatedPostReloaded => {
-                // todo fix updatedPostReloaded.details[0].comment.should.be.equal("this is post");
+                updatedPostReloaded.details[0].comment.should.be.equal("this is post");
             });
         });
     });
