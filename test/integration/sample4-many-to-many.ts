@@ -323,7 +323,7 @@ describe("many-to-many", function() {
                 .then(post => savedPost = post);
         });
 
-        it("should ignore updates in the model and do not update the db when entity is updated", function () {
+        it("should remove relation however should not remove details itself", function () {
             newPost.details = null;
             return postRepository.persist(newPost).then(updatedPost => {
                 return postRepository
@@ -333,10 +333,22 @@ describe("many-to-many", function() {
                     .setParameter("id", updatedPost.id)
                     .getSingleResult();
             }).then(updatedPostReloaded => {
-                updatedPostReloaded.details[0].comment.should.be.equal("this is post");
+                expect(updatedPostReloaded.details).to.be.empty;
+
+                return postDetailsRepository
+                    .createQueryBuilder("details")
+                    .leftJoinAndSelect("details.posts", "posts")
+                    .where("details.id=:id")
+                    .setParameter("id", details.id)
+                    .getSingleResult();
+            }).then(reloadedDetails => {
+                expect(reloadedDetails).not.to.be.empty;
+                expect(reloadedDetails.posts).to.be.empty;
             });
         });
     });
+    
+    return;
 
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
         let newPost: Post, newImage: PostImage, savedImage: PostImage;
