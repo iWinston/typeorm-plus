@@ -134,46 +134,6 @@ export class EntityPersistOperationBuilder {
         return insertOperations.reduce((operations, insertOperation) => {
             return operations.concat(this.findRelationsWithEntityInside(insertOperation, newEntity));
         }, <UpdateByRelationOperation[]> []);
-
-        /*const entitiesWithoutIds = allEntities
-         .filter(entityWithId => !!entityWithId.id)
-         .map(entityWithId => entityWithId.entity);*/
-/*
-            entitiesWithoutIds.find(entity => entity === insertOperation.entity);
-
-            metadata.relations.map(relation => {
-
-            });
-
-            const oneToOneManyToOneUpdates = Promise.all(meta.relations.map(relation => {
-
-                let insertOperationUpdates: Promise<any>, updateOperationUpdates: Promise<any>;
-
-                if (insertOperation.entity[relation.propertyName] instanceof Array && relation.isOneToMany) {
-
-                    insertOperationUpdates = Promise.all(persistOperations.inserts.filter(o => {
-                        return insertOperation.entity[relation.propertyName].indexOf(o.entity) !== -1;
-                    }).map(o => {
-                        const oMetadata = this.connection.getMetadata(o.entity.constructor);
-                        const inverseRelation = relation.inverseRelation;
-                        const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${insertOperation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${o.entityId}'`;
-                        return this.connection.driver.query(query);
-                    }));
-
-                    updateOperationUpdates = Promise.all(persistOperations.updates.filter(o => {
-                        return insertOperation.entity[relation.propertyName].indexOf(o.entity) !== -1;
-                    }).map(o => {
-                        const oMetadata = this.connection.getMetadata(o.entity.constructor);
-                        const inverseRelation = relation.inverseRelation;
-                        const id = insertOperation.entity[meta.primaryColumn.name];
-                        const query = `UPDATE ${oMetadata.table.name} SET ${inverseRelation.name}='${insertOperation.entityId}' WHERE ${oMetadata.primaryColumn.name}='${id}'`;
-                        return this.connection.driver.query(query);
-                    }));
-
-                }
-                //return Promise.all([insertOperationUpdates, updateOperationUpdates]);
-            }));
-        });*/
     }
     
     private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[]): JunctionInsertOperation[] {

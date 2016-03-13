@@ -22,59 +22,94 @@ export class PersistOperationExecutor {
 
     executePersistOperation(persistOperation: PersistOperation) {
         return Promise.resolve()
-            .then(() => { // insert new relations
-                return Promise.all(persistOperation.inserts.map(operation => {
-                    return this.insert(operation.entity).then((result: any) => {
-                        operation.entityId = result.insertId;
-                    });
-                }));
-    
-            }).then(() => { // insert junction table insertions
-    
-                return Promise.all(persistOperation.junctionInserts.map(junctionOperation => {
-                    return this.insertJunctions(junctionOperation, persistOperation.inserts);
-                }));
-            }).then(() => { // remove junction table insertions
-    
-                return Promise.all(persistOperation.junctionRemoves.map(junctionOperation => {
-                    return this.removeJunctions(junctionOperation);
-                }));
-    
-            }).then(() => {
-    
-                return Promise.all(persistOperation.updatesByRelations.map(updateByRelation => {
-                    this.updateByRelation(updateByRelation, persistOperation.inserts);
-                }));
-    
-            }).then(() => { // perform updates
-    
-                return Promise.all(persistOperation.updates.map(updateOperation => {
-                    return this.update(updateOperation);
-                }));
-    
-            }).then(() => { // remove removed relations
-                return Promise.all(persistOperation.removes.map(operation => {
-                    return this.updateDeletedRelations(operation);
-                }));
-    
-            }).then(() => { // remove removed entities
-                return Promise.all(persistOperation.removes.map(operation => {
-                    return this.delete(operation.entity);
-                }));
-    
-            }).then(() => { // update ids
-    
-                persistOperation.inserts.forEach(insertOperation => {
-                    const metadata = this.connection.getMetadata(insertOperation.entity.constructor);
-                    insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
-                });
-    
-            });
+            .then(() => this.executeInsertOperations(persistOperation))
+            .then(() => this.executeInsertJunctionsOperations(persistOperation))
+            .then(() => this.executeRemoveJunctionsOperations(persistOperation))
+            .then(() => this.executeUpdateRelationsOperations(persistOperation))
+            .then(() => this.executeUpdateOperations(persistOperation))
+            .then(() => this.executeRemoveRelationOperations(persistOperation))
+            .then(() => this.executeRemoveOperations(persistOperation))
+            .then(() => this.executeUpdateByIdOperations(persistOperation));
     }
 
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Executes insert operations.
+     */
+    private executeInsertOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.inserts.map(operation => {
+            return this.insert(operation.entity).then((result: any) => {
+                operation.entityId = result.insertId;
+            });
+        }));
+    }
+
+    /**
+     * Executes insert junction operations.
+     */
+    private executeInsertJunctionsOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.junctionInserts.map(junctionOperation => {
+            return this.insertJunctions(junctionOperation, persistOperation.inserts);
+        }));
+    }
+
+    /**
+     * Executes remove junction operations.
+     */
+    private executeRemoveJunctionsOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.junctionRemoves.map(junctionOperation => {
+            return this.removeJunctions(junctionOperation);
+        }));
+    }
+
+    /**
+     * Executes update relations operations.
+     */
+    private executeUpdateRelationsOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.updatesByRelations.map(updateByRelation => {
+            this.updateByRelation(updateByRelation, persistOperation.inserts);
+        }));
+    }
+
+    /**
+     * Executes update operations.
+     */
+    private executeUpdateOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.updates.map(updateOperation => {
+            return this.update(updateOperation);
+        }));
+    }
+
+    /**
+     * Executes remove relations operations.
+     */
+    private executeRemoveRelationOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.removes.map(operation => {
+            return this.updateDeletedRelations(operation);
+        }));
+    }
+
+    /**
+     * Executes remove operations.
+     */
+    private executeRemoveOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.removes.map(operation => {
+            return this.delete(operation.entity);
+        }));
+    }
+
+    /**
+     * Executes update by id operations.
+     */
+    private executeUpdateByIdOperations(persistOperation: PersistOperation) {
+        persistOperation.inserts.forEach(insertOperation => {
+            const metadata = this.connection.getMetadata(insertOperation.entity.constructor);
+            insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
+        });
+    }
 
     private updateByRelation(operation: UpdateByRelationOperation, insertOperations: InsertOperation[]) {
         let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
@@ -129,20 +164,10 @@ export class PersistOperationExecutor {
             .filter(column => !column.isVirtual)
             .filter(column => entity.hasOwnProperty(column.propertyName))
             .map(column => column.name);
-        /*const virtualColumns = metadata.columns
-         .filter(column => column.isVirtual)
-         .filter(column => entity.hasOwnProperty(column.propertyName))
-         .map(column => column.name);*/
         const values = metadata.columns
             .filter(column => !column.isVirtual)
             .filter(column => entity.hasOwnProperty(column.propertyName))
             .map(column => "'" + entity[column.propertyName] + "'");
-        /*const virtualValues = metadata.columns
-         .filter(column => column.isVirtual)
-         .filter(column => entity.hasOwnProperty(column.propertyName))
-         .map(column => "'" + entity[column.propertyName] + "'");
-         const allColumns = columns.concat(virtualColumns);
-         const allVolumes = values.concat(virtualValues);*/
         const relationColumns = metadata.relations
             .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
