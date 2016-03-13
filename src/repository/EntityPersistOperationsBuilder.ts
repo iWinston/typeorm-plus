@@ -1,7 +1,6 @@
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata-builder/metadata/RelationMetadata";
-import metadata = Reflect.metadata;
 import {Connection} from "../connection/Connection";
 
 export interface EntityWithId {

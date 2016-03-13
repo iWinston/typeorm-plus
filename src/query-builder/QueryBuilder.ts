@@ -13,7 +13,7 @@ export interface Join {
 export class QueryBuilder<Entity> {
 
     // -------------------------------------------------------------------------
-    // Pirvate properties
+    // Private properties
     // -------------------------------------------------------------------------
 
     private _aliasMap: AliasMap;
@@ -221,7 +221,6 @@ export class QueryBuilder<Entity> {
     }
 
     getSql(): string {
-        // joins are before because their many-to-many relations can add aliases
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
         sql += this.createWhereExpression();

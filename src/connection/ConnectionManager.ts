@@ -7,9 +7,12 @@ import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
 
 /**
- * Connection manager holds all connections made to the databases.
+ * Connection manager holds all connections made to the databases and providers helper management functions 
+ * for all exist connections.
  */
 export class ConnectionManager {
+    
+    // todo: inject naming strategy, make it configurable
 
     // -------------------------------------------------------------------------
     // Properties
