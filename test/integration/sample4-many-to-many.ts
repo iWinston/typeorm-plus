@@ -32,7 +32,7 @@ describe("many-to-many", function() {
     // connect to db
     let connection: Connection;
     before(function() {
-        return createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(conn => {
+        return createMysqlConnection(options, [__dirname + "/../../sample/sample4-many-to-many/entity"]).then(conn => {
             connection = conn;
         }).catch(e => console.log("Error during connection to db: " + e));
     });

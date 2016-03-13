@@ -1,11 +1,6 @@
 import {createMysqlConnection} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
-import {PostCategory} from "./entity/PostCategory";
-import {PostMetadata} from "./entity/PostMetadata";
-import {PostImage} from "./entity/PostImage";
-import {PostInformation} from "./entity/PostInformation";
-import {PostAuthor} from "./entity/PostAuthor";
 
 // first create a connection
 let options = {
@@ -17,7 +12,7 @@ let options = {
     autoSchemaCreate: true
 };
 
-createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(connection => {
+createMysqlConnection(options, [__dirname + "/entity"]).then(connection => {
 
     let details1 = new PostDetails();
     details1.comment = "People";

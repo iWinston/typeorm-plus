@@ -44,11 +44,12 @@
   "dependencies": {
     "fs": "^0.0.2",
     "lodash": "^4.5.0",
+    "mysql": "^2.10.2",
     "path": "^0.11.14",
     "reflect-metadata": "^0.1.3",
+    "require-all": "^2.0.0",
     "sha1": "^1.1.1",
-    "typedi": "~0.2.0",
-    "mysql": "^2.10.2"
+    "typedi": "~0.2.0"
   },
   "scripts": {
     "postversion": "./node_modules/.bin/gulp package",

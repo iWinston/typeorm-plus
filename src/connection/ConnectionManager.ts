@@ -1,17 +1,15 @@
 import {Connection} from "./Connection";
-import {OrmUtils} from "../util/OrmUtils";
 import {defaultMetadataStorage} from "../metadata-builder/MetadataStorage";
 import {Driver} from "../driver/Driver";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
+import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
 
 /**
  * Connection manager holds all connections made to the databases.
  */
 export class ConnectionManager {
-
-    // todo: add support for importing entities and subscribers from subdirectories, make support of glob patterns
 
     // -------------------------------------------------------------------------
     // Properties
@@ -36,7 +34,7 @@ export class ConnectionManager {
     /**
      * Sets a container that can be used in custom user subscribers. This allows to inject services in user classes.
      */
-    set container(container: { get(someClass: any): any }) {
+    set container(container: { get(someClass: Function): any }) {
         this._container = container;
     }
 
@@ -70,24 +68,6 @@ export class ConnectionManager {
     }
 
     /**
-     * Imports entities for the given connection. If connection name is not given then default connection is used.
-     */
-    importEntities(entities: Function[]): void;
-    importEntities(connectionName: string, entities: Function[]): void;
-    importEntities(connectionNameOrEntities: string|Function[], entities?: Function[]): void {
-        let connectionName = "default";
-        if (typeof connectionNameOrEntities === "string") {
-            connectionName = <string> connectionNameOrEntities;
-        } else {
-            entities = <Function[]> connectionNameOrEntities;
-        }
-
-        const metadatas = this.entityMetadataBuilder.build(entities);
-        if (metadatas.length > 0)
-            this.getConnection(connectionName).addMetadatas(metadatas);
-    }
-
-    /**
      * Imports entities from the given paths (directories) for the given connection. If connection name is not given
      * then default connection is used.
      */
@@ -101,12 +81,7 @@ export class ConnectionManager {
             paths = <string[]> connectionNameOrPaths;
         }
 
-        const entitiesInFiles = OrmUtils.requireAll(paths);
-        const allEntities = entitiesInFiles.reduce((allEntities, entities) => {
-            return allEntities.concat(Object.keys(entities).map(key => entities[key]));
-        }, []);
-        
-        this.importEntities(connectionName, allEntities);
+        this.importEntities(connectionName, importClassesFromDirectories(paths));
     }
 
     /**
@@ -115,27 +90,45 @@ export class ConnectionManager {
      */
     importSubscribersFromDirectories(paths: string[]): void;
     importSubscribersFromDirectories(connectionName: string, paths: string[]): void;
-    importSubscribersFromDirectories(connectionName: any, paths?: string[]): void {
-        if (typeof connectionName === "object") {
-            paths = connectionName;
-            connectionName = "default";
+    importSubscribersFromDirectories(connectionNameOrPaths: string|string[], paths?: string[]): void {
+        let connectionName = "default";
+        if (typeof connectionNameOrPaths === "string") {
+            connectionName = <string> connectionNameOrPaths;
+        } else {
+            paths = <string[]> connectionNameOrPaths;
         }
 
-        const subscribersInFiles = OrmUtils.requireAll(paths);
-        const allSubscriberClasses = subscribersInFiles.reduce((all, subscriberInFile) => {
-            return all.concat(Object.keys(subscriberInFile).map(key => subscriberInFile[key]));
-        }, []);
-
+        const allSubscriberClasses = importClassesFromDirectories(paths);
         const subscribers = defaultMetadataStorage
-            .ormEventSubscriberMetadatas
-            .filter(metadata => allSubscriberClasses.indexOf(metadata.constructor) !== -1)
-            .map(metadata => {
-                const constructor: any = metadata.constructor;
-                return this._container ? this._container.get(constructor) : new constructor();
-            });
-        
-        if (subscribers.length > 0)
-            this.getConnection(connectionName).addSubscribers(subscribers);
+            .findOrmEventSubscribersForClasses(allSubscriberClasses)
+            .map(metadata => this.createContainerInstance(metadata.constructor));
+
+        this.getConnection(connectionName).addSubscribers(subscribers);
+    }
+
+    /**
+     * Imports entities for the given connection. If connection name is not given then default connection is used.
+     */
+    importEntities(entities: Function[]): void;
+    importEntities(connectionName: string, entities: Function[]): void;
+    importEntities(connectionNameOrEntities: string|Function[], entities?: Function[]): void {
+        let connectionName = "default";
+        if (typeof connectionNameOrEntities === "string") {
+            connectionName = <string> connectionNameOrEntities;
+        } else {
+            entities = <Function[]> connectionNameOrEntities;
+        }
+
+        const metadatas = this.entityMetadataBuilder.build(entities);
+        this.getConnection(connectionName).addMetadatas(metadatas);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    private createContainerInstance(constructor: Function) {
+        return this._container ? this._container.get(constructor) : new (<any> constructor)();
     }
 
 }
