@@ -3,7 +3,6 @@ import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {MysqlSchemaBuilder} from "../schema-builder/MysqlSchemaBuilder";
-import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 
 /**
@@ -15,8 +14,10 @@ export class MysqlDriver implements Driver {
     // Properties
     // -------------------------------------------------------------------------
 
+    connection: Connection;
+    
     private mysql: any;
-    private connection: any;
+    private mysqlConnection: any;
     private connectionOptions: ConnectionOptions;
 
     // -------------------------------------------------------------------------
@@ -46,8 +47,8 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a query builder which can be used to build an sql queries.
      */
-    createQueryBuilder<Entity>(connection: Connection): QueryBuilder<Entity> {
-        return new QueryBuilder<Entity>(connection);
+    createQueryBuilder<Entity>(): QueryBuilder<Entity> {
+        return new QueryBuilder<Entity>(this.connection);
     }
 
     /**
@@ -62,24 +63,24 @@ export class MysqlDriver implements Driver {
      */
     connect(options: ConnectionOptions): Promise<void> {
         this.connectionOptions = options;
-        this.connection = this.mysql.createConnection({
+        this.mysqlConnection = this.mysql.createConnection({
             host: options.host,
             user: options.username,
             password: options.password,
             database: options.database
         });
-        return new Promise<void>((ok, fail) => this.connection.connect((err: any) => err ? fail(err) : ok()));
+        return new Promise<void>((ok, fail) => this.mysqlConnection.connect((err: any) => err ? fail(err) : ok()));
     }
 
     /**
      * Closes connection with database.
      */
     disconnect(): Promise<void> {
-        if (!this.connection) 
+        if (!this.mysqlConnection) 
             throw new Error("Connection is not established, cannot disconnect.");
         
         return new Promise<void>((ok, fail) => {
-            this.connection.end((err: any) => err ? fail(err) : ok());
+            this.mysqlConnection.end((err: any) => err ? fail(err) : ok());
         });
     }
 
@@ -87,9 +88,9 @@ export class MysqlDriver implements Driver {
      * Executes a given SQL query.
      */
     query<T>(query: string): Promise<T> {
-        if (!this.connection) throw new Error("Connection is not established, cannot execute a query.");
-        console.info("executing:", query);
-        return new Promise<any>((ok, fail) => this.connection.query(query, (err: any, result: any) => {
+        if (!this.mysqlConnection) throw new Error("Connection is not established, cannot execute a query.");
+       // console.info("executing:", query);
+        return new Promise<any>((ok, fail) => this.mysqlConnection.query(query, (err: any, result: any) => {
             if (err) {
                 console.error("query failed: ", query);
                 fail(err);
@@ -103,9 +104,9 @@ export class MysqlDriver implements Driver {
      * Clears all tables in the currently connected database.
      */
     clearDatabase(): Promise<void> {
-        if (!this.connection) throw new Error("Connection is not established, cannot execute a query.");
+        if (!this.mysqlConnection) throw new Error("Connection is not established, cannot execute a query.");
         
-        // todo: omprize and make coder better
+        // todo: optrize and make coder better
         
         const query1 = `SET FOREIGN_KEY_CHECKS = 0;`;
         const query2 = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS q FROM information_schema.tables WHERE table_schema = '${this.connectionOptions.database}';`;
@@ -119,6 +120,34 @@ export class MysqlDriver implements Driver {
             })
             .then(() => this.query(query3))
             .then(() => {});
+    }
+
+    /**
+     * Updates rows that match given conditions in the given table.
+     */
+    update(tableName: string, valuesMap: Object, conditions: Object): Promise<void> {
+        const qb = this.createQueryBuilder().update(tableName, valuesMap).from(tableName, "t");
+        Object.keys(conditions).forEach(key => qb.andWhere(key + "=:" + key, { [key]: (<any> conditions)[key] }));
+        return qb.execute().then(() => {});
+    }
+
+    /**
+     * Insert a new row into given table.
+     */
+    insert(tableName: string, keyValues: Object): Promise<any> {
+        const columns = Object.keys(keyValues).join(",");
+        const values  = Object.keys(keyValues).map(key => (<any> keyValues)[key]).join(",");
+        const query   = `INSERT INTO ${tableName}(${columns}) VALUES (${values})`;
+        return this.query(query);
+    }
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    delete(tableName: string, conditions: Object): Promise<void> {
+        const qb = this.createQueryBuilder().delete(tableName);
+        Object.keys(conditions).forEach(key => qb.andWhere(key + "=:" + key, { [key]: (<any> conditions)[key] }));
+        return qb.execute().then(() => {});
     }
 
 }

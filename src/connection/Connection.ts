@@ -32,6 +32,7 @@ export class Connection {
     constructor(name: string, driver: Driver) {
         this._name = name;
         this._driver = driver;
+        this._driver.connection = this;
     }
 
     // -------------------------------------------------------------------------

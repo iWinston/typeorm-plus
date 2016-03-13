@@ -7,6 +7,9 @@ import {InsertOperation} from "./operation/InsertOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 
+/**
+ * Executes PersistOperation in the given connection.
+ */
 export class PersistOperationExecutor {
 
     // -------------------------------------------------------------------------
@@ -20,6 +23,9 @@ export class PersistOperationExecutor {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Executes given persist operation.
+     */
     executePersistOperation(persistOperation: PersistOperation) {
         return Promise.resolve()
             .then(() => this.executeInsertOperations(persistOperation))
@@ -130,32 +136,32 @@ export class PersistOperationExecutor {
             idColumn = metadata.primaryColumn.name;
             id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
         }
-        const query = `UPDATE ${tableName} SET ${relationName}='${relationId}' WHERE ${idColumn}='${id}'`;
-        return this.connection.driver.query(query);
+        return this.connection.driver.update(tableName, { [relationName]: relationId }, { [idColumn]: id });
     }
 
     private update(updateOperation: UpdateOperation) {
         const entity = updateOperation.entity;
         const metadata = this.connection.getMetadata(entity.constructor);
-        const values = updateOperation.columns.map(column => {
-            return column.name + "='" + entity[column.propertyName] + "'";
-        });
-
-        const query = `UPDATE ${metadata.table.name} SET ${values} WHERE ${metadata.primaryColumn.name}='${metadata.getEntityId(entity)}'` ;
-        return this.connection.driver.query(query);
+        const values = updateOperation.columns.reduce((object, column) => {
+            (<any> object)[column.name] = entity[column.propertyName];
+            return object;
+        }, {});
+        return this.connection.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: metadata.getEntityId(entity) });
     }
 
     private updateDeletedRelations(removeOperation: RemoveOperation) { // todo: check if both many-to-one deletions work too
         if (removeOperation.relation.isManyToMany || removeOperation.relation.isOneToMany) return;
-        const value = removeOperation.relation.name + "=NULL";
-        const query = `UPDATE ${removeOperation.metadata.table.name} SET ${value} WHERE ${removeOperation.metadata.primaryColumn.name}='${removeOperation.fromEntityId}'` ;
-        return this.connection.driver.query(query);
+
+        return this.connection.driver.update(
+            removeOperation.metadata.table.name, 
+            { [removeOperation.relation.name]: null },
+            { [removeOperation.metadata.primaryColumn.name]: removeOperation.fromEntityId }
+        );
     }
 
     private delete(entity: any) {
         const metadata = this.connection.getMetadata(entity.constructor);
-        const query = `DELETE FROM ${metadata.table.name} WHERE ${metadata.primaryColumn.name}='${entity[metadata.primaryColumn.propertyName]}'`;
-        return this.connection.driver.query(query);
+        return this.connection.driver.delete(metadata.table.name, { [metadata.primaryColumn.name]: entity[metadata.primaryColumn.propertyName] });
     }
 
     private insert(entity: any) {
@@ -180,8 +186,10 @@ export class PersistOperationExecutor {
             .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.relatedEntityMetadata.primaryColumn.name))
             .map(relation => "'" + entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name] + "'");
 
-        const query = `INSERT INTO ${metadata.table.name}(${columns.concat(relationColumns).join(",")}) VALUES (${values.concat(relationValues).join(",")})`;
-        return this.connection.driver.query(query);
+        const allColumns = columns.concat(relationColumns);
+        const allValues = values.concat(relationValues);
+        
+        return this.connection.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));
     }
 
     private insertJunctions(junctionOperation: JunctionInsertOperation, insertOperations: InsertOperation[]) {
@@ -192,9 +200,7 @@ export class PersistOperationExecutor {
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity1).entityId;
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity2).entityId;
         const values = [id1, id2]; // todo: order may differ, find solution (column.table to compare with entity metadata table?)
-
-        const query = `INSERT INTO ${junctionMetadata.table.name}(${columns.join(",")}) VALUES (${values.join(",")})`;
-        return this.connection.driver.query(query);
+        return this.connection.driver.insert(junctionMetadata.table.name, this.zipObject(columns, values));
     }
 
     private removeJunctions(junctionOperation: JunctionRemoveOperation) {
@@ -204,8 +210,14 @@ export class PersistOperationExecutor {
         const columns = junctionMetadata.columns.map(column => column.name);
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.name];
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.name];
-        const query = `DELETE FROM ${junctionMetadata.table.name} WHERE ${columns[0]}='${id1}' AND ${columns[1]}='${id2}'`;
-        return this.connection.driver.query(query);
+        return this.connection.driver.delete(junctionMetadata.table.name, { [columns[0]]: id1, [columns[1]]: id2 });
+    }
+
+    private zipObject(keys: any[], values: any[]): Object {
+        return keys.reduce((object, column, index) => {
+            (<any> object)[column] = values[index];
+            return object;
+        }, {});
     }
 
 }

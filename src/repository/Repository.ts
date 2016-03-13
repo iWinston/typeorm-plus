@@ -64,7 +64,7 @@ export class Repository<Entity> {
      */
     createQueryBuilder(alias: string): QueryBuilder<Entity> {
         return this.connection.driver
-            .createQueryBuilder<Entity>(this.connection)
+            .createQueryBuilder<Entity>()
             .select(alias)
             .from(this.metadata.target, alias);
     }

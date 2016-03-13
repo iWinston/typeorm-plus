@@ -19,7 +19,9 @@ export class QueryBuilder<Entity> {
     private _aliasMap: AliasMap;
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
-    private froms: { alias: Alias };
+    private fromEntity: { alias: Alias };
+    private fromTableName: string;
+    private updateQuerySet: Object;
     private joins: Join[] = [];
     private groupBys: string[] = [];
     private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
@@ -49,13 +51,43 @@ export class QueryBuilder<Entity> {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    delete(): this {
+    delete(entity?: Function): this;
+    delete(tableName?: string): this;
+    delete(tableNameOrEntity?: string|Function): this {
+        if (tableNameOrEntity instanceof Function) {
+            const aliasName = (<any> tableNameOrEntity).name;
+            const aliasObj = new Alias(aliasName);
+            aliasObj.target = <Function> tableNameOrEntity;
+            this._aliasMap.addMainAlias(aliasObj);
+            this.fromEntity = { alias: aliasObj };
+        } else if (typeof tableNameOrEntity === "string") {
+            this.fromTableName = <string> tableNameOrEntity;
+        }
+
         this.type = "delete";
         return this;
     }
 
-    update(): this {
+    update(updateSet: Object): this;
+    update(entity: Function, updateSet: Object): this;
+    update(tableName: string, updateSet: Object): this;
+    update(tableNameOrEntityOrUpdateSet?: string|Function, updateSet?: Object): this {
+        if (tableNameOrEntityOrUpdateSet instanceof Function) {
+            const aliasName = (<any> tableNameOrEntityOrUpdateSet).name;
+            const aliasObj = new Alias(aliasName);
+            aliasObj.target = <Function> tableNameOrEntityOrUpdateSet;
+            this._aliasMap.addMainAlias(aliasObj);
+            this.fromEntity = { alias: aliasObj };
+            
+        } else if (typeof tableNameOrEntityOrUpdateSet === "object") {
+            updateSet = <Object> tableNameOrEntityOrUpdateSet;
+            
+        } else if (typeof tableNameOrEntityOrUpdateSet === "string") {
+            this.fromTableName = <string> tableNameOrEntityOrUpdateSet;
+        }
+        
         this.type = "update";
+        this.updateQuerySet = updateSet;
         return this;
     }
 
@@ -86,13 +118,17 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    //from(tableName: string, alias: string): this;
-    from(entity: Function, alias?: string): this {
-    //from(entityOrTableName: Function|string, alias: string): this {
-        const aliasObj = new Alias(alias);
-        aliasObj.target = entity;
-        this._aliasMap.addMainAlias(aliasObj);
-        this.froms = { alias: aliasObj };
+    from(tableName: string, alias: string): this;
+    from(entity: Function, alias?: string): this;
+    from(entityOrTableName: Function|string, alias: string): this {
+        if (entityOrTableName instanceof Function) {
+            const aliasObj = new Alias(alias);
+            aliasObj.target = <Function> entityOrTableName;
+            this._aliasMap.addMainAlias(aliasObj);
+            this.fromEntity = { alias: aliasObj };
+        } else {
+            this.fromTableName = <string> entityOrTableName;
+        }
         return this;
     }
 
@@ -233,8 +269,8 @@ export class QueryBuilder<Entity> {
         return sql;
     }
     
-    execute(): Promise<void> {
-        return this.connection.driver.query(this.getSql()).then(() => {});
+    execute(): Promise<any> {
+        return this.connection.driver.query(this.getSql());
     }
     
     getScalarResults<T>(): Promise<T[]> {
@@ -266,16 +302,28 @@ export class QueryBuilder<Entity> {
     
     protected createSelectExpression() {
         // todo throw exception if selects or from is missing
-        const metadata =  this._aliasMap.getEntityMetadataByAlias(this.froms.alias);
-        const tableName = metadata.table.name;
-        const alias = this.froms.alias.name;
-        const allSelects: string[] = [];
 
-        // add select from the main table
-        if (this.selects.indexOf(alias) !== -1)
-            metadata.columns.forEach(column => {
-                allSelects.push(alias + "." + column.name + " AS " + alias + "_" + column.name);
-            });
+        let alias: string, tableName: string;
+        const allSelects: string[] = [];
+        
+        if (this.fromEntity) {
+            const metadata = this._aliasMap.getEntityMetadataByAlias(this.fromEntity.alias);
+            tableName = metadata.table.name;
+            alias = this.fromEntity.alias.name;
+
+            // add select from the main table
+            if (this.selects.indexOf(alias) !== -1) {
+                metadata.columns.forEach(column => {
+                    allSelects.push(alias + "." + column.name + " AS " + alias + "_" + column.name);
+                });
+            }
+            
+        } else if (this.fromTableName) {
+            tableName = this.fromTableName;
+            
+        } else {
+            throw new Error("No from given");
+        }
 
         // add selects from joins
         this.joins
@@ -292,13 +340,24 @@ export class QueryBuilder<Entity> {
             return select !== alias && !this.joins.find(join => join.alias.name === select);
         }).forEach(select => allSelects.push(select));
         
+        // if still selection is empty, then simply set it to all (*)
+        if (allSelects.length === 0)
+            allSelects.push("*");
+        
+        // create a selection query
         switch (this.type) {
             case "select":
                 return "SELECT " + allSelects.join(", ") + " FROM " + tableName + " " + alias;
-            case "update":
-                return "UPDATE " + tableName + " " + alias;
             case "delete":
-                return "DELETE " + tableName + " " + alias;
+                return "DELETE FROM " + tableName + " " + (alias ? alias : "");
+            case "update":
+                const updateSet = Object.keys(this.updateQuerySet).map(key => key + "=:updateQuerySet_" + key);
+                const params = Object.keys(this.updateQuerySet).reduce((object, key) => {
+                    (<any> object)["updateQuerySet_" + key] = (<any> this.updateQuerySet)[key];
+                    return object;
+                }, {});
+                this.addParameters(params);
+                return "UPDATE " + tableName + " " + (alias ? alias : "") + " SET " + updateSet;
         }
         return "";
     }
@@ -306,12 +365,12 @@ export class QueryBuilder<Entity> {
     protected createWhereExpression() {
         if (!this.wheres || !this.wheres.length) return "";
 
-        return " WHERE " + this.wheres.map(where => {
+        return " WHERE " + this.wheres.map((where, index) => {
             switch (where.type) {
                 case "and":
-                    return "AND " + where.condition;
+                    return (index > 0 ? "AND " : "") + where.condition;
                 case "or":
-                    return "OR " + where.condition;
+                    return (index > 0 ? "OR " : "") + where.condition;
                 default:
                     return where.condition;
             }
@@ -392,7 +451,8 @@ export class QueryBuilder<Entity> {
 
     protected replaceParameters(sql: string) {
         Object.keys(this.parameters).forEach(key => {
-            sql = sql.replace(":" + key, '"' + this.parameters[key] + '"'); // .replace('"', '')
+            const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? '"' + this.parameters[key] + '"' : "NULL";
+            sql = sql.replace(":" + key, value); // .replace('"', '')
         });
         return sql;
     }
