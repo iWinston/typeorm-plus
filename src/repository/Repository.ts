@@ -4,8 +4,9 @@ import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {EntityPersistOperationsBuilder, PersistOperation} from "./EntityPersistOperationsBuilder";
-import {EntityPersister} from "./EntityPersister";
+import {PersistOperation} from "../persistment/operation/PersistOperation";
+import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
+import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 
 // todo: think how we can implement queryCount, queryManyAndCount
 // todo: extract non safe methods from repository (removeById, removeByConditions)
@@ -110,7 +111,7 @@ export class Repository<Entity> {
      * Persists (saves) a given entity in the database.
      */
     persist(entity: Entity) {
-        const persister = new EntityPersister(this.connection);
+        const persister = new PersistOperationExecutor(this.connection);
         const promise = !this.hasId(entity) ? Promise.resolve(null) : this.initialize(entity);
         return promise.then(dbEntity => {
             const persistOperation = this.difference(dbEntity, entity);
@@ -122,7 +123,7 @@ export class Repository<Entity> {
      * Removes a given entity from the database.
      */
     remove(entity: Entity) {
-        const persister = new EntityPersister(this.connection);
+        const persister = new PersistOperationExecutor(this.connection);
         return this.initialize(entity).then(dbEntity => {
             // make this only to remove
             const persistOperation = this.difference(dbEntity, entity);
@@ -177,7 +178,7 @@ export class Repository<Entity> {
      * that contains all information about what needs to be persisted.
      */
     private difference(entity1: Entity, entity2: Entity): PersistOperation {
-        const builder = new EntityPersistOperationsBuilder(this.connection);
+        const builder = new EntityPersistOperationBuilder(this.connection);
         return builder.difference(this.metadata, entity1, entity2);
     }
 

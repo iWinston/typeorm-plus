@@ -1,15 +1,24 @@
-import {
-    JunctionRemoveOperation,
-    InsertOperation,
-    JunctionInsertOperation,
-    PersistOperation, UpdateByRelationOperation, UpdateOperation, RemoveOperation
-} from "./EntityPersistOperationsBuilder";
 import {Connection} from "../connection/Connection";
+import {PersistOperation} from "./operation/PersistOperation";
+import {RemoveOperation} from "./operation/RemoveOperation";
+import {UpdateOperation} from "./operation/UpdateOperation";
+import {JunctionInsertOperation} from "./operation/JunctionInsertOperation";
+import {InsertOperation} from "./operation/InsertOperation";
+import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
+import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 
-export class EntityPersister {
+export class PersistOperationExecutor {
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
     
     constructor(private connection: Connection) {
     }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
 
     executePersistOperation(persistOperation: PersistOperation) {
         return Promise.resolve()
@@ -62,6 +71,10 @@ export class EntityPersister {
     
             });
     }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
 
     private updateByRelation(operation: UpdateByRelationOperation, insertOperations: InsertOperation[]) {
         let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;

@@ -1,104 +1,51 @@
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
-import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata-builder/metadata/RelationMetadata";
 import {Connection} from "../connection/Connection";
+import {PersistOperation} from "./operation/PersistOperation";
+import {InsertOperation} from "./operation/InsertOperation";
+import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
+import {JunctionInsertOperation} from "./operation/JunctionInsertOperation";
+import {UpdateOperation} from "./operation/UpdateOperation";
 
-export interface EntityWithId {
+interface EntityWithId {
     id: any;
     entity: any;
 }
 
-export interface InsertOperation {
-    entity: any;
-    entityId: number;
-}
+/**
+  * 1. collect all exist objects from the db entity
+  * 2. collect all objects from the new entity
+  * 3. first need to go throw all relations of the new entity and:
+  *      3.1. find all objects that are new (e.g. cascade="insert") by comparing ids from the exist objects
+  *      3.2. check if relation has rights to do cascade operation and throw exception if it cannot
+  *      3.3. save new objects for insert operation
+  * 4. second need to go throw all relations of the db entity and:
+  *      4.1. find all objects that are removed (e.g. cascade="remove") by comparing data with collected objects of the new entity
+  *      4.2. check if relation has rights to do cascade operation and throw exception if it cannot
+  *      4.3. save new objects for remove operation
+  * 5. third need to go throw collection of all new entities
+  *      5.1. compare with entities from the collection of db entities, find difference and generate a change set
+  *      5.2. check if relation has rights to do cascade operation and throw exception if it cannot
+  *      5.3.
+  * 6. go throw all relations and find junction
+  *      6.1.
+ *      
+  * if relation has "all" then all of above:
+  * if relation has "insert" it can insert a new entity
+  * if relation has "update" it can only update related entity
+  * if relation has "remove" it can only remove related entity
+ */
+export class EntityPersistOperationBuilder {
 
-export interface RemoveOperation {
-    entity: any;
-    fromEntityId: any;
-    metadata: EntityMetadata;
-    relation: RelationMetadata;
-}
-
-export interface UpdateOperation {
-    entity: any;
-    columns: ColumnMetadata[];
-}
-
-export interface JunctionInsertOperation {
-    metadata: EntityMetadata;
-    entity1: any;
-    entity2: any;
-}
-
-export interface JunctionRemoveOperation {
-    metadata: EntityMetadata;
-    entity1: any;
-    entity2: any;
-}
-
-export class UpdateByRelationOperation {
-    constructor(public targetEntity: any,
-                public insertOperation: InsertOperation,
-                public updatedRelation: RelationMetadata) {
-    }
-}
-
-export class PersistOperation {
-    inserts: InsertOperation[];
-    removes: RemoveOperation[];
-    updates: UpdateOperation[];
-    junctionInserts: JunctionInsertOperation[];
-    junctionRemoves: JunctionRemoveOperation[];
-    updatesByRelations: UpdateByRelationOperation[];
-    
-    constructor(inserts: InsertOperation[], 
-                removes: RemoveOperation[], 
-                updates: UpdateOperation[],
-                junctionInserts: JunctionInsertOperation[],
-                junctionRemoves: JunctionRemoveOperation[],
-                updatesByRelations: UpdateByRelationOperation[]) {
-        
-        this.inserts = inserts;
-        this.removes = removes;
-        this.updates = updates;
-        this.junctionInserts = junctionInserts;
-        this.junctionRemoves = junctionRemoves;
-        this.updatesByRelations = updatesByRelations;
-    }
-}
-
-/*export class JunctionEntity {
-    relation: RelationMetadata;
-    entity1: any;
-    entity2: any;
-}*/
-
-export class EntityPersistOperationsBuilder {
-
-    // 1. collect all exist objects from the db entity
-    // 2. collect all objects from the new entity
-    // 3. first need to go throw all relations of the new entity and:
-    //      3.1. find all objects that are new (e.g. cascade="insert") by comparing ids from the exist objects
-    //      3.2. check if relation has rights to do cascade operation and throw exception if it cannot
-    //      3.3. save new objects for insert operation
-    // 4. second need to go throw all relations of the db entity and:
-    //      4.1. find all objects that are removed (e.g. cascade="remove") by comparing data with collected objects of the new entity
-    //      4.2. check if relation has rights to do cascade operation and throw exception if it cannot
-    //      4.3. save new objects for remove operation
-    // 5. third need to go throw collection of all new entities
-    //      5.1. compare with entities from the collection of db entities, find difference and generate a change set
-    //      5.2. check if relation has rights to do cascade operation and throw exception if it cannot
-    //      5.3.
-    // 6. go throw all relations and find junction
-    //      6.1.
-
-    // if relation has "all" then all of above:
-    // if relation has "insert" it can insert a new entity
-    // if relation has "update" it can only update related entity
-    // if relation has "remove" it can only remove related entity
+    // -------------------------------------------------------------------------
+    // Properties
+    // -------------------------------------------------------------------------
     
     private strictCascadesMode = false;
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
 
     constructor(private connection: Connection) {
     }
@@ -119,51 +66,6 @@ export class EntityPersistOperationsBuilder {
         const junctionInsertOperations = this.findJunctionInsertOperations(metadata, entity2, dbEntities);
         const junctionRemoveOperations = this.findJunctionRemoveOperations(metadata, entity1, allEntities);
         const updatesByRelationsOperations = this.updateRelations(insertOperations, entity2);
-        //const insertJunctionOperations = ;//this.a();
-        console.log("---------------------------------------------------------");
-        console.log("DB ENTITY");
-        console.log("---------------------------------------------------------");
-        console.log(entity1);
-        console.log("---------------------------------------------------------");
-        console.log("NEW ENTITY");
-        console.log("---------------------------------------------------------");
-        console.log(entity2);
-        console.log("---------------------------------------------------------");
-        console.log("DB ENTITIES");
-        console.log("---------------------------------------------------------");
-        console.log(dbEntities);
-        console.log("---------------------------------------------------------");
-        console.log("ALL NEW ENTITIES");
-        console.log("---------------------------------------------------------");
-        console.log(allEntities);
-        console.log("---------------------------------------------------------");
-        console.log("INSERTED ENTITIES");
-        console.log("---------------------------------------------------------");
-        console.log(insertOperations);
-        console.log("---------------------------------------------------------");
-        console.log("REMOVED ENTITIES");
-        console.log("---------------------------------------------------------");
-        console.log(removeOperations);
-        console.log("---------------------------------------------------------");
-        console.log("UPDATED ENTITIES");
-        console.log("---------------------------------------------------------");
-        console.log(updateOperations);
-        console.log("---------------------------------------------------------");
-        console.log("JUNCTION INSERT ENTITIES");
-        console.log("---------------------------------------------------------");
-        console.log(junctionInsertOperations);
-        console.log("---------------------------------------------------------");
-        console.log("JUNCTION REMOVE ENTITIES");
-        console.log("---------------------------------------------------------");
-        console.log(junctionRemoveOperations);
-        console.log("---------------------------------------------------------");
-        console.log("UPDATES BY RELATIONS");
-        console.log("---------------------------------------------------------");
-        console.log(updatesByRelationsOperations);
-        console.log("---------------------------------------------------------");
-
-        // now normalize inserted entities
-        // no need probably, since we cant rely on deepness because of recursion: insertOperations.sort((a, b) => a.deepness + b.deepness);
         
         // todo: implement duplicates removal later
         // remove duplicates from inserted entities (todo: shall we check if duplicates differ and throw exception?)
@@ -208,8 +110,9 @@ export class EntityPersistOperationsBuilder {
                     operations.concat(subOperations);
                 });
             } else if (value) {
-                if (value === insertOperation.entity)
+                if (value === insertOperation.entity) {
                     operations.push(new UpdateByRelationOperation(entityToSearchIn, insertOperation, relation));
+                }
 
                 const subOperations = this.findRelationsWithEntityInside(insertOperation, value);
                 operations.concat(subOperations);
