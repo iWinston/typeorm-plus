@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {TypeORM} from "../../src/TypeORM";
+import {createMysqlConnection} from "../../src/typeorm";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
@@ -26,7 +26,7 @@ describe("insertion", function() {
     // connect to db
     let connection: Connection;
     before(function() {
-        return TypeORM.createMysqlConnection(options, [Post]).then(conn => {
+        return createMysqlConnection(options, [Post]).then(conn => {
             connection = conn;
         }).catch(e => console.log("Error during connection to db: " + e));
     });

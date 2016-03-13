@@ -1,4 +1,4 @@
-import {TypeORM} from "../../src/TypeORM";
+import {createMysqlConnection} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {PostCategory} from "./entity/PostCategory";
@@ -17,7 +17,7 @@ let options = {
     autoSchemaCreate: true
 };
 
-TypeORM.createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(connection => {
+createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(connection => {
 
     let details1 = new PostDetails();
     details1.comment = "People";

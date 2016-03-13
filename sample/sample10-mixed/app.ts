@@ -1,4 +1,4 @@
-import {TypeORM} from "../../src/TypeORM";
+import {createMysqlConnection} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {Image} from "./entity/Image";
@@ -17,7 +17,7 @@ let options = {
     autoSchemaCreate: true
 };
 
-TypeORM.createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover, Category, Chapter]).then(connection => {
+createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover, Category, Chapter]).then(connection => {
 
     let postRepository = connection.getRepository<Post>(Post);
 
