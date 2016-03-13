@@ -1,9 +1,10 @@
 export class BroadcasterNotFoundError extends Error {
     name = "BroadcasterNotFoundError";
 
-    constructor(documentClassOrName: string|Function) {
+    constructor(entityClassOrName: string|Function) {
         super();
-        this.message = `No broadcaster for ${documentClassOrName} has been found!`;
+        const name = entityClassOrName instanceof Function ? (<any> entityClassOrName).name : entityClassOrName;
+        this.message = `No broadcaster for "${name}" was found. Looks like this entity is not registered in your connection?`;
     }
 
 }

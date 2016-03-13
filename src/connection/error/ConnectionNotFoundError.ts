@@ -3,7 +3,7 @@ export class ConnectionNotFoundError extends Error {
 
     constructor(name: string) {
         super();
-        this.message = `No connection ${name} found.`;
+        this.message = `Connection "${name}" was not found.`;
     }
 
 }

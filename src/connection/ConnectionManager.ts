@@ -25,11 +25,8 @@ export class ConnectionManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(entityMetadataBuilder?: EntityMetadataBuilder) {
-        if (!entityMetadataBuilder)
-            entityMetadataBuilder = new EntityMetadataBuilder(defaultMetadataStorage, new DefaultNamingStrategy());
-
-        this.entityMetadataBuilder = entityMetadataBuilder;
+    constructor() {
+        this.entityMetadataBuilder = new EntityMetadataBuilder(defaultMetadataStorage, new DefaultNamingStrategy());
     }
 
     // -------------------------------------------------------------------------
@@ -37,8 +34,7 @@ export class ConnectionManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Sets a container that can be used in your custom subscribers. This allows you to inject services in your
-     * classes.
+     * Sets a container that can be used in custom user subscribers. This allows to inject services in user classes.
      */
     set container(container: { get(someClass: any): any }) {
         this._container = container;
@@ -62,7 +58,8 @@ export class ConnectionManager {
     }
 
     /**
-     * Gets the specific connection.
+     * Gets registered connection with the given name. If connection name is not given then it will get a default
+     * connection.
      */
     getConnection(name: string = "default"): Connection {
         const foundConnection = this.connections.find(connection => connection.name === name);
@@ -73,7 +70,7 @@ export class ConnectionManager {
     }
 
     /**
-     * Imports entities to the given connection.
+     * Imports entities for the given connection. If connection name is not given then default connection is used.
      */
     importEntities(entities: Function[]): void;
     importEntities(connectionName: string, entities: Function[]): void;
@@ -85,13 +82,14 @@ export class ConnectionManager {
             entities = <Function[]> connectionNameOrEntities;
         }
 
-        let metadatas = this.entityMetadataBuilder.build(entities);
+        const metadatas = this.entityMetadataBuilder.build(entities);
         if (metadatas.length > 0)
             this.getConnection(connectionName).addMetadatas(metadatas);
     }
 
     /**
-     * Imports entities from the given paths.
+     * Imports entities from the given paths (directories) for the given connection. If connection name is not given
+     * then default connection is used.
      */
     importEntitiesFromDirectories(paths: string[]): void;
     importEntitiesFromDirectories(connectionName: string, paths: string[]): void;
@@ -103,8 +101,8 @@ export class ConnectionManager {
             paths = <string[]> connectionNameOrPaths;
         }
 
-        let entitiesInFiles = OrmUtils.requireAll(paths);
-        let allEntities = entitiesInFiles.reduce((allEntities, entities) => {
+        const entitiesInFiles = OrmUtils.requireAll(paths);
+        const allEntities = entitiesInFiles.reduce((allEntities, entities) => {
             return allEntities.concat(Object.keys(entities).map(key => entities[key]));
         }, []);
         
@@ -112,7 +110,8 @@ export class ConnectionManager {
     }
 
     /**
-     * Imports subscribers from the given paths.
+     * Imports subscribers from the given paths (directories) for the given connection. If connection name is not given
+     * then default connection is used.
      */
     importSubscribersFromDirectories(paths: string[]): void;
     importSubscribersFromDirectories(connectionName: string, paths: string[]): void;
@@ -131,9 +130,10 @@ export class ConnectionManager {
             .ormEventSubscriberMetadatas
             .filter(metadata => allSubscriberClasses.indexOf(metadata.constructor) !== -1)
             .map(metadata => {
-                let constructor: any = metadata.constructor;
+                const constructor: any = metadata.constructor;
                 return this._container ? this._container.get(constructor) : new constructor();
             });
+        
         if (subscribers.length > 0)
             this.getConnection(connectionName).addSubscribers(subscribers);
     }

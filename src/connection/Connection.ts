@@ -7,6 +7,7 @@ import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {BroadcasterNotFoundError} from "./error/BroadcasterNotFoundError";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {SchemaCreator} from "../schema-creator/SchemaCreator";
+import {MetadataNotFoundError} from "./error/MetadataNotFoundError";
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -88,7 +89,8 @@ export class Connection {
      */
     connect(options: ConnectionOptions): Promise<void> {
         const schemaCreator = new SchemaCreator(this);
-        return this._driver.connect(options)
+        return this._driver
+            .connect(options)
             .then(() => {
                 if (options.autoSchemaCreate === true)
                     return schemaCreator.create();
@@ -103,7 +105,7 @@ export class Connection {
     }
 
     /**
-     * Adds a new entity metadatas.
+     * Registers entity metadatas for the current connection.
      */
     addMetadatas(metadatas: EntityMetadata[]) {
         this._metadatas     = this._metadatas.concat(metadatas);
@@ -112,7 +114,7 @@ export class Connection {
     }
 
     /**
-     * Adds subscribers to this connection.
+     * Registers subscribers for the current connection.
      */
     addSubscribers(subscribers: OrmSubscriber<any>[]) {
         this._subscribers = this._subscribers.concat(subscribers);
@@ -131,13 +133,12 @@ export class Connection {
     }
 
     /**
-     * Gets the metadata for the given entity class.
+     * Gets the entity metadata for the given entity class.
      */
     getMetadata(entityClass: Function): EntityMetadata {
         const metadata = this.metadatas.find(metadata => metadata.target === entityClass);
-        // todo:
-        // if (!metadata)
-        //    throw new MetadataNotFoundError(entityClass);
+        if (!metadata)
+           throw new MetadataNotFoundError(entityClass);
 
         return metadata;
     }
@@ -146,7 +147,7 @@ export class Connection {
      * Gets the broadcaster for the given entity class.
      */
     getBroadcaster<Entity>(entityClass: Function): OrmBroadcaster<Entity> {
-        let metadata = this.broadcasters.find(broadcaster => broadcaster.entityClass === entityClass);
+        const metadata = this.broadcasters.find(broadcaster => broadcaster.entityClass === entityClass);
         if (!metadata)
             throw new BroadcasterNotFoundError(entityClass);
 
