@@ -6,27 +6,15 @@ import {JunctionRemoveOperation} from "./JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./UpdateByRelationOperation";
 
 export class PersistOperation {
+    
+    // todo: what if we have two same entities in the insert operations?
+    
     inserts: InsertOperation[];
     removes: RemoveOperation[];
     updates: UpdateOperation[];
     junctionInserts: JunctionInsertOperation[];
     junctionRemoves: JunctionRemoveOperation[];
     updatesByRelations: UpdateByRelationOperation[];
-    
-    constructor(inserts: InsertOperation[], 
-                removes: RemoveOperation[], 
-                updates: UpdateOperation[],
-                junctionInserts: JunctionInsertOperation[],
-                junctionRemoves: JunctionRemoveOperation[],
-                updatesByRelations: UpdateByRelationOperation[]) {
-        
-        this.inserts = inserts;
-        this.removes = removes;
-        this.updates = updates;
-        this.junctionInserts = junctionInserts;
-        this.junctionRemoves = junctionRemoves;
-        this.updatesByRelations = updatesByRelations;
-    }
     
     log() {
         console.log("---------------------------------------------------------");

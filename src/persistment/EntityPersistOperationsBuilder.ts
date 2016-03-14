@@ -60,41 +60,161 @@ export class EntityPersistOperationBuilder {
     difference(metadata: EntityMetadata, entity1: any, entity2: any): PersistOperation {
         const dbEntities = this.extractObjectsById(entity1, metadata);
         const allEntities = this.extractObjectsById(entity2, metadata);
-        const insertOperations = this.findCascadeInsertedEntities(metadata, entity2, dbEntities, null);
-        const removeOperations = this.findCascadeRemovedEntities(metadata, entity1, allEntities);
-        const updateOperations = this.findCascadeUpdateEntities(metadata, entity1, entity2, null);
-        const junctionInsertOperations = this.findJunctionInsertOperations(metadata, entity2, dbEntities);
-        const junctionRemoveOperations = this.findJunctionRemoveOperations(metadata, entity1, allEntities);
-        const updatesByRelationsOperations = this.updateRelations(insertOperations, entity2);
         
-        // todo: implement duplicates removal later
-        // remove duplicates from inserted entities (todo: shall we check if duplicates differ and throw exception?)
-        /*const uniqueInsertOperations = insertOperations.map(insertOperation => {
-            const otherInsertOperations = insertOperations.filter(o => o !== insertOperation && o.entity === insertOperation.entity);
-            const otherRelations = otherInsertOperations.reduce((relations, o) => {
-                return relations.concat(o.relations);
-            }, <RelationMetadata[]> []);
-            return <InsertOperation> {
-                entity: insertOperation.entity,
-                relations: insertOperation.relations.concat(otherRelations)
-            };
-        });*/
-        
-        // sort inserts
-        return new PersistOperation(
-            insertOperations, 
-            removeOperations, 
-            updateOperations, 
-            junctionInsertOperations, 
-            junctionRemoveOperations,
-            updatesByRelationsOperations
-        );
+        const persistOperation = new PersistOperation();
+        persistOperation.inserts = this.findCascadeInsertedEntities(entity2, dbEntities, null);
+        persistOperation.removes = this.findCascadeRemovedEntities(metadata, entity1, allEntities);
+        persistOperation.updates = this.findCascadeUpdateEntities(metadata, entity1, entity2, null);
+        persistOperation.junctionInserts = this.findJunctionInsertOperations(metadata, entity2, dbEntities);
+        persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, entity1, allEntities);
+        persistOperation.updatesByRelations = this.updateRelations(persistOperation.inserts, entity2);
+
+        return persistOperation;
     }
     
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
 
+    private findCascadeInsertedEntities(newEntity: any, 
+                                        dbEntities: EntityWithId[], 
+                                        fromRelation: RelationMetadata): InsertOperation[] {
+
+        const metadata = this.connection.getMetadata(newEntity.constructor);
+        const operations: InsertOperation[] = [];
+        const isObjectNew = !dbEntities.find(dbEntity => {
+            return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor === metadata.target;
+        });
+
+        if (isObjectNew && fromRelation && !fromRelation.isCascadeInsert) {
+            if (this.strictCascadesMode) {
+                throw new Error("Cascade inserts are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
+            } else {
+                return [];
+            }
+        }
+
+        if (isObjectNew)
+            operations.push(new InsertOperation(newEntity));
+
+        return metadata.relations
+            .filter(relation => !!newEntity[relation.propertyName])
+            .reduce((insertedEntities, relation) => {
+                const value = newEntity[relation.propertyName];
+                if (value instanceof Array) {
+                    value.forEach((subEntity: any) => {
+                        const subInserted = this.findCascadeInsertedEntities(subEntity, dbEntities, relation);
+                        insertedEntities = insertedEntities.concat(subInserted);
+                    });
+                } else {
+                    const subInserted = this.findCascadeInsertedEntities(value, dbEntities, relation);
+                    insertedEntities = insertedEntities.concat(subInserted);
+                }
+
+                return insertedEntities;
+            }, operations);
+    }
+
+    private findCascadeUpdateEntities(metadata: EntityMetadata, dbEntity: any, newEntity: any, fromRelation: RelationMetadata): UpdateOperation[] {
+        if (!dbEntity)
+            return [];
+
+        const updatedEntities: any[] = [];
+        const diff = this.diffColumns(metadata, newEntity, dbEntity);
+        if (diff.length && fromRelation && !fromRelation.isCascadeUpdate) {
+            if (this.strictCascadesMode) {
+                throw new Error("Cascade updates are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
+            } else {
+                return [];
+            }
+        }
+
+        if (diff.length) {
+            updatedEntities.push(new UpdateOperation(newEntity, diff));
+        }
+
+        return metadata.relations
+            .filter(relation => newEntity[relation.propertyName] && dbEntity[relation.propertyName])
+            .reduce((updatedColumns, relation) => {
+                const relMetadata = relation.relatedEntityMetadata;
+                const relationIdColumnName = relMetadata.primaryColumn.name;
+                if (newEntity[relation.propertyName] instanceof Array) {
+                    newEntity[relation.propertyName].forEach((subEntity: any) => {
+                        const subDbEntity = (dbEntity[relation.propertyName] as any[]).find(subDbEntity => {
+                            return subDbEntity[relationIdColumnName] === subEntity[relationIdColumnName];
+                        });
+                        if (subDbEntity) {
+                            const relationUpdatedColumns = this.findCascadeUpdateEntities(relMetadata, subDbEntity, subEntity, relation);
+                            updatedColumns = updatedColumns.concat(relationUpdatedColumns);
+                        }
+
+                    });
+                } else {
+                    const relationUpdatedColumns = this.findCascadeUpdateEntities(relMetadata,  dbEntity[relation.propertyName], newEntity[relation.propertyName], relation);
+                    updatedColumns = updatedColumns.concat(relationUpdatedColumns);
+                }
+
+                return updatedColumns;
+            }, updatedEntities);
+    }
+
+    private findCascadeRemovedEntities(metadata: EntityMetadata, dbEntity: any, newEntities: EntityWithId[]): any[] {
+        if (!dbEntity)
+            return [];
+
+        return metadata.relations
+            .filter(relation => !!dbEntity[relation.propertyName])
+            .reduce((removedEntities, relation) => {
+                const relationIdColumnName = relation.relatedEntityMetadata.primaryColumn.name;
+                const relMetadata = relation.relatedEntityMetadata;
+                if (dbEntity[relation.propertyName] instanceof Array) { // todo: propertyName or name here?
+                    dbEntity[relation.propertyName].forEach((subEntity: any) => {
+                        const isObjectRemoved = !newEntities.find(newEntity => {
+                            return newEntity.id === subEntity[relationIdColumnName] && newEntity.entity.constructor === relMetadata.target;
+                        });
+                        if (isObjectRemoved && relation.isCascadeRemove)
+                            removedEntities.push({
+                                entity: subEntity,
+                                fromEntityId: dbEntity[metadata.primaryColumn.name],
+                                metadata: metadata,
+                                relation: relation
+                            });
+
+                        removedEntities = removedEntities.concat(this.findCascadeRemovedEntities(relMetadata, subEntity, newEntities));
+                    });
+                } else {
+                    const relationId = dbEntity[relation.propertyName][relationIdColumnName];
+                    const isObjectRemoved = !newEntities.find(newEntity => {
+                        return newEntity.id === relationId && newEntity.entity.constructor === relMetadata.target;
+                    });
+                    if (isObjectRemoved && relation.isCascadeRemove)
+                        removedEntities.push({
+                            entity: dbEntity[relation.propertyName],
+                            fromEntityId: dbEntity[metadata.primaryColumn.name],
+                            metadata: metadata,
+                            relation: relation
+                        });
+
+                    removedEntities = removedEntities.concat(this.findCascadeRemovedEntities(relMetadata, dbEntity[relation.propertyName], newEntities));
+                }
+
+                return removedEntities;
+            }, []);
+    }
+
+    /**
+     * To update relation, you need:
+     *   update table where this relation (owner side)
+     *   set its relation property to inserted id
+     *   where
+     *
+     */
+
+    private updateRelations(insertOperations: InsertOperation[], newEntity: any): UpdateByRelationOperation[] {
+        return insertOperations.reduce((operations, insertOperation) => {
+            return operations.concat(this.findRelationsWithEntityInside(insertOperation, newEntity));
+        }, <UpdateByRelationOperation[]> []);
+    }
 
     private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchIn: any) {
         const metadata = this.connection.getMetadata(entityToSearchIn.constructor);
@@ -121,24 +241,10 @@ export class EntityPersistOperationBuilder {
             return operations;
         }, <UpdateByRelationOperation[]> []);
     }
-
-    /**
-     * To update relation, you need:
-     *   update table where this relation (owner side)
-     *   set its relation property to inserted id
-     *   where
-     *
-     */
-
-    private updateRelations(insertOperations: InsertOperation[], newEntity: any): UpdateByRelationOperation[] {
-        return insertOperations.reduce((operations, insertOperation) => {
-            return operations.concat(this.findRelationsWithEntityInside(insertOperation, newEntity));
-        }, <UpdateByRelationOperation[]> []);
-    }
     
     private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[]): JunctionInsertOperation[] {
         const dbEntity = dbEntities.find(dbEntity => {
-            return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor.name === metadata.name;
+            return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor === metadata.target;
         });
         return metadata.relations
             .filter(relation => relation.isManyToMany)
@@ -172,7 +278,7 @@ export class EntityPersistOperationBuilder {
             return [];
         
         const newEntity = newEntities.find(newEntity => {
-            return newEntity.id === dbEntity[metadata.primaryColumn.name] && newEntity.entity.constructor.name === metadata.name;
+            return newEntity.id === dbEntity[metadata.primaryColumn.name] && newEntity.entity.constructor === metadata.target;
         });
         return metadata.relations
             .filter(relation => relation.isManyToMany)
@@ -201,89 +307,6 @@ export class EntityPersistOperationBuilder {
             }, <JunctionInsertOperation[]> []);
     }
 
-    private findCascadeInsertedEntities(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[], fromRelation: RelationMetadata): any[] {
-
-        const insertedEntities: any[] = [];
-        const isObjectNew = !dbEntities.find(dbEntity => {
-            return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor.name === metadata.name;
-        });
-
-        if (isObjectNew && fromRelation && !fromRelation.isCascadeInsert) {
-            if (this.strictCascadesMode) {
-                throw new Error("Cascade inserts are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
-            } else {
-                return [];
-            }
-        }
-
-        if (isObjectNew)
-            insertedEntities.push({
-                entity: newEntity
-            });
-
-        return metadata.relations
-            .filter(relation => !!newEntity[relation.propertyName])
-            .reduce((insertedEntities, relation) => {
-                const relMetadata = relation.relatedEntityMetadata;
-                const value = newEntity[relation.propertyName];
-                if (value instanceof Array) {
-                    value.forEach((subEntity: any) => {
-                        const subInserted = this.findCascadeInsertedEntities(relMetadata, subEntity, dbEntities, relation);
-                        insertedEntities = insertedEntities.concat(subInserted);
-                    });
-                } else {
-                    const subInserted = this.findCascadeInsertedEntities(relMetadata, value, dbEntities, relation);
-                    insertedEntities = insertedEntities.concat(subInserted);
-                }
-
-                return insertedEntities;
-            }, insertedEntities);
-    }
-    
-    private findCascadeRemovedEntities(metadata: EntityMetadata, dbEntity: any, newEntities: EntityWithId[]): any[] {
-        if (!dbEntity)
-            return [];
-        
-        return metadata.relations
-            .filter(relation => !!dbEntity[relation.propertyName])
-            .reduce((removedEntities, relation) => {
-                const relationIdColumnName = relation.relatedEntityMetadata.primaryColumn.name;
-                const relMetadata = relation.relatedEntityMetadata;
-                if (dbEntity[relation.propertyName] instanceof Array) { // todo: propertyName or name here?
-                    dbEntity[relation.propertyName].forEach((subEntity: any) => {
-                        const isObjectRemoved = !newEntities.find(newEntity => {
-                            return newEntity.id === subEntity[relationIdColumnName] && newEntity.entity.constructor.name === relMetadata.name;
-                        });
-                        if (isObjectRemoved && relation.isCascadeRemove)
-                            removedEntities.push({
-                                entity: subEntity,
-                                fromEntityId: dbEntity[metadata.primaryColumn.name],
-                                metadata: metadata,
-                                relation: relation
-                            });
-
-                        removedEntities = removedEntities.concat(this.findCascadeRemovedEntities(relMetadata, subEntity, newEntities));
-                    });
-                } else {
-                    const relationId = dbEntity[relation.propertyName][relationIdColumnName];
-                    const isObjectRemoved = !newEntities.find(newEntity => {
-                        return newEntity.id === relationId && newEntity.entity.constructor.name === relMetadata.name;
-                    });
-                    if (isObjectRemoved && relation.isCascadeRemove)
-                        removedEntities.push({
-                            entity: dbEntity[relation.propertyName],
-                            fromEntityId: dbEntity[metadata.primaryColumn.name],
-                            metadata: metadata,
-                            relation: relation
-                        });
-
-                    removedEntities = removedEntities.concat(this.findCascadeRemovedEntities(relMetadata, dbEntity[relation.propertyName], newEntities));
-                }
-                
-                return removedEntities;
-            }, []);
-    }
-
     /**
      * Extracts unique objects from given entity and all its downside relations.
      */
@@ -305,55 +328,9 @@ export class EntityPersistOperationBuilder {
             .reduce((col1: any[], col2: any[]) => col1.concat(col2), [])  // flatten
             .concat([{
                 id: entity[metadata.primaryColumn.name],
-                entity: entity//.constructor.name
+                entity: entity
             }])
             .filter((entity: any, index: number, allEntities: any[]) => allEntities.indexOf(entity) === index); // unique
-    }
-
-    private findCascadeUpdateEntities(metadata: EntityMetadata, dbEntity: any, newEntity: any, fromRelation: RelationMetadata): UpdateOperation[] {
-        if (!dbEntity)
-            return [];
-
-        const updatedEntities: any[] = [];
-        const diff = this.diffColumns(metadata, newEntity, dbEntity);
-        if (diff.length && fromRelation && !fromRelation.isCascadeUpdate) {
-            if (this.strictCascadesMode) {
-                throw new Error("Cascade updates are not allowed in " + metadata.name + "#" + fromRelation.propertyName);
-            } else {
-                return [];
-            }
-        }
-
-        if (diff.length) {
-            updatedEntities.push({
-                entity: newEntity,
-                columns: diff
-            });
-        }
-        
-        return metadata.relations
-            .filter(relation => newEntity[relation.propertyName] && dbEntity[relation.propertyName])
-            .reduce((updatedColumns, relation) => {
-                const relMetadata = relation.relatedEntityMetadata;
-                const relationIdColumnName = relMetadata.primaryColumn.name;
-                if (newEntity[relation.propertyName] instanceof Array) {
-                    newEntity[relation.propertyName].forEach((subEntity: any) => {
-                        const subDbEntity = (dbEntity[relation.propertyName] as any[]).find(subDbEntity => {
-                            return subDbEntity[relationIdColumnName] === subEntity[relationIdColumnName];
-                        });
-                        if (subDbEntity) {
-                            const relationUpdatedColumns = this.findCascadeUpdateEntities(relMetadata, subDbEntity, subEntity, relation);
-                            updatedColumns = updatedColumns.concat(relationUpdatedColumns);
-                        }
-
-                    });
-                } else {
-                    const relationUpdatedColumns = this.findCascadeUpdateEntities(relMetadata,  dbEntity[relation.propertyName], newEntity[relation.propertyName], relation);
-                    updatedColumns = updatedColumns.concat(relationUpdatedColumns);
-                }
-
-                return updatedColumns;
-            }, updatedEntities);
     }
 
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {

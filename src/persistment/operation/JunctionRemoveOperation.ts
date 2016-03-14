@@ -1,7 +1,8 @@
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 
-export interface JunctionRemoveOperation {
-    metadata: EntityMetadata;
-    entity1: any;
-    entity2: any;
+export class JunctionRemoveOperation {
+    constructor(public metadata: EntityMetadata,
+                public entity1: any,
+                public entity2: any) {
+    }
 }

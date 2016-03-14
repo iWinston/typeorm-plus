@@ -1,9 +1,10 @@
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 
-export interface RemoveOperation {
-    entity: any;
-    fromEntityId: any;
-    metadata: EntityMetadata;
-    relation: RelationMetadata;
+export class RemoveOperation {
+    constructor(public metadata: EntityMetadata,
+                public relation: RelationMetadata,
+                public entity: any,
+                public fromEntityId: any) {
+    }
 }
