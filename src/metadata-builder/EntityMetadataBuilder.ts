@@ -108,7 +108,12 @@ export class EntityMetadataBuilder {
                         oldColumnName: relation.oldColumnName,
                         nullable: relation.isNullable
                     };
-                    relationalColumn = new ColumnMetadata(metadata.target, relation.name, false, false, false, true, options);
+                    relationalColumn = new ColumnMetadata({
+                        target: metadata.target,
+                        propertyName: relation.name,
+                        isVirtual: true,
+                        options: options
+                    });
                     metadata.columns.push(relationalColumn);
                 }
 
@@ -145,8 +150,16 @@ export class EntityMetadataBuilder {
                     name: inverseSideMetadata.table.name + "_" + inverseSideMetadata.primaryColumn.name
                 };
                 const columns = [
-                    new ColumnMetadata(null, null, false, false, false, false, column1options),
-                    new ColumnMetadata(null, null, false, false, false, false, column2options)
+                    new ColumnMetadata({
+                        target: null,
+                        propertyName: null,
+                        options: column1options
+                    }),
+                    new ColumnMetadata({
+                        target: null,
+                        propertyName: null,
+                        options: column2options
+                    })
                 ];
                 const foreignKeys = [
                     new ForeignKeyMetadata(tableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),

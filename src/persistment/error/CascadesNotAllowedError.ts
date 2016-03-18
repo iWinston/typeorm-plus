@@ -6,8 +6,8 @@ export class CascadesNotAllowedError extends Error {
 
     constructor(type: "insert"|"update"|"remove", metadata: EntityMetadata, relation: RelationMetadata) {
         super();
-        const name = entityClassOrName instanceof Function ? (<any> entityClassOrName).name : entityClassOrName;
-        this.message = `No broadcaster for "${name}" was found. Looks like this entity is not registered in your connection?`;
+        const cls = (<any> metadata.target).name;
+        this.message = `Cascades (${type}) are not allowed for the given relation ${cls}#${relation.name}`;
     }
 
 }
