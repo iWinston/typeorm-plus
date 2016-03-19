@@ -38,4 +38,31 @@ export interface ConnectionOptions {
      */
     autoSchemaCreate?: boolean;
 
+    /**
+     * Logging options.
+     */
+    logging?: {
+
+        /**
+         * Some specific logger to be used. By default it console.
+         */
+        logger?: (message: any, level: string) => void;
+
+        /**
+         * Used if you want to log every executed query.
+         */
+        logQueries?: boolean;
+
+        /**
+         * Used if you want to log only failed query.
+         */
+        logOnlyFailedQueries?: boolean;
+
+        /**
+         * Used if you want to log error of the failed query.
+         */
+        logFailedQueryError?: boolean;
+        
+    };
+
 }

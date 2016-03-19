@@ -24,6 +24,7 @@ export class Connection {
     private _subscribers: OrmSubscriber<any>[] = [];
     private _broadcasters: OrmBroadcaster<any>[] = [];
     private _repositories: Repository<any>[] = [];
+    private _options: ConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -81,6 +82,13 @@ export class Connection {
         return this._repositories;
     }
 
+    /**
+     * This connection options and settings.
+     */
+    get options(): ConnectionOptions {
+        return this._options;
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -90,6 +98,7 @@ export class Connection {
      */
     connect(options: ConnectionOptions): Promise<void> {
         const schemaCreator = new SchemaCreator(this);
+        this._options = options;
         return this._driver
             .connect(options)
             .then(() => {

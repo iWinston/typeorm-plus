@@ -14,14 +14,14 @@ export interface Driver {
     native: any;
 
     /**
-     * Gets database name to which this connection is made.
-     */
-    db: string;
-
-    /**
      * Connection used in this driver.
      */
     connection: Connection;
+    
+    /**
+     * Database name to which this connection is made.
+     */
+    db: string;
     
     /**
      * Creates a query builder which can be used to build an sql queries.
@@ -44,27 +44,27 @@ export interface Driver {
     disconnect(): Promise<void>;
 
     /**
-     * Executes a given SQL query.
+     * Executes a given SQL query and returns raw database results.
      */
     query<T>(query: string): Promise<T>;
 
     /**
-     * Clears all tables in the currently connected database.
+     * Removes all tables from the currently connected database.
      */
     clearDatabase(): Promise<void>;
 
     /**
-     * Updates rows that match given conditions in the given table.
+     * Updates rows that match given simple conditions in the given table.
      */
     update(tableName: string, valuesMap: Object, conditions: Object): Promise<void>;
 
     /**
-     * Insert a new row into given table.
+     * Inserts a new row into given table.
      */
     insert(tableName: string, valuesMap: Object): Promise<any>;
 
     /**
-     * Insert a new row into given table.
+     * Performs a simple DELETE query by a given conditions in a given table.
      */
     delete(tableName: string, conditions: Object): Promise<void>;
 
