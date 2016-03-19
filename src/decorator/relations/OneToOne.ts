@@ -6,10 +6,9 @@ import {
 } from "../../metadata-builder/types/RelationTypes";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 
-export function OneToOne<T>(isOwning: boolean, typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
-export function OneToOne<T>(isOwning: boolean, typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
-export function OneToOne<T>(isOwning: boolean, 
-                            typeFunction: RelationTypeInFunction,
+export function OneToOne<T>(typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
+export function OneToOne<T>(typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
+export function OneToOne<T>(typeFunction: RelationTypeInFunction,
                             inverseSideOrOptions: PropertyTypeInFunction<T>|RelationOptions,
                             options?: RelationOptions): Function {
     let inverseSideProperty: PropertyTypeInFunction<T>;
@@ -30,7 +29,7 @@ export function OneToOne<T>(isOwning: boolean,
             relationType: RelationTypes.ONE_TO_ONE,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
-            isOwning: isOwning,
+            isOwning: true,
             options: options
         }));
     };

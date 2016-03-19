@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
 import {Post} from "./Post";
-import {ManyToMany} from "../../../src/decorator/Relations";
+import {ManyToManyInverse} from "../../../src/decorator/Relations";
 
 @Table("sample4_post_author")
 export class PostAuthor {
@@ -12,7 +12,7 @@ export class PostAuthor {
     @Column()
     name: string;
 
-    @ManyToMany<Post>(false, () => Post, post => post.authors)
+    @ManyToManyInverse<Post>(() => Post, post => post.authors)
     posts: Post[];
 
 }

@@ -1,6 +1,6 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {OneToMany, ManyToMany, ManyToOne} from "../../../src/decorator/Relations";
+import {ManyToOne, ManyToManyInverse} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
 import {PostDetails} from "./PostDetails";
 
@@ -13,7 +13,7 @@ export class Category {
     @Column()
     description: string;
 
-    @ManyToMany<Post>(false, type => Post, post => post.categories)
+    @ManyToManyInverse<Post>(type => Post, post => post.categories)
     posts: Post[];
 
     @ManyToOne<PostDetails>(_ => PostDetails, postDetails => postDetails.categories)

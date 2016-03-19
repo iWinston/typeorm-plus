@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
 import {Post} from "./Post";
-import {OneToOne} from "../../../src/decorator/Relations";
+import {OneToOneInverse} from "../../../src/decorator/Relations";
 
 @Table("sample2_post_author")
 export class PostAuthor {
@@ -12,7 +12,8 @@ export class PostAuthor {
     @Column()
     name: string;
 
-    @OneToOne<Post>(false, () => Post, post => post.author)
+    @OneToOneInverse
+    <Post>(() => Post, post => post.author)
     post: Post;
 
 }

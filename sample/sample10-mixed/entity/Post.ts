@@ -22,7 +22,7 @@ export class Post {
     })
     text: string;
 
-    @OneToOne<PostDetails>(true, () => PostDetails, details => details.post, {
+    @OneToOne<PostDetails>(() => PostDetails, details => details.post, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
@@ -51,7 +51,7 @@ export class Post {
     })
     coverId: number;
 
-    @ManyToMany<Category>(true, type => Category, category => category.posts, {
+    @ManyToMany<Category>(type => Category, category => category.posts, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

@@ -1,16 +1,16 @@
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 import {RelationOptions} from "../../metadata-builder/options/RelationOptions";
 import {
-    RelationTypeInFunction, PropertyTypeInFunction,
+    PropertyTypeInFunction, RelationTypeInFunction,
     RelationTypes
 } from "../../metadata-builder/types/RelationTypes";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 
-export function ManyToMany<T>(typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
-export function ManyToMany<T>(typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
-export function ManyToMany<T>(typeFunction: RelationTypeInFunction,
-                              inverseSideOrOptions: PropertyTypeInFunction<T>|RelationOptions,
-                              options?: RelationOptions): Function {
+export function OneToOneInverse<T>(typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
+export function OneToOneInverse<T>(typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
+export function OneToOneInverse<T>(typeFunction: RelationTypeInFunction,
+                                 inverseSideOrOptions: PropertyTypeInFunction<T>|RelationOptions,
+                                 options?: RelationOptions): Function {
     let inverseSideProperty: PropertyTypeInFunction<T>;
     if (typeof inverseSideOrOptions === "object") {
         options = <RelationOptions> inverseSideOrOptions;
@@ -26,12 +26,11 @@ export function ManyToMany<T>(typeFunction: RelationTypeInFunction,
         defaultMetadataStorage.addRelationMetadata(new RelationMetadata({
             target: object.constructor,
             propertyName: propertyName,
-            relationType: RelationTypes.MANY_TO_MANY,
+            relationType: RelationTypes.ONE_TO_ONE,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
-            isOwning: true,
+            isOwning: false,
             options: options
         }));
     };
 }
-

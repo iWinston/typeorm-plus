@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
 import {Post} from "./Post";
-import {OneToOne} from "../../../src/decorator/Relations";
+import {OneToOneInverse} from "../../../src/decorator/Relations";
 
 @Table("sample2_post_image")
 export class PostImage {
@@ -12,7 +12,7 @@ export class PostImage {
     @Column()
     url: string;
 
-    @OneToOne<Post>(false, () => Post, post => post.image)
+    @OneToOneInverse<Post>(() => Post, post => post.image)
     post: Post;
 
 }

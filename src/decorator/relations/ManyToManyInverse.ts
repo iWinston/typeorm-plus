@@ -6,11 +6,11 @@ import {
 } from "../../metadata-builder/types/RelationTypes";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 
-export function ManyToMany<T>(typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
-export function ManyToMany<T>(typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
-export function ManyToMany<T>(typeFunction: RelationTypeInFunction,
-                              inverseSideOrOptions: PropertyTypeInFunction<T>|RelationOptions,
-                              options?: RelationOptions): Function {
+export function ManyToManyInverse<T>(typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
+export function ManyToManyInverse<T>(typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
+export function ManyToManyInverse<T>(typeFunction: RelationTypeInFunction,
+                                     inverseSideOrOptions: PropertyTypeInFunction<T>|RelationOptions,
+                                     options?: RelationOptions): Function {
     let inverseSideProperty: PropertyTypeInFunction<T>;
     if (typeof inverseSideOrOptions === "object") {
         options = <RelationOptions> inverseSideOrOptions;
@@ -29,7 +29,7 @@ export function ManyToMany<T>(typeFunction: RelationTypeInFunction,
             relationType: RelationTypes.MANY_TO_MANY,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
-            isOwning: true,
+            isOwning: false,
             options: options
         }));
     };

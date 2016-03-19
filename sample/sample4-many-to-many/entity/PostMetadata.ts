@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
 import {Post} from "./Post";
-import {ManyToMany} from "../../../src/decorator/Relations";
+import {ManyToManyInverse} from "../../../src/decorator/Relations";
 
 @Table("sample4_post_metadata")
 export class PostMetadata {
@@ -12,7 +12,7 @@ export class PostMetadata {
     @Column()
     description: string;
 
-    @ManyToMany<Post>(false, () => Post, post => post.metadatas)
+    @ManyToManyInverse<Post>(() => Post, post => post.metadatas)
     posts: Post[];
 
 }

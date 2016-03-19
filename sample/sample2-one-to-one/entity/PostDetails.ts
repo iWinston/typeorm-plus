@@ -1,6 +1,6 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {OneToOne} from "../../../src/decorator/Relations";
+import {OneToOneInverse} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
 
 @Table("sample2_post_details")
@@ -18,7 +18,7 @@ export class PostDetails {
     @Column()
     metadata: string;
     
-    @OneToOne<Post>(false, () => Post, post => post.details, {
+    @OneToOneInverse<Post>(() => Post, post => post.details, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

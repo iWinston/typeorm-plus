@@ -1,6 +1,6 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {ManyToOne, OneToMany, OneToOne} from "../../../src/decorator/Relations";
+import {ManyToOne, OneToOne} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
 import {ImageDetails} from "./ImageDetails";
 
@@ -21,7 +21,7 @@ export class Image {
     })
     secondaryPost: Post;
 
-    @OneToOne<ImageDetails>(true, () => ImageDetails, details => details.image, {
+    @OneToOne<ImageDetails>(() => ImageDetails, details => details.image, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

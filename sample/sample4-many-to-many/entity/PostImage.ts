@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
 import {Post} from "./Post";
-import {ManyToMany} from "../../../src/decorator/Relations";
+import {ManyToManyInverse} from "../../../src/decorator/Relations";
 
 @Table("sample4_post_image")
 export class PostImage {
@@ -12,7 +12,7 @@ export class PostImage {
     @Column()
     url: string;
 
-    @ManyToMany<Post>(false, () => Post, post => post.images)
+    @ManyToManyInverse<Post>(() => Post, post => post.images)
     posts: Post[];
 
 }

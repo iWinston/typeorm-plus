@@ -1,6 +1,6 @@
 import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
 import {Table} from "../../../src/decorator/Tables";
-import {ManyToMany} from "../../../src/decorator/Relations";
+import {ManyToManyInverse} from "../../../src/decorator/Relations";
 import {Post} from "./Post";
 
 @Table("sample4_post_information")
@@ -12,7 +12,7 @@ export class PostInformation {
     @Column()
     text: string;
     
-    @ManyToMany<Post>(false, () => Post, post => post.informations, {
+    @ManyToManyInverse<Post>(() => Post, post => post.informations, {
         cascadeUpdate: true,
     })
     posts: Post[];
