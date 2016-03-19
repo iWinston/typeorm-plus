@@ -1,18 +1,12 @@
 import {ConnectionManager} from "../connection/ConnectionManager";
-import {defaultMetadataStorage} from "../metadata-builder/MetadataStorage";
-import {OrmEventSubscriberMetadata} from "../metadata-builder/metadata/OrmEventSubscriberMetadata";
+
+// todo: should this decorator be outside of this module?
+// todo: also create "inject" version of this to allow to inject to properties
 
 /**
- * Subscribers that gonna listen to orm events must be annotated with this annotation.
+ * Allows to inject a Repository using typedi's Container.
  */
-export function OrmEventSubscriber() {
-    return function (target: Function) {
-        const metadata = new OrmEventSubscriberMetadata(target);
-        defaultMetadataStorage.addOrmEventSubscriberMetadata(metadata);
-    };
-}
-
-export function OrmRepository(className: Function, connectionName?: string): Function {
+export function OrmRepository(cls: Function, connectionName?: string): Function {
     return function(target: Function, key: string, index: number) {
 
         let container: any;
@@ -28,7 +22,7 @@ export function OrmRepository(className: Function, connectionName?: string): Fun
             getValue: () => {
                 const connectionManager: ConnectionManager = container.get(ConnectionManager);
                 const connection = connectionManager.getConnection(connectionName);
-                return connection.getRepository(className);
+                return connection.getRepository(cls);
             }
         });
     };

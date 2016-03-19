@@ -4,7 +4,7 @@
 export type RelationType = "one-to-one"|"one-to-many"|"many-to-one"|"many-to-many";
 
 /**
- * Function that returns a type of the field. Returned value should be some class within which this relation is being created.
+ * Function that returns a type of the field. Returned value must be a class used on the relation.
  */
 export type RelationTypeInFunction = ((type?: any) => Function);
 
@@ -13,6 +13,9 @@ export type RelationTypeInFunction = ((type?: any) => Function);
  */
 export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
 
+/**
+ * Provides a constants for each relation type.
+ */
 export class RelationTypes {
     static ONE_TO_ONE: RelationType = "one-to-one";
     static ONE_TO_MANY: RelationType = "one-to-many";

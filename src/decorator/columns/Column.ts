@@ -1,17 +1,27 @@
-import "reflect-metadata";
 import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
 import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
+import "reflect-metadata";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this 
  * decorator will be persisted to the database when entity be saved.
  */
 export function Column(options?: ColumnOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
+ * decorator will be persisted to the database when entity be saved.
+ */
 export function Column(type?: ColumnType, options?: ColumnOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
+ * decorator will be persisted to the database when entity be saved.
+ */
 export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
     let type: ColumnType;
     if (typeof typeOrOptions === "string") {
