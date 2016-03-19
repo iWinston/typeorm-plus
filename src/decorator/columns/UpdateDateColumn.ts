@@ -1,4 +1,5 @@
-import {ColumnOptions, ColumnTypeString, ColumnTypes} from "../../metadata-builder/options/ColumnOptions";
+import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
+import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
 import "reflect-metadata";
@@ -15,7 +16,7 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
             options = {};
 
         // implicitly set a type, because this column's type cannot be anything else except date
-        options.type = <ColumnTypeString> ColumnTypes.DATETIME;
+        options.type = <ColumnType> ColumnTypes.DATETIME;
 
         // create and register a new column metadata
         defaultMetadataStorage.addColumnMetadata(new ColumnMetadata({

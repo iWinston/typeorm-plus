@@ -1,6 +1,7 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {ColumnOptions, ColumnTypeString} from "../options/ColumnOptions";
+import {ColumnOptions} from "../options/ColumnOptions";
 import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
+import {ColumnType} from "../types/ColumnTypes";
 
 /**
  * Constructor arguments for ColumnMetadata class.
@@ -41,7 +42,7 @@ export class ColumnMetadata extends PropertyMetadata {
     /**
      * The type of the column.
      */
-    private _type: ColumnTypeString;
+    private _type: ColumnType;
 
     /**
      * Maximum length in the database.
@@ -174,7 +175,7 @@ export class ColumnMetadata extends PropertyMetadata {
     /**
      * Type of the column.
      */
-    get type(): ColumnTypeString {
+    get type(): ColumnType {
         return this._type;
     }
 

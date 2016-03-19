@@ -13,6 +13,8 @@ import {ForeignKeyMetadata} from "./metadata/ForeignKeyMetadata";
  */
 export class EntityMetadataBuilder {
 
+    // todo: type in function validation, inverse side function validation
+    
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

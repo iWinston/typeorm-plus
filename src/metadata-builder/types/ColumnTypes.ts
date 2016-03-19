@@ -1,58 +1,149 @@
 /**
- * Lists all types that can be a table column.
+ * All types that column can be.
+ */
+export type ColumnType = "string"|"text"|"number"|"integer"|"int"|"smallint"|"bigint"|"float"|"double"|
+                         "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"simple_array";
+
+/**
+ * All types that column can be.
  */
 export class ColumnTypes {
 
-    static SMALLINT = "smallint";
-    static INTEGER = "integer";
-    static BIGINT = "bigint";
-    static DECIMAL = "decimal";
-    static FLOAT = "float";
-    static STRING = "string";
-    static TEXT = "text";
-    static BINARY = "binary";
-    static BLOB = "blob";
-    static BOOLEAN = "boolean";
-    static DATE = "date";
-    static DATETIME = "datetime";
-    static TIME = "time";
-    static ARRAY = "array";
-    static JSON = "json";
+    /**
+     * SQL VARCHAR type. Your class's property type should be a "string".
+     */
+    static STRING: ColumnType = "string";
 
-    static isTypeSupported(type: string): boolean {
-        switch (type) {
-            case this.SMALLINT:
-            case this.INTEGER:
-            case this.BIGINT:
-            case this.DECIMAL:
-            case this.FLOAT:
-            case this.STRING:
-            case this.TEXT:
-            case this.BINARY:
-            case this.BLOB:
-            case this.BOOLEAN:
-            case this.DATE:
-            case this.DATETIME:
-            case this.TIME:
-            case this.ARRAY:
-            case this.JSON:
-                return true;
-        }
-        return false;
+    /**
+     * SQL CLOB type. Your class's property type should be a "string".
+     */
+    static TEXT: ColumnType = "text";
+
+    /**
+     * SQL FLOAT type. Your class's property type should be a "number".
+     */
+    static NUMBER: ColumnType = "number";
+
+    /**
+     * SQL INT type. Your class's property type should be a "number".
+     */
+    static INTEGER: ColumnType = "integer";
+
+    /**
+     * SQL INT type. Your class's property type should be a "number".
+     */
+    static INT: ColumnType = "int";
+
+    /**
+     * SQL SMALLINT type. Your class's property type should be a "number".
+     */
+    static SMALLINT: ColumnType = "smallint";
+
+    /**
+     * SQL BIGINT type. Your class's property type should be a "number".
+     */
+    static BIGINT: ColumnType = "bigint";
+
+    /**
+     * SQL FLOAT type. Your class's property type should be a "number".
+     */
+    static FLOAT: ColumnType = "float";
+
+    /**
+     * SQL FLOAT type. Your class's property type should be a "number".
+     */
+    static DOUBLE: ColumnType = "double";
+
+    /**
+     * SQL DECIMAL type. Your class's property type should be a "string".
+     */
+    static DECIMAL: ColumnType = "decimal";
+
+    /**
+     * SQL DATETIME type. Your class's property type should be a "Date" object.
+     */
+    static DATE: ColumnType = "date";
+
+    /**
+     * SQL TIME type. Your class's property type should be a "Date" object.
+     */
+    static TIME: ColumnType = "time";
+
+    /**
+     * SQL DATETIME/TIMESTAMP type. Your class's property type should be a "Date" object.
+     */
+    static DATETIME: ColumnType = "datetime";
+
+    /**
+     * SQL BOOLEAN type. Your class's property type should be a "boolean".
+     */
+    static BOOLEAN: ColumnType = "boolean";
+
+    /**
+     * SQL CLOB type. Your class's property type should be any Object.
+     */
+    static JSON: ColumnType = "json";
+
+    /**
+     * SQL CLOB type. Your class's property type should be array of string. Note: value in this column should not contain
+     * a comma (",") since this symbol is used to create a string from the array, using .join(",") operator.
+     */
+    static SIMPLE_ARRAY: ColumnType = "simple_array";
+
+    /**
+     * Checks if given type in a string format is supported by ORM.
+     */
+    static isTypeSupported(type: string) {
+        return this.supportedTypes.indexOf(<ColumnType> type) !== -1;
     }
 
-    static validateTypeInFunction(typeFunction: () => Function): boolean {
-        if (!typeFunction || typeof typeFunction !== "function")
-            return false;
+    /**
+     * Returns list of all supported types by the ORM.
+     */
+    static get supportedTypes() {
+        return [
+            this.STRING,
+            this.TEXT,
+            this.NUMBER,
+            this.INTEGER,
+            this.INT,
+            this.SMALLINT,
+            this.BIGINT,
+            this.FLOAT,
+            this.DOUBLE,
+            this.DECIMAL,
+            this.DATE,
+            this.TIME,
+            this.DATETIME,
+            this.BOOLEAN,
+            this.JSON,
+            this.SIMPLE_ARRAY
+        ];
+    }
 
-        let type = typeFunction();
-        if (!type)
-            return false;
+    /**
+     * Tries to guess a column type from the given function.
+     */
+    static determineTypeFromFunction(type: Function): ColumnType {
+        if (type instanceof Date) {
+            return ColumnTypes.DATETIME;
 
-        if (typeof type === "string" && !ColumnTypes.isTypeSupported(String(type)))
-            return false;
+        } else if (type instanceof Function) {
+            const typeName = (<any>type).name.toLowerCase();
+            switch (typeName) {
+                case "number":
+                    return ColumnTypes.NUMBER;
+                case "boolean":
+                    return ColumnTypes.BOOLEAN;
+                case "string":
+                    return ColumnTypes.STRING;
+            }
 
-        return true;
+        } else if (type instanceof Object) {
+            return ColumnTypes.JSON;
+
+        }
+        return undefined;
     }
 
 }

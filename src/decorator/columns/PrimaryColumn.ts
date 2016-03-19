@@ -1,5 +1,6 @@
 import "reflect-metadata";
-import {ColumnOptions, ColumnTypeString, ColumnTypes} from "../../metadata-builder/options/ColumnOptions";
+import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
+import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
@@ -11,11 +12,11 @@ import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBe
  * this column in a db.
  */
 export function PrimaryColumn(options?: ColumnOptions): Function;
-export function PrimaryColumn(type?: ColumnTypeString, options?: ColumnOptions): Function;
-export function PrimaryColumn(typeOrOptions?: ColumnTypeString|ColumnOptions, options?: ColumnOptions): Function {
-    let type: ColumnTypeString;
+export function PrimaryColumn(type?: ColumnType, options?: ColumnOptions): Function;
+export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
+    let type: ColumnType;
     if (typeof typeOrOptions === "string") {
-        type = <ColumnTypeString> typeOrOptions;
+        type = <ColumnType> typeOrOptions;
     } else {
         options = <ColumnOptions> typeOrOptions;
     }

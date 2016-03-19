@@ -1,9 +1,9 @@
-import {
-    RelationTypeInFunction, PropertyTypeInFunction,
-    RelationMetadata
-} from "../../metadata-builder/metadata/RelationMetadata";
+import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 import {RelationOptions} from "../../metadata-builder/options/RelationOptions";
-import {RelationTypes} from "../../metadata-builder/types/RelationTypes";
+import {
+    PropertyTypeInFunction, RelationTypeInFunction,
+    RelationTypes
+} from "../../metadata-builder/types/RelationTypes";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 
 export function OneToOne<T>(isOwning: boolean, typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
@@ -21,13 +21,17 @@ export function OneToOne<T>(isOwning: boolean,
 
     return function (object: Object, propertyName: string) {
 
-        // todo: type in function validation, inverse side function validation
         if (!options)
             options = {};
 
-        const metadata = new RelationMetadata(
-            object.constructor, propertyName, RelationTypes.ONE_TO_ONE, typeFunction, inverseSideProperty, isOwning, options
-        );
-        defaultMetadataStorage.addRelationMetadata(metadata);
+        defaultMetadataStorage.addRelationMetadata(new RelationMetadata({
+            target: object.constructor,
+            propertyName: propertyName,
+            relationType: RelationTypes.ONE_TO_ONE,
+            type: typeFunction,
+            inverseSideProperty: inverseSideProperty,
+            isOwning: isOwning,
+            options: options
+        }));
     };
 }

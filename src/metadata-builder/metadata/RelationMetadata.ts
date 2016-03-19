@@ -1,19 +1,19 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {RelationTypes} from "../types/RelationTypes";
+import {RelationTypes, RelationType, RelationTypeInFunction, PropertyTypeInFunction} from "../types/RelationTypes";
 import {RelationOptions} from "../options/RelationOptions";
 import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
 import {TableMetadata} from "./TableMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 
-/**
- * Function that returns a type of the field. Returned value should be some class within which this relation is being created.
- */
-export type RelationTypeInFunction = ((type?: any) => Function);
-
-/**
- * Contains the name of the property of the object, or the function that returns this name.
- */
-export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
+export interface RelationMetadataArgs {
+    target: Function;
+    propertyName: string;
+    relationType: RelationType;
+    type: RelationTypeInFunction;
+    inverseSideProperty: PropertyTypeInFunction<any>;
+    isOwning: boolean;
+    options: RelationOptions;
+}
 
 /**
  * This metadata interface contains all information about some document's relation.
@@ -39,7 +39,7 @@ export class RelationMetadata extends PropertyMetadata {
     /**
      * Relation type.
      */
-    private _relationType: RelationTypes;
+    private _relationType: RelationType;
 
     /**
      * The type of the field.
@@ -95,34 +95,28 @@ export class RelationMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function,
-                propertyName: string,
-                relationType: RelationTypes,
-                type: RelationTypeInFunction,
-                inverseSideProperty: PropertyTypeInFunction<any>,
-                isOwning: boolean,
-                options: RelationOptions) {
-        super(target, propertyName);
-        this._relationType = relationType;
-        this._type = type;
-        this._isOwning = isOwning;
-        this._inverseSideProperty = inverseSideProperty;
+    constructor(args: RelationMetadataArgs) {
+        super(args.target, args.propertyName);
+        this._relationType = args.relationType;
+        this._type = args.type;
+        this._isOwning = args.isOwning;
+        this._inverseSideProperty = args.inverseSideProperty;
 
-        if (options.name)
-            this._name = options.name;
-        if (options.cascadeInsert)
-            this._isCascadeInsert = options.cascadeInsert;
-        if (options.cascadeUpdate)
-            this._isCascadeUpdate = options.cascadeUpdate;
-        if (options.cascadeRemove)
-            this._isCascadeRemove = options.cascadeRemove;
-        if (options.oldColumnName)
-            this._oldColumnName = options.oldColumnName;
-        if (options.nullable)
-            this._isNullable = options.nullable;
+        if (args.options.name)
+            this._name = args.options.name;
+        if (args.options.cascadeInsert)
+            this._isCascadeInsert = args.options.cascadeInsert;
+        if (args.options.cascadeUpdate)
+            this._isCascadeUpdate = args.options.cascadeUpdate;
+        if (args.options.cascadeRemove)
+            this._isCascadeRemove = args.options.cascadeRemove;
+        if (args.options.oldColumnName)
+            this._oldColumnName = args.options.oldColumnName;
+        if (args.options.nullable)
+            this._isNullable = args.options.nullable;
 
         if (!this._name)
-            this._name = propertyName;
+            this._name = args.propertyName;
     }
 
     // ---------------------------------------------------------------------
@@ -149,7 +143,7 @@ export class RelationMetadata extends PropertyMetadata {
         this._junctionEntityMetadata = metadata;
     }
 
-    get relationType(): RelationTypes {
+    get relationType(): RelationType {
         return this._relationType;
     }
 

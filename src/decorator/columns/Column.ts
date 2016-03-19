@@ -1,20 +1,21 @@
 import "reflect-metadata";
-import {ColumnOptions, ColumnTypeString, ColumnTypes} from "../../metadata-builder/options/ColumnOptions";
+import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
+import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this 
  * decorator will be persisted to the database when entity be saved.
  */
 export function Column(options?: ColumnOptions): Function;
-export function Column(type?: ColumnTypeString, options?: ColumnOptions): Function;
-export function Column(typeOrOptions?: ColumnTypeString|ColumnOptions, options?: ColumnOptions): Function {
-    let type: ColumnTypeString;
+export function Column(type?: ColumnType, options?: ColumnOptions): Function;
+export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
+    let type: ColumnType;
     if (typeof typeOrOptions === "string") {
-        type = <ColumnTypeString> typeOrOptions;
+        type = <ColumnType> typeOrOptions;
     } else {
         options = <ColumnOptions> typeOrOptions;
     }
