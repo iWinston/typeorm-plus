@@ -70,21 +70,6 @@ export class EntityMetadataBuilder {
                 entityIndices = entityIndices.concat(inheritedIndices);
             });
 
-            // generate columns for relations
-           /* const relationColumns = entityRelations
-                .filter(relation => relation.isOwning && (relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType ===RelationTypes.MANY_TO_ONE))
-                .filter(relation => !entityColumns.find(column => column.name === relation.name))
-                .map(relation => {
-                    const options: ColumnOptions = {
-                        type: "int", // todo: setup proper inverse side type later
-                        oldColumnName: relation.oldColumnName,
-                        isNullable: relation.isNullable
-                    };
-                    return new ColumnMetadata(tableMetadata.target, relation.name, false, false, false, options);
-                });
-
-            const allColumns = entityColumns.concat(relationColumns);*/
-
             const entityMetadata = new EntityMetadata(tableMetadata, entityColumns, entityRelations, entityIndices, entityCompoundIndices, []);
 
             // set naming strategies

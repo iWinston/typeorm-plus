@@ -20,8 +20,19 @@ export class Repository<Entity> {
     // Properties
     // -------------------------------------------------------------------------
 
-    private _connection: Connection;
-    private _metadata: EntityMetadata;
+    /**
+     * Connection used by this repository.
+     */
+    private connection: Connection;
+
+    /**
+     * Entity metadata of the table with which this repository is working.
+     */
+    private metadata: EntityMetadata;
+
+    /**
+     * Broadcaster used to broadcast this repository events.
+     */
     private broadcaster: OrmBroadcaster<Entity>;
 
     // -------------------------------------------------------------------------
@@ -31,21 +42,9 @@ export class Repository<Entity> {
     constructor(connection: Connection,
                 metadata: EntityMetadata,
                 broadcaster: OrmBroadcaster<Entity>) {
-        this._connection = connection;
-        this._metadata   = metadata;
+        this.connection  = connection;
+        this.metadata    = metadata;
         this.broadcaster = broadcaster;
-    }
-
-    // -------------------------------------------------------------------------
-    // Getter Methods
-    // -------------------------------------------------------------------------
-
-    get metadata(): EntityMetadata {
-        return this._metadata;
-    }
-
-    get connection(): Connection {
-        return this._connection;
     }
 
     // -------------------------------------------------------------------------
@@ -129,7 +128,7 @@ export class Repository<Entity> {
             const persistOperation = this.difference(dbEntity, entity);
             return persister.executePersistOperation(persistOperation);
         }).then(() => entity);
-}
+    }
 
     /**
      * Finds entities that match given conditions.

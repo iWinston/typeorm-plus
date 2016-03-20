@@ -1,4 +1,5 @@
 /**
+ * Contains metadata information about ORM event subscribers.
  */
 export class OrmEventSubscriberMetadata {
 
@@ -6,6 +7,9 @@ export class OrmEventSubscriberMetadata {
     // Private Properties
     // ---------------------------------------------------------------------
 
+    /**
+     * Class to which this decorator is applied.
+     */
     private _target: Function;
 
     // ---------------------------------------------------------------------

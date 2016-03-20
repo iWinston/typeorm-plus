@@ -1,4 +1,3 @@
-
 /**
  * Describes all relation's options.
  */

@@ -1,5 +1,5 @@
 /**
- * This metadata interface contains all information about compound index on a document.
+ * This metadata interface contains all information about table's compound index.
  */
 export class CompoundIndexMetadata {
 
@@ -7,6 +7,9 @@ export class CompoundIndexMetadata {
     // Private Properties
     // ---------------------------------------------------------------------
 
+    /**
+     * Class to which this decorator is applied.
+     */
     private _target: Function;
 
     /**
@@ -34,6 +37,9 @@ export class CompoundIndexMetadata {
         return this._target;
     }
 
+    /**
+     * Fields combination to be used as index.
+     */
     get fields() {
         return this._fields;
     }

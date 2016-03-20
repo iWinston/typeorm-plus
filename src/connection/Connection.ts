@@ -9,6 +9,11 @@ import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {SchemaCreator} from "../schema-creator/SchemaCreator";
 import {MetadataNotFoundError} from "./error/MetadataNotFoundError";
 
+interface RepositoryAndMetadata {
+    repository: Repository<any>;
+    metadata: EntityMetadata;
+}
+
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
  */
@@ -23,7 +28,7 @@ export class Connection {
     private _metadatas: EntityMetadata[] = [];
     private _subscribers: OrmSubscriber<any>[] = [];
     private _broadcasters: OrmBroadcaster<any>[] = [];
-    private _repositories: Repository<any>[] = [];
+    private repositoryAndMetadatas: RepositoryAndMetadata[] = [];
     private _options: ConnectionOptions;
 
     // -------------------------------------------------------------------------
@@ -79,7 +84,7 @@ export class Connection {
      * All repositories that are registered for this connection.
      */
     get repositories(): Repository<any>[] {
-        return this._repositories;
+        return this.repositoryAndMetadatas.map(repoAndMeta => repoAndMeta.repository);
     }
 
     /**
@@ -120,7 +125,7 @@ export class Connection {
     addMetadatas(metadatas: EntityMetadata[]) {
         this._metadatas     = this._metadatas.concat(metadatas);
         this._broadcasters  = this._broadcasters.concat(metadatas.map(metadata => this.createBroadcasterForMetadata(metadata)));
-        this._repositories  = this._repositories.concat(metadatas.map(metadata => this.createRepositoryForMetadata(metadata)));
+        this.repositoryAndMetadatas  = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
     }
 
     /**
@@ -135,11 +140,11 @@ export class Connection {
      */
     getRepository<Entity>(entityClass: Function): Repository<Entity> {
         const metadata = this.getMetadata(entityClass);
-        const repository = this.repositories.find(repository => repository.metadata === metadata);
-        if (!repository)
+        const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
+        if (!repoMeta)
             throw new RepositoryNotFoundError(entityClass);
 
-        return repository;
+        return repoMeta.repository;
     }
 
     /**
@@ -172,8 +177,11 @@ export class Connection {
         return new OrmBroadcaster<any>(this.subscribers, metadata.target);
     }
 
-    private createRepositoryForMetadata(metadata: EntityMetadata): Repository<any> {
-        return new Repository<any>(this, metadata, this.getBroadcaster(metadata.target));
+    private createRepoMeta(metadata: EntityMetadata): RepositoryAndMetadata {
+        return {
+            metadata: metadata,
+            repository: new Repository<any>(this, metadata, this.getBroadcaster(metadata.target))
+        };
     }
 
 }

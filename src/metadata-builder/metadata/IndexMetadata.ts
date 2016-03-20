@@ -9,5 +9,15 @@ export class IndexMetadata extends PropertyMetadata {
      * The name of the index.
      */
     name: string;
+    
+    // ---------------------------------------------------------------------
+    // Constructor
+    // ---------------------------------------------------------------------
+
+    constructor(target: Function, propertyName: string, name?: string) {
+        super(target, propertyName);
+        this.name = name; // todo: if there is no name, then generate it
+    }
+
 
 }

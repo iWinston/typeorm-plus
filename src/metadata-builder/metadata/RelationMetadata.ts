@@ -65,8 +65,10 @@ export class RelationMetadata extends PropertyMetadata {
     // Public Properties
     // ---------------------------------------------------------------------
 
+    /**
+     * Naming strategy used to generate and normalize column name.
+     */
     namingStrategy: NamingStrategy;
-   // ownerEntityPropertiesMap: Object;
 
     // ---------------------------------------------------------------------
     // Private Properties

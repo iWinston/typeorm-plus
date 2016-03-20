@@ -1,7 +1,7 @@
 import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
 
 /**
- * This metadata interface contains all information about some table.
+ * This metadata interface contains all information about specific table.
  */
 export class TableMetadata {
 
@@ -9,14 +9,28 @@ export class TableMetadata {
     // Public Properties
     // ---------------------------------------------------------------------
 
+    /**
+     * Naming strategy used to generate and normalize table name.
+     */
     namingStrategy: NamingStrategy;
 
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
 
+    /**
+     * Class to which this column is applied.
+     */
     private _target: Function;
+
+    /**
+     * Table name in the database.
+     */
     private _name: string;
+
+    /**
+     * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
+     */
     private _isAbstract: boolean;
 
     // ---------------------------------------------------------------------
@@ -41,10 +55,16 @@ export class TableMetadata {
         return this._target;
     }
 
+    /**
+     * Table name in the database.
+     */
     get name() {
         return this.namingStrategy ? this.namingStrategy.tableName(this._name) : this._name;
     }
 
+    /**
+     * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
+     */
     get isAbstract() {
         return this._isAbstract;
     }

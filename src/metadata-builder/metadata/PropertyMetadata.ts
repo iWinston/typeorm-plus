@@ -7,7 +7,14 @@ export abstract class PropertyMetadata {
     // Properties
     // ---------------------------------------------------------------------
 
+    /**
+     * Class to which this decorator is applied.
+     */
     private _target: Function;
+
+    /**
+     * Class's property name to which this decorator is applied.
+     */
     private _propertyName: string;
 
     // ---------------------------------------------------------------------
