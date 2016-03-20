@@ -112,7 +112,7 @@ export class SchemaCreator {
         return this.schemaBuilder.checkIfTableExist(table.name).then(exist => {
             if (!exist)
                 return this.schemaBuilder.createTableQuery(table, columns);
-        })
+        });
     }
 
     /**

@@ -600,7 +600,6 @@ describe("many-to-many", function() {
         });
 
         it("should not have a post and category ids since object was removed from the db", function () {
-            console.log("removed post: ", newPost);
             expect(newPost.id).to.be.empty;
             expect(category1.id).to.be.empty;
             expect(category2.id).to.be.empty;

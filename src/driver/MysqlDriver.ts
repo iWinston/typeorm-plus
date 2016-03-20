@@ -140,7 +140,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
 
         return this.query(disableForeignKeysCheckQuery)
             .then(() => this.query<any[]>(dropTablesQuery))
-            .then(results => Promise.all(results.map(q => this.query(q['q']))))
+            .then(results => Promise.all(results.map(q => this.query(q["q"]))))
             .then(() => this.query(enableForeignKeysCheckQuery))
             .then(() => {});
     }

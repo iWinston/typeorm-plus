@@ -4,7 +4,6 @@ import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {PersistOperation} from "../persistment/operation/PersistOperation";
 import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 
@@ -124,7 +123,6 @@ export class Repository<Entity> {
     remove(entity: Entity) {
         const persister = new PersistOperationExecutor(this.connection);
         return this.initialize(entity).then(dbEntity => {
-            // make this only to remove
             (<any> entity)[this.metadata.primaryColumn.name] = undefined;
             const builder = new EntityPersistOperationBuilder(this.connection);
             const persistOperation = builder.buildOnlyRemovement(this.metadata, dbEntity, entity);
@@ -143,7 +141,7 @@ export class Repository<Entity> {
     }
 
     /**
-     * Finds one entity that matches given condition.
+     * Finds first entity that matches given conditions.
      */
     findOne(conditions: Object): Promise<Entity> {
         const alias = this.metadata.table.name;

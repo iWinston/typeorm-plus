@@ -11,7 +11,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
     
     getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'`+
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
             ` AND TABLE_NAME = '${tableName}'`;
         return this.query<any[]>(sql).then(results => {
 
@@ -101,7 +101,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     getTableColumns(tableName: string): Promise<string[]> {
-        const sql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'`+
+        const sql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
             ` AND TABLE_NAME = '${tableName}'`;
         return this.query<any[]>(sql).then(results => results.map(result => result.COLUMN_NAME));
     }
@@ -126,7 +126,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        var c = column.name + " " + this.normalizeType(column.type, column.length);
+        let c = column.name + " " + this.normalizeType(column.type, column.length);
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isPrimary === true && !skipPrimary)

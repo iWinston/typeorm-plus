@@ -2,7 +2,7 @@ import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
-//import * as mysql from "mysql";
+// import * as mysql from "mysql";
 let mysql = require("mysql");
 
 /**
