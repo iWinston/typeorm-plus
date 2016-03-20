@@ -5,34 +5,43 @@ import {JunctionInsertOperation} from "./JunctionInsertOperation";
 import {JunctionRemoveOperation} from "./JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./UpdateByRelationOperation";
 
+export interface EntityWithId {
+    id: any;
+    entity: any;
+}
+
 export class PersistOperation {
     
     // todo: what if we have two same entities in the insert operations?
-    
-    inserts: InsertOperation[];
-    removes: RemoveOperation[];
-    updates: UpdateOperation[];
-    junctionInserts: JunctionInsertOperation[];
-    junctionRemoves: JunctionRemoveOperation[];
-    updatesByRelations: UpdateByRelationOperation[];
+
+    dbEntity: any;
+    persistedEntity: any;
+    allDbEntities: EntityWithId[];
+    allPersistedEntities: EntityWithId[];
+    inserts: InsertOperation[] = [];
+    removes: RemoveOperation[] = [];
+    updates: UpdateOperation[] = [];
+    junctionInserts: JunctionInsertOperation[] = [];
+    junctionRemoves: JunctionRemoveOperation[] = [];
+    updatesByRelations: UpdateByRelationOperation[] = [];
     
     log() {
         console.log("---------------------------------------------------------");
         console.log("DB ENTITY");
         console.log("---------------------------------------------------------");
-        // console.log(entity1);
+        console.log(this.dbEntity);
         console.log("---------------------------------------------------------");
         console.log("NEW ENTITY");
         console.log("---------------------------------------------------------");
-        // console.log(entity2);
+        console.log(this.persistedEntity);
         console.log("---------------------------------------------------------");
         console.log("DB ENTITIES");
         console.log("---------------------------------------------------------");
-        // console.log(dbEntities);
+        console.log(this.allDbEntities);
         console.log("---------------------------------------------------------");
         console.log("ALL NEW ENTITIES");
         console.log("---------------------------------------------------------");
-        // console.log(allEntities);
+        console.log(this.allPersistedEntities);
         console.log("---------------------------------------------------------");
         console.log("INSERTED ENTITIES");
         console.log("---------------------------------------------------------");

@@ -9,7 +9,6 @@ import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperati
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 
 // todo: think how we can implement queryCount, queryManyAndCount
-// todo: extract non safe methods from repository (removeById, removeByConditions)
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -113,7 +112,8 @@ export class Repository<Entity> {
         const persister = new PersistOperationExecutor(this.connection);
         const promise = !this.hasId(entity) ? Promise.resolve(null) : this.initialize(entity);
         return promise.then(dbEntity => {
-            const persistOperation = this.difference(dbEntity, entity);
+            const builder = new EntityPersistOperationBuilder(this.connection);
+            const persistOperation = builder.buildFullPersistment(this.metadata, dbEntity, entity);
             return persister.executePersistOperation(persistOperation);
         }).then(() => entity);
     }
@@ -125,7 +125,9 @@ export class Repository<Entity> {
         const persister = new PersistOperationExecutor(this.connection);
         return this.initialize(entity).then(dbEntity => {
             // make this only to remove
-            const persistOperation = this.difference(dbEntity, entity);
+            (<any> entity)[this.metadata.primaryColumn.name] = undefined;
+            const builder = new EntityPersistOperationBuilder(this.connection);
+            const persistOperation = builder.buildOnlyRemovement(this.metadata, dbEntity, entity);
             return persister.executePersistOperation(persistOperation);
         }).then(() => entity);
     }
@@ -166,19 +168,6 @@ export class Repository<Entity> {
      */
     query(query: string): Promise<any> {
         return this.connection.driver.query(query);
-    }
-
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Finds columns and relations from entity2 which does not exist or does not match in entity1. Returns an object
-     * that contains all information about what needs to be persisted.
-     */
-    private difference(entity1: Entity, entity2: Entity): PersistOperation {
-        const builder = new EntityPersistOperationBuilder(this.connection);
-        return builder.difference(this.metadata, entity1, entity2);
     }
 
 }

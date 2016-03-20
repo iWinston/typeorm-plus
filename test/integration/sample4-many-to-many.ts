@@ -8,10 +8,8 @@ import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {PostDetails} from "../../sample/sample4-many-to-many/entity/PostDetails";
 import {Post} from "../../sample/sample4-many-to-many/entity/Post";
 import {PostCategory} from "../../sample/sample4-many-to-many/entity/PostCategory";
-import {PostAuthor} from "../../sample/sample4-many-to-many/entity/PostAuthor";
 import {PostMetadata} from "../../sample/sample4-many-to-many/entity/PostMetadata";
 import {PostImage} from "../../sample/sample4-many-to-many/entity/PostImage";
-import {PostInformation} from "../../sample/sample4-many-to-many/entity/PostInformation";
 
 chai.should();
 describe("many-to-many", function() {
@@ -26,7 +24,11 @@ describe("many-to-many", function() {
         username: "root",
         password: "admin",
         database: "test",
-        autoSchemaCreate: true
+        autoSchemaCreate: true,
+        logging: {
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        }
     };
     
     // connect to db
@@ -506,6 +508,114 @@ describe("many-to-many", function() {
                 .where("details.id=:id", { id: savedDetails.id })
                 .getSingleResult()
                 .should.eventually.eql(expectedDetails);
+        });
+
+    });
+    
+    // -------------------------------------------------------------------------
+    // Remove the post
+    // -------------------------------------------------------------------------
+
+    describe("remove post should remove it but not post details because of cascade settings", function() {
+        let newPost: Post, details: PostDetails, savedPostId: number, savedDetailsId: number;
+
+        before(reloadDatabase);
+
+        before(function() {
+            details = new PostDetails();
+            details.comment = "post details comment";
+            
+            newPost = new Post();
+            newPost.text = "Hello post";
+            newPost.title = "this is post title";
+            newPost.details.push(details);
+
+            return postRepository
+                .persist(newPost) // first save
+                .then(savedPost => {
+                    savedPostId = savedPost.id;
+                    savedDetailsId = details.id;
+                    return postRepository.remove(newPost);
+                }); // now remove newly saved
+        });
+
+        it("should have a savedPostId and savedDetailsId because it was persisted before removal", function () {
+            expect(savedPostId).not.to.be.empty;
+            expect(savedDetailsId).not.to.be.empty;
+        });
+
+        it("should not have a post id since object was removed from the db", function () {
+            expect(newPost.id).to.be.empty;
+        });
+
+        it("should have a details id since details was not removed from db because of cascades settings", function () {
+            expect(details.id).not.to.be.empty;
+        });
+
+        it("should not have post in the database", function() {
+            return postRepository.findById(savedPostId).should.eventually.eql(undefined);
+        });
+
+        it("should have details in the database because it was not removed because cascades do not allow it", function() {
+            const details = new PostDetails();
+            details.id = savedDetailsId;
+            details.comment = "post details comment";
+            return postDetailsRepository.findById(savedDetailsId).should.eventually.eql(details);
+        });
+
+    });
+
+    describe("remove post should remove it and its categories", function() {
+        let newPost: Post, category1: PostCategory, category2: PostCategory, savedPostId: number, 
+            savedCategory1Id: number, savedCategory2Id: number;
+
+        before(reloadDatabase);
+
+        before(function() {
+            category1 = new PostCategory();
+            category1.name = "post category #1";
+            
+            category2 = new PostCategory();
+            category2.name = "post category #2";
+            
+            newPost = new Post();
+            newPost.text = "Hello post";
+            newPost.title = "this is post title";
+            newPost.categories.push(category1, category2);
+
+            return postRepository
+                .persist(newPost) // first save
+                .then(savedPost => {
+                    savedPostId = savedPost.id;
+                    savedCategory1Id = category1.id;
+                    savedCategory2Id = category2.id;
+                    return postRepository.remove(newPost);
+                }); // now remove newly saved
+        });
+
+        it("should have a savedPostId and savedCategory1Id and savedCategory2Id because it was persisted before removal", function () {
+            expect(savedPostId).not.to.be.empty;
+            expect(savedCategory1Id).not.to.be.empty;
+            expect(savedCategory2Id).not.to.be.empty;
+        });
+
+        it("should not have a post and category ids since object was removed from the db", function () {
+            console.log("removed post: ", newPost);
+            expect(newPost.id).to.be.empty;
+            expect(category1.id).to.be.empty;
+            expect(category2.id).to.be.empty;
+        });
+
+        it("should not have post in the database", function() {
+            return postRepository.findById(savedPostId).should.eventually.eql(undefined);
+        });
+
+        it("should not have category1 in the database", function() {
+            return postCategoryRepository.findById(savedCategory1Id).should.eventually.eql(undefined);
+        });
+
+        it("should not have category2 in the database", function() {
+            return postCategoryRepository.findById(savedCategory2Id).should.eventually.eql(undefined);
         });
 
     });

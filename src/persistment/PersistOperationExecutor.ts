@@ -35,7 +35,8 @@ export class PersistOperationExecutor {
             .then(() => this.executeUpdateOperations(persistOperation))
             .then(() => this.executeRemoveRelationOperations(persistOperation))
             .then(() => this.executeRemoveOperations(persistOperation))
-            .then(() => this.executeUpdateByIdOperations(persistOperation));
+            .then(() => this.updateIdsOfInsertedEntities(persistOperation))
+            .then(() => this.updateIdsOfRemovedEntities(persistOperation));
     }
 
     // -------------------------------------------------------------------------
@@ -93,9 +94,12 @@ export class PersistOperationExecutor {
      * Executes remove relations operations.
      */
     private executeRemoveRelationOperations(persistOperation: PersistOperation) {
-        return Promise.all(persistOperation.removes.map(operation => {
-            return this.updateDeletedRelations(operation);
-        }));
+        return Promise.all(persistOperation.removes
+            .filter(operation => operation.relation && !operation.relation.isManyToMany && !operation.relation.isOneToMany)
+            .map(operation => {
+                return this.updateDeletedRelations(operation);
+            })
+        );
     }
 
     /**
@@ -108,12 +112,28 @@ export class PersistOperationExecutor {
     }
 
     /**
-     * Executes update by id operations.
+     * Updates all ids of the inserted entities.
      */
-    private executeUpdateByIdOperations(persistOperation: PersistOperation) {
+    private updateIdsOfInsertedEntities(persistOperation: PersistOperation) {
         persistOperation.inserts.forEach(insertOperation => {
             const metadata = this.connection.getMetadata(insertOperation.entity.constructor);
             insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
+        });
+    }
+
+    /**
+     * Removes all ids of the removed entities.
+     */
+    private updateIdsOfRemovedEntities(persistOperation: PersistOperation) {
+        // console.log("OPERATION REMOVES: ", persistOperation.removes);
+        // console.log("ALL NEW ENTITIES: ", persistOperation.allNewEntities);
+        persistOperation.removes.forEach(removeOperation => {
+            const metadata = this.connection.getMetadata(removeOperation.entity.constructor);
+            const removedEntity = persistOperation.allPersistedEntities.find(allNewEntity => {
+                return allNewEntity.entity.constructor === removeOperation.entity.constructor && allNewEntity.id === removeOperation.entity[metadata.primaryColumn.name];
+            });
+            if (removedEntity)
+                removedEntity.entity[metadata.primaryColumn.propertyName] = undefined;
         });
     }
 
@@ -150,12 +170,10 @@ export class PersistOperationExecutor {
     }
 
     private updateDeletedRelations(removeOperation: RemoveOperation) { // todo: check if both many-to-one deletions work too
-        if (removeOperation.relation.isManyToMany || removeOperation.relation.isOneToMany) return;
-
         return this.connection.driver.update(
-            removeOperation.metadata.table.name, 
+            removeOperation.fromMetadata.table.name, 
             { [removeOperation.relation.name]: null },
-            { [removeOperation.metadata.primaryColumn.name]: removeOperation.fromEntityId }
+            { [removeOperation.fromMetadata.primaryColumn.name]: removeOperation.fromEntityId }
         );
     }
 
