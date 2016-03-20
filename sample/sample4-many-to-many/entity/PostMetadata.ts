@@ -12,7 +12,7 @@ export class PostMetadata {
     @Column()
     description: string;
 
-    @ManyToManyInverse<Post>(() => Post, post => post.metadatas)
+    @ManyToManyInverse(type => Post, post => post.metadatas)
     posts: Post[];
 
 }

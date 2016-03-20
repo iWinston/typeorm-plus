@@ -12,7 +12,7 @@ export class Cover {
     @Column()
     url: string;
 
-    @OneToMany<Post>(() => Post, post => post.cover)
+    @OneToMany(type => Post, post => post.cover)
     posts: Post[];
 
 }

@@ -12,7 +12,7 @@ export class PostInformation {
     @Column()
     text: string;
     
-    @OneToOneInverse<Post>(() => Post, post => post.information, {
+    @OneToOneInverse(type => Post, post => post.information, {
         cascadeUpdate: true,
     })
     post: Post;

@@ -1,3 +1,7 @@
+
+/**
+ * Describes all relation's options.
+ */
 export interface RelationOptions {
 
     /**
@@ -21,7 +25,8 @@ export interface RelationOptions {
     cascadeRemove?: boolean;
 
     /**
-     * Old column name. Used to make safe schema updates.
+     * Column name used previously for this column. Used to make safe schema updates. Experimental and most probably
+     * will be removed in the future. Avoid using it.
      */
     oldColumnName?: string;
 
@@ -29,5 +34,10 @@ export interface RelationOptions {
      * Indicates if relation column value can be nullable or not.
      */
     nullable?: boolean;
+
+    /**
+     * Database cascade action on delete.
+     */
+    onDelete?: boolean;
 
 }

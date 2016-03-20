@@ -12,7 +12,7 @@ export class PostMetadata {
     @Column()
     description: string;
 
-    @OneToMany<Post>(() => Post, post => post.metadata)
+    @OneToMany(type => Post, post => post.metadata)
     posts: Post[];
 
 }

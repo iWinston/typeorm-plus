@@ -15,7 +15,7 @@ export class ImageDetails {
     @Column()
     comment: string;
 
-    @OneToOneInverse<Image>(() => Image, image => image.details)
+    @OneToOneInverse(type => Image, image => image.details)
     image: Image;
 
 }

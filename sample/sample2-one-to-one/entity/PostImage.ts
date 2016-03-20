@@ -12,7 +12,7 @@ export class PostImage {
     @Column()
     url: string;
 
-    @OneToOneInverse<Post>(() => Post, post => post.image)
+    @OneToOneInverse(type => Post, post => post.image)
     post: Post;
 
 }

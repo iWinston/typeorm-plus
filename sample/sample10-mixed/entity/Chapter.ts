@@ -12,7 +12,7 @@ export class Chapter {
     @Column()
     about: string;
 
-    @OneToMany<PostDetails>(type => PostDetails, postDetails => postDetails.chapter)
+    @OneToMany(type => PostDetails, postDetails => postDetails.chapter)
     postDetails: PostDetails[];
 
 }

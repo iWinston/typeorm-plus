@@ -13,15 +13,15 @@ export class Image {
     @Column()
     name: string;
     
-    @ManyToOne<Post>(() => Post, post => post.images)
+    @ManyToOne(type => Post, post => post.images)
     post: Post;
     
-    @ManyToOne<Post>(() => Post, post => post.secondaryImages, {
+    @ManyToOne(type => Post, post => post.secondaryImages, {
         cascadeInsert: true
     })
     secondaryPost: Post;
 
-    @OneToOne<ImageDetails>(() => ImageDetails, details => details.image, {
+    @OneToOne(type => ImageDetails, details => details.image, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

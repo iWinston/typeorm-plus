@@ -18,7 +18,7 @@ export class PostDetails {
     @Column()
     metadata: string;
     
-    @OneToOneInverse<Post>(() => Post, post => post.details, {
+    @OneToOneInverse(type => Post, post => post.details, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

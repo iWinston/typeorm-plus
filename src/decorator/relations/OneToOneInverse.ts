@@ -1,10 +1,6 @@
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 import {RelationOptions} from "../../metadata-builder/options/RelationOptions";
-import {
-    PropertyTypeInFunction,
-    RelationTypeInFunction,
-    RelationTypes
-} from "../../metadata-builder/types/RelationTypes";
+import {RelationTypes, ObjectConstructor} from "../../metadata-builder/types/RelationTypes";
 import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
 
 /**
@@ -12,28 +8,30 @@ import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
  * Entity2 have only one Entity1. Entity2 is inverse side of the relation on Entity1. Does not storage id of the 
  * Entity1. Entity1's id is storage on the one-to-one owner side.
  */
-export function OneToOneInverse<T>(typeFunction: RelationTypeInFunction, options?: RelationOptions): Function;
+export function OneToOneInverse<T>(typeFunction: (type?: any) => ObjectConstructor<T>, options?: RelationOptions): Function;
 
 /**
  * Inverse side of the one-to-one relation. One-to-one relation allows to create direct relation between two entities.
  * Entity2 have only one Entity1. Entity2 is inverse side of the relation on Entity1. Does not storage id of the
  * Entity1. Entity1's id is storage on the one-to-one owner side.
  */
-export function OneToOneInverse<T>(typeFunction: RelationTypeInFunction, inverseSide?: PropertyTypeInFunction<T>, options?: RelationOptions): Function;
+export function OneToOneInverse<T>(typeFunction: (type?: any) => ObjectConstructor<T>,
+                                   inverseSide?: string|((object: T) => any),
+                                   options?: RelationOptions): Function;
 
 /**
  * Inverse side of the one-to-one relation. One-to-one relation allows to create direct relation between two entities.
  * Entity2 have only one Entity1. Entity2 is inverse side of the relation on Entity1. Does not storage id of the
  * Entity1. Entity1's id is storage on the one-to-one owner side.
  */
-export function OneToOneInverse<T>(typeFunction: RelationTypeInFunction,
-                                   inverseSideOrOptions: PropertyTypeInFunction<T>|RelationOptions,
+export function OneToOneInverse<T>(typeFunction: (type?: any) => ObjectConstructor<T>,
+                                   inverseSideOrOptions?: string|((object: T) => any)|RelationOptions,
                                    options?: RelationOptions): Function {
-    let inverseSideProperty: PropertyTypeInFunction<T>;
+    let inverseSideProperty: string|((object: T) => any);
     if (typeof inverseSideOrOptions === "object") {
         options = <RelationOptions> inverseSideOrOptions;
     } else {
-        inverseSideProperty = <PropertyTypeInFunction<T>> inverseSideOrOptions;
+        inverseSideProperty = <string|((object: T) => any)> inverseSideOrOptions;
     }
 
     return function (object: Object, propertyName: string) {

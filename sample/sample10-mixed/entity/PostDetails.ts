@@ -18,16 +18,16 @@ export class PostDetails {
     @Column()
     comment: string;
 
-    @OneToOneInverse<Post>(type => Post, post => post.details)
+    @OneToOneInverse(type => Post, post => post.details)
     post: Post;
 
-    @OneToMany<Category>(type => Category, category => category.details, {
+    @OneToMany(type => Category, category => category.details, {
         cascadeInsert: true,
         cascadeRemove: true
     })
     categories: Category[];
 
-    @ManyToOne<Chapter>(_ => Chapter, chapter => chapter.postDetails, {
+    @ManyToOne(type => Chapter, chapter => chapter.postDetails, {
         cascadeInsert: true,
         cascadeRemove: true
     })

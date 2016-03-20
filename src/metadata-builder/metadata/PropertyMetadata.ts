@@ -3,13 +3,25 @@
  */
 export abstract class PropertyMetadata {
 
+    // ---------------------------------------------------------------------
+    // Properties
+    // ---------------------------------------------------------------------
+
     private _target: Function;
     private _propertyName: string;
+
+    // ---------------------------------------------------------------------
+    // Constructor
+    // ---------------------------------------------------------------------
 
     constructor(target: Function, propertyName: string) {
         this._target = target;
         this._propertyName = propertyName;
     }
+
+    // ---------------------------------------------------------------------
+    // Accessors
+    // ---------------------------------------------------------------------
 
     /**
      * The object class to which this metadata is attached.

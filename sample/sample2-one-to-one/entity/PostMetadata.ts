@@ -12,7 +12,7 @@ export class PostMetadata {
     @Column()
     description: string;
 
-    @OneToOneInverse<Post>(() => Post, post => post.metadata)
+    @OneToOneInverse(type => Post, post => post.metadata)
     post: Post;
 
 }

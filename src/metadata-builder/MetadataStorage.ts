@@ -19,7 +19,7 @@ export class MetadataStorage {
 
     private _tableMetadatas: TableMetadata[] = [];
     private _ormEventSubscriberMetadatas: OrmEventSubscriberMetadata[] = [];
-    private _fieldMetadatas: ColumnMetadata[] = [];
+    private _columnMetadatas: ColumnMetadata[] = [];
     private _indexMetadatas: IndexMetadata[] = [];
     private _compoundIndexMetadatas: CompoundIndexMetadata[] = [];
     private _relationMetadatas: RelationMetadata[] = [];
@@ -36,8 +36,8 @@ export class MetadataStorage {
         return this._ormEventSubscriberMetadatas;
     }
 
-    get fieldMetadatas(): ColumnMetadata[] {
-        return this._fieldMetadatas;
+    get columnMetadatas(): ColumnMetadata[] {
+        return this._columnMetadatas;
     }
 
     get indexMetadatas(): IndexMetadata[] {
@@ -83,7 +83,7 @@ export class MetadataStorage {
         if (metadata.name && this.hasFieldMetadataWithName(metadata.target, metadata.name))
             throw new MetadataWithSuchNameAlreadyExistsError("Column", metadata.name);
 
-        this.fieldMetadatas.push(metadata);
+        this.columnMetadatas.push(metadata);
     }
 
     addOrmEventSubscriberMetadata(metadata: OrmEventSubscriberMetadata) {
@@ -136,7 +136,7 @@ export class MetadataStorage {
     }
 
     findFieldMetadatasForClasses(classes: Function[]): ColumnMetadata[] {
-        return this.fieldMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
+        return this.columnMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
     }
 
     findRelationMetadatasForClasses(classes: Function[]): RelationMetadata[] {
@@ -148,43 +148,35 @@ export class MetadataStorage {
     // -------------------------------------------------------------------------
 
     private hasTableMetadataWithObjectConstructor(constructor: Function): boolean {
-        return this.tableMetadatas.reduce((found, metadata) => metadata.target === constructor ? metadata : found, null) !== null;
+        return !!this.tableMetadatas.find(metadata => metadata.target === constructor);
     }
 
     private hasCompoundIndexMetadataWithObjectConstructor(constructor: Function): boolean {
-        return this.compoundIndexMetadatas.reduce((found, metadata) => metadata.target === constructor ? metadata : found, null) !== null;
+        return !!this.compoundIndexMetadatas.find(metadata => metadata.target === constructor);
     }
 
     private hasOrmEventSubscriberWithObjectConstructor(constructor: Function): boolean {
-        return this.ormEventSubscriberMetadatas.reduce((found, metadata) => metadata.target === constructor ? metadata : found, null) !== null;
+        return !!this.ormEventSubscriberMetadatas.find(metadata => metadata.target === constructor);
     }
 
     private hasFieldMetadataOnProperty(constructor: Function, propertyName: string): boolean {
-        return this.fieldMetadatas.reduce((found, metadata) => {
-            return metadata.target === constructor && metadata.propertyName === propertyName ? metadata : found;
-        }, null) !== null;
+        return !!this.columnMetadatas.find(metadata => metadata.target === constructor && metadata.propertyName === propertyName);
     }
 
     private hasRelationWithOneMetadataOnProperty(constructor: Function, propertyName: string): boolean {
-        return this.relationMetadatas.reduce((found, metadata) => {
-                return metadata.target === constructor && metadata.propertyName === propertyName ? metadata : found;
-            }, null) !== null;
+        return !!this.relationMetadatas.find(metadata => metadata.target === constructor && metadata.propertyName === propertyName);
     }
 
     private hasTableMetadataWithName(name: string): boolean {
-        return this.tableMetadatas.reduce((found, metadata) => metadata.name === name ? metadata : found, null) !== null;
+        return !!this.tableMetadatas.find(metadata => metadata.name === name);
     }
 
     private hasFieldMetadataWithName(constructor: Function, name: string): boolean {
-        return this.fieldMetadatas.reduce((found, metadata) => {
-            return metadata.target === constructor && metadata.name === name ? metadata : found;
-        }, null) !== null;
+        return !!this.columnMetadatas.find(metadata => metadata.target === constructor && metadata.name === name);
     }
 
     private hasRelationWithOneMetadataWithName(constructor: Function, name: string): boolean {
-        return this.relationMetadatas.reduce((found, metadata) => {
-                return metadata.target === constructor && metadata.name === name ? metadata : found;
-            }, null) !== null;
+        return !!this.relationMetadatas.find(metadata => metadata.target === constructor && metadata.name === name);
     }
 
 }
@@ -192,4 +184,4 @@ export class MetadataStorage {
 /**
  * Default metadata storage used as singleton and can be used to storage all metadatas in the system.
  */
-export let defaultMetadataStorage = new MetadataStorage();
+export const defaultMetadataStorage = new MetadataStorage();

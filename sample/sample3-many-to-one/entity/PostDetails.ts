@@ -24,7 +24,7 @@ export class PostDetails {
     })
     metadata: string;
     
-    @OneToMany<Post>(() => Post, post => post.details, {
+    @OneToMany(type => Post, post => post.details, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

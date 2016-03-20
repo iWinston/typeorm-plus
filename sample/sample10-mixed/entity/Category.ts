@@ -13,10 +13,10 @@ export class Category {
     @Column()
     description: string;
 
-    @ManyToManyInverse<Post>(type => Post, post => post.categories)
+    @ManyToManyInverse(type => Post, post => post.categories)
     posts: Post[];
 
-    @ManyToOne<PostDetails>(_ => PostDetails, postDetails => postDetails.categories)
+    @ManyToOne(type => PostDetails, postDetails => postDetails.categories)
     details: PostDetails;
 
 }

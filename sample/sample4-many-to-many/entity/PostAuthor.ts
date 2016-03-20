@@ -12,7 +12,7 @@ export class PostAuthor {
     @Column()
     name: string;
 
-    @ManyToManyInverse<Post>(() => Post, post => post.authors)
+    @ManyToManyInverse(type => Post, post => post.authors)
     posts: Post[];
 
 }

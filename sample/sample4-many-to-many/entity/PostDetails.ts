@@ -24,7 +24,7 @@ export class PostDetails {
     })
     metadata: string;
     
-    @ManyToManyInverse<Post>(() => Post, post => post.details, {
+    @ManyToManyInverse(type => Post, post => post.details, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

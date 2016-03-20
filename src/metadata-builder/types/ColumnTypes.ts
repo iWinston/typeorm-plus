@@ -1,3 +1,4 @@
+
 /**
  * All types that column can be.
  */

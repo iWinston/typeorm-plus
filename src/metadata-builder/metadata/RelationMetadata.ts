@@ -1,17 +1,58 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {RelationTypes, RelationType, RelationTypeInFunction, PropertyTypeInFunction} from "../types/RelationTypes";
+import {RelationTypes, RelationType} from "../types/RelationTypes";
 import {RelationOptions} from "../options/RelationOptions";
 import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
-import {TableMetadata} from "./TableMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 
+/**
+ * Function that returns a type of the field. Returned value must be a class used on the relation.
+ */
+type RelationTypeInFunction = ((type?: any) => Function);
+
+/**
+ * Contains the name of the property of the object, or the function that returns this name.
+ */
+type PropertyTypeInFunction<T> = string|((t: T) => string|any);
+
+/**
+ * Relation metadata constructor arguments.
+ */
 export interface RelationMetadataArgs {
+
+    /**
+     * Class to which this relation is applied.
+     */
     target: Function;
+
+    /**
+     * Class's property name to which this relation is applied.
+     */
     propertyName: string;
+
+    /**
+     * Type of relation. Can be one of the value of the RelationTypes class.
+     */
     relationType: RelationType;
+
+    /**
+     * Type of the relation. This type is in function because of language specifics and problems with recursive
+     * referenced classes.
+     */
     type: RelationTypeInFunction;
+
+    /**
+     * Inverse side of the relation.
+     */
     inverseSideProperty: PropertyTypeInFunction<any>;
+
+    /**
+     * Indicates if this relation is owner side of the relation between entities.
+     */
     isOwning: boolean;
+
+    /**
+     * Additional relation options.
+     */
     options: RelationOptions;
 }
 

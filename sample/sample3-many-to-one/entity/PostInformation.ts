@@ -12,7 +12,7 @@ export class PostInformation {
     @Column()
     text: string;
     
-    @OneToMany<Post>(() => Post, post => post.information, {
+    @OneToMany(type => Post, post => post.information, {
         cascadeUpdate: true,
     })
     posts: Post[];

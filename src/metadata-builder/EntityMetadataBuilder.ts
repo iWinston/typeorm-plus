@@ -5,7 +5,6 @@ import {EntityMetadata} from "./metadata/EntityMetadata";
 import {NamingStrategy} from "../naming-strategy/NamingStrategy";
 import {ColumnMetadata} from "./metadata/ColumnMetadata";
 import {ColumnOptions} from "./options/ColumnOptions";
-import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./metadata/ForeignKeyMetadata";
 
 /**

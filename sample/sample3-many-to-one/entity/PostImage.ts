@@ -12,7 +12,7 @@ export class PostImage {
     @Column()
     url: string;
 
-    @OneToMany<Post>(() => Post, post => post.image)
+    @OneToMany(type => Post, post => post.image)
     posts: Post[];
 
 }

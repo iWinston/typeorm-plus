@@ -12,8 +12,7 @@ export class PostAuthor {
     @Column()
     name: string;
 
-    @OneToOneInverse
-    <Post>(() => Post, post => post.author)
+    @OneToOneInverse(type => Post, post => post.author)
     post: Post;
 
 }

@@ -21,7 +21,7 @@ export class Post {
     text: string;
 
     // post has relation with category, however inverse relation is not set (category does not have relation with post set)
-    @ManyToOne<PostCategory>(() => PostCategory, {
+    @ManyToOne(type => PostCategory, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
@@ -30,27 +30,27 @@ export class Post {
 
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
     // relation it will be inserted automatically to the db when you save this Post entity
-    @ManyToOne<PostDetails>(() => PostDetails, details => details.posts, {
+    @ManyToOne(type => PostDetails, details => details.posts, {
         cascadeInsert: true
     })
     details: PostDetails;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
-    @ManyToOne<PostImage>(() => PostImage, image => image.posts, {
+    @ManyToOne(type => PostImage, image => image.posts, {
         cascadeUpdate: true
     })
     image: PostImage;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
-    @ManyToOne<PostMetadata>(() => PostMetadata, metadata => metadata.posts, {
+    @ManyToOne(type => PostMetadata, metadata => metadata.posts, {
         cascadeRemove: true
     })
     metadata: PostMetadata;
 
     // post has relation with details. full cascades here
-    @ManyToOne<PostInformation>(() => PostInformation, information => information.posts, {
+    @ManyToOne(type => PostInformation, information => information.posts, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
@@ -58,7 +58,7 @@ export class Post {
     information: PostInformation;
 
     // post has relation with details. not cascades here. means cannot be persisted, updated or removed
-    @ManyToOne<PostAuthor>(() => PostAuthor, author => author.posts)
+    @ManyToOne(type => PostAuthor, author => author.posts)
     author: PostAuthor;
 
 }

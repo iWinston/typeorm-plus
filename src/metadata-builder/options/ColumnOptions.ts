@@ -27,12 +27,12 @@ export interface ColumnOptions {
     autoIncrement?: boolean;
 
     /**
-     * Specifies if column's value must be unqiue or not.
+     * Specifies if column's value must be unique or not.
      */
     unique?: boolean;
 
     /**
-     * Indicates if column must be nullable or not.
+     * Indicates if column's value can be set to NULL.
      */
     nullable?: boolean;
 
