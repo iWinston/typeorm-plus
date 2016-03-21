@@ -6,6 +6,6 @@ import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
  */
 export function AbstractTable() {
     return function (cls: Function) {
-        defaultMetadataStorage.addTableMetadata(new TableMetadata(cls, name, true));
+        defaultMetadataStorage.addTableMetadata(new TableMetadata(cls, undefined, true));
     };
 }

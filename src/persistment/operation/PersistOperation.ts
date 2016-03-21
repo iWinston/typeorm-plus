@@ -31,7 +31,7 @@ export class PersistOperation {
         console.log("---------------------------------------------------------");
         console.log(this.dbEntity);
         console.log("---------------------------------------------------------");
-        console.log("NEW ENTITY");
+        console.log("PERSISTENT ENTITY");
         console.log("---------------------------------------------------------");
         console.log(this.persistedEntity);
         console.log("---------------------------------------------------------");
@@ -39,7 +39,7 @@ export class PersistOperation {
         console.log("---------------------------------------------------------");
         console.log(this.allDbEntities);
         console.log("---------------------------------------------------------");
-        console.log("ALL NEW ENTITIES");
+        console.log("ALL PERSISTENT ENTITIES");
         console.log("---------------------------------------------------------");
         console.log(this.allPersistedEntities);
         console.log("---------------------------------------------------------");

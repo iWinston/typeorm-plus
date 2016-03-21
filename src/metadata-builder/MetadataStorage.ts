@@ -119,7 +119,7 @@ export class MetadataStorage {
     }
 
     findTableMetadatasForClasses(classes: Function[]): TableMetadata[] {
-        return this.tableMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
+        return this.tableMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1 && !metadata.isAbstract);
     }
 
     findCompoundIndexMetadatasForClasses(classes: Function[]): CompoundIndexMetadata[] {

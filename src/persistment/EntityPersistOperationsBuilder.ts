@@ -340,7 +340,7 @@ export class EntityPersistOperationBuilder {
                 id: entity[metadata.primaryColumn.name],
                 entity: entity
             }])
-            .filter((entity: any, index: number, allEntities: any[]) => allEntities.indexOf(entity) === index); // unique
+            .filter((entity: any, index: number, allEntities: any[]) => allEntities.indexOf(entity) === index);  // unique
     }
 
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
