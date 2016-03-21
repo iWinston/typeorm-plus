@@ -8,6 +8,7 @@ import {BroadcasterNotFoundError} from "./error/BroadcasterNotFoundError";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {SchemaCreator} from "../schema-creator/SchemaCreator";
 import {MetadataNotFoundError} from "./error/MetadataNotFoundError";
+import {ConstructorFunction} from "../common/ConstructorFunction";
 
 interface RepositoryAndMetadata {
     repository: Repository<any>;
@@ -138,7 +139,7 @@ export class Connection {
     /**
      * Gets repository for the given entity class.
      */
-    getRepository<Entity>(entityClass: Function): Repository<Entity> {
+    getRepository<Entity>(entityClass: ConstructorFunction<Entity>): Repository<Entity> {
         const metadata = this.getMetadata(entityClass);
         const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
         if (!repoMeta)
@@ -161,7 +162,7 @@ export class Connection {
     /**
      * Gets the broadcaster for the given entity class.
      */
-    getBroadcaster<Entity>(entityClass: Function): OrmBroadcaster<Entity> {
+    getBroadcaster<Entity>(entityClass: ConstructorFunction<Entity>): OrmBroadcaster<Entity> {
         const metadata = this.broadcasters.find(broadcaster => broadcaster.entityClass === entityClass);
         if (!metadata)
             throw new BroadcasterNotFoundError(entityClass);
@@ -180,7 +181,7 @@ export class Connection {
     private createRepoMeta(metadata: EntityMetadata): RepositoryAndMetadata {
         return {
             metadata: metadata,
-            repository: new Repository<any>(this, metadata, this.getBroadcaster(metadata.target))
+            repository: new Repository<any>(this, metadata, this.getBroadcaster(<any> metadata.target))
         };
     }
 

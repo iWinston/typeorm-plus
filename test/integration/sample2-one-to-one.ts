@@ -54,11 +54,11 @@ describe("one-to-one", function() {
         postImageRepository: Repository<PostImage>,
         postMetadataRepository: Repository<PostMetadata>;
     before(function() {
-        postRepository = connection.getRepository<Post>(Post);
-        postDetailsRepository = connection.getRepository<PostDetails>(PostDetails);
-        postCategoryRepository = connection.getRepository<PostCategory>(PostCategory);
-        postImageRepository = connection.getRepository<PostImage>(PostImage);
-        postMetadataRepository = connection.getRepository<PostMetadata>(PostMetadata);
+        postRepository = connection.getRepository(Post);
+        postDetailsRepository = connection.getRepository(PostDetails);
+        postCategoryRepository = connection.getRepository(PostCategory);
+        postImageRepository = connection.getRepository(PostImage);
+        postMetadataRepository = connection.getRepository(PostMetadata);
     });
 
     // -------------------------------------------------------------------------

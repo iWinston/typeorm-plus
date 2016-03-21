@@ -4,13 +4,6 @@
 export type RelationType = "one-to-one"|"one-to-many"|"many-to-one"|"many-to-many";
 
 /**
- * Used to get a type of the creating Function.
- */
-export interface ObjectConstructor<T> {
-    new (): T;
-}
-
-/**
  * Provides a constants for each relation type.
  */
 export class RelationTypes {

@@ -44,7 +44,7 @@ describe("insertion", function() {
 
     let postRepository: Repository<Post>;
     beforeEach(function() {
-        postRepository = connection.getRepository<Post>(Post);
+        postRepository = connection.getRepository(Post);
     });
 
     // -------------------------------------------------------------------------
