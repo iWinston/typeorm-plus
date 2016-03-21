@@ -178,7 +178,7 @@ export class Repository<Entity> {
             .then(() => runInTransaction())
             .then(result => {
                 runInTransactionResult = result;
-                this.connection.driver.endTransaction()
+                return this.connection.driver.endTransaction();
             })
             .then(() => runInTransactionResult);
     }
