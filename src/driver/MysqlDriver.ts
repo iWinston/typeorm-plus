@@ -182,4 +182,18 @@ export class MysqlDriver extends BaseDriver implements Driver {
         return qb.execute().then(() => {});
     }
 
+    /**
+     * Starts mysql transaction.
+     */
+    beginTransaction(): Promise<void> {
+        return this.query("START TRANSACTION").then(() => {});
+    }
+
+    /**
+     * Ends mysql transaction.
+     */
+    endTransaction(): Promise<void> {
+        return this.query("COMMIT").then(() => {});
+    }
+
 }

@@ -50,10 +50,10 @@ describe("insertion", function() {
     // -------------------------------------------------------------------------
     // Specifications: persist
     // -------------------------------------------------------------------------
-
+    
     describe("basic insert functionality", function() {
         let newPost: Post, savedPost: Post;
-        
+
         before(reloadDatabase);
 
         beforeEach(function() {

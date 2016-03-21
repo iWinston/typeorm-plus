@@ -67,5 +67,15 @@ export interface Driver {
      * Performs a simple DELETE query by a given conditions in a given table.
      */
     delete(tableName: string, conditions: Object): Promise<void>;
+    
+    /**
+     * Starts transaction.
+     */
+    beginTransaction(): Promise<void>;
+    
+    /**
+     * Ends transaction.
+     */
+    endTransaction(): Promise<void>;
 
 }

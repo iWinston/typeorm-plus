@@ -28,6 +28,7 @@ export class PersistOperationExecutor {
      */
     executePersistOperation(persistOperation: PersistOperation) {
         return Promise.resolve()
+            .then(() => this.connection.driver.beginTransaction())
             .then(() => this.executeInsertOperations(persistOperation))
             .then(() => this.executeInsertJunctionsOperations(persistOperation))
             .then(() => this.executeRemoveJunctionsOperations(persistOperation))
@@ -35,6 +36,7 @@ export class PersistOperationExecutor {
             .then(() => this.executeUpdateOperations(persistOperation))
             .then(() => this.executeRemoveRelationOperations(persistOperation))
             .then(() => this.executeRemoveOperations(persistOperation))
+            .then(() => this.connection.driver.endTransaction())
             .then(() => this.updateIdsOfInsertedEntities(persistOperation))
             .then(() => this.updateIdsOfRemovedEntities(persistOperation));
     }

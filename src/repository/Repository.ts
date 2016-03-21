@@ -168,4 +168,19 @@ export class Repository<Entity> {
         return this.connection.driver.query(query);
     }
 
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     */
+    transaction(runInTransaction: () => Promise<any>): Promise<any> {
+        let runInTransactionResult: any;
+        return this.connection.driver
+            .beginTransaction()
+            .then(() => runInTransaction())
+            .then(result => {
+                runInTransactionResult = result;
+                this.connection.driver.endTransaction()
+            })
+            .then(() => runInTransactionResult);
+    }
+
 }
