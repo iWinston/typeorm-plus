@@ -128,12 +128,12 @@ export class EntityMetadataBuilder {
                 const column1options: ColumnOptions = {
                     length: metadata.primaryColumn.length,
                     type: metadata.primaryColumn.type,
-                    name: metadata.table.name + "_" + metadata.primaryColumn.name
+                    name: metadata.table.name + "_" + metadata.primaryColumn.name + "_1"
                 };
                 const column2options: ColumnOptions = {
                     length: inverseSideMetadata.primaryColumn.length,
                     type: inverseSideMetadata.primaryColumn.type,
-                    name: inverseSideMetadata.table.name + "_" + inverseSideMetadata.primaryColumn.name
+                    name: inverseSideMetadata.table.name + "_" + inverseSideMetadata.primaryColumn.name + "_2"
                 };
                 const columns = [
                     new ColumnMetadata({

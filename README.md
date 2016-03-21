@@ -16,9 +16,7 @@ usages.
 * add partial selection support
 * in query builder should we use property names or table names? (right now its mixed)
 * should all entities have a primary column?
-* check if inheritance and abstract table works fine
 * think about indices
-* make subscribers and listeners to work correctly
 * think more about cascades
 * add cascadePersist to cascades?
 * naming strategy need to be done correctly
@@ -28,8 +26,5 @@ usages.
 * what happens if owner one-to-one on both sides
 * check self referencing
 * class lifecycle callbacks?
-* query builder limit offset
-* query with count? (Paginator)
-* wrap persistment in transaction
 * array / json / date column types
 * exceptions everywhere!

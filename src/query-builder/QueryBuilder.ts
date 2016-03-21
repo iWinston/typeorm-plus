@@ -521,8 +521,8 @@ export class QueryBuilder<Entity> {
                 const junctionTable = junctionMetadata.table.name;
                 const junctionAlias = join.alias.parentAliasName + "_" + join.alias.name;
                 const joinAlias = join.alias.name;
-                const condition1 = junctionAlias + "." + parentTable + "_" + parentTableColumn + "=" + parentAlias + "." + joinTableColumn; // todo: use column names from junction table somehow
-                const condition2 = joinAlias + "." + joinTableColumn + "=" + junctionAlias + "." + joinTable + "_" + joinTableColumn;
+                const condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn; // todo: use column names from junction table somehow
+                const condition2 = joinAlias + "." + joinTableColumn + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
                 
                 return " " + joinType + " JOIN " + junctionTable + " " + junctionAlias + " " + join.conditionType + " " + condition1 +
                        " " + joinType + " JOIN " + joinTable + " " + joinAlias + " " + join.conditionType + " " + condition2 + appendedCondition;
