@@ -7,7 +7,7 @@ import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperati
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
 
-// todo: think how we can implement queryCount, queryManyAndCount
+// todo: make extended functionality for findOne, find and findAndCount queries, so no need for user to use query builder
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -123,6 +123,20 @@ export class Repository<Entity> {
         const builder = this.createQueryBuilder(alias);
         Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
         return builder.setParameters(conditions).getResults();
+    }
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    findAndCount(conditions?: Object): Promise<{ items: Entity[], count: number }> {
+        const alias = this.metadata.table.name;
+        const builder = this.createQueryBuilder(alias);
+        if (conditions) {
+            Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
+            builder.setParameters(conditions);
+        }
+        return Promise.all<any>([ builder.getResults(), builder.getCount() ])
+            .then(([entities, count]: [Entity[], number]) => ({ items: entities, count: count }));
     }
 
     /**

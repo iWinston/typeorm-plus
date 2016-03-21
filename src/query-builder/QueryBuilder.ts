@@ -17,11 +17,13 @@ export class QueryBuilder<Entity> {
     // Private properties
     // -------------------------------------------------------------------------
 
+    private broadcaster: OrmBroadcaster;
     private _aliasMap: AliasMap;
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
     private fromEntity: { alias: Alias };
     private fromTableName: string;
+    private fromTableAlias: string;
     private updateQuerySet: Object;
     private joins: Join[] = [];
     private groupBys: string[] = [];
@@ -31,13 +33,16 @@ export class QueryBuilder<Entity> {
     private parameters: { [key: string]: any } = {};
     private limit: number;
     private offset: number;
-
+    private firstResult: number;
+    private maxResults: number;
+    
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(private connection: Connection) {
         this._aliasMap = new AliasMap(connection.metadatas);
+        this.broadcaster = new OrmBroadcaster(connection);
     }
 
     // -------------------------------------------------------------------------
@@ -129,6 +134,7 @@ export class QueryBuilder<Entity> {
             this.fromEntity = { alias: aliasObj };
         } else {
             this.fromTableName = <string> entityOrTableName;
+            this.fromTableAlias = alias;
         }
         return this;
     }
@@ -242,6 +248,16 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
+    setFirstResult(firstResult: number): this {
+        this.firstResult = firstResult;
+        return this;
+    }
+
+    setMaxResults(maxResults: number): this {
+        this.maxResults = maxResults;
+        return this;
+    }
+
     setParameter(key: string, value: any): this {
         this.parameters[key] = value;
         return this;
@@ -283,19 +299,122 @@ export class QueryBuilder<Entity> {
     }
 
     getResults(): Promise<Entity[]> {
-        const broadcaster = new OrmBroadcaster(this.connection);
-        return this.connection.driver
-            .query<any[]>(this.getSql())
-            .then(results => this.rawResultsToEntities(results))
-            .then(results => {
-                broadcaster.broadcastLoadEventsForAll(results);
-                return results;
-            });
+        const mainAlias = this.aliasMap.mainAlias.name;
+        if (this.firstResult || this.maxResults) {
+            const metadata = this.connection.getMetadata(this.fromEntity.alias.target);
+            const idsQuery = this.clone()
+                .select(`DISTINCT(${mainAlias}.${metadata.primaryColumn.name}) as ids`)
+                .setOffset(this.firstResult)
+                .setLimit(this.maxResults)
+                .getSql();
+            return this.connection.driver
+                .query<any[]>(idsQuery)
+                .then((results: any[]) => {
+                    const ids = results.map(result => result["ids"]).join(", ");
+                    const queryWithIds = this.clone()
+                        .andWhere(mainAlias + "." + metadata.primaryColumn.name + " IN (" + ids + ")")
+                        .getSql();
+                    return this.connection.driver.query<any[]>(queryWithIds);
+                })
+                .then(results => this.rawResultsToEntities(results))
+                .then(results => {
+                    this.broadcaster.broadcastLoadEventsForAll(results);
+                    return results;
+                });
+
+        } else {
+            return this.connection.driver
+                .query<any[]>(this.getSql())
+                .then(results => this.rawResultsToEntities(results))
+                .then(results => {
+                    this.broadcaster.broadcastLoadEventsForAll(results);
+                    return results;
+                });
+        }
     }
 
     getSingleResult(): Promise<Entity> {
         return this.getResults().then(entities => entities[0]);
     }
+
+    getCount(): Promise<number> {
+        const mainAlias = this.aliasMap.mainAlias.name;
+        const metadata = this.connection.getMetadata(this.fromEntity.alias.target);
+        const countQuery = this.clone()
+            .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`)
+            .getSql();
+        return this.connection.driver
+            .query<any[]>(countQuery)
+            .then(results => parseInt(results[0]["cnt"]));
+    }
+
+    clone() {
+        const qb = new QueryBuilder(this.connection);
+        
+        switch (this.type) {
+            case "select":
+                qb.select(this.selects);
+                break;
+            case "update":
+                qb.update(this.updateQuerySet);
+                break;
+            case "delete":
+                qb.delete();
+                break;
+        }
+
+        if (this.fromEntity && this.fromEntity.alias && this.fromEntity.alias.target) {
+            qb.from(this.fromEntity.alias.target, this.fromEntity.alias.name);
+        } else if (this.fromTableName) {
+            qb.from(this.fromTableName, this.fromTableAlias);
+        }
+
+        this.joins.forEach(join => {
+            const property = join.alias.target || (join.alias.parentAliasName + "." + join.alias.parentPropertyName);
+            qb.join(join.type, property, join.alias.name, join.conditionType, join.condition);
+        });
+
+        this.groupBys.forEach(groupBy => qb.addGroupBy(groupBy));
+
+        this.wheres.forEach(where => {
+            switch (where.type) {
+                case "simple":
+                    qb.where(where.condition);
+                    break;
+                case "and":
+                    qb.andWhere(where.condition);
+                    break;
+                case "or":
+                    qb.orWhere(where.condition);
+                    break;
+            }
+        });
+
+        this.havings.forEach(having => {
+            switch (having.type) {
+                case "simple":
+                    qb.where(having.condition);
+                    break;
+                case "and":
+                    qb.andWhere(having.condition);
+                    break;
+                case "or":
+                    qb.orWhere(having.condition);
+                    break;
+            }
+        });
+
+        this.orderBys.forEach(orderBy => qb.addOrderBy(orderBy.sort, orderBy.order));
+        Object.keys(this.parameters).forEach(key => qb.setParameter(key, this.parameters[key]))
+
+        qb.setLimit(this.limit)
+            .setOffset(this.offset)
+            .setFirstResult(this.firstResult)
+            .setMaxResults(this.maxResults);
+
+        return qb;
+    }
+
 
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -365,7 +484,8 @@ export class QueryBuilder<Entity> {
                 this.addParameters(params);
                 return "UPDATE " + tableName + " " + (alias ? alias : "") + " SET " + updateSet;
         }
-        return "";
+        
+        throw new Error("No query builder type is specified.");
     }
 
     protected createWhereExpression() {
