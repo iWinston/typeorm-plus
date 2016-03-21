@@ -106,9 +106,8 @@ export class EntityPersistOperationBuilder {
     
     private findCascadeInsertedEntities(newEntity: any, 
                                         dbEntities: EntityWithId[], 
-                                        fromRelation: RelationMetadata): InsertOperation[] {
-
-        let operations: InsertOperation[] = [];
+                                        fromRelation: RelationMetadata,
+                                        operations: InsertOperation[] = []): InsertOperation[] {
         const metadata = this.connection.getMetadata(newEntity.constructor);
         const isObjectNew = !this.findEntityWithId(dbEntities, metadata.target, newEntity[metadata.primaryColumn.name]);
         
@@ -116,7 +115,7 @@ export class EntityPersistOperationBuilder {
         if (isObjectNew && !this.checkCascadesAllowed("insert", metadata, fromRelation)) {
             return operations; // looks like object is new here, but cascades are not allowed - then we should stop iteration
 
-        } else if (isObjectNew) { // object is new and cascades are allow here
+        } else if (isObjectNew && !operations.find(o => o.entity === newEntity)) { // object is new and cascades are allow here
             operations.push(new InsertOperation(newEntity));
         }
 
@@ -126,12 +125,10 @@ export class EntityPersistOperationBuilder {
                 const value = newEntity[relation.propertyName];
                 if (value instanceof Array) {
                     value.forEach((subEntity: any) => {
-                        const subInserted = this.findCascadeInsertedEntities(subEntity, dbEntities, relation);
-                        operations = operations.concat(subInserted);
+                        this.findCascadeInsertedEntities(subEntity, dbEntities, relation, operations);
                     });
                 } else {
-                    const subInserted = this.findCascadeInsertedEntities(value, dbEntities, relation);
-                    operations = operations.concat(subInserted);
+                    this.findCascadeInsertedEntities(value, dbEntities, relation, operations);
                 }
             });
         

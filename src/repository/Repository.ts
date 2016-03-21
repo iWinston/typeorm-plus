@@ -218,27 +218,30 @@ export class Repository<Entity> {
     /**
      * Extracts unique objects from given entity and all its downside relations.
      */
-    private extractObjectsById(entity: any, metadata: EntityMetadata): EntityWithId[] {
+    private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): EntityWithId[] {
         if (!entity)
-            return [];
+            return entityWithIds;
 
-        return metadata.relations
+        metadata.relations
             .filter(relation => !!entity[relation.propertyName])
-            .map(relation => {
+            .forEach(relation => {
                 const relMetadata = relation.relatedEntityMetadata;
-                if (!(entity[relation.propertyName] instanceof Array))
-                    return this.extractObjectsById(entity[relation.propertyName], relMetadata);
-
-                return entity[relation.propertyName]
-                    .map((subEntity: any) => this.extractObjectsById(subEntity, relMetadata))
-                    .reduce((col1: any[], col2: any[]) => col1.concat(col2), []); // flatten
-            })
-            .reduce((col1: any[], col2: any[]) => col1.concat(col2), [])  // flatten
-            .concat([{
+                const value = entity[relation.propertyName];
+                if (value instanceof Array) {
+                    value.forEach((subEntity: any) => this.extractObjectsById(subEntity, relMetadata, entityWithIds));
+                } else {
+                    this.extractObjectsById(value, relMetadata, entityWithIds);
+                }
+            });
+        
+        if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
+            entityWithIds.push({
                 id: entity[metadata.primaryColumn.name],
                 entity: entity
-            }])
-            .filter((entity: any, index: number, allEntities: any[]) => allEntities.indexOf(entity) === index);  // unique
+            });
+        }
+        
+        return entityWithIds;
     }
 
 }
