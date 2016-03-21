@@ -142,7 +142,8 @@ export class EntityPersistOperationBuilder {
             return operations;
             
         } else if (diff.length) {
-            operations.push(new UpdateOperation(newEntity, diff));
+            const entityId = newEntity[metadata.primaryColumn.name];
+            operations.push(new UpdateOperation(newEntity, entityId, diff));
         }
 
         metadata.relations
@@ -189,7 +190,7 @@ export class EntityPersistOperationBuilder {
             return operations; // looks like object is removed here, but cascades are not allowed - then we should stop iteration
 
         } else if (isObjectRemoved) {  // object is remove and cascades are allow here
-            operations.push(new RemoveOperation(dbEntity, fromMetadata, fromRelation, fromEntityId));
+            operations.push(new RemoveOperation(dbEntity, relationId, fromMetadata, fromRelation, fromEntityId));
         }
 
         metadata.relations

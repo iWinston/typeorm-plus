@@ -2,7 +2,6 @@ import {Driver} from "../driver/Driver";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {Repository} from "../repository/Repository";
 import {OrmSubscriber} from "../subscriber/OrmSubscriber";
-import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {BroadcasterNotFoundError} from "./error/BroadcasterNotFoundError";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
@@ -28,7 +27,6 @@ export class Connection {
     private _driver: Driver;
     private _metadatas: EntityMetadata[] = [];
     private _subscribers: OrmSubscriber<any>[] = [];
-    private _broadcasters: OrmBroadcaster<any>[] = [];
     private repositoryAndMetadatas: RepositoryAndMetadata[] = [];
     private _options: ConnectionOptions;
 
@@ -65,13 +63,6 @@ export class Connection {
      */
     get subscribers(): OrmSubscriber<any>[] {
         return this._subscribers;
-    }
-
-    /**
-     * All broadcasters that are registered for this connection.
-     */
-    get broadcasters(): OrmBroadcaster<any>[] {
-        return this._broadcasters;
     }
 
     /**
@@ -125,7 +116,6 @@ export class Connection {
      */
     addMetadatas(metadatas: EntityMetadata[]) {
         this._metadatas     = this._metadatas.concat(metadatas);
-        this._broadcasters  = this._broadcasters.concat(metadatas.map(metadata => this.createBroadcasterForMetadata(metadata)));
         this.repositoryAndMetadatas  = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
     }
 
@@ -159,29 +149,14 @@ export class Connection {
         return metadata;
     }
 
-    /**
-     * Gets the broadcaster for the given entity class.
-     */
-    getBroadcaster<Entity>(entityClass: ConstructorFunction<Entity>): OrmBroadcaster<Entity> {
-        const metadata = this.broadcasters.find(broadcaster => broadcaster.entityClass === entityClass);
-        if (!metadata)
-            throw new BroadcasterNotFoundError(entityClass);
-
-        return metadata;
-    }
-
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private createBroadcasterForMetadata(metadata: EntityMetadata): OrmBroadcaster<any> {
-        return new OrmBroadcaster<any>(this.subscribers, metadata.target);
-    }
-
     private createRepoMeta(metadata: EntityMetadata): RepositoryAndMetadata {
         return {
             metadata: metadata,
-            repository: new Repository<any>(this, metadata, this.getBroadcaster(<any> metadata.target))
+            repository: new Repository<any>(this, metadata)
         };
     }
 

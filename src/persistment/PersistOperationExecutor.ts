@@ -6,6 +6,7 @@ import {JunctionInsertOperation} from "./operation/JunctionInsertOperation";
 import {InsertOperation} from "./operation/InsertOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
+import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -27,7 +28,10 @@ export class PersistOperationExecutor {
      * Executes given persist operation.
      */
     executePersistOperation(persistOperation: PersistOperation) {
+        const broadcaster = new OrmBroadcaster(this.connection);
+        
         return Promise.resolve()
+            .then(() => this.broadcastBeforeEvents(broadcaster, persistOperation))
             .then(() => this.connection.driver.beginTransaction())
             .then(() => this.executeInsertOperations(persistOperation))
             .then(() => this.executeInsertJunctionsOperations(persistOperation))
@@ -38,12 +42,59 @@ export class PersistOperationExecutor {
             .then(() => this.executeRemoveOperations(persistOperation))
             .then(() => this.connection.driver.endTransaction())
             .then(() => this.updateIdsOfInsertedEntities(persistOperation))
-            .then(() => this.updateIdsOfRemovedEntities(persistOperation));
+            .then(() => this.updateIdsOfRemovedEntities(persistOperation))
+            .then(() => this.broadcastAfterEvents(broadcaster, persistOperation));
     }
 
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Broadcast all before persistment events - beforeInsert, beforeUpdate and beforeRemove events.
+     */
+    private broadcastBeforeEvents(broadcaster: OrmBroadcaster, persistOperation: PersistOperation) {
+        
+        const insertEvents = persistOperation.inserts.map(insertOperation => {
+            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === insertOperation.entityId);
+            return broadcaster.broadcastBeforeInsertEvent(persistedEntity);
+        });
+        const updateEvents = persistOperation.updates.map(updateOperation => {
+            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === updateOperation.entityId);
+            return broadcaster.broadcastBeforeUpdateEvent(persistedEntity, updateOperation.columns);
+        });
+        const removeEvents = persistOperation.removes.map(removeOperation => {
+            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === removeOperation.entityId);
+            return broadcaster.broadcastBeforeRemoveEvent(persistedEntity, removeOperation.entityId);
+        });
+        
+        return Promise.all(insertEvents)
+            .then(() => Promise.all(updateEvents))
+            .then(() => Promise.all(removeEvents)); // todo: do we really should send it in order?
+    }
+
+    /**
+     * Broadcast all after persistment events - afterInsert, afterUpdate and afterRemove events.
+     */
+    private broadcastAfterEvents(broadcaster: OrmBroadcaster, persistOperation: PersistOperation) {
+        
+        const insertEvents = persistOperation.inserts.map(insertOperation => {
+            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === insertOperation.entityId);
+            return broadcaster.broadcastAfterInsertEvent(persistedEntity);
+        });
+        const updateEvents = persistOperation.updates.map(updateOperation => {
+            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === updateOperation.entityId);
+            return broadcaster.broadcastAfterUpdateEvent(persistedEntity, updateOperation.columns);
+        });
+        const removeEvents = persistOperation.removes.map(removeOperation => {
+            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === removeOperation.entityId);
+            return broadcaster.broadcastAfterRemoveEvent(persistedEntity, removeOperation.entityId);
+        });
+        
+        return Promise.all(insertEvents)
+            .then(() => Promise.all(updateEvents))
+            .then(() => Promise.all(removeEvents)); // todo: do we really should send it in order?
+    }
 
     /**
      * Executes insert operations.
@@ -127,8 +178,6 @@ export class PersistOperationExecutor {
      * Removes all ids of the removed entities.
      */
     private updateIdsOfRemovedEntities(persistOperation: PersistOperation) {
-        // console.log("OPERATION REMOVES: ", persistOperation.removes);
-        // console.log("ALL NEW ENTITIES: ", persistOperation.allNewEntities);
         persistOperation.removes.forEach(removeOperation => {
             const metadata = this.connection.getMetadata(removeOperation.entity.constructor);
             const removedEntity = persistOperation.allPersistedEntities.find(allNewEntity => {

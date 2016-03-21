@@ -115,7 +115,6 @@ export class MetadataStorage {
     // -------------------------------------------------------------------------
 
     findOrmEventSubscribersForClasses(classes: Function[]): OrmEventSubscriberMetadata[] { 
-        // todo: didn't checked. Check if is working. Maybe dont need to use target and use constructor somehow?
         return this.ormEventSubscriberMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
     }
 

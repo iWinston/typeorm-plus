@@ -10,7 +10,7 @@ export interface OrmSubscriber<Entity> {
     /**
      * Returns the class of the entity to which events will listen.
      */
-    listenTo(): Function;
+    listenTo?(): Function;
 
     /**
      * Called after entity is loaded.

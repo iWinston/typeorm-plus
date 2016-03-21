@@ -1,6 +1,5 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
-import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
@@ -15,34 +14,10 @@ import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor"
 export class Repository<Entity> {
 
     // -------------------------------------------------------------------------
-    // Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Connection used by this repository.
-     */
-    private connection: Connection;
-
-    /**
-     * Entity metadata of the table with which this repository is working.
-     */
-    private metadata: EntityMetadata;
-
-    /**
-     * Broadcaster used to broadcast this repository events.
-     */
-    private broadcaster: OrmBroadcaster<Entity>;
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection,
-                metadata: EntityMetadata,
-                broadcaster: OrmBroadcaster<Entity>) {
-        this.connection  = connection;
-        this.metadata    = metadata;
-        this.broadcaster = broadcaster;
+    constructor(private connection: Connection, private metadata: EntityMetadata) {
     }
 
     // -------------------------------------------------------------------------

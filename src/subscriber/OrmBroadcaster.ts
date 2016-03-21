@@ -1,99 +1,87 @@
-import {UpdateEvent} from "./event/UpdateEvent";
-import {RemoveEvent} from "./event/RemoveEvent";
-import {InsertEvent} from "./event/InsertEvent";
 import {OrmSubscriber} from "./OrmSubscriber";
+import {Connection} from "../connection/Connection";
+import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
-export class OrmBroadcaster<Entity> {
-
-    // -------------------------------------------------------------------------
-    // Properties
-    // -------------------------------------------------------------------------
-
-    private subscribers: OrmSubscriber<Entity|any>[];
-    private _entityClass: Function;
+export class OrmBroadcaster {
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(subscribers: OrmSubscriber<Entity|any>[], entityClass: Function) {
-        this.subscribers = subscribers;
-        this._entityClass = entityClass;
+    constructor(private connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
 
-    get entityClass(): Function {
-        return this._entityClass;
-    }
-
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
-
-    broadcastBeforeInsert(event: InsertEvent<Entity>) {
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
+    broadcastBeforeInsertEvent(entity: any) {
+        this.connection
+            .subscribers
+            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeInsert)
-            .forEach(subscriber => subscriber.beforeInsert(event));
+            .forEach(subscriber => subscriber.beforeInsert({ entity: entity }));
     }
 
-    broadcastAfterInsert(event: InsertEvent<Entity>) {
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
-            .filter(subscriber => !!subscriber.afterInsert)
-            .forEach(subscriber => subscriber.afterInsert(event));
-    }
-
-    broadcastBeforeUpdate(event: UpdateEvent<Entity>) {
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
+    broadcastBeforeUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]) {
+        this.connection
+            .subscribers
+            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeUpdate)
-            .forEach(subscriber => subscriber.beforeUpdate(event));
+            .forEach(subscriber => subscriber.beforeUpdate({ entity: entity, updatedColumns: updatedColumns }));
     }
 
-    broadcastAfterUpdate(event: UpdateEvent<Entity>) {
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
-            .filter(subscriber => !!subscriber.afterUpdate)
-            .forEach(subscriber => subscriber.afterUpdate(event));
-    }
-
-    broadcastAfterRemove(event: RemoveEvent<Entity>) {
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
-            .filter(subscriber => !!subscriber.afterRemove)
-            .forEach(subscriber => subscriber.afterRemove(event));
-    }
-
-    broadcastBeforeRemove(event: RemoveEvent<Entity>) {
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
+    broadcastBeforeRemoveEvent(entity: any, entityId: any) {
+        this.connection
+            .subscribers
+            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeRemove)
-            .forEach(subscriber => subscriber.beforeRemove(event));
+            .forEach(subscriber => subscriber.beforeRemove({ entity: entity, entityId: entityId }));
     }
 
-    broadcastAfterLoadedAll(entities: Entity[]) {
-        if (!entities || entities.length) return;
-
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
-            .filter(subscriber => !!subscriber.afterLoad)
-            .forEach(subscriber => {
-                entities.forEach(entity => subscriber.afterLoad(entity));
-            });
+    broadcastAfterInsertEvent(entity: any) {
+        this.connection
+            .subscribers
+            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
+            .filter(subscriber => !!subscriber.afterInsert)
+            .forEach(subscriber => subscriber.afterInsert({ entity: entity }));
     }
 
-    broadcastAfterLoaded(entity: Entity) {
-        if (!entity) return;
+    broadcastAfterUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]) {
+        this.connection
+            .subscribers
+            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
+            .filter(subscriber => !!subscriber.afterUpdate)
+            .forEach(subscriber => subscriber.afterUpdate({ entity: entity, updatedColumns: updatedColumns }));
+    }
 
-        this.subscribers
-            .filter(subscriber => this.isAllowedSubscribers(subscriber))
+    broadcastAfterRemoveEvent(entity: any, entityId: any) {
+        this.connection
+            .subscribers
+            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
+            .filter(subscriber => !!subscriber.afterRemove)
+            .forEach(subscriber => subscriber.afterRemove({ entity: entity, entityId: entityId }));
+    }
+
+    broadcastLoadEventsForAll(entities: any[]) {
+        entities.forEach(entity => this.broadcastLoadEvents(entity));
+    }
+
+    broadcastLoadEvents(entity: any) {
+        const metadata = this.connection.getMetadata(entity.constructor);
+
+        metadata
+            .relations
+            .filter(relation => entity.hasOwnProperty(relation.propertyName))
+            .map(relation => entity[relation.propertyName])
+            .forEach(value => value instanceof Array ? this.broadcastLoadEventsForAll(value) : this.broadcastLoadEvents(value));
+
+        this.connection
+            .subscribers
+            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterLoad)
             .forEach(subscriber => subscriber.afterLoad(entity));
     }
@@ -102,8 +90,11 @@ export class OrmBroadcaster<Entity> {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private isAllowedSubscribers(subscriber: OrmSubscriber<Entity|any>) {
-        return !subscriber.listenTo() || subscriber.listenTo() === Object || subscriber.listenTo() === this._entityClass;
+    private isAllowedSubscribers(subscriber: OrmSubscriber<any>, cls: Function) {
+        return  !subscriber.listenTo ||
+                !subscriber.listenTo() ||
+                subscriber.listenTo() === Object ||
+                subscriber.listenTo() === cls;
     }
 
 }

@@ -1,10 +1,20 @@
+import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
+
 /**
  * This event is used on update events.
  */
 export interface UpdateEvent<Entity> {
-    
-    // todo: will we send an entity changeset ?
 
-    entity?: Entity;
+    // todo: send old and new update values
+    
+    /**
+     * Updated entity.
+     */
+    entity: Entity;
+
+    /**
+     * List of columns that were updated.
+     */
+    updatedColumns: ColumnMetadata[];
 
 }

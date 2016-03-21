@@ -2,6 +2,7 @@ import {Alias} from "./alias/Alias";
 import {AliasMap} from "./alias/AliasMap";
 import {Connection} from "../connection/Connection";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
+import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
 
 export interface Join {
     alias: Alias;
@@ -282,9 +283,14 @@ export class QueryBuilder<Entity> {
     }
 
     getResults(): Promise<Entity[]> {
+        const broadcaster = new OrmBroadcaster(this.connection);
         return this.connection.driver
             .query<any[]>(this.getSql())
-            .then(results => this.rawResultsToEntities(results));
+            .then(results => this.rawResultsToEntities(results))
+            .then(results => {
+                broadcaster.broadcastLoadEventsForAll(results);
+                return results;
+            });
     }
 
     getSingleResult(): Promise<Entity> {
