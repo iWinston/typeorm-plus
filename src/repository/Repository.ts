@@ -5,6 +5,7 @@ import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/Pl
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
+import {EntityWithId} from "../persistment/operation/PersistOperation";
 
 // todo: think how we can implement queryCount, queryManyAndCount
 
@@ -83,13 +84,20 @@ export class Repository<Entity> {
      * Persists (saves) a given entity in the database.
      */
     persist(entity: Entity) {
+        let loadedDbEntity: any;
         const persister = new PersistOperationExecutor(this.connection);
+        const builder = new EntityPersistOperationBuilder(this.connection);
+        const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
         const promise = !this.hasId(entity) ? Promise.resolve(null) : this.initialize(entity);
-        return promise.then(dbEntity => {
-            const builder = new EntityPersistOperationBuilder(this.connection);
-            const persistOperation = builder.buildFullPersistment(this.metadata, dbEntity, entity);
-            return persister.executePersistOperation(persistOperation);
-        }).then(() => entity);
+        return promise
+            .then(dbEntity => {
+                loadedDbEntity = dbEntity;
+                return this.findNotLoadedIds(this.extractObjectsById(dbEntity, this.metadata), allPersistedEntities);
+            }) // need to find db entities that were not loaded by initialize method
+            .then(allDbEntities => {
+                const persistOperation = builder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
+                return persister.executePersistOperation(persistOperation);
+            }).then(() => entity);
     }
 
     /**
@@ -100,7 +108,9 @@ export class Repository<Entity> {
         return this.initialize(entity).then(dbEntity => {
             (<any> entity)[this.metadata.primaryColumn.name] = undefined;
             const builder = new EntityPersistOperationBuilder(this.connection);
-            const persistOperation = builder.buildOnlyRemovement(this.metadata, dbEntity, entity);
+            const dbEntities = this.extractObjectsById(dbEntity, this.metadata);
+            const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
+            const persistOperation = builder.buildOnlyRemovement(this.metadata, dbEntity, entity, dbEntities, allPersistedEntities);
             return persister.executePersistOperation(persistOperation);
         }).then(() => entity);
     }
@@ -156,6 +166,65 @@ export class Repository<Entity> {
                 return this.connection.driver.endTransaction();
             })
             .then(() => runInTransactionResult);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * When ORM loads dbEntity it uses joins to load all entity dependencies. However when dbEntity is newly persisted
+     * to the db, but uses already exist in the db relational entities, those entities cannot be loaded, and will
+     * absent in dbEntities. To fix it, we need to go throw all persistedEntities we have, find out those which have
+     * ids, check if we did not load them yet and try to load them. This algorithm will make sure that all dbEntities
+     * are loaded. Further it will help insert operations to work correctly.
+     */
+    private findNotLoadedIds(dbEntities: EntityWithId[], persistedEntities: EntityWithId[]): Promise<EntityWithId[]> {
+        const missingDbEntitiesLoad = persistedEntities
+            .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
+            .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entity.constructor === entityWithId.entity.constructor && dbEntity.id === entityWithId.id))
+            .map(entityWithId => {
+                const metadata = this.connection.getMetadata(entityWithId.entity.constructor);
+                const repository = this.connection.getRepository(entityWithId.entity.constructor);
+                return repository.findById(entityWithId.id).then(loadedEntity => {
+                    if (!loadedEntity) return undefined;
+
+                    return {
+                        id: (<any> loadedEntity)[metadata.primaryColumn.name],
+                        entity: loadedEntity
+                    };
+                });
+            });
+
+        return Promise.all(missingDbEntitiesLoad).then(missingDbEntities => {
+            return dbEntities.concat(missingDbEntities.filter(dbEntity => !!dbEntity));
+        });
+    }
+
+    /**
+     * Extracts unique objects from given entity and all its downside relations.
+     */
+    private extractObjectsById(entity: any, metadata: EntityMetadata): EntityWithId[] {
+        if (!entity)
+            return [];
+
+        return metadata.relations
+            .filter(relation => !!entity[relation.propertyName])
+            .map(relation => {
+                const relMetadata = relation.relatedEntityMetadata;
+                if (!(entity[relation.propertyName] instanceof Array))
+                    return this.extractObjectsById(entity[relation.propertyName], relMetadata);
+
+                return entity[relation.propertyName]
+                    .map((subEntity: any) => this.extractObjectsById(subEntity, relMetadata))
+                    .reduce((col1: any[], col2: any[]) => col1.concat(col2), []); // flatten
+            })
+            .reduce((col1: any[], col2: any[]) => col1.concat(col2), [])  // flatten
+            .concat([{
+                id: entity[metadata.primaryColumn.name],
+                entity: entity
+            }])
+            .filter((entity: any, index: number, allEntities: any[]) => allEntities.indexOf(entity) === index);  // unique
     }
 
 }

@@ -54,9 +54,14 @@ export class EntityPersistOperationBuilder {
     /**
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
-    buildFullPersistment(metadata: EntityMetadata, dbEntity: any, persistedEntity: any): PersistOperation {
-        const dbEntities = this.extractObjectsById(dbEntity, metadata);
-        const allPersistedEntities = this.extractObjectsById(persistedEntity, metadata);
+    buildFullPersistment(metadata: EntityMetadata, 
+                         dbEntity: any, 
+                         persistedEntity: any, 
+                         dbEntities: EntityWithId[],
+                         allPersistedEntities: EntityWithId[]): PersistOperation {
+        
+        //const dbEntities = this.extractObjectsById(dbEntity, metadata);
+        //const allPersistedEntities = this.extractObjectsById(persistedEntity, metadata);
         
         const persistOperation = new PersistOperation();
         persistOperation.dbEntity = dbEntity;
@@ -76,17 +81,21 @@ export class EntityPersistOperationBuilder {
     /**
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
-    buildOnlyRemovement(metadata: EntityMetadata, dbEntity: any, newEntity: any): PersistOperation {
-        const dbEntities = this.extractObjectsById(dbEntity, metadata);
-        const allEntities = this.extractObjectsById(newEntity, metadata);
+    buildOnlyRemovement(metadata: EntityMetadata,
+                        dbEntity: any,
+                        persistedEntity: any,
+                        dbEntities: EntityWithId[],
+                        allPersistedEntities: EntityWithId[]): PersistOperation {
+        // const dbEntities = this.extractObjectsById(dbEntity, metadata);
+        // const allEntities = this.extractObjectsById(newEntity, metadata);
         
         const persistOperation = new PersistOperation();
         persistOperation.dbEntity = dbEntity;
-        persistOperation.persistedEntity = newEntity;
+        persistOperation.persistedEntity = persistedEntity;
         persistOperation.allDbEntities = dbEntities;
-        persistOperation.allPersistedEntities = allEntities;
-        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allEntities, null, null, null);
-        persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allEntities);
+        persistOperation.allPersistedEntities = allPersistedEntities;
+        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, null, null, null);
+        persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
 
         return persistOperation;
     }
@@ -315,32 +324,6 @@ export class EntityPersistOperationBuilder {
                 });
                 return operations;
             }, <JunctionInsertOperation[]> []);
-    }
-
-    /**
-     * Extracts unique objects from given entity and all its downside relations.
-     */
-    private extractObjectsById(entity: any, metadata: EntityMetadata): EntityWithId[] {
-        if (!entity)
-            return [];
-        
-        return metadata.relations
-            .filter(relation => !!entity[relation.propertyName])
-            .map(relation => {
-                const relMetadata = relation.relatedEntityMetadata;
-                if (!(entity[relation.propertyName] instanceof Array))
-                    return this.extractObjectsById(entity[relation.propertyName], relMetadata);
-                
-                return entity[relation.propertyName]
-                    .map((subEntity: any) => this.extractObjectsById(subEntity, relMetadata))
-                    .reduce((col1: any[], col2: any[]) => col1.concat(col2), []); // flatten
-            })
-            .reduce((col1: any[], col2: any[]) => col1.concat(col2), [])  // flatten
-            .concat([{
-                id: entity[metadata.primaryColumn.name],
-                entity: entity
-            }])
-            .filter((entity: any, index: number, allEntities: any[]) => allEntities.indexOf(entity) === index);  // unique
     }
 
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {

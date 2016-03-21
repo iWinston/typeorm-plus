@@ -129,7 +129,7 @@ export class Connection {
     /**
      * Gets repository for the given entity class.
      */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>): Repository<Entity> {
+    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
         const metadata = this.getMetadata(entityClass);
         const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
         if (!repoMeta)

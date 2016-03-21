@@ -31,14 +31,14 @@ createMysqlConnection(options, [__dirname + "/entity"]).then(connection => {
     post.author = author;
     post.categories.push(category1, category2);
 
-    category1 = new PostCategory();
+    /*category1 = new PostCategory();
     category1.name = "post category #1";
 
     category2 = new PostCategory();
     category2.name = "post category #2";
 
     author = new PostAuthor();
-    author.name = "Umed";
+    author.name = "Umed";*/
 
     let blog = new Blog();
     blog.text = "Hello how are you?";
