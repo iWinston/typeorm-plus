@@ -1,4 +1,4 @@
-import {OrmEventSubscriber} from "../../../src/decorator/OrmEventSubscriber";
+import {OrmEventSubscriber} from "../../../src/decorator/listeners/OrmEventSubscriber";
 import {OrmSubscriber} from "../../../src/subscriber/OrmSubscriber";
 import {InsertEvent} from "../../../src/subscriber/event/InsertEvent";
 import {RemoveEvent} from "../../../src/subscriber/event/RemoveEvent";

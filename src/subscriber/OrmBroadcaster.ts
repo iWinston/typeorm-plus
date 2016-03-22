@@ -1,6 +1,7 @@
 import {OrmSubscriber} from "./OrmSubscriber";
 import {Connection} from "../connection/Connection";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
+import {EventListenerTypes} from "../metadata-builder/types/EventListenerTypes";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -18,72 +19,135 @@ export class OrmBroadcaster {
     // Accessors
     // -------------------------------------------------------------------------
 
-    broadcastBeforeInsertEvent(entity: any) {
-        this.connection
+    broadcastBeforeInsertEvent(entity: any): Promise<void> {
+
+        const subscribers = this.connection
             .subscribers
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeInsert)
-            .forEach(subscriber => subscriber.beforeInsert({ entity: entity }));
+            .map(subscriber => subscriber.beforeInsert({ entity: entity }));
+
+        const listeners = this.connection.entityListeners
+            .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT)
+            .filter(listener => listener.target === entity.constructor)
+            .map(entityListener => entity[entityListener.propertyName]());
+
+        return Promise.all(subscribers.concat(listeners)).then(() => {});
     }
 
-    broadcastBeforeUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]) {
-        this.connection
+    broadcastBeforeUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]): Promise<void> {
+
+        const subscribers = this.connection
             .subscribers
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeUpdate)
-            .forEach(subscriber => subscriber.beforeUpdate({ entity: entity, updatedColumns: updatedColumns }));
+            .map(subscriber => subscriber.beforeUpdate({ entity: entity, updatedColumns: updatedColumns }));
+
+        const listeners = this.connection.entityListeners
+            .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE)
+            .filter(listener => listener.target === entity.constructor)
+            .map(entityListener => entity[entityListener.propertyName]());
+
+        return Promise.all(subscribers.concat(listeners)).then(() => {});
     }
 
-    broadcastBeforeRemoveEvent(entity: any, entityId: any) {
-        this.connection
+    broadcastBeforeRemoveEvent(entity: any, entityId: any): Promise<void> {
+
+        const subscribers = this.connection
             .subscribers
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeRemove)
-            .forEach(subscriber => subscriber.beforeRemove({ entity: entity, entityId: entityId }));
+            .map(subscriber => subscriber.beforeRemove({ entity: entity, entityId: entityId }));
+
+        const listeners = this.connection.entityListeners
+            .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE)
+            .filter(listener => listener.target === entity.constructor)
+            .map(entityListener => entity[entityListener.propertyName]());
+
+        return Promise.all(subscribers.concat(listeners)).then(() => {});
     }
 
-    broadcastAfterInsertEvent(entity: any) {
-        this.connection
+    broadcastAfterInsertEvent(entity: any): Promise<void> {
+
+        const subscribers = this.connection
             .subscribers
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterInsert)
-            .forEach(subscriber => subscriber.afterInsert({ entity: entity }));
+            .map(subscriber => subscriber.afterInsert({ entity: entity }));
+
+        const listeners = this.connection.entityListeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT)
+            .filter(listener => listener.target === entity.constructor)
+            .map(entityListener => entity[entityListener.propertyName]());
+
+        return Promise.all(subscribers.concat(listeners)).then(() => {});
     }
 
-    broadcastAfterUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]) {
-        this.connection
+    broadcastAfterUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]): Promise<void> {
+
+        const subscribers = this.connection
             .subscribers
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterUpdate)
-            .forEach(subscriber => subscriber.afterUpdate({ entity: entity, updatedColumns: updatedColumns }));
+            .map(subscriber => subscriber.afterUpdate({ entity: entity, updatedColumns: updatedColumns }));
+
+        const listeners = this.connection.entityListeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE)
+            .filter(listener => listener.target === entity.constructor)
+            .map(entityListener => entity[entityListener.propertyName]());
+
+        return Promise.all(subscribers.concat(listeners)).then(() => {});
     }
 
-    broadcastAfterRemoveEvent(entity: any, entityId: any) {
-        this.connection
+    broadcastAfterRemoveEvent(entity: any, entityId: any): Promise<void> {
+
+        const subscribers = this.connection
             .subscribers
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterRemove)
-            .forEach(subscriber => subscriber.afterRemove({ entity: entity, entityId: entityId }));
+            .map(subscriber => subscriber.afterRemove({ entity: entity, entityId: entityId }));
+
+        const listeners = this.connection.entityListeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE)
+            .filter(listener => listener.target === entity.constructor)
+            .map(entityListener => entity[entityListener.propertyName]());
+
+        return Promise.all(subscribers.concat(listeners)).then(() => {});
     }
 
-    broadcastLoadEventsForAll(entities: any[]) {
-        entities.forEach(entity => this.broadcastLoadEvents(entity));
-    }
-
-    broadcastLoadEvents(entity: any) {
-        const metadata = this.connection.getMetadata(entity.constructor);
+    broadcastLoadEvents(entity: any): Promise<void> {
+        const metadata = this.connection.getEntityMetadata(entity.constructor);
+        let promises: Promise<any>[] = [];
 
         metadata
             .relations
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
             .map(relation => entity[relation.propertyName])
-            .forEach(value => value instanceof Array ? this.broadcastLoadEventsForAll(value) : this.broadcastLoadEvents(value));
+            .map(value => {
+                if (value instanceof Array) {
+                    promises = promises.concat(this.broadcastLoadEventsForAll(value));
+                } else {
+                    promises.push(this.broadcastLoadEvents(value));
+                }
+            });
 
         this.connection
             .subscribers
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterLoad)
-            .forEach(subscriber => subscriber.afterLoad(entity));
+            .forEach(subscriber => promises.push(<any> subscriber.afterLoad(entity)));
+
+        this.connection
+            .entityListeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD)
+            .filter(listener => listener.target === entity.constructor)
+            .forEach(listener => promises.push(<any> entity[listener.propertyName]()));
+
+        return Promise.all(promises).then(() => {});
+    }
+
+    broadcastLoadEventsForAll(entities: any[]): Promise<void> {
+        return Promise.all(entities.map(entity => this.broadcastLoadEvents(entity))).then(() => {});
     }
 
     // -------------------------------------------------------------------------

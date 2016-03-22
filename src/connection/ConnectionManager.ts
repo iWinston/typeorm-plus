@@ -122,8 +122,11 @@ export class ConnectionManager {
             entities = <Function[]> connectionNameOrEntities;
         }
 
-        const metadatas = this.entityMetadataBuilder.build(entities);
-        this.getConnection(connectionName).addMetadatas(metadatas);
+        const entityMetadatas = this.entityMetadataBuilder.build(entities);
+        const entityListenerMetadatas = defaultMetadataStorage.findEntityListenersForClasses(entities);
+
+        this.getConnection(connectionName).addEntityMetadatas(entityMetadatas);
+        this.getConnection(connectionName).addEntityListenerMetadatas(entityListenerMetadatas);
     }
 
     // -------------------------------------------------------------------------

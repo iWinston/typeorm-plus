@@ -108,7 +108,7 @@ export class EntityPersistOperationBuilder {
                                         dbEntities: EntityWithId[], 
                                         fromRelation: RelationMetadata,
                                         operations: InsertOperation[] = []): InsertOperation[] {
-        const metadata = this.connection.getMetadata(newEntity.constructor);
+        const metadata = this.connection.getEntityMetadata(newEntity.constructor);
         const isObjectNew = !this.findEntityWithId(dbEntities, metadata.target, newEntity[metadata.primaryColumn.name]);
         
         // if object is new and should be inserted, we check if cascades are allowed before add it to operations list
@@ -188,15 +188,15 @@ export class EntityPersistOperationBuilder {
         if (!dbEntity)
             return operations;
 
-        const relationId = dbEntity[metadata.primaryColumn.name];
-        const isObjectRemoved = parentAlreadyRemoved || !this.findEntityWithId(allPersistedEntities, metadata.target, relationId);
+        const entityId = dbEntity[metadata.primaryColumn.name];
+        const isObjectRemoved = parentAlreadyRemoved || !this.findEntityWithId(allPersistedEntities, metadata.target, entityId);
 
         // if object is removed and should be removed, we check if cascades are allowed before add it to operations list
         if (isObjectRemoved && !this.checkCascadesAllowed("remove", metadata, fromRelation)) {
             return operations; // looks like object is removed here, but cascades are not allowed - then we should stop iteration
 
         } else if (isObjectRemoved) {  // object is remove and cascades are allow here
-            operations.push(new RemoveOperation(dbEntity, relationId, fromMetadata, fromRelation, fromEntityId));
+            operations.push(new RemoveOperation(dbEntity, entityId, fromMetadata, fromRelation, fromEntityId));
         }
 
         metadata.relations
@@ -233,7 +233,7 @@ export class EntityPersistOperationBuilder {
     }
 
     private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchIn: any) {
-        const metadata = this.connection.getMetadata(entityToSearchIn.constructor);
+        const metadata = this.connection.getEntityMetadata(entityToSearchIn.constructor);
 
         return metadata.relations.reduce((operations, relation) => {
             const value = entityToSearchIn[relation.propertyName];

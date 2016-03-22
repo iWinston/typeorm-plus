@@ -3,11 +3,11 @@ import {ConnectionOptions} from "./ConnectionOptions";
 import {Repository} from "../repository/Repository";
 import {OrmSubscriber} from "../subscriber/OrmSubscriber";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
-import {BroadcasterNotFoundError} from "./error/BroadcasterNotFoundError";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {SchemaCreator} from "../schema-creator/SchemaCreator";
 import {MetadataNotFoundError} from "./error/MetadataNotFoundError";
 import {ConstructorFunction} from "../common/ConstructorFunction";
+import {EntityListenerMetadata} from "../metadata-builder/metadata/EntityListenerMetadata";
 
 interface RepositoryAndMetadata {
     repository: Repository<any>;
@@ -25,7 +25,8 @@ export class Connection {
 
     private _name: string;
     private _driver: Driver;
-    private _metadatas: EntityMetadata[] = [];
+    private _entityMetadatas: EntityMetadata[] = [];
+    private _entityListenerMetadatas: EntityListenerMetadata[] = [];
     private _subscribers: OrmSubscriber<any>[] = [];
     private repositoryAndMetadatas: RepositoryAndMetadata[] = [];
     private _options: ConnectionOptions;
@@ -66,10 +67,17 @@ export class Connection {
     }
 
     /**
-     * All metadatas that are registered for this connection.
+     * All entity metadatas that are registered for this connection.
      */
-    get metadatas(): EntityMetadata[] {
-        return this._metadatas;
+    get entityMetadatas(): EntityMetadata[] {
+        return this._entityMetadatas;
+    }
+
+    /**
+     * All entity listener metadatas that are registered for this connection.
+     */
+    get entityListeners(): EntityListenerMetadata[] {
+        return this._entityListenerMetadatas;
     }
 
     /**
@@ -114,9 +122,16 @@ export class Connection {
     /**
      * Registers entity metadatas for the current connection.
      */
-    addMetadatas(metadatas: EntityMetadata[]) {
-        this._metadatas     = this._metadatas.concat(metadatas);
-        this.repositoryAndMetadatas  = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
+    addEntityMetadatas(metadatas: EntityMetadata[]) {
+        this._entityMetadatas = this._entityMetadatas.concat(metadatas);
+        this.repositoryAndMetadatas = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
+    }
+
+    /**
+     * Registers entity listener metadatas for the current connection.
+     */
+    addEntityListenerMetadatas(metadatas: EntityListenerMetadata[]) {
+        this._entityListenerMetadatas = this._entityListenerMetadatas.concat(metadatas);
     }
 
     /**
@@ -130,7 +145,7 @@ export class Connection {
      * Gets repository for the given entity class.
      */
     getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
-        const metadata = this.getMetadata(entityClass);
+        const metadata = this.getEntityMetadata(entityClass);
         const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
         if (!repoMeta)
             throw new RepositoryNotFoundError(entityClass);
@@ -141,8 +156,8 @@ export class Connection {
     /**
      * Gets the entity metadata for the given entity class.
      */
-    getMetadata(entityClass: Function): EntityMetadata {
-        const metadata = this.metadatas.find(metadata => metadata.target === entityClass);
+    getEntityMetadata(entityClass: Function): EntityMetadata {
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === entityClass);
         if (!metadata)
            throw new MetadataNotFoundError(entityClass);
 

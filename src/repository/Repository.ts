@@ -198,7 +198,7 @@ export class Repository<Entity> {
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entity.constructor === entityWithId.entity.constructor && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
-                const metadata = this.connection.getMetadata(entityWithId.entity.constructor);
+                const metadata = this.connection.getEntityMetadata(entityWithId.entity.constructor);
                 const repository = this.connection.getRepository(entityWithId.entity.constructor);
                 return repository.findById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;

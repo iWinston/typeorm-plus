@@ -36,11 +36,13 @@ createMysqlConnection(options, [__dirname + "/entity"], [__dirname + "/subscribe
         .persist(post)
         .then(post => {
             console.log("Post has been saved");
+            console.log("---------------------------");
             return postRepository.findById(post.id);
         })
         .then(loadedPost => {
+            console.log("post is loaded. Its uid is " + loadedPost.uid);
+            console.log("Lets now load it with relations.");
             console.log("---------------------------");
-            console.log("post is loaded. Lets now load it with relations.");
             return postRepository
                 .createQueryBuilder("p")
                 .leftJoinAndSelect("p.author", "author")
@@ -49,19 +51,18 @@ createMysqlConnection(options, [__dirname + "/entity"], [__dirname + "/subscribe
                 .getSingleResult();
         })
         .then(loadedPost => {
-            console.log("---------------------------");
             console.log("load finished. Now lets update entity");
+            console.log("---------------------------");
             loadedPost.text = "post updated";
             loadedPost.author.name = "Bakha";
             return postRepository.persist(loadedPost);
         })
         .then(loadedPost => {
-            console.log("---------------------------");
             console.log("update finished. Now lets remove entity");
+            console.log("---------------------------");
             return postRepository.remove(loadedPost);
         })
         .then(loadedPost => {
-            console.log("---------------------------");
             console.log("post removed.");
         })
         .catch(error => console.log("Cannot save. Error: ", error.stack ? error.stack : error));

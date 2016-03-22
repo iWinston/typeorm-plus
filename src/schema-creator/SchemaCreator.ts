@@ -34,7 +34,7 @@ export class SchemaCreator {
      * Creates complete schemas for the given entity metadatas.
      */
     create(): Promise<void> {
-        const metadatas = this.connection.metadatas;
+        const metadatas = this.connection.entityMetadatas;
         return Promise.resolve()
             .then(_ => this.dropForeignKeysForAll(metadatas))
             .then(_ => this.createTablesForAll(metadatas))

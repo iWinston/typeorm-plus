@@ -6,6 +6,7 @@ import {IndexMetadata} from "./metadata/IndexMetadata";
 import {CompoundIndexMetadata} from "./metadata/CompoundIndexMetadata";
 import {ColumnMetadata} from "./metadata/ColumnMetadata";
 import {OrmEventSubscriberMetadata} from "./metadata/OrmEventSubscriberMetadata";
+import {EntityListenerMetadata} from "./metadata/EntityListenerMetadata";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -21,6 +22,7 @@ export class MetadataStorage {
     private _ormEventSubscriberMetadatas: OrmEventSubscriberMetadata[] = [];
     private _columnMetadatas: ColumnMetadata[] = [];
     private _indexMetadatas: IndexMetadata[] = [];
+    private _entityListenerMetadatas: EntityListenerMetadata[] = [];
     private _compoundIndexMetadatas: CompoundIndexMetadata[] = [];
     private _relationMetadatas: RelationMetadata[] = [];
 
@@ -42,6 +44,10 @@ export class MetadataStorage {
 
     get indexMetadatas(): IndexMetadata[] {
         return this._indexMetadatas;
+    }
+
+    get entityListenerMetadatas(): EntityListenerMetadata[] {
+        return this._entityListenerMetadatas;
     }
 
     get compoundIndexMetadatas(): CompoundIndexMetadata[] {
@@ -110,12 +116,23 @@ export class MetadataStorage {
         this.compoundIndexMetadatas.push(metadata);
     }
 
+    addEntityListenerMetadata(metadata: EntityListenerMetadata) {
+        if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName))
+            throw new MetadataAlreadyExistsError("EventListener", metadata.target);
+
+        this.entityListenerMetadatas.push(metadata);
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
     findOrmEventSubscribersForClasses(classes: Function[]): OrmEventSubscriberMetadata[] { 
         return this.ormEventSubscriberMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
+    }
+
+    findEntityListenersForClasses(classes: Function[]): EntityListenerMetadata[] { 
+        return this.entityListenerMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
     }
 
     findTableMetadatasForClasses(classes: Function[]): TableMetadata[] {

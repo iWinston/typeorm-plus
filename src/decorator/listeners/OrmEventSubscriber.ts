@@ -1,5 +1,5 @@
-import {defaultMetadataStorage} from "../metadata-builder/MetadataStorage";
-import {OrmEventSubscriberMetadata} from "../metadata-builder/metadata/OrmEventSubscriberMetadata";
+import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {OrmEventSubscriberMetadata} from "../../metadata-builder/metadata/OrmEventSubscriberMetadata";
 
 /**
  * Subscribers that gonna listen to ORM events must be decorated with this decorator.

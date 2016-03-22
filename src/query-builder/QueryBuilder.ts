@@ -41,7 +41,7 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     constructor(private connection: Connection) {
-        this._aliasMap = new AliasMap(connection.metadatas);
+        this._aliasMap = new AliasMap(connection.entityMetadatas);
         this.broadcaster = new OrmBroadcaster(connection);
     }
 
@@ -301,7 +301,7 @@ export class QueryBuilder<Entity> {
     getResults(): Promise<Entity[]> {
         const mainAlias = this.aliasMap.mainAlias.name;
         if (this.firstResult || this.maxResults) {
-            const metadata = this.connection.getMetadata(this.fromEntity.alias.target);
+            const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
             const idsQuery = this.clone()
                 .select(`DISTINCT(${mainAlias}.${metadata.primaryColumn.name}) as ids`)
                 .setOffset(this.firstResult)
@@ -317,19 +317,13 @@ export class QueryBuilder<Entity> {
                     return this.connection.driver.query<any[]>(queryWithIds);
                 })
                 .then(results => this.rawResultsToEntities(results))
-                .then(results => {
-                    this.broadcaster.broadcastLoadEventsForAll(results);
-                    return results;
-                });
+                .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results));
 
         } else {
             return this.connection.driver
                 .query<any[]>(this.getSql())
                 .then(results => this.rawResultsToEntities(results))
-                .then(results => {
-                    this.broadcaster.broadcastLoadEventsForAll(results);
-                    return results;
-                });
+                .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results));
         }
     }
 
@@ -339,7 +333,7 @@ export class QueryBuilder<Entity> {
 
     getCount(): Promise<number> {
         const mainAlias = this.aliasMap.mainAlias.name;
-        const metadata = this.connection.getMetadata(this.fromEntity.alias.target);
+        const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
         const countQuery = this.clone()
             .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`)
             .getSql();

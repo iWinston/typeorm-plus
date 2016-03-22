@@ -29,6 +29,7 @@ export class PersistOperationExecutor {
      */
     executePersistOperation(persistOperation: PersistOperation) {
         const broadcaster = new OrmBroadcaster(this.connection);
+        // persistOperation.log();
         
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(broadcaster, persistOperation))
@@ -56,16 +57,17 @@ export class PersistOperationExecutor {
     private broadcastBeforeEvents(broadcaster: OrmBroadcaster, persistOperation: PersistOperation) {
         
         const insertEvents = persistOperation.inserts.map(insertOperation => {
-            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === insertOperation.entityId);
-            return broadcaster.broadcastBeforeInsertEvent(persistedEntity);
+            const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);
+            return broadcaster.broadcastBeforeInsertEvent(persistedEntityWithId.entity);
         });
         const updateEvents = persistOperation.updates.map(updateOperation => {
-            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === updateOperation.entityId);
-            return broadcaster.broadcastBeforeUpdateEvent(persistedEntity, updateOperation.columns);
+            const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === updateOperation.entity);
+            return broadcaster.broadcastBeforeUpdateEvent(persistedEntityWithId.entity, updateOperation.columns);
         });
         const removeEvents = persistOperation.removes.map(removeOperation => {
-            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === removeOperation.entityId);
-            return broadcaster.broadcastBeforeRemoveEvent(persistedEntity, removeOperation.entityId);
+            // we can send here only dbEntity, not entity from the persisted object, since entity from the persisted
+            // object does not exist anymore - its removed, and there is no way to find this removed object
+            return broadcaster.broadcastBeforeRemoveEvent(removeOperation.entity, removeOperation.entityId);
         });
         
         return Promise.all(insertEvents)
@@ -79,16 +81,17 @@ export class PersistOperationExecutor {
     private broadcastAfterEvents(broadcaster: OrmBroadcaster, persistOperation: PersistOperation) {
         
         const insertEvents = persistOperation.inserts.map(insertOperation => {
-            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === insertOperation.entityId);
-            return broadcaster.broadcastAfterInsertEvent(persistedEntity);
+            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);
+            return broadcaster.broadcastAfterInsertEvent(persistedEntity.entity);
         });
         const updateEvents = persistOperation.updates.map(updateOperation => {
-            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === updateOperation.entityId);
-            return broadcaster.broadcastAfterUpdateEvent(persistedEntity, updateOperation.columns);
+            const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === updateOperation.entity);
+            return broadcaster.broadcastAfterUpdateEvent(persistedEntityWithId.entity, updateOperation.columns);
         });
         const removeEvents = persistOperation.removes.map(removeOperation => {
-            const persistedEntity = persistOperation.allPersistedEntities.find(e => e.id === removeOperation.entityId);
-            return broadcaster.broadcastAfterRemoveEvent(persistedEntity, removeOperation.entityId);
+            // we can send here only dbEntity, not entity from the persisted object, since entity from the persisted
+            // object does not exist anymore - its removed, and there is no way to find this removed object
+            return broadcaster.broadcastAfterRemoveEvent(removeOperation.entity, removeOperation.entityId);
         });
         
         return Promise.all(insertEvents)
@@ -169,7 +172,7 @@ export class PersistOperationExecutor {
      */
     private updateIdsOfInsertedEntities(persistOperation: PersistOperation) {
         persistOperation.inserts.forEach(insertOperation => {
-            const metadata = this.connection.getMetadata(insertOperation.entity.constructor);
+            const metadata = this.connection.getEntityMetadata(insertOperation.entity.constructor);
             insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
         });
     }
@@ -179,7 +182,7 @@ export class PersistOperationExecutor {
      */
     private updateIdsOfRemovedEntities(persistOperation: PersistOperation) {
         persistOperation.removes.forEach(removeOperation => {
-            const metadata = this.connection.getMetadata(removeOperation.entity.constructor);
+            const metadata = this.connection.getEntityMetadata(removeOperation.entity.constructor);
             const removedEntity = persistOperation.allPersistedEntities.find(allNewEntity => {
                 return allNewEntity.entity.constructor === removeOperation.entity.constructor && allNewEntity.id === removeOperation.entity[metadata.primaryColumn.name];
             });
@@ -192,7 +195,7 @@ export class PersistOperationExecutor {
         let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
         const idInInserts = insertOperations.find(o => o.entity === operation.targetEntity).entityId;
         if (operation.updatedRelation.isOneToMany) {
-            const metadata = this.connection.getMetadata(operation.insertOperation.entity.constructor);
+            const metadata = this.connection.getEntityMetadata(operation.insertOperation.entity.constructor);
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.inverseRelation.name;
             relationId = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
@@ -200,7 +203,7 @@ export class PersistOperationExecutor {
             id = operation.insertOperation.entityId;
 
         } else {
-            const metadata = this.connection.getMetadata(operation.targetEntity.constructor);
+            const metadata = this.connection.getEntityMetadata(operation.targetEntity.constructor);
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.name;
             relationId = operation.insertOperation.entityId;
@@ -212,7 +215,7 @@ export class PersistOperationExecutor {
 
     private update(updateOperation: UpdateOperation) {
         const entity = updateOperation.entity;
-        const metadata = this.connection.getMetadata(entity.constructor);
+        const metadata = this.connection.getEntityMetadata(entity.constructor);
         const values = updateOperation.columns.reduce((object, column) => {
             (<any> object)[column.name] = entity[column.propertyName];
             return object;
@@ -229,12 +232,12 @@ export class PersistOperationExecutor {
     }
 
     private delete(entity: any) {
-        const metadata = this.connection.getMetadata(entity.constructor);
+        const metadata = this.connection.getEntityMetadata(entity.constructor);
         return this.connection.driver.delete(metadata.table.name, { [metadata.primaryColumn.name]: entity[metadata.primaryColumn.propertyName] });
     }
 
     private insert(entity: any) {
-        const metadata = this.connection.getMetadata(entity.constructor);
+        const metadata = this.connection.getEntityMetadata(entity.constructor);
         const columns = metadata.columns
             .filter(column => !column.isVirtual)
             .filter(column => entity.hasOwnProperty(column.propertyName))
@@ -263,8 +266,8 @@ export class PersistOperationExecutor {
 
     private insertJunctions(junctionOperation: JunctionInsertOperation, insertOperations: InsertOperation[]) {
         const junctionMetadata = junctionOperation.metadata;
-        const metadata1 = this.connection.getMetadata(junctionOperation.entity1.constructor);
-        const metadata2 = this.connection.getMetadata(junctionOperation.entity2.constructor);
+        const metadata1 = this.connection.getEntityMetadata(junctionOperation.entity1.constructor);
+        const metadata2 = this.connection.getEntityMetadata(junctionOperation.entity2.constructor);
         const columns = junctionMetadata.columns.map(column => column.name);
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity1).entityId;
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity2).entityId;
@@ -274,8 +277,8 @@ export class PersistOperationExecutor {
 
     private removeJunctions(junctionOperation: JunctionRemoveOperation) {
         const junctionMetadata = junctionOperation.metadata;
-        const metadata1 = this.connection.getMetadata(junctionOperation.entity1.constructor);
-        const metadata2 = this.connection.getMetadata(junctionOperation.entity2.constructor);
+        const metadata1 = this.connection.getEntityMetadata(junctionOperation.entity1.constructor);
+        const metadata2 = this.connection.getEntityMetadata(junctionOperation.entity2.constructor);
         const columns = junctionMetadata.columns.map(column => column.name);
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.name];
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.name];
