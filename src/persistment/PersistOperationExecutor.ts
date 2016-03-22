@@ -29,7 +29,6 @@ export class PersistOperationExecutor {
      */
     executePersistOperation(persistOperation: PersistOperation) {
         const broadcaster = new OrmBroadcaster(this.connection);
-        // persistOperation.log();
         
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(broadcaster, persistOperation))

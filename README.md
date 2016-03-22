@@ -28,3 +28,4 @@ usages.
 * class lifecycle callbacks?
 * array / json / date column types
 * exceptions everywhere!
+* added ability to load only ids of the relation (similar to loading only single id)

@@ -23,7 +23,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
             return null;
         
         const alias = queryBuilder.aliasMap.mainAlias.name;
-        const needToLoad = this.buildLoadMap(object, metadata);
+        const needToLoad = this.buildLoadMap(object, metadata, true);
 
         this.join(queryBuilder, needToLoad, alias);
         return queryBuilder
@@ -45,10 +45,16 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
         });
     }
     
-    private buildLoadMap(object: any, metadata: EntityMetadata): LoadMap[] {
+    private buildLoadMap(object: any, metadata: EntityMetadata, isFirstLevelDepth = false): LoadMap[] {
+        // todo: rething the way we are trying to load things using left joins cause there are situations when same
+        // todo: entities are loaded multiple times and become different objects (problem with duplicate entities in dbEntities)
         return metadata.relations
             .filter(relation => object.hasOwnProperty(relation.propertyName))
-            .filter(relation => !(object[relation.propertyName] instanceof Array) || object[relation.propertyName].length > 0) // this is very important check that prevents building additional query for empty relations
+            .filter(relation => {
+                // we only need to load empty relations for first-level depth objects, otherwise removal can break
+                // this is not reliable, refactor this part later
+                return isFirstLevelDepth || !(object[relation.propertyName] instanceof Array) || object[relation.propertyName].length > 0;
+            })
             .map(relation => {
                 let value = object[relation.propertyName];
                 if (value instanceof Array)

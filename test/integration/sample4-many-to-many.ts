@@ -271,16 +271,12 @@ describe("many-to-many", function() {
                 .where("p.id=:id", { id: savedPost.id })
                 .getSingleResult()
                 .then(loadedPost => {
-                    // console.log("loaded post: ", loadedPost);
                     loadedPost.categories.splice(0, 1);
-                   // loadedPost.categories.push(new PostCategory("blbla"));
                     return postRepository.persist(loadedPost);
                 }).then(updatedPost => {
-                    console.log("updated post: ", updatedPost);
                     return postCategoryRepository.find({ name : "technology" });
                 }).then(foundCategory => {
-                    console.log("found category: ", foundCategory);
-                    // todo: expect(foundCategory).to.be.empty;
+                    expect(foundCategory).to.be.empty;
                 });
         });
         
