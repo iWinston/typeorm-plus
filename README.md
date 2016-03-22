@@ -25,7 +25,24 @@ usages.
 * foreign keys for relations
 * what happens if owner one-to-one on both sides
 * check self referencing
-* class lifecycle callbacks?
 * array / json / date column types
 * exceptions everywhere!
 * added ability to load only ids of the relation (similar to loading only single id)
+* make @Index and @CompoundIndex to work properly
+* make relations to connect not only to primary key (e.g. relation#referencedColumnName)
+* multiple primary key support?
+* ability to specify many-to-many column names in relation options
+* lazy loading? really?
+* investigate relations support in abstract tables
+* allow inherited tables to work like abstract tables
+* check query builder query to function support
+* order by support in relations?
+* versioning?
+* check relations without inverse sides
+* flush? 
+* create entity manager? (if want to use ORM without repository)
+* do we need unit of work? It can start on some time, and finish after flushing
+* check group by functionality
+* send entity changeset in update event
+* create a gulp task for schema update
+* fixtures and migrations
