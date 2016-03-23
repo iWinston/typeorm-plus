@@ -48,14 +48,18 @@ export class ConnectionManager {
     /**
      * Creates and adds a new connection with given driver.
      */
-    addConnection(driver: Driver): void;
-    addConnection(name: string, driver: Driver): void;
-    addConnection(name: any, driver?: Driver): void {
+    createConnection(driver: Driver): Connection;
+    createConnection(name: string, driver: Driver): Connection;
+    createConnection(name: string|Driver, driver?: Driver): Connection {
         if (typeof name === "object") {
             driver = <Driver> name;
+        }
+        if (!name) {
             name = "default";
         }
-        this.connections.push(new Connection(name, driver));
+        const connection = new Connection(<string> name, driver);
+        this.connections.push(connection);
+        return connection;
     }
 
     /**
@@ -63,6 +67,8 @@ export class ConnectionManager {
      * connection.
      */
     getConnection(name: string = "default"): Connection {
+        if (!name)
+            name = "default";
         const foundConnection = this.connections.find(connection => connection.name === name);
         if (!foundConnection)
             throw new ConnectionNotFoundError(name);
@@ -78,7 +84,7 @@ export class ConnectionManager {
     importEntitiesFromDirectories(connectionName: string, paths: string[]): void;
     importEntitiesFromDirectories(connectionNameOrPaths: string|string[], paths?: string[]): void {
         let connectionName = "default";
-        if (typeof connectionNameOrPaths === "string") {
+        if (paths) {
             connectionName = <string> connectionNameOrPaths;
         } else {
             paths = <string[]> connectionNameOrPaths;
@@ -95,7 +101,7 @@ export class ConnectionManager {
     importSubscribersFromDirectories(connectionName: string, paths: string[]): void;
     importSubscribersFromDirectories(connectionNameOrPaths: string|string[], paths?: string[]): void {
         let connectionName = "default";
-        if (typeof connectionNameOrPaths === "string") {
+        if (paths) {
             connectionName = <string> connectionNameOrPaths;
         } else {
             paths = <string[]> connectionNameOrPaths;
@@ -116,7 +122,7 @@ export class ConnectionManager {
     importEntities(connectionName: string, entities: Function[]): void;
     importEntities(connectionNameOrEntities: string|Function[], entities?: Function[]): void {
         let connectionName = "default";
-        if (typeof connectionNameOrEntities === "string") {
+        if (entities) {
             connectionName = <string> connectionNameOrEntities;
         } else {
             entities = <Function[]> connectionNameOrEntities;

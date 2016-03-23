@@ -1,8 +1,7 @@
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createMysqlConnection} from "../../src/typeorm";
-import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
+import {createConnection, CreateConnectionParameters} from "../../src/typeorm";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {Post} from "../../sample/sample1-simple-entity/entity/Post";
@@ -14,21 +13,25 @@ describe("insertion", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let options: ConnectionOptions = {
-        host: "192.168.99.100",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test",
-        autoSchemaCreate: true
+    const parameters: CreateConnectionParameters = {
+        driver: "mysql",
+        connectionOptions: {
+            host: "192.168.99.100",
+            port: 3306,
+            username: "root",
+            password: "admin",
+            database: "test",
+            autoSchemaCreate: true
+        },
+        entities: [Post]
     };
     
     // connect to db
     let connection: Connection;
     before(function() {
-        return createMysqlConnection(options, [Post]).then(conn => {
-            connection = conn;
-        }).catch(e => console.log("Error during connection to db: " + e));
+        return createConnection(parameters)
+            .then(con => connection = con)
+            .catch(e => console.log("Error during connection to db: " + e));
     });
 
     after(function() {
@@ -39,7 +42,8 @@ describe("insertion", function() {
     function reloadDatabase() {
         return connection.driver
             .clearDatabase()
-            .then(() => new SchemaCreator(connection).create());
+            .then(() => new SchemaCreator(connection).create())
+            .catch(e => console.log("Error during schema re-creation: ", e));
     }
 
     let postRepository: Repository<Post>;
