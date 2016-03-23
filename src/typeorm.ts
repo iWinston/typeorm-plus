@@ -13,7 +13,7 @@ export const connectionManager = new ConnectionManager();
 /**
  * All options to help to create a new connection.
  */
-export interface CreateConnectionParameters {
+export interface CreateConnectionOptions {
 
     /**
      * Driver type. Mysql is the only driver supported at this moment.
@@ -54,30 +54,30 @@ export interface CreateConnectionParameters {
 /**
  * Creates a new connection with the database.
  */
-export function createConnection(parameters: CreateConnectionParameters): Promise<Connection> {
+export function createConnection(options: CreateConnectionOptions): Promise<Connection> {
 
     let connection: Connection;
-    switch (parameters.driver) {
+    switch (options.driver) {
         case "mysql":
-            connection = connectionManager.createConnection(parameters.connectionName, new MysqlDriver(mysql));
+            connection = connectionManager.createConnection(options.connectionName, new MysqlDriver(mysql));
             break;
         default:
-            throw new Error(`Wrong driver ${parameters.driver} given. Supported drivers are: "mysql"`);
+            throw new Error(`Wrong driver ${options.driver} given. Supported drivers are: "mysql"`);
     }
 
-    if (parameters.entityDirectories && parameters.entityDirectories.length > 0)
-        connectionManager.importEntitiesFromDirectories(parameters.connectionName, parameters.entityDirectories);
+    if (options.entityDirectories && options.entityDirectories.length > 0)
+        connectionManager.importEntitiesFromDirectories(options.connectionName, options.entityDirectories);
 
-    if (parameters.entities)
-        connectionManager.importEntities(parameters.connectionName, parameters.entities);
+    if (options.entities)
+        connectionManager.importEntities(options.connectionName, options.entities);
 
-    if (parameters.subscriberDirectories && parameters.subscriberDirectories.length > 0)
-        connectionManager.importSubscribersFromDirectories(parameters.connectionName, parameters.subscriberDirectories);
+    if (options.subscriberDirectories && options.subscriberDirectories.length > 0)
+        connectionManager.importSubscribersFromDirectories(options.connectionName, options.subscriberDirectories);
 
-    if (parameters.subscribers)
-        connectionManager.importSubscribers(parameters.subscribers);
+    if (options.subscribers)
+        connectionManager.importSubscribers(options.subscribers);
 
     return connection
-        .connect(parameters.connectionOptions)
+        .connect(options.connectionOptions)
         .then(() => connection);
 }

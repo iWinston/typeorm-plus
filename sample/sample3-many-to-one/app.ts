@@ -1,4 +1,4 @@
-import {CreateConnectionParameters, createConnection} from "../../src/typeorm";
+import {CreateConnectionOptions, createConnection} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {PostCategory} from "./entity/PostCategory";
@@ -7,7 +7,7 @@ import {PostImage} from "./entity/PostImage";
 import {PostInformation} from "./entity/PostInformation";
 import {PostAuthor} from "./entity/PostAuthor";
 
-const options: CreateConnectionParameters = {
+const options: CreateConnectionOptions = {
     driver: "mysql",
     connectionOptions: {
         host: "192.168.99.100",

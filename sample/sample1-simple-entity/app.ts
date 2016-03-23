@@ -1,7 +1,7 @@
-import {createConnection, CreateConnectionParameters} from "../../src/typeorm";
+import {createConnection, CreateConnectionOptions} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 
-const options: CreateConnectionParameters = {
+const options: CreateConnectionOptions = {
     driver: "mysql",
     connectionOptions: {
         host: "192.168.99.100",

@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createConnection, CreateConnectionParameters} from "../../src/typeorm";
+import {createConnection, CreateConnectionOptions} from "../../src/typeorm";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {Post} from "../../sample/sample1-simple-entity/entity/Post";
@@ -13,7 +13,7 @@ describe("insertion", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const parameters: CreateConnectionParameters = {
+    const parameters: CreateConnectionOptions = {
         driver: "mysql",
         connectionOptions: {
             host: "192.168.99.100",

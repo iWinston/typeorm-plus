@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createConnection, CreateConnectionParameters} from "../../src/typeorm";
+import {createConnection, CreateConnectionOptions} from "../../src/typeorm";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {PostDetails} from "../../sample/sample3-many-to-one/entity/PostDetails";
@@ -19,7 +19,7 @@ describe("many-to-one", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const options: CreateConnectionParameters = {
+    const options: CreateConnectionOptions = {
         driver: "mysql",
         connectionOptions: {
             host: "192.168.99.100",
