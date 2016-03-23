@@ -101,7 +101,7 @@ import {Photo} from "./Photo";
 
 const options: CreateConnectionOptions = {
     driver: "mysql", // specify driver type here. Right now only "mysql" is supported
-    connectionOptions: {
+    connection: {
         host: "localhost", // mysql host
         port: 3306, // mysql port
         username: "root", // mysql database username

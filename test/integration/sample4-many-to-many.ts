@@ -19,7 +19,7 @@ describe("many-to-many", function() {
 
     const options: CreateConnectionOptions = {
         driver: "mysql",
-        connectionOptions: {
+        connection: {
             host: "192.168.99.100",
             port: 3306,
             username: "root",

@@ -2,8 +2,6 @@ import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
-// import * as mysql from "mysql";
-let mysql = require("mysql");
 
 /**
  * Global connection manager.
@@ -23,7 +21,7 @@ export interface CreateConnectionOptions {
     /**
      * Database connection options.
      */
-    connectionOptions: ConnectionOptions;
+    connection: ConnectionOptions;
 
     /**
      * Connection name. By default its called "default". Different connections must have different names.
@@ -59,7 +57,7 @@ export function createConnection(options: CreateConnectionOptions): Promise<Conn
     let connection: Connection;
     switch (options.driver) {
         case "mysql":
-            connection = connectionManager.createConnection(options.connectionName, new MysqlDriver(mysql));
+            connection = connectionManager.createConnection(options.connectionName, new MysqlDriver(), options.connection);
             break;
         default:
             throw new Error(`Wrong driver ${options.driver} given. Supported drivers are: "mysql"`);
@@ -77,7 +75,5 @@ export function createConnection(options: CreateConnectionOptions): Promise<Conn
     if (options.subscribers)
         connectionManager.importSubscribers(options.subscribers);
 
-    return connection
-        .connect(options.connectionOptions)
-        .then(() => connection);
+    return connection.connect().then(() => connection);
 }

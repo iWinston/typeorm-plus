@@ -57,8 +57,20 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(mysql: any) {
+    constructor(mysql?: any) {
         super();
+
+        // if driver dependency is not given explicitly, then try to load it via "require"
+        if (!mysql && require) {
+            try {
+                mysql = require("mysql");
+            } catch (e) {
+                throw new Error("Mysql package was not found installed. Try to install it: npm install mysql --save");
+            }
+        } else {
+            throw new Error("Cannot load mysql driver dependencies. Try to install all required dependencies.");
+        }
+
         this.mysql = mysql;
     }
 
@@ -83,12 +95,12 @@ export class MysqlDriver extends BaseDriver implements Driver {
     /**
      * Performs connection to the database based on given connection options.
      */
-    connect(options: ConnectionOptions): Promise<void> {
+    connect(): Promise<void> {
         this.mysqlConnection = this.mysql.createConnection({
-            host: options.host,
-            user: options.username,
-            password: options.password,
-            database: options.database
+            host: this.connection.options.host,
+            user: this.connection.options.username,
+            password: this.connection.options.password,
+            database: this.connection.options.database
         });
         return new Promise<void>((ok, fail) => {
             this.mysqlConnection.connect((err: any) => err ? fail(err) : ok());

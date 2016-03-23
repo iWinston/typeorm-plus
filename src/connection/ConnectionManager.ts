@@ -5,6 +5,7 @@ import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
+import {ConnectionOptions} from "tls";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -48,11 +49,12 @@ export class ConnectionManager {
     /**
      * Creates and adds a new connection with given driver.
      */
-    createConnection(driver: Driver): Connection;
-    createConnection(name: string, driver: Driver): Connection;
-    createConnection(name: string|Driver, driver?: Driver): Connection {
+    createConnection(driver: Driver, options: ConnectionOptions): Connection;
+    createConnection(name: string, driver: Driver, options: ConnectionOptions): Connection;
+    createConnection(name: string|Driver, driver?: Driver|ConnectionOptions, options?: ConnectionOptions): Connection {
         if (typeof name === "object") {
             driver = <Driver> name;
+            options = <ConnectionOptions> driver;
         }
         if (!name) {
             name = "default";
@@ -61,7 +63,7 @@ export class ConnectionManager {
         if (existConnection)
             this.connections.splice(this.connections.indexOf(existConnection), 1);
         
-        const connection = new Connection(<string> name, driver);
+        const connection = new Connection(<string> name, <Driver> driver, options);
         this.connections.push(connection);
         return connection;
     }

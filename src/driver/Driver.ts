@@ -36,7 +36,7 @@ export interface Driver {
     /**
      * Performs connection to the database based on given connection options.
      */
-    connect(options: ConnectionOptions): Promise<void>;
+    connect(): Promise<void>;
 
     /**
      * Closes connection with database.

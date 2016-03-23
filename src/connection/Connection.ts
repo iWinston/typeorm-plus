@@ -35,10 +35,11 @@ export class Connection {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, driver: Driver) {
+    constructor(name: string, driver: Driver, options: ConnectionOptions) {
         this._name = name;
         this._driver = driver;
         this._driver.connection = this;
+        this._options = options;
     }
 
     // -------------------------------------------------------------------------
@@ -101,15 +102,12 @@ export class Connection {
     /**
      * Performs connection to the database.
      */
-    connect(options: ConnectionOptions): Promise<void> {
+    connect(): Promise<void> {
         const schemaCreator = new SchemaCreator(this);
-        this._options = options;
-        return this._driver
-            .connect(options)
-            .then(() => {
-                if (options.autoSchemaCreate === true)
-                    return schemaCreator.create();
-            });
+        return this._driver.connect().then(() => {
+            if (this._options.autoSchemaCreate === true)
+                return schemaCreator.create();
+        });
     }
 
     /**
