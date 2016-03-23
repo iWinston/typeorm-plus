@@ -152,49 +152,49 @@ If you want to load photos from the database, you can use `repository.find*`
 methods:
 
 ```typescript
-    // here we load one photo by id:
-    let photoId = 1;
-    let repository = connection.getRepository(Photo);
-    repository.findById(photoId).then(photo => {
-        console.log("Photo is loaded: ", photo);
-    });
-    
-    // here we load one photo by name
-    let repository = connection.getRepository(Photo);
-    repository.findOne({ name: "Me and Bears" }).then(photo => {
-        console.log("Photo is loaded: ", photo);
-    });
-    
-    // here we load all published photos
-    let repository = connection.getRepository(Photo);
-    repository.find({ isPublished: true }).then(photos => {
-        console.log("Published photos are loaded: ", photos);
-    });
+// here we load one photo by id:
+let photoId = 1;
+let repository = connection.getRepository(Photo);
+repository.findById(photoId).then(photo => {
+    console.log("Photo is loaded: ", photo);
+});
+
+// here we load one photo by name
+let repository = connection.getRepository(Photo);
+repository.findOne({ name: "Me and Bears" }).then(photo => {
+    console.log("Photo is loaded: ", photo);
+});
+
+// here we load all published photos
+let repository = connection.getRepository(Photo);
+repository.find({ isPublished: true }).then(photos => {
+    console.log("Published photos are loaded: ", photos);
+});
 ```
 
 If you want to update in the database a previously loaded photo, you 
 can use `repository.persist` method:
 
 ```typescript
-    // change previously loaded photo
-    photo.name = "Me and Bears and Penguins";
-    photo.description = "I am near polar bears and penguins";
+// change previously loaded photo
+photo.name = "Me and Bears and Penguins";
+photo.description = "I am near polar bears and penguins";
 
-    // call persist method to update a photo
-    let repository = connection.getRepository(Photo);
-    repository.persist(photo).then(photo => {
-        console.log("Photo is updated in the database: ", photo);
-    });
+// call persist method to update a photo
+let repository = connection.getRepository(Photo);
+repository.persist(photo).then(photo => {
+    console.log("Photo is updated in the database: ", photo);
+});
 ```
 
 If you want to remove a photo from the database, you can use 
 `repository.remove` method:
 
 ```typescript
-    let repository = connection.getRepository(Photo);
-    repository.remove(photo).then(() => {
-        console.log("Photo has been successfully removed.");
-    });
+let repository = connection.getRepository(Photo);
+repository.remove(photo).then(() => {
+    console.log("Photo has been successfully removed.");
+});
 ```
 
 ## Samples
@@ -242,4 +242,4 @@ Feel free to contribute ;)
 * fixtures and migrations
 
 
-(1): https://en.wikipedia.org/wiki/Object-relational_mapping
+[1]: https://en.wikipedia.org/wiki/Object-relational_mapping
