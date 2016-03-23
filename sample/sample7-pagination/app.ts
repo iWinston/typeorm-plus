@@ -1,19 +1,22 @@
-import {createMysqlConnection} from "../../src/typeorm";
+import {createConnection, CreateConnectionParameters} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";
 import {PostAuthor} from "./entity/PostAuthor";
 
-// first create a connection
-let options = {
-    host: "192.168.99.100",
-    port: 3306,
-    username: "root",
-    password: "admin",
-    database: "test",
-    autoSchemaCreate: true
+const options: CreateConnectionParameters = {
+    driver: "mysql",
+    connectionOptions: {
+        host: "192.168.99.100",
+        port: 3306,
+        username: "root",
+        password: "admin",
+        database: "test",
+        autoSchemaCreate: true
+    },
+    entityDirectories: [__dirname + "/entity"]
 };
 
-createMysqlConnection(options, [__dirname + "/entity"]).then(connection => {
+createConnection(options).then(connection => {
 
     let postRepository = connection.getRepository(Post);
     const posts: Post[] = [];

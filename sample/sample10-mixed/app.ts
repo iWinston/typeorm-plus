@@ -1,24 +1,24 @@
-import {createMysqlConnection} from "../../src/typeorm";
+import {createConnection, CreateConnectionParameters} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {Image} from "./entity/Image";
-import {ImageDetails} from "./entity/ImageDetails";
 import {Cover} from "./entity/Cover";
 import {Category} from "./entity/Category";
-import {Chapter} from "./entity/Chapter";
 
-// first create a connection
-let options = {
-    host: "192.168.99.100",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-    autoSchemaCreate: true
+const options: CreateConnectionParameters = {
+    driver: "mysql",
+    connectionOptions: {
+        host: "192.168.99.100",
+        port: 3306,
+        username: "root",
+        password: "admin",
+        database: "test",
+        autoSchemaCreate: true
+    },
+    entityDirectories: [__dirname + "/entity"]
 };
 
-createMysqlConnection(options, [Post, PostDetails, Image, ImageDetails, Cover, Category, Chapter]).then(connection => {
-
+createConnection(options).then(connection => {
     let postRepository = connection.getRepository<Post>(Post);
 
     let postCover = new Cover();

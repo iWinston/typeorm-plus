@@ -10,16 +10,50 @@ let mysql = require("mysql");
  */
 export const connectionManager = new ConnectionManager();
 
+/**
+ * All options to help to create a new connection.
+ */
 export interface CreateConnectionParameters {
+
+    /**
+     * Driver type. Mysql is the only driver supported at this moment.
+     */
     driver: "mysql";
+
+    /**
+     * Database connection options.
+     */
+    connectionOptions: ConnectionOptions;
+
+    /**
+     * Connection name. By default its called "default". Different connections must have different names.
+     */
     connectionName?: string;
-    connectionOptions?: ConnectionOptions;
+
+    /**
+     * Entities to be loaded for the new connection.
+     */
     entities?: Function[];
+
+    /**
+     * Subscribers to be loaded for the new connection.
+     */
     subscribers?: Function[];
+
+    /**
+     * List of directories from where entities will be loaded.
+     */
     entityDirectories?: string[];
+
+    /**
+     * List of directories from where subscribers will be loaded.
+     */
     subscriberDirectories?: string[];
 }
 
+/**
+ * Creates a new connection with the database.
+ */
 export function createConnection(parameters: CreateConnectionParameters): Promise<Connection> {
 
     let connection: Connection;
@@ -34,46 +68,16 @@ export function createConnection(parameters: CreateConnectionParameters): Promis
     if (parameters.entityDirectories && parameters.entityDirectories.length > 0)
         connectionManager.importEntitiesFromDirectories(parameters.connectionName, parameters.entityDirectories);
 
-    if (parameters.entities) {
+    if (parameters.entities)
         connectionManager.importEntities(parameters.connectionName, parameters.entities);
-    }
 
     if (parameters.subscriberDirectories && parameters.subscriberDirectories.length > 0)
         connectionManager.importSubscribersFromDirectories(parameters.connectionName, parameters.subscriberDirectories);
 
-    // if (parameters.subscribers)
-    //     connectionManager.importSubscribers(parameters.subscribers);
+    if (parameters.subscribers)
+        connectionManager.importSubscribers(parameters.subscribers);
 
     return connection
         .connect(parameters.connectionOptions)
         .then(() => connection);
-}
-
-
-/**
- * Creates a new connection to mysql. Imports documents and subscribers from the given directories.
- * @deprecated
- */
-export function createMysqlConnection(options: string, documentDirectories: string[]|Function[], subscriberDirectories?: string[]): Promise<Connection>;
-export function createMysqlConnection(options: ConnectionOptions, documentDirectories: string[]|Function[], subscriberDirectories?: string[]): Promise<Connection>;
-export function createMysqlConnection(configuration: string|ConnectionOptions, documentDirectories: string[]|Function[], subscriberDirectories?: string[]): Promise<Connection> {
-    if (typeof configuration === "string") {
-        configuration = { url: <string> configuration };
-    }
-
-    connectionManager.createConnection(new MysqlDriver(mysql));
-
-    if (documentDirectories && documentDirectories.length > 0) {
-        if (typeof documentDirectories[0] === "string") {
-            connectionManager.importEntitiesFromDirectories(<string[]> documentDirectories);
-        } else {
-            connectionManager.importEntities(<Function[]> documentDirectories);
-        }
-    }
-
-    if (subscriberDirectories && subscriberDirectories.length > 0)
-        connectionManager.importSubscribersFromDirectories(subscriberDirectories);
-
-    const connection = connectionManager.getConnection();
-    return connection.connect(<ConnectionOptions> configuration).then(() => connection);
 }

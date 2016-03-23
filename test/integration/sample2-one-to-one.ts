@@ -1,8 +1,7 @@
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createMysqlConnection} from "../../src/typeorm";
-import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
+import {createConnection, CreateConnectionParameters} from "../../src/typeorm";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {PostDetails} from "../../sample/sample2-one-to-one/entity/PostDetails";
@@ -20,21 +19,25 @@ describe("one-to-one", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let options: ConnectionOptions = {
-        host: "192.168.99.100",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test",
-        autoSchemaCreate: true
+    const options: CreateConnectionParameters = {
+        driver: "mysql",
+        connectionOptions: {
+            host: "192.168.99.100",
+            port: 3306,
+            username: "root",
+            password: "admin",
+            database: "test",
+            autoSchemaCreate: true
+        },
+        entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
-    
+
     // connect to db
     let connection: Connection;
     before(function() {
-        return createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(conn => {
-            connection = conn;
-        }).catch(e => console.log("Error during connection to db: " + e));
+        return createConnection(options)
+            .then(con => connection = con)
+            .catch(e => console.log("Error during connection to db: " + e));
     });
 
     after(function() {

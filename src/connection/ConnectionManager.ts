@@ -57,6 +57,10 @@ export class ConnectionManager {
         if (!name) {
             name = "default";
         }
+        const existConnection = this.connections.find(connection => connection.name === name);
+        if (existConnection)
+            this.connections.splice(this.connections.indexOf(existConnection), 1);
+        
         const connection = new Connection(<string> name, driver);
         this.connections.push(connection);
         return connection;
@@ -107,12 +111,7 @@ export class ConnectionManager {
             paths = <string[]> connectionNameOrPaths;
         }
 
-        const allSubscriberClasses = importClassesFromDirectories(paths);
-        const subscribers = defaultMetadataStorage
-            .findOrmEventSubscribersForClasses(allSubscriberClasses)
-            .map(metadata => this.createContainerInstance(metadata.target));
-
-        this.getConnection(connectionName).addSubscribers(subscribers);
+        this.importSubscribers(connectionName, importClassesFromDirectories(paths));
     }
 
     /**
@@ -127,12 +126,31 @@ export class ConnectionManager {
         } else {
             entities = <Function[]> connectionNameOrEntities;
         }
-
         const entityMetadatas = this.entityMetadataBuilder.build(entities);
         const entityListenerMetadatas = defaultMetadataStorage.findEntityListenersForClasses(entities);
 
         this.getConnection(connectionName).addEntityMetadatas(entityMetadatas);
         this.getConnection(connectionName).addEntityListenerMetadatas(entityListenerMetadatas);
+    }
+
+    /**
+     * Imports entities for the given connection. If connection name is not given then default connection is used.
+     */
+    importSubscribers(subscriberClasses: Function[]): void;
+    importSubscribers(connectionName: string, subscriberClasses: Function[]): void;
+    importSubscribers(connectionNameOrSubscriberClasses: string|Function[], subscriberClasses?: Function[]): void {
+        let connectionName = "default";
+        if (subscriberClasses) {
+            connectionName = <string> connectionNameOrSubscriberClasses;
+        } else {
+            subscriberClasses = <Function[]> connectionNameOrSubscriberClasses;
+        }
+
+        const subscribers = defaultMetadataStorage
+            .findOrmEventSubscribersForClasses(subscriberClasses)
+            .map(metadata => this.createContainerInstance(metadata.target));
+
+        this.getConnection(connectionName).addSubscribers(subscribers);
     }
 
     // -------------------------------------------------------------------------

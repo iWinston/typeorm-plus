@@ -1,8 +1,7 @@
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createMysqlConnection} from "../../src/typeorm";
-import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
+import {CreateConnectionParameters, createConnection} from "../../src/typeorm";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {PostDetails} from "../../sample/sample4-many-to-many/entity/PostDetails";
@@ -18,26 +17,31 @@ describe("many-to-many", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let options: ConnectionOptions = {
-        host: "192.168.99.100",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test",
-        autoSchemaCreate: true,
-        logging: {
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        }
+    const options: CreateConnectionParameters = {
+        driver: "mysql",
+        connectionOptions: {
+            host: "192.168.99.100",
+            port: 3306,
+            username: "root",
+            password: "admin",
+            database: "test",
+            autoSchemaCreate: true,
+            logging: {
+                logOnlyFailedQueries: true,
+                logFailedQueryError: true
+            }
+        },
+        entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity"]
     };
-    
+
     // connect to db
     let connection: Connection;
     before(function() {
-        return createMysqlConnection(options, [__dirname + "/../../sample/sample4-many-to-many/entity"]).then(conn => {
-            connection = conn;
-        }).catch(e => console.log("Error during connection to db: " + e));
+        return createConnection(options)
+            .then(con => connection = con)
+            .catch(e => console.log("Error during connection to db: " + e));
     });
+
 
     after(function() {
         connection.close();

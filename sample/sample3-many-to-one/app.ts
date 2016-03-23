@@ -1,4 +1,4 @@
-import {createMysqlConnection} from "../../src/typeorm";
+import {CreateConnectionParameters, createConnection} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {PostCategory} from "./entity/PostCategory";
@@ -7,18 +7,20 @@ import {PostImage} from "./entity/PostImage";
 import {PostInformation} from "./entity/PostInformation";
 import {PostAuthor} from "./entity/PostAuthor";
 
-// first create a connection
-let options = {
-    host: "192.168.99.100",
-    port: 3306,
-    username: "root",
-    password: "admin",
-    database: "test",
-    autoSchemaCreate: true
+const options: CreateConnectionParameters = {
+    driver: "mysql",
+    connectionOptions: {
+        host: "192.168.99.100",
+        port: 3306,
+        username: "root",
+        password: "admin",
+        database: "test",
+        autoSchemaCreate: true
+    },
+    entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };
 
-createMysqlConnection(options, [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]).then(connection => {
-
+createConnection(options).then(connection => {
     let details = new PostDetails();
     details.authorName = "Umed";
     details.comment = "about post";
