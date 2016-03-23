@@ -15,7 +15,7 @@ to javascript object's properties
 between tables
 * and much more ...
 
-TypeORM uses Data Mapper pattern, unlink all other javascript ORMs that 
+TypeORM uses Data Mapper pattern, unlike all other javascript ORMs that 
 currently exist, which means you can write loosely coupled, scalable, 
 maintainable enterprise applications easily.
 
@@ -79,9 +79,9 @@ Here, we are using three decorators:
 * `@Table(tableName)` - tells ORM to create a new table in the database 
 for this class. We also specified a table name in the database.
 * `@PrimaryColumn(columnType, columnOptions)` - tells ORM to create a table
-column for the given class property and make it PRIMARY KEY column. We also
+column for the given class property and make it *PRIMARY KEY* column. We also
  set `{ autoIncrement: true }` in column options, which makes our 
- primary column an AUTO_INCREMENT.
+ primary column an *AUTO_INCREMENT*.
 * `@Column(columnType, columnOptions)` - tells ORM to create a table
 column for the given class property.
 
@@ -116,6 +116,7 @@ createConnection(options).then(connection => {
 Now run your `app.ts`. ORM will automatically create a `photo` table in 
 the `test` database:
 
+```
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
@@ -125,6 +126,7 @@ the `test` database:
 | filename    | varchar(255) |                            |
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
+```
 
 Now lets create a new Photo, and persist it to the database.
 
@@ -150,7 +152,6 @@ If you want to load photos from the database, you can use `repository.find*`
 methods:
 
 ```typescript
-
     // here we load one photo by id:
     let photoId = 1;
     let repository = connection.getRepository(Photo);
@@ -169,14 +170,12 @@ methods:
     repository.find({ isPublished: true }).then(photos => {
         console.log("Published photos are loaded: ", photos);
     });
-
 ```
 
 If you want to update in the database a previously loaded photo, you 
 can use `repository.persist` method:
 
 ```typescript
-    
     // change previously loaded photo
     photo.name = "Me and Bears and Penguins";
     photo.description = "I am near polar bears and penguins";
@@ -186,19 +185,16 @@ can use `repository.persist` method:
     repository.persist(photo).then(photo => {
         console.log("Photo is updated in the database: ", photo);
     });
-
 ```
 
 If you want to remove a photo from the database, you can use 
 `repository.remove` method:
 
 ```typescript
-
     let repository = connection.getRepository(Photo);
     repository.remove(photo).then(() => {
         console.log("Photo has been successfully removed.");
     });
-
 ```
 
 ## Samples
