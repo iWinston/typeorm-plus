@@ -13,4 +13,7 @@ export class Post {
     @Column()
     text: string;
 
+    @Column()
+    likesCount: number;
+
 }

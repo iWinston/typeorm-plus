@@ -64,6 +64,7 @@ describe("insertion", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
+            newPost.likesCount = 0;
             return postRepository.persist(newPost).then(post => savedPost = post);
         });
 

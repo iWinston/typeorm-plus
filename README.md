@@ -49,10 +49,15 @@ need to do:
 
 ## Example
 
-Lets create a sample application - photo album. First we create a new file
-`Photo.ts` and create a class there:
+Lets create a sample application - photo album. 
+
+#### create Photo entity class
+
+First we create a new file `Photo.ts` and create a class there:
 
 ```typescript
+import {Table} from "typeorm/decorator/Tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
 
 @Table("photo")
 export class Photo {
@@ -84,6 +89,8 @@ column for the given class property and make it *PRIMARY KEY* column. We also
  primary column an *AUTO_INCREMENT*.
 * `@Column(columnType, columnOptions)` - tells ORM to create a table
 column for the given class property.
+
+#### connect to the database and register Photo entity class in ORM
 
 Now lets run bootstrap our application and connect to the database. Create 
 `app.ts`:
@@ -128,6 +135,8 @@ the `test` database:
 +-------------+--------------+----------------------------+
 ```
 
+#### inserting photo into the database
+
 Now lets create a new Photo, and persist it to the database.
 
 ```typescript
@@ -148,10 +157,14 @@ createConnection(options).then(connection => {
 });
 ```
 
+#### loading photos from the database
+
 If you want to load photos from the database, you can use `repository.find*`
 methods:
 
 ```typescript
+let repository = connection.getRepository(Photo);
+
 // here we load one photo by id:
 let photoId = 1;
 let repository = connection.getRepository(Photo);
@@ -160,17 +173,17 @@ repository.findById(photoId).then(photo => {
 });
 
 // here we load one photo by name
-let repository = connection.getRepository(Photo);
 repository.findOne({ name: "Me and Bears" }).then(photo => {
     console.log("Photo is loaded: ", photo);
 });
 
 // here we load all published photos
-let repository = connection.getRepository(Photo);
 repository.find({ isPublished: true }).then(photos => {
     console.log("Published photos are loaded: ", photos);
 });
 ```
+
+#### updating photo in the database
 
 If you want to update in the database a previously loaded photo, you 
 can use `repository.persist` method:
@@ -187,6 +200,8 @@ repository.persist(photo).then(photo => {
 });
 ```
 
+#### removing photo from the database
+
 If you want to remove a photo from the database, you can use 
 `repository.remove` method:
 
@@ -196,6 +211,419 @@ repository.remove(photo).then(() => {
     console.log("Photo has been successfully removed.");
 });
 ```
+
+#### creating a one-to-one relation
+
+Lets create a one-to-one relation with another class. Lets create a new
+class called `PhotoMetadata.ts` which will contain a `PhotoMetadata` class
+which supposed to be contain our Photo's additional meta-information:
+
+```typescript
+import {Table} from "typeorm/decorator/Tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
+import {OneToOne} from "typeorm/decorator/Relations";
+
+@Table("photo_metadata")
+export class PhotoMetadata {
+    
+    @PrimaryColumn("int", { autoIncrement: true })
+    id: number;
+    
+    @Column()
+    height: number;
+    
+    @Column()
+    width: number;
+    
+    @Column()
+    comment: string;
+    
+    @Column()
+    compressed: boolean;
+    
+    @Column()
+    orientation: string;
+    
+    @OneToOne(type => Photo, photo => photo.metadata) // note: we will create metadata property in the Photo class below
+    photo: Photo;
+}
+```
+
+Here, we are using a new decorator called `@OneToOne`. It allows to
+create one-to-one relations between two entities. `@OneToOne` decorator
+accepts two arguments:
+
+* `type => Photo` is a function that returns the class of the entity with
+which relation we want to make our relation. 
+
+> we are forced to use a function that returns a class, instead of using
+class directly, because of the language specifics. We can also write it 
+as a `() => Photo`, but we use `type => Photo` as convention to increase
+code readability a bit. `type` variable itself does not contain anything.
+ 
+* `photo => photo.metadata` is a function that returns a name of the 
+*inverse side of the relation*. Here we show that `metadata` property
+of the `Photo` class is where we store `PhotoMetadata` in the `Photo` class.
+
+> you could also instead of passing function that returns a property of the 
+photo simply pass a string to @OneToOne decorator, like "metadata". But
+we used this function-typed approach to make your refactorings easier.
+
+Now lets add inverse side of our relation to the `Photo` class:
+
+```typescript
+export class Photo {
+    /// ... other columns
+    
+    @OneToOneInverse(type => PhotoMetadata, metadata => metadata.photo)
+    metadata: PhotoMetadata;
+}
+```
+
+`@OneToOneInverse` decorator has same parameters as `@OneToOne` - first 
+parameter specifies the class with which the relation is made, second 
+parameter specifies inverse side of this relation. In any relation there 
+are always two sides and only one of them can be owner side. Owner side
+is called "owner", because it "owns" relation id. In our example 
+`PhotoMetadata` owns relation because it uses `@OneToOne` decorator, thus
+it will contain photo id. `Photo` entity does not own relation, thus
+does not have metadata id.
+
+After you run application ORM will create a photo_metadata table:
+
+```
++-------------+--------------+----------------------------+
+|                     photo_metadata                      |
++-------------+--------------+----------------------------+
+| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| height      | double       |                            |
+| width       | double       |                            |
+| comment     | varchar(255) |                            |
+| compressed  | boolean      |                            |
+| orientation | varchar(255) |                            |
+| photo       | int(11)      | FOREIGN KEY                |
++-------------+--------------+----------------------------+
+```
+
+Don't forget to register `PhotoMetadata` class for your connection in the ORM:
+
+```typescript
+const options: CreateConnectionOptions = {
+    // ... other options
+    entities: [Photo, PhotoMetadata]
+};
+```
+
+Now lets insert metadata and photo to our database:
+
+```typescript
+createConnection(options).then(connection => {
+
+    // create photo object
+    let photo = new Photo();
+    photo.name = "Me and Bears";
+    photo.description = "I am near polar bears";
+    photo.filename = "photo-with-bears.jpg"
+    photo.isPublished = true;
+
+    // create photo metadata object
+    let metadata         = new PhotoMetadata();
+    metadata.height      = 640;
+    metadata.width       = 480;
+    metadata.compressed  = true;
+    metadata.comment     = "cybershoot";
+    metadata.orientation = "portait";
+    metadata.photo       = photo; // this way we connect them
+    
+    // get entity repositories
+    let photoRepository = connection.getRepository(Photo);
+    let metadataRepository = connection.getRepository(PhotoMetadata);
+    
+    // first we should persist a photo
+    photoRepository.persist(photo).then(photo => {
+    
+        // photo is saved. Now we need to persist a photo metadata
+        return metadataRepository.persist(metadata);
+    
+    }).then(metadata => {
+        // metadata is saved, and relation between metadata and photo is created in the database too
+    });
+
+});
+```
+
+#### using cascade options to automatically save related objects
+
+We can setup cascade options in our relations, in the cases when we want
+our related object to be persisted whenever other object is saved. Let's
+change our photo's `@OneToOneInverse` decorator a bit:
+
+```typescript
+export class Photo {
+    /// ... other columns
+    
+    @OneToOneInverse(type => PhotoMetadata, metadata => metadata.photo, {
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
+    })
+    metadata: PhotoMetadata;
+}
+```
+
+* `cascadeInsert` automatically insert metadata in the relation if
+it does not exist in its table. This means that we don't need to manually
+insert a newly created photoMetadata object.
+* `cascadeUpdate` automatically update metadata in the relation if
+in this object something is changed
+* `cascadeRemove` automatically remove metadata from its table if you 
+removed metadata from photo object
+
+Using `cascadeInsert` allows us not to separately persist photo and 
+separately persist metadata objects now. Now we can simply persist a 
+photo object, and metadata object will persist automatically because of 
+cascade options.
+
+```typescript
+createConnection(options).then(connection => {
+
+    // create photo object
+    let photo = new Photo();
+    photo.name = "Me and Bears";
+    photo.description = "I am near polar bears";
+    photo.filename = "photo-with-bears.jpg"
+    photo.isPublished = true;
+
+    // create photo metadata object
+    let metadata         = new PhotoMetadata();
+    metadata.height      = 640;
+    metadata.width       = 480;
+    metadata.compressed  = true;
+    metadata.comment     = "cybershoot";
+    metadata.orientation = "portait";
+    metadata.photo       = photo; // this way we connect them
+    
+    // get repository
+    let photoRepository = connection.getRepository(Photo);
+    
+    // first we should persist a photo
+    photoRepository.persist(photo).then(photo => {
+        console.log("Photo is saved, photo metadata is saved too.")
+    });
+
+});
+```
+
+#### creating a many-to-one / one-to-many relation
+
+Lets create a many-to-one / one-to-many relation. Lets say a photo has 
+one author, and each author can have many photos. First, lets create a
+`Author` class:
+
+```typescript
+import {Table} from "typeorm/decorator/Tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
+import {OneToMany} from "typeorm/decorator/Relations";
+
+@Table("author")
+export class Author {
+    
+    @PrimaryColumn("int", { autoIncrement: true })
+    id: number;
+    
+    @Column()
+    name: string;
+    
+    @OneToMany(type => Photo, photo => photo.author) // note: we will create author property in the Photo class below
+    photos: Photo[];
+}
+```
+
+Now lets add inverse side of our relation to the `Photo` class:
+
+```typescript
+export class Photo {
+    /// ... other columns
+    
+    @ManyToOne(type => Author, author => author.photos)
+    author: Author;
+}
+```
+
+In case of many-to-one / one-to-many relation, owner relation is **many-to-one**.
+It means that class which uses `@ManyToOne` will store id of the related
+object.
+
+After you run application ORM will create **author** table:
+
+```
++-------------+--------------+----------------------------+
+|                          author                         |
++-------------+--------------+----------------------------+
+| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| name        | varchar(255) |                            |
++-------------+--------------+----------------------------+
+```
+
+It will also modify **photo** table - add a new column `author` and create
+ a foreign key for it:
+ 
+```
++-------------+--------------+----------------------------+
+|                         photo                           |
++-------------+--------------+----------------------------+
+| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| name        | varchar(255) |                            |
+| description | varchar(255) |                            |
+| filename    | varchar(255) |                            |
+| isPublished | boolean      |                            |
+| author      | int(11)      | FOREIGN KEY                |
++-------------+--------------+----------------------------+
+```
+
+Don't forget to register `Author` class for your connection in the ORM:
+
+```typescript
+const options: CreateConnectionOptions = {
+    // ... other options
+    entities: [Photo, PhotoMetadata, Author]
+};
+```
+
+Now lets insert author and photo to our database:
+
+```typescript
+createConnection(options).then(connection => {
+
+    // create a new user
+    let author = new Author();
+    author.name = "Umed Khudoiberdiev";
+
+    // create photo object
+    let photo = new Photo();
+    photo.name = "Me and Bears";
+    photo.description = "I am near polar bears";
+    photo.filename = "photo-with-bears.jpg"
+    photo.author = author;
+    
+    // get entity repositories
+    let photoRepository = connection.getRepository(Photo);
+    let authorRepository = connection.getRepository(Author);
+    
+    // first we should persist our user
+    authorRepository.persist(author).then(author => {
+    
+        // author is saved. Now we need to persist a photo
+        return photoRepository.persist(photo);
+    
+    }).then(photo => {
+        // photo is saved, and relation between photo and author is created in the database too
+    });
+
+});
+```
+
+#### creating a many-to-many / many-to-many relation
+
+Lets create a many-to-one / many-to-many relation. Lets say a photo can
+be in many albums, and multiple can have many photos. Lets create an
+`Album` class:
+
+```typescript
+import {Table} from "typeorm/decorator/Tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
+import {ManyToMany} from "typeorm/decorator/Relations";
+
+@Table("album")
+export class Album {
+    
+    @PrimaryColumn("int", { autoIncrement: true })
+    id: number;
+    
+    @Column()
+    name: string;
+    
+    @ManyToMany(type => Photo, album => photo.albums, {  // note: we will create "albums" property in the Photo class below
+        cascadeInsert: true, // allow to insert a new photo on album save
+        cascadeUpdate: true, // allow to update a photo on album save
+        cascadeRemove: true  // allow to remove a photo on album remove
+    })
+    photos: Photo[] = []; // we initialize array for convinience here
+}
+```
+
+Now lets add inverse side of our relation to the `Photo` class:
+
+```typescript
+export class Photo {
+    /// ... other columns
+    
+    @ManyToManyInverse(type => Album, album => album.photos, {
+       cascadeInsert: true, // allow to insert a new album on photo save
+       cascadeUpdate: true, // allow to update an album on photo save
+       cascadeRemove: true  // allow to remove an album on photo remove
+    })
+    albums: Album[] = []; // we initialize array for convinience here
+}
+```
+
+After you run application ORM will create a **album_photos_photo_albums** 
+*junction table*:
+
+```
++-------------+--------------+----------------------------+
+|                album_photos_photo_albums                |
++-------------+--------------+----------------------------+
+| album_id_1  | int(11)      | FOREIGN KEY                |
+| photo_id_2  | int(11)      | FOREIGN KEY                |
++-------------+--------------+----------------------------+
+```
+
+
+Don't forget to register `Album` class for your connection in the ORM:
+
+```typescript
+const options: CreateConnectionOptions = {
+    // ... other options
+    entities: [Photo, PhotoMetadata, Author, Album]
+};
+```
+
+Now lets insert author and photo to our database:
+
+```typescript
+createConnection(options).then(connection => {
+
+    // create a few albums
+    let album1 = new Album();
+    album1.name = "Bears";
+    
+    let album2 = new Album();
+    album2.name = "Me";
+
+    // create a few photos
+    let photo1 = new Photo();
+    photo1.name = "Me and Bears";
+    photo1.description = "I am near polar bears";
+    photo1.filename = "photo-with-bears.jpg"
+    
+    let photo2 = new Photo();
+    photo2.name = "Me and Bears";
+    photo2.description = "I am near polar bears";
+    photo2.filename = "photo-with-bears.jpg"
+    
+    // get entity repository
+    let photoRepository = connection.getRepository(Photo);
+    
+    // we only save a photos, albums are persisted automatically because of cascade options
+    photoRepository
+        .persist(photo1) // first save a first photo
+        .then(photo => photoRepository.persist(photo2)) // second save a second photo
+        .then(photo => console.log("Both photos have been saved"));
+    
+});
+```
+
 
 ## Samples
 
