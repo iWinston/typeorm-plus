@@ -6,8 +6,7 @@ import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transform
 import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
-
-// todo: make extended functionality for findOne, find and findAndCount queries, so no need for user to use query builder
+import {FindOptions, FindOptionsUtils} from "./FindOptions";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -118,45 +117,93 @@ export class Repository<Entity> {
     /**
      * Finds entities that match given conditions.
      */
-    find(conditions?: Object): Promise<Entity[]> {
-        const alias = this.metadata.table.name;
-        const builder = this.createQueryBuilder(alias);
-        Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
-        return builder.setParameters(conditions).getResults();
+    find(): Promise<Entity[]>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    find(conditions: Object): Promise<Entity[]>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    find(options: FindOptions): Promise<Entity[]>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    find(conditions: Object, options: FindOptions): Promise<Entity[]>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    find(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
+        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
+            .getResults();
     }
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(conditions?: Object): Promise<{ items: Entity[], count: number }> {
-        const alias = this.metadata.table.name;
-        const builder = this.createQueryBuilder(alias);
-        if (conditions) {
-            Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
-            builder.setParameters(conditions);
-        }
-        return Promise.all<any>([ builder.getResults(), builder.getCount() ])
+    findAndCount(): Promise<{ items: Entity[], count: number }>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    findAndCount(conditions: Object): Promise<{ items: Entity[], count: number }>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    findAndCount(options: FindOptions): Promise<{ items: Entity[], count: number }>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    findAndCount(conditions: Object, options: FindOptions): Promise<{ items: Entity[], count: number }>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<{ items: Entity[], count: number }> {
+        const qb = this.createFindQueryBuilder(conditionsOrFindOptions, options);
+        return Promise.all<any>([ qb.getResults(), qb.getCount() ])
             .then(([entities, count]: [Entity[], number]) => ({ items: entities, count: count }));
     }
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(conditions: Object): Promise<Entity> {
-        const alias = this.metadata.table.name;
-        const builder = this.createQueryBuilder(alias);
-        Object.keys(conditions).forEach(key => builder.where(alias + "." + key + "=:" + key));
-        return builder.setParameters(conditions).getSingleResult();
+    findOne(): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOne(conditions: Object): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOne(options: FindOptions): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOne(conditions: Object, options: FindOptions): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOne(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
+        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
+            .getSingleResult();
     }
 
     /**
      * Finds entity with given id.
      */
-    findById(id: any): Promise<Entity> {
-        const alias = this.metadata.table.name;
-        return this.createQueryBuilder(alias)
-            .where(alias + "." + this.metadata.primaryColumn.name + "=:id")
-            .setParameter("id", id)
+    findById(id: any, options?: FindOptions): Promise<Entity> {
+        return this.createFindQueryBuilder({ [this.metadata.primaryColumn.name]: id }, options)
             .getSingleResult();
     }
 
@@ -185,6 +232,30 @@ export class Repository<Entity> {
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
+
+    private createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions) {
+        let findOptions: FindOptions, conditions: Object;
+        if (FindOptionsUtils.isFindOptions(conditionsOrFindOptions)) {
+            findOptions = conditionsOrFindOptions;
+        } else {
+            findOptions = options;
+            conditions = conditionsOrFindOptions;
+        }
+
+        const alias = findOptions ? options.alias : this.metadata.table.name;
+        const qb = this.createQueryBuilder(alias);
+        if (findOptions) {
+            FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
+        }
+        if (conditions) {
+            Object.keys(conditions).forEach(key => {
+                const name = key.indexOf(".") === -1 ? alias + "." + key : key;
+                qb.andWhere(name + "=:" + key);
+            });
+            qb.addParameters(conditions);
+        }
+        return qb;
+    }
 
     /**
      * When ORM loads dbEntity it uses joins to load all entity dependencies. However when dbEntity is newly persisted
