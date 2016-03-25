@@ -8,6 +8,7 @@ import {SchemaCreator} from "../schema-creator/SchemaCreator";
 import {MetadataNotFoundError} from "./error/MetadataNotFoundError";
 import {ConstructorFunction} from "../common/ConstructorFunction";
 import {EntityListenerMetadata} from "../metadata-builder/metadata/EntityListenerMetadata";
+import {EntityManager} from "../repository/EntityManager";
 
 interface RepositoryAndMetadata {
     repository: Repository<any>;
@@ -30,6 +31,7 @@ export class Connection {
     private _subscribers: OrmSubscriber<any>[] = [];
     private repositoryAndMetadatas: RepositoryAndMetadata[] = [];
     private _options: ConnectionOptions;
+    private entityManager: EntityManager;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -40,6 +42,7 @@ export class Connection {
         this._driver = driver;
         this._driver.connection = this;
         this._options = options;
+        this.entityManager = new EntityManager(this);
     }
 
     // -------------------------------------------------------------------------
@@ -137,6 +140,10 @@ export class Connection {
      */
     addSubscribers(subscribers: OrmSubscriber<any>[]) {
         this._subscribers = this._subscribers.concat(subscribers);
+    }
+
+    getEntityManager() {
+        return this.entityManager;
     }
 
     /**

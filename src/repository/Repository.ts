@@ -82,7 +82,7 @@ export class Repository<Entity> {
     /**
      * Persists (saves) a given entity in the database.
      */
-    persist(entity: Entity) {
+    persist(entity: Entity): Promise<Entity> {
         let loadedDbEntity: any;
         const persister = new PersistOperationExecutor(this.connection);
         const builder = new EntityPersistOperationBuilder(this.connection);
@@ -102,7 +102,7 @@ export class Repository<Entity> {
     /**
      * Removes a given entity from the database.
      */
-    remove(entity: Entity) {
+    remove(entity: Entity): Promise<Entity> {
         const persister = new PersistOperationExecutor(this.connection);
         return this.initialize(entity).then(dbEntity => {
             (<any> entity)[this.metadata.primaryColumn.name] = undefined;
