@@ -743,22 +743,22 @@ Learn more about EntityManager [here]().
 
 ## Learn more
 
-* [connection and connection options](tree/master/docs/connection-and-connection-options.md)
-* [updating database schema](tree/master/docs/updating-database-schema.md)
-* [databases and drivers](tree/master/docs/databases-and-drivers.md)
-* [tables and table inheritance](tree/master/docs/tables-and-table-inheritance.md)
-* [table columns](tree/master/docs/table-columns.md)
-* [relations](tree/master/docs/relations.md)
-* [indices and keys](tree/master/docs/indices-and-keys.md)
-* [repository](tree/master/docs/repository.md)
-* [query builder](tree/master/docs/query-builder.md)
-* [entity manager](tree/master/docs/entity-manager.md)
-* [subscribers and entity listeners](tree/master/docs/subscribers-and-entity-listeners.md)
-* [naming strategies](tree/master/docs/naming-strategies.md)
+* [connection and connection options](docs/connection-and-connection-options.md)
+* [updating database schema](docs/updating-database-schema.md)
+* [databases and drivers](docs/databases-and-drivers.md)
+* [tables and table inheritance](docs/tables-and-table-inheritance.md)
+* [table columns](docs/table-columns.md)
+* [relations](docs/relations.md)
+* [indices and keys](docs/indices-and-keys.md)
+* [repository](docs/repository.md)
+* [query builder](docs/query-builder.md)
+* [entity manager](docs/entity-manager.md)
+* [subscribers and entity listeners](docs/subscribers-and-entity-listeners.md)
+* [naming strategies](docs/naming-strategies.md)
 
 ## Samples
 
-Take a look on samples in [./sample](https://github.com/pleerock/typeorm/tree/master/sample) for more examples of
+Take a look on samples in [./sample](sample) for more examples of
 usages.
 
 ## Todos
