@@ -523,7 +523,7 @@ createConnection(options).then(connection => {
 });
 ```
 
-#### creating a many-to-many / many-to-many relation
+#### creating a many-to-many relation
 
 Lets create a many-to-one / many-to-many relation. Lets say a photo can
 be in many albums, and multiple can have many photos. Lets create an
@@ -624,6 +624,137 @@ createConnection(options).then(connection => {
 });
 ```
 
+### using FindOptions to customize find queries
+
+`Repository.find` method allows you to specify `findOptions`. Using this
+you can customize your query to perform more complex queries. For example
+you can do this:
+
+```typescript
+let photoRepository = connection.getRepository(Photo);
+photoRepository.find({
+    alias: "photo", // this is alias of what you are selecting - photos. You must specify it.
+    innerJoinAndSelect: [
+        "photo.metadata"
+    ],
+    leftJoinAndSelect: [
+        "photo.albums"
+    ],
+    where: "photo.isPublished=true AND (photo.name=:photoName OR photo.name=:bearName)",
+    orderBy: [{ sort: "photo.id", order: "DESC" }],
+    firstResult: 5,
+    maxResults: 10,
+    parameters: {
+        photoName: "My",
+        bearName: "Mishka"
+    }
+}).then(photos => {
+    console.log(photos);
+});
+```
+
+`photoRepository.find` will select you all photos that are published and
+whose name is "My" or "Mishka", it will select results from 5 position 
+(pagination offset), and will select only 10 results (pagination limit).
+Selection result will be ordered by id in descending order. Photo's albums
+will be left-joined and photo's metadata will be inner joined.
+
+Learn more about FindOptions [here]().
+
+#### using QueryBuilder to build complex queries
+
+You can use `QueryBuilder` to build even more complex queries. For example
+you can do this:
+
+
+```typescript
+let photoRepository = connection.getRepository(Photo);
+photoRepository
+    .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it. 
+    .innerJoinAndSelect("photo.metadata")
+    .leftJoinAndSelect("photo.3")
+    .where("photo.isPublished=true")
+    .andWhere("photo.name=:photoName OR photo.name=:bearName")
+    .orderBy("photo.id", "DESC")
+    .setFirstResult(5)
+    .setMaxResults(10)
+    .setParameters({ photoName: "My", beaName: "Mishka" })
+    .getResults().then(photos => console.log(photos));
+```
+
+This query builder will select you all photos that are published and
+whose name is "My" or "Mishka", it will select results from 5 position 
+(pagination offset), and will select only 10 results (pagination limit).
+Selection result will be ordered by id in descending order. Photo's albums
+will be left-joined and photo's metadata will be inner joined.
+
+Learn more about QueryBuilder [here]().
+
+#### using EntityManager to work with any entity
+
+Sometimes you may want to simplify what you are doing and not to create 
+a `repository` instance for each of your entity to, for example, persist
+it. In such cases you may want to use EntityManager. These are several
+methods from EntityManager class:
+
+```typescript
+// create a new user
+let author = new Author();
+author.name = "Umed Khudoiberdiev";
+
+// create photo metadata
+let metadata         = new PhotoMetadata();
+metadata.height      = 640;
+metadata.width       = 480;
+metadata.compressed  = true;
+metadata.comment     = "cybershoot";
+metadata.orientation = "portait";
+metadata.photo       = photo; // this way we connect them
+
+// create a new photo
+let photo = new Photo();
+photo.name = "Me and Bears";
+photo.description = "I am near polar bears";
+photo.filename = "photo-with-bears.jpg"
+photo.author = author;
+photo.metadata = metadata;
+
+let entityManager = connection.getEntityManager();
+
+// first lets persist entities
+entityManager
+    .persist(author) // first lets save a new author
+    .then(savedAuthor => entityManager.persist(metadata)); // then save a new metadata
+    .then(savedMetadata => entityManager.persist(photo)); // and finally save a photo
+    .then(savedPhoto => {
+        console.log("Everything is saved without using repositories")
+     
+        // next example is about finding entity and removing it
+        entityManager.find(Photo, { isPublished: true }).then(photos => {
+            
+            // and final example about removing entities
+            return Promise.all(photos.map(photo => entityManager.remove(photo)));
+        });
+        
+    });
+```
+
+Learn more about EntityManager [here]().
+
+## Learn more
+
+* [connection and connection options](tree/master/docs/connection-and-connection-options.md)
+* [updating database schema](tree/master/docs/updating-database-schema.md)
+* [databases and drivers](tree/master/docs/databases-and-drivers.md)
+* [tables and table inheritance](tree/master/docs/tables-and-table-inheritance.md)
+* [table columns](tree/master/docs/table-columns.md)
+* [relations](tree/master/docs/relations.md)
+* [indices and keys](tree/master/docs/indices-and-keys.md)
+* [repository](tree/master/docs/repository.md)
+* [query builder](tree/master/docs/query-builder.md)
+* [entity manager](tree/master/docs/entity-manager.md)
+* [subscribers and entity listeners](tree/master/docs/subscribers-and-entity-listeners.md)
+* [naming strategies](tree/master/docs/naming-strategies.md)
 
 ## Samples
 
@@ -640,7 +771,7 @@ Feel free to contribute ;)
 * should all entities have a primary column?
 * think about indices
 * think more about cascades
-* add cascadePersist to cascades?
+* add cascadeAll to cascades?
 * naming strategy need to be done correctly
 * fix all propertyName/tableName problems and make sure everything work correctly
 * check column types, make validation there
@@ -649,20 +780,17 @@ Feel free to contribute ;)
 * check self referencing
 * array / json / date column types
 * exceptions everywhere!
-* added ability to load only ids of the relation (similar to loading only single id)
+* add ability to load only ids of the relation (similar to loading only single id)
 * make @Index and @CompoundIndex to work properly
 * make relations to connect not only to primary key (e.g. relation#referencedColumnName)
 * multiple primary key support?
 * ability to specify many-to-many column names in relation options
-* lazy loading? really?
 * investigate relations support in abstract tables
 * allow inherited tables to work like abstract tables
 * check query builder query to function support
-* order by support in relations?
 * versioning?
 * check relations without inverse sides
 * flush? 
-* create entity manager? (if want to use ORM without repository)
 * do we need unit of work? It can start on some time, and finish after flushing
 * check group by functionality
 * send entity changeset in update event
