@@ -672,7 +672,7 @@ let photoRepository = connection.getRepository(Photo);
 photoRepository
     .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it. 
     .innerJoinAndSelect("photo.metadata")
-    .leftJoinAndSelect("photo.3")
+    .leftJoinAndSelect("photo.albums")
     .where("photo.isPublished=true")
     .andWhere("photo.name=:photoName OR photo.name=:bearName")
     .orderBy("photo.id", "DESC")
