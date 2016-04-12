@@ -45,6 +45,13 @@ export class MysqlDriver extends BaseDriver implements Driver {
     get native(): any {
         return this.mysql;
     }
+    
+    /**
+     * Access to the native implementation of the database.
+     */
+    get nativeConnection(): any {
+        return this.mysqlConnection;
+    }
 
     /**
      * Database name to which this connection is made.

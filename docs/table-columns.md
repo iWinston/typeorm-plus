@@ -1,70 +1,172 @@
-## Tables and columns
+## Table columns
 
-### Creating a basic table
+Entity consist of columns. For each entity column, column in the database will be created.
 
-Every object that you want to be saved in the database must have `@Table` 
-decorator and each property you want to be saved from your object must
-have `@Column` decorator. Let's start with an example:
+* [@Column decorator](#@column)
+* [@PrimaryColumn decorator](#@primary-column)
+* [@CreateDateColumn decorator](#@create-date-column)
+* [@UpdateDateColumn decorator](#@update-date-column)
+* [Column types](#column-type)
+* [Column options](#column-options)
+* [Columns usage example](#example)
+
+#### @Column
+
+Column decorator simply marks an entity property to be a table column.
+There are several column decorator signatures:
 
 ```typescript
-@Table("photo")
-class Photo {
-    
-    @PrimaryColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @Column()
-    filename: string;
-    
-    @Column()
-    description: string;
-    
-}
+@Column(options?: ColumnOptions)
+@Column(type?: ColumnType, options?: ColumnOptions)
 ```
 
-* `@Table` decorator registers your class in ORM, and allows you to make
-different operations with instances of this class directly in the db.
-After you mark your class with this decorator and run schema update 
-process, ORM will create a table in the db for you, with all proper
-columns, keys and so on. After you define your class as a @Table you 
-can do various operations like inserting, updating, removing, fining 
-objects of this class in the database. In this example we also specified
-a name for this table (`@Table("photo")`). ORM will create a table in 
-the database with such name - "photos".
+#### @PrimaryColumn
 
-* `@Column` decorator marks properties of your class to be persisted into
-the database. For each property of your class decorated by `@Table` 
-decorator ORM will create a column in the table, and this property's 
-value will be saved to database when you'll save a class instance.
+PrimaryColumn marks an entity property as a column and creates a primary key for it.
+There are several column decorator signatures:
 
-* `@PrimaryColumn` decorator marks a property of your class that must
-be a primary-key in your table. It works the same way as @Column decorator,
-but the main difference is that it also creates a PRIMARY KEY for this 
-column. This decorator is always used when you want to create an id-based
-column, including auto-increment id.
- 
-### Primary and regular columns
+```typescript
+@PrimaryColumn(options?: ColumnOptions)
+@PrimaryColumn(type?: ColumnType, options?: ColumnOptions)
+```
 
-By default column type used in the database is automatically guessed 
-from property type. But type that is set for property is not desirable
-for the type used in the database. For example type `number
-You can specify a type of column that will be used `@Column`
+#### @CreateDateColumn
+
+CreateDateColumn adds a simple datetime column to the table. During its first persistence (e.g. insertion) it
+sets current date as a value of the property object.
+
+```typescript
+@CreateDateColumn(options?: ColumnOptions)
+```
+
+#### @UpdateDateColumn
+
+UpdateDateColumn adds a simple datetime column to the table. Each time object is persisted, this column value is updated
+to the current date.
+
+```typescript
+@CreateDateColumn(options?: ColumnOptions)
+```
+
+#### ColumnType
+
+ColumnType can be one of:
+
+* `string` will be mapped to db's `varchar`
+* `text` will be mapped to db's `text`
+* `number` will be mapped to db's `double`
+* `integer` will be mapped to db's `int`
+* `int` will be mapped to db's `int`
+* `smallint` will be mapped to db's `int`
+* `bigint` will be mapped to db's `int`
+* `float` will be mapped to db's `float`
+* `double` will be mapped to db's `double`
+* `decimal` will be mapped to db's `decimal`
+* `date` will be mapped to db's `datetime`
+* `time` will be mapped to db's `time`
+* `datetime` will be mapped to db's `datetime`
+* `boolean` will be mapped to db's `boolean`
+* `json` will be mapped to db's `text`
+* `simple_array` will be mapped to db's `text`
+
+If you omit a column type, type will be guessed automatically based on variable type:
+
+* `number` will be mapped to `float`
+* `boolean` will be mapped to `boolean`
+* `string` will be mapped to `varchar`
+* `Date` will be mapped to `datetime`
+
+#### ColumnOptions
+
+ColumnOptions is an object with additional column options:
+
+* `name?: string` - column name in the database
+* `type?: ColumnType` - column type also can be specified via column options
+* `length?: string` - column type's length. For example type = "string" and length = 100 means that ORM will create a
+ column with type varchar(100).
+* `autoIncrement?: boolean` - specifies if this column will use AUTO_INCREMENT or not (e.g. generated number)
+* `unique?: boolean` - specifies if column's value must be unique or not.
+* `nullable?: boolean` - indicates if column's value can be set to NULL.
+* `columnDefinition?: string` - Extra column definition. Should be used only in emergency situations.
+Note that if you'll use this property auto schema generation will not work properly anymore.
+* `comment?: string` - column comment
+* `precision?: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
+number of digits that are stored for the values.
+* `scale?: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number
+of digits to the right of the decimal point and must not be greater than precision.
+* `collation?: string` - Column collation. Note that not all databases support it.
+
+#### Example
 
 ```typescript
 @Table("photo")
 class Photo {
-    
-    @Column("string")
+
+    /**
+     * Primary column with auto increment key.
+     */
+    @PrimaryColumn("int", { autoIncrement: true })
+    id: number;
+
+    /**
+     * Simple string column.
+     */
+    @Column()
     name: string;
-    
+
+    /**
+     * Simple boolean column.
+     */
     @Column()
-    filename: string;
-    
+    isPublished: boolean;
+
+    /**
+     * Simple numeric (float) column.
+     */
     @Column()
+    scale: number;
+
+    /**
+     * Simple numeric (integer) column.
+     */
+    @Column("integer")
+    size: number;
+
+    /**
+     * Simple column that contains a date.
+     */
+    @Column()
+    publishedDate: Date;
+
+    /**
+     * Simple column that contains a big text.
+     */
+    @Column("text")
     description: string;
+
+    /**
+     * Simple column that contains a short text.
+     */
+    @Column({
+        length: 3
+    })
+    locale: string;
+
+    /**
+     * This column's value must be unique.
+     */
+    @Column({
+        unique: true
+    })
+    slug: string;
+
+    /**
+     * This column's value can be nullable.
+     */
+    @Column({
+        nullable: true
+    })
+    metadata: string;
     
 }
 ```

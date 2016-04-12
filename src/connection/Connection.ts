@@ -121,27 +121,8 @@ export class Connection {
     }
 
     /**
-     * Registers entity metadatas for the current connection.
+     * Gets EntityManager of this connection.
      */
-    addEntityMetadatas(metadatas: EntityMetadata[]) {
-        this._entityMetadatas = this._entityMetadatas.concat(metadatas);
-        this.repositoryAndMetadatas = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
-    }
-
-    /**
-     * Registers entity listener metadatas for the current connection.
-     */
-    addEntityListenerMetadatas(metadatas: EntityListenerMetadata[]) {
-        this._entityListenerMetadatas = this._entityListenerMetadatas.concat(metadatas);
-    }
-
-    /**
-     * Registers subscribers for the current connection.
-     */
-    addSubscribers(subscribers: OrmSubscriber<any>[]) {
-        this._subscribers = this._subscribers.concat(subscribers);
-    }
-
     getEntityManager() {
         return this.entityManager;
     }
@@ -164,9 +145,31 @@ export class Connection {
     getEntityMetadata(entityClass: Function): EntityMetadata {
         const metadata = this.entityMetadatas.find(metadata => metadata.target === entityClass);
         if (!metadata)
-           throw new MetadataNotFoundError(entityClass);
+            throw new MetadataNotFoundError(entityClass);
 
         return metadata;
+    }
+
+    /**
+     * Registers entity metadatas for the current connection.
+     */
+    addEntityMetadatas(metadatas: EntityMetadata[]) {
+        this._entityMetadatas = this._entityMetadatas.concat(metadatas);
+        this.repositoryAndMetadatas = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
+    }
+
+    /**
+     * Registers entity listener metadatas for the current connection.
+     */
+    addEntityListenerMetadatas(metadatas: EntityListenerMetadata[]) {
+        this._entityListenerMetadatas = this._entityListenerMetadatas.concat(metadatas);
+    }
+
+    /**
+     * Registers subscribers for the current connection.
+     */
+    addSubscribers(subscribers: OrmSubscriber<any>[]) {
+        this._subscribers = this._subscribers.concat(subscribers);
     }
 
     // -------------------------------------------------------------------------

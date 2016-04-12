@@ -44,7 +44,7 @@ export interface ConnectionOptions {
     logging?: {
 
         /**
-         * Some specific logger to be used. By default it console.
+         * Some specific logger to be used. By default it is a console.
          */
         logger?: (message: any, level: string) => void;
 

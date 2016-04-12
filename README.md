@@ -5,7 +5,7 @@
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
 Typescript that can help you to:
 
-* automatically create your table schemas based on your model 
+* automatically create your table schemas based on your models 
 (javascript class, decorated with special decorators)
 * ability to transparently insert / update / delete to the database 
 your objects
@@ -17,7 +17,7 @@ between tables
 
 TypeORM uses Data Mapper pattern, unlike all other javascript ORMs that 
 currently exist, which means you can write loosely coupled, scalable, 
-maintainable enterprise applications easily.
+maintainable enterprise applications with less problems.
 
 The benefit of using ORM for the programmer is the ability to focus on 
 the business logic and worry about persistence only as a secondary problem. 
@@ -49,11 +49,11 @@ need to do:
 
 ## Example
 
-Lets create a sample application - photo album. 
+Lets create a sample application - a photo album. 
 
 #### create Photo entity class
 
-First we create a new file `Photo.ts` and create a class there:
+First we create a new file `Photo.ts` and put a class there:
 
 ```typescript
 import {Table} from "typeorm/decorator/Tables";
@@ -659,7 +659,7 @@ whose name is "My" or "Mishka", it will select results from 5 position
 Selection result will be ordered by id in descending order. Photo's albums
 will be left-joined and photo's metadata will be inner joined.
 
-Learn more about FindOptions [here]().
+Learn more about FindOptions [here](docs/repository.md#find-options).
 
 #### using QueryBuilder to build complex queries
 
@@ -688,7 +688,7 @@ whose name is "My" or "Mishka", it will select results from 5 position
 Selection result will be ordered by id in descending order. Photo's albums
 will be left-joined and photo's metadata will be inner joined.
 
-Learn more about QueryBuilder [here]().
+Learn more about QueryBuilder [here](docs/query-builder.md).
 
 #### using EntityManager to work with any entity
 
@@ -739,13 +739,13 @@ entityManager
     });
 ```
 
-Learn more about EntityManager [here]().
+Learn more about EntityManager [here](docs/entity-manager.md).
 
 ## Learn more
 
 * [connection and connection options](docs/connection-and-connection-options.md)
-* [updating database schema](docs/updating-database-schema.md)
 * [databases and drivers](docs/databases-and-drivers.md)
+* [updating database schema](docs/updating-database-schema.md)
 * [tables and table inheritance](docs/tables-and-table-inheritance.md)
 * [table columns](docs/table-columns.md)
 * [relations](docs/relations.md)
@@ -755,6 +755,8 @@ Learn more about EntityManager [here]().
 * [entity manager](docs/entity-manager.md)
 * [subscribers and entity listeners](docs/subscribers-and-entity-listeners.md)
 * [naming strategies](docs/naming-strategies.md)
+* [decorators reference](docs/decorators-reference.md)
+* [command line tools](docs/command-line-tools.md)
 
 ## Samples
 
@@ -763,11 +765,11 @@ usages.
 
 ## Todos
 
-ORM development is in progress. Readme and documentations expected to be soon.
+ORM development is in progress. Api can be changed a lot. More documentation and features expected to be soon.
 Feel free to contribute ;)
 
-* add partial selection support
-* in query builder should we use property names or table names? (right now its mixed)
+* add partial selection support (lot of problems with partial selection. Is there real benefit for users to use it?)
+* in query builder should we use property names or table names? (right now its kinda mixed)
 * should all entities have a primary column?
 * think about indices
 * think more about cascades

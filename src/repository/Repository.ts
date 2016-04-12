@@ -32,7 +32,7 @@ export class Repository<Entity> {
     }
 
     /**
-     * Creates a new query builder that can be used to build an sql query.
+     * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder(alias: string): QueryBuilder<Entity> {
         return this.connection.driver
@@ -56,7 +56,7 @@ export class Repository<Entity> {
     /**
      * Creates a entities from the given array of plain javascript objects.
      */
-    createMany(copyFromObjects: any[]): Entity[] {
+    createMany(copyFromObjects: Object[]): Entity[] {
         return copyFromObjects.map(object => this.create(object));
     }
 
@@ -80,7 +80,8 @@ export class Repository<Entity> {
     }
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Persists (saves) a given entity in the database. If entity does not exist in the database then it inserts it, 
+     * else if entity already exist in the database then it updates it.
      */
     persist(entity: Entity): Promise<Entity> {
         let loadedDbEntity: any;
@@ -115,7 +116,7 @@ export class Repository<Entity> {
     }
 
     /**
-     * Finds entities that match given conditions.
+     * Finds all entities.
      */
     find(): Promise<Entity[]>;
 
@@ -125,7 +126,7 @@ export class Repository<Entity> {
     find(conditions: Object): Promise<Entity[]>;
 
     /**
-     * Finds entities that match given conditions.
+     * Finds entities with options applied.
      */
     find(options: FindOptions): Promise<Entity[]>;
 

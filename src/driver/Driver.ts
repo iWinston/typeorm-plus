@@ -14,6 +14,11 @@ export interface Driver {
     native: any;
 
     /**
+     * Access to the connection of the native interface of the database.
+     */
+    nativeConnection: any;
+
+    /**
      * Connection used in this driver.
      */
     connection: Connection;
