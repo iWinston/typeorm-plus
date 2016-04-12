@@ -1,6 +1,8 @@
 ## Repository
 
-For each entity you have there is a Repository for it. Repository provides functionality to work with your entity.
+For each entity you have there is a Repository for it.
+Repository provides functionality to work with your entity.
+Repository works the same way as EntityManager, but is more specific for concrete entity class.
 There are several useful methods of the Repository:
 
 * `hasId(entity: Entity): boolean`
@@ -34,21 +36,11 @@ else if entity already exist in the database then it updates it.
 
 Removes a given entity from the database.
 
-* ```typescript
-find(): Promise<Entity[]>
-find(conditions: Object): Promise<Entity[]>;
-find(options: FindOptions): Promise<Entity[]>;
-find(conditions: Object, options: FindOptions): Promise<Entity[]>;
-```
+* `find(conditions?: Object, options?: FindOptions): Promise<Entity[]>`
 
 Finds entities that match given conditions or given find options.
 
-* ```typescript
-findOne(): Promise<Entity>;
-findOne(conditions: Object): Promise<Entity>;
-findOne(options: FindOptions): Promise<Entity>;
-findOne(conditions: Object, options: FindOptions): Promise<Entity>;
-```
+* `findOne(conditions?: Object, options?: FindOptions): Promise<Entity>`
 
 Finds the first entity that match given conditions or given find options.
 

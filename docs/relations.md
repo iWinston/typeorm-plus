@@ -4,11 +4,11 @@ One of the best sides of TypeORM is relations support. You can build relations b
 easily without thinking of database schema and foreign keys. Relations are created using special decorators
 on specific fields of entity objects.
 
-* [@OneToOne and @OneToOneInverse decorators](#@OneToOne-and-@OneToOneInverse-decorators)
-* [@OneToMany and @ManyToOne decorators](#@OneToMany-and-@ManyToOne-decorators)
-* [@ManyToMany and @ManyToManyInverse decorators](#@ManyToMany-and-@ManyToManyInverse-decorators)
+* [@OneToOne and @OneToOneInverse decorators](#onetoone-and-onetooneinverse-decorators)
+* [@OneToMany and @ManyToOne decorators](#onetomany-and-manytoone-decorators)
+* [@ManyToMany and @ManyToManyInverse decorators](#manytomany-and-manytomanyinverse-decorators)
 * [Self referencing](#self-referencing)
-* [Relational decorators options](#RelationOptions)
+* [Relational decorators options](#relational-decorators-options)
 
 ### @OneToOne and @OneToOneInverse decorators
 

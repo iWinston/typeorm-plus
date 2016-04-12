@@ -125,7 +125,7 @@ export class QueryBuilder<Entity> {
     }
 
     from(tableName: string, alias: string): this;
-    from(entity: Function, alias?: string): this;
+    from(entity: Function, alias: string): this;
     from(entityOrTableName: Function|string, alias: string): this {
         if (entityOrTableName instanceof Function) {
             const aliasObj = new Alias(alias);
@@ -213,18 +213,21 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    having(having: string): this {
+    having(having: string, parameters?: { [key: string]: any }): this {
         this.havings.push({ type: "simple", condition: having });
+        if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    andHaving(having: string): this {
+    andHaving(having: string, parameters?: { [key: string]: any }): this {
         this.havings.push({ type: "and", condition: having });
+        if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    orHaving(having: string): this {
+    orHaving(having: string, parameters?: { [key: string]: any }): this {
         this.havings.push({ type: "or", condition: having });
+        if (parameters) this.addParameters(parameters);
         return this;
     }
 
@@ -264,7 +267,8 @@ export class QueryBuilder<Entity> {
     }
 
     setParameters(parameters: { [key: string]: any }): this {
-        this.parameters = parameters;
+        this.parameters = {};
+        Object.keys(parameters).forEach(key => this.parameters[key] = parameters[key]);
         return this;
     }
 

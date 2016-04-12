@@ -32,7 +32,7 @@ export class EntityManager {
      * Checks if entity has an id.
      */
     hasId(entity: Function): boolean {
-        return this.getRepository(entity).hasId(entity);
+        return this.getRepository(entity.constructor).hasId(entity);
     }
 
     /**
@@ -78,14 +78,14 @@ export class EntityManager {
      * Persists (saves) a given entity in the database.
      */
     persist<Entity>(entity: Entity): Promise<Entity> {
-        return this.getRepository(<any> entity).persist(entity);
+        return this.getRepository(<any> entity.constructor).persist(entity);
     }
 
     /**
      * Removes a given entity from the database.
      */
     remove<Entity>(entity: Entity) {
-        return this.getRepository(<any> entity).remove(entity);
+        return this.getRepository(<any> entity.constructor).remove(entity);
     }
 
     /**

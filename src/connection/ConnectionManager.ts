@@ -6,6 +6,7 @@ import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
 import {ConnectionOptions} from "tls";
+import {NamingStrategy} from "../naming-strategy/NamingStrategy";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -27,8 +28,11 @@ export class ConnectionManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor() {
-        this.entityMetadataBuilder = new EntityMetadataBuilder(defaultMetadataStorage, new DefaultNamingStrategy());
+    constructor(namingStrategy?: NamingStrategy) {
+        if (!namingStrategy)
+            namingStrategy = new DefaultNamingStrategy();
+        
+        this.entityMetadataBuilder = new EntityMetadataBuilder(defaultMetadataStorage, namingStrategy);
     }
 
     // -------------------------------------------------------------------------
