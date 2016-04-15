@@ -10,10 +10,7 @@ import {ConstructorFunction} from "../common/ConstructorFunction";
 import {EntityListenerMetadata} from "../metadata-builder/metadata/EntityListenerMetadata";
 import {EntityManager} from "../repository/EntityManager";
 
-interface RepositoryAndMetadata {
-    repository: Repository<any>;
-    metadata: EntityMetadata;
-}
+type RepositoryAndMetadata = { repository: Repository<any>, metadata: EntityMetadata };
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -153,23 +150,26 @@ export class Connection {
     /**
      * Registers entity metadatas for the current connection.
      */
-    addEntityMetadatas(metadatas: EntityMetadata[]) {
+    addEntityMetadatas(metadatas: EntityMetadata[]): Connection {
         this._entityMetadatas = this._entityMetadatas.concat(metadatas);
         this.repositoryAndMetadatas = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
+        return this;
     }
 
     /**
      * Registers entity listener metadatas for the current connection.
      */
-    addEntityListenerMetadatas(metadatas: EntityListenerMetadata[]) {
+    addEntityListenerMetadatas(metadatas: EntityListenerMetadata[]): Connection {
         this._entityListenerMetadatas = this._entityListenerMetadatas.concat(metadatas);
+        return this;
     }
 
     /**
      * Registers subscribers for the current connection.
      */
-    addSubscribers(subscribers: OrmSubscriber<any>[]) {
+    addSubscribers(subscribers: OrmSubscriber<any>[]): Connection {
         this._subscribers = this._subscribers.concat(subscribers);
+        return this;
     }
 
     // -------------------------------------------------------------------------

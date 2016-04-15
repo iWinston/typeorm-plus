@@ -8,6 +8,7 @@ import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoad
 import {ConnectionOptions} from "tls";
 import {NamingStrategy} from "../naming-strategy/NamingStrategy";
 import {CannotSetNamingStrategyError} from "./error/CannotSetNamingStrategyError";
+import {ConnectionArray} from "./ConnectionArray";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -19,7 +20,7 @@ export class ConnectionManager {
     // Properties
     // -------------------------------------------------------------------------
 
-    private connections: Connection[] = [];
+    private connections = new ConnectionArray();
     private _entityMetadataBuilder: EntityMetadataBuilder;
     private _namingStrategy: NamingStrategy;
     private _container: { get(someClass: any): any };
@@ -57,21 +58,14 @@ export class ConnectionManager {
      */
     createConnection(driver: Driver, options: ConnectionOptions): Connection;
     createConnection(name: string, driver: Driver, options: ConnectionOptions): Connection;
-    createConnection(name: string|Driver, driver?: Driver|ConnectionOptions, options?: ConnectionOptions): Connection {
-        if (typeof name === "object") {
-            driver = <Driver> name;
+    createConnection(nameOrDriver: string|Driver, driver?: Driver|ConnectionOptions, options?: ConnectionOptions): Connection {
+        if (typeof nameOrDriver === "object") {
+            driver = <Driver> nameOrDriver;
             options = <ConnectionOptions> driver;
         }
-        if (!name) {
-            name = "default";
-        }
-        const existConnection = this.connections.find(connection => connection.name === name);
-        if (existConnection)
-            this.connections.splice(this.connections.indexOf(existConnection), 1);
-        
-        const connection = new Connection(<string> name, <Driver> driver, options);
-        this.connections.push(connection);
-        return connection;
+        const name = typeof nameOrDriver === "string" ? <string> nameOrDriver : "default";
+
+        return this.connections.createAndPush(name, <Driver> driver, options);
     }
 
     /**
@@ -79,13 +73,12 @@ export class ConnectionManager {
      * connection.
      */
     getConnection(name: string = "default"): Connection {
-        if (!name)
-            name = "default";
-        const foundConnection = this.connections.find(connection => connection.name === name);
-        if (!foundConnection)
+        if (!name) name = "default";
+        
+        if (!this.connections.hasWithName(name))
             throw new ConnectionNotFoundError(name);
 
-        return foundConnection;
+        return this.connections.getWithName(name);
     }
 
     /**
@@ -137,8 +130,9 @@ export class ConnectionManager {
         const entityMetadatas = this.entityMetadataBuilder.build(entities);
         const entityListenerMetadatas = defaultMetadataStorage.findEntityListenersForClasses(entities);
 
-        this.getConnection(connectionName).addEntityMetadatas(entityMetadatas);
-        this.getConnection(connectionName).addEntityListenerMetadatas(entityListenerMetadatas);
+        this.getConnection(connectionName)
+            .addEntityMetadatas(entityMetadatas)
+            .addEntityListenerMetadatas(entityListenerMetadatas);
     }
 
     /**
