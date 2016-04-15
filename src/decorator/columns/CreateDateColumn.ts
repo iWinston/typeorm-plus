@@ -6,7 +6,7 @@ import "reflect-metadata";
 
 /**
  * This column will store a creation date of the inserted object. Creation date is generated and inserted only once,
- * at the first time when you create an object, the value is inserted into the table, and is never tocuhed again.
+ * at the first time when you create an object, the value is inserted into the table, and is never touched again.
  */
 export function CreateDateColumn(options?: ColumnOptions): Function {
     return function (object: Object, propertyName: string) {
