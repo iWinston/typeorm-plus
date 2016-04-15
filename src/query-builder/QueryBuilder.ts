@@ -2,7 +2,7 @@ import {Alias} from "./alias/Alias";
 import {AliasMap} from "./alias/AliasMap";
 import {Connection} from "../connection/Connection";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
-import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 export interface Join {
     alias: Alias;
@@ -17,7 +17,7 @@ export class QueryBuilder<Entity> {
     // Private properties
     // -------------------------------------------------------------------------
 
-    private broadcaster: OrmBroadcaster;
+    private broadcaster: Broadcaster;
     private _aliasMap: AliasMap;
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
@@ -42,7 +42,7 @@ export class QueryBuilder<Entity> {
 
     constructor(private connection: Connection) {
         this._aliasMap = new AliasMap(connection.entityMetadatas);
-        this.broadcaster = new OrmBroadcaster(connection);
+        this.broadcaster = new Broadcaster(connection);
     }
 
     // -------------------------------------------------------------------------

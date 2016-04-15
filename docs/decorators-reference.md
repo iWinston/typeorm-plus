@@ -16,7 +16,7 @@
     * [@ManyToMany](#many-to-many)
     * [@ManyToManyInverse](#many-to-many-inverse)
 * Subscriber and Listener Decorators
-    * [@OrmEventSubscriber](#orm-event-subscriber)
+    * [@EventSubscriber](#event-subscriber)
     * [@AfterLoad](#after-load)
     * [@BeforeInsert](#before-insert)
     * [@AfterInsert](#after-insert)
@@ -132,12 +132,12 @@ entity1 and entity2 ids. This is inverse side of the relationship.
 
 ### Subscriber and Listener Decorators
 
-#### @OrmEventSubscriber
+#### @EventSubscriber
 
-`@OrmEventSubscriber()`
+`@EventSubscriber()`
 
 Classes decorated with this decorator will listen to ORM events and their methods will be triggered when event
-occurs. Those classes must implement OrmSubscriber interface.
+occurs. Those classes must implement EventSubscriberInterface.
 
 #### @AfterLoad
 

@@ -1,4 +1,4 @@
-import {OrmSubscriber} from "./OrmSubscriber";
+import {EventSubscriberInterface} from "./EventSubscriberInterface";
 import {Connection} from "../connection/Connection";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {EventListenerTypes} from "../metadata-builder/types/EventListenerTypes";
@@ -6,7 +6,7 @@ import {EventListenerTypes} from "../metadata-builder/types/EventListenerTypes";
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
-export class OrmBroadcaster {
+export class Broadcaster {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -154,7 +154,7 @@ export class OrmBroadcaster {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private isAllowedSubscribers(subscriber: OrmSubscriber<any>, cls: Function) {
+    private isAllowedSubscribers(subscriber: EventSubscriberInterface<any>, cls: Function) {
         return  !subscriber.listenTo ||
                 !subscriber.listenTo() ||
                 subscriber.listenTo() === Object ||

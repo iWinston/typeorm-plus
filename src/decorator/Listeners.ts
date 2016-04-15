@@ -1,4 +1,4 @@
-export * from "./listeners/OrmEventSubscriber";
+export * from "./listeners/EventSubscriber";
 export * from "./listeners/AfterInsert";
 export * from "./listeners/BeforeInsert";
 export * from "./listeners/AfterUpdate";

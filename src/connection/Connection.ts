@@ -1,7 +1,7 @@
 import {Driver} from "../driver/Driver";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {Repository} from "../repository/Repository";
-import {OrmSubscriber} from "../subscriber/OrmSubscriber";
+import {EventSubscriberInterface} from "../subscriber/EventSubscriberInterface";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {SchemaCreator} from "../schema-creator/SchemaCreator";
@@ -25,7 +25,7 @@ export class Connection {
     private _driver: Driver;
     private _entityMetadatas: EntityMetadata[] = [];
     private _entityListenerMetadatas: EntityListenerMetadata[] = [];
-    private _subscribers: OrmSubscriber<any>[] = [];
+    private _subscribers: EventSubscriberInterface<any>[] = [];
     private repositoryAndMetadatas: RepositoryAndMetadata[] = [];
     private _options: ConnectionOptions;
     private entityManager: EntityManager;
@@ -63,7 +63,7 @@ export class Connection {
     /**
      * All subscribers that are registered for this connection.
      */
-    get subscribers(): OrmSubscriber<any>[] {
+    get subscribers(): EventSubscriberInterface<any>[] {
         return this._subscribers;
     }
 
@@ -167,7 +167,7 @@ export class Connection {
     /**
      * Registers subscribers for the current connection.
      */
-    addSubscribers(subscribers: OrmSubscriber<any>[]): Connection {
+    addSubscribers(subscribers: EventSubscriberInterface<any>[]): Connection {
         this._subscribers = this._subscribers.concat(subscribers);
         return this;
     }

@@ -1,11 +1,11 @@
-import {OrmEventSubscriber} from "../../../src/decorator/listeners/OrmEventSubscriber";
-import {OrmSubscriber} from "../../../src/subscriber/OrmSubscriber";
+import {EventSubscriber} from "../../../src/decorator/listeners/EventSubscriber";
+import {EventSubscriberInterface} from "../../../src/subscriber/EventSubscriberInterface";
 import {InsertEvent} from "../../../src/subscriber/event/InsertEvent";
 import {RemoveEvent} from "../../../src/subscriber/event/RemoveEvent";
 import {UpdateEvent} from "../../../src/subscriber/event/UpdateEvent";
 
-@OrmEventSubscriber()
-export class EverythingSubscriber implements OrmSubscriber<any> {
+@EventSubscriber()
+export class EverythingSubscriber implements EventSubscriberInterface<any> {
     
     /**
      * Called after entity insertion.

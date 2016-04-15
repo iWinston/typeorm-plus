@@ -7,17 +7,14 @@ You can listen to events in the ORM. There two concepts you can use:
 
 ### Subscribers
 
-First you need to create a new subscriber class and implement `OrmSubscriber` interface:
+First you need to create a new subscriber class and implement `EventSubscriberInterface` interface:
 
 ```typescript
-import {OrmEventSubscriber} from "typeorm/decorator/listeners"
-import {OrmSubscriber} from "typeorm/subscriber/OrmSubscriber";
-import {UpdateEvent} from "typeorm/subscriber/event/UpdateEvent";
-import {RemoveEvent} from "typeorm/subscriber/event/RemoveEvent";
-import {InsertEvent} from "typeorm/subscriber/event/InsertEvent";
+import {EventSubscriber, UpdateEvent, RemoveEvent, InsertEvent} from "typeorm/decorator/listeners"
+import {EventSubscriberInterface} from "typeorm/subscriber/EventSubscriberInterface";
 
-@OrmEventSubscriber()
-export class MySubscriber implements OrmSubscriber<any> {
+@EventSubscriber()
+export class MySubscriber implements EventSubscriberInterface<any> {
 
     /**
      * Called after entity insertion.

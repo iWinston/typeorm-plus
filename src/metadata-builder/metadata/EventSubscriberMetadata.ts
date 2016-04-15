@@ -1,7 +1,7 @@
 /**
  * Contains metadata information about ORM event subscribers.
  */
-export class OrmEventSubscriberMetadata {
+export class EventSubscriberMetadata {
 
     // ---------------------------------------------------------------------
     // Private Properties

@@ -149,7 +149,7 @@ export class ConnectionManager {
         }
 
         const subscribers = defaultMetadataStorage
-            .findOrmEventSubscribersForClasses(subscriberClasses)
+            .findEventSubscribersForClasses(subscriberClasses)
             .map(metadata => this.createContainerInstance(metadata.target));
 
         this.getConnection(connectionName).addSubscribers(subscribers);

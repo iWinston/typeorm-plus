@@ -6,7 +6,7 @@ import {JunctionInsertOperation} from "./operation/JunctionInsertOperation";
 import {InsertOperation} from "./operation/InsertOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
-import {OrmBroadcaster} from "../subscriber/OrmBroadcaster";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -28,7 +28,7 @@ export class PersistOperationExecutor {
      * Executes given persist operation.
      */
     executePersistOperation(persistOperation: PersistOperation) {
-        const broadcaster = new OrmBroadcaster(this.connection);
+        const broadcaster = new Broadcaster(this.connection);
         
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(broadcaster, persistOperation))
@@ -53,7 +53,7 @@ export class PersistOperationExecutor {
     /**
      * Broadcast all before persistment events - beforeInsert, beforeUpdate and beforeRemove events.
      */
-    private broadcastBeforeEvents(broadcaster: OrmBroadcaster, persistOperation: PersistOperation) {
+    private broadcastBeforeEvents(broadcaster: Broadcaster, persistOperation: PersistOperation) {
         
         const insertEvents = persistOperation.inserts.map(insertOperation => {
             const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);
@@ -77,7 +77,7 @@ export class PersistOperationExecutor {
     /**
      * Broadcast all after persistment events - afterInsert, afterUpdate and afterRemove events.
      */
-    private broadcastAfterEvents(broadcaster: OrmBroadcaster, persistOperation: PersistOperation) {
+    private broadcastAfterEvents(broadcaster: Broadcaster, persistOperation: PersistOperation) {
         
         const insertEvents = persistOperation.inserts.map(insertOperation => {
             const persistedEntity = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);

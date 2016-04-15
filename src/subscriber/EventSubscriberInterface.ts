@@ -5,7 +5,7 @@ import {InsertEvent} from "./event/InsertEvent";
 /**
  * Classes that implement this interface are subscribers that subscribe for the specific events of the ORM.
  */
-export interface OrmSubscriber<Entity> {
+export interface EventSubscriberInterface<Entity> {
 
     /**
      * Returns the class of the entity to which events will listen.

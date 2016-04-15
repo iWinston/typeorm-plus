@@ -5,7 +5,7 @@ import {RelationMetadata} from "./metadata/RelationMetadata";
 import {IndexMetadata} from "./metadata/IndexMetadata";
 import {CompoundIndexMetadata} from "./metadata/CompoundIndexMetadata";
 import {ColumnMetadata} from "./metadata/ColumnMetadata";
-import {OrmEventSubscriberMetadata} from "./metadata/OrmEventSubscriberMetadata";
+import {EventSubscriberMetadata} from "./metadata/EventSubscriberMetadata";
 import {EntityListenerMetadata} from "./metadata/EntityListenerMetadata";
 
 /**
@@ -19,7 +19,7 @@ export class MetadataStorage {
     // -------------------------------------------------------------------------
 
     private _tableMetadatas: TableMetadata[] = [];
-    private _ormEventSubscriberMetadatas: OrmEventSubscriberMetadata[] = [];
+    private _eventSubscriberMetadatas: EventSubscriberMetadata[] = [];
     private _columnMetadatas: ColumnMetadata[] = [];
     private _indexMetadatas: IndexMetadata[] = [];
     private _entityListenerMetadatas: EntityListenerMetadata[] = [];
@@ -34,8 +34,8 @@ export class MetadataStorage {
         return this._tableMetadatas;
     }
 
-    get ormEventSubscriberMetadatas(): OrmEventSubscriberMetadata[] {
-        return this._ormEventSubscriberMetadatas;
+    get eventSubscriberMetadatas(): EventSubscriberMetadata[] {
+        return this._eventSubscriberMetadatas;
     }
 
     get columnMetadatas(): ColumnMetadata[] {
@@ -92,11 +92,11 @@ export class MetadataStorage {
         this.columnMetadatas.push(metadata);
     }
 
-    addOrmEventSubscriberMetadata(metadata: OrmEventSubscriberMetadata) {
-        if (this.hasOrmEventSubscriberWithObjectConstructor(metadata.target))
-            throw new MetadataAlreadyExistsError("OrmEventSubscriber", metadata.target);
+    addEventSubscriberMetadata(metadata: EventSubscriberMetadata) {
+        if (this.hasEventSubscriberWithObjectConstructor(metadata.target))
+            throw new MetadataAlreadyExistsError("EventSubscriber", metadata.target);
 
-        this.ormEventSubscriberMetadatas.push(metadata);
+        this.eventSubscriberMetadatas.push(metadata);
     }
 
     addIndexMetadata(metadata: IndexMetadata) {
@@ -127,8 +127,8 @@ export class MetadataStorage {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    findOrmEventSubscribersForClasses(classes: Function[]): OrmEventSubscriberMetadata[] { 
-        return this.ormEventSubscriberMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
+    findEventSubscribersForClasses(classes: Function[]): EventSubscriberMetadata[] { 
+        return this.eventSubscriberMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
     }
 
     findEntityListenersForClasses(classes: Function[]): EntityListenerMetadata[] { 
@@ -171,8 +171,8 @@ export class MetadataStorage {
         return !!this.compoundIndexMetadatas.find(metadata => metadata.target === constructor);
     }
 
-    private hasOrmEventSubscriberWithObjectConstructor(constructor: Function): boolean {
-        return !!this.ormEventSubscriberMetadatas.find(metadata => metadata.target === constructor);
+    private hasEventSubscriberWithObjectConstructor(constructor: Function): boolean {
+        return !!this.eventSubscriberMetadatas.find(metadata => metadata.target === constructor);
     }
 
     private hasFieldMetadataOnProperty(constructor: Function, propertyName: string): boolean {
