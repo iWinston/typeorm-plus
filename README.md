@@ -624,7 +624,7 @@ createConnection(options).then(connection => {
 });
 ```
 
-### using FindOptions to customize find queries
+#### using FindOptions to customize find queries
 
 `Repository.find` method allows you to specify `findOptions`. Using this
 you can customize your query to perform more complex queries. For example

@@ -45,8 +45,7 @@ export class SchemaCreator {
             .then(_ => this.createForeignKeysForAll(metadatas))
             .then(_ => this.updateUniqueKeysForAll(metadatas))
             .then(_ => this.removePrimaryKeyForAll(metadatas))
-            .then(_ => {})
-            .catch(err => console.log(err));
+            .then(_ => {});
     }
 
     // -------------------------------------------------------------------------
