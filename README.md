@@ -792,8 +792,6 @@ Feel free to contribute ;)
 * check query builder query to function support
 * versioning?
 * check relations without inverse sides
-* flush? 
-* do we need unit of work? It can start on some time, and finish after flushing
 * check group by functionality
 * send entity changeset in update event
 * create a gulp task for schema update
