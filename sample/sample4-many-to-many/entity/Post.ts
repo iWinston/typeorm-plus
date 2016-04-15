@@ -1,7 +1,7 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
-import {Table} from "../../../src/decorator/Tables";
+import {PrimaryColumn, Column} from "../../../src/decorator/columns";
+import {Table} from "../../../src/decorator/tables";
 import {PostDetails} from "./PostDetails";
-import {ManyToMany} from "../../../src/decorator/Relations";
+import {ManyToMany} from "../../../src/decorator/relations";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
 import {PostInformation} from "./PostInformation";

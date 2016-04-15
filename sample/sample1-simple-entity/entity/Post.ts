@@ -1,5 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/Columns";
-import {Table} from "../../../src/decorator/Tables";
+import {PrimaryColumn, Column} from "../../../src/decorator/columns";
+import {Table} from "../../../src/decorator/tables";
 
 @Table("sample1_post")
 export class Post {

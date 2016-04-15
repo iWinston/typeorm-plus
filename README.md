@@ -56,8 +56,8 @@ Lets create a sample application - a photo album.
 First we create a new file `Photo.ts` and put a class there:
 
 ```typescript
-import {Table} from "typeorm/decorator/Tables";
-import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
+import {Table} from "typeorm/decorator/tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/columns";
 
 @Table("photo")
 export class Photo {
@@ -219,9 +219,9 @@ class called `PhotoMetadata.ts` which will contain a `PhotoMetadata` class
 which supposed to be contain our Photo's additional meta-information:
 
 ```typescript
-import {Table} from "typeorm/decorator/Tables";
-import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
-import {OneToOne} from "typeorm/decorator/Relations";
+import {Table} from "typeorm/decorator/tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/columns";
+import {OneToOne} from "typeorm/decorator/relations";
 
 @Table("photo_metadata")
 export class PhotoMetadata {
@@ -421,9 +421,9 @@ one author, and each author can have many photos. First, lets create a
 `Author` class:
 
 ```typescript
-import {Table} from "typeorm/decorator/Tables";
-import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
-import {OneToMany} from "typeorm/decorator/Relations";
+import {Table} from "typeorm/decorator/tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/columns";
+import {OneToMany} from "typeorm/decorator/relations";
 
 @Table("author")
 export class Author {
@@ -530,9 +530,9 @@ be in many albums, and multiple can have many photos. Lets create an
 `Album` class:
 
 ```typescript
-import {Table} from "typeorm/decorator/Tables";
-import {PrimaryColumn, Column} from "typeorm/decorator/Columns";
-import {ManyToMany} from "typeorm/decorator/Relations";
+import {Table} from "typeorm/decorator/tables";
+import {PrimaryColumn, Column} from "typeorm/decorator/columns";
+import {ManyToMany} from "typeorm/decorator/relations";
 
 @Table("album")
 export class Album {

@@ -1,12 +1,12 @@
 import {ConnectionManager} from "../connection/ConnectionManager";
-import {ConstructorFunction} from "../common/ConstructorFunction";
 
 // todo: should this decorator be outside of this module?
 // todo: also create "inject" version of this to allow to inject to properties
 
 /**
  * Allows to inject a Repository using typedi's Container.
- */
+ * @deprecated
+ * */
 export function OrmRepository(cls: Function, connectionName?: string): Function {
     return function(target: Function, key: string, index: number) {
 
