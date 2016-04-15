@@ -294,7 +294,7 @@ describe("one-to-one", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult()
+                    .getSingleResult();
             }).then(updatedPostReloaded => {
                 updatedPostReloaded.details.comment.should.be.equal("this is post");
             });
@@ -331,7 +331,7 @@ describe("one-to-one", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult()
+                    .getSingleResult();
             }).then(updatedPostReloaded => {
                 updatedPostReloaded.details.comment.should.be.equal("this is post");
             });

@@ -7,12 +7,12 @@ import {EntityMetadata} from "./EntityMetadata";
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
  */
-type RelationTypeInFunction = ((type?: any) => Function);
+export type RelationTypeInFunction = ((type?: any) => Function);
 
 /**
  * Contains the name of the property of the object, or the function that returns this name.
  */
-type PropertyTypeInFunction<T> = string|((t: T) => string|any);
+export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
 
 /**
  * Relation metadata constructor arguments.

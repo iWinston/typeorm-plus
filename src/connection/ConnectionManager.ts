@@ -7,43 +7,45 @@ import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
 import {ConnectionOptions} from "tls";
 import {NamingStrategy} from "../naming-strategy/NamingStrategy";
+import {CannotSetNamingStrategyError} from "./error/CannotSetNamingStrategyError";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
  * for all exist connections.
  */
 export class ConnectionManager {
-    
-    // todo: inject naming strategy, make it configurable
 
     // -------------------------------------------------------------------------
     // Properties
     // -------------------------------------------------------------------------
 
     private connections: Connection[] = [];
-    private entityMetadataBuilder: EntityMetadataBuilder;
+    private _entityMetadataBuilder: EntityMetadataBuilder;
+    private _namingStrategy: NamingStrategy;
     private _container: { get(someClass: any): any };
-
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-
-    constructor(namingStrategy?: NamingStrategy) {
-        if (!namingStrategy)
-            namingStrategy = new DefaultNamingStrategy();
-        
-        this.entityMetadataBuilder = new EntityMetadataBuilder(defaultMetadataStorage, namingStrategy);
-    }
 
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
 
     /**
-     * Sets a container that can be used in custom user subscribers. This allows to inject services in user classes.
+     * Sets a container that can be used in custom user subscribers. This allows to inject services in subscribers.
      */
     set container(container: { get(someClass: Function): any }) {
         this._container = container;
+    }
+
+    /**
+     * Sets the naming strategy to be used instead of DefaultNamingStrategy.
+     */
+    set namingStrategy(namingStrategy: NamingStrategy) {
+
+        // if entity metadata builder already initialized then strategy already is used there, and setting a new naming
+        // strategy is pointless
+        if (this._entityMetadataBuilder)
+            throw new CannotSetNamingStrategyError();
+
+        this._namingStrategy = namingStrategy;
     }
 
     // -------------------------------------------------------------------------
@@ -163,6 +165,21 @@ export class ConnectionManager {
     // Private Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * We need to lazily initialize EntityMetadataBuilder because naming strategy can be set before we use entityMetadataBuilder.
+     */
+    private get entityMetadataBuilder() {
+        if (!this._entityMetadataBuilder) {
+            const namingStrategy = this._namingStrategy ? this._namingStrategy : new DefaultNamingStrategy();
+            this._entityMetadataBuilder = new EntityMetadataBuilder(defaultMetadataStorage, namingStrategy);
+        }
+
+        return this._entityMetadataBuilder;
+    }
+
+    /**
+     * Creates a new instance of the given constructor.
+     */
     private createContainerInstance(constructor: Function) {
         return this._container ? this._container.get(constructor) : new (<any> constructor)();
     }

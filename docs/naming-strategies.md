@@ -47,7 +47,8 @@ export class MyNamingStrategy implements NamingStrategy {
 We also need to specify our new naming strategy on connection manager creation:
 
 ```typescript
-let connectionManager = new ConnectionManager(new MyNamingStrategy());
+let connectionManager = new ConnectionManager();
+connectionManager.namingStrategy = new MyNamingStrategy();
 ```
 
 Now try to run and generate your database schema. New naming strategy should be used.

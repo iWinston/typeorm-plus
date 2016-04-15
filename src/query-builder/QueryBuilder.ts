@@ -403,7 +403,7 @@ export class QueryBuilder<Entity> {
         });
 
         this.orderBys.forEach(orderBy => qb.addOrderBy(orderBy.sort, orderBy.order));
-        Object.keys(this.parameters).forEach(key => qb.setParameter(key, this.parameters[key]))
+        Object.keys(this.parameters).forEach(key => qb.setParameter(key, this.parameters[key]));
 
         qb.setLimit(this.limit)
             .setOffset(this.offset)

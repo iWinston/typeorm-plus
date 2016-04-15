@@ -60,8 +60,8 @@ export class EntityPersistOperationBuilder {
                          dbEntities: EntityWithId[],
                          allPersistedEntities: EntityWithId[]): PersistOperation {
         
-        //const dbEntities = this.extractObjectsById(dbEntity, metadata);
-        //const allPersistedEntities = this.extractObjectsById(persistedEntity, metadata);
+        // const dbEntities = this.extractObjectsById(dbEntity, metadata);
+        // const allPersistedEntities = this.extractObjectsById(persistedEntity, metadata);
         
         const persistOperation = new PersistOperation();
         persistOperation.dbEntity = dbEntity;

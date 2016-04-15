@@ -268,7 +268,6 @@ describe("many-to-many", function() {
         });
 
         it("should remove category from post ", function() {
-            //const qb = 
             return postRepository
                 .createQueryBuilder("p")
                 .leftJoinAndSelect("p.categories", "categories")

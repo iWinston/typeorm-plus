@@ -126,7 +126,7 @@ export class Repository<Entity> {
     find(conditions: Object): Promise<Entity[]>;
 
     /**
-     * Finds entities with options applied.
+     * Finds entities with .
      */
     find(options: FindOptions): Promise<Entity[]>;
 
@@ -275,14 +275,14 @@ export class Repository<Entity> {
                 return repository.findById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;
 
-                    return {
+                    return <EntityWithId> {
                         id: (<any> loadedEntity)[metadata.primaryColumn.name],
                         entity: loadedEntity
                     };
                 });
             });
 
-        return Promise.all(missingDbEntitiesLoad).then(missingDbEntities => {
+        return Promise.all<EntityWithId>(missingDbEntitiesLoad).then(missingDbEntities => {
             return dbEntities.concat(missingDbEntities.filter(dbEntity => !!dbEntity));
         });
     }
