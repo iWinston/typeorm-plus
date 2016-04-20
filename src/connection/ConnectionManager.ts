@@ -60,8 +60,8 @@ export class ConnectionManager {
     createConnection(name: string, driver: Driver, options: ConnectionOptions): Connection;
     createConnection(nameOrDriver: string|Driver, driver?: Driver|ConnectionOptions, options?: ConnectionOptions): Connection {
         if (typeof nameOrDriver === "object") {
-            driver = <Driver> nameOrDriver;
             options = <ConnectionOptions> driver;
+            driver = <Driver> nameOrDriver;
         }
         const name = typeof nameOrDriver === "string" ? <string> nameOrDriver : "default";
 
