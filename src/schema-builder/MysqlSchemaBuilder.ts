@@ -19,7 +19,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
                 const dbData = results.find(result => result.COLUMN_NAME === column.name);
                 if (!dbData) return false;
 
-                const newType = this.normalizeType(column.type, column.length);
+                const newType = this.normalizeType(column);
                 const isNullable = column.isNullable === true ? "YES" : "NO";
                 const hasDbColumnAutoIncrement = dbData.EXTRA.indexOf("auto_increment") !== -1;
                 const hasDbColumnPrimaryIndex = dbData.COLUMN_KEY.indexOf("PRI") !== -1;
@@ -126,7 +126,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        let c = column.name + " " + this.normalizeType(column.type, column.length);
+        let c = column.name + " " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isPrimary === true && !skipPrimary)
@@ -140,31 +140,63 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         return c;
     }
 
-    private normalizeType(type: any, length?: string) {
+    private normalizeType(column: ColumnMetadata) {
 
         let realType: string;
-        if (typeof type === "string") {
-            realType = type.toLowerCase();
+        if (typeof column.type === "string") {
+            realType = column.type.toLowerCase();
 
-        } else if (type.name && typeof type.name === "string") {
-            realType = type.name.toLowerCase();
+            // todo: remove casting to any after upgrade to typescript 2
+        } else if (typeof column.type === "object" && (<any>column.type).name && typeof (<any>column.type).name === "string") {
+            realType = (<any>column.type).toLowerCase();
         }
 
         switch (realType) {
             case "string":
-                return "varchar(" + (length ? length : 255) + ")";
+                return "varchar(" + (column.length ? column.length : 255) + ")";
             case "text":
                 return "text";
-            case "number":
-                return "double";
             case "boolean":
                 return "boolean";
             case "integer":
             case "int":
-                return "int(" + (length ? length : 11) + ")";
+                return "INT(" + (column.length ? column.length : 11) + ")";
+            case "smallint":
+                return "SMALLINT(" + (column.length ? column.length : 11) + ")";
+            case "bigint":
+                return "BIGINT(" + (column.length ? column.length : 11) + ")";
+            case "float":
+                return "FLOAT";
+            case "double":
+            case "number":
+                return "DOUBLE";
+            case "decimal":
+                if (column.precision && column.scale) {
+                    return `DECIMAL(${column.precision},${column.scale})`;
+                    
+                } else if (column.scale) {
+                    return `DECIMAL(${column.scale})`;
+                    
+                } else if (column.precision) {
+                    return `DECIMAL(${column.precision})`;
+                    
+                } else {
+                    return "DECIMAL";
+                    
+                }
+            case "date":
+                return "DATE";
+            case "time":
+                return "TIME";
+            case "datetime":
+                return "DATETIME";
+            case "json":
+                return "text";
+            case "simple_array":
+                return column.length ? "varchar(" + column.length + ")" : "text";
         }
 
-        throw new Error("Specified type (" + type + ") is not supported by current driver.");
+        throw new Error("Specified type (" + column.type + ") is not supported by current driver.");
     }
     
 }

@@ -215,10 +215,15 @@ export class PersistOperationExecutor {
     private update(updateOperation: UpdateOperation) {
         const entity = updateOperation.entity;
         const metadata = this.connection.getEntityMetadata(entity.constructor);
-        const values = updateOperation.columns.reduce((object, column) => {
-            (<any> object)[column.name] = entity[column.propertyName];
+        const values: any = updateOperation.columns.reduce((object, column) => {
+            const value = this.connection.driver.preparePersistentValue(entity[column.propertyName], column);
+            (<any> object)[column.name] = value;
             return object;
         }, {});
+
+        if (metadata.updateDateColumn)
+            values[metadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), metadata.updateDateColumn);
+        
         return this.connection.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: metadata.getEntityId(entity) });
     }
 
@@ -244,7 +249,14 @@ export class PersistOperationExecutor {
         const values = metadata.columns
             .filter(column => !column.isVirtual)
             .filter(column => entity.hasOwnProperty(column.propertyName))
-            .map(column => "'" + entity[column.propertyName] + "'");
+            .map(column => this.connection.driver.preparePersistentValue(entity[column.propertyName], column))
+            .map(value => {
+                if (value === null || value === undefined) {
+                    return "NULL";
+                } else {
+                    return this.connection.driver.escape(value);
+                }
+            });
         const relationColumns = metadata.relations
             .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
@@ -255,10 +267,20 @@ export class PersistOperationExecutor {
             .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
             .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.relatedEntityMetadata.primaryColumn.name))
-            .map(relation => "'" + entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name] + "'");
+            .map(relation => this.connection.driver.escape(entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name]));
 
         const allColumns = columns.concat(relationColumns);
         const allValues = values.concat(relationValues);
+
+        if (metadata.createDateColumn) {
+            allColumns.push(metadata.createDateColumn.name);
+            allValues.push(this.connection.driver.escape(this.connection.driver.preparePersistentValue(new Date(), metadata.createDateColumn)));
+        }
+
+        if (metadata.updateDateColumn) {
+            allColumns.push(metadata.updateDateColumn.name);
+            allValues.push(this.connection.driver.escape(this.connection.driver.preparePersistentValue(new Date(), metadata.updateDateColumn)));
+        }
         
         return this.connection.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));
     }

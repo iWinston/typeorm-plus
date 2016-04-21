@@ -28,7 +28,11 @@ export class Repository<Entity> {
      * Checks if entity has an id.
      */
     hasId(entity: Entity): boolean {
-        return entity && this.metadata.primaryColumn && entity.hasOwnProperty(this.metadata.primaryColumn.propertyName);
+        return entity &&
+            this.metadata.primaryColumn &&
+            entity.hasOwnProperty(this.metadata.primaryColumn.propertyName) &&
+            (<any> entity)[this.metadata.primaryColumn.propertyName] !== null &&
+            (<any> entity)[this.metadata.primaryColumn.propertyName] !== undefined;
     }
 
     /**

@@ -138,6 +138,10 @@ export class ColumnTypes {
                     return ColumnTypes.BOOLEAN;
                 case "string":
                     return ColumnTypes.STRING;
+                case "date":
+                    return ColumnTypes.DATETIME;
+                case "object":
+                    return ColumnTypes.JSON;
             }
 
         } else if (type instanceof Object) {
@@ -145,6 +149,10 @@ export class ColumnTypes {
 
         }
         return undefined;
+    }
+    
+    static typeToString(type: Function) {
+        return (<any>type).name.toLowerCase();
     }
 
 }

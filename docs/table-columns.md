@@ -65,6 +65,7 @@ ColumnType can be one of:
 * `date` will be mapped to db's `datetime`
 * `time` will be mapped to db's `time`
 * `datetime` will be mapped to db's `datetime`
+* `timestamp` will be mapped to db's `timestamp`
 * `boolean` will be mapped to db's `boolean`
 * `json` will be mapped to db's `text`
 * `simple_array` will be mapped to db's `text`

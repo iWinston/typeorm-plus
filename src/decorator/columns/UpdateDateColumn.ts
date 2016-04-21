@@ -11,6 +11,8 @@ import "reflect-metadata";
 export function UpdateDateColumn(options?: ColumnOptions): Function {
     return function (object: Object, propertyName: string) {
 
+        const reflectedType = ColumnTypes.typeToString(Reflect.getMetadata("design:type", object, propertyName));
+
         // if column options are not given then create a new empty options
         if (!options)
             options = {};
@@ -22,6 +24,7 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
         defaultMetadataStorage.addColumnMetadata(new ColumnMetadata({
             target: object.constructor,
             propertyName: propertyName,
+            propertyType: reflectedType,
             isUpdateDate: true,
             options: options
         }));

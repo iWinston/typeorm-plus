@@ -163,8 +163,6 @@ If you want to load photos from the database, you can use `repository.find*`
 methods:
 
 ```typescript
-let repository = connection.getRepository(Photo);
-
 // here we load one photo by id:
 let photoId = 1;
 let repository = connection.getRepository(Photo);

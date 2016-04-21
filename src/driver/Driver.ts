@@ -2,6 +2,7 @@ import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {Connection} from "../connection/Connection";
+import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 
 /**
  * Driver communicates with specific database.
@@ -83,4 +84,19 @@ export interface Driver {
      */
     endTransaction(): Promise<void>;
 
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, column: ColumnMetadata): any;
+
+    /**
+     * Prepares given value to a value to be hydrated, based on its column type and metadata.
+     */
+    prepareHydratedValue(value: any, column: ColumnMetadata): any;
+
+    /**
+     * Escapes given value.
+     */
+    escape(value: any): any;
+    
 }

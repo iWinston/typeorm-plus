@@ -30,6 +30,8 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
         options = <ColumnOptions> typeOrOptions;
     }
     return function (object: Object, propertyName: string) {
+        
+        const reflectedType = ColumnTypes.typeToString(Reflect.getMetadata("design:type", object, propertyName));
 
         // if type is not given implicitly then try to guess it
         if (!type)
@@ -55,6 +57,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
         defaultMetadataStorage.addColumnMetadata(new ColumnMetadata({
             target: object.constructor,
             propertyName: propertyName,
+            propertyType: reflectedType,
             options: options
         }));
     };

@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.0.2-alpha",
+  "version": "0.0.2-alpha.1",
   "description": "Data-mapper ORM for Typescript",
   "license": "Apache-2.0",
   "readmeFilename": "README.md",
@@ -44,6 +44,7 @@
   "dependencies": {
     "fs": "^0.0.2",
     "lodash": "^4.11.1",
+    "moment": "^2.13.0",
     "mysql": "^2.10.2",
     "path": "^0.12.7",
     "reflect-metadata": "^0.1.3",

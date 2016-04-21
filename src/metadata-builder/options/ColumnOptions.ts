@@ -29,7 +29,7 @@ export interface ColumnOptions {
     /**
      * Specifies if column's value must be unique or not.
      */
-    unique?: boolean;
+    unique?: boolean;   
 
     /**
      * Indicates if column's value can be set to NULL.

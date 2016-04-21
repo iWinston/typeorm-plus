@@ -1,11 +1,13 @@
 import {Driver} from "./Driver";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {MysqlSchemaBuilder} from "../schema-builder/MysqlSchemaBuilder";
 import {Connection} from "../connection/Connection";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
 import {BaseDriver} from "./BaseDriver";
+import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
+import {ColumnTypes} from "../metadata-builder/types/ColumnTypes";
+import * as moment from "moment";
 
 /**
  * This driver organizes work with mysql database.
@@ -213,6 +215,67 @@ export class MysqlDriver extends BaseDriver implements Driver {
      */
     endTransaction(): Promise<void> {
         return this.query("COMMIT").then(() => {});
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, column: ColumnMetadata): any {
+        switch (column.type) {
+            case ColumnTypes.BOOLEAN:
+                return value === true ? 1 : 0;
+            case ColumnTypes.DATE:
+                return moment(value).format("YYYY-MM-DD");
+            case ColumnTypes.TIME:
+                return moment(value).format("hh:mm:ss");
+            case ColumnTypes.DATETIME:
+                return moment(value).format("YYYY-MM-DD hh:mm:ss");
+            case ColumnTypes.JSON:
+                return JSON.stringify(value);
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as Array<any>)
+                    .map(i => String(i))
+                    .join(",");
+        }
+
+        return value;
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    prepareHydratedValue(value: any, column: ColumnMetadata): any {
+        switch (column.type) {
+            case ColumnTypes.DATE:
+                if (value instanceof Date)
+                    return value;
+                
+                return moment(value, "YYYY-MM-DD").toDate();
+            
+            case ColumnTypes.TIME:
+                return moment(value, "hh:mm:ss").toDate();
+            
+            case ColumnTypes.DATETIME:
+                if (value instanceof Date)
+                    return value;
+                
+                return moment(value, "YYYY-MM-DD hh:mm:ss").toDate();
+            
+            case ColumnTypes.JSON:
+                return JSON.parse(value);
+            
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as string).split(",");
+        }
+
+        return value;
+    }
+
+    /**
+     * Escapes given value.
+     */
+    escape(value: any): any {
+        return this.mysqlConnection.escape(value);
     }
 
 }

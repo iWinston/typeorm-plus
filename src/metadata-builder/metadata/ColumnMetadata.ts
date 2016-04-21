@@ -19,6 +19,11 @@ export interface ColumnMetadataArgs {
     propertyName: string;
 
     /**
+     * Class's property type (reflected) to which this column is applied.
+     */
+    propertyType: string;
+
+    /**
      * Indicates if this column is primary key or not.
      */
     isPrimaryKey?: boolean;
@@ -66,6 +71,11 @@ export class ColumnMetadata extends PropertyMetadata {
      * Column name to be used in the database.
      */
     private _name: string;
+
+    /**
+     * The real reflected property type.
+     */
+    private _propertyType: string;
 
     /**
      * The type of the column.
@@ -159,6 +169,8 @@ export class ColumnMetadata extends PropertyMetadata {
             this._isUpdateDate = args.isUpdateDate;
         if (args.isVirtual)
             this._isVirtual = args.isVirtual;
+        if (args.propertyType)
+            this._propertyType = args.propertyType;
         if (args.options.name)
             this._name = args.options.name;
         if (args.options.type)
@@ -198,6 +210,13 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     get name(): string {
         return this.namingStrategy ? this.namingStrategy.columnName(this._name) : this._name;
+    }
+
+    /**
+     * The real reflected property type.
+     */
+    get propertyType(): string {
+        return this._propertyType.toLowerCase();
     }
 
     /**

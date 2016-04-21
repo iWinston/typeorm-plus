@@ -97,6 +97,7 @@ export class EntityMetadataBuilder {
                     relationalColumn = new ColumnMetadata({
                         target: metadata.target,
                         propertyName: relation.name,
+                        propertyType: inverseSideMetadata.primaryColumn.type,
                         isVirtual: true,
                         options: options
                     });
@@ -139,11 +140,13 @@ export class EntityMetadataBuilder {
                     new ColumnMetadata({
                         target: null,
                         propertyName: null,
+                        propertyType: inverseSideMetadata.primaryColumn.type,
                         options: column1options
                     }),
                     new ColumnMetadata({
                         target: null,
                         propertyName: null,
+                        propertyType: inverseSideMetadata.primaryColumn.type,
                         options: column2options
                     })
                 ];
