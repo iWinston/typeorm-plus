@@ -574,10 +574,9 @@ export class QueryBuilder<Entity> {
     }
 
     protected replaceParameters(sql: string) {
-        // todo: proper escape values and prevent sql injection
         Object.keys(this.parameters).forEach(key => {
-            const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.parameters[key] : "NULL";
-            sql = sql.replace(":" + key, this.connection.driver.escape(value)); // .replace('"', '')
+            const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.connection.driver.escape(this.parameters[key]) : "NULL";
+            sql = sql.replace(":" + key, value);
         });
         return sql;
     }

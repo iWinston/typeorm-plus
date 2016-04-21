@@ -766,7 +766,6 @@ usages.
 ORM development is in progress. Api can be changed a lot. More documentation and features expected to be soon.
 Feel free to contribute ;)
 
-* add partial selection support (lot of problems with partial selection. Is there real benefit for users to use it?)
 * in query builder should we use property names or table names? (right now its kinda mixed)
 * should all entities have a primary column?
 * think about indices
@@ -774,11 +773,9 @@ Feel free to contribute ;)
 * add cascadeAll to cascades?
 * naming strategy need to be done correctly
 * fix all propertyName/tableName problems and make sure everything work correctly
-* check column types, make validation there
 * foreign keys for relations
 * what happens if owner one-to-one on both sides
 * check self referencing
-* array / json / date column types
 * exceptions everywhere!
 * add ability to load only ids of the relation (similar to loading only single id)
 * make @Index and @CompoundIndex to work properly

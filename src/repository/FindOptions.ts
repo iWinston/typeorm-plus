@@ -147,7 +147,7 @@ export class FindOptionsUtils {
      */
     static isFindOptions(object: any): object is FindOptions {
         const possibleOptions: FindOptions = object;
-        return  possibleOptions.alias && typeof possibleOptions.alias === "string" && (
+        return  possibleOptions && possibleOptions.alias && typeof possibleOptions.alias === "string" && (
                     !!possibleOptions.limit ||
                     !!possibleOptions.offset ||
                     !!possibleOptions.firstResult ||

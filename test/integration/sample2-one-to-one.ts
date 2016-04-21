@@ -27,7 +27,10 @@ describe("one-to-one", function() {
             username: "root",
             password: "admin",
             database: "test",
-            autoSchemaCreate: true
+            autoSchemaCreate: true,
+            logging: {
+                logFailedQueryError: true
+            }
         },
         entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
