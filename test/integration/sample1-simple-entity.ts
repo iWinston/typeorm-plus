@@ -77,6 +77,7 @@ describe("insertion", function() {
         });
 
         it("should have inserted post in the database", function() {
+            postRepository.findById(savedPost.id).then(p => console.log(p));
             return postRepository.findById(savedPost.id).should.eventually.eql({
                 id: savedPost.id,
                 text: "Hello post",

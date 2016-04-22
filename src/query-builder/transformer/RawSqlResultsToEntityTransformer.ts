@@ -3,6 +3,7 @@ import {Alias} from "../alias/Alias";
 import * as _ from "lodash";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 import {Connection} from "../../connection/Connection";
+import {OrmUtils} from "../../util/OrmUtils";
 
 /**
  * Transforms raw sql results returned from the database into entity object. 
@@ -40,11 +41,12 @@ export class RawSqlResultsToEntityTransformer {
         if (!metadata.hasPrimaryKey)
             throw new Error("Metadata does not have primary key. You must have it to make convertation to object possible.");
 
-        const groupedRawResults = _.groupBy(rawSqlResults, result => alias.getPrimaryKeyValue(result, metadata.primaryColumn));
-        return Object.keys(groupedRawResults)
-            .map(key => this.transformIntoSingleResult(groupedRawResults[key], alias, metadata))
+        const groupedResults = OrmUtils.groupBy(rawSqlResults, result => alias.getPrimaryKeyValue(result, metadata.primaryColumn));
+        return groupedResults
+            .map(group => this.transformIntoSingleResult(group.items, alias, metadata))
             .filter(res => !!res);
     }
+
 
     /**
      * Transforms set of data results into single entity.

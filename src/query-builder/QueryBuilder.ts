@@ -306,11 +306,16 @@ export class QueryBuilder<Entity> {
         const mainAlias = this.aliasMap.mainAlias.name;
         if (this.firstResult || this.maxResults) {
             const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
-            const idsQuery = this.clone()
-                .select(`DISTINCT(${mainAlias}.${metadata.primaryColumn.name}) as ids`)
-                .setOffset(this.firstResult)
-                .setLimit(this.maxResults)
-                .getSql();
+            let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAlias}_${metadata.primaryColumn.name}) as ids`;
+            if (this.orderBys)
+                idsQuery += ", " + this.orderBys.map(orderBy => orderBy.sort.replace(".", "_")).join(", ");
+            idsQuery += ` FROM (${this.getSql()}) distinctAlias`;
+            if (this.orderBys)
+                idsQuery += " ORDER BY " + this.orderBys.map(order => "distinctAlias." + order.sort.replace(".", "_") + " " + order.order).join(", ");
+            if (this.maxResults)
+                idsQuery += " LIMIT " + this.maxResults;
+            if (this.firstResult)
+                idsQuery += " OFFSET " + this.firstResult;
             return this.connection.driver
                 .query<any[]>(idsQuery)
                 .then((results: any[]) => {
@@ -338,7 +343,7 @@ export class QueryBuilder<Entity> {
     getCount(): Promise<number> {
         const mainAlias = this.aliasMap.mainAlias.name;
         const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
-        const countQuery = this.clone()
+        const countQuery = this.clone({ skipOrderBys: true })
             .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`)
             .getSql();
         return this.connection.driver
@@ -346,7 +351,7 @@ export class QueryBuilder<Entity> {
             .then(results => parseInt(results[0]["cnt"]));
     }
 
-    clone() {
+    clone(options?: { skipOrderBys?: boolean }) {
         const qb = new QueryBuilder(this.connection);
         
         switch (this.type) {
@@ -402,7 +407,9 @@ export class QueryBuilder<Entity> {
             }
         });
 
-        this.orderBys.forEach(orderBy => qb.addOrderBy(orderBy.sort, orderBy.order));
+        if (!options || !options.skipOrderBys)
+            this.orderBys.forEach(orderBy => qb.addOrderBy(orderBy.sort, orderBy.order));
+        
         Object.keys(this.parameters).forEach(key => qb.setParameter(key, this.parameters[key]));
 
         qb.setLimit(this.limit)
