@@ -320,6 +320,8 @@ export class QueryBuilder<Entity> {
                 .query<any[]>(idsQuery)
                 .then((results: any[]) => {
                     const ids = results.map(result => result["ids"]).join(", ");
+                    if (ids.length === 0)
+                        return Promise.resolve([]);
                     const queryWithIds = this.clone()
                         .andWhere(mainAlias + "." + metadata.primaryColumn.name + " IN (" + ids + ")")
                         .getSql();
