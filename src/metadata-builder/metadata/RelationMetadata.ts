@@ -3,6 +3,7 @@ import {RelationTypes, RelationType} from "../types/RelationTypes";
 import {RelationOptions} from "../options/RelationOptions";
 import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
 import {EntityMetadata} from "./EntityMetadata";
+import {OnDeleteType} from "./ForeignKeyMetadata";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -134,6 +135,11 @@ export class RelationMetadata extends PropertyMetadata {
      */
     private _junctionEntityMetadata: EntityMetadata;
 
+    /**
+     * What to do with a relation on deletion of the row containing a foreign key.
+     */
+    private _onDelete: OnDeleteType;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -157,6 +163,8 @@ export class RelationMetadata extends PropertyMetadata {
             this._oldColumnName = args.options.oldColumnName;
         if (args.options.nullable)
             this._isNullable = args.options.nullable;
+        if (args.options.onDelete)
+            this._onDelete = args.options.onDelete;
 
         if (!this._name)
             this._name = args.propertyName;
@@ -240,6 +248,10 @@ export class RelationMetadata extends PropertyMetadata {
 
     get oldColumnName(): string {
         return this._oldColumnName;
+    }
+
+    get onDelete(): OnDeleteType {
+        return this._onDelete;
     }
 
     // ---------------------------------------------------------------------

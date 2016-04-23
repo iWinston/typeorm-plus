@@ -307,10 +307,10 @@ export class QueryBuilder<Entity> {
         if (this.firstResult || this.maxResults) {
             const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
             let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAlias}_${metadata.primaryColumn.name}) as ids`;
-            if (this.orderBys)
+            if (this.orderBys && this.orderBys.length > 0)
                 idsQuery += ", " + this.orderBys.map(orderBy => orderBy.sort.replace(".", "_")).join(", ");
             idsQuery += ` FROM (${this.getSql()}) distinctAlias`;
-            if (this.orderBys)
+            if (this.orderBys && this.orderBys.length > 0)
                 idsQuery += " ORDER BY " + this.orderBys.map(order => "distinctAlias." + order.sort.replace(".", "_") + " " + order.order).join(", ");
             if (this.maxResults)
                 idsQuery += " LIMIT " + this.maxResults;
@@ -349,6 +349,13 @@ export class QueryBuilder<Entity> {
         return this.connection.driver
             .query<any[]>(countQuery)
             .then(results => parseInt(results[0]["cnt"]));
+    }
+
+    getResultsAndCount(): Promise<[Entity[], number]> {
+        return Promise.all<any>([
+            this.getResults(),
+            this.getCount()
+        ]);
     }
 
     clone(options?: { skipOrderBys?: boolean }) {

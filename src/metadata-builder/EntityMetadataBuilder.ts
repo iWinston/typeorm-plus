@@ -105,7 +105,12 @@ export class EntityMetadataBuilder {
                 }
 
                 // create and add foreign key
-                const foreignKey = new ForeignKeyMetadata(metadata.table, [relationalColumn], inverseSideMetadata.table, [inverseSideMetadata.primaryColumn]);
+                const foreignKey = new ForeignKeyMetadata(metadata.table, 
+                    [relationalColumn], 
+                    inverseSideMetadata.table, 
+                    [inverseSideMetadata.primaryColumn],
+                    relation.onDelete
+                );
                 metadata.foreignKeys.push(foreignKey);
             });
         });

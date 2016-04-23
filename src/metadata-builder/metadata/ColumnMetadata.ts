@@ -196,9 +196,6 @@ export class ColumnMetadata extends PropertyMetadata {
             this._precision = args.options.precision;
         if (args.options.collation)
             this._collation = args.options.collation;
-
-        if (!this._name)
-            this._name = args.propertyName;
     }
 
     // ---------------------------------------------------------------------
@@ -209,7 +206,10 @@ export class ColumnMetadata extends PropertyMetadata {
      * Column name in the database.
      */
     get name(): string {
-        return this.namingStrategy ? this.namingStrategy.columnName(this._name) : this._name;
+        if (this._name)
+            return this._name;
+        
+        return this.namingStrategy ? this.namingStrategy.columnName(this.propertyName) : this.propertyName;
     }
 
     /**

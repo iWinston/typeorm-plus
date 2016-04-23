@@ -1,3 +1,4 @@
+import {OnDeleteType} from "../metadata/ForeignKeyMetadata";
 /**
  * Describes all relation's options.
  */
@@ -37,6 +38,6 @@ export interface RelationOptions {
     /**
      * Database cascade action on delete.
      */
-    onDelete?: boolean;
+    onDelete?: OnDeleteType;
 
 }

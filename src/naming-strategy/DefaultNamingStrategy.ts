@@ -1,4 +1,5 @@
 import {NamingStrategy} from "./NamingStrategy";
+import * as _ from "lodash";
 
 /**
  * Naming strategy that is used by default.
@@ -6,7 +7,7 @@ import {NamingStrategy} from "./NamingStrategy";
 export class DefaultNamingStrategy implements NamingStrategy {
 
     tableName(className: string): string {
-        return className;
+        return _.snakeCase(className);
     }
 
     columnName(propertyName: string): string {

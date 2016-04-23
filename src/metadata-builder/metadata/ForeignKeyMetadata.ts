@@ -1,6 +1,8 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {TableMetadata} from "./TableMetadata";
 
+export type OnDeleteType = "RESTRICT"|"CASCADE"|"SET NULL";
+
 /**
  * This metadata interface contains all information foreign keys.
  */
@@ -30,15 +32,25 @@ export class ForeignKeyMetadata {
      */
     private _referencedColumns: ColumnMetadata[];
 
+    /**
+     * What to do with a relation on deletion of the row containing a foreign key.
+     */
+    private _onDelete: OnDeleteType;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(table: TableMetadata, columns: ColumnMetadata[], referencedTable: TableMetadata, referencedColumns: ColumnMetadata[]) {
+    constructor(table: TableMetadata, 
+                columns: ColumnMetadata[], 
+                referencedTable: TableMetadata, 
+                referencedColumns: ColumnMetadata[],
+                onDelete?: OnDeleteType) {
         this._table = table;
         this._columns = columns;
         this._referencedTable = referencedTable;
         this._referencedColumns = referencedColumns;
+        this._onDelete = onDelete;
     }
 
     // -------------------------------------------------------------------------
@@ -94,6 +106,13 @@ export class ForeignKeyMetadata {
         const key = `${this.table.name}_${this.columnNames.join("_")}` +
                     `_${this.referencedTable.name}_${this.referencedColumnNames.join("_")}`;
         return "fk_" + require("sha1")(key); // todo: use crypto instead?
+    }
+
+    /**
+     * Array of referenced column names.
+     */
+    get onDelete(): OnDeleteType {
+        return this._onDelete;
     }
 
 }

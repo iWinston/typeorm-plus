@@ -59,7 +59,10 @@ export class TableMetadata {
      * Table name in the database.
      */
     get name() {
-        return this.namingStrategy ? this.namingStrategy.tableName(this._name) : this._name;
+        if (this._name)
+            return this._name;
+
+        return this.namingStrategy ? this.namingStrategy.tableName((<any>this._target).name) : (<any>this._target).name;
     }
 
     /**
