@@ -51,7 +51,7 @@ Finds the first entity that match given conditions or given find options.
 
 Finds entity with a given entity id.
 
-* `findAndCount(entityClass: Function, conditions?: Object, options?: FindOptions): Promise<{ items: Entity[], count: number }>`
+* `findAndCount(entityClass: Function, conditions?: Object, options?: FindOptions): Promise<[Entity[], number]>`
 
 Finds entities that match given conditions or given find options plus gets a overall count of this items (for
 pagination purposes).

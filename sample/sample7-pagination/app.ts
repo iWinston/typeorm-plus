@@ -65,8 +65,8 @@ createConnection(options).then(connection => {
             return postRepository.findAndCount();
         })
         .then(entitiesWithCount => {
-            console.log("items: ", entitiesWithCount.items);
-            console.log("count: ", entitiesWithCount.count);
+            console.log("items: ", entitiesWithCount[0]);
+            console.log("count: ", entitiesWithCount[1]);
 
         })
         .catch(error => console.log("Cannot save. Error: ", error.stack ? error.stack : error));

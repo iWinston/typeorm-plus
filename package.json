@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.0.2-alpha.5",
+  "version": "0.0.2-alpha.6",
   "description": "Data-mapper ORM for Typescript",
   "license": "Apache-2.0",
   "readmeFilename": "README.md",
@@ -38,7 +38,7 @@
     "sinon-chai": "^2.8.0",
     "tslint": "^3.7.4",
     "tslint-stylish": "^2.1.0-beta",
-    "typescript": "^1.8.10",
+    "typescript": "next",
     "typings": "^0.7.12"
   },
   "dependencies": {

@@ -150,30 +150,29 @@ export class Repository<Entity> {
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(): Promise<{ items: Entity[], count: number }>;
+    findAndCount(): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(conditions: Object): Promise<{ items: Entity[], count: number }>;
+    findAndCount(conditions: Object): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(options: FindOptions): Promise<{ items: Entity[], count: number }>;
+    findAndCount(options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(conditions: Object, options: FindOptions): Promise<{ items: Entity[], count: number }>;
+    findAndCount(conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<{ items: Entity[], count: number }> {
+    findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
         const qb = this.createFindQueryBuilder(conditionsOrFindOptions, options);
-        return Promise.all<any>([ qb.getResults(), qb.getCount() ])
-            .then(([entities, count]: [Entity[], number]) => ({ items: entities, count: count }));
+        return qb.getResultsAndCount();
     }
 
     /**

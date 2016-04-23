@@ -118,27 +118,27 @@ export class EntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function): Promise<{ items: Entity[], count: number }>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Promise<{ items: Entity[], count: number }>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Promise<{ items: Entity[], count: number }>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Promise<{ items: Entity[], count: number }>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<{ items: Entity[], count: number }> {
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
         return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
     }
 
