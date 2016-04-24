@@ -5,10 +5,14 @@ import {PropertyMetadata} from "./PropertyMetadata";
  */
 export class IndexMetadata extends PropertyMetadata {
 
+    // ---------------------------------------------------------------------
+    // Readonly Properties
+    // ---------------------------------------------------------------------
+
     /**
      * The name of the index.
      */
-    name: string|undefined;
+    readonly name: string|undefined;
     
     // ---------------------------------------------------------------------
     // Constructor

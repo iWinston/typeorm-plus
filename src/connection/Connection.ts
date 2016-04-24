@@ -21,78 +21,68 @@ export class Connection {
     // Properties
     // -------------------------------------------------------------------------
 
-    private _name: string;
-    private _driver: Driver;
-    private _entityMetadatas: EntityMetadata[] = [];
-    private _entityListenerMetadatas: EntityListenerMetadata[] = [];
-    private _subscribers: EventSubscriberInterface<any>[] = [];
     private repositoryAndMetadatas: RepositoryAndMetadata[] = [];
-    private _options: ConnectionOptions;
-    private entityManager: EntityManager;
+
+    // -------------------------------------------------------------------------
+    // Readonly properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Database connection options.
+     */
+    readonly options: ConnectionOptions;
+
+    /**
+     * Gets EntityManager of this connection.
+     */
+    readonly entityManager: EntityManager;
+
+    /**
+     * The name of the connection.
+     */
+    readonly name: string;
+
+    /**
+     * Database driver used by this connection.
+     */
+    readonly driver: Driver;
+
+    /**
+     * All entity metadatas that are registered for this connection.
+     */
+    readonly entityMetadatas: EntityMetadata[] = [];
+
+    /**
+     * All entity listener metadatas that are registered for this connection.
+     */
+    readonly entityListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * All subscribers that are registered for this connection.
+     */
+    readonly subscribers: EventSubscriberInterface<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(name: string, driver: Driver, options: ConnectionOptions) {
-        this._name = name;
-        this._driver = driver;
-        this._driver.connection = this;
-        this._options = options;
+        this.name = name;
+        this.driver = driver;
+        this.driver.connection = this;
+        this.options = options;
         this.entityManager = new EntityManager(this);
     }
 
     // -------------------------------------------------------------------------
-    // Getter / Setter Methods
+    // Accessors
     // -------------------------------------------------------------------------
-
-    /**
-     * The name of the connection.
-     */
-    get name(): string {
-        return this._name;
-    }
-
-    /**
-     * Database driver used by this connection.
-     */
-    get driver(): Driver {
-        return this._driver;
-    }
-
-    /**
-     * All subscribers that are registered for this connection.
-     */
-    get subscribers(): EventSubscriberInterface<any>[] {
-        return this._subscribers;
-    }
-
-    /**
-     * All entity metadatas that are registered for this connection.
-     */
-    get entityMetadatas(): EntityMetadata[] {
-        return this._entityMetadatas;
-    }
-
-    /**
-     * All entity listener metadatas that are registered for this connection.
-     */
-    get entityListeners(): EntityListenerMetadata[] {
-        return this._entityListenerMetadatas;
-    }
 
     /**
      * All repositories that are registered for this connection.
      */
     get repositories(): Repository<any>[] {
         return this.repositoryAndMetadatas.map(repoAndMeta => repoAndMeta.repository);
-    }
-
-    /**
-     * This connection options and settings.
-     */
-    get options(): ConnectionOptions {
-        return this._options;
     }
 
     // -------------------------------------------------------------------------
@@ -104,10 +94,10 @@ export class Connection {
      */
     connect(): Promise<void> {
         const schemaCreator = new SchemaCreator(this);
-        return this._driver.connect().then(() => {
-            if (this._options.autoSchemaCreate === true)
+        return this.driver.connect().then(() => {
+            if (this.options.autoSchemaCreate === true)
                 return schemaCreator.create();
-            
+
             return undefined;
         });
     }
@@ -116,14 +106,7 @@ export class Connection {
      * Closes this connection.
      */
     close(): Promise<void> {
-        return this._driver.disconnect();
-    }
-
-    /**
-     * Gets EntityManager of this connection.
-     */
-    getEntityManager() {
-        return this.entityManager;
+        return this.driver.disconnect();
     }
 
     /**
@@ -153,7 +136,7 @@ export class Connection {
      * Registers entity metadatas for the current connection.
      */
     addEntityMetadatas(metadatas: EntityMetadata[]): Connection {
-        this._entityMetadatas = this._entityMetadatas.concat(metadatas);
+        this.entityMetadatas.push(...metadatas);
         this.repositoryAndMetadatas = this.repositoryAndMetadatas.concat(metadatas.map(metadata => this.createRepoMeta(metadata)));
         return this;
     }
@@ -162,7 +145,7 @@ export class Connection {
      * Registers entity listener metadatas for the current connection.
      */
     addEntityListenerMetadatas(metadatas: EntityListenerMetadata[]): Connection {
-        this._entityListenerMetadatas = this._entityListenerMetadatas.concat(metadatas);
+        this.entityListeners.push(...metadatas);
         return this;
     }
 
@@ -170,7 +153,7 @@ export class Connection {
      * Registers subscribers for the current connection.
      */
     addSubscribers(subscribers: EventSubscriberInterface<any>[]): Connection {
-        this._subscribers = this._subscribers.concat(subscribers);
+        this.subscribers.push(...subscribers);
         return this;
     }
 

@@ -4,18 +4,18 @@
 export abstract class PropertyMetadata {
 
     // ---------------------------------------------------------------------
-    // Properties
+    // Readonly Properties
     // ---------------------------------------------------------------------
 
     /**
      * Class to which this decorator is applied.
      */
-    private _target: Function;
+    readonly target: Function;
 
     /**
      * Class's property name to which this decorator is applied.
      */
-    private _propertyName: string;
+    readonly propertyName: string;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -23,28 +23,10 @@ export abstract class PropertyMetadata {
 
     constructor(target?: Function, propertyName?: string) {
         if (target)
-            this._target = target;
+            this.target = target;
         
         if (propertyName)
-            this._propertyName = propertyName;
-    }
-
-    // ---------------------------------------------------------------------
-    // Accessors
-    // ---------------------------------------------------------------------
-
-    /**
-     * The object class to which this metadata is attached.
-     */
-    get target() {
-        return this._target;
-    }
-
-    /**
-     * The name of the property of the object to which this metadata is attached.
-     */
-    get propertyName() {
-        return this._propertyName;
+            this.propertyName = propertyName;
     }
 
 }

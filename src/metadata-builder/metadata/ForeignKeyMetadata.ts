@@ -9,33 +9,33 @@ export type OnDeleteType = "RESTRICT"|"CASCADE"|"SET NULL";
 export class ForeignKeyMetadata {
 
     // -------------------------------------------------------------------------
-    // Properties
+    // Readonly Properties
     // -------------------------------------------------------------------------
 
     /**
      * Table to which this foreign key is applied.
      */
-    private _table: TableMetadata;
+    readonly table: TableMetadata;
 
     /**
      * Array of columns.
      */
-    private _columns: ColumnMetadata[];
+    readonly columns: ColumnMetadata[];
 
     /**
      * Table to which this foreign key is references.
      */
-    private _referencedTable: TableMetadata;
+    readonly referencedTable: TableMetadata;
 
     /**
      * Array of referenced columns.
      */
-    private _referencedColumns: ColumnMetadata[];
+    readonly referencedColumns: ColumnMetadata[];
 
     /**
      * What to do with a relation on deletion of the row containing a foreign key.
      */
-    private _onDelete: OnDeleteType;
+    readonly onDelete: OnDeleteType;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -46,45 +46,17 @@ export class ForeignKeyMetadata {
                 referencedTable: TableMetadata, 
                 referencedColumns: ColumnMetadata[],
                 onDelete?: OnDeleteType) {
-        this._table = table;
-        this._columns = columns;
-        this._referencedTable = referencedTable;
-        this._referencedColumns = referencedColumns;
+        this.table = table;
+        this.columns = columns;
+        this.referencedTable = referencedTable;
+        this.referencedColumns = referencedColumns;
         if (onDelete)
-            this._onDelete = onDelete;
+            this.onDelete = onDelete;
     }
 
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
-
-    /**
-     * Table to which this foreign key is applied.
-     */
-    get table(): TableMetadata {
-        return this._table;
-    }
-
-    /**
-     * Array of columns.
-     */
-    get columns(): ColumnMetadata[] {
-        return this._columns;
-    }
-
-    /**
-     * Table to which this foreign key is references.
-     */
-    get referencedTable(): TableMetadata {
-        return this._referencedTable;
-    }
-
-    /**
-     * Array of referenced columns.
-     */
-    get referencedColumns(): ColumnMetadata[] {
-        return this._referencedColumns;
-    }
 
     /**
      * Array of column names.
@@ -104,16 +76,10 @@ export class ForeignKeyMetadata {
      * Foreign key name.
      */
     get name() {
+        // todo: use naming strategy
         const key = `${this.table.name}_${this.columnNames.join("_")}` +
                     `_${this.referencedTable.name}_${this.referencedColumnNames.join("_")}`;
         return "fk_" + require("sha1")(key); // todo: use crypto instead?
-    }
-
-    /**
-     * Array of referenced column names.
-     */
-    get onDelete(): OnDeleteType {
-        return this._onDelete;
     }
 
 }

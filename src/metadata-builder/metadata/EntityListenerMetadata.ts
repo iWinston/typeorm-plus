@@ -6,10 +6,14 @@ import {EventListenerType} from "../types/EventListenerTypes";
  */
 export class EntityListenerMetadata extends PropertyMetadata {
 
+    // ---------------------------------------------------------------------
+    // Readonly Properties
+    // ---------------------------------------------------------------------
+
     /**
      * The type of the listener.
      */
-    type: EventListenerType;
+    readonly type: EventListenerType;
 
     // ---------------------------------------------------------------------
     // Constructor

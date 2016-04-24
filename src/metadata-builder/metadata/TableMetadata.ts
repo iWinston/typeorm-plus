@@ -15,23 +15,27 @@ export class TableMetadata {
     namingStrategy: NamingStrategy;
 
     // ---------------------------------------------------------------------
-    // Private Properties
+    // Readonly Properties
     // ---------------------------------------------------------------------
 
     /**
      * Class to which this column is applied.
      */
-    private _target: Function;
+    readonly target: Function;
+
+    /**
+     * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
+     */
+    readonly isAbstract = false;
+
+    // ---------------------------------------------------------------------
+    // Private Properties
+    // ---------------------------------------------------------------------
 
     /**
      * Table name in the database.
      */
     private _name: string;
-
-    /**
-     * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
-     */
-    private _isAbstract = false;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -41,26 +45,18 @@ export class TableMetadata {
     constructor(target: Function, isAbstract: boolean);
     constructor(target: Function, nameOrIsAbstract?: string|boolean, maybeIsAbstract?: boolean) {
         if (target)
-            this._target = target;
+            this.target = target;
         if (typeof nameOrIsAbstract === "string")
             this._name = nameOrIsAbstract;
         if (typeof nameOrIsAbstract === "boolean")
-            this._isAbstract = nameOrIsAbstract;
+            this.isAbstract = nameOrIsAbstract;
         if (typeof maybeIsAbstract === "boolean")
-            this._isAbstract = maybeIsAbstract;
+            this.isAbstract = maybeIsAbstract;
     }
 
     // ---------------------------------------------------------------------
     // Getters
     // ---------------------------------------------------------------------
-
-    /**
-     * Target entity of this table.
-     * Target can be empty only for junction tables.
-     */
-    get target() {
-        return this._target;
-    }
 
     /**
      * Table name in the database.
@@ -69,14 +65,7 @@ export class TableMetadata {
         if (this._name)
             return this._name;
 
-        return this.namingStrategy ? this.namingStrategy.tableName((<any>this._target).name) : (<any>this._target).name;
-    }
-
-    /**
-     * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
-     */
-    get isAbstract() {
-        return this._isAbstract;
+        return this.namingStrategy ? this.namingStrategy.tableName((<any>this.target).name) : (<any>this.target).name;
     }
 
 }

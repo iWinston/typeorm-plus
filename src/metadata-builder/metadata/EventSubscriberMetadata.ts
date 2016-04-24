@@ -4,31 +4,20 @@
 export class EventSubscriberMetadata {
 
     // ---------------------------------------------------------------------
-    // Private Properties
+    // Readonly Properties
     // ---------------------------------------------------------------------
 
     /**
      * Class to which this decorator is applied.
      */
-    private _target: Function;
+    readonly target: Function;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
     constructor(target: Function) {
-        this._target = target;
-    }
-
-    // ---------------------------------------------------------------------
-    // Getters
-    // ---------------------------------------------------------------------
-
-    /**
-     * The object class to which this metadata is attached.
-     */
-    get target() {
-        return this._target;
+        this.target = target;
     }
 
 }

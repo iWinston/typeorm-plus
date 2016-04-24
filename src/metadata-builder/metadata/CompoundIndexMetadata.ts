@@ -4,44 +4,26 @@
 export class CompoundIndexMetadata {
 
     // ---------------------------------------------------------------------
-    // Private Properties
+    // Readonly Properties
     // ---------------------------------------------------------------------
 
     /**
      * Class to which this decorator is applied.
      */
-    private _target: Function;
+    readonly target: Function;
 
     /**
      * Fields combination to be used as index.
      */
-    private _fields: string[];
+    readonly fields: string[];
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
     constructor(target: Function, fields: string[]) {
-        this._target = target;
-        this._fields = fields;
-    }
-
-    // ---------------------------------------------------------------------
-    // Getters
-    // ---------------------------------------------------------------------
-
-    /**
-     * The object class to which this metadata is attached.
-     */
-    get target() {
-        return this._target;
-    }
-
-    /**
-     * Fields combination to be used as index.
-     */
-    get fields() {
-        return this._fields;
+        this.target = target;
+        this.fields = fields;
     }
 
 }

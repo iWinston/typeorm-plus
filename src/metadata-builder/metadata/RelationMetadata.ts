@@ -71,6 +71,60 @@ export class RelationMetadata extends PropertyMetadata {
      */
     namingStrategy: NamingStrategy;
 
+    /**
+     * Related entity metadata.
+     */
+    relatedEntityMetadata: EntityMetadata;
+
+    /**
+     * Junction entity metadata.
+     */
+    junctionEntityMetadata: EntityMetadata;
+
+    // ---------------------------------------------------------------------
+    // Readonly Properties
+    // ---------------------------------------------------------------------
+
+    /**
+     * Relation type.
+     */
+    readonly relationType: RelationType;
+
+    /**
+     * Indicates if this side is an owner of this relation.
+     */
+    readonly isOwning: boolean;
+
+    /**
+     * If set to true then it means that related object can be allowed to be inserted to the db.
+     */
+    readonly isCascadeInsert: boolean;
+
+    /**
+     * If set to true then it means that related object can be allowed to be updated in the db.
+     */
+    readonly isCascadeUpdate: boolean;
+
+    /**
+     * If set to true then it means that related object can be allowed to be remove from the db.
+     */
+    readonly isCascadeRemove: boolean;
+
+    /**
+     * Indicates if relation column value can be nullable or not.
+     */
+    readonly isNullable: boolean = true;
+
+    /**
+     * Old column name.
+     */
+    readonly oldColumnName: string;
+
+    /**
+     * What to do with a relation on deletion of the row containing a foreign key.
+     */
+    readonly onDelete: OnDeleteType;
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -79,11 +133,6 @@ export class RelationMetadata extends PropertyMetadata {
      * Column name for this relation.
      */
     private _name: string;
-
-    /**
-     * Relation type.
-     */
-    private _relationType: RelationType;
 
     /**
      * The type of the field.
@@ -95,77 +144,33 @@ export class RelationMetadata extends PropertyMetadata {
      */
     private _inverseSideProperty: PropertyTypeInFunction<any>;
 
-    /**
-     * Indicates if this side is an owner of this relation.
-     */
-    private _isOwning: boolean;
-
-    /**
-     * If set to true then it means that related object can be allowed to be inserted to the db.
-     */
-    private _isCascadeInsert: boolean;
-
-    /**
-     * If set to true then it means that related object can be allowed to be updated in the db.
-     */
-    private _isCascadeUpdate: boolean;
-
-    /**
-     * If set to true then it means that related object can be allowed to be remove from the db.
-     */
-    private _isCascadeRemove: boolean;
-
-    /**
-     * Indicates if relation column value can be nullable or not.
-     */
-    private _isNullable: boolean = true;
-
-    /**
-     * Old column name.
-     */
-    private _oldColumnName: string;
-
-    /**
-     * Related entity metadata.
-     */
-    private _relatedEntityMetadata: EntityMetadata;
-
-    /**
-     * Junction entity metadata.
-     */
-    private _junctionEntityMetadata: EntityMetadata;
-
-    /**
-     * What to do with a relation on deletion of the row containing a foreign key.
-     */
-    private _onDelete: OnDeleteType;
-
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
     constructor(args: RelationMetadataArgs) {
         super(args.target, args.propertyName);
-        this._relationType = args.relationType;
-        this._type = args.type;
-        this._isOwning = args.isOwning;
+        this.relationType = args.relationType;
+        this.isOwning = args.isOwning;
         this._inverseSideProperty = args.inverseSideProperty;
 
         if (args.options.name)
             this._name = args.options.name;
         if (args.options.cascadeInsert)
-            this._isCascadeInsert = args.options.cascadeInsert;
+            this.isCascadeInsert = args.options.cascadeInsert;
         if (args.options.cascadeUpdate)
-            this._isCascadeUpdate = args.options.cascadeUpdate;
+            this.isCascadeUpdate = args.options.cascadeUpdate;
         if (args.options.cascadeRemove)
-            this._isCascadeRemove = args.options.cascadeRemove;
+            this.isCascadeRemove = args.options.cascadeRemove;
         if (args.options.oldColumnName)
-            this._oldColumnName = args.options.oldColumnName;
+            this.oldColumnName = args.options.oldColumnName;
         if (args.options.nullable)
-            this._isNullable = args.options.nullable;
+            this.isNullable = args.options.nullable;
         if (args.options.onDelete)
-            this._onDelete = args.options.onDelete;
+            this.onDelete = args.options.onDelete;
 
+        if (!this._type)
+            this._type = args.type;
         if (!this._name)
             this._name = args.propertyName;
     }
@@ -177,26 +182,6 @@ export class RelationMetadata extends PropertyMetadata {
     get name(): string {
         return this.namingStrategy ? this.namingStrategy.relationName(this._name) : this._name;
     }
-    
-    get relatedEntityMetadata(): EntityMetadata {
-        return this._relatedEntityMetadata;
-    }
-    
-    set relatedEntityMetadata(metadata: EntityMetadata) {
-        this._relatedEntityMetadata = metadata;
-    }
-
-    get junctionEntityMetadata(): EntityMetadata {
-        return this._junctionEntityMetadata;
-    }
-    
-    set junctionEntityMetadata(metadata: EntityMetadata) {
-        this._junctionEntityMetadata = metadata;
-    }
-
-    get relationType(): RelationType {
-        return this._relationType;
-    }
 
     get type(): Function {
         return this._type();
@@ -207,23 +192,7 @@ export class RelationMetadata extends PropertyMetadata {
     }
 
     get inverseRelation(): RelationMetadata {
-        return this._relatedEntityMetadata.findRelationWithPropertyName(this.computeInverseSide(this._inverseSideProperty));
-    }
-
-    get isOwning(): boolean {
-        return this._isOwning;
-    }
-
-    get isCascadeInsert(): boolean {
-        return this._isCascadeInsert;
-    }
-
-    get isCascadeUpdate(): boolean {
-        return this._isCascadeUpdate;
-    }
-
-    get isCascadeRemove(): boolean {
-        return this._isCascadeRemove;
+        return this.relatedEntityMetadata.findRelationWithPropertyName(this.computeInverseSide(this._inverseSideProperty));
     }
 
     get isOneToOne(): boolean {
@@ -240,18 +209,6 @@ export class RelationMetadata extends PropertyMetadata {
 
     get isManyToMany(): boolean {
         return this.relationType === RelationTypes.MANY_TO_MANY;
-    }
-
-    get isNullable(): boolean {
-        return this._isNullable;
-    }
-
-    get oldColumnName(): string {
-        return this._oldColumnName;
-    }
-
-    get onDelete(): OnDeleteType {
-        return this._onDelete;
     }
 
     // ---------------------------------------------------------------------

@@ -12,15 +12,15 @@ import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 export class EntityMetadata {
 
     // -------------------------------------------------------------------------
-    // Private Properties
+    // Readonly Properties
     // -------------------------------------------------------------------------
 
-    private _table: TableMetadata;
-    private _columns: ColumnMetadata[];
-    private _relations: RelationMetadata[];
-    private _indices: IndexMetadata[];
-    private _compoundIndices: CompoundIndexMetadata[];
-    private _foreignKeys: ForeignKeyMetadata[];
+    readonly table: TableMetadata;
+    readonly columns: ColumnMetadata[];
+    readonly relations: RelationMetadata[];
+    readonly indices: IndexMetadata[];
+    readonly compoundIndices: CompoundIndexMetadata[];
+    readonly foreignKeys: ForeignKeyMetadata[];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -32,12 +32,12 @@ export class EntityMetadata {
                 indices: IndexMetadata[],
                 compoundIndices: CompoundIndexMetadata[],
                 foreignKeys: ForeignKeyMetadata[]) {
-        this._table = table;
-        this._columns = columns;
-        this._relations = relations;
-        this._indices = indices;
-        this._compoundIndices = compoundIndices;
-        this._foreignKeys = foreignKeys;
+        this.table = table;
+        this.columns = columns;
+        this.relations = relations;
+        this.indices = indices;
+        this.compoundIndices = compoundIndices;
+        this.foreignKeys = foreignKeys;
     }
 
     // -------------------------------------------------------------------------
@@ -45,71 +45,47 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     get name(): string {
-        return (<any> this._table.target).name;
+        return (<any> this.table.target).name;
     }
 
     get target(): Function {
-        return this._table.target;
-    }
-
-    get table(): TableMetadata {
-        return this._table;
-    }
-
-    get columns(): ColumnMetadata[] {
-        return this._columns;
-    }
-
-    get relations(): RelationMetadata[] {
-        return this._relations;
-    }
-
-    get foreignKeys(): ForeignKeyMetadata[] {
-        return this._foreignKeys;
+        return this.table.target;
     }
 
     get oneToOneRelations(): RelationMetadata[] {
-        return this._relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_ONE);
+        return this.relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_ONE);
     }
 
     get ownerOneToOneRelations(): RelationMetadata[] {
-        return this._relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_ONE && relation.isOwning);
+        return this.relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_ONE && relation.isOwning);
     }
 
     get oneToManyRelations(): RelationMetadata[] {
-        return this._relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_MANY);
+        return this.relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_MANY);
     }
 
     get manyToOneRelations(): RelationMetadata[] {
-        return this._relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_ONE);
+        return this.relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_ONE);
     }
 
     get manyToManyRelations(): RelationMetadata[] {
-        return this._relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_MANY);
+        return this.relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_MANY);
     }
 
     get ownerManyToManyRelations(): RelationMetadata[] {
-        return this._relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_MANY && relation.isOwning);
-    }
-
-    get indices(): IndexMetadata[] {
-        return this._indices;
-    }
-
-    get compoundIndices(): CompoundIndexMetadata[] {
-        return this._compoundIndices;
+        return this.relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_MANY && relation.isOwning);
     }
 
     get primaryColumn(): ColumnMetadata {
-        return this._columns.find(column => column.isPrimary);
+        return this.columns.find(column => column.isPrimary);
     }
 
     get createDateColumn(): ColumnMetadata {
-        return this._columns.find(column => column.isCreateDate);
+        return this.columns.find(column => column.isCreateDate);
     }
 
     get updateDateColumn(): ColumnMetadata {
-        return this._columns.find(column => column.isUpdateDate);
+        return this.columns.find(column => column.isUpdateDate);
     }
 
     get hasPrimaryKey(): boolean {
@@ -129,8 +105,8 @@ export class EntityMetadata {
 
     createPropertiesMap(): any {
         const entity: any = {};
-        this._columns.forEach(column => entity[column.name] = column.name);
-        this._relations.forEach(relation => entity[relation.name] = relation.name);
+        this.columns.forEach(column => entity[column.name] = column.name);
+        this.relations.forEach(relation => entity[relation.name] = relation.name);
         return entity;
     }
 
@@ -147,11 +123,11 @@ export class EntityMetadata {
     }
 
     findColumnWithPropertyName(propertyName: string): ColumnMetadata {
-        return this._columns.find(column => column.propertyName === propertyName);
+        return this.columns.find(column => column.propertyName === propertyName);
     }
 
     findColumnWithDbName(name: string): ColumnMetadata {
-        return this._columns.find(column => column.name === name);
+        return this.columns.find(column => column.name === name);
     }
 
     hasRelationWithPropertyName(propertyName: string): boolean {
@@ -163,27 +139,27 @@ export class EntityMetadata {
     }
 
     findRelationWithPropertyName(propertyName: string): RelationMetadata {
-        return this._relations.find(relation => relation.propertyName === propertyName);
+        return this.relations.find(relation => relation.propertyName === propertyName);
     }
 
     findRelationWithDbName(propertyName: string): RelationMetadata {
-        return this._relations.find(relation => relation.name === propertyName);
+        return this.relations.find(relation => relation.name === propertyName);
     }
 
     findRelationWithOneWithPropertyName(propertyName: string): RelationMetadata {
-        return this._relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
+        return this.relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
     }
 
     findRelationWithOneWithDbName(name: string): RelationMetadata {
-        return this._relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
+        return this.relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
     }
 
     findRelationWithManyWithPropertyName(propertyName: string): RelationMetadata {
-        return this._relations.find(relation => relation.propertyName === propertyName && (relation.isManyToOne || relation.isManyToMany));
+        return this.relations.find(relation => relation.propertyName === propertyName && (relation.isManyToOne || relation.isManyToMany));
     }
 
     findRelationWithManyWithDbName(name: string): RelationMetadata {
-        return this._relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
+        return this.relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
     }
 
     hasRelationWithOneWithPropertyName(propertyName: string): boolean {
