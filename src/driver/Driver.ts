@@ -1,4 +1,3 @@
-import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {Connection} from "../connection/Connection";
@@ -12,12 +11,12 @@ export interface Driver {
     /**
      * Access to the native implementation of the database.
      */
-    native: any;
+    readonly native: any;
 
     /**
      * Access to the connection of the native interface of the database.
      */
-    nativeConnection: any;
+    readonly nativeConnection: any;
 
     /**
      * Connection used in this driver.
@@ -27,7 +26,7 @@ export interface Driver {
     /**
      * Database name to which this connection is made.
      */
-    db: string;
+    readonly db: string;
     
     /**
      * Creates a query builder which can be used to build an sql queries.

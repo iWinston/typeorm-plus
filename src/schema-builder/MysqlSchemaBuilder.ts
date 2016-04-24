@@ -4,6 +4,9 @@ import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
 
+/**
+ * @internal
+ */
 export class MysqlSchemaBuilder extends SchemaBuilder {
     
     constructor(private driver: MysqlDriver) {

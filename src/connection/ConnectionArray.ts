@@ -4,6 +4,8 @@ import {ConnectionOptions} from "./ConnectionOptions";
 
 /**
  * Array for the connections.
+ *
+ * @internal
  */
 export class ConnectionArray extends Array<Connection> {
 

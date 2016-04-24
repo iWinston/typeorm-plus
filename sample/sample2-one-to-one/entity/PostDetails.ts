@@ -1,6 +1,6 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/columns";
-import {Table} from "../../../src/decorator/tables";
-import {OneToOneInverse} from "../../../src/decorator/relations";
+import {PrimaryColumn, Column} from "../../../src/columns";
+import {Table} from "../../../src/tables";
+import {OneToOneInverse} from "../../../src/relations";
 import {Post} from "./Post";
 
 @Table("sample2_post_details")

@@ -1,3 +1,6 @@
+/**
+ * @internal
+ */
 export class ConnectionNotFoundError extends Error {
     name = "ConnectionNotFoundError";
 

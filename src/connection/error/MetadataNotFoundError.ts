@@ -1,3 +1,6 @@
+/**
+ * @internal
+ */
 export class MetadataNotFoundError extends Error {
     name = "MetadataNotFoundError";
 

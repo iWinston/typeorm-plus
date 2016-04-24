@@ -10,6 +10,7 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Executes PersistOperation in the given connection.
+ * @internal
  */
 export class PersistOperationExecutor {
 

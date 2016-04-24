@@ -2,6 +2,9 @@ import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
 
+/**
+ * todo: make internal too (need to refactor driver).
+ */
 export abstract class SchemaBuilder {
 
     abstract getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]>;

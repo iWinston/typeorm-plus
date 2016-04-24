@@ -2,6 +2,7 @@ import {Connection} from "../connection/Connection";
 
 /**
  * Provides base functionality for all driver implementations.
+ * @internal
  */
 export abstract class BaseDriver {
 

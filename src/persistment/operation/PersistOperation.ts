@@ -5,11 +5,17 @@ import {JunctionInsertOperation} from "./JunctionInsertOperation";
 import {JunctionRemoveOperation} from "./JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./UpdateByRelationOperation";
 
+/**
+ * @internal
+ */
 export interface EntityWithId {
     id: any;
     entity: any;
 }
 
+/**
+ * @internal
+ */
 export class PersistOperation {
     
     // todo: what if we have two same entities in the insert operations?

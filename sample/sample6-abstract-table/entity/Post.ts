@@ -1,5 +1,5 @@
-import {Column} from "../../../src/decorator/columns";
-import {Table} from "../../../src/decorator/tables";
+import {Column} from "../../../src/columns";
+import {Table} from "../../../src/tables";
 import {BasePost} from "./BasePost";
 import {PostCategory} from "./PostCategory";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";

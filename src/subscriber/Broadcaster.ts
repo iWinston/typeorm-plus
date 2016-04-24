@@ -5,6 +5,8 @@ import {EventListenerTypes} from "../metadata-builder/types/EventListenerTypes";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
+ * 
+ * @internal
  */
 export class Broadcaster {
 

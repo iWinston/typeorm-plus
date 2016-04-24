@@ -11,6 +11,8 @@ import {EntityListenerMetadata} from "./metadata/EntityListenerMetadata";
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
  * Each metadata represents some specifications of what it represents.
+ * 
+ * @internal
  */
 export class MetadataStorage {
 

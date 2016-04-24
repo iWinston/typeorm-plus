@@ -7,10 +7,7 @@ import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
 
-/**
- * Global connection manager.
- */
-export const connectionManager = new ConnectionManager();
+const connectionManager = new ConnectionManager();
 
 /**
  * All options to help to create a new connection.
@@ -81,3 +78,23 @@ export function createConnection(options: CreateConnectionOptions): Promise<Conn
 
     return connection.connect().then(() => connection);
 }
+
+/**
+ * Default export. Global connection manager.
+ */
+export default connectionManager;
+
+// export everything commonly used
+export {Connection} from "./connection/Connection";
+export {ConnectionManager} from "./connection/ConnectionManager";
+export {ConnectionOptions} from "./connection/ConnectionOptions";
+export {Driver} from "./driver/Driver";
+export {MysqlDriver} from "./driver/MysqlDriver";
+export {QueryBuilder} from "./query-builder/QueryBuilder";
+export {EntityManager} from "./repository/EntityManager";
+export {Repository} from "./repository/Repository";
+export {FindOptions} from "./repository/FindOptions";
+export {InsertEvent} from "./subscriber/event/InsertEvent";
+export {UpdateEvent} from "./subscriber/event/UpdateEvent";
+export {RemoveEvent} from "./subscriber/event/RemoveEvent";
+export {EventSubscriberInterface} from "./subscriber/EventSubscriberInterface";

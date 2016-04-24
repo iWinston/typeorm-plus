@@ -1,7 +1,7 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/columns";
-import {Table} from "../../../src/decorator/tables";
+import {PrimaryColumn, Column} from "../../../src/columns";
+import {Table} from "../../../src/tables";
 import {Post} from "./Post";
-import {OneToMany} from "../../../src/decorator/relations";
+import {OneToMany} from "../../../src/relations";
 
 @Table("sample3_post_author")
 export class PostAuthor {

@@ -1,3 +1,6 @@
+/**
+ * @internal
+ */
 export class RepositoryNotFoundError extends Error {
     name = "RepositoryNotFoundError";
 

@@ -1,3 +1,6 @@
+/**
+ * @internal
+ */
 export class BroadcasterNotFoundError extends Error {
     name = "BroadcasterNotFoundError";
 

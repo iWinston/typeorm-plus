@@ -10,6 +10,8 @@ import {JunctionTableMetadata} from "./metadata/JunctionTableMetadata";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
+ * 
+ * @internal
  */
 export class EntityMetadataBuilder {
 

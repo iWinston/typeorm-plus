@@ -1,6 +1,6 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/columns";
-import {Table} from "../../../src/decorator/tables";
-import {ManyToOne, OneToOne} from "../../../src/decorator/relations";
+import {PrimaryColumn, Column} from "../../../src/columns";
+import {Table} from "../../../src/tables";
+import {ManyToOne, OneToOne} from "../../../src/relations";
 import {Post} from "./Post";
 import {ImageDetails} from "./ImageDetails";
 

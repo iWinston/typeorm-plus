@@ -1,7 +1,7 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/columns";
-import {Table} from "../../../src/decorator/tables";
+import {PrimaryColumn, Column} from "../../../src/columns";
+import {Table} from "../../../src/tables";
 import {Post} from "./Post";
-import {ManyToManyInverse} from "../../../src/decorator/relations";
+import {ManyToManyInverse} from "../../../src/relations";
 
 @Table("sample4_post_image")
 export class PostImage {

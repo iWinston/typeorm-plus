@@ -2,6 +2,7 @@ import * as fs from "fs";
 
 /**
  * Loads all exported classes from the given directory.
+ * @internal
  */
 export class DirectoryExportedClassesLoader {
 

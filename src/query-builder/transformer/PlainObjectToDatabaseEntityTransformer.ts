@@ -1,6 +1,9 @@
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 import {QueryBuilder} from "../QueryBuilder";
 
+/**
+ * @internal
+ */
 interface LoadMap {
     name: string;
     child: LoadMap[];
@@ -9,6 +12,8 @@ interface LoadMap {
 /**
  * Transforms plain old javascript object
  * Entity is constructed based on its entity metadata.
+ *
+ * @internal
  */
 export class PlainObjectToDatabaseEntityTransformer<Entity> {
 
@@ -22,7 +27,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
         if (!metadata.hasPrimaryKey || !object[metadata.primaryColumn.name])
             return Promise.reject<Entity>("Given object does not have a primary column, cannot transform it to database entity.");
         
-        const alias = queryBuilder.aliasMap.mainAlias.name;
+        const alias = queryBuilder.alias;
         const needToLoad = this.buildLoadMap(object, metadata, true);
 
         this.join(queryBuilder, needToLoad, alias);

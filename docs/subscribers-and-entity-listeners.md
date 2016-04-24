@@ -10,7 +10,7 @@ You can listen to events in the ORM. There two concepts you can use:
 First you need to create a new subscriber class and implement `EventSubscriberInterface` interface:
 
 ```typescript
-import {EventSubscriber, UpdateEvent, RemoveEvent, InsertEvent} from "typeorm/decorator/listeners"
+import {EventSubscriber, UpdateEvent, RemoveEvent, InsertEvent} from "typeorm/listeners"
 import {EventSubscriberInterface} from "typeorm/subscriber/EventSubscriberInterface";
 
 @EventSubscriber()
@@ -79,7 +79,7 @@ connectionManager.importSubscribers([MySubscriber]);
 You can also use listeners in your entities. Such listeners can be convenient for a trivial operations.
 
 ```typescript
-import {Table} from "typeorm/decorator/tables";
+import {Table} from "typeorm/tables";
 import {AfterLoad} from "typeorm/decorator/listeners/AfterLoad";
 import {AfterInsert} from "typeorm/decorator/listeners/AfterInsert";
 import {BeforeInsert} from "typeorm/decorator/listeners/BeforeInsert";

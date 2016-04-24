@@ -1,6 +1,9 @@
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 
+/**
+ * @internal
+ */
 export class RemoveOperation {
     constructor(public entity: any,
                 public entityId: any,

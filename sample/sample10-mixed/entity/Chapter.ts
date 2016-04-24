@@ -1,6 +1,6 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/columns";
-import {Table} from "../../../src/decorator/tables";
-import {OneToMany} from "../../../src/decorator/relations";
+import {PrimaryColumn, Column} from "../../../src/columns";
+import {Table} from "../../../src/tables";
+import {OneToMany} from "../../../src/relations";
 import {PostDetails} from "./PostDetails";
 
 @Table("sample10_chapter")

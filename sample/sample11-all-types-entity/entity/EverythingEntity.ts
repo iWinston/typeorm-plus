@@ -1,5 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/decorator/columns";
-import {Table} from "../../../src/decorator/tables";
+import {PrimaryColumn, Column} from "../../../src/columns";
+import {Table} from "../../../src/tables";
 import {CreateDateColumn} from "../../../src/decorator/columns/CreateDateColumn";
 import {UpdateDateColumn} from "../../../src/decorator/columns/UpdateDateColumn";
 

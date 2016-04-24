@@ -6,7 +6,9 @@ import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 
 /**
- * Creates indexes based on the given metadata
+ * Creates indexes based on the given metadata.
+ * 
+ * @internal
  */
 export class SchemaCreator {
 

@@ -4,6 +4,9 @@ import {Connection} from "../connection/Connection";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {Broadcaster} from "../subscriber/Broadcaster";
 
+/**
+ * @internal
+ */
 export interface Join {
     alias: Alias;
     type: "left"|"inner";
@@ -18,7 +21,7 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     private broadcaster: Broadcaster;
-    private _aliasMap: AliasMap;
+    private aliasMap: AliasMap;
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
     private fromEntity: { alias: Alias };
@@ -41,7 +44,7 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     constructor(private connection: Connection) {
-        this._aliasMap = new AliasMap(connection.entityMetadatas);
+        this.aliasMap = new AliasMap(connection.entityMetadatas);
         this.broadcaster = new Broadcaster(connection);
     }
 
@@ -49,8 +52,8 @@ export class QueryBuilder<Entity> {
     // Accessors
     // -------------------------------------------------------------------------
 
-    get aliasMap() {
-        return this._aliasMap;
+    get alias(): string {
+        return this.aliasMap.mainAlias.name;
     }
 
     // -------------------------------------------------------------------------
@@ -64,7 +67,7 @@ export class QueryBuilder<Entity> {
             const aliasName = (<any> tableNameOrEntity).name;
             const aliasObj = new Alias(aliasName);
             aliasObj.target = <Function> tableNameOrEntity;
-            this._aliasMap.addMainAlias(aliasObj);
+            this.aliasMap.addMainAlias(aliasObj);
             this.fromEntity = { alias: aliasObj };
         } else if (typeof tableNameOrEntity === "string") {
             this.fromTableName = <string> tableNameOrEntity;
@@ -84,7 +87,7 @@ export class QueryBuilder<Entity> {
             const aliasName = (<any> tableNameOrEntityOrUpdateSet).name;
             const aliasObj = new Alias(aliasName);
             aliasObj.target = <Function> tableNameOrEntityOrUpdateSet;
-            this._aliasMap.addMainAlias(aliasObj);
+            this.aliasMap.addMainAlias(aliasObj);
             this.fromEntity = { alias: aliasObj };
             
         } else if (typeof tableNameOrEntityOrUpdateSet === "string") {
@@ -129,7 +132,7 @@ export class QueryBuilder<Entity> {
         if (entityOrTableName instanceof Function) {
             const aliasObj = new Alias(alias);
             aliasObj.target = <Function> entityOrTableName;
-            this._aliasMap.addMainAlias(aliasObj);
+            this.aliasMap.addMainAlias(aliasObj);
             this.fromEntity = { alias: aliasObj };
         } else {
             this.fromTableName = <string> entityOrTableName;
@@ -170,7 +173,7 @@ export class QueryBuilder<Entity> {
     join(joinType: "inner"|"left", entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition: string = ""): this {
 
         const aliasObj = new Alias(alias);
-        this._aliasMap.addAlias(aliasObj);
+        this.aliasMap.addAlias(aliasObj);
         if (entityOrProperty instanceof Function) {
             aliasObj.target = entityOrProperty;
 
@@ -434,7 +437,7 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     protected rawResultsToEntities(results: any[]) {
-        const transformer = new RawSqlResultsToEntityTransformer(this.connection, this._aliasMap);
+        const transformer = new RawSqlResultsToEntityTransformer(this.connection, this.aliasMap);
         return transformer.transform(results);
     }
     
@@ -445,7 +448,7 @@ export class QueryBuilder<Entity> {
         const allSelects: string[] = [];
         
         if (this.fromEntity) {
-            const metadata = this._aliasMap.getEntityMetadataByAlias(this.fromEntity.alias);
+            const metadata = this.aliasMap.getEntityMetadataByAlias(this.fromEntity.alias);
             tableName = metadata.table.name;
             alias = this.fromEntity.alias.name;
 
@@ -467,7 +470,7 @@ export class QueryBuilder<Entity> {
         this.joins
             .filter(join => this.selects.indexOf(join.alias.name) !== -1)
             .forEach(join => {
-                const joinMetadata = this._aliasMap.getEntityMetadataByAlias(join.alias);
+                const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
                 joinMetadata.columns.forEach(column => {
                     allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
                 });
@@ -521,12 +524,12 @@ export class QueryBuilder<Entity> {
             const joinType = join.type === "inner" ? "INNER" : "LEFT";
             const appendedCondition = join.condition ? " AND " + join.condition : ""; 
             const parentAlias = join.alias.parentAliasName;
-            const parentMetadata = this._aliasMap.getEntityMetadataByAlias(this._aliasMap.findAliasByName(parentAlias));
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.findAliasByName(parentAlias));
             const parentTable = parentMetadata.table.name;
             const parentTableColumn = parentMetadata.primaryColumn.name;
             const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
-            const joinMetadata = this._aliasMap.getEntityMetadataByAlias(join.alias);
+            const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
             const joinTable = joinMetadata.table.name;
             const joinTableColumn = joinMetadata.primaryColumn.name;
             

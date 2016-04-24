@@ -1,6 +1,9 @@
 import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
 import {Alias} from "./Alias";
 
+/**
+ * @internal
+ */
 export class AliasMap {
     
     // -------------------------------------------------------------------------
