@@ -346,7 +346,7 @@ describe("many-to-many", function() {
         });
 
         it("should remove relation however should not remove details itself", function () {
-            newPost.details = null;
+            newPost.details = [];
             return postRepository.persist(newPost).then(updatedPost => {
                 return postRepository
                     .createQueryBuilder("post")
@@ -450,7 +450,7 @@ describe("many-to-many", function() {
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    loadedPost.metadatas = null;
+                    loadedPost.metadatas = [];
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {

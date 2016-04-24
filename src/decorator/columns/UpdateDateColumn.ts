@@ -14,11 +14,10 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
         const reflectedType = ColumnTypes.typeToString(Reflect.getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
-        if (!options)
-            options = {};
+        const columnOptions = options ? options : {} as ColumnOptions;
 
         // implicitly set a type, because this column's type cannot be anything else except date
-        options.type = <ColumnType> ColumnTypes.DATETIME;
+        columnOptions.type = ColumnTypes.DATETIME;
 
         // create and register a new column metadata
         defaultMetadataStorage.addColumnMetadata(new ColumnMetadata({
@@ -26,7 +25,7 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
             propertyName: propertyName,
             propertyType: reflectedType,
             isUpdateDate: true,
-            options: options
+            options: columnOptions
         }));
     };
 }

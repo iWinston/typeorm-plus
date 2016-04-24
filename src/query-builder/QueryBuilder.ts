@@ -77,16 +77,15 @@ export class QueryBuilder<Entity> {
     update(updateSet: Object): this;
     update(entity: Function, updateSet: Object): this;
     update(tableName: string, updateSet: Object): this;
-    update(tableNameOrEntityOrUpdateSet?: string|Function, updateSet?: Object): this {
+    update(tableNameOrEntityOrUpdateSet?: string|Function|Object, maybeUpdateSet?: Object): this {
+        const updateSet = maybeUpdateSet ? maybeUpdateSet : <Object> tableNameOrEntityOrUpdateSet;
+        
         if (tableNameOrEntityOrUpdateSet instanceof Function) {
             const aliasName = (<any> tableNameOrEntityOrUpdateSet).name;
             const aliasObj = new Alias(aliasName);
             aliasObj.target = <Function> tableNameOrEntityOrUpdateSet;
             this._aliasMap.addMainAlias(aliasObj);
             this.fromEntity = { alias: aliasObj };
-            
-        } else if (typeof tableNameOrEntityOrUpdateSet === "object") {
-            updateSet = <Object> tableNameOrEntityOrUpdateSet;
             
         } else if (typeof tableNameOrEntityOrUpdateSet === "string") {
             this.fromTableName = <string> tableNameOrEntityOrUpdateSet;
@@ -141,34 +140,34 @@ export class QueryBuilder<Entity> {
 
     innerJoinAndSelect(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
     innerJoinAndSelect(entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
-    innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType?: "on"|"with", condition?: string): this {
+    innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition: string = ""): this {
         this.addSelect(alias);
         return this.join("inner", entityOrProperty, alias, conditionType, condition);
     }
 
     innerJoin(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
     innerJoin(entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
-    innerJoin(entityOrProperty: Function|string, alias: string, conditionType?: "on"|"with", condition?: string): this {
+    innerJoin(entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition: string = ""): this {
         return this.join("inner", entityOrProperty, alias, conditionType, condition);
     }
 
     leftJoinAndSelect(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
     leftJoinAndSelect(entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
-    leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition?: string): this {
+    leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition: string = ""): this {
         this.addSelect(alias);
         return this.join("left", entityOrProperty, alias, conditionType, condition);
     }
 
     leftJoin(property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
     leftJoin(entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
-    leftJoin(entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition?: string): this {
+    leftJoin(entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition: string = ""): this {
         return this.join("left", entityOrProperty, alias, conditionType, condition);
     }
 
     join(joinType: "inner"|"left", property: string, alias: string, conditionType?: "on"|"with", condition?: string): this;
     join(joinType: "inner"|"left", entity: Function, alias: string, conditionType?: "on"|"with", condition?: string): this;
     join(joinType: "inner"|"left", entityOrProperty: Function|string, alias: string, conditionType: "on"|"with", condition: string): this;
-    join(joinType: "inner"|"left", entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition?: string): this {
+    join(joinType: "inner"|"left", entityOrProperty: Function|string, alias: string, conditionType: "on"|"with" = "on", condition: string = ""): this {
 
         const aliasObj = new Alias(alias);
         this._aliasMap.addAlias(aliasObj);

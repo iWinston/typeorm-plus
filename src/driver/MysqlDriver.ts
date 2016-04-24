@@ -59,7 +59,14 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Database name to which this connection is made.
      */
     get db(): string {
-        return this.connection.options.database;
+        if (this.mysqlConnection && this.mysqlConnection.config.database)
+            return this.mysqlConnection.config.database;
+
+        if (this.connection.options.database)
+            return this.connection.options.database;
+        
+        throw new Error("Cannot get the database name. Since database name is not explicitly given in configuration " +
+            "(maybe connection url is used?), database name cannot be retrieved until connection is made.");
     }
 
     // -------------------------------------------------------------------------

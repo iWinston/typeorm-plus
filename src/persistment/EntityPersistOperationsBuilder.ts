@@ -68,16 +68,16 @@ export class EntityPersistOperationBuilder {
         persistOperation.persistedEntity = persistedEntity;
         persistOperation.allDbEntities = dbEntities;
         persistOperation.allPersistedEntities = allPersistedEntities;
-        persistOperation.inserts = this.findCascadeInsertedEntities(persistedEntity, dbEntities, null);
-        persistOperation.updates = this.findCascadeUpdateEntities(metadata, dbEntity, persistedEntity, null);
+        persistOperation.inserts = this.findCascadeInsertedEntities(persistedEntity, dbEntities);
+        persistOperation.updates = this.findCascadeUpdateEntities(metadata, dbEntity, persistedEntity);
         persistOperation.junctionInserts = this.findJunctionInsertOperations(metadata, persistedEntity, dbEntities);
         persistOperation.updatesByRelations = this.updateRelations(persistOperation.inserts, persistedEntity);
-        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, null, null, null);
+        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, undefined, undefined, undefined);
         persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
 
         return persistOperation;
     }
-    
+
     /**
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
@@ -88,31 +88,31 @@ export class EntityPersistOperationBuilder {
                         allPersistedEntities: EntityWithId[]): PersistOperation {
         // const dbEntities = this.extractObjectsById(dbEntity, metadata);
         // const allEntities = this.extractObjectsById(newEntity, metadata);
-        
+
         const persistOperation = new PersistOperation();
         persistOperation.dbEntity = dbEntity;
         persistOperation.persistedEntity = persistedEntity;
         persistOperation.allDbEntities = dbEntities;
         persistOperation.allPersistedEntities = allPersistedEntities;
-        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, null, null, null);
+        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, undefined, undefined, undefined);
         persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
 
         return persistOperation;
     }
-    
+
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
-    
-    private findCascadeInsertedEntities(newEntity: any, 
-                                        dbEntities: EntityWithId[], 
-                                        fromRelation: RelationMetadata,
+
+    private findCascadeInsertedEntities(newEntity: any,
+                                        dbEntities: EntityWithId[],
+                                        fromRelation?: RelationMetadata,
                                         operations: InsertOperation[] = []): InsertOperation[] {
         const metadata = this.connection.getEntityMetadata(newEntity.constructor);
         const isObjectNew = !this.findEntityWithId(dbEntities, metadata.target, newEntity[metadata.primaryColumn.name]);
-        
+
         // if object is new and should be inserted, we check if cascades are allowed before add it to operations list
-        if (isObjectNew && !this.checkCascadesAllowed("insert", metadata, fromRelation)) {
+        if (isObjectNew && fromRelation && !this.checkCascadesAllowed("insert", metadata, fromRelation)) {
             return operations; // looks like object is new here, but cascades are not allowed - then we should stop iteration
 
         } else if (isObjectNew && !operations.find(o => o.entity === newEntity)) { // object is new and cascades are allow here
@@ -131,22 +131,22 @@ export class EntityPersistOperationBuilder {
                     this.findCascadeInsertedEntities(value, dbEntities, relation, operations);
                 }
             });
-        
+
         return operations;
     }
 
     private findCascadeUpdateEntities(metadata: EntityMetadata,
                                       dbEntity: any,
                                       newEntity: any,
-                                      fromRelation: RelationMetadata): UpdateOperation[] {
+                                      fromRelation?: RelationMetadata): UpdateOperation[] {
         let operations: UpdateOperation[] = [];
         if (!dbEntity)
             return operations;
 
         const diff = this.diffColumns(metadata, newEntity, dbEntity);
-        if (diff.length && !this.checkCascadesAllowed("update", metadata, fromRelation)) {
+        if (diff.length && fromRelation && !this.checkCascadesAllowed("update", metadata, fromRelation)) {
             return operations;
-            
+
         } else if (diff.length) {
             const entityId = newEntity[metadata.primaryColumn.name];
             operations.push(new UpdateOperation(newEntity, entityId, diff));
@@ -159,7 +159,7 @@ export class EntityPersistOperationBuilder {
                 const relationIdColumnName = relMetadata.primaryColumn.name;
                 const value = newEntity[relation.propertyName];
                 const dbValue = dbEntity[relation.propertyName];
-                
+
                 if (value instanceof Array) {
                     value.forEach((subEntity: any) => {
                         const subDbEntity = dbValue.find((subDbEntity: any) => {
@@ -173,15 +173,15 @@ export class EntityPersistOperationBuilder {
                     operations = operations.concat(relationOperations);
                 }
             });
-        
+
         return operations;
     }
 
     private findCascadeRemovedEntities(metadata: EntityMetadata,
                                        dbEntity: any,
                                        allPersistedEntities: EntityWithId[],
-                                       fromRelation: RelationMetadata,
-                                       fromMetadata: EntityMetadata,
+                                       fromRelation: RelationMetadata|undefined,
+                                       fromMetadata: EntityMetadata|undefined,
                                        fromEntityId: any,
                                        parentAlreadyRemoved: boolean = false): RemoveOperation[] {
         let operations: RemoveOperation[] = [];
@@ -192,11 +192,11 @@ export class EntityPersistOperationBuilder {
         const isObjectRemoved = parentAlreadyRemoved || !this.findEntityWithId(allPersistedEntities, metadata.target, entityId);
 
         // if object is removed and should be removed, we check if cascades are allowed before add it to operations list
-        if (isObjectRemoved && !this.checkCascadesAllowed("remove", metadata, fromRelation)) {
+        if (isObjectRemoved && fromRelation && !this.checkCascadesAllowed("remove", metadata, fromRelation)) {
             return operations; // looks like object is removed here, but cascades are not allowed - then we should stop iteration
 
         } else if (isObjectRemoved) {  // object is remove and cascades are allow here
-            operations.push(new RemoveOperation(dbEntity, entityId, fromMetadata, fromRelation, fromEntityId));
+            operations.push(new RemoveOperation(dbEntity, entityId, <EntityMetadata> fromMetadata, fromRelation, fromEntityId));
         }
 
         metadata.relations
@@ -257,7 +257,7 @@ export class EntityPersistOperationBuilder {
             return operations;
         }, <UpdateByRelationOperation[]> []);
     }
-    
+
     private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[]): JunctionInsertOperation[] {
         const dbEntity = dbEntities.find(dbEntity => {
             return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor === metadata.target;
@@ -288,11 +288,11 @@ export class EntityPersistOperationBuilder {
                 return operations;
             }, <JunctionInsertOperation[]> []);
     }
-    
+
     private findJunctionRemoveOperations(metadata: EntityMetadata, dbEntity: any, newEntities: EntityWithId[]): JunctionInsertOperation[] {
         if (!dbEntity) // if new entity is persisted then it does not have anything to be deleted
             return [];
-        
+
         const newEntity = newEntities.find(newEntity => {
             return newEntity.id === dbEntity[metadata.primaryColumn.name] && newEntity.entity.constructor === metadata.target;
         });
@@ -334,9 +334,6 @@ export class EntityPersistOperationBuilder {
     }
 
     private checkCascadesAllowed(type: "insert"|"update"|"remove", metadata: EntityMetadata, relation: RelationMetadata) {
-        if (!relation)
-            return true;
-
         let isAllowed = false;
         switch (type) {
             case "insert":

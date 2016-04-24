@@ -8,7 +8,7 @@ export class IndexMetadata extends PropertyMetadata {
     /**
      * The name of the index.
      */
-    name: string;
+    name: string|undefined;
     
     // ---------------------------------------------------------------------
     // Constructor

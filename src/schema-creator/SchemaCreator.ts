@@ -111,6 +111,8 @@ export class SchemaCreator {
         return this.schemaBuilder.checkIfTableExist(table.name).then(exist => {
             if (!exist)
                 return this.schemaBuilder.createTableQuery(table, columns);
+
+            return undefined;
         });
     }
 
@@ -213,6 +215,8 @@ export class SchemaCreator {
         return this.schemaBuilder.getPrimaryConstraintName(table.name).then(constraintName => {
             if (constraintName)
                 return this.schemaBuilder.dropIndex(table.name, constraintName);
+
+            return undefined;
         });
     }
 

@@ -31,16 +31,23 @@ export class TableMetadata {
     /**
      * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
      */
-    private _isAbstract: boolean;
+    private _isAbstract = false;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, name: string, isAbstract: boolean) {
-        this._target = target;
-        this._name = name;
-        this._isAbstract = isAbstract;
+    constructor(target?: Function, name?: string);
+    constructor(target: Function, isAbstract: boolean);
+    constructor(target: Function, nameOrIsAbstract?: string|boolean, maybeIsAbstract?: boolean) {
+        if (target)
+            this._target = target;
+        if (typeof nameOrIsAbstract === "string")
+            this._name = nameOrIsAbstract;
+        if (typeof nameOrIsAbstract === "boolean")
+            this._isAbstract = nameOrIsAbstract;
+        if (typeof maybeIsAbstract === "boolean")
+            this._isAbstract = maybeIsAbstract;
     }
 
     // ---------------------------------------------------------------------

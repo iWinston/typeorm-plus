@@ -148,7 +148,8 @@ export class ColumnTypes {
             return ColumnTypes.JSON;
 
         }
-        return undefined;
+        throw new Error(`Column type of ${type} cannot be determined.`);
+        // return undefined;
     }
     
     static typeToString(type: Function) {

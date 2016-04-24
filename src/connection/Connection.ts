@@ -107,6 +107,8 @@ export class Connection {
         return this._driver.connect().then(() => {
             if (this._options.autoSchemaCreate === true)
                 return schemaCreator.create();
+            
+            return undefined;
         });
     }
 

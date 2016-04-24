@@ -37,8 +37,7 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T
 
     return function (object: Object, propertyName: string) {
 
-        if (!options)
-            options = {};
+        const relationOptions = options ? options : {} as RelationOptions;
 
         defaultMetadataStorage.addRelationMetadata(new RelationMetadata({
             target: object.constructor,
@@ -47,7 +46,7 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             isOwning: true,
-            options: options
+            options: relationOptions
         }));
     };
 }

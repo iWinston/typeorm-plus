@@ -21,9 +21,12 @@ export abstract class PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, propertyName: string) {
-        this._target = target;
-        this._propertyName = propertyName;
+    constructor(target?: Function, propertyName?: string) {
+        if (target)
+            this._target = target;
+        
+        if (propertyName)
+            this._propertyName = propertyName;
     }
 
     // ---------------------------------------------------------------------

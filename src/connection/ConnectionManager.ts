@@ -57,15 +57,13 @@ export class ConnectionManager {
      * Creates and adds a new connection with given driver.
      */
     createConnection(driver: Driver, options: ConnectionOptions): Connection;
-    createConnection(name: string, driver: Driver, options: ConnectionOptions): Connection;
-    createConnection(nameOrDriver: string|Driver, driver?: Driver|ConnectionOptions, options?: ConnectionOptions): Connection {
-        if (typeof nameOrDriver === "object") {
-            options = <ConnectionOptions> driver;
-            driver = <Driver> nameOrDriver;
-        }
-        const name = typeof nameOrDriver === "string" ? <string> nameOrDriver : "default";
+    createConnection(name: string|undefined, driver: Driver, options: ConnectionOptions): Connection;
+    createConnection(nameOrDriver: string|undefined|Driver, driverOrOptions?: Driver|ConnectionOptions, maybeOptions?: ConnectionOptions): Connection {
+        const name = typeof nameOrDriver === "string" ? nameOrDriver : "default";
+        const driver = typeof nameOrDriver === "object" ? <Driver> nameOrDriver : <Driver> driverOrOptions;
+        const options = typeof nameOrDriver === "object" ? <ConnectionOptions> driverOrOptions : <ConnectionOptions> maybeOptions;
 
-        return this.connections.createAndPush(name, <Driver> driver, options);
+        return this.connections.createAndPush(name, driver, options);
     }
 
     /**
@@ -86,14 +84,10 @@ export class ConnectionManager {
      * then default connection is used.
      */
     importEntitiesFromDirectories(paths: string[]): void;
-    importEntitiesFromDirectories(connectionName: string, paths: string[]): void;
-    importEntitiesFromDirectories(connectionNameOrPaths: string|string[], paths?: string[]): void {
-        let connectionName = "default";
-        if (paths) {
-            connectionName = <string> connectionNameOrPaths;
-        } else {
-            paths = <string[]> connectionNameOrPaths;
-        }
+    importEntitiesFromDirectories(connectionName: string|undefined, paths: string[]): void;
+    importEntitiesFromDirectories(connectionNameOrPaths: string|string[]|undefined, maybePaths?: string[]): void {
+        const connectionName = typeof connectionNameOrPaths === "string" ? connectionNameOrPaths : "default";
+        const paths = maybePaths ? <string[]> maybePaths : <string[]> connectionNameOrPaths;
 
         this.importEntities(connectionName, importClassesFromDirectories(paths));
     }
@@ -103,14 +97,10 @@ export class ConnectionManager {
      * then default connection is used.
      */
     importSubscribersFromDirectories(paths: string[]): void;
-    importSubscribersFromDirectories(connectionName: string, paths: string[]): void;
-    importSubscribersFromDirectories(connectionNameOrPaths: string|string[], paths?: string[]): void {
-        let connectionName = "default";
-        if (paths) {
-            connectionName = <string> connectionNameOrPaths;
-        } else {
-            paths = <string[]> connectionNameOrPaths;
-        }
+    importSubscribersFromDirectories(connectionName: string|undefined, paths: string[]): void;
+    importSubscribersFromDirectories(connectionNameOrPaths: string|string[]|undefined, maybePaths?: string[]): void {
+        const connectionName = typeof connectionNameOrPaths === "string" ? connectionNameOrPaths : "default";
+        const paths = maybePaths ? <string[]> maybePaths : <string[]> connectionNameOrPaths;
 
         this.importSubscribers(connectionName, importClassesFromDirectories(paths));
     }
@@ -119,14 +109,13 @@ export class ConnectionManager {
      * Imports entities for the given connection. If connection name is not given then default connection is used.
      */
     importEntities(entities: Function[]): void;
-    importEntities(connectionName: string, entities: Function[]): void;
-    importEntities(connectionNameOrEntities: string|Function[], entities?: Function[]): void {
-        let connectionName = "default";
-        if (entities) {
-            connectionName = <string> connectionNameOrEntities;
-        } else {
-            entities = <Function[]> connectionNameOrEntities;
-        }
+    importEntities(connectionName: string|undefined, entities: Function[]): void;
+    importEntities(connectionNameOrEntities: string|undefined|Function[], maybeEntities?: Function[]): void {
+        const connectionName = typeof connectionNameOrEntities === "string" ? connectionNameOrEntities : "default";
+        const entities = maybeEntities ? <Function[]> maybeEntities : <Function[]> connectionNameOrEntities;
+        
+        // console.log("entities", entities);
+        
         const entityMetadatas = this.entityMetadataBuilder.build(entities);
         const entityListenerMetadatas = defaultMetadataStorage.findEntityListenersForClasses(entities);
 
@@ -139,14 +128,10 @@ export class ConnectionManager {
      * Imports entities for the given connection. If connection name is not given then default connection is used.
      */
     importSubscribers(subscriberClasses: Function[]): void;
-    importSubscribers(connectionName: string, subscriberClasses: Function[]): void;
-    importSubscribers(connectionNameOrSubscriberClasses: string|Function[], subscriberClasses?: Function[]): void {
-        let connectionName = "default";
-        if (subscriberClasses) {
-            connectionName = <string> connectionNameOrSubscriberClasses;
-        } else {
-            subscriberClasses = <Function[]> connectionNameOrSubscriberClasses;
-        }
+    importSubscribers(connectionName: string|undefined, subscriberClasses: Function[]): void;
+    importSubscribers(connectionNameOrSubscriberClasses: string|undefined|Function[], maybeSubscriberClasses?: Function[]): void {
+        const connectionName = typeof connectionNameOrSubscriberClasses === "string" ? connectionNameOrSubscriberClasses : "default";
+        const subscriberClasses = maybeSubscriberClasses ? <Function[]> maybeSubscriberClasses : <Function[]> connectionNameOrSubscriberClasses;
 
         const subscribers = defaultMetadataStorage
             .findEventSubscribersForClasses(subscriberClasses)

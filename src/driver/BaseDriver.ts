@@ -35,7 +35,7 @@ export abstract class BaseDriver {
     
     protected log(message: any, level: "log"|"debug"|"info"|"error") {
         if (!this.connection.options.logging) return;
-        if ( this.connection.options.logging.logger) {
+        if (this.connection.options && this.connection.options.logging && this.connection.options.logging.logger) {
             this.connection.options.logging.logger(message, level);
         } else {
             switch (level) {

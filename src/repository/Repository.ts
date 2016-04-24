@@ -92,11 +92,12 @@ export class Repository<Entity> {
         const persister = new PersistOperationExecutor(this.connection);
         const builder = new EntityPersistOperationBuilder(this.connection);
         const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
-        const promise = !this.hasId(entity) ? Promise.resolve(null) : this.initialize(entity);
+        const promise: Promise<Entity> = !this.hasId(entity) ? Promise.resolve<Entity|null>(null) : this.initialize(entity);
         return promise
             .then(dbEntity => {
                 loadedDbEntity = dbEntity;
-                return this.findNotLoadedIds(this.extractObjectsById(dbEntity, this.metadata), allPersistedEntities);
+                const entityWithIds = dbEntity ? this.extractObjectsById(dbEntity, this.metadata) : [];
+                return this.findNotLoadedIds(entityWithIds, allPersistedEntities);
             }) // need to find db entities that were not loaded by initialize method
             .then(allDbEntities => {
                 const persistOperation = builder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
@@ -238,15 +239,10 @@ export class Repository<Entity> {
     // -------------------------------------------------------------------------
 
     private createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions) {
-        let findOptions: FindOptions, conditions: Object;
-        if (FindOptionsUtils.isFindOptions(conditionsOrFindOptions)) {
-            findOptions = conditionsOrFindOptions;
-        } else {
-            findOptions = options;
-            conditions = conditionsOrFindOptions;
-        }
+        const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : <FindOptions> options;
+        const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
 
-        const alias = findOptions ? options.alias : this.metadata.table.name;
+        const alias = findOptions ? findOptions.alias : this.metadata.table.name;
         const qb = this.createQueryBuilder(alias);
         if (findOptions) {
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
@@ -294,9 +290,6 @@ export class Repository<Entity> {
      * Extracts unique objects from given entity and all its downside relations.
      */
     private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): EntityWithId[] {
-        if (!entity)
-            return entityWithIds;
-
         metadata.relations
             .filter(relation => !!entity[relation.propertyName])
             .forEach(relation => {

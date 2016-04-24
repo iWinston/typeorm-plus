@@ -46,7 +46,7 @@ createConnection(options).then(connection => {
         .persist(entity)
         .then(entity => {
             console.log("EverythingEntity has been saved. Lets insert a new one to update it later");
-            entity.id = null;
+            delete entity.id;
             return postRepository.persist(entity);
         })
         .then(entity => {
@@ -76,7 +76,7 @@ createConnection(options).then(connection => {
         .then(entity => {
             console.log("Entity has been updated. Persist once again to make find and remove then");
 
-            entity.id = null;
+            delete entity.id;
             return postRepository.persist(entity);
         })
         .then(entity => {

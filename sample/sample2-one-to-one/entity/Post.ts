@@ -47,7 +47,7 @@ export class Post {
     @OneToOne(type => PostMetadata, metadata => metadata.post, {
         cascadeRemove: true
     })
-    metadata: PostMetadata;
+    metadata: PostMetadata|undefined;
 
     // post has relation with details. full cascades here
     @OneToOne(type => PostInformation, information => information.post, {

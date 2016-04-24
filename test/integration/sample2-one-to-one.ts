@@ -327,7 +327,7 @@ describe("one-to-one", function() {
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
-            newPost.details = null;
+            delete newPost.details;
             return postRepository.persist(newPost).then(updatedPost => {
                 return postRepository
                     .createQueryBuilder("post")
@@ -421,7 +421,7 @@ describe("one-to-one", function() {
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    loadedPost.metadata = null;
+                    loadedPost.metadata = undefined;
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {
@@ -433,7 +433,7 @@ describe("one-to-one", function() {
                         .getSingleResult();
 
                 }).then(reloadedPost => {
-                    expect(reloadedPost.metadata).to.be.empty;
+                    expect(reloadedPost.metadata).to.not.exist;
                 });
         });
 

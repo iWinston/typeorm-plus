@@ -6,6 +6,7 @@ import {NamingStrategy} from "../naming-strategy/NamingStrategy";
 import {ColumnMetadata} from "./metadata/ColumnMetadata";
 import {ColumnOptions} from "./options/ColumnOptions";
 import {ForeignKeyMetadata} from "./metadata/ForeignKeyMetadata";
+import {JunctionTableMetadata} from "./metadata/JunctionTableMetadata";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -130,7 +131,7 @@ export class EntityMetadataBuilder {
                 const tableName = metadata.table.name + "_" + relation.name + "_" +
                     inverseSideMetadata.table.name + "_" + inverseSideMetadata.primaryColumn.name;
 
-                const tableMetadata = new TableMetadata(null, tableName, false);
+                const tableMetadata = new JunctionTableMetadata(tableName);
                 const column1options: ColumnOptions = {
                     length: metadata.primaryColumn.length,
                     type: metadata.primaryColumn.type,
@@ -143,14 +144,10 @@ export class EntityMetadataBuilder {
                 };
                 const columns = [
                     new ColumnMetadata({
-                        target: null,
-                        propertyName: null,
                         propertyType: inverseSideMetadata.primaryColumn.type,
                         options: column1options
                     }),
                     new ColumnMetadata({
-                        target: null,
-                        propertyName: null,
                         propertyType: inverseSideMetadata.primaryColumn.type,
                         options: column2options
                     })
@@ -180,9 +177,7 @@ export class EntityMetadataBuilder {
 
     private filterObjectPropertyMetadatasIfNotExist<T extends PropertyMetadata>(newMetadatas: T[], existsMetadatas: T[]): T[] {
         return newMetadatas.filter(fieldFromMapped => {
-            return existsMetadatas.reduce((found, fieldFromDocument) => {
-                    return fieldFromDocument.propertyName === fieldFromMapped.propertyName ? fieldFromDocument : found;
-                }, null) === null;
+            return !!existsMetadatas.find(fieldFromDocument => fieldFromDocument.propertyName === fieldFromMapped.propertyName);
         });
     }
 

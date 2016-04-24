@@ -112,7 +112,15 @@ export class EntityManager {
      * Finds entities that match given conditions.
      */
     find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
-        return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
+        if (conditionsOrFindOptions && options) {
+            return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
+            
+        } else if (conditionsOrFindOptions) {
+            return this.getRepository(entityClass).find(conditionsOrFindOptions);
+            
+        } else {
+            return this.getRepository(entityClass).find();
+        }
     }
 
     /**
@@ -139,7 +147,15 @@ export class EntityManager {
      * Finds entities that match given conditions.
      */
     findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
-        return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
+        if (conditionsOrFindOptions && options) {
+            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
+
+        } else if (conditionsOrFindOptions) {
+            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions);
+
+        } else {
+            return this.getRepository(entityClass).findAndCount();
+        }
     }
 
     /**
@@ -166,7 +182,15 @@ export class EntityManager {
      * Finds first entity that matches given conditions.
      */
     findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
-        return this.getRepository(entityClass).findOne(conditionsOrFindOptions, options);
+        if (conditionsOrFindOptions && options) {
+            return this.getRepository(entityClass).findOne(conditionsOrFindOptions, options);
+
+        } else if (conditionsOrFindOptions) {
+            return this.getRepository(entityClass).findOne(conditionsOrFindOptions);
+
+        } else {
+            return this.getRepository(entityClass).findOne();
+        }
     }
 
     /**

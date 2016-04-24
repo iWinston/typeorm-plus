@@ -47,7 +47,7 @@ export class Post {
     @ManyToOne(type => PostMetadata, metadata => metadata.posts, {
         cascadeRemove: true
     })
-    metadata: PostMetadata;
+    metadata: PostMetadata|undefined;
 
     // post has relation with details. full cascades here
     @ManyToOne(type => PostInformation, information => information.posts, {

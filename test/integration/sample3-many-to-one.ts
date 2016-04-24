@@ -326,7 +326,7 @@ describe("many-to-one", function() {
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
-            newPost.details = null;
+            delete newPost.details;
             return postRepository.persist(newPost).then(updatedPost => {
                 return postRepository
                     .createQueryBuilder("post")
@@ -420,7 +420,7 @@ describe("many-to-one", function() {
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    loadedPost.metadata = null;
+                    loadedPost.metadata = undefined;
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {

@@ -1,4 +1,5 @@
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {ConnectionOptions} from "../connection/ConnectionOptions";
 
 /**
  * Options to be passed to find methods.
@@ -207,16 +208,28 @@ export class FindOptionsUtils {
             options.groupBy.forEach(groupBy => qb.addGroupBy(groupBy));
         
         if (options.leftJoin)
-            Object.keys(options.leftJoin).forEach(key => qb.leftJoin(options.leftJoin[key], key));
+            Object.keys(options.leftJoin).forEach(key => {
+                if (options.leftJoin) // this check because of tsc bug
+                    qb.leftJoin(options.leftJoin[key], key);
+            });
         
         if (options.innerJoin)
-            Object.keys(options.innerJoin).forEach(key => qb.innerJoin(options.innerJoin[key], key));
+            Object.keys(options.innerJoin).forEach(key => {
+                if (options.innerJoin) // this check because of tsc bug
+                    qb.innerJoin(options.innerJoin[key], key);
+            });
         
         if (options.leftJoinAndSelect)
-            Object.keys(options.leftJoinAndSelect).forEach(key => qb.leftJoinAndSelect(options.leftJoinAndSelect[key], key));
+            Object.keys(options.leftJoinAndSelect).forEach(key => {
+                if (options.leftJoinAndSelect) // this check because of tsc bug
+                    qb.leftJoinAndSelect(options.leftJoinAndSelect[key], key);
+            });
         
         if (options.innerJoinAndSelect)
-            Object.keys(options.innerJoinAndSelect).forEach(key => qb.innerJoinAndSelect(options.innerJoinAndSelect[key], key));
+            Object.keys(options.innerJoinAndSelect).forEach(key => {
+                if (options.innerJoinAndSelect) // this check because of tsc bug
+                    qb.innerJoinAndSelect(options.innerJoinAndSelect[key], key);
+            });
 
         if (options.parameters)
             qb.addParameters(options.parameters);

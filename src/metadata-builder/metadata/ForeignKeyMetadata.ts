@@ -50,7 +50,8 @@ export class ForeignKeyMetadata {
         this._columns = columns;
         this._referencedTable = referencedTable;
         this._referencedColumns = referencedColumns;
-        this._onDelete = onDelete;
+        if (onDelete)
+            this._onDelete = onDelete;
     }
 
     // -------------------------------------------------------------------------

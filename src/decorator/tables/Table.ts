@@ -7,6 +7,6 @@ import {TableMetadata} from "../../metadata-builder/metadata/TableMetadata";
  */
 export function Table(name?: string) {
     return function (cls: Function) {
-        defaultMetadataStorage.addTableMetadata(new TableMetadata(cls, name, false));
+        defaultMetadataStorage.addTableMetadata(new TableMetadata(cls, name));
     };
 }

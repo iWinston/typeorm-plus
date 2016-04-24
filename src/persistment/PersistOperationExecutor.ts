@@ -150,7 +150,9 @@ export class PersistOperationExecutor {
      */
     private executeRemoveRelationOperations(persistOperation: PersistOperation) {
         return Promise.all(persistOperation.removes
-            .filter(operation => operation.relation && !operation.relation.isManyToMany && !operation.relation.isOneToMany)
+            .filter(operation => {
+                return !!(operation.relation && !operation.relation.isManyToMany && !operation.relation.isOneToMany);
+            })
             .map(operation => {
                 return this.updateDeletedRelations(operation);
             })
@@ -228,11 +230,15 @@ export class PersistOperationExecutor {
     }
 
     private updateDeletedRelations(removeOperation: RemoveOperation) { // todo: check if both many-to-one deletions work too
-        return this.connection.driver.update(
-            removeOperation.fromMetadata.table.name, 
-            { [removeOperation.relation.name]: null },
-            { [removeOperation.fromMetadata.primaryColumn.name]: removeOperation.fromEntityId }
-        );
+        if (removeOperation.relation) {
+            return this.connection.driver.update(
+                removeOperation.fromMetadata.table.name,
+                { [removeOperation.relation.name]: null },
+                { [removeOperation.fromMetadata.primaryColumn.name]: removeOperation.fromEntityId }
+            );   
+        }
+
+        throw new Error("Remove operation relation is not set"); // todo: find out how its possible
     }
 
     private delete(entity: any) {

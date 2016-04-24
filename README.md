@@ -791,6 +791,8 @@ Feel free to contribute ;)
 * send entity changeset in update event
 * create a gulp task for schema update
 * fixtures and migrations
+* lazy loading of properties throw promises? Property can have a Promise\<Entity\> type.
+* cover everything with tests
 
 
 [1]: https://en.wikipedia.org/wiki/Object-relational_mapping

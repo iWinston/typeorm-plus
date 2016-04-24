@@ -265,7 +265,8 @@ export class RelationMetadata extends PropertyMetadata {
         if (typeof inverseSide === "string")
             return <string> inverseSide;
 
-        return null;
+        // throw new Error("Cannot compute inverse side of the relation");
+        return "";
     }
 
 }

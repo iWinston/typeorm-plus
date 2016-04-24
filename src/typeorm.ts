@@ -1,3 +1,7 @@
+/*!
+ 
+ */
+
 import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
