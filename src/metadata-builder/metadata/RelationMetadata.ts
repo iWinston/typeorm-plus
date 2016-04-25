@@ -17,8 +17,6 @@ export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
 
 /**
  * Relation metadata constructor arguments.
- *
- * @internal
  */
 export interface RelationMetadataArgs {
 
@@ -61,8 +59,6 @@ export interface RelationMetadataArgs {
 
 /**
  * This metadata interface contains all information about some document's relation.
- *
- * @internal
  */
 export class RelationMetadata extends PropertyMetadata {
 

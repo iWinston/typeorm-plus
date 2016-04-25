@@ -51,7 +51,7 @@ describe("many-to-many", function() {
     function reloadDatabase() {
         return connection.driver
             .clearDatabase()
-            .then(() => new SchemaCreator(connection).create());
+            .then(() => connection.createSchema());
     }
 
     let postRepository: Repository<Post>,

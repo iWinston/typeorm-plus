@@ -50,7 +50,7 @@ export class Connection {
     /**
      * All entity metadatas that are registered for this connection.
      */
-    readonly entityMetadatas: EntityMetadata[] = [];
+    private readonly entityMetadatas: EntityMetadata[] = [];
 
     /**
      * All entity listener metadatas that are registered for this connection.
@@ -93,13 +93,20 @@ export class Connection {
      * Performs connection to the database.
      */
     connect(): Promise<void> {
-        const schemaCreator = new SchemaCreator(this);
         return this.driver.connect().then(() => {
             if (this.options.autoSchemaCreate === true)
-                return schemaCreator.create();
+                return this.createSchema();
 
             return undefined;
         });
+    }
+
+    /**
+     * Creates database schema for all entities registered in this connection.
+     */
+    createSchema() {
+        const schemaCreator = new SchemaCreator(this, this.entityMetadatas);
+        return schemaCreator.create();
     }
 
     /**
@@ -120,17 +127,6 @@ export class Connection {
             throw new RepositoryNotFoundError(entityClass);
 
         return repoMeta.repository;
-    }
-
-    /**
-     * Gets the entity metadata for the given entity class.
-     */
-    getEntityMetadata(entityClass: Function): EntityMetadata {
-        const metadata = this.entityMetadatas.find(metadata => metadata.target === entityClass);
-        if (!metadata)
-            throw new MetadataNotFoundError(entityClass);
-
-        return metadata;
     }
 
     /**

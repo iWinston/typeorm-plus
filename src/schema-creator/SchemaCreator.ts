@@ -23,7 +23,7 @@ export class SchemaCreator {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
+    constructor(connection: Connection, private entityMetadatas: EntityMetadata[]) {
         this.connection = connection;
         this.schemaBuilder = connection.driver.createSchemaBuilder();
     }
@@ -36,7 +36,7 @@ export class SchemaCreator {
      * Creates complete schemas for the given entity metadatas.
      */
     create(): Promise<void> {
-        const metadatas = this.connection.entityMetadatas;
+        const metadatas = this.entityMetadatas;
         return Promise.resolve()
             .then(_ => this.dropForeignKeysForAll(metadatas))
             .then(_ => this.createTablesForAll(metadatas))

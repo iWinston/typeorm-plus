@@ -46,7 +46,7 @@ export class QueryBuilder<Entity> {
 
     constructor(private connection: Connection,
                 private entityMetadatas: EntityMetadata[]) {
-        this.aliasMap = new AliasMap(connection.entityMetadatas);
+        this.aliasMap = new AliasMap(entityMetadatas);
         this.broadcaster = new Broadcaster(connection, this.entityMetadatas);
     }
 

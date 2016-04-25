@@ -1,7 +1,5 @@
 /**
  * This metadata interface contains all information about table's compound index.
- *
- * @internal
  */
 export class CompoundIndexMetadata {
 

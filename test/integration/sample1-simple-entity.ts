@@ -42,7 +42,7 @@ describe("insertion", function() {
     function reloadDatabase() {
         return connection.driver
             .clearDatabase()
-            .then(() => new SchemaCreator(connection).create())
+            .then(() => connection.createSchema())
             .catch(e => console.log("Error during schema re-creation: ", e));
     }
 

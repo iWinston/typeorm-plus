@@ -8,8 +8,6 @@ import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 
 /**
  * Contains all entity metadata.
- * 
- * @internal
  */
 export class EntityMetadata {
 
