@@ -1,4 +1,4 @@
-import {Connection} from "../connection/Connection";
+import {ConnectionOptions} from "../connection/ConnectionOptions";
 
 /**
  * Provides base functionality for all driver implementations.
@@ -10,34 +10,34 @@ export abstract class BaseDriver {
     // Properties
     // -------------------------------------------------------------------------
 
-    connection: Connection;
+    abstract connectionOptions: ConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
     protected logQuery(query: string) {
-        if (this.connection.options.logging && this.connection.options.logging.logQueries)
+        if (this.connectionOptions.logging && this.connectionOptions.logging.logQueries)
             this.log("executing query: " + query, "log");
     }
     
     protected logQueryError(error: any) {
-        if (this.connection.options.logging && this.connection.options.logging.logFailedQueryError) {
+        if (this.connectionOptions.logging && this.connectionOptions.logging.logFailedQueryError) {
             this.log("error during executing query:", "error");
             this.log(error, "error");
         }
     }
     
     protected logFailedQuery(query: string) {
-        if (this.connection.options.logging && 
-            (this.connection.options.logging.logQueries || this.connection.options.logging.logOnlyFailedQueries))
+        if (this.connectionOptions.logging && 
+            (this.connectionOptions.logging.logQueries || this.connectionOptions.logging.logOnlyFailedQueries))
             this.log("query failed: " + query, "error");
     }
     
     protected log(message: any, level: "log"|"debug"|"info"|"error") {
-        if (!this.connection.options.logging) return;
-        if (this.connection.options && this.connection.options.logging && this.connection.options.logging.logger) {
-            this.connection.options.logging.logger(message, level);
+        if (!this.connectionOptions.logging) return;
+        if (this.connectionOptions && this.connectionOptions.logging && this.connectionOptions.logging.logger) {
+            this.connectionOptions.logging.logger(message, level);
         } else {
             switch (level) {
                 case "log":

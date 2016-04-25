@@ -5,6 +5,8 @@ import {ColumnType} from "../types/ColumnTypes";
 
 /**
  * Constructor arguments for ColumnMetadata class.
+ *
+ * @internal
  */
 export interface ColumnMetadataArgs {
 
@@ -51,6 +53,8 @@ export interface ColumnMetadataArgs {
 
 /**
  * This metadata contains all information about class's column.
+ *
+ * @internal
  */
 export class ColumnMetadata extends PropertyMetadata {
 

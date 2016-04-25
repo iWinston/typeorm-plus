@@ -1,5 +1,7 @@
 /**
  * This represents metadata of some object's property.
+ *
+ * @internal
  */
 export abstract class PropertyMetadata {
 

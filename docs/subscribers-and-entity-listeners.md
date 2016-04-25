@@ -11,7 +11,7 @@ First you need to create a new subscriber class and implement `EventSubscriberIn
 
 ```typescript
 import {EventSubscriber, UpdateEvent, RemoveEvent, InsertEvent} from "typeorm/listeners"
-import {EventSubscriberInterface} from "typeorm/subscriber/EventSubscriberInterface";
+import {EventSubscriberInterface} from "typeorm/typeorm";
 
 @EventSubscriber()
 export class MySubscriber implements EventSubscriberInterface<any> {
@@ -80,13 +80,7 @@ You can also use listeners in your entities. Such listeners can be convenient fo
 
 ```typescript
 import {Table} from "typeorm/tables";
-import {AfterLoad} from "typeorm/decorator/listeners/AfterLoad";
-import {AfterInsert} from "typeorm/decorator/listeners/AfterInsert";
-import {BeforeInsert} from "typeorm/decorator/listeners/BeforeInsert";
-import {BeforeUpdate} from "typeorm/decorator/listeners/BeforeUpdate";
-import {AfterUpdate} from "typeorm/decorator/listeners/AfterUpdate";
-import {BeforeRemove} from "typeorm/decorator/listeners/BeforeRemove";
-import {AfterRemove} from "typeorm/decorator/listeners/AfterRemove";
+import {AfterLoad, AfterInsert, BeforeInsert, BeforeUpdate, AfterUpdate, BeforeRemove, AfterRemove} from "typeorm/listeners";
 
 @Table("posts")
 export class Post {

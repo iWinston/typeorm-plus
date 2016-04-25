@@ -5,6 +5,8 @@ export type OnDeleteType = "RESTRICT"|"CASCADE"|"SET NULL";
 
 /**
  * This metadata interface contains all information foreign keys.
+ *
+ * @internal
  */
 export class ForeignKeyMetadata {
 

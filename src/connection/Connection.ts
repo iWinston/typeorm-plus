@@ -69,7 +69,7 @@ export class Connection {
     constructor(name: string, driver: Driver, options: ConnectionOptions) {
         this.name = name;
         this.driver = driver;
-        this.driver.connection = this;
+        this.driver.connectionOptions = options;
         this.options = options;
         this.entityManager = new EntityManager(this);
     }
@@ -113,7 +113,8 @@ export class Connection {
      * Gets repository for the given entity class.
      */
     getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
-        const metadata = this.getEntityMetadata(entityClass);
+        // const metadata = this.getEntityMetadata(entityClass);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === entityClass);
         const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
         if (!repoMeta)
             throw new RepositoryNotFoundError(entityClass);
@@ -164,7 +165,7 @@ export class Connection {
     private createRepoMeta(metadata: EntityMetadata): RepositoryAndMetadata {
         return {
             metadata: metadata,
-            repository: new Repository<any>(this, metadata)
+            repository: new Repository<any>(this, this.entityMetadatas, metadata)
         };
     }
 

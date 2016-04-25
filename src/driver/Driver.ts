@@ -1,7 +1,6 @@
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {Connection} from "../connection/Connection";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
+import {ConnectionOptions} from "../connection/ConnectionOptions";
 
 /**
  * Driver communicates with specific database.
@@ -19,9 +18,9 @@ export interface Driver {
     readonly nativeConnection: any;
 
     /**
-     * Connection used in this driver.
+     * Connection options used in this driver.
      */
-    connection: Connection;
+    connectionOptions: ConnectionOptions;
     
     /**
      * Database name to which this connection is made.
@@ -31,7 +30,7 @@ export interface Driver {
     /**
      * Creates a query builder which can be used to build an sql queries.
      */
-    createQueryBuilder<Entity>(): QueryBuilder<Entity>;
+    readonly queryBuilderClass: Function;
     
     /**
      * Creates a schema builder which can be used to build database/table schemas.

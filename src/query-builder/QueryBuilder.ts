@@ -3,6 +3,7 @@ import {AliasMap} from "./alias/AliasMap";
 import {Connection} from "../connection/Connection";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 
 /**
  * @internal
@@ -43,9 +44,10 @@ export class QueryBuilder<Entity> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private connection: Connection,
+                private entityMetadatas: EntityMetadata[]) {
         this.aliasMap = new AliasMap(connection.entityMetadatas);
-        this.broadcaster = new Broadcaster(connection);
+        this.broadcaster = new Broadcaster(connection, this.entityMetadatas);
     }
 
     // -------------------------------------------------------------------------
@@ -307,7 +309,8 @@ export class QueryBuilder<Entity> {
     getResults(): Promise<Entity[]> {
         const mainAlias = this.aliasMap.mainAlias.name;
         if (this.firstResult || this.maxResults) {
-            const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
+            // const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
+            const metadata = this.entityMetadatas.find(metadata => metadata.target === this.fromEntity.alias.target);
             let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAlias}_${metadata.primaryColumn.name}) as ids`;
             if (this.orderBys && this.orderBys.length > 0)
                 idsQuery += ", " + this.orderBys.map(orderBy => orderBy.sort.replace(".", "_")).join(", ");
@@ -346,7 +349,8 @@ export class QueryBuilder<Entity> {
 
     getCount(): Promise<number> {
         const mainAlias = this.aliasMap.mainAlias.name;
-        const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === this.fromEntity.alias.target);
+        // const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
         const countQuery = this.clone({ skipOrderBys: true })
             .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`)
             .getSql();
@@ -363,7 +367,7 @@ export class QueryBuilder<Entity> {
     }
 
     clone(options?: { skipOrderBys?: boolean }) {
-        const qb = new QueryBuilder(this.connection);
+        const qb = new QueryBuilder(this.connection, this.entityMetadatas);
         
         switch (this.type) {
             case "select":
@@ -594,7 +598,7 @@ export class QueryBuilder<Entity> {
     protected replaceParameters(sql: string) {
         Object.keys(this.parameters).forEach(key => {
             const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.connection.driver.escape(this.parameters[key]) : "NULL";
-            sql = sql.replace(":" + key, value);
+            sql = sql.replace(":" + key, value); // todo: make replace only in value statements, otherwise problems
         });
         return sql;
     }

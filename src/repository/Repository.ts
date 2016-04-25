@@ -17,7 +17,9 @@ export class Repository<Entity> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection, private metadata: EntityMetadata) {
+    constructor(private connection: Connection, 
+                private entityMetadatas: EntityMetadata[],
+                private metadata: EntityMetadata) {
     }
 
     // -------------------------------------------------------------------------
@@ -39,8 +41,10 @@ export class Repository<Entity> {
      * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder(alias: string): QueryBuilder<Entity> {
-        return this.connection.driver
-            .createQueryBuilder<Entity>()
+        // const qb = this.connection.driver.createQueryBuilder<Entity>();
+        const cls: any = this.connection.driver.queryBuilderClass;
+        const qb = new cls(this.connection, this.entityMetadatas);
+        return qb
             .select(alias)
             .from(this.metadata.target, alias);
     }
@@ -89,8 +93,8 @@ export class Repository<Entity> {
      */
     persist(entity: Entity): Promise<Entity> {
         let loadedDbEntity: any;
-        const persister = new PersistOperationExecutor(this.connection);
-        const builder = new EntityPersistOperationBuilder(this.connection);
+        const persister = new PersistOperationExecutor(this.connection, this.entityMetadatas);
+        const builder = new EntityPersistOperationBuilder(this.connection, this.entityMetadatas);
         const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
         const promise: Promise<Entity> = !this.hasId(entity) ? Promise.resolve<Entity|null>(null) : this.initialize(entity);
         return promise
@@ -109,10 +113,10 @@ export class Repository<Entity> {
      * Removes a given entity from the database.
      */
     remove(entity: Entity): Promise<Entity> {
-        const persister = new PersistOperationExecutor(this.connection);
+        const persister = new PersistOperationExecutor(this.connection, this.entityMetadatas);
         return this.initialize(entity).then(dbEntity => {
             (<any> entity)[this.metadata.primaryColumn.name] = undefined;
-            const builder = new EntityPersistOperationBuilder(this.connection);
+            const builder = new EntityPersistOperationBuilder(this.connection, this.entityMetadatas);
             const dbEntities = this.extractObjectsById(dbEntity, this.metadata);
             const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
             const persistOperation = builder.buildOnlyRemovement(this.metadata, dbEntity, entity, dbEntities, allPersistedEntities);
@@ -269,7 +273,8 @@ export class Repository<Entity> {
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entity.constructor === entityWithId.entity.constructor && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
-                const metadata = this.connection.getEntityMetadata(entityWithId.entity.constructor);
+                // const metadata = this.connection.getEntityMetadata(entityWithId.entity.constructor);
+                const metadata = this.entityMetadatas.find(metadata => metadata.target === entityWithId.entity.constructor);
                 const repository = this.connection.getRepository(entityWithId.entity.constructor);
                 return repository.findById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;

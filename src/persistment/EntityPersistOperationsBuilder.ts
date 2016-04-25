@@ -45,7 +45,8 @@ export class EntityPersistOperationBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private connection: Connection,
+                private entityMetadatas: EntityMetadata[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -109,7 +110,8 @@ export class EntityPersistOperationBuilder {
                                         dbEntities: EntityWithId[],
                                         fromRelation?: RelationMetadata,
                                         operations: InsertOperation[] = []): InsertOperation[] {
-        const metadata = this.connection.getEntityMetadata(newEntity.constructor);
+        // const metadata = this.connection.getEntityMetadata(newEntity.constructor);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === newEntity.constructor);
         const isObjectNew = !this.findEntityWithId(dbEntities, metadata.target, newEntity[metadata.primaryColumn.name]);
 
         // if object is new and should be inserted, we check if cascades are allowed before add it to operations list
@@ -234,7 +236,8 @@ export class EntityPersistOperationBuilder {
     }
 
     private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchIn: any) {
-        const metadata = this.connection.getEntityMetadata(entityToSearchIn.constructor);
+        // const metadata = this.connection.getEntityMetadata(entityToSearchIn.constructor);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === entityToSearchIn.constructor);
 
         return metadata.relations.reduce((operations, relation) => {
             const value = entityToSearchIn[relation.propertyName];

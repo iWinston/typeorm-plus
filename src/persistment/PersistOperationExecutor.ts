@@ -7,6 +7,7 @@ import {InsertOperation} from "./operation/InsertOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -18,7 +19,8 @@ export class PersistOperationExecutor {
     // Constructor
     // -------------------------------------------------------------------------
     
-    constructor(private connection: Connection) {
+    constructor(private connection: Connection, 
+                private entityMetadatas: EntityMetadata[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -29,7 +31,7 @@ export class PersistOperationExecutor {
      * Executes given persist operation.
      */
     executePersistOperation(persistOperation: PersistOperation) {
-        const broadcaster = new Broadcaster(this.connection);
+        const broadcaster = new Broadcaster(this.connection, this.entityMetadatas);
         
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(broadcaster, persistOperation))
@@ -104,8 +106,8 @@ export class PersistOperationExecutor {
      */
     private executeInsertOperations(persistOperation: PersistOperation) {
         return Promise.all(persistOperation.inserts.map(operation => {
-            return this.insert(operation.entity).then((result: any) => {
-                operation.entityId = result.insertId;
+            return this.insert(operation.entity).then((insertId: any) => {
+                operation.entityId = insertId;
             });
         }));
     }
@@ -174,7 +176,8 @@ export class PersistOperationExecutor {
      */
     private updateIdsOfInsertedEntities(persistOperation: PersistOperation) {
         persistOperation.inserts.forEach(insertOperation => {
-            const metadata = this.connection.getEntityMetadata(insertOperation.entity.constructor);
+            // const metadata = this.connection.getEntityMetadata(insertOperation.entity.constructor);
+            const metadata = this.entityMetadatas.find(metadata => metadata.target === insertOperation.entity.constructor);
             insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
         });
     }
@@ -184,7 +187,8 @@ export class PersistOperationExecutor {
      */
     private updateIdsOfRemovedEntities(persistOperation: PersistOperation) {
         persistOperation.removes.forEach(removeOperation => {
-            const metadata = this.connection.getEntityMetadata(removeOperation.entity.constructor);
+            // const metadata = this.connection.getEntityMetadata(removeOperation.entity.constructor);
+            const metadata = this.entityMetadatas.find(metadata => metadata.target === removeOperation.entity.constructor);
             const removedEntity = persistOperation.allPersistedEntities.find(allNewEntity => {
                 return allNewEntity.entity.constructor === removeOperation.entity.constructor && allNewEntity.id === removeOperation.entity[metadata.primaryColumn.name];
             });
@@ -197,7 +201,8 @@ export class PersistOperationExecutor {
         let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
         const idInInserts = insertOperations.find(o => o.entity === operation.targetEntity).entityId;
         if (operation.updatedRelation.isOneToMany) {
-            const metadata = this.connection.getEntityMetadata(operation.insertOperation.entity.constructor);
+            // const metadata = this.connection.getEntityMetadata(operation.insertOperation.entity.constructor);
+            const metadata = this.entityMetadatas.find(metadata => metadata.target === operation.insertOperation.entity.constructor);
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.inverseRelation.name;
             relationId = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
@@ -205,7 +210,8 @@ export class PersistOperationExecutor {
             id = operation.insertOperation.entityId;
 
         } else {
-            const metadata = this.connection.getEntityMetadata(operation.targetEntity.constructor);
+            // const metadata = this.connection.getEntityMetadata(operation.targetEntity.constructor);
+            const metadata = this.entityMetadatas.find(metadata => metadata.target === operation.targetEntity.constructor);
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.name;
             relationId = operation.insertOperation.entityId;
@@ -217,7 +223,8 @@ export class PersistOperationExecutor {
 
     private update(updateOperation: UpdateOperation) {
         const entity = updateOperation.entity;
-        const metadata = this.connection.getEntityMetadata(entity.constructor);
+        // const metadata = this.connection.getEntityMetadata(entity.constructor);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === entity.constructor);
         const values: any = updateOperation.columns.reduce((object, column) => {
             const value = this.connection.driver.preparePersistentValue(entity[column.propertyName], column);
             (<any> object)[column.name] = value;
@@ -243,12 +250,14 @@ export class PersistOperationExecutor {
     }
 
     private delete(entity: any) {
-        const metadata = this.connection.getEntityMetadata(entity.constructor);
+        // const metadata = this.connection.getEntityMetadata(entity.constructor);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === entity.constructor);
         return this.connection.driver.delete(metadata.table.name, { [metadata.primaryColumn.name]: entity[metadata.primaryColumn.propertyName] });
     }
 
     private insert(entity: any) {
-        const metadata = this.connection.getEntityMetadata(entity.constructor);
+        // const metadata = this.connection.getEntityMetadata(entity.constructor);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === entity.constructor);
         const columns = metadata.columns
             .filter(column => !column.isVirtual)
             .filter(column => entity.hasOwnProperty(column.propertyName))
@@ -256,14 +265,7 @@ export class PersistOperationExecutor {
         const values = metadata.columns
             .filter(column => !column.isVirtual)
             .filter(column => entity.hasOwnProperty(column.propertyName))
-            .map(column => this.connection.driver.preparePersistentValue(entity[column.propertyName], column))
-            .map(value => {
-                if (value === null || value === undefined) {
-                    return "NULL";
-                } else {
-                    return this.connection.driver.escape(value);
-                }
-            });
+            .map(column => this.connection.driver.preparePersistentValue(entity[column.propertyName], column));
         const relationColumns = metadata.relations
             .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
@@ -274,19 +276,19 @@ export class PersistOperationExecutor {
             .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
             .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.relatedEntityMetadata.primaryColumn.name))
-            .map(relation => this.connection.driver.escape(entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name]));
+            .map(relation => entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name]);
 
         const allColumns = columns.concat(relationColumns);
         const allValues = values.concat(relationValues);
 
         if (metadata.createDateColumn) {
             allColumns.push(metadata.createDateColumn.name);
-            allValues.push(this.connection.driver.escape(this.connection.driver.preparePersistentValue(new Date(), metadata.createDateColumn)));
+            allValues.push(this.connection.driver.preparePersistentValue(new Date(), metadata.createDateColumn));
         }
 
         if (metadata.updateDateColumn) {
             allColumns.push(metadata.updateDateColumn.name);
-            allValues.push(this.connection.driver.escape(this.connection.driver.preparePersistentValue(new Date(), metadata.updateDateColumn)));
+            allValues.push(this.connection.driver.preparePersistentValue(new Date(), metadata.updateDateColumn));
         }
         
         return this.connection.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));
@@ -294,8 +296,10 @@ export class PersistOperationExecutor {
 
     private insertJunctions(junctionOperation: JunctionInsertOperation, insertOperations: InsertOperation[]) {
         const junctionMetadata = junctionOperation.metadata;
-        const metadata1 = this.connection.getEntityMetadata(junctionOperation.entity1.constructor);
-        const metadata2 = this.connection.getEntityMetadata(junctionOperation.entity2.constructor);
+        // const metadata1 = this.connection.getEntityMetadata(junctionOperation.entity1.constructor);
+        // const metadata2 = this.connection.getEntityMetadata(junctionOperation.entity2.constructor);
+        const metadata1 = this.entityMetadatas.find(metadata => metadata.target === junctionOperation.entity1.constructor);
+        const metadata2 = this.entityMetadatas.find(metadata => metadata.target === junctionOperation.entity2.constructor);
         const columns = junctionMetadata.columns.map(column => column.name);
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity1).entityId;
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity2).entityId;
@@ -305,8 +309,10 @@ export class PersistOperationExecutor {
 
     private removeJunctions(junctionOperation: JunctionRemoveOperation) {
         const junctionMetadata = junctionOperation.metadata;
-        const metadata1 = this.connection.getEntityMetadata(junctionOperation.entity1.constructor);
-        const metadata2 = this.connection.getEntityMetadata(junctionOperation.entity2.constructor);
+        // const metadata1 = this.connection.getEntityMetadata(junctionOperation.entity1.constructor);
+        // const metadata2 = this.connection.getEntityMetadata(junctionOperation.entity2.constructor);
+        const metadata1 = this.entityMetadatas.find(metadata => metadata.target === junctionOperation.entity1.constructor);
+        const metadata2 = this.entityMetadatas.find(metadata => metadata.target === junctionOperation.entity2.constructor);
         const columns = junctionMetadata.columns.map(column => column.name);
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.name];
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.name];

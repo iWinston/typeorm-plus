@@ -1,5 +1,7 @@
 /**
  * Contains metadata information about ORM event subscribers.
+ *
+ * @internal
  */
 export class EventSubscriberMetadata {
 

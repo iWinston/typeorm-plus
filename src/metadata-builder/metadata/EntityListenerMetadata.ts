@@ -3,6 +3,8 @@ import {EventListenerType} from "../types/EventListenerTypes";
 
 /**
  * This metadata interface contains all information about some index on a field.
+ *
+ * @internal
  */
 export class EntityListenerMetadata extends PropertyMetadata {
 

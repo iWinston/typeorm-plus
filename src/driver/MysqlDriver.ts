@@ -2,12 +2,12 @@ import {Driver} from "./Driver";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {MysqlSchemaBuilder} from "../schema-builder/MysqlSchemaBuilder";
-import {Connection} from "../connection/Connection";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
 import {BaseDriver} from "./BaseDriver";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {ColumnTypes} from "../metadata-builder/types/ColumnTypes";
 import * as moment from "moment";
+import {ConnectionOptions} from "../connection/ConnectionOptions";
 
 /**
  * This driver organizes work with mysql database.
@@ -21,7 +21,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
     /**
      * Connection used in this driver.
      */
-    connection: Connection;
+    connectionOptions: ConnectionOptions;
     
     // -------------------------------------------------------------------------
     // Private Properties
@@ -62,8 +62,8 @@ export class MysqlDriver extends BaseDriver implements Driver {
         if (this.mysqlConnection && this.mysqlConnection.config.database)
             return this.mysqlConnection.config.database;
 
-        if (this.connection.options.database)
-            return this.connection.options.database;
+        if (this.connectionOptions.database)
+            return this.connectionOptions.database;
         
         throw new Error("Cannot get the database name. Since database name is not explicitly given in configuration " +
             "(maybe connection url is used?), database name cannot be retrieved until connection is made.");
@@ -97,8 +97,8 @@ export class MysqlDriver extends BaseDriver implements Driver {
     /**
      * Creates a query builder which can be used to build an sql queries.
      */
-    createQueryBuilder<Entity>(): QueryBuilder<Entity> {
-        return new QueryBuilder<Entity>(this.connection);
+    get queryBuilderClass() {
+        return QueryBuilder;
     }
 
     /**
@@ -113,10 +113,10 @@ export class MysqlDriver extends BaseDriver implements Driver {
      */
     connect(): Promise<void> {
         this.mysqlConnection = this.mysql.createConnection({
-            host: this.connection.options.host,
-            user: this.connection.options.username,
-            password: this.connection.options.password,
-            database: this.connection.options.database
+            host: this.connectionOptions.host,
+            user: this.connectionOptions.username,
+            password: this.connectionOptions.password,
+            database: this.connectionOptions.database
         });
         return new Promise<void>((ok, fail) => {
             this.mysqlConnection.connect((err: any) => err ? fail(err) : ok());
@@ -180,9 +180,24 @@ export class MysqlDriver extends BaseDriver implements Driver {
         if (!this.mysqlConnection)
             throw new ConnectionIsNotSetError("mysql");
         
-        const qb = this.createQueryBuilder().update(tableName, valuesMap).from(tableName, "t");
-        Object.keys(conditions).forEach(key => qb.andWhere(key + "=:" + key, { [key]: (<any> conditions)[key] }));
-        return qb.execute().then(() => {});
+        const updateValues = this.escapeObjectMap(valuesMap).join(",");
+        const conditionString = this.escapeObjectMap(conditions).join(" AND ");
+        const query = `UPDATE ${tableName} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        return this.query(query).then(() => {});
+        // const qb = this.createQueryBuilder().update(tableName, valuesMap).from(tableName, "t");
+        // Object.keys(conditions).forEach(key => qb.andWhere(key + "=:" + key, { [key]: (<any> conditions)[key] }));
+        // return qb.execute().then(() => {});
+    }
+    
+    private escapeObjectMap(objectMap: { [key: string]: any }): string[] {
+        return Object.keys(objectMap).map(key => {
+            const value = (<any> objectMap)[key];
+            if (value === null || value === undefined) {
+                return key + "=NULL";
+            } else {
+                return key + "=" + this.escape(value);
+            }
+        });
     }
 
     /**
@@ -193,9 +208,10 @@ export class MysqlDriver extends BaseDriver implements Driver {
             throw new ConnectionIsNotSetError("mysql");
         
         const columns = Object.keys(keyValues).join(",");
-        const values  = Object.keys(keyValues).map(key => (<any> keyValues)[key]).join(",");
+        // const values  = this.escapeObjectMap(keyValues).join(",");
+        const values  = Object.keys(keyValues).map(key => this.escape((<any> keyValues)[key])).join(","); // todo: escape here
         const query   = `INSERT INTO ${tableName}(${columns}) VALUES (${values})`;
-        return this.query(query);
+        return this.query<any>(query).then(result => result.insertId);
     }
 
     /**
@@ -204,10 +220,13 @@ export class MysqlDriver extends BaseDriver implements Driver {
     delete(tableName: string, conditions: Object): Promise<void> {
         if (!this.mysqlConnection)
             throw new ConnectionIsNotSetError("mysql");
-        
-        const qb = this.createQueryBuilder().delete(tableName);
-        Object.keys(conditions).forEach(key => qb.andWhere(key + "=:" + key, { [key]: (<any> conditions)[key] }));
-        return qb.execute().then(() => {});
+
+        const conditionString = this.escapeObjectMap(conditions).join(" AND ");
+        const query = `DELETE FROM ${tableName} WHERE ${conditionString}`;
+        return this.query(query).then(() => {});
+        // const qb = this.createQueryBuilder().delete(tableName);
+        // Object.keys(conditions).forEach(key => qb.andWhere(key + "=:" + key, { [key]: (<any> conditions)[key] }));
+        // return qb.execute().then(() => {});
     }
 
     /**

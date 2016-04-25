@@ -1,4 +1,5 @@
 import {OnDeleteType} from "../metadata/ForeignKeyMetadata";
+
 /**
  * Describes all relation's options.
  */

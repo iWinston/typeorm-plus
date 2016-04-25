@@ -2,6 +2,7 @@ import {EventSubscriberInterface} from "./EventSubscriberInterface";
 import {Connection} from "../connection/Connection";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {EventListenerTypes} from "../metadata-builder/types/EventListenerTypes";
+import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -14,7 +15,8 @@ export class Broadcaster {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private connection: Connection,
+                private entityMetadatas: EntityMetadata[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -118,7 +120,8 @@ export class Broadcaster {
     }
 
     broadcastLoadEvents(entity: any): Promise<void> {
-        const metadata = this.connection.getEntityMetadata(entity.constructor);
+        // const metadata = this.connection.getEntityMetadata(entity.constructor);
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === entity.constructor);
         let promises: Promise<any>[] = [];
 
         metadata

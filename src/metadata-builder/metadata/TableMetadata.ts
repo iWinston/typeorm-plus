@@ -2,6 +2,8 @@ import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
 
 /**
  * This metadata interface contains all information about specific table.
+ * 
+ * @internal
  */
 export class TableMetadata {
 
