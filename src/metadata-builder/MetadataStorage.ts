@@ -8,6 +8,8 @@ import {ColumnMetadata} from "./metadata/ColumnMetadata";
 import {EventSubscriberMetadata} from "./metadata/EventSubscriberMetadata";
 import {EntityListenerMetadata} from "./metadata/EntityListenerMetadata";
 import {NamingStrategyMetadata} from "./metadata/NamingStrategyMetadata";
+import {JoinColumnMetadata} from "./metadata/JoinColumnMetadata";
+import {JoinTableMetadata} from "./metadata/JoinTableMetadata";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -27,6 +29,8 @@ export class MetadataStorage {
     private compoundIndexMetadatas: CompoundIndexMetadata[] = [];
     private namingStrategyMetadatas: NamingStrategyMetadata[] = [];
     private relationMetadatas: RelationMetadata[] = [];
+    private joinColumnMetadatas: JoinColumnMetadata[] = [];
+    private joinTableMetadatas: JoinTableMetadata[] = [];
 
     // -------------------------------------------------------------------------
     // Adder Methods
@@ -98,6 +102,18 @@ export class MetadataStorage {
             throw new MetadataAlreadyExistsError("EventListener", metadata.target);
 
         this.entityListenerMetadatas.push(metadata);
+    }
+
+    addJoinTableMetadata(metadata: JoinTableMetadata) {
+        // if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName)) // todo later
+        //     throw new MetadataAlreadyExistsError("EventListener", metadata.target);
+        this.joinTableMetadatas.push(metadata);
+    }
+
+    addJoinColumnMetadata(metadata: JoinColumnMetadata) {
+        // if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName)) // todo later
+        //     throw new MetadataAlreadyExistsError("EventListener", metadata.target);
+        this.joinColumnMetadatas.push(metadata);
     }
 
     // -------------------------------------------------------------------------
