@@ -62,7 +62,7 @@ import {PrimaryColumn, Column} from "typeorm/columns";
 @Table("photo")
 export class Photo {
     
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
     
     @Column()
@@ -85,7 +85,7 @@ Here, we are using three decorators:
 for this class. We also specified a table name in the database.
 * `@PrimaryColumn(columnType, columnOptions)` - tells ORM to create a table
 column for the given class property and make it *PRIMARY KEY* column. We also
- set `{ autoIncrement: true }` in column options, which makes our 
+ set `{ generated: true }` in column options, which makes our
  primary column an *AUTO_INCREMENT*.
 * `@Column(columnType, columnOptions)` - tells ORM to create a table
 column for the given class property.
@@ -224,7 +224,7 @@ import {OneToOne} from "typeorm/relations";
 @Table("photo_metadata")
 export class PhotoMetadata {
     
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
     
     @Column()
@@ -426,7 +426,7 @@ import {OneToMany} from "typeorm/relations";
 @Table("author")
 export class Author {
     
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
     
     @Column()
@@ -535,7 +535,7 @@ import {ManyToMany} from "typeorm/relations";
 @Table("album")
 export class Album {
     
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
     
     @Column()

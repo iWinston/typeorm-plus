@@ -9,7 +9,7 @@ import {AbstractTable} from "../../../src/decorator/tables/AbstractTable";
 @AbstractTable()
 export class BasePost {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

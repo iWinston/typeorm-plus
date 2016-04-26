@@ -6,7 +6,7 @@ import {Post} from "./Post";
 @Table("sample4_post_information")
 export class PostInformation {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

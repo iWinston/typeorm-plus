@@ -10,7 +10,7 @@ import {OneToOneInverse} from "../../../src/decorator/relations/OneToOneInverse"
 @Table("sample8_category")
 export class Category {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

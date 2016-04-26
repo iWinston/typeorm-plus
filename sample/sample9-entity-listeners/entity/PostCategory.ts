@@ -12,7 +12,7 @@ import {BeforeInsert} from "../../../src/decorator/listeners/BeforeInsert";
 @Table("sample9_post_category")
 export class PostCategory {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

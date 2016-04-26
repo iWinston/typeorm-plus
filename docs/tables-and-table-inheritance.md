@@ -25,7 +25,7 @@ must mark your table with `@AbstractTable()` decorator:
 @AbstractTable()
 export class BasePhoto {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: string;
 
     @Column()

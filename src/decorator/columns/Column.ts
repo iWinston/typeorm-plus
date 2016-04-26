@@ -49,7 +49,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             throw new ColumnTypeUndefinedError(object, propertyName);
 
         // check if auto increment is not set for simple column
-        if (options.autoIncrement)
+        if (options.generated)
             throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata

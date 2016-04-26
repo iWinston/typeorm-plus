@@ -4,7 +4,7 @@ import {Table} from "../../../src/tables";
 @Table("sample1_post")
 export class Post {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

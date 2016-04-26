@@ -85,7 +85,7 @@ ColumnOptions is an object with additional column options:
 * `type?: ColumnType` - column type also can be specified via column options
 * `length?: string` - column type's length. For example type = "string" and length = 100 means that ORM will create a
  column with type varchar(100).
-* `autoIncrement?: boolean` - specifies if this column will use AUTO_INCREMENT or not (e.g. generated number)
+* `generated?: boolean` - specifies if this column will use AUTO_INCREMENT or not (e.g. generated number)
 * `unique?: boolean` - specifies if column's value must be unique or not.
 * `nullable?: boolean` - indicates if column's value can be set to NULL.
 * `columnDefinition?: string` - Extra column definition. Should be used only in emergency situations.
@@ -106,7 +106,7 @@ class Photo {
     /**
      * Primary column with auto increment key.
      */
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     /**

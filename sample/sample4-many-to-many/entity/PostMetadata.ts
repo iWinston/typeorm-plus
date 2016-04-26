@@ -6,7 +6,7 @@ import {ManyToManyInverse} from "../../../src/relations";
 @Table("sample4_post_metadata")
 export class PostMetadata {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

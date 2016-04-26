@@ -6,7 +6,7 @@ import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 @Table("sample6_post_author")
 export class PostAuthor {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

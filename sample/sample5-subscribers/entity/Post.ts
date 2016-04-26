@@ -9,7 +9,7 @@ import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 @Table("sample5_post")
 export class Post {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

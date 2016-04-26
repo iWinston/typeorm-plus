@@ -6,7 +6,7 @@ import {ManyToManyInverse} from "../../../src/decorator/relations/ManyToManyInve
 @Table("sample5_post_category")
 export class PostCategory {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

@@ -15,7 +15,7 @@ import {AfterRemove} from "../../../src/decorator/listeners/AfterRemove";
 @Table("sample9_post")
 export class Post {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

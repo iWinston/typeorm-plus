@@ -11,7 +11,7 @@ import {PostMetadata} from "./PostMetadata";
 @Table("sample3_post")
 export class Post {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

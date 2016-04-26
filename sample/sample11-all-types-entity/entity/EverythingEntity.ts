@@ -6,7 +6,7 @@ import {UpdateDateColumn} from "../../../src/decorator/columns/UpdateDateColumn"
 @Table("sample11_everything_entity")
 export class EverythingEntity {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

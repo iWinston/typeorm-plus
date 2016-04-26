@@ -182,8 +182,8 @@ export class ColumnMetadata extends PropertyMetadata {
 
         if (args.options.length)
             this.length = args.options.length;
-        if (args.options.autoIncrement)
-            this.isAutoIncrement = args.options.autoIncrement;
+        if (args.options.generated)
+            this.isAutoIncrement = args.options.generated;
         if (args.options.unique)
             this.isUnique = args.options.unique;
         if (args.options.nullable)

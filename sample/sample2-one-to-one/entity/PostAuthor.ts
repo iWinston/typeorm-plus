@@ -6,7 +6,7 @@ import {OneToOneInverse} from "../../../src/relations";
 @Table("sample2_post_author")
 export class PostAuthor {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()

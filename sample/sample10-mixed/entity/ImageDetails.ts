@@ -6,7 +6,7 @@ import {Image} from "./Image";
 @Table("sample10_image_details")
 export class ImageDetails {
 
-    @PrimaryColumn("int", { autoIncrement: true })
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()
