@@ -1,5 +1,5 @@
-import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
-import {RelationMetadata} from "../metadata-builder/metadata/RelationMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 import {Connection} from "../connection/Connection";
 import {PersistOperation, EntityWithId} from "./operation/PersistOperation";
 import {InsertOperation} from "./operation/InsertOperation";

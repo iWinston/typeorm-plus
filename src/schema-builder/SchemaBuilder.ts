@@ -1,6 +1,6 @@
-import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
-import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
-import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
+import {TableMetadata} from "../metadata/TableMetadata";
 
 /**
  * todo: make internal too (need to refactor driver).

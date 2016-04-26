@@ -1,7 +1,7 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {RelationTypes, RelationType} from "../types/RelationTypes";
-import {RelationOptions} from "../options/RelationOptions";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategy";
+import {RelationTypes, RelationType} from "./types/RelationTypes";
+import {RelationOptions} from "./options/RelationOptions";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
 

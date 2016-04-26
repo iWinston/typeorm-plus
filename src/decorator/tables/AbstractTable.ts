@@ -1,4 +1,4 @@
-import {TableMetadata} from "../../metadata-builder/metadata/TableMetadata";
+import {TableMetadata} from "../../metadata/TableMetadata";
 import {defaultMetadataStorage} from "../../typeorm";
 
 /**

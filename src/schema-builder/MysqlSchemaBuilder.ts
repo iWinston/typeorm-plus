@@ -1,8 +1,8 @@
 import {SchemaBuilder} from "./SchemaBuilder";
 import {MysqlDriver} from "../driver/MysqlDriver";
-import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
-import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
-import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
+import {TableMetadata} from "../metadata/TableMetadata";
 
 /**
  * @internal

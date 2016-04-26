@@ -1,4 +1,4 @@
-import {CompoundIndexMetadata} from "../../metadata-builder/metadata/CompoundIndexMetadata";
+import {CompoundIndexMetadata} from "../../metadata/CompoundIndexMetadata";
 import {defaultMetadataStorage} from "../../typeorm";
 
 /**

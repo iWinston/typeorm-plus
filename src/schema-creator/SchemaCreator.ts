@@ -1,9 +1,9 @@
-import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
-import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
-import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
-import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
+import {TableMetadata} from "../metadata/TableMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
-import {EntityMetadataArray} from "../metadata-builder/metadata/EntityMetadataArray";
+import {EntityMetadataArray} from "../metadata/EntityMetadataArray";
 
 /**
  * Creates indexes based on the given metadata.

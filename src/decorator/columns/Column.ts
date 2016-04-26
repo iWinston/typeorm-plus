@@ -1,9 +1,9 @@
-import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
+import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
 import {defaultMetadataStorage} from "../../typeorm";
-import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
-import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 import "reflect-metadata";
 
 /**

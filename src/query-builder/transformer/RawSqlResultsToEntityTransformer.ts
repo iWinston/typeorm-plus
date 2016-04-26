@@ -1,7 +1,7 @@
 import {AliasMap} from "../alias/AliasMap";
 import {Alias} from "../alias/Alias";
 import * as _ from "lodash";
-import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Connection} from "../../connection/Connection";
 import {OrmUtils} from "../../util/OrmUtils";
 

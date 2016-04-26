@@ -1,6 +1,6 @@
-import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
-import {RelationOptions} from "../../metadata-builder/options/RelationOptions";
-import {RelationTypes} from "../../metadata-builder/types/RelationTypes";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {RelationOptions} from "../../metadata/options/RelationOptions";
+import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {defaultMetadataStorage} from "../../typeorm";
 import {ConstructorFunction} from "../../common/ConstructorFunction";
 

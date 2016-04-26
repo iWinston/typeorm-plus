@@ -1,4 +1,4 @@
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 
 /**
  * This metadata interface contains all information about specific table.

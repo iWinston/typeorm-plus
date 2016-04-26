@@ -1,15 +1,15 @@
-import {TableMetadata} from "./metadata/TableMetadata";
+import {TableMetadata} from "../metadata/TableMetadata";
 import {MetadataAlreadyExistsError} from "./error/MetadataAlreadyExistsError";
 import {MetadataWithSuchNameAlreadyExistsError} from "./error/MetadataWithSuchNameAlreadyExistsError";
-import {RelationMetadata} from "./metadata/RelationMetadata";
-import {IndexMetadata} from "./metadata/IndexMetadata";
-import {CompoundIndexMetadata} from "./metadata/CompoundIndexMetadata";
-import {ColumnMetadata} from "./metadata/ColumnMetadata";
-import {EventSubscriberMetadata} from "./metadata/EventSubscriberMetadata";
-import {EntityListenerMetadata} from "./metadata/EntityListenerMetadata";
-import {NamingStrategyMetadata} from "./metadata/NamingStrategyMetadata";
-import {JoinColumnMetadata} from "./metadata/JoinColumnMetadata";
-import {JoinTableMetadata} from "./metadata/JoinTableMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
+import {IndexMetadata} from "../metadata/IndexMetadata";
+import {CompoundIndexMetadata} from "../metadata/CompoundIndexMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {EventSubscriberMetadata} from "../metadata/EventSubscriberMetadata";
+import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
+import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
+import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
+import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.

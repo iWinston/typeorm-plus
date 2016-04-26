@@ -4,8 +4,8 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {MysqlSchemaBuilder} from "../schema-builder/MysqlSchemaBuilder";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
 import {BaseDriver} from "./BaseDriver";
-import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
-import {ColumnTypes} from "../metadata-builder/types/ColumnTypes";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import * as moment from "moment";
 import {ConnectionOptions} from "../connection/ConnectionOptions";
 

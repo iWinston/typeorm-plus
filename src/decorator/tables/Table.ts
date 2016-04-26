@@ -1,5 +1,5 @@
 import {defaultMetadataStorage} from "../../typeorm";
-import {TableMetadata} from "../../metadata-builder/metadata/TableMetadata";
+import {TableMetadata} from "../../metadata/TableMetadata";
 
 /**
  * This decorator is used to mark classes that will be a tables. Database schema will be created for all classes

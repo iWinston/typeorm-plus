@@ -1,5 +1,5 @@
 import {Connection} from "../connection/Connection";
-import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";

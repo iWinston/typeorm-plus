@@ -7,7 +7,7 @@ import {InsertOperation} from "./operation/InsertOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Executes PersistOperation in the given connection.

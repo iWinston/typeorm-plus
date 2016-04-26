@@ -1,7 +1,7 @@
-import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
-import {ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
+import {ColumnOptions} from "../../metadata/options/ColumnOptions";
+import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {defaultMetadataStorage} from "../../typeorm";
-import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import "reflect-metadata";
 
 /**

@@ -1,12 +1,12 @@
 import {MetadataStorage} from "./MetadataStorage";
-import {PropertyMetadata} from "./metadata/PropertyMetadata";
-import {TableMetadata} from "./metadata/TableMetadata";
-import {EntityMetadata} from "./metadata/EntityMetadata";
+import {PropertyMetadata} from "../metadata/PropertyMetadata";
+import {TableMetadata} from "../metadata/TableMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
-import {ColumnMetadata} from "./metadata/ColumnMetadata";
-import {ColumnOptions} from "./options/ColumnOptions";
-import {ForeignKeyMetadata} from "./metadata/ForeignKeyMetadata";
-import {JunctionTableMetadata} from "./metadata/JunctionTableMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {ColumnOptions} from "../metadata/options/ColumnOptions";
+import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
+import {JunctionTableMetadata} from "../metadata/JunctionTableMetadata";
 import {defaultMetadataStorage} from "../typeorm";
 
 /**

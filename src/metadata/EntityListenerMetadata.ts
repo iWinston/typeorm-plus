@@ -1,5 +1,5 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {EventListenerType} from "../types/EventListenerTypes";
+import {EventListenerType} from "./types/EventListenerTypes";
 
 /**
  * This metadata interface contains all information about some index on a field.

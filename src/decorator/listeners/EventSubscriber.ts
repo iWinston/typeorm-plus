@@ -1,5 +1,5 @@
 import {defaultMetadataStorage} from "../../typeorm";
-import {EventSubscriberMetadata} from "../../metadata-builder/metadata/EventSubscriberMetadata";
+import {EventSubscriberMetadata} from "../../metadata/EventSubscriberMetadata";
 
 /**
  * Classes decorated with this decorator will listen to ORM events and their methods will be triggered when event

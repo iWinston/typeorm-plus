@@ -1,4 +1,4 @@
-import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 
 /**
  * This event is used on update events.

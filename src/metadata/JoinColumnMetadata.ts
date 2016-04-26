@@ -1,9 +1,9 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {JoinTableOptions} from "../options/JoinTableOptions";
+import {JoinColumnOptions} from "./options/JoinColumnOptions";
 
 /**
  */
-export class JoinTableMetadata extends PropertyMetadata {
+export class JoinColumnMetadata extends PropertyMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -21,13 +21,13 @@ export class JoinTableMetadata extends PropertyMetadata {
     /**
      * Join table options.
      */
-    readonly options: JoinTableOptions;
+    readonly options: JoinColumnOptions;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, propertyName: string, options: JoinTableOptions) {
+    constructor(target: Function, propertyName: string, options: JoinColumnOptions) {
         super(target, propertyName);
         this.options = options;
     }

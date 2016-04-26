@@ -1,5 +1,5 @@
 import {EntityMetadata} from "./EntityMetadata";
-import {EntityMetadataNotFound} from "../error/EntityMetadataNotFound";
+import {EntityMetadataNotFound} from "./error/EntityMetadataNotFound";
 
 /**
  * Array for the entity metadatas.

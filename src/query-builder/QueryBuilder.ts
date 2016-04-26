@@ -3,7 +3,7 @@ import {AliasMap} from "./alias/AliasMap";
 import {Connection} from "../connection/Connection";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * @internal

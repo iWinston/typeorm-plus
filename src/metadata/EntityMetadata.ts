@@ -1,9 +1,9 @@
-import {TableMetadata} from "../metadata/TableMetadata";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {RelationMetadata} from "../metadata/RelationMetadata";
-import {IndexMetadata} from "../metadata/IndexMetadata";
-import {CompoundIndexMetadata} from "../metadata/CompoundIndexMetadata";
-import {RelationTypes} from "../types/RelationTypes";
+import {TableMetadata} from "./TableMetadata";
+import {ColumnMetadata} from "./ColumnMetadata";
+import {RelationMetadata} from "./RelationMetadata";
+import {IndexMetadata} from "./IndexMetadata";
+import {CompoundIndexMetadata} from "./CompoundIndexMetadata";
+import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 
 /**

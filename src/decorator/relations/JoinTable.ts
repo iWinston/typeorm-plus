@@ -1,6 +1,6 @@
 import {defaultMetadataStorage} from "../../typeorm";
-import {JoinTableOptions} from "../../metadata-builder/options/JoinTableOptions";
-import {JoinTableMetadata} from "../../metadata-builder/metadata/JoinTableMetadata";
+import {JoinTableOptions} from "../../metadata/options/JoinTableOptions";
+import {JoinTableMetadata} from "../../metadata/JoinTableMetadata";
 
 /**
  */

@@ -1,8 +1,8 @@
-import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
-import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
+import {ColumnOptions} from "../../metadata/options/ColumnOptions";
+import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {defaultMetadataStorage} from "../../typeorm";
-import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
 import "reflect-metadata";
 

@@ -1,6 +1,6 @@
 import {defaultMetadataStorage} from "../../typeorm";
-import {EventListenerTypes} from "../../metadata-builder/types/EventListenerTypes";
-import {EntityListenerMetadata} from "../../metadata-builder/metadata/EntityListenerMetadata";
+import {EventListenerTypes} from "../../metadata/types/EventListenerTypes";
+import {EntityListenerMetadata} from "../../metadata/EntityListenerMetadata";
 
 /**
  * Calls a method on which this decorator is applied after entity is loaded.

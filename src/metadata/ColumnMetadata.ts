@@ -1,7 +1,7 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {ColumnOptions} from "../options/ColumnOptions";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategy";
-import {ColumnType} from "../types/ColumnTypes";
+import {ColumnOptions} from "./options/ColumnOptions";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
+import {ColumnType} from "./types/ColumnTypes";
 
 /**
  * Constructor arguments for ColumnMetadata class.

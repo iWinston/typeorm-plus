@@ -1,5 +1,5 @@
 import {defaultMetadataStorage} from "../../typeorm";
-import {IndexMetadata} from "../../metadata-builder/metadata/IndexMetadata";
+import {IndexMetadata} from "../../metadata/IndexMetadata";
 
 /**
  * Fields that needs to be indexed must be marked with this decorator.

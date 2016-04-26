@@ -1,5 +1,5 @@
 import {InsertOperation} from "./InsertOperation";
-import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
  * @internal

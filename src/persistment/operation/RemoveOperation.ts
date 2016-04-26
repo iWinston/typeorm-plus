@@ -1,5 +1,5 @@
-import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
-import {EntityMetadata} from "../../metadata-builder/metadata/EntityMetadata";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * @internal
