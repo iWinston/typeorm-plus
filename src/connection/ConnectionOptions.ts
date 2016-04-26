@@ -39,6 +39,11 @@ export interface ConnectionOptions {
     autoSchemaCreate?: boolean;
 
     /**
+     * Name of the naming strategy to be used on this connection.
+     */
+    namingStrategy?: string;
+
+    /**
      * Logging options.
      */
     logging?: {

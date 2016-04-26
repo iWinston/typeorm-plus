@@ -1,7 +1,7 @@
 import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
-import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {defaultMetadataStorage} from "../../typeorm";
 import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
 import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
 import "reflect-metadata";
@@ -53,7 +53,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata
-        defaultMetadataStorage.addColumnMetadata(new ColumnMetadata({
+        defaultMetadataStorage().addColumnMetadata(new ColumnMetadata({
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,

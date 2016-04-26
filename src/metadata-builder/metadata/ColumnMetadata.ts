@@ -1,6 +1,6 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {ColumnOptions} from "../options/ColumnOptions";
-import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategy";
 import {ColumnType} from "../types/ColumnTypes";
 
 /**
@@ -61,7 +61,7 @@ export class ColumnMetadata extends PropertyMetadata {
     /**
      * Naming strategy to be used to generate column name.
      */
-    namingStrategy: NamingStrategy;
+    namingStrategy: NamingStrategyInterface;
 
     // ---------------------------------------------------------------------
     // Readonly Properties

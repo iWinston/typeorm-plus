@@ -1,4 +1,4 @@
-import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {defaultMetadataStorage} from "../../typeorm";
 import {TableMetadata} from "../../metadata-builder/metadata/TableMetadata";
 
 /**
@@ -7,6 +7,6 @@ import {TableMetadata} from "../../metadata-builder/metadata/TableMetadata";
  */
 export function Table(name?: string) {
     return function (cls: Function) {
-        defaultMetadataStorage.addTableMetadata(new TableMetadata(cls, name));
+        defaultMetadataStorage().addTableMetadata(new TableMetadata(cls, name));
     };
 }

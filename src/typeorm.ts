@@ -3,91 +3,92 @@
  */
 
 import {ConnectionOptions} from "./connection/ConnectionOptions";
-import {ConnectionManager} from "./connection/ConnectionManager";
+import {ConnectionManager} from "./connection-manager/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
+import {MetadataStorage} from "./metadata-builder/MetadataStorage";
+import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 
-const connectionManager = new ConnectionManager();
+// -------------------------------------------------------------------------
+// Global Container
+// -------------------------------------------------------------------------
 
 /**
- * All options to help to create a new connection.
+ * Container to be used by TypeORM for inversion control.
  */
-export interface CreateConnectionOptions {
+let container: { get(someClass: any): any };
 
-    /**
-     * Driver type. Mysql is the only driver supported at this moment.
-     */
-    driver: "mysql";
-
-    /**
-     * Database connection options.
-     */
-    connection: ConnectionOptions;
-
-    /**
-     * Connection name. By default its called "default". Different connections must have different names.
-     */
-    connectionName?: string;
-
-    /**
-     * Entities to be loaded for the new connection.
-     */
-    entities?: Function[];
-
-    /**
-     * Subscribers to be loaded for the new connection.
-     */
-    subscribers?: Function[];
-
-    /**
-     * List of directories from where entities will be loaded.
-     */
-    entityDirectories?: string[];
-
-    /**
-     * List of directories from where subscribers will be loaded.
-     */
-    subscriberDirectories?: string[];
+/**
+ * Sets container to be used by TypeORM.
+ * 
+ * @param iocContainer
+ */
+export function useContainer(iocContainer: { get(someClass: any): any }) {
+    container = iocContainer;
 }
 
-/**
- * Creates a new connection with the database.
- */
-export function createConnection(options: CreateConnectionOptions): Promise<Connection> {
+export function getContainer() {
+    return container;
+}
 
-    let connection: Connection;
-    switch (options.driver) {
-        case "mysql":
-            connection = connectionManager.createConnection(options.connectionName, new MysqlDriver(), options.connection);
-            break;
-        default:
-            throw new Error(`Wrong driver ${options.driver} given. Supported drivers are: "mysql"`);
+// -------------------------------------------------------------------------
+// Global Metadata Storage
+// -------------------------------------------------------------------------
+
+/**
+ * Default metadata storage used as singleton and can be used to storage all metadatas in the system.
+ */
+let metadataStorage: MetadataStorage;
+
+export function defaultMetadataStorage() {
+    if (!metadataStorage && container) {
+        metadataStorage = container.get(MetadataStorage);
+        
+    } else if (!metadataStorage) {
+        metadataStorage = new MetadataStorage();
     }
-
-    if (options.entityDirectories && options.entityDirectories.length > 0)
-        connectionManager.importEntitiesFromDirectories(options.connectionName, options.entityDirectories);
-
-    if (options.entities)
-        connectionManager.importEntities(options.connectionName, options.entities);
-
-    if (options.subscriberDirectories && options.subscriberDirectories.length > 0)
-        connectionManager.importSubscribersFromDirectories(options.connectionName, options.subscriberDirectories);
-
-    if (options.subscribers)
-        connectionManager.importSubscribers(options.subscribers);
-
-    return connection.connect().then(() => connection);
+    
+    return metadataStorage;
 }
+
+// -------------------------------------------------------------------------
+// Global Connection Manager
+// -------------------------------------------------------------------------
 
 /**
  * Default export. Global connection manager.
  */
-export default connectionManager;
+let connectionManager: ConnectionManager;
 
-// export everything commonly used
+/**
+ * Gets a ConnectionManager which creates connections.
+ */
+export function getConnectionManager() {
+    if (!connectionManager && container) {
+        connectionManager = container.get(ConnectionManager);
+
+    } else if (!connectionManager) {
+        connectionManager = new ConnectionManager();
+    }
+
+    return connectionManager;
+}
+
+/**
+ * Allows to quickly create a connection based on the given options. Uses ConnectionManager.
+ */
+export function createConnection(options: CreateConnectionOptions) {
+    return getConnectionManager().create(options);
+}
+
+// -------------------------------------------------------------------------
+// Commonly Used exports
+// -------------------------------------------------------------------------
+
 export {Connection} from "./connection/Connection";
-export {ConnectionManager} from "./connection/ConnectionManager";
 export {ConnectionOptions} from "./connection/ConnectionOptions";
+export {ConnectionManager} from "./connection-manager/ConnectionManager";
+export {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 export {Driver} from "./driver/Driver";
 export {MysqlDriver} from "./driver/MysqlDriver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";

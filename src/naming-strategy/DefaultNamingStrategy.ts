@@ -1,10 +1,10 @@
-import {NamingStrategy} from "./NamingStrategy";
+import {NamingStrategyInterface} from "./NamingStrategy";
 import * as _ from "lodash";
 
 /**
  * Naming strategy that is used by default.
  */
-export class DefaultNamingStrategy implements NamingStrategy {
+export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     tableName(className: string): string {
         return _.snakeCase(className);

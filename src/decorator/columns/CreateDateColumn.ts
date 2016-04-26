@@ -1,6 +1,6 @@
 import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
 import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
-import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {defaultMetadataStorage} from "../../typeorm";
 import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
 import "reflect-metadata";
 
@@ -20,7 +20,7 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
         columnOptions.type = ColumnTypes.DATETIME;
 
         // create and register a new column metadata
-        defaultMetadataStorage.addColumnMetadata(new ColumnMetadata({
+        defaultMetadataStorage().addColumnMetadata(new ColumnMetadata({
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,

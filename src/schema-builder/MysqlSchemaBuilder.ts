@@ -147,7 +147,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
 
     private normalizeType(column: ColumnMetadata) {
 
-        let realType: string;
+        let realType: string = "";
         if (typeof column.type === "string") {
             realType = column.type.toLowerCase();
 

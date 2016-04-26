@@ -448,7 +448,7 @@ export class QueryBuilder<Entity> {
     protected createSelectExpression() {
         // todo throw exception if selects or from is missing
 
-        let alias: string, tableName: string;
+        let alias: string = "", tableName: string;
         const allSelects: string[] = [];
         
         if (this.fromEntity) {

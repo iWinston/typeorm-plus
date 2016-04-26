@@ -7,12 +7,11 @@ import {CompoundIndexMetadata} from "./metadata/CompoundIndexMetadata";
 import {ColumnMetadata} from "./metadata/ColumnMetadata";
 import {EventSubscriberMetadata} from "./metadata/EventSubscriberMetadata";
 import {EntityListenerMetadata} from "./metadata/EntityListenerMetadata";
+import {NamingStrategyMetadata} from "./metadata/NamingStrategyMetadata";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
  * Each metadata represents some specifications of what it represents.
- * 
- * @internal
  */
 export class MetadataStorage {
 
@@ -20,45 +19,14 @@ export class MetadataStorage {
     // Properties
     // -------------------------------------------------------------------------
 
-    private _tableMetadatas: TableMetadata[] = [];
-    private _eventSubscriberMetadatas: EventSubscriberMetadata[] = [];
-    private _columnMetadatas: ColumnMetadata[] = [];
-    private _indexMetadatas: IndexMetadata[] = [];
-    private _entityListenerMetadatas: EntityListenerMetadata[] = [];
-    private _compoundIndexMetadatas: CompoundIndexMetadata[] = [];
-    private _relationMetadatas: RelationMetadata[] = [];
-
-    // -------------------------------------------------------------------------
-    // Getter Methods
-    // -------------------------------------------------------------------------
-
-    get tableMetadatas(): TableMetadata[] {
-        return this._tableMetadatas;
-    }
-
-    get eventSubscriberMetadatas(): EventSubscriberMetadata[] {
-        return this._eventSubscriberMetadatas;
-    }
-
-    get columnMetadatas(): ColumnMetadata[] {
-        return this._columnMetadatas;
-    }
-
-    get indexMetadatas(): IndexMetadata[] {
-        return this._indexMetadatas;
-    }
-
-    get entityListenerMetadatas(): EntityListenerMetadata[] {
-        return this._entityListenerMetadatas;
-    }
-
-    get compoundIndexMetadatas(): CompoundIndexMetadata[] {
-        return this._compoundIndexMetadatas;
-    }
-
-    get relationMetadatas(): RelationMetadata[] {
-        return this._relationMetadatas;
-    }
+    private tableMetadatas: TableMetadata[] = [];
+    private eventSubscriberMetadatas: EventSubscriberMetadata[] = [];
+    private columnMetadatas: ColumnMetadata[] = [];
+    private indexMetadatas: IndexMetadata[] = [];
+    private entityListenerMetadatas: EntityListenerMetadata[] = [];
+    private compoundIndexMetadatas: CompoundIndexMetadata[] = [];
+    private namingStrategyMetadatas: NamingStrategyMetadata[] = [];
+    private relationMetadatas: RelationMetadata[] = [];
 
     // -------------------------------------------------------------------------
     // Adder Methods
@@ -118,6 +86,13 @@ export class MetadataStorage {
         this.compoundIndexMetadatas.push(metadata);
     }
 
+    addNamingStrategyMetadata(metadata: NamingStrategyMetadata) {
+        if (this.hasNamingStrategyMetadataWithObjectConstructor(metadata.target))
+            throw new MetadataAlreadyExistsError("NamingStrategy", metadata.target);
+
+        this.namingStrategyMetadatas.push(metadata);
+    }
+
     addEntityListenerMetadata(metadata: EntityListenerMetadata) {
         if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName))
             throw new MetadataAlreadyExistsError("EventListener", metadata.target);
@@ -161,6 +136,15 @@ export class MetadataStorage {
         return this.relationMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
     }
 
+    findNamingStrategy(name: string): NamingStrategyMetadata {
+        // todo: throw error if naming strategy is not found.
+        return this.namingStrategyMetadatas.find(metadata => metadata.name === name);
+    }
+
+    findNamingStrategiesForClasses(classes: Function[]): NamingStrategyMetadata[] {
+        return this.namingStrategyMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
+    }
+
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
@@ -171,6 +155,10 @@ export class MetadataStorage {
 
     private hasCompoundIndexMetadataWithObjectConstructor(constructor: Function): boolean {
         return !!this.compoundIndexMetadatas.find(metadata => metadata.target === constructor);
+    }
+
+    private hasNamingStrategyMetadataWithObjectConstructor(constructor: Function): boolean {
+        return !!this.namingStrategyMetadatas.find(metadata => metadata.target === constructor);
     }
 
     private hasEventSubscriberWithObjectConstructor(constructor: Function): boolean {
@@ -198,8 +186,3 @@ export class MetadataStorage {
     }
 
 }
-
-/**
- * Default metadata storage used as singleton and can be used to storage all metadatas in the system.
- */
-export const defaultMetadataStorage = new MetadataStorage();

@@ -1,4 +1,4 @@
-import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategy";
 
 /**
  * This metadata interface contains all information about specific table.
@@ -12,7 +12,7 @@ export class TableMetadata {
     /**
      * Naming strategy used to generate and normalize table name.
      */
-    namingStrategy: NamingStrategy;
+    namingStrategy: NamingStrategyInterface;
 
     // ---------------------------------------------------------------------
     // Readonly Properties

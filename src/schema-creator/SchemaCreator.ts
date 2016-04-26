@@ -1,9 +1,9 @@
-import {Connection} from "../connection/Connection";
 import {TableMetadata} from "../metadata-builder/metadata/TableMetadata";
 import {ColumnMetadata} from "../metadata-builder/metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata-builder/metadata/ForeignKeyMetadata";
 import {EntityMetadata} from "../metadata-builder/metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
+import {EntityMetadataArray} from "../metadata-builder/metadata/EntityMetadataArray";
 
 /**
  * Creates indexes based on the given metadata.
@@ -13,19 +13,11 @@ import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 export class SchemaCreator {
 
     // -------------------------------------------------------------------------
-    // Properties
-    // -------------------------------------------------------------------------
-
-    private connection: Connection;
-    private schemaBuilder: SchemaBuilder;
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, private entityMetadatas: EntityMetadata[]) {
-        this.connection = connection;
-        this.schemaBuilder = connection.driver.createSchemaBuilder();
+    constructor(private schemaBuilder: SchemaBuilder, 
+                private entityMetadatas: EntityMetadataArray) {
     }
 
     // -------------------------------------------------------------------------

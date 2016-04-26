@@ -2,11 +2,12 @@ import {MetadataStorage} from "./MetadataStorage";
 import {PropertyMetadata} from "./metadata/PropertyMetadata";
 import {TableMetadata} from "./metadata/TableMetadata";
 import {EntityMetadata} from "./metadata/EntityMetadata";
-import {NamingStrategy} from "../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {ColumnMetadata} from "./metadata/ColumnMetadata";
 import {ColumnOptions} from "./options/ColumnOptions";
 import {ForeignKeyMetadata} from "./metadata/ForeignKeyMetadata";
 import {JunctionTableMetadata} from "./metadata/JunctionTableMetadata";
+import {defaultMetadataStorage} from "../typeorm";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -17,12 +18,13 @@ export class EntityMetadataBuilder {
 
     // todo: type in function validation, inverse side function validation
     
+    private metadataStorage: MetadataStorage = defaultMetadataStorage();
+    
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private metadataStorage: MetadataStorage,
-                private namingStrategy: NamingStrategy) {
+    constructor(private namingStrategy: NamingStrategyInterface) {
     }
 
     // -------------------------------------------------------------------------

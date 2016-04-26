@@ -1,7 +1,7 @@
 import {ColumnOptions} from "../../metadata-builder/options/ColumnOptions";
 import {ColumnType, ColumnTypes} from "../../metadata-builder/types/ColumnTypes";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
-import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {defaultMetadataStorage} from "../../typeorm";
 import {ColumnMetadata} from "../../metadata-builder/metadata/ColumnMetadata";
 import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
 import "reflect-metadata";
@@ -56,7 +56,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
         // create and register a new column metadata
-        defaultMetadataStorage.addColumnMetadata(new ColumnMetadata({
+        defaultMetadataStorage().addColumnMetadata(new ColumnMetadata({
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,

@@ -26,7 +26,7 @@ export class Broadcaster {
     broadcastBeforeInsertEvent(entity: any): Promise<void> {
 
         const subscribers = this.connection
-            .subscribers
+            .subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeInsert)
             .map(subscriber => subscriber.beforeInsert({ entity: entity }));
@@ -42,7 +42,7 @@ export class Broadcaster {
     broadcastBeforeUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]): Promise<void> {
 
         const subscribers = this.connection
-            .subscribers
+            .subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate({ entity: entity, updatedColumns: updatedColumns }));
@@ -58,7 +58,7 @@ export class Broadcaster {
     broadcastBeforeRemoveEvent(entity: any, entityId: any): Promise<void> {
 
         const subscribers = this.connection
-            .subscribers
+            .subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove({ entity: entity, entityId: entityId }));
@@ -74,7 +74,7 @@ export class Broadcaster {
     broadcastAfterInsertEvent(entity: any): Promise<void> {
 
         const subscribers = this.connection
-            .subscribers
+            .subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterInsert)
             .map(subscriber => subscriber.afterInsert({ entity: entity }));
@@ -90,7 +90,7 @@ export class Broadcaster {
     broadcastAfterUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]): Promise<void> {
 
         const subscribers = this.connection
-            .subscribers
+            .subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate({ entity: entity, updatedColumns: updatedColumns }));
@@ -106,7 +106,7 @@ export class Broadcaster {
     broadcastAfterRemoveEvent(entity: any, entityId: any): Promise<void> {
 
         const subscribers = this.connection
-            .subscribers
+            .subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove({ entity: entity, entityId: entityId }));
@@ -137,7 +137,7 @@ export class Broadcaster {
             });
 
         this.connection
-            .subscribers
+            .subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterLoad)
             .forEach(subscriber => promises.push(<any> subscriber.afterLoad(entity)));

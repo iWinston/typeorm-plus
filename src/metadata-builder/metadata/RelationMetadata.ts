@@ -1,7 +1,7 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationTypes, RelationType} from "../types/RelationTypes";
 import {RelationOptions} from "../options/RelationOptions";
-import {NamingStrategy} from "../../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategy";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
 
@@ -69,7 +69,7 @@ export class RelationMetadata extends PropertyMetadata {
     /**
      * Naming strategy used to generate and normalize column name.
      */
-    namingStrategy: NamingStrategy;
+    namingStrategy: NamingStrategyInterface;
 
     /**
      * Related entity metadata.

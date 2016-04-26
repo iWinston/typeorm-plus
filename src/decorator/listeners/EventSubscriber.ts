@@ -1,4 +1,4 @@
-import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {defaultMetadataStorage} from "../../typeorm";
 import {EventSubscriberMetadata} from "../../metadata-builder/metadata/EventSubscriberMetadata";
 
 /**
@@ -7,6 +7,6 @@ import {EventSubscriberMetadata} from "../../metadata-builder/metadata/EventSubs
  */
 export function EventSubscriber() {
     return function (target: Function) {
-        defaultMetadataStorage.addEventSubscriberMetadata(new EventSubscriberMetadata(target));
+        defaultMetadataStorage().addEventSubscriberMetadata(new EventSubscriberMetadata(target));
     };
 }

@@ -1,7 +1,7 @@
 import {RelationMetadata} from "../../metadata-builder/metadata/RelationMetadata";
 import {RelationOptions} from "../../metadata-builder/options/RelationOptions";
 import {RelationTypes} from "../../metadata-builder/types/RelationTypes";
-import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {defaultMetadataStorage} from "../../typeorm";
 import {ConstructorFunction} from "../../common/ConstructorFunction";
 
 /**
@@ -36,7 +36,7 @@ export function OneToMany<T>(typeFunction: (type?: any) => ConstructorFunction<T
 
         const relationOptions = options ? options : {} as RelationOptions;
 
-        defaultMetadataStorage.addRelationMetadata(new RelationMetadata({
+        defaultMetadataStorage().addRelationMetadata(new RelationMetadata({
             target: object.constructor,
             propertyName: propertyName,
             relationType: RelationTypes.ONE_TO_MANY,

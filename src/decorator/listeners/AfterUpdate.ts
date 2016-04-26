@@ -1,4 +1,4 @@
-import {defaultMetadataStorage} from "../../metadata-builder/MetadataStorage";
+import {defaultMetadataStorage} from "../../typeorm";
 import {EventListenerTypes} from "../../metadata-builder/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../../metadata-builder/metadata/EntityListenerMetadata";
 
@@ -7,7 +7,7 @@ import {EntityListenerMetadata} from "../../metadata-builder/metadata/EntityList
  */
 export function AfterUpdate() {
     return function (object: Object, propertyName: string) {
-        defaultMetadataStorage.addEntityListenerMetadata(new EntityListenerMetadata(
+        defaultMetadataStorage().addEntityListenerMetadata(new EntityListenerMetadata(
             object.constructor, 
             propertyName, 
             EventListenerTypes.AFTER_UPDATE
