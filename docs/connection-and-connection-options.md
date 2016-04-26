@@ -9,10 +9,10 @@ You start using ORM by creating a connection with the database. In this section 
 
 ### Connection Manager
 
-Connection manager allows to create a new connections and retrive previously created connections. Also it allows to import
+Connection manager allows to create a new connections and retrieve previously created connections. Also it allows to import
 entities and subscribers into specific connection. These are main public methods of the `ConnectionManager`:
 
-* `createConnection(connectionName: string = "default", driver: Driver, options: ConnectionOptions): Connection`
+* `createConnection(options: CreateConnectionOptions): Connection`
 
 Creates a new connection and registers it in the connection manager. It returns a newly created connection.
 New connection will have a given *connection name*. If connection name is not given then "default" will be used as a

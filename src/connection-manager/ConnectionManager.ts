@@ -47,7 +47,7 @@ export class ConnectionManager {
         if (options.namingStrategies)
             connection.importNamingStrategies(options.namingStrategies);
 
-        return connection.connect().then(() => connection);
+        return connection.connect();
     }
 
     /**

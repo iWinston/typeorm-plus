@@ -48,7 +48,7 @@ describe("many-to-one", function() {
     function reloadDatabase() {
         return connection.driver
             .clearDatabase()
-            .then(() => connection.createSchema());
+            .then(() => connection.syncSchema());
     }
 
     let postRepository: Repository<Post>,

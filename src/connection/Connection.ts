@@ -14,6 +14,10 @@ import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {EntityMetadataArray} from "../metadata-builder/metadata/EntityMetadataArray";
 import {NamingStrategyMetadata} from "../metadata-builder/metadata/NamingStrategyMetadata";
+import {NoConnectionForRepositoryError} from "./error/NoConnectionForRepositoryError";
+import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
+import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
+import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
 
 /**
  * Temporary type to store and link both repository and its metadata.
@@ -94,6 +98,11 @@ export class Connection {
      */
     private readonly namingStrategyClasses: Function[] = [];
 
+    /**
+     * Indicates if connection has been done or not.
+     */
+    private _isConnected = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -107,23 +116,41 @@ export class Connection {
     }
 
     // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if connection to the database already established for this connection.
+     */
+    get isConnected() {
+        return this._isConnected;
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
     /**
      * Performs connection to the database.
      */
-    connect(): Promise<void> {
+    connect(): Promise<this> {
+        if (this.isConnected)
+            throw new CannotConnectAlreadyConnectedError(this.name);
+        
         return this.driver.connect().then(() => {
             
-            // build all metadata
-            this.registerMetadatas();
+            // first build all metadata
+            this.buildMetadatas();
             
             // second build schema
             if (this.options.autoSchemaCreate === true)
-                return this.createSchema();
+                return this.syncSchema();
 
-            return undefined;
+            return Promise.resolve();
+
+        }).then(() => {
+            this._isConnected = true;
+            return this;
         });
     }
 
@@ -131,55 +158,52 @@ export class Connection {
      * Closes this connection.
      */
     close(): Promise<void> {
+        if (!this.isConnected)
+            throw new CannotCloseNotConnectedError(this.name);
+        
         return this.driver.disconnect();
     }
 
     /**
      * Creates database schema for all entities registered in this connection.
      */
-    createSchema() {
+    syncSchema() {
         const schemaBuilder = this.driver.createSchemaBuilder();
         const schemaCreator = new SchemaCreator(schemaBuilder, this.entityMetadatas);
         return schemaCreator.create();
     }
 
     /**
-     * Gets repository for the given entity class.
-     */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
-        const metadata = this.entityMetadatas.findByTarget(entityClass);
-        const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
-        if (!repoMeta)
-            throw new RepositoryNotFoundError(entityClass);
-
-        return repoMeta.repository;
-    }
-
-    /**
      * Imports entities from the given paths (directories) for the current connection. 
      */
-    importEntitiesFromDirectories(paths: string[]): void {
+    importEntitiesFromDirectories(paths: string[]): this {
         this.importEntities(importClassesFromDirectories(paths));
+        return this;
     }
 
     /**
      * Imports subscribers from the given paths (directories) for the current connection.
      */
-    importSubscribersFromDirectories(paths: string[]): void {
+    importSubscribersFromDirectories(paths: string[]): this {
         this.importSubscribers(importClassesFromDirectories(paths));
+        return this;
     }
 
     /**
      * Imports naming strategies from the given paths (directories) for the current connection.
      */
-    importNamingStrategiesFromDirectories(paths: string[]): void {
+    importNamingStrategiesFromDirectories(paths: string[]): this {
         this.importEntities(importClassesFromDirectories(paths));
+        return this;
     }
     
     /**
      * Imports entities for the current connection.
      */
     importEntities(entities: Function[]): this {
+        if (this.isConnected)
+            throw new CannotImportAlreadyConnectedError("entities", this.name);
+        
         this.entityClasses.push(...entities);
         return this;
     }
@@ -188,6 +212,9 @@ export class Connection {
      * Imports entities for the given connection. If connection name is not given then default connection is used.
      */
     importSubscribers(subscriberClasses: Function[]): this {
+        if (this.isConnected)
+            throw new CannotImportAlreadyConnectedError("event subscribers", this.name);
+        
         this.subscriberClasses.push(...subscriberClasses);
         return this;
     }
@@ -196,15 +223,36 @@ export class Connection {
      * Imports entities for the current connection.
      */
     importNamingStrategies(strategies: Function[]): this {
+        if (this.isConnected)
+            throw new CannotImportAlreadyConnectedError("naming strategies", this.name);
+        
         this.namingStrategyClasses.push(...strategies);
         return this;
+    }
+
+    /**
+     * Gets repository for the given entity class.
+     */
+    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
+        if (!this.isConnected)
+            throw new NoConnectionForRepositoryError(this.name);
+
+        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
+        if (!repoMeta)
+            throw new RepositoryNotFoundError(this.name, entityClass);
+
+        return repoMeta.repository;
     }
 
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
-    
-    private registerMetadatas() {
+
+    /**
+     * Builds all registered metadatas.
+     */
+    private buildMetadatas() {
         
         // first register naming strategies
         const metadatas = defaultMetadataStorage().findNamingStrategiesForClasses(this.namingStrategyClasses);
@@ -227,7 +275,7 @@ export class Connection {
     }
 
     /**
-     * Gets the naming strategy
+     * Gets the naming strategy to be used for this connection.
      */
     private createNamingStrategy() {
         if (!this.options.namingStrategy)
@@ -238,14 +286,15 @@ export class Connection {
     }
 
     /**
-     * Creates a new instance of the given constructor. If IOC Container is registered in the ORM
+     * Creates a new instance of the given constructor. If service container is registered in the ORM, then it will
+     * be used, otherwise new instance of naming strategy will be created.
      */
     private createContainerInstance(constructor: Function) {
         return getContainer() ? getContainer().get(constructor) : new (<any> constructor)();
     }
 
     /**
-     * Creates a temporary object RepositoryAndMetadata to store mapping between repository and metadata.
+     * Creates a temporary object RepositoryAndMetadata to store relation between repository and metadata.
      */
     private createRepoMeta(metadata: EntityMetadata): RepositoryAndMetadata {
         return {
