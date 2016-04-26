@@ -152,9 +152,12 @@ export class MetadataStorage {
         return this.relationMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
     }
 
-    findNamingStrategy(name: string): NamingStrategyMetadata {
-        // todo: throw error if naming strategy is not found.
-        return this.namingStrategyMetadatas.find(metadata => metadata.name === name);
+    findJoinTableMetadatasForClasses(classes: Function[]): JoinTableMetadata[] {
+        return this.joinTableMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
+    }
+
+    findJoinColumnMetadatasForClasses(classes: Function[]): JoinColumnMetadata[] {
+        return this.joinColumnMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
     }
 
     findNamingStrategiesForClasses(classes: Function[]): NamingStrategyMetadata[] {

@@ -3,9 +3,9 @@ import {Table} from "../../../src/tables";
 import {ManyToMany} from "../../../src/relations";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
-import {ManyToManyInverse} from "../../../src/decorator/relations/ManyToManyInverse";
 import {OneToOne} from "../../../src/decorator/relations/OneToOne";
-import {OneToOneInverse} from "../../../src/decorator/relations/OneToOneInverse";
+import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample8_category")
 export class Category {
@@ -21,9 +21,10 @@ export class Category {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinColumn()
     oneCategory: Category;
 
-    @OneToOneInverse(type => Category, category => category.oneCategory, {
+    @OneToOne(type => Category, category => category.oneCategory, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
@@ -49,9 +50,10 @@ export class Category {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinTable()
     manyCategories: Category[] = [];
 
-    @ManyToManyInverse(type => Category, category => category.manyCategories, {
+    @ManyToMany(type => Category, category => category.manyCategories, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

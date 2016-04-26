@@ -41,7 +41,6 @@ export function OneToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T>
             relationType: RelationTypes.ONE_TO_ONE,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
-            isOwning: true,
             options: options
         }));
     };

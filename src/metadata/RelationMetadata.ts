@@ -4,6 +4,8 @@ import {RelationOptions} from "./options/RelationOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
+import {JoinTableMetadata} from "./JoinTableMetadata";
+import {JoinColumnMetadata} from "./JoinColumnMetadata";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -47,11 +49,6 @@ export interface RelationMetadataArgs {
     inverseSideProperty: PropertyTypeInFunction<any>;
 
     /**
-     * Indicates if this relation is owner side of the relation between entities.
-     */
-    isOwning: boolean;
-
-    /**
      * Additional relation options.
      */
     options: RelationOptions;
@@ -81,6 +78,16 @@ export class RelationMetadata extends PropertyMetadata {
      */
     junctionEntityMetadata: EntityMetadata;
 
+    /**
+     * Join table metadata.
+     */
+    joinTable: JoinTableMetadata;
+
+    /**
+     * Join column metadata.
+     */
+    joinColumn: JoinColumnMetadata;
+    
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
@@ -89,11 +96,6 @@ export class RelationMetadata extends PropertyMetadata {
      * Relation type.
      */
     readonly relationType: RelationType;
-
-    /**
-     * Indicates if this side is an owner of this relation.
-     */
-    readonly isOwning: boolean;
 
     /**
      * If set to true then it means that related object can be allowed to be inserted to the db.
@@ -151,7 +153,6 @@ export class RelationMetadata extends PropertyMetadata {
     constructor(args: RelationMetadataArgs) {
         super(args.target, args.propertyName);
         this.relationType = args.relationType;
-        this.isOwning = args.isOwning;
         this._inverseSideProperty = args.inverseSideProperty;
 
         if (args.options.name)
@@ -181,6 +182,15 @@ export class RelationMetadata extends PropertyMetadata {
 
     get name(): string {
         return this.namingStrategy ? this.namingStrategy.relationName(this._name) : this._name;
+    }
+
+    /**
+     * Indicates if this side is an owner of this relation.
+     */
+    get isOwning() {
+        return  this.isManyToOne || 
+                (this.isManyToMany && this.joinTable) || 
+                (this.isOneToOne && this.joinColumn);
     }
 
     get type(): Function {

@@ -3,6 +3,7 @@ import {Table} from "../../../src/tables";
 import {ManyToOne, OneToOne} from "../../../src/relations";
 import {Post} from "./Post";
 import {ImageDetails} from "./ImageDetails";
+import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 
 @Table("sample10_image")
 export class Image {
@@ -26,6 +27,7 @@ export class Image {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinColumn()
     details: ImageDetails;
 
 }

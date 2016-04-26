@@ -44,7 +44,6 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T
             relationType: RelationTypes.MANY_TO_ONE,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
-            isOwning: true,
             options: options
         }));
     };

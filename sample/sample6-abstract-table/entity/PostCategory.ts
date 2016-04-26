@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {Post} from "./Post";
-import {ManyToManyInverse} from "../../../src/decorator/relations/ManyToManyInverse";
+import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 
 @Table("sample6_post_category")
 export class PostCategory {
@@ -12,7 +12,7 @@ export class PostCategory {
     @Column()
     name: string;
 
-    @ManyToManyInverse(type => Post, post => post.categories, {
+    @ManyToMany(type => Post, post => post.categories, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

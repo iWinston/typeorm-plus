@@ -5,6 +5,8 @@ import {Image} from "./Image";
 import {Cover} from "./Cover";
 import {Category} from "./Category";
 import {PostDetails} from "./PostDetails";
+import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample10_post")
 export class Post {
@@ -27,6 +29,7 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinColumn()
     details: PostDetails;
 
     @OneToMany(type => Image, image => image.post, {
@@ -56,6 +59,7 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinTable()
     categories: Category[];
 
 }

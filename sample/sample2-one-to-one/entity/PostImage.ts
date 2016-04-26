@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {Post} from "./Post";
-import {OneToOneInverse} from "../../../src/relations";
+import {OneToOne} from "../../../src/relations";
 
 @Table("sample2_post_image")
 export class PostImage {
@@ -12,7 +12,7 @@ export class PostImage {
     @Column()
     url: string;
 
-    @OneToOneInverse(type => Post, post => post.image)
+    @OneToOne(type => Post, post => post.image)
     post: Post;
 
 }

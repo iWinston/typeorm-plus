@@ -1,6 +1,6 @@
 import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
-import {ManyToManyInverse} from "../../../src/relations";
+import {ManyToMany} from "../../../src/relations";
 import {Post} from "./Post";
 
 @Table("sample4_post_details")
@@ -24,7 +24,7 @@ export class PostDetails {
     })
     metadata: string;
     
-    @ManyToManyInverse(type => Post, post => post.details, {
+    @ManyToMany(type => Post, post => post.details, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

@@ -41,7 +41,6 @@ export function OneToMany<T>(typeFunction: (type?: any) => ConstructorFunction<T
             relationType: RelationTypes.ONE_TO_MANY,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
-            isOwning: false,
             options: options
         }));
     };

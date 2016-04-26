@@ -41,6 +41,8 @@ export class EntityMetadataBuilder {
         const abstractTableMetadatas = this.metadataStorage.findAbstractTableMetadatasForClasses(entityClasses);
         const columnMetadatas = this.metadataStorage.findFieldMetadatasForClasses(entityClasses);
         const relationMetadatas = this.metadataStorage.findRelationMetadatasForClasses(entityClasses);
+        const joinTableMetadatas = this.metadataStorage.findJoinTableMetadatasForClasses(entityClasses);
+        const joinColumnMetadatas = this.metadataStorage.findJoinColumnMetadatasForClasses(entityClasses);
         const indexMetadatas = this.metadataStorage.findIndexMetadatasForClasses(entityClasses);
         const compoundIndexMetadatas = this.metadataStorage.findCompoundIndexMetadatasForClasses(entityClasses);
 
@@ -53,6 +55,8 @@ export class EntityMetadataBuilder {
             let entityRelations = relationMetadatas.filter(constructorChecker);
             let entityCompoundIndices = compoundIndexMetadatas.filter(constructorChecker2);
             let entityIndices = indexMetadatas.filter(constructorChecker);
+            let entityJoinTables = joinTableMetadatas.filter(constructorChecker);
+            let entityJoinColumns = joinColumnMetadatas.filter(constructorChecker);
 
             // merge all columns in the abstract table extendings of this table
             abstractTableMetadatas.forEach(abstractMetadata => {
@@ -76,6 +80,20 @@ export class EntityMetadataBuilder {
             });
 
             const entityMetadata = new EntityMetadata(tableMetadata, entityColumns, entityRelations, entityIndices, entityCompoundIndices, []);
+
+            // find entity's relations join tables
+            entityRelations.forEach(relation => {
+                const relationJoinTable = entityJoinTables.find(joinTable => joinTable.propertyName === relation.propertyName);
+                if (relationJoinTable)
+                    relation.joinTable = relationJoinTable;
+            });
+
+            // find entity's relations join columns
+            entityRelations.forEach(relation => {
+                const relationJoinColumn = entityJoinColumns.find(joinColumn => joinColumn.propertyName === relation.propertyName);
+                if (relationJoinColumn)
+                    relation.joinColumn = relationJoinColumn;
+            });
 
             // set naming strategies
             tableMetadata.namingStrategy = this.namingStrategy;

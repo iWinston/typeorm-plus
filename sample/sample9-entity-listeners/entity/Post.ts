@@ -11,6 +11,7 @@ import {BeforeUpdate} from "../../../src/decorator/listeners/BeforeUpdate";
 import {AfterUpdate} from "../../../src/decorator/listeners/AfterUpdate";
 import {BeforeRemove} from "../../../src/decorator/listeners/BeforeRemove";
 import {AfterRemove} from "../../../src/decorator/listeners/AfterRemove";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample9_post")
 export class Post {
@@ -35,6 +36,7 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinTable()
     categories: PostCategory[] = [];
 
     uid: number;

@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {Post} from "./Post";
-import {OneToOneInverse} from "../../../src/relations";
+import {OneToOne} from "../../../src/relations";
 
 @Table("sample2_post_metadata")
 export class PostMetadata {
@@ -12,7 +12,7 @@ export class PostMetadata {
     @Column()
     description: string;
 
-    @OneToOneInverse(type => Post, post => post.metadata)
+    @OneToOne(type => Post, post => post.metadata)
     post: Post;
 
 }

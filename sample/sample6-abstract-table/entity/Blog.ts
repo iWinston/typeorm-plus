@@ -5,6 +5,7 @@ import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {PostAuthor} from "./PostAuthor";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 import {PostCategory} from "./PostCategory";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample6_blog")
 export class Blog extends BasePost {
@@ -24,6 +25,7 @@ export class Blog extends BasePost {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinTable()
     categories: PostCategory[] = [];
 
 }

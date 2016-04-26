@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {Post} from "./Post";
-import {ManyToManyInverse} from "../../../src/relations";
+import {ManyToMany} from "../../../src/relations";
 
 @Table("sample4_post_image")
 export class PostImage {
@@ -12,7 +12,7 @@ export class PostImage {
     @Column()
     url: string;
 
-    @ManyToManyInverse(type => Post, post => post.images)
+    @ManyToMany(type => Post, post => post.images)
     posts: Post[];
 
 }

@@ -44,7 +44,6 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ConstructorFunction<
             relationType: RelationTypes.MANY_TO_MANY,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
-            isOwning: true,
             options: options
         }));
     };

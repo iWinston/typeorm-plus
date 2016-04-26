@@ -5,6 +5,7 @@ import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample5_post")
 export class Post {
@@ -30,6 +31,7 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinTable()
     categories: PostCategory[] = [];
 
 }

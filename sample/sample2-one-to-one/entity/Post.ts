@@ -7,6 +7,7 @@ import {PostAuthor} from "./PostAuthor";
 import {PostInformation} from "./PostInformation";
 import {PostImage} from "./PostImage";
 import {PostMetadata} from "./PostMetadata";
+import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 
 @Table("sample2_post")
 export class Post {
@@ -26,6 +27,7 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinColumn()
     category: PostCategory;
 
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
@@ -33,6 +35,7 @@ export class Post {
     @OneToOne(type => PostDetails, details => details.post, {
         cascadeInsert: true
     })
+    @JoinColumn()
     details: PostDetails;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
@@ -40,6 +43,7 @@ export class Post {
     @OneToOne(type => PostImage, image => image.post, {
         cascadeUpdate: true
     })
+    @JoinColumn()
     image: PostImage;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
@@ -47,6 +51,7 @@ export class Post {
     @OneToOne(type => PostMetadata, metadata => metadata.post, {
         cascadeRemove: true
     })
+    @JoinColumn()
     metadata: PostMetadata|undefined;
 
     // post has relation with details. full cascades here
@@ -55,10 +60,12 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinColumn()
     information: PostInformation;
 
     // post has relation with details. not cascades here. means cannot be persisted, updated or removed
     @OneToOne(type => PostAuthor, author => author.post)
+    @JoinColumn()
     author: PostAuthor;
 
 }

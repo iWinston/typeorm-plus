@@ -1,7 +1,7 @@
 import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {Post} from "./Post";
-import {ManyToManyInverse} from "../../../src/relations";
+import {ManyToMany} from "../../../src/relations";
 
 @Table("sample4_post_author")
 export class PostAuthor {
@@ -12,7 +12,7 @@ export class PostAuthor {
     @Column()
     name: string;
 
-    @ManyToManyInverse(type => Post, post => post.authors)
+    @ManyToMany(type => Post, post => post.authors)
     posts: Post[];
 
 }

@@ -1,6 +1,6 @@
 import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
-import {OneToOneInverse} from "../../../src/relations";
+import {OneToOne} from "../../../src/relations";
 import {Post} from "./Post";
 
 @Table("sample2_post_details")
@@ -18,7 +18,7 @@ export class PostDetails {
     @Column()
     metadata: string;
     
-    @OneToOneInverse(type => Post, post => post.details, {
+    @OneToOne(type => Post, post => post.details, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

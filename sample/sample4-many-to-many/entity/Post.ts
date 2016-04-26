@@ -7,6 +7,7 @@ import {PostAuthor} from "./PostAuthor";
 import {PostInformation} from "./PostInformation";
 import {PostImage} from "./PostImage";
 import {PostMetadata} from "./PostMetadata";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample4_post")
 export class Post {
@@ -26,6 +27,7 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinTable()
     categories: PostCategory[] = [];
 
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
@@ -33,6 +35,7 @@ export class Post {
     @ManyToMany(type => PostDetails, details => details.posts, {
         cascadeInsert: true
     })
+    @JoinTable()
     details: PostDetails[] = [];
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
@@ -40,6 +43,7 @@ export class Post {
     @ManyToMany(type => PostImage, image => image.posts, {
         cascadeUpdate: true
     })
+    @JoinTable()
     images: PostImage[] = [];
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
@@ -47,6 +51,7 @@ export class Post {
     @ManyToMany(type => PostMetadata, metadata => metadata.posts, {
         cascadeRemove: true
     })
+    @JoinTable()
     metadatas: PostMetadata[] = [];
 
     // post has relation with details. full cascades here
@@ -55,10 +60,12 @@ export class Post {
         cascadeUpdate: true,
         cascadeRemove: true
     })
+    @JoinTable()
     informations: PostInformation[] = [];
 
     // post has relation with details. not cascades here. means cannot be persisted, updated or removed
     @ManyToMany(type => PostAuthor, author => author.posts)
+    @JoinTable()
     authors: PostAuthor[] = [];
 
 }

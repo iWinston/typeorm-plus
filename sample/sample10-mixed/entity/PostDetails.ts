@@ -4,7 +4,6 @@ import {OneToOne, OneToMany, ManyToOne} from "../../../src/relations";
 import {Post} from "./Post";
 import {Chapter} from "./Chapter";
 import {Category} from "./Category";
-import {OneToOneInverse} from "../../../src/decorator/relations/OneToOneInverse";
 
 @Table("sample10_post_details")
 export class PostDetails {
@@ -18,7 +17,7 @@ export class PostDetails {
     @Column()
     comment: string;
 
-    @OneToOneInverse(type => Post, post => post.details)
+    @OneToOne(type => Post, post => post.details)
     post: Post;
 
     @OneToMany(type => Category, category => category.details, {
