@@ -36,8 +36,7 @@ export function OneToOneInverse<T>(typeFunction: (type?: any) => ConstructorFunc
     }
 
     return function (object: Object, propertyName: string) {
-
-        const relationOptions = options ? options : {} as RelationOptions;
+        if (!options) options = {} as RelationOptions;
 
         defaultMetadataStorage().addRelationMetadata(new RelationMetadata({
             target: object.constructor,
@@ -46,7 +45,7 @@ export function OneToOneInverse<T>(typeFunction: (type?: any) => ConstructorFunc
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             isOwning: false,
-            options: relationOptions
+            options: options
         }));
     };
 }

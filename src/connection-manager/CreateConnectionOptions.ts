@@ -1,4 +1,3 @@
-
 import {ConnectionOptions} from "../connection/ConnectionOptions";
 
 /**

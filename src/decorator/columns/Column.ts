@@ -38,18 +38,18 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             type = ColumnTypes.determineTypeFromFunction(Reflect.getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
-        const columnOptions = options ? options : {} as ColumnOptions;
-
+        if (!options) options = {} as ColumnOptions;
+        
         // check if there is no type in column options then set type from first function argument, or guessed one
-        if (!columnOptions.type)
-            columnOptions.type = type;
+        if (!options.type)
+            options.type = type;
 
         // if we still don't have a type then we need to give error to user that type is required
-        if (!columnOptions.type)
+        if (!options.type)
             throw new ColumnTypeUndefinedError(object, propertyName);
 
         // check if auto increment is not set for simple column
-        if (columnOptions.autoIncrement)
+        if (options.autoIncrement)
             throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata
@@ -57,7 +57,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
-            options: columnOptions
+            options: options
         }));
     };
 }

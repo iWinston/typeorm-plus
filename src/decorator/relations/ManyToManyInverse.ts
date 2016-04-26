@@ -36,8 +36,7 @@ export function ManyToManyInverse<T>(typeFunction: (type?: any) => ConstructorFu
     }
 
     return function (object: Object, propertyName: string) {
-
-        const relationOptions = options ? options : {} as RelationOptions;
+        if (!options) options = {} as RelationOptions;
 
         defaultMetadataStorage().addRelationMetadata(new RelationMetadata({
             target: object.constructor,
@@ -46,7 +45,7 @@ export function ManyToManyInverse<T>(typeFunction: (type?: any) => ConstructorFu
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             isOwning: false,
-            options: relationOptions
+            options: options
         }));
     };
 }
