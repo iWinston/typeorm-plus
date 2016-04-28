@@ -6,6 +6,6 @@ import {IndexMetadata} from "../../metadata/IndexMetadata";
  */
 export function Index(name?: string) {
     return function (object: Object, propertyName: string) {
-        defaultMetadataStorage().addIndexMetadata(new IndexMetadata(object.constructor, propertyName, name));
+        defaultMetadataStorage().indexMetadatas.add(new IndexMetadata(object.constructor, propertyName, name));
     };
 }

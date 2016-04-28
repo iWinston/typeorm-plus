@@ -1,23 +1,8 @@
+import {TargetMetadata} from "./TargetMetadata";
+
 /**
  * Contains metadata information about ORM event subscribers.
  */
-export class EventSubscriberMetadata {
-
-    // ---------------------------------------------------------------------
-    // Readonly Properties
-    // ---------------------------------------------------------------------
-
-    /**
-     * Class to which this decorator is applied.
-     */
-    readonly target: Function;
-
-    // ---------------------------------------------------------------------
-    // Constructor
-    // ---------------------------------------------------------------------
-
-    constructor(target: Function) {
-        this.target = target;
-    }
+export class EventSubscriberMetadata extends TargetMetadata {
 
 }

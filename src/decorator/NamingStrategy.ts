@@ -8,6 +8,6 @@ import {defaultMetadataStorage} from "../typeorm";
 export function NamingStrategy(name?: string): Function {
     return function (target: Function) {
         const strategyName = name ? name : (<any> target).name;
-        defaultMetadataStorage().addNamingStrategyMetadata(new NamingStrategyMetadata(target, strategyName));
+        defaultMetadataStorage().namingStrategyMetadatas.add(new NamingStrategyMetadata(target, strategyName));
     };
 }

@@ -1,9 +1,10 @@
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
+import {TargetMetadata} from "./TargetMetadata";
 
 /**
  * This metadata interface contains all information about specific table.
  */
-export class TableMetadata {
+export class TableMetadata extends TargetMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -17,11 +18,6 @@ export class TableMetadata {
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
-
-    /**
-     * Class to which this column is applied.
-     */
-    readonly target: Function;
 
     /**
      * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
@@ -44,8 +40,7 @@ export class TableMetadata {
     constructor(target?: Function, name?: string);
     constructor(target: Function, isAbstract: boolean);
     constructor(target: Function, nameOrIsAbstract?: string|boolean, maybeIsAbstract?: boolean) {
-        if (target)
-            this.target = target;
+        super(target);
         if (typeof nameOrIsAbstract === "string")
             this._name = nameOrIsAbstract;
         if (typeof nameOrIsAbstract === "boolean")
@@ -66,6 +61,16 @@ export class TableMetadata {
             return this._name;
 
         return this.namingStrategy ? this.namingStrategy.tableName((<any>this.target).name) : (<any>this.target).name;
+    }
+
+    /**
+     * Checks if this table is inherited from another table.
+     */
+    isInherited(anotherTable: TableMetadata) {
+        return Object.getPrototypeOf(this.target.prototype).constructor === anotherTable.target;
+        // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
+        // properties get inherited in a right order. To achieve it we can only check a first parent of the class
+        // return this.target.prototype instanceof anotherTable.target;
     }
 
 }

@@ -1,16 +1,13 @@
+import {TargetMetadata} from "./TargetMetadata";
+
 /**
  * This represents metadata of some object's property.
  */
-export abstract class PropertyMetadata {
+export abstract class PropertyMetadata extends TargetMetadata {
 
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
-
-    /**
-     * Class to which this decorator is applied.
-     */
-    readonly target: Function;
 
     /**
      * Class's property name to which this decorator is applied.
@@ -22,8 +19,7 @@ export abstract class PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(target?: Function, propertyName?: string) {
-        if (target)
-            this.target = target;
+        super(target);
         
         if (propertyName)
             this.propertyName = propertyName;

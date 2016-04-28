@@ -7,6 +7,6 @@ import {EventSubscriberMetadata} from "../../metadata/EventSubscriberMetadata";
  */
 export function EventSubscriber() {
     return function (target: Function) {
-        defaultMetadataStorage().addEventSubscriberMetadata(new EventSubscriberMetadata(target));
+        defaultMetadataStorage().eventSubscriberMetadatas.add(new EventSubscriberMetadata(target));
     };
 }

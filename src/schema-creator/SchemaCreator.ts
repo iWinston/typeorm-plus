@@ -3,7 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
-import {EntityMetadataArray} from "../metadata/EntityMetadataArray";
+import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
 
 /**
  * Creates indexes based on the given metadata.
@@ -17,7 +17,7 @@ export class SchemaCreator {
     // -------------------------------------------------------------------------
 
     constructor(private schemaBuilder: SchemaBuilder, 
-                private entityMetadatas: EntityMetadataArray) {
+                private entityMetadatas: EntityMetadataCollection) {
     }
 
     // -------------------------------------------------------------------------

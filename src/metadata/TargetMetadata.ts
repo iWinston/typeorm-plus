@@ -1,26 +1,21 @@
-import {TargetMetadata} from "./TargetMetadata";
-
 /**
- * This metadata interface contains all information about naming strategy.
+ * This represents metadata of some object.
  */
-export class NamingStrategyMetadata extends TargetMetadata {
+export abstract class TargetMetadata {
 
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
-
-    /**
-     * Naming strategy name.
-     */
-    readonly name: string;
+    
+    readonly target: Function;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-
-    constructor(target: Function, name: string) {
-        super(target);
-        this.name = name;
+    
+    constructor(target?: Function) {
+        if (target)
+            this.target = target;
     }
-
+    
 }

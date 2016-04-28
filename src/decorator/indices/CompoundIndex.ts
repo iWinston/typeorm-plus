@@ -6,6 +6,6 @@ import {defaultMetadataStorage} from "../../typeorm";
  */
 export function CompoundIndex(fields: string[]) {
     return function (cls: Function) {
-        defaultMetadataStorage().addCompoundIndexMetadata(new CompoundIndexMetadata(cls, fields));
+        defaultMetadataStorage().compoundIndexMetadatas.add(new CompoundIndexMetadata(cls, fields));
     };
 }

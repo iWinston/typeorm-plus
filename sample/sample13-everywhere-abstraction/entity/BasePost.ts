@@ -10,4 +10,7 @@ export class BasePost {
     @Column()
     title: string;
 
+    @Column()
+    title2312312: string;
+
 }

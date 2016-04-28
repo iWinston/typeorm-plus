@@ -1,12 +1,12 @@
-import {EntityMetadata} from "./EntityMetadata";
-import {EntityMetadataNotFound} from "./error/EntityMetadataNotFound";
+import {EntityMetadata} from "../EntityMetadata";
+import {EntityMetadataNotFound} from "../error/EntityMetadataNotFound";
 
 /**
  * Array for the entity metadatas.
  *
  * @internal
  */
-export class EntityMetadataArray extends Array<EntityMetadata> {
+export class EntityMetadataCollection extends Array<EntityMetadata> {
 
     // -------------------------------------------------------------------------
     // Public Methods

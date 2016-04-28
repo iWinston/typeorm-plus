@@ -56,7 +56,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
         // create and register a new column metadata
-        defaultMetadataStorage().addColumnMetadata(new ColumnMetadata({
+        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,

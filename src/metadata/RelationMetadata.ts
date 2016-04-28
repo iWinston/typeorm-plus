@@ -1,11 +1,11 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationTypes, RelationType} from "./types/RelationTypes";
-import {RelationOptions} from "./options/RelationOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
+import {RelationMetadataArgs} from "./args/RelationMetadataArgs";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -17,42 +17,6 @@ export type RelationTypeInFunction = ((type?: any) => Function);
  */
 export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
 
-/**
- * Relation metadata constructor arguments.
- */
-export interface RelationMetadataArgs {
-
-    /**
-     * Class to which this relation is applied.
-     */
-    target: Function;
-
-    /**
-     * Class's property name to which this relation is applied.
-     */
-    propertyName: string;
-
-    /**
-     * Type of relation. Can be one of the value of the RelationTypes class.
-     */
-    relationType: RelationType;
-
-    /**
-     * Type of the relation. This type is in function because of language specifics and problems with recursive
-     * referenced classes.
-     */
-    type: RelationTypeInFunction;
-
-    /**
-     * Inverse side of the relation.
-     */
-    inverseSideProperty: PropertyTypeInFunction<any>;
-
-    /**
-     * Additional relation options.
-     */
-    options: RelationOptions;
-}
 
 /**
  * This metadata interface contains all information about some document's relation.

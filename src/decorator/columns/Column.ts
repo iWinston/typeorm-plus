@@ -53,7 +53,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata
-        defaultMetadataStorage().addColumnMetadata(new ColumnMetadata({
+        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,

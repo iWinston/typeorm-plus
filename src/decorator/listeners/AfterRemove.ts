@@ -7,7 +7,7 @@ import {EntityListenerMetadata} from "../../metadata/EntityListenerMetadata";
  */
 export function AfterRemove() {
     return function (object: Object, propertyName: string) {
-        defaultMetadataStorage().addEntityListenerMetadata(new EntityListenerMetadata(
+        defaultMetadataStorage().entityListenerMetadatas.add(new EntityListenerMetadata(
             object.constructor, 
             propertyName, 
             EventListenerTypes.AFTER_REMOVE

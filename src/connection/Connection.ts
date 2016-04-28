@@ -12,7 +12,7 @@ import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoad
 import {defaultMetadataStorage, getContainer} from "../typeorm";
 import {EntityMetadataBuilder} from "../metadata-storage/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
-import {EntityMetadataArray} from "../metadata/EntityMetadataArray";
+import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
 import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
 import {NoConnectionForRepositoryError} from "./error/NoConnectionForRepositoryError";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
@@ -76,7 +76,7 @@ export class Connection {
     /**
      * All entity metadatas that are registered for this connection.
      */
-    private readonly entityMetadatas = new EntityMetadataArray();
+    private readonly entityMetadatas = new EntityMetadataCollection();
 
     /**
      * All naming strategy metadatas that are registered for this connection.
@@ -255,19 +255,20 @@ export class Connection {
     private buildMetadatas() {
         
         // first register naming strategies
-        const metadatas = defaultMetadataStorage().findNamingStrategiesForClasses(this.namingStrategyClasses);
+        const metadatas = defaultMetadataStorage().namingStrategyMetadatas.filterByClasses(this.namingStrategyClasses);
         this.namingStrategyMetadatas.push(...metadatas);
 
         // second register subscriber metadatas
         const subscribers = defaultMetadataStorage()
-            .findEventSubscribersForClasses(this.subscriberClasses)
+            .eventSubscriberMetadatas
+            .filterByClasses(this.subscriberClasses)
             .map(metadata => this.createContainerInstance(metadata.target));
         this.subscriberMetadatas.push(...subscribers);
 
         // third register entity and entity listener metadatas
         const entityMetadataBuilder = new EntityMetadataBuilder(this.createNamingStrategy());
         const entityMetadatas = entityMetadataBuilder.build(this.entityClasses);
-        const entityListenerMetadatas = defaultMetadataStorage().findEntityListenersForClasses(this.entityClasses);
+        const entityListenerMetadatas = defaultMetadataStorage().entityListenerMetadatas.filterByClasses(this.entityClasses);
 
         this.entityMetadatas.push(...entityMetadatas);
         this.entityListeners.push(...entityListenerMetadatas);

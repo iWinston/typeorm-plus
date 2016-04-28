@@ -12,7 +12,7 @@ export class IndexMetadata extends PropertyMetadata {
     /**
      * The name of the index.
      */
-    readonly name: string|undefined;
+    readonly name: string;
     
     // ---------------------------------------------------------------------
     // Constructor
@@ -20,7 +20,9 @@ export class IndexMetadata extends PropertyMetadata {
 
     constructor(target: Function, propertyName: string, name?: string) {
         super(target, propertyName);
-        this.name = name; // todo: if there is no name, then generate it
+        
+        if (name)
+            this.name = name; // todo: if there is no name, then generate it (using naming strategy?)
     }
 
 

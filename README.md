@@ -793,6 +793,7 @@ Feel free to contribute ;)
 * fixtures and migrations
 * lazy loading of properties throw promises? Property can have a Promise\<Entity\> type.
 * cover everything with tests
+* logging
 
 
 [1]: https://en.wikipedia.org/wiki/Object-relational_mapping

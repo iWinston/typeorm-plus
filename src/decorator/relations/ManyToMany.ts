@@ -38,7 +38,7 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ConstructorFunction<
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        defaultMetadataStorage().addRelationMetadata(new RelationMetadata({
+        defaultMetadataStorage().relationMetadatas.add(new RelationMetadata({
             target: object.constructor,
             propertyName: propertyName,
             relationType: RelationTypes.MANY_TO_MANY,

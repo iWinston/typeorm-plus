@@ -1,6 +1,5 @@
 import {MetadataStorage} from "./MetadataStorage";
 import {PropertyMetadata} from "../metadata/PropertyMetadata";
-import {TableMetadata} from "../metadata/TableMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
@@ -8,6 +7,8 @@ import {ColumnOptions} from "../metadata/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {JunctionTableMetadata} from "../metadata/JunctionTableMetadata";
 import {defaultMetadataStorage} from "../typeorm";
+import {TableMetadata} from "../metadata/TableMetadata";
+import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -17,6 +18,9 @@ import {defaultMetadataStorage} from "../typeorm";
 export class EntityMetadataBuilder {
 
     // todo: type in function validation, inverse side function validation
+    // todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
+
+    // todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
     
     private metadataStorage: MetadataStorage = defaultMetadataStorage();
     
@@ -35,70 +39,50 @@ export class EntityMetadataBuilder {
      * Builds a complete metadata aggregations for the given entity classes.
      */
     build(entityClasses: Function[]): EntityMetadata[] {
+        
+        const allMetadataStorage = defaultMetadataStorage();
 
         // filter the metadata only we need - those which are bind to the given table classes
-        const tableMetadatas = this.metadataStorage.findTableMetadatasForClasses(entityClasses);
-        const abstractTableMetadatas = this.metadataStorage.findAbstractTableMetadatasForClasses(entityClasses);
-        const columnMetadatas = this.metadataStorage.findFieldMetadatasForClasses(entityClasses);
-        const relationMetadatas = this.metadataStorage.findRelationMetadatasForClasses(entityClasses);
-        const joinTableMetadatas = this.metadataStorage.findJoinTableMetadatasForClasses(entityClasses);
-        const joinColumnMetadatas = this.metadataStorage.findJoinColumnMetadatasForClasses(entityClasses);
-        const indexMetadatas = this.metadataStorage.findIndexMetadatasForClasses(entityClasses);
-        const compoundIndexMetadatas = this.metadataStorage.findCompoundIndexMetadatasForClasses(entityClasses);
+        const allTableMetadatas = allMetadataStorage.tableMetadatas.filterByClasses(entityClasses);
+        const tableMetadatas = allTableMetadatas.filterByClasses(entityClasses).filter(table => !table.isAbstract);
+
+        // const abstractTableMetadatas = allTableMetadatas.filterByClasses(entityClasses).filter(table => table.isAbstract);
 
         const entityMetadatas = tableMetadatas.map(tableMetadata => {
+            const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
 
-            const constructorChecker = (opm: PropertyMetadata) => opm.target === tableMetadata.target;
-            const constructorChecker2 = (opm: { target: Function }) => opm.target === tableMetadata.target;
-
-            let entityColumns = columnMetadatas.filter(constructorChecker);
-            let entityRelations = relationMetadatas.filter(constructorChecker);
-            let entityCompoundIndices = compoundIndexMetadatas.filter(constructorChecker2);
-            let entityIndices = indexMetadatas.filter(constructorChecker);
-            let entityJoinTables = joinTableMetadatas.filter(constructorChecker);
-            let entityJoinColumns = joinColumnMetadatas.filter(constructorChecker);
-
-            // merge all columns in the abstract table extendings of this table
-            abstractTableMetadatas.forEach(abstractMetadata => {
-                if (!this.isTableMetadataExtendsAbstractMetadata(tableMetadata, abstractMetadata)) return;
-                const constructorChecker = (opm: PropertyMetadata) => opm.target === abstractMetadata.target;
-                const constructorChecker2 = (opm: { target: Function }) => opm.target === abstractMetadata.target;
-
-                const abstractColumns = columnMetadatas.filter(constructorChecker);
-                const abstractRelations = entityRelations.filter(constructorChecker);
-                const abstractCompoundIndices = entityCompoundIndices.filter(constructorChecker2);
-                const abstractIndices = indexMetadatas.filter(constructorChecker);
-
-                const inheritedFields = this.filterObjectPropertyMetadatasIfNotExist(abstractColumns, entityColumns);
-                const inheritedRelations = this.filterObjectPropertyMetadatasIfNotExist(abstractRelations, entityRelations);
-                const inheritedIndices = this.filterObjectPropertyMetadatasIfNotExist(abstractIndices, entityIndices);
-
-                entityCompoundIndices = entityCompoundIndices.concat(abstractCompoundIndices);
-                entityColumns = entityColumns.concat(inheritedFields);
-                entityRelations = entityRelations.concat(inheritedRelations);
-                entityIndices = entityIndices.concat(inheritedIndices);
-            });
-
-            const entityMetadata = new EntityMetadata(tableMetadata, entityColumns, entityRelations, entityIndices, entityCompoundIndices, []);
+            const entityMetadata = new EntityMetadata(
+                tableMetadata,
+                mergedMetadata.columnMetadatas,
+                mergedMetadata.relationMetadatas,
+                mergedMetadata.indexMetadatas,
+                mergedMetadata.compoundIndexMetadatas,
+                []
+            );
 
             // find entity's relations join tables
-            entityRelations.forEach(relation => {
-                const relationJoinTable = entityJoinTables.find(joinTable => joinTable.propertyName === relation.propertyName);
+            entityMetadata.relations.forEach(relation => {
+                const relationJoinTable = mergedMetadata.joinTableMetadatas.find(joinTable => joinTable.propertyName === relation.propertyName);
                 if (relationJoinTable)
                     relation.joinTable = relationJoinTable;
             });
 
             // find entity's relations join columns
-            entityRelations.forEach(relation => {
-                const relationJoinColumn = entityJoinColumns.find(joinColumn => joinColumn.propertyName === relation.propertyName);
+            entityMetadata.relations.forEach(relation => {
+                const relationJoinColumn = mergedMetadata.joinColumnMetadatas.find(joinColumn => joinColumn.propertyName === relation.propertyName);
                 if (relationJoinColumn)
                     relation.joinColumn = relationJoinColumn;
             });
 
             // set naming strategies
             tableMetadata.namingStrategy = this.namingStrategy;
-            entityColumns.forEach(column => column.namingStrategy = this.namingStrategy);
-            entityRelations.forEach(relation => relation.namingStrategy = this.namingStrategy);
+            entityMetadata.columns.forEach(column => column.namingStrategy = this.namingStrategy);
+            entityMetadata.relations.forEach(relation => relation.namingStrategy = this.namingStrategy);
+
+
+            // check if table metadata has an id
+            if (!entityMetadata.primaryColumn)
+                throw new Error(`Entity "${entityMetadata.name}" (table "${tableMetadata.name}") does not have a primary column. Primary column is required to have in all your entities. Use @PrimaryColumn decorator to add a primary column to your entity.`);
 
             return entityMetadata;
         });
@@ -128,9 +112,9 @@ export class EntityMetadataBuilder {
                 }
 
                 // create and add foreign key
-                const foreignKey = new ForeignKeyMetadata(metadata.table, 
-                    [relationalColumn], 
-                    inverseSideMetadata.table, 
+                const foreignKey = new ForeignKeyMetadata(metadata.table,
+                    [relationalColumn],
+                    inverseSideMetadata.table,
                     [inverseSideMetadata.primaryColumn],
                     relation.onDelete
                 );
@@ -153,6 +137,7 @@ export class EntityMetadataBuilder {
                 const tableName = metadata.table.name + "_" + relation.name + "_" +
                     inverseSideMetadata.table.name + "_" + inverseSideMetadata.primaryColumn.name;
 
+                
                 const tableMetadata = new JunctionTableMetadata(tableName);
                 const column1options: ColumnOptions = {
                     length: metadata.primaryColumn.length,
@@ -193,14 +178,9 @@ export class EntityMetadataBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private isTableMetadataExtendsAbstractMetadata(tableMetadata: TableMetadata, abstractMetadata: TableMetadata): boolean {
-        return tableMetadata.target.prototype instanceof abstractMetadata.target;
-    }
-
-    private filterObjectPropertyMetadatasIfNotExist<T extends PropertyMetadata>(newMetadatas: T[], existsMetadatas: T[]): T[] {
+    private filterRepeatedMetadatas<T extends PropertyMetadata>(newMetadatas: T[], existsMetadatas: T[]): T[] {
         return newMetadatas.filter(fieldFromMapped => {
             return !!existsMetadatas.find(fieldFromDocument => fieldFromDocument.propertyName === fieldFromMapped.propertyName);
         });
     }
-
 }

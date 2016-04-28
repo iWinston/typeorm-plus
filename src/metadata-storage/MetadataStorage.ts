@@ -1,6 +1,4 @@
 import {TableMetadata} from "../metadata/TableMetadata";
-import {MetadataAlreadyExistsError} from "./error/MetadataAlreadyExistsError";
-import {MetadataWithSuchNameAlreadyExistsError} from "./error/MetadataWithSuchNameAlreadyExistsError";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {CompoundIndexMetadata} from "../metadata/CompoundIndexMetadata";
@@ -10,6 +8,8 @@ import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
 import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
+import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
+import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -17,191 +17,103 @@ import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
  */
 export class MetadataStorage {
 
+    // todo: type in function validation, inverse side function validation
+    // todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
+    // todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
+    // todo: check for duplicate targets too since this check has been removed too
+
     // -------------------------------------------------------------------------
     // Properties
     // -------------------------------------------------------------------------
 
-    private tableMetadatas: TableMetadata[] = [];
-    private eventSubscriberMetadatas: EventSubscriberMetadata[] = [];
-    private columnMetadatas: ColumnMetadata[] = [];
-    private indexMetadatas: IndexMetadata[] = [];
-    private entityListenerMetadatas: EntityListenerMetadata[] = [];
-    private compoundIndexMetadatas: CompoundIndexMetadata[] = [];
-    private namingStrategyMetadatas: NamingStrategyMetadata[] = [];
-    private relationMetadatas: RelationMetadata[] = [];
-    private joinColumnMetadatas: JoinColumnMetadata[] = [];
-    private joinTableMetadatas: JoinTableMetadata[] = [];
+    readonly tableMetadatas = new TargetMetadataCollection<TableMetadata>();
+    readonly namingStrategyMetadatas = new TargetMetadataCollection<NamingStrategyMetadata>();
+    readonly eventSubscriberMetadatas = new TargetMetadataCollection<EventSubscriberMetadata>();
+    readonly compoundIndexMetadatas = new TargetMetadataCollection<CompoundIndexMetadata>();
+    readonly columnMetadatas = new PropertyMetadataCollection<ColumnMetadata>();
+    readonly relationMetadatas = new PropertyMetadataCollection<RelationMetadata>();
+    readonly joinColumnMetadatas = new PropertyMetadataCollection<JoinColumnMetadata>();
+    readonly joinTableMetadatas = new PropertyMetadataCollection<JoinTableMetadata>();
+    readonly indexMetadatas = new PropertyMetadataCollection<IndexMetadata>();
+    readonly entityListenerMetadatas = new PropertyMetadataCollection<EntityListenerMetadata>();
 
     // -------------------------------------------------------------------------
-    // Adder Methods
+    // Constructor
     // -------------------------------------------------------------------------
 
-    addTableMetadata(metadata: TableMetadata) {
-        if (this.hasTableMetadataWithObjectConstructor(metadata.target))
-            throw new MetadataAlreadyExistsError("Table", metadata.target);
-
-        if (metadata.name && this.hasTableMetadataWithName(metadata.name))
-            throw new MetadataWithSuchNameAlreadyExistsError("Table", metadata.name);
-
-        this.tableMetadatas.push(metadata);
+    constructor(tableMetadatas?: TargetMetadataCollection<TableMetadata>,
+                namingStrategyMetadatas?: TargetMetadataCollection<NamingStrategyMetadata>,
+                eventSubscriberMetadatas?: TargetMetadataCollection<EventSubscriberMetadata>,
+                compoundIndexMetadatas?: TargetMetadataCollection<CompoundIndexMetadata>,
+                columnMetadatas?: PropertyMetadataCollection<ColumnMetadata>,
+                relationMetadatas?: PropertyMetadataCollection<RelationMetadata>,
+                joinColumnMetadatas?: PropertyMetadataCollection<JoinColumnMetadata>,
+                joinTableMetadatas?: PropertyMetadataCollection<JoinTableMetadata>,
+                indexMetadatas?: PropertyMetadataCollection<IndexMetadata>,
+                entityListenerMetadatas?: PropertyMetadataCollection<EntityListenerMetadata>) {
+        if (tableMetadatas)
+            this.tableMetadatas = tableMetadatas;
+        if (namingStrategyMetadatas)
+            this.namingStrategyMetadatas = namingStrategyMetadatas;
+        if (eventSubscriberMetadatas)
+            this.eventSubscriberMetadatas = eventSubscriberMetadatas;
+        if (compoundIndexMetadatas)
+            this.compoundIndexMetadatas = compoundIndexMetadatas;
+        if (columnMetadatas)
+            this.columnMetadatas = columnMetadatas;
+        if (relationMetadatas)
+            this.relationMetadatas = relationMetadatas;
+        if (joinColumnMetadatas)
+            this.joinColumnMetadatas = joinColumnMetadatas;
+        if (joinTableMetadatas)
+            this.joinTableMetadatas = joinTableMetadatas;
+        if (indexMetadatas)
+            this.indexMetadatas = indexMetadatas;
+        if (entityListenerMetadatas)
+            this.entityListenerMetadatas = entityListenerMetadatas;
     }
-
-    addRelationMetadata(metadata: RelationMetadata) {
-        if (this.hasRelationWithOneMetadataOnProperty(metadata.target, metadata.propertyName))
-            throw new MetadataAlreadyExistsError("RelationMetadata", metadata.target, metadata.propertyName);
-
-        if (metadata.name && this.hasRelationWithOneMetadataWithName(metadata.target, metadata.name))
-            throw new MetadataWithSuchNameAlreadyExistsError("RelationMetadata", metadata.name);
-
-        this.relationMetadatas.push(metadata);
-    }
-
-    addColumnMetadata(metadata: ColumnMetadata) {
-        if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName))
-            throw new MetadataAlreadyExistsError("Column", metadata.target);
-
-        if (metadata.name && this.hasFieldMetadataWithName(metadata.target, metadata.name))
-            throw new MetadataWithSuchNameAlreadyExistsError("Column", metadata.name);
-
-        this.columnMetadatas.push(metadata);
-    }
-
-    addEventSubscriberMetadata(metadata: EventSubscriberMetadata) {
-        if (this.hasEventSubscriberWithObjectConstructor(metadata.target))
-            throw new MetadataAlreadyExistsError("EventSubscriber", metadata.target);
-
-        this.eventSubscriberMetadatas.push(metadata);
-    }
-
-    addIndexMetadata(metadata: IndexMetadata) {
-        if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName))
-            throw new MetadataAlreadyExistsError("Index", metadata.target);
-
-        if (metadata.name && this.hasFieldMetadataWithName(metadata.target, metadata.name))
-            throw new MetadataWithSuchNameAlreadyExistsError("Index", metadata.name);
-
-        this.indexMetadatas.push(metadata);
-    }
-
-    addCompoundIndexMetadata(metadata: CompoundIndexMetadata) {
-        if (this.hasCompoundIndexMetadataWithObjectConstructor(metadata.target))
-            throw new MetadataAlreadyExistsError("CompoundIndex", metadata.target);
-
-        this.compoundIndexMetadatas.push(metadata);
-    }
-
-    addNamingStrategyMetadata(metadata: NamingStrategyMetadata) {
-        if (this.hasNamingStrategyMetadataWithObjectConstructor(metadata.target))
-            throw new MetadataAlreadyExistsError("NamingStrategy", metadata.target);
-
-        this.namingStrategyMetadatas.push(metadata);
-    }
-
-    addEntityListenerMetadata(metadata: EntityListenerMetadata) {
-        if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName))
-            throw new MetadataAlreadyExistsError("EventListener", metadata.target);
-
-        this.entityListenerMetadatas.push(metadata);
-    }
-
-    addJoinTableMetadata(metadata: JoinTableMetadata) {
-        // if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName)) // todo later
-        //     throw new MetadataAlreadyExistsError("EventListener", metadata.target);
-        this.joinTableMetadatas.push(metadata);
-    }
-
-    addJoinColumnMetadata(metadata: JoinColumnMetadata) {
-        // if (this.hasFieldMetadataOnProperty(metadata.target, metadata.propertyName)) // todo later
-        //     throw new MetadataAlreadyExistsError("EventListener", metadata.target);
-        this.joinColumnMetadatas.push(metadata);
-    }
-
+    
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
-    findEventSubscribersForClasses(classes: Function[]): EventSubscriberMetadata[] { 
-        return this.eventSubscriberMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
+    /**
+     * Creates a new copy of the MetadataStorage with same metadatas as in current metadata storage, but filtered
+     * by classes.
+     */
+    mergeWithAbstract(allTableMetadatas: TargetMetadataCollection<TableMetadata>,
+                      tableMetadata: TableMetadata) {
+
+        const compoundIndexMetadatas = this.compoundIndexMetadatas.filterByClass(tableMetadata.target);
+        const columnMetadatas = this.columnMetadatas.filterByClass(tableMetadata.target);
+        const relationMetadatas = this.relationMetadatas.filterByClass(tableMetadata.target);
+        const joinColumnMetadatas = this.joinColumnMetadatas.filterByClass(tableMetadata.target);
+        const joinTableMetadatas = this.joinTableMetadatas.filterByClass(tableMetadata.target);
+        const indexMetadatas = this.indexMetadatas.filterByClass(tableMetadata.target);
+        const entityListenerMetadatas = this.entityListenerMetadatas.filterByClass(tableMetadata.target);
+
+        allTableMetadatas
+            .filter(metadata => tableMetadata.isInherited(metadata))
+            .forEach(parentMetadata => {
+                const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
+
+                columnMetadatas.push(...metadatasFromAbstract.columnMetadatas.filterRepeatedMetadatas(columnMetadatas));
+                relationMetadatas.push(...metadatasFromAbstract.relationMetadatas.filterRepeatedMetadatas(relationMetadatas));
+                joinColumnMetadatas.push(...metadatasFromAbstract.joinColumnMetadatas.filterRepeatedMetadatas(joinColumnMetadatas));
+                joinTableMetadatas.push(...metadatasFromAbstract.joinTableMetadatas.filterRepeatedMetadatas(joinTableMetadatas));
+                indexMetadatas.push(...metadatasFromAbstract.indexMetadatas.filterRepeatedMetadatas(indexMetadatas));
+                entityListenerMetadatas.push(...metadatasFromAbstract.entityListenerMetadatas.filterRepeatedMetadatas(entityListenerMetadatas));
+            });
+
+        return {
+            compoundIndexMetadatas: compoundIndexMetadatas,
+            columnMetadatas: columnMetadatas,
+            relationMetadatas: relationMetadatas,
+            joinColumnMetadatas: joinColumnMetadatas,
+            joinTableMetadatas: joinTableMetadatas,
+            indexMetadatas: indexMetadatas,
+            entityListenerMetadatas: entityListenerMetadatas
+        };
     }
-
-    findEntityListenersForClasses(classes: Function[]): EntityListenerMetadata[] { 
-        return this.entityListenerMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    findTableMetadatasForClasses(classes: Function[]): TableMetadata[] {
-        return this.tableMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1 && !metadata.isAbstract);
-    }
-
-    findCompoundIndexMetadatasForClasses(classes: Function[]): CompoundIndexMetadata[] {
-        return this.compoundIndexMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    findAbstractTableMetadatasForClasses(classes: Function[]): TableMetadata[] {
-        return this.tableMetadatas.filter(metadata => metadata.isAbstract && classes.indexOf(metadata.target) !== -1);
-    }
-
-    findIndexMetadatasForClasses(classes: Function[]): IndexMetadata[] {
-        return this.indexMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    findFieldMetadatasForClasses(classes: Function[]): ColumnMetadata[] {
-        return this.columnMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    findRelationMetadatasForClasses(classes: Function[]): RelationMetadata[] {
-        return this.relationMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    findJoinTableMetadatasForClasses(classes: Function[]): JoinTableMetadata[] {
-        return this.joinTableMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    findJoinColumnMetadatasForClasses(classes: Function[]): JoinColumnMetadata[] {
-        return this.joinColumnMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    findNamingStrategiesForClasses(classes: Function[]): NamingStrategyMetadata[] {
-        return this.namingStrategyMetadatas.filter(metadata => classes.indexOf(metadata.target) !== -1);
-    }
-
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
-    private hasTableMetadataWithObjectConstructor(constructor: Function): boolean {
-        return !!this.tableMetadatas.find(metadata => metadata.target === constructor);
-    }
-
-    private hasCompoundIndexMetadataWithObjectConstructor(constructor: Function): boolean {
-        return !!this.compoundIndexMetadatas.find(metadata => metadata.target === constructor);
-    }
-
-    private hasNamingStrategyMetadataWithObjectConstructor(constructor: Function): boolean {
-        return !!this.namingStrategyMetadatas.find(metadata => metadata.target === constructor);
-    }
-
-    private hasEventSubscriberWithObjectConstructor(constructor: Function): boolean {
-        return !!this.eventSubscriberMetadatas.find(metadata => metadata.target === constructor);
-    }
-
-    private hasFieldMetadataOnProperty(constructor: Function, propertyName: string): boolean {
-        return !!this.columnMetadatas.find(metadata => metadata.target === constructor && metadata.propertyName === propertyName);
-    }
-
-    private hasRelationWithOneMetadataOnProperty(constructor: Function, propertyName: string): boolean {
-        return !!this.relationMetadatas.find(metadata => metadata.target === constructor && metadata.propertyName === propertyName);
-    }
-
-    private hasTableMetadataWithName(name: string): boolean {
-        return !!this.tableMetadatas.find(metadata => metadata.name === name);
-    }
-
-    private hasFieldMetadataWithName(constructor: Function, name: string): boolean {
-        return !!this.columnMetadatas.find(metadata => metadata.target === constructor && metadata.name === name);
-    }
-
-    private hasRelationWithOneMetadataWithName(constructor: Function, name: string): boolean {
-        return !!this.relationMetadatas.find(metadata => metadata.target === constructor && metadata.name === name);
-    }
-
+    
 }

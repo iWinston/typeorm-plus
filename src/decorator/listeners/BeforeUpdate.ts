@@ -7,7 +7,7 @@ import {EntityListenerMetadata} from "../../metadata/EntityListenerMetadata";
  */
 export function BeforeUpdate() {
     return function (object: Object, propertyName: string) {
-        defaultMetadataStorage().addEntityListenerMetadata(new EntityListenerMetadata(
+        defaultMetadataStorage().entityListenerMetadatas.add(new EntityListenerMetadata(
             object.constructor, 
             propertyName, 
             EventListenerTypes.BEFORE_UPDATE

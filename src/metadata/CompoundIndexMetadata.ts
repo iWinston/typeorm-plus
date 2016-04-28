@@ -1,16 +1,13 @@
+import {TargetMetadata} from "./TargetMetadata";
+
 /**
  * This metadata interface contains all information about table's compound index.
  */
-export class CompoundIndexMetadata {
+export class CompoundIndexMetadata extends TargetMetadata {
 
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
-
-    /**
-     * Class to which this decorator is applied.
-     */
-    readonly target: Function;
 
     /**
      * Fields combination to be used as index.
@@ -22,7 +19,7 @@ export class CompoundIndexMetadata {
     // ---------------------------------------------------------------------
 
     constructor(target: Function, fields: string[]) {
-        this.target = target;
+        super(target);
         this.fields = fields;
     }
 
