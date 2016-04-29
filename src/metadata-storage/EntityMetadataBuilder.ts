@@ -1,5 +1,4 @@
 import {MetadataStorage} from "./MetadataStorage";
-import {PropertyMetadata} from "../metadata/PropertyMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
@@ -7,8 +6,13 @@ import {ColumnOptions} from "../metadata/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {JunctionTableMetadata} from "../metadata/JunctionTableMetadata";
 import {defaultMetadataStorage} from "../typeorm";
-import {TableMetadata} from "../metadata/TableMetadata";
-import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
+import {UsingJoinTableIsNotAllowedError} from "./error/UsingJoinTableIsNotAllowedError";
+import {UsingJoinTableOnlyOnOneSideAllowedError} from "./error/UsingJoinTableOnlyOnOneSideAllowedError";
+import {UsingJoinColumnIsNotAllowedError} from "./error/UsingJoinColumnIsNotAllowedError";
+import {UsingJoinColumnOnlyOnOneSideAllowedError} from "./error/UsingJoinColumnOnlyOnOneSideAllowedError";
+import {MissingJoinColumnError} from "./error/MissingJoinColumnError";
+import {MissingJoinTableError} from "./error/MissingJoinTableError";
+import {EntityMetadataValidator} from "./EntityMetadataValidator";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -23,6 +27,7 @@ export class EntityMetadataBuilder {
     // todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
     
     private metadataStorage: MetadataStorage = defaultMetadataStorage();
+    private entityValidator = new EntityMetadataValidator();
     
     // -------------------------------------------------------------------------
     // Constructor
@@ -45,8 +50,6 @@ export class EntityMetadataBuilder {
         // filter the metadata only we need - those which are bind to the given table classes
         const allTableMetadatas = allMetadataStorage.tableMetadatas.filterByClasses(entityClasses);
         const tableMetadatas = allTableMetadatas.filterByClasses(entityClasses).filter(table => !table.isAbstract);
-
-        // const abstractTableMetadatas = allTableMetadatas.filterByClasses(entityClasses).filter(table => table.isAbstract);
 
         const entityMetadatas = tableMetadatas.map(tableMetadata => {
             const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
@@ -78,14 +81,19 @@ export class EntityMetadataBuilder {
             tableMetadata.namingStrategy = this.namingStrategy;
             entityMetadata.columns.forEach(column => column.namingStrategy = this.namingStrategy);
             entityMetadata.relations.forEach(relation => relation.namingStrategy = this.namingStrategy);
-
-
-            // check if table metadata has an id
-            if (!entityMetadata.primaryColumn)
-                throw new Error(`Entity "${entityMetadata.name}" (table "${tableMetadata.name}") does not have a primary column. Primary column is required to have in all your entities. Use @PrimaryColumn decorator to add a primary column to your entity.`);
-
+            
             return entityMetadata;
         });
+
+        // set inverse side (related) entity metadatas for all relation metadatas
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.relations.forEach(relation => {
+                relation.relatedEntityMetadata = entityMetadatas.find(m => m.target === relation.type);
+            });
+        });
+
+        // check for errors in build metadata schema (we need to check after relationEntityMetadata is set)
+        this.entityValidator.validateMany(entityMetadatas);
 
         // generate columns and foreign keys for tables with relations
         entityMetadatas.forEach(metadata => {
@@ -119,13 +127,6 @@ export class EntityMetadataBuilder {
                     relation.onDelete
                 );
                 metadata.foreignKeys.push(foreignKey);
-            });
-        });
-
-        // set inverse side (related) entity metadatas for all relation metadatas
-        entityMetadatas.forEach(entityMetadata => {
-            entityMetadata.relations.forEach(relation => {
-                relation.relatedEntityMetadata = entityMetadatas.find(m => m.target === relation.type);
             });
         });
 
@@ -174,13 +175,4 @@ export class EntityMetadataBuilder {
         return entityMetadatas.concat(junctionEntityMetadatas);
     }
 
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
-    private filterRepeatedMetadatas<T extends PropertyMetadata>(newMetadatas: T[], existsMetadatas: T[]): T[] {
-        return newMetadatas.filter(fieldFromMapped => {
-            return !!existsMetadatas.find(fieldFromDocument => fieldFromDocument.propertyName === fieldFromMapped.propertyName);
-        });
-    }
 }

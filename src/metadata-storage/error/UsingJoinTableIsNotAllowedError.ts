@@ -1,0 +1,17 @@
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
+
+/**
+ * @internal
+ */
+export class UsingJoinTableIsNotAllowedError extends Error {
+    name = "UsingJoinTableIsNotAllowedError";
+
+    constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
+        super();
+        this.message = `Using JoinTable on ${entityMetadata.name}#${relation.name} is wrong. ` + 
+            `${entityMetadata.name}#${relation.name} has ${relation.relationType} relation, ` + 
+            `however you can use JoinTable only on many-to-many relations.`;
+    }
+
+}

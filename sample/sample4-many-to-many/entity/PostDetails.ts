@@ -2,6 +2,7 @@ import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {ManyToMany} from "../../../src/relations";
 import {Post} from "./Post";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample4_post_details")
 export class PostDetails {

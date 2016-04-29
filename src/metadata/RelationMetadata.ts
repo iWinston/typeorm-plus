@@ -184,6 +184,10 @@ export class RelationMetadata extends PropertyMetadata {
     get isManyToMany(): boolean {
         return this.relationType === RelationTypes.MANY_TO_MANY;
     }
+    
+    get hasInverseSide(): boolean {
+        return !!this.inverseRelation;
+    }
 
     // ---------------------------------------------------------------------
     // Private Methods

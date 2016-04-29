@@ -1,0 +1,17 @@
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
+
+/**
+ * @internal
+ */
+export class UsingJoinColumnOnlyOnOneSideAllowedError extends Error {
+    name = "UsingJoinColumnOnlyOnOneSideAllowedError";
+
+    constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
+        super();
+        this.message = `Using JoinColumn is allowed only on one side of the one-to-one relationship. ` + 
+            `Both ${entityMetadata.name}#${relation.name} and ${relation.relatedEntityMetadata.name}#${relation.inverseRelation.name} ` + 
+            `has JoinTable decorators. Choose one of them and left JoinTable decorator only on it.`;
+    }
+
+}
