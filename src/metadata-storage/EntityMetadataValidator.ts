@@ -5,6 +5,7 @@ import {UsingJoinColumnOnlyOnOneSideAllowedError} from "./error/UsingJoinColumnO
 import {MissingJoinColumnError} from "./error/MissingJoinColumnError";
 import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
 
 /**
  * Validates built entity metadatas.
@@ -17,16 +18,22 @@ export class EntityMetadataValidator {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Validates all given entity metadatas.
+     */
     validateMany(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata));
     }
-    
+
+    /**
+     * Validates given entity metadata.
+     */
     validate(entityMetadata: EntityMetadata) {
 
         // check if table metadata has an id
         if (!entityMetadata.primaryColumn)
-            throw new Error(`Entity "${entityMetadata.name}" does not have a primary column. Primary column is required to have in all your entities. Use @PrimaryColumn decorator to add a primary column to your entity.`);
-
+            throw new MissingPrimaryColumnError(entityMetadata);
+        
         entityMetadata.relations.forEach(relation => {
 
             // check join tables:

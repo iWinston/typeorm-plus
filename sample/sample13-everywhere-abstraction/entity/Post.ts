@@ -13,13 +13,6 @@ export class Post extends BaseObject {
     @Column()
     text: string;
 
-    @ManyToOne(type => PostAuthor, post => post.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
-    })
-    author: PostAuthor;
-
     @ManyToMany(type => PostCategory, category => category.posts, {
         cascadeInsert: true,
         cascadeUpdate: true,
