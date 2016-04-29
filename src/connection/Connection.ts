@@ -62,7 +62,7 @@ export class Connection {
     /**
      * All subscribers that are registered for this connection.
      */
-    readonly subscriberMetadatas: EventSubscriberInterface<any>[] = [];
+    readonly eventSubscribers: EventSubscriberInterface<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Private Properties
@@ -263,7 +263,7 @@ export class Connection {
             .eventSubscriberMetadatas
             .filterByClasses(this.subscriberClasses)
             .map(metadata => this.createContainerInstance(metadata.target));
-        this.subscriberMetadatas.push(...subscribers);
+        this.eventSubscribers.push(...subscribers);
 
         // third register entity and entity listener metadatas
         const entityMetadataBuilder = new EntityMetadataBuilder(this.createNamingStrategy());

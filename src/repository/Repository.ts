@@ -7,6 +7,8 @@ import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperati
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
+import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -14,12 +16,21 @@ import {FindOptions, FindOptionsUtils} from "./FindOptions";
 export class Repository<Entity> {
 
     // -------------------------------------------------------------------------
+    // Private Properties
+    // -------------------------------------------------------------------------
+
+    private broadcaster: Broadcaster;
+    private persister: PersistOperationExecutor;
+    
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(private connection: Connection, 
-                private entityMetadatas: EntityMetadata[],
+                private entityMetadatas: EntityMetadataCollection,
                 private metadata: EntityMetadata) {
+        this.broadcaster = new Broadcaster(entityMetadatas, connection.eventSubscribers, connection.entityListeners);
+        this.persister = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);
     }
 
     // -------------------------------------------------------------------------
@@ -42,8 +53,7 @@ export class Repository<Entity> {
      */
     createQueryBuilder(alias: string): QueryBuilder<Entity> {
         // const qb = this.connection.driver.createQueryBuilder<Entity>();
-        const cls: any = this.connection.driver.queryBuilderClass;
-        const qb = new cls(this.connection, this.entityMetadatas);
+        const qb = new QueryBuilder(this.connection.driver, this.entityMetadatas, this.broadcaster);
         return qb
             .select(alias)
             .from(this.metadata.target, alias);
@@ -93,7 +103,6 @@ export class Repository<Entity> {
      */
     persist(entity: Entity): Promise<Entity> {
         let loadedDbEntity: any;
-        const persister = new PersistOperationExecutor(this.connection, this.entityMetadatas);
         const builder = new EntityPersistOperationBuilder(this.connection, this.entityMetadatas);
         const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
         const promise: Promise<Entity> = !this.hasId(entity) ? Promise.resolve<Entity|null>(null) : this.initialize(entity);
@@ -105,7 +114,7 @@ export class Repository<Entity> {
             }) // need to find db entities that were not loaded by initialize method
             .then(allDbEntities => {
                 const persistOperation = builder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
-                return persister.executePersistOperation(persistOperation);
+                return this.persister.executePersistOperation(persistOperation);
             }).then(() => entity);
     }
 
@@ -113,14 +122,13 @@ export class Repository<Entity> {
      * Removes a given entity from the database.
      */
     remove(entity: Entity): Promise<Entity> {
-        const persister = new PersistOperationExecutor(this.connection, this.entityMetadatas);
         return this.initialize(entity).then(dbEntity => {
             (<any> entity)[this.metadata.primaryColumn.name] = undefined;
             const builder = new EntityPersistOperationBuilder(this.connection, this.entityMetadatas);
             const dbEntities = this.extractObjectsById(dbEntity, this.metadata);
             const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
             const persistOperation = builder.buildOnlyRemovement(this.metadata, dbEntity, entity, dbEntities, allPersistedEntities);
-            return persister.executePersistOperation(persistOperation);
+            return this.persister.executePersistOperation(persistOperation);
         }).then(() => entity);
     }
 

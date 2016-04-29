@@ -4,6 +4,8 @@ import {Connection} from "../connection/Connection";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {Driver} from "../driver/Driver";
 
 /**
  * @internal
@@ -21,7 +23,6 @@ export class QueryBuilder<Entity> {
     // Private properties
     // -------------------------------------------------------------------------
 
-    private broadcaster: Broadcaster;
     private aliasMap: AliasMap;
     private type: "select"|"update"|"delete";
     private selects: string[] = [];
@@ -44,10 +45,10 @@ export class QueryBuilder<Entity> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection,
-                private entityMetadatas: EntityMetadata[]) {
+    constructor(private driver: Driver,
+                private entityMetadatas: EntityMetadataCollection, 
+                private broadcaster: Broadcaster) {
         this.aliasMap = new AliasMap(entityMetadatas);
-        this.broadcaster = new Broadcaster(connection, this.entityMetadatas);
     }
 
     // -------------------------------------------------------------------------
@@ -295,11 +296,11 @@ export class QueryBuilder<Entity> {
     }
     
     execute(): Promise<any> {
-        return this.connection.driver.query(this.getSql());
+        return this.driver.query(this.getSql());
     }
     
     getScalarResults<T>(): Promise<T[]> {
-        return this.connection.driver.query<T[]>(this.getSql());
+        return this.driver.query<T[]>(this.getSql());
     }
 
     getSingleScalarResult<T>(): Promise<T> {
@@ -309,8 +310,7 @@ export class QueryBuilder<Entity> {
     getResults(): Promise<Entity[]> {
         const mainAlias = this.aliasMap.mainAlias.name;
         if (this.firstResult || this.maxResults) {
-            // const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
-            const metadata = this.entityMetadatas.find(metadata => metadata.target === this.fromEntity.alias.target);
+            const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
             let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAlias}_${metadata.primaryColumn.name}) as ids`;
             if (this.orderBys && this.orderBys.length > 0)
                 idsQuery += ", " + this.orderBys.map(orderBy => orderBy.sort.replace(".", "_")).join(", ");
@@ -321,7 +321,7 @@ export class QueryBuilder<Entity> {
                 idsQuery += " LIMIT " + this.maxResults;
             if (this.firstResult)
                 idsQuery += " OFFSET " + this.firstResult;
-            return this.connection.driver
+            return this.driver
                 .query<any[]>(idsQuery)
                 .then((results: any[]) => {
                     const ids = results.map(result => result["ids"]).join(", ");
@@ -330,13 +330,13 @@ export class QueryBuilder<Entity> {
                     const queryWithIds = this.clone()
                         .andWhere(mainAlias + "." + metadata.primaryColumn.name + " IN (" + ids + ")")
                         .getSql();
-                    return this.connection.driver.query<any[]>(queryWithIds);
+                    return this.driver.query<any[]>(queryWithIds);
                 })
                 .then(results => this.rawResultsToEntities(results))
                 .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results));
 
         } else {
-            return this.connection.driver
+            return this.driver
                 .query<any[]>(this.getSql())
                 .then(results => this.rawResultsToEntities(results))
                 .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results));
@@ -349,12 +349,11 @@ export class QueryBuilder<Entity> {
 
     getCount(): Promise<number> {
         const mainAlias = this.aliasMap.mainAlias.name;
-        const metadata = this.entityMetadatas.find(metadata => metadata.target === this.fromEntity.alias.target);
-        // const metadata = this.connection.getEntityMetadata(this.fromEntity.alias.target);
+        const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
         const countQuery = this.clone({ skipOrderBys: true })
             .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`)
             .getSql();
-        return this.connection.driver
+        return this.driver
             .query<any[]>(countQuery)
             .then(results => parseInt(results[0]["cnt"]));
     }
@@ -367,7 +366,7 @@ export class QueryBuilder<Entity> {
     }
 
     clone(options?: { skipOrderBys?: boolean }) {
-        const qb = new QueryBuilder(this.connection, this.entityMetadatas);
+        const qb = new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster);
         
         switch (this.type) {
             case "select":
@@ -441,7 +440,7 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     protected rawResultsToEntities(results: any[]) {
-        const transformer = new RawSqlResultsToEntityTransformer(this.connection, this.aliasMap);
+        const transformer = new RawSqlResultsToEntityTransformer(this.driver, this.aliasMap);
         return transformer.transform(results);
     }
     
@@ -597,7 +596,7 @@ export class QueryBuilder<Entity> {
 
     protected replaceParameters(sql: string) {
         Object.keys(this.parameters).forEach(key => {
-            const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.connection.driver.escape(this.parameters[key]) : "NULL";
+            const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
             sql = sql.replace(":" + key, value); // todo: make replace only in value statements, otherwise problems
         });
         return sql;

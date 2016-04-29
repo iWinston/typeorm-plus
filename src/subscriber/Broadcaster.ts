@@ -1,8 +1,8 @@
 import {EventSubscriberInterface} from "./EventSubscriberInterface";
-import {Connection} from "../connection/Connection";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
-import {EntityMetadata} from "../metadata/EntityMetadata";
+import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
+import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -15,8 +15,9 @@ export class Broadcaster {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection,
-                private entityMetadatas: EntityMetadata[]) {
+    constructor(private entityMetadatas: EntityMetadataCollection,
+                private subscriberMetadatas: EventSubscriberInterface<any>[],
+                private entityListeners: EntityListenerMetadata[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -25,13 +26,12 @@ export class Broadcaster {
 
     broadcastBeforeInsertEvent(entity: any): Promise<void> {
 
-        const subscribers = this.connection
-            .subscriberMetadatas
+        const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeInsert)
             .map(subscriber => subscriber.beforeInsert({ entity: entity }));
 
-        const listeners = this.connection.entityListeners
+        const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT)
             .filter(listener => listener.target === entity.constructor)
             .map(entityListener => entity[entityListener.propertyName]());
@@ -41,13 +41,12 @@ export class Broadcaster {
 
     broadcastBeforeUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]): Promise<void> {
 
-        const subscribers = this.connection
-            .subscriberMetadatas
+        const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate({ entity: entity, updatedColumns: updatedColumns }));
 
-        const listeners = this.connection.entityListeners
+        const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE)
             .filter(listener => listener.target === entity.constructor)
             .map(entityListener => entity[entityListener.propertyName]());
@@ -57,13 +56,12 @@ export class Broadcaster {
 
     broadcastBeforeRemoveEvent(entity: any, entityId: any): Promise<void> {
 
-        const subscribers = this.connection
-            .subscriberMetadatas
+        const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove({ entity: entity, entityId: entityId }));
 
-        const listeners = this.connection.entityListeners
+        const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE)
             .filter(listener => listener.target === entity.constructor)
             .map(entityListener => entity[entityListener.propertyName]());
@@ -73,13 +71,12 @@ export class Broadcaster {
 
     broadcastAfterInsertEvent(entity: any): Promise<void> {
 
-        const subscribers = this.connection
-            .subscriberMetadatas
+        const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterInsert)
             .map(subscriber => subscriber.afterInsert({ entity: entity }));
 
-        const listeners = this.connection.entityListeners
+        const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT)
             .filter(listener => listener.target === entity.constructor)
             .map(entityListener => entity[entityListener.propertyName]());
@@ -89,13 +86,12 @@ export class Broadcaster {
 
     broadcastAfterUpdateEvent(entity: any, updatedColumns: ColumnMetadata[]): Promise<void> {
 
-        const subscribers = this.connection
-            .subscriberMetadatas
+        const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate({ entity: entity, updatedColumns: updatedColumns }));
 
-        const listeners = this.connection.entityListeners
+        const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE)
             .filter(listener => listener.target === entity.constructor)
             .map(entityListener => entity[entityListener.propertyName]());
@@ -105,13 +101,12 @@ export class Broadcaster {
 
     broadcastAfterRemoveEvent(entity: any, entityId: any): Promise<void> {
 
-        const subscribers = this.connection
-            .subscriberMetadatas
+        const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove({ entity: entity, entityId: entityId }));
 
-        const listeners = this.connection.entityListeners
+        const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE)
             .filter(listener => listener.target === entity.constructor)
             .map(entityListener => entity[entityListener.propertyName]());
@@ -120,7 +115,7 @@ export class Broadcaster {
     }
 
     broadcastLoadEvents(entity: any): Promise<void> {
-        // const metadata = this.connection.getEntityMetadata(entity.constructor);
+        // const metadata = this.getEntityMetadata(entity.constructor);
         const metadata = this.entityMetadatas.find(metadata => metadata.target === entity.constructor);
         let promises: Promise<any>[] = [];
 
@@ -136,14 +131,12 @@ export class Broadcaster {
                 }
             });
 
-        this.connection
-            .subscriberMetadatas
+        this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
             .filter(subscriber => !!subscriber.afterLoad)
             .forEach(subscriber => promises.push(<any> subscriber.afterLoad(entity)));
 
-        this.connection
-            .entityListeners
+        this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD)
             .filter(listener => listener.target === entity.constructor)
             .forEach(listener => promises.push(<any> entity[listener.propertyName]()));

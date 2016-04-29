@@ -1,9 +1,8 @@
 import {AliasMap} from "../alias/AliasMap";
 import {Alias} from "../alias/Alias";
-import * as _ from "lodash";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {Connection} from "../../connection/Connection";
 import {OrmUtils} from "../../util/OrmUtils";
+import {Driver} from "../../driver/Driver";
 
 /**
  * Transforms raw sql results returned from the database into entity object. 
@@ -17,7 +16,7 @@ export class RawSqlResultsToEntityTransformer {
     // Constructor
     // -------------------------------------------------------------------------
     
-    constructor(private connection: Connection,
+    constructor(private driver: Driver,
                 private aliasMap: AliasMap) {
     }
 
@@ -61,7 +60,7 @@ export class RawSqlResultsToEntityTransformer {
         metadata.columns.forEach(column => {
             const valueInObject = alias.getColumnValue(rawSqlResults[0], column); // we use zero index since its grouped data
             if (valueInObject && column.propertyName && !column.isVirtual) {
-                entity[column.propertyName] = this.connection.driver.prepareHydratedValue(valueInObject, column);
+                entity[column.propertyName] = this.driver.prepareHydratedValue(valueInObject, column);
                 hasData = true;
             }
         });
