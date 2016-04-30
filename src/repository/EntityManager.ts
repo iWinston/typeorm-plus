@@ -196,8 +196,8 @@ export class EntityManager {
     /**
      * Finds entity with given id.
      */
-    findById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any, options?: FindOptions): Promise<Entity> {
-        return this.getRepository(entityClass).findById(id, options);
+    findOneById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any, options?: FindOptions): Promise<Entity> {
+        return this.getRepository(entityClass).findOneById(id, options);
     }
 
     /**

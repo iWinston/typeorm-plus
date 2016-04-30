@@ -45,8 +45,7 @@ export class EntityPersistOperationBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection,
-                private entityMetadatas: EntityMetadata[]) {
+    constructor(private entityMetadatas: EntityMetadata[]) {
     }
 
     // -------------------------------------------------------------------------

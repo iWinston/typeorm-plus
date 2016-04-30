@@ -80,7 +80,7 @@ createConnection(options).then(connection => {
             return postRepository.persist(entity);
         })
         .then(entity => {
-            return postRepository.findById(entity.id);
+            return postRepository.findOneById(entity.id);
         })
         .then(entity => {
             console.log("Entity is loaded: ", entity);

@@ -47,7 +47,7 @@ Finds entities that match given conditions or given find options.
 
 Finds the first entity that match given conditions or given find options.
 
-* `findById(entityClass: Function, id: any, options?: FindOptions): Promise<Entity>`
+* `findOneById(entityClass: Function, id: any, options?: FindOptions): Promise<Entity>`
 
 Finds entity with a given entity id.
 

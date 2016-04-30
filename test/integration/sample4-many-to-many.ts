@@ -109,7 +109,7 @@ describe("many-to-many", function() {
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
             
-            return postRepository.findById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted post details in the database", function() {
@@ -119,7 +119,7 @@ describe("many-to-many", function() {
             expectedDetails.comment = savedPost.details[0].comment;
             expectedDetails.metadata = savedPost.details[0].metadata;
             
-            return postDetailsRepository.findById(savedPost.details[0].id).should.eventually.eql(expectedDetails);
+            return postDetailsRepository.findOneById(savedPost.details[0].id).should.eventually.eql(expectedDetails);
         });
 
         it("should load post and its details if left join used", function() {
@@ -230,14 +230,14 @@ describe("many-to-many", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            return postRepository.findById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted category in the database", function() {
             const expectedPost = new PostCategory();
             expectedPost.id = savedPost.categories[0].id;
             expectedPost.name = "technology";
-            return postCategoryRepository.findById(savedPost.categories[0].id).should.eventually.eql(expectedPost);
+            return postCategoryRepository.findOneById(savedPost.categories[0].id).should.eventually.eql(expectedPost);
         });
 
         it("should load post and its category if left join used", function() {
@@ -503,14 +503,14 @@ describe("many-to-many", function() {
             expectedPost.id = newPost.id;
             expectedPost.text = newPost.text;
             expectedPost.title = newPost.title;
-            return postRepository.findById(savedDetails.id).should.eventually.eql(expectedPost);
+            return postRepository.findOneById(savedDetails.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted details in the database", function() {
             const expectedDetails = new PostDetails();
             expectedDetails.id = details.id;
             expectedDetails.comment = details.comment;
-            return postDetailsRepository.findById(details.id).should.eventually.eql(expectedDetails);
+            return postDetailsRepository.findOneById(details.id).should.eventually.eql(expectedDetails);
         });
 
         it("should load post and its details if left join used", function() {
@@ -573,14 +573,14 @@ describe("many-to-many", function() {
         });
 
         it("should not have post in the database", function() {
-            return postRepository.findById(savedPostId).should.eventually.eql(undefined);
+            return postRepository.findOneById(savedPostId).should.eventually.eql(undefined);
         });
 
         it("should have details in the database because it was not removed because cascades do not allow it", function() {
             const details = new PostDetails();
             details.id = savedDetailsId;
             details.comment = "post details comment";
-            return postDetailsRepository.findById(savedDetailsId).should.eventually.eql(details);
+            return postDetailsRepository.findOneById(savedDetailsId).should.eventually.eql(details);
         });
 
     });
@@ -626,15 +626,15 @@ describe("many-to-many", function() {
         });
 
         it("should not have post in the database", function() {
-            return postRepository.findById(savedPostId).should.eventually.eql(undefined);
+            return postRepository.findOneById(savedPostId).should.eventually.eql(undefined);
         });
 
         it("should not have category1 in the database", function() {
-            return postCategoryRepository.findById(savedCategory1Id).should.eventually.eql(undefined);
+            return postCategoryRepository.findOneById(savedCategory1Id).should.eventually.eql(undefined);
         });
 
         it("should not have category2 in the database", function() {
-            return postCategoryRepository.findById(savedCategory2Id).should.eventually.eql(undefined);
+            return postCategoryRepository.findOneById(savedCategory2Id).should.eventually.eql(undefined);
         });
 
     });

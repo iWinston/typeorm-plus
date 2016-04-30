@@ -9,6 +9,7 @@ import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
 import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {Driver} from "../driver/Driver";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -19,8 +20,12 @@ export class Repository<Entity> {
     // Private Properties
     // -------------------------------------------------------------------------
 
+    private driver: Driver;
     private broadcaster: Broadcaster;
-    private persister: PersistOperationExecutor;
+    private persistOperationExecutor: PersistOperationExecutor;
+    private entityPersistOperationBuilder: EntityPersistOperationBuilder;
+    private plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
+    private plainObjectToDatabaseEntityTransformer: PlainObjectToDatabaseEntityTransformer<Entity>;
     
     // -------------------------------------------------------------------------
     // Constructor
@@ -29,8 +34,12 @@ export class Repository<Entity> {
     constructor(private connection: Connection, 
                 private entityMetadatas: EntityMetadataCollection,
                 private metadata: EntityMetadata) {
+        this.driver = connection.driver;
         this.broadcaster = new Broadcaster(entityMetadatas, connection.eventSubscribers, connection.entityListeners);
-        this.persister = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);
+        this.persistOperationExecutor = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);
+        this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(entityMetadatas);
+        this.plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
+        this.plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
     }
 
     // -------------------------------------------------------------------------
@@ -42,19 +51,17 @@ export class Repository<Entity> {
      */
     hasId(entity: Entity): boolean {
         return entity &&
-            this.metadata.primaryColumn &&
             entity.hasOwnProperty(this.metadata.primaryColumn.propertyName) &&
             (<any> entity)[this.metadata.primaryColumn.propertyName] !== null &&
-            (<any> entity)[this.metadata.primaryColumn.propertyName] !== undefined;
+            (<any> entity)[this.metadata.primaryColumn.propertyName] !== undefined &&
+            (<any> entity)[this.metadata.primaryColumn.propertyName] !== "";
     }
 
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder(alias: string): QueryBuilder<Entity> {
-        // const qb = this.connection.driver.createQueryBuilder<Entity>();
-        const qb = new QueryBuilder(this.connection.driver, this.entityMetadatas, this.broadcaster);
-        return qb
+        return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
             .select(alias)
             .from(this.metadata.target, alias);
     }
@@ -64,15 +71,14 @@ export class Repository<Entity> {
      * from this object into a new entity (copies only properties that should be in a new entity).
      */
     create(fromRawEntity?: Object): Entity {
-        if (fromRawEntity) {
-            const transformer = new PlainObjectToNewEntityTransformer();
-            return transformer.transform(fromRawEntity, this.metadata);
-        }
+        if (fromRawEntity)
+            return this.plainObjectToEntityTransformer.transform(fromRawEntity, this.metadata);
+
         return <Entity> this.metadata.create();
     }
 
     /**
-     * Creates a entities from the given array of plain javascript objects.
+     * Creates entities from a given array of plain javascript objects.
      */
     createMany(copyFromObjects: Object[]): Entity[] {
         return copyFromObjects.map(object => this.create(object));
@@ -85,9 +91,8 @@ export class Repository<Entity> {
      * replaced from the new object.
      */
     initialize(object: Object): Promise<Entity> {
-        const transformer = new PlainObjectToDatabaseEntityTransformer();
         const queryBuilder = this.createQueryBuilder(this.metadata.table.name);
-        return transformer.transform(object, this.metadata, queryBuilder);
+        return this.plainObjectToDatabaseEntityTransformer.transform(object, this.metadata, queryBuilder);
     }
 
     /**
@@ -103,7 +108,6 @@ export class Repository<Entity> {
      */
     persist(entity: Entity): Promise<Entity> {
         let loadedDbEntity: any;
-        const builder = new EntityPersistOperationBuilder(this.connection, this.entityMetadatas);
         const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
         const promise: Promise<Entity> = !this.hasId(entity) ? Promise.resolve<Entity|null>(null) : this.initialize(entity);
         return promise
@@ -113,8 +117,8 @@ export class Repository<Entity> {
                 return this.findNotLoadedIds(entityWithIds, allPersistedEntities);
             }) // need to find db entities that were not loaded by initialize method
             .then(allDbEntities => {
-                const persistOperation = builder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
-                return this.persister.executePersistOperation(persistOperation);
+                const persistOperation = this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
+                return this.persistOperationExecutor.executePersistOperation(persistOperation);
             }).then(() => entity);
     }
 
@@ -124,11 +128,10 @@ export class Repository<Entity> {
     remove(entity: Entity): Promise<Entity> {
         return this.initialize(entity).then(dbEntity => {
             (<any> entity)[this.metadata.primaryColumn.name] = undefined;
-            const builder = new EntityPersistOperationBuilder(this.connection, this.entityMetadatas);
             const dbEntities = this.extractObjectsById(dbEntity, this.metadata);
             const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
-            const persistOperation = builder.buildOnlyRemovement(this.metadata, dbEntity, entity, dbEntities, allPersistedEntities);
-            return this.persister.executePersistOperation(persistOperation);
+            const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntity, entity, dbEntities, allPersistedEntities);
+            return this.persistOperationExecutor.executePersistOperation(persistOperation);
         }).then(() => entity);
     }
 
@@ -219,7 +222,7 @@ export class Repository<Entity> {
     /**
      * Finds entity with given id.
      */
-    findById(id: any, options?: FindOptions): Promise<Entity> {
+    findOneById(id: any, options?: FindOptions): Promise<Entity> {
         return this.createFindQueryBuilder({ [this.metadata.primaryColumn.name]: id }, options)
             .getSingleResult();
     }
@@ -228,7 +231,7 @@ export class Repository<Entity> {
      * Executes raw SQL query and returns raw database results.
      */
     query(query: string): Promise<any> {
-        return this.connection.driver.query(query);
+        return this.driver.query(query);
     }
 
     /**
@@ -236,12 +239,12 @@ export class Repository<Entity> {
      */
     transaction(runInTransaction: () => Promise<any>): Promise<any> {
         let runInTransactionResult: any;
-        return this.connection.driver
+        return this.driver
             .beginTransaction()
             .then(() => runInTransaction())
             .then(result => {
                 runInTransactionResult = result;
-                return this.connection.driver.endTransaction();
+                return this.driver.endTransaction();
             })
             .then(() => runInTransactionResult);
     }
@@ -281,10 +284,9 @@ export class Repository<Entity> {
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entity.constructor === entityWithId.entity.constructor && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
-                // const metadata = this.connection.getEntityMetadata(entityWithId.entity.constructor);
-                const metadata = this.entityMetadatas.find(metadata => metadata.target === entityWithId.entity.constructor);
+                const metadata = this.entityMetadatas.findByTarget(entityWithId.entity.constructor);
                 const repository = this.connection.getRepository(entityWithId.entity.constructor);
-                return repository.findById(entityWithId.id).then(loadedEntity => {
+                return repository.findOneById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;
 
                     return <EntityWithId> {

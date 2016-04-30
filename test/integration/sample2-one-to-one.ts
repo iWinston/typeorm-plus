@@ -108,7 +108,7 @@ describe("one-to-one", function() {
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
             
-            return postRepository.findById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted post details in the database", function() {
@@ -118,7 +118,7 @@ describe("one-to-one", function() {
             expectedDetails.comment = savedPost.details.comment;
             expectedDetails.metadata = savedPost.details.metadata;
             
-            return postDetailsRepository.findById(savedPost.details.id).should.eventually.eql(expectedDetails);
+            return postDetailsRepository.findOneById(savedPost.details.id).should.eventually.eql(expectedDetails);
         });
 
         it("should load post and its details if left join used", function() {
@@ -227,14 +227,14 @@ describe("one-to-one", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            return postRepository.findById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted category in the database", function() {
             const expectedPost = new PostCategory();
             expectedPost.id = savedPost.category.id;
             expectedPost.name = "technology";
-            return postCategoryRepository.findById(savedPost.category.id).should.eventually.eql(expectedPost);
+            return postCategoryRepository.findOneById(savedPost.category.id).should.eventually.eql(expectedPost);
         });
 
         it("should load post and its category if left join used", function() {

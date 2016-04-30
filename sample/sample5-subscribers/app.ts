@@ -42,7 +42,7 @@ createConnection(options).then(connection => {
         .persist(post)
         .then(post => {
             console.log("Post has been saved");
-            return postRepository.findById(post.id);
+            return postRepository.findOneById(post.id);
         })
         .then(loadedPost => {
             console.log("---------------------------");

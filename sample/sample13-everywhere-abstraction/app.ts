@@ -64,7 +64,7 @@ createConnection(options).then(connection => {
         .persist(post)
         .then(post => {
             console.log("Post has been saved");
-            return postRepository.findById(post.id);
+            return postRepository.findOneById(post.id);
         })
         .then(loadedPost => {
             console.log("post is loaded: ", loadedPost);
@@ -72,7 +72,7 @@ createConnection(options).then(connection => {
         })
         .then(blog => {
             console.log("Blog has been saved");
-            return blogRepository.findById(blog.id);
+            return blogRepository.findOneById(blog.id);
         })
         .then(loadedBlog => {
             console.log("blog is loaded: ", loadedBlog);

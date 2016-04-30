@@ -40,7 +40,7 @@ createConnection(options).then(connection => {
         .then(post => {
             console.log("Post has been saved");
             console.log("---------------------------");
-            return postRepository.findById(post.id);
+            return postRepository.findOneById(post.id);
         })
         .then(loadedPost => {
             console.log("post is loaded. Its uid is " + loadedPost.uid);
