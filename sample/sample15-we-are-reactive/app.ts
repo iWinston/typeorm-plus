@@ -19,13 +19,13 @@ createConnection(options).then(connection => {
     let post = new Post();
     post.text = "Hello how are you?";
     post.title = "hello";
-    post.likesCount = 100;
+    post.likesCount = 0;
 
-    let postRepository = connection.getRepository<Post>(Post);
+    let postRepository = connection.getReactiveRepository(Post);
 
     postRepository
         .persist(post)
-        .then(post => console.log("Post has been saved"))
-        .catch(error => console.log("Cannot save. Error: ", error));
+        .do(post => console.log(post.title + " stream!"))
+        .subscribe(post => console.log("Post has been saved"));
 
 }, error => console.log("Cannot connect: ", error));

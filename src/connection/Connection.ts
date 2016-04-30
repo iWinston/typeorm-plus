@@ -18,11 +18,13 @@ import {NoConnectionForRepositoryError} from "./error/NoConnectionForRepositoryE
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
 import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
+import {ReactiveRepository} from "../repository/ReactiveRepository";
+import {ReactiveEntityManager} from "../repository/ReactiveEntityManager";
 
 /**
  * Temporary type to store and link both repository and its metadata.
  */
-type RepositoryAndMetadata = { repository: Repository<any>, metadata: EntityMetadata };
+type RepositoryAndMetadata = { metadata: EntityMetadata, repository: Repository<any>, reactiveRepository: ReactiveRepository<any> };
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -43,6 +45,11 @@ export class Connection {
      * Gets EntityManager of this connection.
      */
     readonly entityManager: EntityManager;
+
+    /**
+     * Gets ReactiveEntityManager of this connection.
+     */
+    readonly reactiveEntityManager: ReactiveEntityManager;
 
     /**
      * The name of the connection.
@@ -113,6 +120,7 @@ export class Connection {
         this.driver.connectionOptions = options;
         this.options = options;
         this.entityManager = new EntityManager(this);
+        this.reactiveEntityManager = new ReactiveEntityManager(this);
     }
 
     // -------------------------------------------------------------------------
@@ -245,6 +253,21 @@ export class Connection {
         return repoMeta.repository;
     }
 
+    /**
+     * Gets repository for the given entity class.
+     */
+    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveRepository<Entity> {
+        if (!this.isConnected)
+            throw new NoConnectionForRepositoryError(this.name);
+
+        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
+        if (!repoMeta)
+            throw new RepositoryNotFoundError(this.name, entityClass);
+
+        return repoMeta.reactiveRepository;
+    }
+
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
@@ -298,9 +321,11 @@ export class Connection {
      * Creates a temporary object RepositoryAndMetadata to store relation between repository and metadata.
      */
     private createRepoMeta(metadata: EntityMetadata): RepositoryAndMetadata {
+        const repository = new Repository<any>(this, this.entityMetadatas, metadata);
         return {
             metadata: metadata,
-            repository: new Repository<any>(this, this.entityMetadatas, metadata)
+            repository: repository,
+            reactiveRepository: new ReactiveRepository(repository)
         };
     }
 

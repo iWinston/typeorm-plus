@@ -4,12 +4,13 @@ import {FindOptions} from "./FindOptions";
 import {Repository} from "./Repository";
 import {ConstructorFunction} from "../common/ConstructorFunction";
 import {ReactiveRepository} from "./ReactiveRepository";
+import * as Rx from "rxjs/Rx";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
- * entity type are you passing.
+ * entity type are you passing. This version of ReactiveEntityManager works with reactive streams and observables.
  */
-export class EntityManager {
+export class ReactiveEntityManager {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -40,14 +41,14 @@ export class EntityManager {
      * Checks if entity has an id.
      */
     hasId(entity: Function): boolean {
-        return this.getRepository(entity.constructor).hasId(entity);
+        return this.getReactiveRepository(entity.constructor).hasId(entity);
     }
 
     /**
      * Creates a new query builder that can be used to build an sql query.
      */
     createQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string): QueryBuilder<Entity> {
-        return this.getRepository(entityClass).createQueryBuilder(alias);
+        return this.getReactiveRepository(entityClass).createQueryBuilder(alias);
     }
 
     /**
@@ -55,14 +56,14 @@ export class EntityManager {
      * from this object into a new entity (copies only properties that should be in a new entity).
      */
     create<Entity>(entityClass: ConstructorFunction<Entity>|Function, fromRawEntity?: Object): Entity {
-        return this.getRepository(entityClass).create(fromRawEntity);
+        return this.getReactiveRepository(entityClass).create(fromRawEntity);
     }
 
     /**
      * Creates a entities from the given array of plain javascript objects.
      */
     createMany<Entity>(entityClass: ConstructorFunction<Entity>|Function, copyFromObjects: any[]): Entity[] {
-        return this.getRepository(entityClass).createMany(copyFromObjects);
+        return this.getReactiveRepository(entityClass).createMany(copyFromObjects);
     }
 
     /**
@@ -71,163 +72,164 @@ export class EntityManager {
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
      */
-    initialize<Entity>(entityClass: ConstructorFunction<Entity>|Function, object: Object): Promise<Entity> {
-        return this.getRepository(entityClass).initialize(object);
+    initialize<Entity>(entityClass: ConstructorFunction<Entity>|Function, object: Object): Rx.Observable<Entity> {
+        return this.getReactiveRepository(entityClass).initialize(object);
     }
 
     /**
      * Merges two entities into one new entity.
      */
     merge<Entity>(entity1: Entity, entity2: Entity): Entity {
-        return <Entity> this.getRepository(<any> entity1).merge(entity1, entity2);
+        return <Entity> this.getReactiveRepository(<any> entity1).merge(entity1, entity2);
     }
 
     /**
      * Persists (saves) a given entity in the database.
      */
-    persist<Entity>(entity: Entity): Promise<Entity> {
-        return this.getRepository(<any> entity.constructor).persist(entity);
+    persist<Entity>(entity: Entity): Rx.Observable<Entity> {
+        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
+        return <any> this.getReactiveRepository(<any> entity.constructor).persist(entity);
     }
 
     /**
      * Removes a given entity from the database.
      */
     remove<Entity>(entity: Entity) {
-        return this.getRepository(<any> entity.constructor).remove(entity);
+        return this.getReactiveRepository(<any> entity.constructor).remove(entity);
     }
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function): Promise<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Promise<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Promise<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Promise<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
+    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity[]> {
         if (conditionsOrFindOptions && options) {
-            return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
+            return this.getReactiveRepository(entityClass).find(conditionsOrFindOptions, options);
             
         } else if (conditionsOrFindOptions) {
-            return this.getRepository(entityClass).find(conditionsOrFindOptions);
+            return this.getReactiveRepository(entityClass).find(conditionsOrFindOptions);
             
         } else {
-            return this.getRepository(entityClass).find();
+            return this.getReactiveRepository(entityClass).find();
         }
     }
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<[Entity[], number]> {
         if (conditionsOrFindOptions && options) {
-            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
+            return this.getReactiveRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
 
         } else if (conditionsOrFindOptions) {
-            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions);
+            return this.getReactiveRepository(entityClass).findAndCount(conditionsOrFindOptions);
 
         } else {
-            return this.getRepository(entityClass).findAndCount();
+            return this.getReactiveRepository(entityClass).findAndCount();
         }
     }
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function): Promise<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Promise<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Promise<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Promise<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity> {
         if (conditionsOrFindOptions && options) {
-            return this.getRepository(entityClass).findOne(conditionsOrFindOptions, options);
+            return this.getReactiveRepository(entityClass).findOne(conditionsOrFindOptions, options);
 
         } else if (conditionsOrFindOptions) {
-            return this.getRepository(entityClass).findOne(conditionsOrFindOptions);
+            return this.getReactiveRepository(entityClass).findOne(conditionsOrFindOptions);
 
         } else {
-            return this.getRepository(entityClass).findOne();
+            return this.getReactiveRepository(entityClass).findOne();
         }
     }
 
     /**
      * Finds entity with given id.
      */
-    findOneById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any, options?: FindOptions): Promise<Entity> {
-        return this.getRepository(entityClass).findOneById(id, options);
+    findOneById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any, options?: FindOptions): Rx.Observable<Entity> {
+        return this.getReactiveRepository(entityClass).findOneById(id, options);
     }
 
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    query(query: string): Promise<any> {
-        return this.connection.driver.query(query);
+    query(query: string): Rx.Observable<any> {
+        return Rx.Observable.fromPromise(this.connection.driver.query(query));
     }
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      */
-    transaction(runInTransaction: () => Promise<any>): Promise<any> {
+    transaction(runInTransaction: () => Promise<any>): Rx.Observable<any> {
         let runInTransactionResult: any;
-        return this.connection.driver
+        return Rx.Observable.fromPromise(this.connection.driver
             .beginTransaction()
             .then(() => runInTransaction())
             .then(result => {
                 runInTransactionResult = result;
                 return this.connection.driver.endTransaction();
             })
-            .then(() => runInTransactionResult);
+            .then(() => runInTransactionResult));
     }
 
 }
