@@ -49,6 +49,10 @@ need to do:
 
 ## Example
 
+> Note: docs are not always up to date because orm is in active development.
+> Samples are more up to date, try to find your questions there.
+> Otherwise a github issue.
+
 Lets create a sample application - a photo album. 
 
 #### create Photo entity class
@@ -764,36 +768,8 @@ usages.
 ## Todos
 
 ORM development is in progress. Api can be changed a lot. More documentation and features expected to be soon.
-Feel free to contribute ;)
+Feel free to contribute ;) List of todos is [here](https://github.com/pleerock/typeorm/issues/2).
 
-* in query builder should we use property names or table names? (right now its kinda mixed)
-* should all entities have a primary column?
-* think about indices
-* think more about cascades
-* add cascadeAll to cascades?
-* naming strategy need to be done correctly
-* fix all propertyName/tableName problems and make sure everything work correctly
-* foreign keys for relations
-* what happens if owner one-to-one on both sides
-* check self referencing
-* exceptions everywhere!
-* add ability to load only ids of the relation (similar to loading only single id)
-* make @Index and @CompoundIndex to work properly
-* make relations to connect not only to primary key (e.g. relation#referencedColumnName)
-* multiple primary key support?
-* ability to specify many-to-many column names in relation options
-* investigate relations support in abstract tables
-* allow inherited tables to work like abstract tables
-* check query builder query to function support
-* versioning?
-* check relations without inverse sides
-* check group by functionality
-* send entity changeset in update event
-* create a gulp task for schema update
-* fixtures and migrations
-* lazy loading of properties throw promises? Property can have a Promise\<Entity\> type.
-* cover everything with tests
-* logging
 
 
 [1]: https://en.wikipedia.org/wiki/Object-relational_mapping
