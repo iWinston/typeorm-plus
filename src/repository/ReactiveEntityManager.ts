@@ -94,8 +94,9 @@ export class ReactiveEntityManager {
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(entity: Entity) {
-        return this.getReactiveRepository(<any> entity.constructor).remove(entity);
+    remove<Entity>(entity: Entity): Rx.Observable<Entity[]> {
+        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
+        return <any> this.getReactiveRepository(<any> entity.constructor).remove(entity);
     }
 
     /**
