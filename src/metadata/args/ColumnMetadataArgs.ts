@@ -41,6 +41,16 @@ export interface ColumnMetadataArgs {
     isVirtual?: boolean;
 
     /**
+     * Indicates if this column is version column.
+     */
+    isVersion?: boolean;
+
+    /**
+     * Indicates if this column is order id column.
+     */
+    isOrderId?: boolean;
+
+    /**
      * Extra column options.
      */
     options: ColumnOptions;

@@ -46,6 +46,7 @@ export class PersistOperationExecutor {
             .then(() => this.driver.endTransaction())
             .then(() => this.updateIdsOfInsertedEntities(persistOperation))
             .then(() => this.updateIdsOfRemovedEntities(persistOperation))
+            .then(() => this.updateSpecialColumnsInEntities(persistOperation))
             .then(() => this.broadcastAfterEvents(persistOperation));
     }
 
@@ -106,7 +107,7 @@ export class PersistOperationExecutor {
      */
     private executeInsertOperations(persistOperation: PersistOperation) {
         return Promise.all(persistOperation.inserts.map(operation => {
-            return this.insert(operation.entity).then((insertId: any) => {
+            return this.insert(operation).then((insertId: any) => {
                 operation.entityId = insertId;
             });
         }));
@@ -177,7 +178,31 @@ export class PersistOperationExecutor {
     private updateIdsOfInsertedEntities(persistOperation: PersistOperation) {
         persistOperation.inserts.forEach(insertOperation => {
             const metadata = this.entityMetadatas.findByTarget(insertOperation.entity.constructor);
-            insertOperation.entity[metadata.primaryColumn.name] = insertOperation.entityId;
+            insertOperation.entity[metadata.primaryColumn.propertyName] = insertOperation.entityId;
+        });
+    }
+
+    /**
+     * Updates all special columns of the saving entities (create date, update date, versioning).
+     */
+    private updateSpecialColumnsInEntities(persistOperation: PersistOperation) {
+        persistOperation.inserts.forEach(insertOperation => {
+            const metadata = this.entityMetadatas.findByTarget(insertOperation.entity.constructor);
+            if (metadata.updateDateColumn)
+                insertOperation.entity[metadata.updateDateColumn.propertyName] = insertOperation.date;
+            if (metadata.createDateColumn)
+                insertOperation.entity[metadata.createDateColumn.propertyName] = insertOperation.date;
+            if (metadata.versionColumn)
+                insertOperation.entity[metadata.versionColumn.propertyName] = 1;
+        });
+        persistOperation.updates.forEach(updateOperation => {
+            const metadata = this.entityMetadatas.findByTarget(updateOperation.entity.constructor);
+            if (metadata.updateDateColumn)
+                updateOperation.entity[metadata.updateDateColumn.propertyName] = updateOperation.date;
+            if (metadata.createDateColumn)
+                updateOperation.entity[metadata.createDateColumn.propertyName] = updateOperation.date;
+            if (metadata.versionColumn)
+                updateOperation.entity[metadata.versionColumn.propertyName]++;
         });
     }
 
@@ -226,8 +251,13 @@ export class PersistOperationExecutor {
             return object;
         }, {});
 
+        // todo: what if number of updated columns = 0 ? + probably no need to update updated date and version columns
+        
         if (metadata.updateDateColumn)
             values[metadata.updateDateColumn.name] = this.driver.preparePersistentValue(new Date(), metadata.updateDateColumn);
+
+        if (metadata.versionColumn)
+            values[metadata.versionColumn.name] = this.driver.preparePersistentValue(entity[metadata.versionColumn.propertyName] + 1, metadata.versionColumn);
         
         return this.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: metadata.getEntityId(entity) });
     }
@@ -249,7 +279,8 @@ export class PersistOperationExecutor {
         return this.driver.delete(metadata.table.name, { [metadata.primaryColumn.name]: entity[metadata.primaryColumn.propertyName] });
     }
 
-    private insert(entity: any) {
+    private insert(operation: InsertOperation) {
+        const entity = operation.entity;
         const metadata = this.entityMetadatas.findByTarget(entity.constructor);
         const columns = metadata.columns
             .filter(column => !column.isVirtual)
@@ -276,12 +307,17 @@ export class PersistOperationExecutor {
 
         if (metadata.createDateColumn) {
             allColumns.push(metadata.createDateColumn.name);
-            allValues.push(this.driver.preparePersistentValue(new Date(), metadata.createDateColumn));
+            allValues.push(this.driver.preparePersistentValue(operation.date, metadata.createDateColumn));
         }
 
         if (metadata.updateDateColumn) {
             allColumns.push(metadata.updateDateColumn.name);
-            allValues.push(this.driver.preparePersistentValue(new Date(), metadata.updateDateColumn));
+            allValues.push(this.driver.preparePersistentValue(operation.date, metadata.updateDateColumn));
+        }
+
+        if (metadata.versionColumn) {
+            allColumns.push(metadata.versionColumn.name);
+            allValues.push(this.driver.preparePersistentValue(1, metadata.versionColumn));
         }
         
         return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));

@@ -67,6 +67,11 @@ export class ColumnMetadata extends PropertyMetadata {
     readonly isUpdateDate = false;
 
     /**
+     * Indicates if column will contain a version.
+     */
+    readonly isVersion = false;
+
+    /**
      * Indicates if column will contain an updated date or not.
      */
     readonly isVirtual = false;
@@ -125,6 +130,8 @@ export class ColumnMetadata extends PropertyMetadata {
             this.isCreateDate = args.isCreateDate;
         if (args.isUpdateDate)
             this.isUpdateDate = args.isUpdateDate;
+        if (args.isVersion)
+            this.isVersion = args.isVersion;
         if (args.isVirtual)
             this.isVirtual = args.isVirtual;
         if (args.propertyType)

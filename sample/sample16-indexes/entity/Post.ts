@@ -5,7 +5,7 @@ import {CompositeIndex} from "../../../src/decorator/indices/CompositeIndex";
 
 @Table("sample16_post")
 @CompositeIndex("my_index_with_id_and_text", ["id", "text"])
-@CompositeIndex(["title", "likesCount"])
+@CompositeIndex(["title", "likesCount"], { unique: true })
 @CompositeIndex((post: Post) => [post.title, post.text])
 @CompositeIndex("my_index_with_id_and_title", (post: Post) => [post.id, post.title])
 export class Post {

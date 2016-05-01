@@ -328,7 +328,7 @@ export class EntityPersistOperationBuilder {
 
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
         return metadata.columns
-            .filter(column => !column.isVirtual && !column.isUpdateDate && !column.isCreateDate)
+            .filter(column => !column.isVirtual && !column.isUpdateDate && !column.isVersion && !column.isCreateDate)
             .filter(column => newEntity[column.propertyName] !== dbEntity[column.propertyName]);
     }
 

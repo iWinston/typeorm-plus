@@ -3,6 +3,7 @@ import {MysqlDriver} from "../driver/MysqlDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
+import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
 
 /**
  * @internal
@@ -117,8 +118,8 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         return this.query(sql).then(() => {});
     }
 
-    createIndex(tableName: string, indexName: string, columns: string[]): Promise<void> {
-        const sql = `CREATE INDEX \`${indexName}\` ON ${tableName}(${columns.join(", ")})`;
+    createIndex(tableName: string, index: CompositeIndexMetadata): Promise<void> {
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON ${tableName}(${index.columns.join(", ")})`;
         return this.query(sql).then(() => {});
     }
 

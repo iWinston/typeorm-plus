@@ -222,7 +222,7 @@ export class SchemaCreator {
             // then create table indices for all composite indices we have
             const addQueries = compositeIndices
                 .filter(compositeIndex => !tableIndices.find(i => i.key === compositeIndex.name))
-                .map(compositeIndex => this.schemaBuilder.createIndex(table.name, compositeIndex.name, compositeIndex.columns));
+                .map(compositeIndex => this.schemaBuilder.createIndex(table.name, compositeIndex));
 
             return Promise.all([dropQueries, addQueries]);
         });

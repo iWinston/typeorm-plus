@@ -91,6 +91,10 @@ export class EntityMetadata {
         return this.columns.find(column => column.isUpdateDate);
     }
 
+    get versionColumn(): ColumnMetadata {
+        return this.columns.find(column => column.isVersion);
+    }
+
     get hasPrimaryKey(): boolean {
         return !!this.primaryColumn;
     }

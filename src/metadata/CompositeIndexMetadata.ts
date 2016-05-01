@@ -1,6 +1,7 @@
 import {TargetMetadata} from "./TargetMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {EntityMetadata} from "./EntityMetadata";
+import {CompositeIndexOptions} from "./options/CompositeIndexOptions";
 
 /**
  * This metadata interface contains all information about table's composite index.
@@ -25,6 +26,11 @@ export class CompositeIndexMetadata extends TargetMetadata {
     // Readonly Properties
     // ---------------------------------------------------------------------
 
+    /**
+     * Indicates if this index must be unique.
+     */
+    readonly isUnique: boolean;
+    
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -43,11 +49,16 @@ export class CompositeIndexMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, name: string|undefined, columns: ((object: any) => any[])|string[]) {
+    constructor(target: Function, 
+                name: string|undefined, 
+                columns: ((object: any) => any[])|string[],
+                options?: CompositeIndexOptions) {
         super(target);
         this._columns = columns;
         if (name)
             this._name = name;
+        if (options && options.unique)
+            this.isUnique = options.unique;
     }
 
     // ---------------------------------------------------------------------

@@ -6,6 +6,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 export class UpdateOperation {
     constructor(public entity: any,
                 public entityId: any,
-                public columns: ColumnMetadata[]) {
+                public columns: ColumnMetadata[],
+                public date = new Date()) {
     }
 }
