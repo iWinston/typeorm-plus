@@ -4,6 +4,8 @@ import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {IndexMetadata} from "../metadata/IndexMetadata";
+import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
 
 /**
  * Creates indexes based on the given metadata.
@@ -38,6 +40,7 @@ export class SchemaCreator {
             .then(_ => this.updateExistColumnsForAll(metadatas))
             .then(_ => this.createForeignKeysForAll(metadatas))
             .then(_ => this.updateUniqueKeysForAll(metadatas))
+            .then(_ => this.createIndicesForAll(metadatas))
             .then(_ => this.removePrimaryKeyForAll(metadatas))
             .then(_ => {});
     }
@@ -78,6 +81,10 @@ export class SchemaCreator {
         return Promise.all(metadatas.map(metadata => this.updateUniqueKeys(metadata.table, metadata.columns)));
     }
 
+    private createIndicesForAll(metadatas: EntityMetadata[]) {
+        return Promise.all(metadatas.map(metadata => this.createIndices(metadata.table, metadata.compositeIndices)));
+    }
+
     private removePrimaryKeyForAll(metadatas: EntityMetadata[]) {
         const queries = metadatas
             .filter(metadata => !metadata.primaryColumn)
@@ -89,7 +96,7 @@ export class SchemaCreator {
      * Drops all (old) foreign keys that exist in the table, but does not exist in the metadata.
      */
     private dropForeignKeys(table: TableMetadata, foreignKeys: ForeignKeyMetadata[]) {
-        return this.schemaBuilder.getTableForeignQuery(table).then(dbKeys => {
+        return this.schemaBuilder.getTableForeignQuery(table.name).then(dbKeys => {
             const dropKeysQueries = dbKeys
                 .filter(dbKey => !foreignKeys.find(foreignKey => foreignKey.name === dbKey))
                 .map(dbKey => this.schemaBuilder.dropForeignKeyQuery(table.name, dbKey));
@@ -168,7 +175,7 @@ export class SchemaCreator {
      * Creates foreign keys which does not exist in the table yet.
      */
     private createForeignKeys(table: TableMetadata, foreignKeys: ForeignKeyMetadata[]) {
-        return this.schemaBuilder.getTableForeignQuery(table).then(dbKeys => {
+        return this.schemaBuilder.getTableForeignQuery(table.name).then(dbKeys => {
             const dropKeysQueries = foreignKeys
                 .filter(foreignKey => dbKeys.indexOf(foreignKey.name) === -1)
                 .map(foreignKey => this.schemaBuilder.addForeignKeyQuery(foreignKey));
@@ -197,6 +204,27 @@ export class SchemaCreator {
                 .map(column => this.schemaBuilder.dropIndex(table.name, "uk_" + column.name));
 
             return Promise.all([addQueries, dropQueries]);
+        });
+    }
+
+    /**
+     * Creates indices which are missing in db yet, and drops indices which exist in the db,
+     * but does not exist in the metadata anymore.
+     */
+    private createIndices(table: TableMetadata, compositeIndices: CompositeIndexMetadata[]) {
+        return this.schemaBuilder.getTableIndicesQuery(table.name).then(tableIndices => {
+
+            // drop all indices that exist in the table, but does not exist in the given composite indices
+            const dropQueries = tableIndices
+                .filter(tableIndex => !compositeIndices.find(compositeIndex => compositeIndex.name === tableIndex.key))
+                .map(tableIndex => this.schemaBuilder.dropIndex(table.name, tableIndex.key));
+
+            // then create table indices for all composite indices we have
+            const addQueries = compositeIndices
+                .filter(compositeIndex => !tableIndices.find(i => i.key === compositeIndex.name))
+                .map(compositeIndex => this.schemaBuilder.createIndex(table.name, compositeIndex.name, compositeIndex.columns));
+
+            return Promise.all([dropQueries, addQueries]);
         });
     }
 

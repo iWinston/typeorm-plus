@@ -6,8 +6,6 @@ import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCol
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
- * 
- * @internal
  */
 export class Broadcaster {
 

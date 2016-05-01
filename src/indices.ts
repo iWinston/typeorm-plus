@@ -1,2 +1,2 @@
 export * from "./decorator/indices/Index";
-export * from "./decorator/indices/CompoundIndex";
+export * from "./decorator/indices/CompositeIndex";

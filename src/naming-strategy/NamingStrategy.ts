@@ -19,4 +19,9 @@ export interface NamingStrategyInterface {
      */
     relationName(propertyName: string): string;
 
+    /**
+     * Gets the name of the index - simple and compose index.
+     */
+    indexName(target: Function, name: string, columns: string[]): string;
+
 }

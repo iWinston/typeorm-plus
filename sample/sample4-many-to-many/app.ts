@@ -27,7 +27,7 @@ createConnection(options).then(connection => {
     post.title = "hello";
     post.details = [details1, details2];
 
-    let postRepository = connection.getRepository<Post>(Post);
+    let postRepository = connection.getRepository(Post);
 
     postRepository
         .persist(post)

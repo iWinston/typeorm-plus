@@ -3,8 +3,6 @@ import {EntityMetadataNotFound} from "../error/EntityMetadataNotFound";
 
 /**
  * Array for the entity metadatas.
- *
- * @internal
  */
 export class EntityMetadataCollection extends Array<EntityMetadata> {
 

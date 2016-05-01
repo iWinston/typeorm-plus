@@ -3,6 +3,10 @@ import {PropertyMetadata} from "../PropertyMetadata";
 
 export class PropertyMetadataCollection<T extends PropertyMetadata> extends TargetMetadataCollection<T>  {
 
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
     filterRepeatedMetadatas(existsMetadatas: T[]): this {
         const collection = new (<any> this.constructor)();
         this

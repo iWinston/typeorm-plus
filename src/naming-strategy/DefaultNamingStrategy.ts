@@ -18,4 +18,11 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return propertyName;
     }
 
+    indexName(target: Function, name: string, columns: string[]): string {
+        if (name)
+            return name;
+        
+        return "ind_" + columns.join("_");
+    }
+    
 }

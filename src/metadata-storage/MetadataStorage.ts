@@ -1,7 +1,7 @@
 import {TableMetadata} from "../metadata/TableMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
-import {CompoundIndexMetadata} from "../metadata/CompoundIndexMetadata";
+import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EventSubscriberMetadata} from "../metadata/EventSubscriberMetadata";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
@@ -29,7 +29,7 @@ export class MetadataStorage {
     readonly tableMetadatas = new TargetMetadataCollection<TableMetadata>();
     readonly namingStrategyMetadatas = new TargetMetadataCollection<NamingStrategyMetadata>();
     readonly eventSubscriberMetadatas = new TargetMetadataCollection<EventSubscriberMetadata>();
-    readonly compoundIndexMetadatas = new TargetMetadataCollection<CompoundIndexMetadata>();
+    readonly compositeIndexMetadatas = new TargetMetadataCollection<CompositeIndexMetadata>();
     readonly columnMetadatas = new PropertyMetadataCollection<ColumnMetadata>();
     readonly relationMetadatas = new PropertyMetadataCollection<RelationMetadata>();
     readonly joinColumnMetadatas = new PropertyMetadataCollection<JoinColumnMetadata>();
@@ -44,7 +44,7 @@ export class MetadataStorage {
     constructor(tableMetadatas?: TargetMetadataCollection<TableMetadata>,
                 namingStrategyMetadatas?: TargetMetadataCollection<NamingStrategyMetadata>,
                 eventSubscriberMetadatas?: TargetMetadataCollection<EventSubscriberMetadata>,
-                compoundIndexMetadatas?: TargetMetadataCollection<CompoundIndexMetadata>,
+                compositeIndexMetadatas?: TargetMetadataCollection<CompositeIndexMetadata>,
                 columnMetadatas?: PropertyMetadataCollection<ColumnMetadata>,
                 relationMetadatas?: PropertyMetadataCollection<RelationMetadata>,
                 joinColumnMetadatas?: PropertyMetadataCollection<JoinColumnMetadata>,
@@ -57,8 +57,8 @@ export class MetadataStorage {
             this.namingStrategyMetadatas = namingStrategyMetadatas;
         if (eventSubscriberMetadatas)
             this.eventSubscriberMetadatas = eventSubscriberMetadatas;
-        if (compoundIndexMetadatas)
-            this.compoundIndexMetadatas = compoundIndexMetadatas;
+        if (compositeIndexMetadatas)
+            this.compositeIndexMetadatas = compositeIndexMetadatas;
         if (columnMetadatas)
             this.columnMetadatas = columnMetadatas;
         if (relationMetadatas)
@@ -84,7 +84,7 @@ export class MetadataStorage {
     mergeWithAbstract(allTableMetadatas: TargetMetadataCollection<TableMetadata>,
                       tableMetadata: TableMetadata) {
 
-        const compoundIndexMetadatas = this.compoundIndexMetadatas.filterByClass(tableMetadata.target);
+        const compositeIndexMetadatas = this.compositeIndexMetadatas.filterByClass(tableMetadata.target);
         const columnMetadatas = this.columnMetadatas.filterByClass(tableMetadata.target);
         const relationMetadatas = this.relationMetadatas.filterByClass(tableMetadata.target);
         const joinColumnMetadatas = this.joinColumnMetadatas.filterByClass(tableMetadata.target);
@@ -106,7 +106,7 @@ export class MetadataStorage {
             });
 
         return {
-            compoundIndexMetadatas: compoundIndexMetadatas,
+            compositeIndexMetadatas: compositeIndexMetadatas,
             columnMetadatas: columnMetadatas,
             relationMetadatas: relationMetadatas,
             joinColumnMetadatas: joinColumnMetadatas,

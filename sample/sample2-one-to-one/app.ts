@@ -32,7 +32,7 @@ createConnection(options).then(connection => {
     post.title = "hello";
     post.details = details;
 
-    let postRepository = connection.getRepository<Post>(Post);
+    let postRepository = connection.getRepository(Post);
 
     postRepository
         .persist(post)

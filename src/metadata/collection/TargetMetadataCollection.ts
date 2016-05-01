@@ -1,6 +1,11 @@
 import {TargetMetadata} from "../TargetMetadata";
+import {MetadataAlreadyExistsError} from "../../metadata-storage/error/MetadataAlreadyExistsError";
 
 export class TargetMetadataCollection<T extends TargetMetadata> extends Array<T> {
+    
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
 
     filterByClass(cls: Function): this {
         return this.filterByClasses([cls]);
@@ -13,17 +18,25 @@ export class TargetMetadataCollection<T extends TargetMetadata> extends Array<T>
         return collection;
     }
 
-
-    add(metadata: T) {
-        // if (this.hasWithClass(metadata.target))
-        //     throw new MetadataAlreadyExistsError((<any> metadata.constructor).name, metadata.target);
-        // if (metadata.name && this.hasTableMetadataWithName(metadata.name))
-        //     throw new MetadataWithSuchNameAlreadyExistsError("Table", metadata.name);
+    add(metadata: T, checkForDuplicateTargets = false) {
+        if (checkForDuplicateTargets && this.hasWithTarget(metadata.target))
+            throw new MetadataAlreadyExistsError((<any> metadata.constructor).name, metadata.target);
 
         this.push(metadata);
     }
 
-    private hasWithClass(constructor: Function): boolean {
+    addUniq(metadata: T) {
+        if (this.hasWithTarget(metadata.target))
+            throw new MetadataAlreadyExistsError((<any> metadata.constructor).name, metadata.target);
+
+        this.push(metadata);
+    }
+    
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    private hasWithTarget(constructor: Function): boolean {
         return !!this.find(metadata => metadata.target === constructor);
     }
 

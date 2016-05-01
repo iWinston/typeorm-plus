@@ -14,10 +14,12 @@ export abstract class SchemaBuilder {
     abstract addForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void>;
     abstract dropForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void>;
     abstract dropForeignKeyQuery(tableName: string, foreignKeyName: string): Promise<void>;
-    abstract getTableForeignQuery(table: TableMetadata): Promise<string[]>;
+    abstract getTableForeignQuery(tableName: string): Promise<string[]>;
     abstract getTableUniqueKeysQuery(tableName: string): Promise<string[]>;
+    abstract getTableIndicesQuery(tableName: string): Promise<{ key: string, sequence: number, column: string }[]>;
     abstract getPrimaryConstraintName(tableName: string): Promise<string>;
     abstract dropIndex(tableName: string, indexName: string): Promise<void>;
+    abstract createIndex(tableName: string, indexName: string, columns: string[]): Promise<void>;
     abstract addUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void>;
     abstract getTableColumns(tableName: string): Promise<string[]>;
     abstract changeColumnQuery(tableName: string, columnName: string, newColumn: ColumnMetadata, skipPrimary?: boolean): Promise<void>;

@@ -23,7 +23,7 @@ createConnection(options).then(connection => {
     post.text = "Hello how are you?";
     post.title = "hello";
 
-    let postRepository = connection.getRepository<Post>(Post);
+    let postRepository = connection.getRepository(Post);
 
     postRepository
         .persist(post)

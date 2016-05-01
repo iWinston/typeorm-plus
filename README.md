@@ -1,5 +1,13 @@
 # TypeORM
 
+> Note: docs are not always up to date because orm is in active development.
+> Samples are more up to date, try to find your questions there.
+> Otherwise create a github issue.
+>
+> Note: Current version of orm works with typescript >1.9. It means you need to install
+> typescript@next to work with it. If you want to use older version of orm you can try
+> to install typeorm@0.0.1
+
 ## What is TypeORM?
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
@@ -48,10 +56,6 @@ need to do:
     `npm install mysql --save`
 
 ## Example
-
-> Note: docs are not always up to date because orm is in active development.
-> Samples are more up to date, try to find your questions there.
-> Otherwise a github issue.
 
 Lets create a sample application - a photo album. 
 

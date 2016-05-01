@@ -19,7 +19,7 @@ const options: CreateConnectionOptions = {
 };
 
 createConnection(options).then(connection => {
-    let postRepository = connection.getRepository<Post>(Post);
+    let postRepository = connection.getRepository(Post);
 
     let postCover = new Cover();
     postCover.url = "http://covers.com/post.jpg";

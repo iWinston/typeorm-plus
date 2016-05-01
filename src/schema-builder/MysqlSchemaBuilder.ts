@@ -77,9 +77,9 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         return this.query(sql).then(() => {});
     }
 
-    getTableForeignQuery(table: TableMetadata): Promise<string[]> {
+    getTableForeignQuery(tableName: string): Promise<string[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = "${this.driver.db}" `
-            + `AND TABLE_NAME = "${table.name}" AND REFERENCED_COLUMN_NAME IS NOT NULL`;
+            + `AND TABLE_NAME = "${tableName}" AND REFERENCED_COLUMN_NAME IS NOT NULL`;
         return this.query<any[]>(sql).then(results => results.map(result => result.CONSTRAINT_NAME));
     }
 
@@ -87,6 +87,23 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = "${this.driver.db}" ` +
             `AND TABLE_NAME = "${tableName}" AND CONSTRAINT_TYPE = 'UNIQUE'`;
         return this.query<any[]>(sql).then(results => results.map(result => result.CONSTRAINT_NAME));
+    }
+
+    getTableIndicesQuery(tableName: string): Promise<{ key: string, sequence: number, column: string }[]> {
+        const sql = `SHOW INDEX FROM ${tableName}`;
+        return this.query<any[]>(sql).then(results => {
+            // exclude foreign keys
+            return this.getTableForeignQuery(tableName).then(foreignKeys => {
+
+                return results
+                    .filter(result => result.Key_name !== "PRIMARY" && foreignKeys.indexOf(result.Key_name) === -1)
+                    .map(result => ({
+                        key: result.Key_name,
+                        sequence: result.Seq_in_index,
+                        column: result.Column_name
+                    }));
+            });
+        });
     }
 
     getPrimaryConstraintName(tableName: string): Promise<string> {
@@ -97,6 +114,11 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
 
     dropIndex(tableName: string, indexName: string): Promise<void> {
         const sql = `ALTER TABLE ${tableName} DROP INDEX \`${indexName}\``;
+        return this.query(sql).then(() => {});
+    }
+
+    createIndex(tableName: string, indexName: string, columns: string[]): Promise<void> {
+        const sql = `CREATE INDEX \`${indexName}\` ON ${tableName}(${columns.join(", ")})`;
         return this.query(sql).then(() => {});
     }
 

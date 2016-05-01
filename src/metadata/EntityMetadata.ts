@@ -2,7 +2,7 @@ import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {IndexMetadata} from "./IndexMetadata";
-import {CompoundIndexMetadata} from "./CompoundIndexMetadata";
+import {CompositeIndexMetadata} from "./CompositeIndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 
@@ -18,8 +18,8 @@ export class EntityMetadata {
     readonly table: TableMetadata;
     readonly columns: ColumnMetadata[];
     readonly relations: RelationMetadata[];
-    readonly indices: IndexMetadata[];
-    readonly compoundIndices: CompoundIndexMetadata[];
+    // readonly indices: IndexMetadata[];
+    readonly compositeIndices: CompositeIndexMetadata[];
     readonly foreignKeys: ForeignKeyMetadata[];
 
     // -------------------------------------------------------------------------
@@ -29,14 +29,14 @@ export class EntityMetadata {
     constructor(table: TableMetadata,
                 columns: ColumnMetadata[],
                 relations: RelationMetadata[],
-                indices: IndexMetadata[],
-                compoundIndices: CompoundIndexMetadata[],
+                // indices: IndexMetadata[],
+                compositeIndices: CompositeIndexMetadata[],
                 foreignKeys: ForeignKeyMetadata[]) {
         this.table = table;
         this.columns = columns;
         this.relations = relations;
-        this.indices = indices;
-        this.compoundIndices = compoundIndices;
+        // this.indices = indices;
+        this.compositeIndices = compositeIndices;
         this.foreignKeys = foreignKeys;
     }
 

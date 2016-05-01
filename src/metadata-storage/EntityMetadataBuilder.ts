@@ -13,6 +13,10 @@ import {UsingJoinColumnOnlyOnOneSideAllowedError} from "./error/UsingJoinColumnO
 import {MissingJoinColumnError} from "./error/MissingJoinColumnError";
 import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadataValidator} from "./EntityMetadataValidator";
+import {IndexMetadata} from "../metadata/IndexMetadata";
+import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
+import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
+import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -40,6 +44,17 @@ export class EntityMetadataBuilder {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    private mergeIndicesAndCompositeIndices(indices: PropertyMetadataCollection<IndexMetadata>,
+                                            compositeIndices: TargetMetadataCollection<CompositeIndexMetadata>) {
+        indices.forEach(index => {
+            const compositeIndex = new CompositeIndexMetadata(index.target, index.name, [index.propertyName]);
+            compositeIndex.namingStrategy = index.namingStrategy;
+            compositeIndices.add(compositeIndex);
+        });
+        
+        // later need to check if no duplicate keys in composite indices?
+    }
+    
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
@@ -51,15 +66,31 @@ export class EntityMetadataBuilder {
         const allTableMetadatas = allMetadataStorage.tableMetadatas.filterByClasses(entityClasses);
         const tableMetadatas = allTableMetadatas.filterByClasses(entityClasses).filter(table => !table.isAbstract);
 
+        // set naming strategy
+        allMetadataStorage.tableMetadatas.forEach(tableMetadata => tableMetadata.namingStrategy = this.namingStrategy);
+        allTableMetadatas.forEach(column => column.namingStrategy = this.namingStrategy);
+        // entityMetadata.relations.forEach(relation => relation.namingStrategy = this.namingStrategy);
+
         const entityMetadatas = tableMetadatas.map(tableMetadata => {
+
             const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
+
+            // set naming strategy
+            tableMetadata.namingStrategy = this.namingStrategy;
+            mergedMetadata.columnMetadatas.forEach(column => column.namingStrategy = this.namingStrategy);
+            mergedMetadata.relationMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
+            mergedMetadata.indexMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
+            mergedMetadata.compositeIndexMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
+            
+            // merge indices and composite indices because simple indices actually are compose indices with only one column
+            this.mergeIndicesAndCompositeIndices(mergedMetadata.indexMetadatas, mergedMetadata.compositeIndexMetadatas);
 
             const entityMetadata = new EntityMetadata(
                 tableMetadata,
                 mergedMetadata.columnMetadatas,
                 mergedMetadata.relationMetadatas,
-                mergedMetadata.indexMetadatas,
-                mergedMetadata.compoundIndexMetadatas,
+                // mergedMetadata.indexMetadatas,
+                mergedMetadata.compositeIndexMetadatas,
                 []
             );
 
@@ -76,11 +107,6 @@ export class EntityMetadataBuilder {
                 if (relationJoinColumn)
                     relation.joinColumn = relationJoinColumn;
             });
-
-            // set naming strategies
-            tableMetadata.namingStrategy = this.namingStrategy;
-            entityMetadata.columns.forEach(column => column.namingStrategy = this.namingStrategy);
-            entityMetadata.relations.forEach(relation => relation.namingStrategy = this.namingStrategy);
             
             return entityMetadata;
         });
@@ -164,7 +190,7 @@ export class EntityMetadataBuilder {
                     new ForeignKeyMetadata(tableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),
                     new ForeignKeyMetadata(tableMetadata, [columns[1]], inverseSideMetadata.table, [inverseSideMetadata.primaryColumn]),
                 ];
-                const junctionEntityMetadata = new EntityMetadata(tableMetadata, columns, [], [], [], foreignKeys);
+                const junctionEntityMetadata = new EntityMetadata(tableMetadata, columns, [], [], foreignKeys);
                 junctionEntityMetadatas.push(junctionEntityMetadata);
                 relation.junctionEntityMetadata = junctionEntityMetadata;
                 if (relation.inverseRelation)
