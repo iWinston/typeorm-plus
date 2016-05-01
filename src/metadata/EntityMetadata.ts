@@ -38,6 +38,9 @@ export class EntityMetadata {
         // this.indices = indices;
         this.compositeIndices = compositeIndices;
         this.foreignKeys = foreignKeys;
+        
+        // this.relations.forEach(relation => relation.entityMetadata = this);
+        this.compositeIndices.forEach(index => index.entityMetadata = this);
     }
 
     // -------------------------------------------------------------------------
