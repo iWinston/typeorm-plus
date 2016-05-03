@@ -77,42 +77,6 @@ export class Repository<Entity> {
         return <Entity> this.addLazyProperties(this.metadata.create());
     }
 
-    // todo: duplication
-    private addLazyProperties(entity: any) {
-        const metadata = this.entityMetadatas.findByTarget(entity.constructor);
-        metadata.relations
-            .filter(relation => relation.isLazy)
-            .forEach(relation => {
-                const index = "__" + relation.propertyName + "__";
-
-                Object.defineProperty(entity, relation.propertyName, {
-                    get: () => {
-                        if (entity[index])
-                            return Promise.resolve(entity[index]);
-                        // find object metadata and try to load
-                        return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
-                            .select(relation.propertyName)
-                            .from(relation.target, relation.propertyName) // todo: change `id` after join column implemented
-                            .where(relation.propertyName + ".id=:" + relation.propertyName + "Id")
-                            .setParameter(relation.propertyName + "Id", entity[index])
-                            .getSingleResult()
-                            .then(result => {
-                                entity[index] = result;
-                                return entity[index];
-                            });
-                    },
-                    set: (promise: Promise<any>) => {
-                        if (promise instanceof Promise) {
-                            promise.then(result => entity[index] = result);
-                        } else {
-                            entity[index] = promise;
-                        }
-                    }
-                });
-            });
-        return entity;
-    }
-
     /**
      * Creates entities from a given array of plain javascript objects.
      */
@@ -410,6 +374,42 @@ export class Repository<Entity> {
 
             return entityWithIds;
         });
+    }
+
+    // todo: duplication
+    private addLazyProperties(entity: any) {
+        const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+        metadata.relations
+            .filter(relation => relation.isLazy)
+            .forEach(relation => {
+                const index = "__" + relation.propertyName + "__";
+
+                Object.defineProperty(entity, relation.propertyName, {
+                    get: () => {
+                        if (entity[index])
+                            return Promise.resolve(entity[index]);
+                        // find object metadata and try to load
+                        return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
+                            .select(relation.propertyName)
+                            .from(relation.target, relation.propertyName) // todo: change `id` after join column implemented
+                            .where(relation.propertyName + ".id=:" + relation.propertyName + "Id")
+                            .setParameter(relation.propertyName + "Id", entity[index])
+                            .getSingleResult()
+                            .then(result => {
+                                entity[index] = result;
+                                return entity[index];
+                            });
+                    },
+                    set: (promise: Promise<any>) => {
+                        if (promise instanceof Promise) {
+                            promise.then(result => entity[index] = result);
+                        } else {
+                            entity[index] = promise;
+                        }
+                    }
+                });
+            });
+        return entity;
     }
 
 }

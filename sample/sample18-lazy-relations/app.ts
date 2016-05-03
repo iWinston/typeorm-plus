@@ -1,6 +1,7 @@
 import {createConnection, CreateConnectionOptions} from "../../src/typeorm";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
+import {Category} from "./entity/Category";
 
 const options: CreateConnectionOptions = {
     driver: "mysql",
@@ -16,13 +17,14 @@ const options: CreateConnectionOptions = {
             logFailedQueryError: true
         }
     },
-    entities: [Post, Author]
+    entities: [Post, Author, Category]
 };
 
 createConnection(options).then(connection => {
 
     let postRepository = connection.getRepository(Post);
     let authorRepository = connection.getRepository(Author);
+    let categoryRepository = connection.getRepository(Category);
 
     let author = authorRepository.create();
     author.name = "Umed";
@@ -67,6 +69,40 @@ createConnection(options).then(connection => {
         })
         .then(posts => {
             console.log("Two post's author has been removed.");  
+            console.log("Now lets check many-to-many relations");
+            
+            let category1 = categoryRepository.create();
+            category1.name = "Hello category1";
+            
+            let category2 = categoryRepository.create();
+            category2.name = "Bye category2";
+            
+            let post = postRepository.create();
+            post.title = "Post & Categories";
+            post.text = "Post with many categories";
+            post.categories = Promise.resolve([
+                category1,
+                category2
+            ]);
+            
+            return postRepository.persist(post);
+        })
+        .then(posts => {
+            console.log("Post has been saved with its categories. ");
+            console.log("Lets find it now. ");
+            return postRepository.find({ alias: "post", innerJoinAndSelect: { categories: "post.categories" } });
+        })
+        .then(posts => {
+            console.log("Post with categories are loaded: ", posts);
+            console.log("Lets remove one of the categories: ");
+            return posts[0].categories.then(categories => {
+                categories.splice(0, 1);
+                // console.log(posts[0]);
+                return postRepository.persist(posts[0]);
+            });
+        })
+        .then(posts => {
+            console.log("One of the post category has been removed.");
         })
         .catch(error => console.log(error.stack));
 

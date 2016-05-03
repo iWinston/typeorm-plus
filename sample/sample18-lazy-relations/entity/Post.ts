@@ -2,6 +2,9 @@ import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {Author} from "./Author";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
+import {Category} from "./Category";
+import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample18_post")
 export class Post {
@@ -21,5 +24,11 @@ export class Post {
         onDelete: "SET NULL"
     })
     author: Promise<Author|null>;
+
+    @ManyToMany(type => Category, category => category.posts, {
+        cascadeAll: true
+    })
+    @JoinTable()
+    categories: Promise<Category[]>;
 
 }

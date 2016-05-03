@@ -273,15 +273,19 @@ export class EntityPersistOperationBuilder {
         });
         return metadata.relations
             .filter(relation => relation.isManyToMany)
-            .filter(relation => newEntity[relation.propertyName] instanceof Array)
+            // .filter(relation => newEntity[relation.propertyName] instanceof Array)
             .reduce((operations, relation) => {
                 const relationMetadata = relation.relatedEntityMetadata;
                 const relationIdProperty = relationMetadata.primaryColumn.name;
-                newEntity[relation.propertyName].map((subEntity: any) => {
+                const value = this.getEntityRelationValue(relation, newEntity);
+                const dbValue = dbEntity ? this.getEntityRelationValue(relation, dbEntity.entity) : null;
+                
+                if (!(value instanceof Array))
+                    return operations;
+                
+                value.forEach((subEntity: any) => {
 
-                    const has = !dbEntity ||
-                                !dbEntity.entity[relation.propertyName] ||
-                                !dbEntity.entity[relation.propertyName].find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
+                    const has = !dbValue || !dbValue.find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
 
                     if (has) {
                         operations.push({
@@ -307,15 +311,19 @@ export class EntityPersistOperationBuilder {
         });
         return metadata.relations
             .filter(relation => relation.isManyToMany)
-            .filter(relation => dbEntity[relation.propertyName] instanceof Array)
+            // .filter(relation => dbEntity[relation.propertyName] instanceof Array)
             .reduce((operations, relation) => {
                 const relationMetadata = relation.relatedEntityMetadata;
                 const relationIdProperty = relationMetadata.primaryColumn.name;
-                dbEntity[relation.propertyName].map((subEntity: any) => {
+                const value = newEntity ? this.getEntityRelationValue(relation, newEntity.entity) : null;
+                const dbValue = this.getEntityRelationValue(relation, dbEntity);
 
-                    const has = !newEntity ||
-                                !newEntity.entity[relation.propertyName] ||
-                                !newEntity.entity[relation.propertyName].find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
+                if (!(dbValue instanceof Array))
+                    return operations;
+                
+                dbValue.forEach((subEntity: any) => {
+
+                    const has = !value || !value.find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
 
                     if (has) {
                         operations.push({
