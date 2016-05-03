@@ -193,7 +193,7 @@ export class EntityMetadataBuilder {
                 const junctionEntityMetadata = new EntityMetadata(tableMetadata, columns, [], [], foreignKeys);
                 junctionEntityMetadatas.push(junctionEntityMetadata);
                 relation.junctionEntityMetadata = junctionEntityMetadata;
-                if (relation.inverseRelation)
+                if (relation.hasInverseSide)
                     relation.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
             });
         });

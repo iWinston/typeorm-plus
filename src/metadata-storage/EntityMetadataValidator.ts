@@ -64,13 +64,20 @@ export class EntityMetadataValidator {
 
             // if its a one-to-one relation and JoinColumn is missing on both sides of the relation
             // or its one-side relation without JoinColumn we should give an error
-            if (!relation.joinColumn && relation.isOneToOne && (!relation.inverseRelation || !relation.inverseRelation.joinColumn))
+            if (!relation.joinColumn && relation.isOneToOne && (!relation.hasInverseSide || !relation.inverseRelation.joinColumn))
                 throw new MissingJoinColumnError(entityMetadata, relation);
 
             // if its a many-to-many relation and JoinTable is missing on both sides of the relation
             // or its one-side relation without JoinTable we should give an error
-            if (!relation.joinTable && relation.isManyToMany && (!relation.inverseRelation || !relation.inverseRelation.joinTable))
+            if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
                 throw new MissingJoinTableError(entityMetadata, relation);
+            
+            
+            // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
+            // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
+            // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
+            // todo: with message like: "Inverse side is specified only on one side of the relationship. Specify on other side too to prevent confusion".
+            
         });
     }
 }

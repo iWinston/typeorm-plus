@@ -193,7 +193,7 @@ export class RelationMetadata extends PropertyMetadata {
     }
     
     get hasInverseSide(): boolean {
-        return !!this.inverseRelation;
+        return this.relatedEntityMetadata && !!this.inverseRelation;
     }
     
     get isLazy(): boolean {
