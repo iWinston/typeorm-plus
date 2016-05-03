@@ -72,7 +72,11 @@ export class RawSqlResultsToEntityTransformer {
                 const relatedEntities = this.groupAndTransform(rawSqlResults, relationAlias);
                 const result = (relation.isManyToOne || relation.isOneToOne) ? relatedEntities[0] : relatedEntities;
                 if (result) {
-                    entity[relation.propertyName] = result;
+                    if (relation.isLazy) {
+                        entity["__" + relation.propertyName + "__"] = result;
+                    } else {
+                        entity[relation.propertyName] = result;
+                    }
                     hasData = true;
                 }
             }

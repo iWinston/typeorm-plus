@@ -18,6 +18,11 @@ export interface RelationMetadataArgs {
     propertyName: string;
 
     /**
+     * Original (reflected) class's property type.
+     */
+    propertyType: any;
+
+    /**
      * Type of relation. Can be one of the value of the RelationTypes class.
      */
     relationType: RelationType;

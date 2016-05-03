@@ -91,6 +91,11 @@ export class RelationMetadata extends PropertyMetadata {
      */
     readonly onDelete: OnDeleteType;
 
+    /**
+     * The real reflected property type.
+     */
+    readonly propertyType: any;
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -121,6 +126,8 @@ export class RelationMetadata extends PropertyMetadata {
 
         if (args.options.name)
             this._name = args.options.name;
+        if (args.propertyType)
+            this.propertyType = args.propertyType;
         if (args.options.cascadeInsert || args.options.cascadeAll)
             this.isCascadeInsert = true;
         if (args.options.cascadeUpdate || args.options.cascadeAll)
@@ -187,6 +194,10 @@ export class RelationMetadata extends PropertyMetadata {
     
     get hasInverseSide(): boolean {
         return !!this.inverseRelation;
+    }
+    
+    get isLazy(): boolean {
+        return this.propertyType && this.propertyType.name && this.propertyType.name.toLowerCase() === "promise";
     }
 
     // ---------------------------------------------------------------------

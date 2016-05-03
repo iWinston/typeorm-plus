@@ -58,7 +58,11 @@ export class PersistOperationExecutor {
      * Broadcast all before persistment events - beforeInsert, beforeUpdate and beforeRemove events.
      */
     private broadcastBeforeEvents(persistOperation: PersistOperation) {
-        
+
+        /*console.log("persistOperation.allPersistedEntities: ", persistOperation.allPersistedEntities);
+        console.log("inserts", persistOperation.inserts);
+        console.log("updates", persistOperation.updates);*/
+
         const insertEvents = persistOperation.inserts.map(insertOperation => {
             const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);
             return this.broadcaster.broadcastBeforeInsertEvent(persistedEntityWithId.entity);
@@ -193,7 +197,7 @@ export class PersistOperationExecutor {
             if (metadata.createDateColumn)
                 insertOperation.entity[metadata.createDateColumn.propertyName] = insertOperation.date;
             if (metadata.versionColumn)
-                insertOperation.entity[metadata.versionColumn.propertyName] = 1;
+                insertOperation.entity[metadata.versionColumn.propertyName]++;
         });
         persistOperation.updates.forEach(updateOperation => {
             const metadata = this.entityMetadatas.findByTarget(updateOperation.entity.constructor);
@@ -222,7 +226,8 @@ export class PersistOperationExecutor {
 
     private updateByRelation(operation: UpdateByRelationOperation, insertOperations: InsertOperation[]) {
         let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
-        const idInInserts = insertOperations.find(o => o.entity === operation.targetEntity).entityId;
+        const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
+        const idInInserts = relatedInsertOperation ? relatedInsertOperation.entityId : null;
         if (operation.updatedRelation.isOneToMany) {
             const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.entity.constructor);
             tableName = metadata.table.name;

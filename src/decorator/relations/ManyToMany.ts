@@ -37,10 +37,13 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ConstructorFunction<
 
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
+        
+        const reflectedType = Reflect.getMetadata("design:type", object, propertyName);
 
         defaultMetadataStorage().relationMetadatas.add(new RelationMetadata({
             target: object.constructor,
             propertyName: propertyName,
+            propertyType: reflectedType,
             relationType: RelationTypes.MANY_TO_MANY,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,

@@ -58,10 +58,12 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
             .filter(relation => {
                 // we only need to load empty relations for first-level depth objects, otherwise removal can break
                 // this is not reliable, refactor this part later
-                return isFirstLevelDepth || !(object[relation.propertyName] instanceof Array) || object[relation.propertyName].length > 0;
+                const value = (object[relation.propertyName] instanceof Promise && relation.isLazy) ? object["__" + relation.propertyName + "__"] : object[relation.propertyName];
+                return isFirstLevelDepth || !(value instanceof Array) || value.length > 0;
             })
             .map(relation => {
-                let value = object[relation.propertyName];
+                let value = (object[relation.propertyName] instanceof Promise && relation.isLazy) ? object["__" + relation.propertyName + "__"] : object[relation.propertyName];
+                // let value = object[relation.propertyName];
                 if (value instanceof Array)
                     value = Object.assign({}, ...value);
 

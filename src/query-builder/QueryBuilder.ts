@@ -333,13 +333,19 @@ export class QueryBuilder<Entity> {
                     return this.driver.query<any[]>(queryWithIds);
                 })
                 .then(results => this.rawResultsToEntities(results))
+                .then(results => this.addLazyProperties(results))
                 .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results));
 
         } else {
             return this.driver
                 .query<any[]>(this.getSql())
                 .then(results => this.rawResultsToEntities(results))
-                .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results));
+                .then(results => this.addLazyProperties(results))
+                .then(results => {
+                    return this.broadcaster
+                        .broadcastLoadEventsForAll(results)
+                        .then(() => results);
+                });
         }
     }
 
@@ -442,6 +448,43 @@ export class QueryBuilder<Entity> {
     protected rawResultsToEntities(results: any[]) {
         const transformer = new RawSqlResultsToEntityTransformer(this.driver, this.aliasMap);
         return transformer.transform(results);
+    }
+
+    protected addLazyProperties(entities: any[]) {
+        entities.forEach(entity => {
+            const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+            metadata.relations
+                .filter(relation => relation.isLazy)
+                .forEach(relation => {
+                    const index = "__" + relation.propertyName + "__";
+
+                    Object.defineProperty(entity, relation.propertyName, {
+                        get: () => {
+                            if (entity[index])
+                                return Promise.resolve(entity[index]);
+                            // find object metadata and try to load
+                            return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
+                                .select(relation.propertyName)
+                                .from(relation.target, relation.propertyName) // todo: change `id` after join column implemented
+                                .where(relation.propertyName + ".id=:" + relation.propertyName + "Id")
+                                .setParameter(relation.propertyName + "Id", entity[index])
+                                .getSingleResult()
+                                .then(result => {
+                                    entity[index] = result;
+                                    return entity[index];
+                                });
+                        },
+                        set: (promise: Promise<any>) => {
+                            if (promise instanceof Promise) {
+                                promise.then(result => entity[index] = result);
+                            } else {
+                                entity[index] = promise;
+                            }
+                        }
+                    });
+                });
+        });
+        return entities;
     }
     
     protected createSelectExpression() {

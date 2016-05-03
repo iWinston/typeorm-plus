@@ -35,7 +35,7 @@ export class Repository<Entity> {
                 private entityMetadatas: EntityMetadataCollection,
                 private metadata: EntityMetadata) {
         this.driver = connection.driver;
-        this.broadcaster = new Broadcaster(entityMetadatas, connection.eventSubscribers, connection.entityListeners);
+        this.broadcaster = new Broadcaster(entityMetadatas, connection.eventSubscribers, connection.entityListeners); // todo: inject broadcaster from connection
         this.persistOperationExecutor = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);
         this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(entityMetadatas);
         this.plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
@@ -72,9 +72,45 @@ export class Repository<Entity> {
      */
     create(fromRawEntity?: Object): Entity {
         if (fromRawEntity)
-            return this.plainObjectToEntityTransformer.transform(fromRawEntity, this.metadata);
+            return this.addLazyProperties(this.plainObjectToEntityTransformer.transform(fromRawEntity, this.metadata));
 
-        return <Entity> this.metadata.create();
+        return <Entity> this.addLazyProperties(this.metadata.create());
+    }
+
+    // todo: duplication
+    private addLazyProperties(entity: any) {
+        const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+        metadata.relations
+            .filter(relation => relation.isLazy)
+            .forEach(relation => {
+                const index = "__" + relation.propertyName + "__";
+
+                Object.defineProperty(entity, relation.propertyName, {
+                    get: () => {
+                        if (entity[index])
+                            return Promise.resolve(entity[index]);
+                        // find object metadata and try to load
+                        return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
+                            .select(relation.propertyName)
+                            .from(relation.target, relation.propertyName) // todo: change `id` after join column implemented
+                            .where(relation.propertyName + ".id=:" + relation.propertyName + "Id")
+                            .setParameter(relation.propertyName + "Id", entity[index])
+                            .getSingleResult()
+                            .then(result => {
+                                entity[index] = result;
+                                return entity[index];
+                            });
+                    },
+                    set: (promise: Promise<any>) => {
+                        if (promise instanceof Promise) {
+                            promise.then(result => entity[index] = result);
+                        } else {
+                            entity[index] = promise;
+                        }
+                    }
+                });
+            });
+        return entity;
     }
 
     /**
@@ -107,32 +143,53 @@ export class Repository<Entity> {
      * else if entity already exist in the database then it updates it.
      */
     persist(entity: Entity): Promise<Entity> {
-        let loadedDbEntity: any;
-        const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
-        const promise: Promise<Entity> = !this.hasId(entity) ? Promise.resolve<Entity|null>(null) : this.initialize(entity);
-        return promise
+        let loadedDbEntity: any, allPersistedEntities: EntityWithId[];
+        return Promise.resolve() // resolve is required because need to wait until lazy relations loaded
+            .then(() => {
+                return this.extractObjectsById(entity, this.metadata);
+            })
+            .then(allPersisted => {
+                allPersistedEntities = allPersisted;
+                if (!this.hasId(entity))
+                    return Promise.resolve<Entity|null>(null);
+
+                return this.initialize(entity);
+            })
             .then(dbEntity => {
                 loadedDbEntity = dbEntity;
-                const entityWithIds = dbEntity ? this.extractObjectsById(dbEntity, this.metadata) : [];
+                return dbEntity ? this.extractObjectsById(dbEntity, this.metadata) : [];
+            }).then(entityWithIds => {
                 return this.findNotLoadedIds(entityWithIds, allPersistedEntities);
             }) // need to find db entities that were not loaded by initialize method
             .then(allDbEntities => {
-                const persistOperation = this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
+                return this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
+            })
+            .then(persistOperation => {
                 return this.persistOperationExecutor.executePersistOperation(persistOperation);
-            }).then(() => entity);
+            })
+            .then(() => entity);
     }
 
     /**
      * Removes a given entity from the database.
      */
     remove(entity: Entity): Promise<Entity> {
-        return this.initialize(entity).then(dbEntity => {
-            (<any> entity)[this.metadata.primaryColumn.name] = undefined;
-            const dbEntities = this.extractObjectsById(dbEntity, this.metadata);
-            const allPersistedEntities = this.extractObjectsById(entity, this.metadata);
-            const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntity, entity, dbEntities, allPersistedEntities);
-            return this.persistOperationExecutor.executePersistOperation(persistOperation);
-        }).then(() => entity);
+        let dbEntity: Entity;
+        return this
+            .initialize(entity)
+            .then(dbEnt => {
+                dbEntity = dbEnt;
+                (<any> entity)[this.metadata.primaryColumn.name] = undefined;
+                return Promise.all<any>([
+                    this.extractObjectsById(dbEntity, this.metadata),
+                    this.extractObjectsById(entity, this.metadata)
+                ]);
+            })
+            // .then(([dbEntities, allPersistedEntities]: [EntityWithId[], EntityWithId[]]) => {
+            .then(results => {
+                const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntity, entity, results[0], results[1]);
+                return this.persistOperationExecutor.executePersistOperation(persistOperation);
+            }).then(() => entity);
     }
 
     /**
@@ -304,27 +361,55 @@ export class Repository<Entity> {
     /**
      * Extracts unique objects from given entity and all its downside relations.
      */
-    private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): EntityWithId[] {
-        metadata.relations
-            .filter(relation => !!entity[relation.propertyName])
-            .forEach(relation => {
+    private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> {
+        const promises = metadata.relations
+            // .filter(relation => !!entity[relation.propertyName])
+            .map(relation => {
                 const relMetadata = relation.relatedEntityMetadata;
-                const value = entity[relation.propertyName];
+                // const value = ;
+
+                const value = (entity[relation.propertyName] instanceof Promise && relation.isLazy) ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
+                if (!value)
+                    return undefined;
+                
                 if (value instanceof Array) {
-                    value.forEach((subEntity: any) => this.extractObjectsById(subEntity, relMetadata, entityWithIds));
+                    const subPromises = value.map((subEntity: any) => {
+                        return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
+                    });
+                    return Promise.all(subPromises);
+
+                /*} else if (value instanceof Promise && relation.isLazy) {
+                    
+                    return value.then((resolvedValue: any) => { // todo: duplicate logic
+
+                        if (resolvedValue && resolvedValue instanceof Array) {
+                            const promises = resolvedValue.map((subEntity: any) => {
+                                return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
+                            });
+                            return Promise.all(promises);
+                            
+                        } else if (resolvedValue) {
+                            return this.extractObjectsById(resolvedValue, relMetadata, entityWithIds);
+                        }
+                        
+                    });*/
+                    
                 } else {
-                    this.extractObjectsById(value, relMetadata, entityWithIds);
+                    return this.extractObjectsById(value, relMetadata, entityWithIds);
                 }
-            });
+            })
+            .filter(result => !!result);
         
-        if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
-            entityWithIds.push({
-                id: entity[metadata.primaryColumn.name],
-                entity: entity
-            });
-        }
-        
-        return entityWithIds;
+        return Promise.all(promises).then(() => {
+            if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
+                entityWithIds.push({
+                    id: entity[metadata.primaryColumn.name],
+                    entity: entity
+                });
+            }
+
+            return entityWithIds;
+        });
     }
 
 }

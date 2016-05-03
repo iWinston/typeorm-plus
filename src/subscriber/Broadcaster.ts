@@ -113,8 +113,10 @@ export class Broadcaster {
     }
 
     broadcastLoadEvents(entity: any): Promise<void> {
-        // const metadata = this.getEntityMetadata(entity.constructor);
-        const metadata = this.entityMetadatas.find(metadata => metadata.target === entity.constructor);
+        if (entity instanceof Promise)
+            return Promise.resolve();
+        
+        const metadata = this.entityMetadatas.findByTarget(entity.constructor);
         let promises: Promise<any>[] = [];
 
         metadata
@@ -143,7 +145,8 @@ export class Broadcaster {
     }
 
     broadcastLoadEventsForAll(entities: any[]): Promise<void> {
-        return Promise.all(entities.map(entity => this.broadcastLoadEvents(entity))).then(() => {});
+        const promises = entities.map(entity => this.broadcastLoadEvents(entity));
+        return Promise.all(promises).then(() => {});
     }
 
     // -------------------------------------------------------------------------
