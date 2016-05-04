@@ -24,4 +24,19 @@ export interface NamingStrategyInterface {
      */
     indexName(target: Function, name: string, columns: string[]): string;
 
+    /**
+     * Gets the name of the join column used in the one-to-one and many-to-one relations.
+     */
+    joinColumnInverseSideName(joinColumnName: string|undefined, propertyName: string): string;
+
+    /**
+     * Gets the name of the join table used in the many-to-many relations.
+     */
+    joinTableName(firstTableName: string, secondTableName: string, firstColumnName: string, secondColumnName: string): string;
+
+    /**
+     * Gets the name of the column used for columns in the junction tables.
+     */
+    joinTableColumnName(tableName: string, columnName: string): string;
+
 }

@@ -296,16 +296,16 @@ export class PersistOperationExecutor {
             .filter(column => entity.hasOwnProperty(column.propertyName))
             .map(column => this.driver.preparePersistentValue(entity[column.propertyName], column));
         const relationColumns = metadata.relations
-            .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
+            .filter(relation => relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .filter(relation => entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name])
+            .filter(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.name])
             .map(relation => relation.name);
 
         const relationValues = metadata.relations
-            .filter(relation => relation.isOwning && !!relation.relatedEntityMetadata)
+            .filter(relation => relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.relatedEntityMetadata.primaryColumn.name))
-            .map(relation => entity[relation.propertyName][relation.relatedEntityMetadata.primaryColumn.name]);
+            .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.inverseEntityMetadata.primaryColumn.name))
+            .map(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.name]);
 
         const allColumns = columns.concat(relationColumns);
         const allValues = values.concat(relationValues);

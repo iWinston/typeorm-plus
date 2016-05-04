@@ -22,9 +22,9 @@ export class Post {
     @ManyToOne(type => Author, author => author.posts, {
         cascadeAll: true
     })
-    @JoinColumn({
+    @JoinColumn(/*{ // todo: not yet fixed
         name: "user"
-    })
+    }*/)
     author: Author;
 
     @ManyToMany(type => Category, category => category.posts, {

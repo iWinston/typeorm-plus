@@ -11,7 +11,7 @@ export class MissingJoinColumnError extends Error {
         super();
         if (relation.inverseRelation) {
             this.message = `JoinColumn is missing on both sides of ${entityMetadata.name}#${relation.name} and ` +
-                `${relation.relatedEntityMetadata.name}#${relation.inverseRelation.name} one-to-one relationship. ` + 
+                `${relation.inverseEntityMetadata.name}#${relation.inverseRelation.name} one-to-one relationship. ` + 
                 `You need to put JoinColumn decorator on one of the sides.`;
         } else {
             this.message = `JoinColumn is missing on ${entityMetadata.name}#${relation.name} one-to-one relationship. ` + 

@@ -577,29 +577,33 @@ export class QueryBuilder<Entity> {
             const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
             const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
-            const joinTable = joinMetadata.table.name;
-            const joinTableColumn = joinMetadata.primaryColumn.name;
+            const joinTableName = joinMetadata.table.name;
             
             if (relation.isManyToMany) {
                 const junctionTable = junctionMetadata.table.name;
                 const junctionAlias = join.alias.parentAliasName + "_" + join.alias.name;
                 const joinAlias = join.alias.name;
+                const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
+                const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
+                const inverseJoinColumnName = joinTable.inverseReferencedColumn.name; // not sure if this is correct
                 const condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn; // todo: use column names from junction table somehow
-                const condition2 = joinAlias + "." + joinTableColumn + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
+                const condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
                 
                 return " " + joinType + " JOIN " + junctionTable + " " + junctionAlias + " " + join.conditionType + " " + condition1 +
-                       " " + joinType + " JOIN " + joinTable + " " + joinAlias + " " + join.conditionType + " " + condition2 + appendedCondition;
+                       " " + joinType + " JOIN " + joinTableName + " " + joinAlias + " " + join.conditionType + " " + condition2 + appendedCondition;
                 
             } else if (relation.isManyToOne || (relation.isOneToOne && relation.isOwning)) {
+                const joinTableColumn = relation.joinColumn.referencedColumn.name;
                 const condition = join.alias.name + "." + joinTableColumn + "=" + parentAlias + "." + join.alias.parentPropertyName;
-                return " " + joinType + " JOIN " + joinTable + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
+                return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
 
             } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {
+                const joinTableColumn = relation.inverseRelation.joinColumn.referencedColumn.name;
                 const condition = join.alias.name + "." + relation.inverseSideProperty + "=" + parentAlias + "." + joinTableColumn;
-                return " " + joinType + " JOIN " + joinTable + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
+                return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
        
             } else {
-                return " " + joinType + " JOIN " + joinTable + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
+                return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
             }
         }).join(" ");
     }

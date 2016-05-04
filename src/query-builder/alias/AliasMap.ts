@@ -61,7 +61,7 @@ export class AliasMap {
             if (!relation)
                 throw new Error("Relation metadata for " + alias.parentAliasName + "#" + alias.parentPropertyName + " was not found.");
 
-            return relation.relatedEntityMetadata;
+            return relation.inverseEntityMetadata;
         }
 
         throw new Error("Cannot get entity metadata for the given alias " + alias.name);

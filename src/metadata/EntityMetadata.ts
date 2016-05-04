@@ -1,15 +1,24 @@
 import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {RelationMetadata} from "./RelationMetadata";
-import {IndexMetadata} from "./IndexMetadata";
 import {CompositeIndexMetadata} from "./CompositeIndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 
 /**
  * Contains all entity metadata.
  */
 export class EntityMetadata {
+
+    // ---------------------------------------------------------------------
+    // Public Properties
+    // ---------------------------------------------------------------------
+
+    /**
+     * Naming strategy used to generate and normalize column name.
+     */
+    namingStrategy: NamingStrategyInterface;
 
     // -------------------------------------------------------------------------
     // Readonly Properties
@@ -34,7 +43,7 @@ export class EntityMetadata {
         this.relations = relations;
         this.compositeIndices = compositeIndices;
         
-        // this.relations.forEach(relation => relation.entityMetadata = this);
+        this.relations.forEach(relation => relation.entityMetadata = this);
         this.compositeIndices.forEach(index => index.entityMetadata = this);
     }
 

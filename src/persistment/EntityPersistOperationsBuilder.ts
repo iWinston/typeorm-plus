@@ -153,7 +153,7 @@ export class EntityPersistOperationBuilder {
         }
 
         metadata.relations.forEach(relation => {
-            const relMetadata = relation.relatedEntityMetadata;
+            const relMetadata = relation.inverseEntityMetadata;
             const relationIdColumnName = relMetadata.primaryColumn.name;
             const value = this.getEntityRelationValue(relation, newEntity);
             const dbValue = this.getEntityRelationValue(relation, dbEntity);
@@ -203,7 +203,7 @@ export class EntityPersistOperationBuilder {
 
         metadata.relations.forEach(relation => {
             const dbValue = this.getEntityRelationValue(relation, dbEntity);
-            const relMetadata = relation.relatedEntityMetadata;
+            const relMetadata = relation.inverseEntityMetadata;
             if (!dbValue) return;
             
             if (dbValue instanceof Array) {
@@ -275,7 +275,7 @@ export class EntityPersistOperationBuilder {
             .filter(relation => relation.isManyToMany)
             // .filter(relation => newEntity[relation.propertyName] instanceof Array)
             .reduce((operations, relation) => {
-                const relationMetadata = relation.relatedEntityMetadata;
+                const relationMetadata = relation.inverseEntityMetadata;
                 const relationIdProperty = relationMetadata.primaryColumn.name;
                 const value = this.getEntityRelationValue(relation, newEntity);
                 const dbValue = dbEntity ? this.getEntityRelationValue(relation, dbEntity.entity) : null;
@@ -313,7 +313,7 @@ export class EntityPersistOperationBuilder {
             .filter(relation => relation.isManyToMany)
             // .filter(relation => dbEntity[relation.propertyName] instanceof Array)
             .reduce((operations, relation) => {
-                const relationMetadata = relation.relatedEntityMetadata;
+                const relationMetadata = relation.inverseEntityMetadata;
                 const relationIdProperty = relationMetadata.primaryColumn.name;
                 const value = newEntity ? this.getEntityRelationValue(relation, newEntity.entity) : null;
                 const dbValue = this.getEntityRelationValue(relation, dbEntity);

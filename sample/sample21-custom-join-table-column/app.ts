@@ -27,15 +27,26 @@ createConnection(options).then(connection => {
     let author = new Author();
     author.name = "Umed";
     
+    let category1 = new Category();
+    category1.name = "Category #1";
+    
+    let category2 = new Category();
+    category2.name = "Category #2";
+    
     let post = new Post();
     post.text = "Hello how are you?";
     post.title = "hello";
     post.author = author;
+    post.categories = [category1, category2];
 
     postRepository
         .persist(post)
         .then(post => {
-            console.log("Post has been saved.");
+            console.log("Post has been saved. Lets load it now.");
+            return postRepository.find({ alias: "post", leftJoinAndSelect: { categories: "post.categories"} });
+        })
+        .then(loadedPosts => {
+            console.log("loadedPosts: ", loadedPosts);
         })
         .catch(error => console.log(error.stack));
 

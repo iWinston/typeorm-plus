@@ -24,5 +24,20 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         
         return "ind_" + columns.join("_");
     }
+
+    joinColumnInverseSideName(joinColumnName: string, propertyName: string): string {
+        if (joinColumnName)
+            return joinColumnName;
+        
+        return propertyName;
+    }
+
+    joinTableName(firstTableName: string, secondTableName: string, firstColumnName: string, secondColumnName: string): string {
+        return firstTableName + "_" + firstColumnName + "_" + secondTableName + "_" + secondColumnName;
+    }
+
+    joinTableColumnName(tableName: string, columnName: string): string {
+        return tableName + "_" + columnName;
+    }
     
 }

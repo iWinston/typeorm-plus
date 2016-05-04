@@ -43,7 +43,7 @@ export class PlainObjectToNewEntityTransformer {
         metadata.relations
             .filter(relation => object.hasOwnProperty(relation.propertyName))
             .forEach(relation => {
-                const relationMetadata = relation.relatedEntityMetadata;
+                const relationMetadata = relation.inverseEntityMetadata;
                 if (!relationMetadata)
                     throw new Error("Relation metadata for the relation " + (<any> metadata.target).name + "#" + relation.propertyName + " is missing");
                 

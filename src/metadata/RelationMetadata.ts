@@ -6,6 +6,7 @@ import {OnDeleteType} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
 import {RelationMetadataArgs} from "./args/RelationMetadataArgs";
+import {ColumnMetadata} from "./ColumnMetadata";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -33,9 +34,14 @@ export class RelationMetadata extends PropertyMetadata {
     namingStrategy: NamingStrategyInterface;
 
     /**
+     * Its own entity metadata.
+     */
+    entityMetadata: EntityMetadata;
+
+    /**
      * Related entity metadata.
      */
-    relatedEntityMetadata: EntityMetadata;
+    inverseEntityMetadata: EntityMetadata;
 
     /**
      * Junction entity metadata.
@@ -173,7 +179,7 @@ export class RelationMetadata extends PropertyMetadata {
     }
 
     get inverseRelation(): RelationMetadata {
-        return this.relatedEntityMetadata.findRelationWithPropertyName(this.computeInverseSide(this._inverseSideProperty));
+        return this.inverseEntityMetadata.findRelationWithPropertyName(this.computeInverseSide(this._inverseSideProperty));
     }
 
     get isOneToOne(): boolean {
@@ -193,7 +199,7 @@ export class RelationMetadata extends PropertyMetadata {
     }
     
     get hasInverseSide(): boolean {
-        return this.relatedEntityMetadata && !!this.inverseRelation;
+        return this.inverseEntityMetadata && !!this.inverseRelation;
     }
     
     get isLazy(): boolean {
@@ -205,7 +211,7 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     private computeInverseSide(inverseSide: PropertyTypeInFunction<any>): string {
-        const ownerEntityPropertiesMap = this.relatedEntityMetadata.createPropertiesMap();
+        const ownerEntityPropertiesMap = this.inverseEntityMetadata.createPropertiesMap();
         if (typeof inverseSide === "function")
             return (<Function> inverseSide)(ownerEntityPropertiesMap);
         if (typeof inverseSide === "string")

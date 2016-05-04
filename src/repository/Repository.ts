@@ -329,7 +329,7 @@ export class Repository<Entity> {
         const promises = metadata.relations
             // .filter(relation => !!entity[relation.propertyName])
             .map(relation => {
-                const relMetadata = relation.relatedEntityMetadata;
+                const relMetadata = relation.inverseEntityMetadata;
                 // const value = ;
 
                 const value = (entity[relation.propertyName] instanceof Promise && relation.isLazy) ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];

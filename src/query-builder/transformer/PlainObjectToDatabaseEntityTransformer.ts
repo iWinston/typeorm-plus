@@ -67,7 +67,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
                 if (value instanceof Array)
                     value = Object.assign({}, ...value);
 
-                const child = value ? this.buildLoadMap(value, relation.relatedEntityMetadata) : [];
+                const child = value ? this.buildLoadMap(value, relation.inverseEntityMetadata) : [];
                 return <LoadMap> { name: relation.name, child: child };
             });
     }
