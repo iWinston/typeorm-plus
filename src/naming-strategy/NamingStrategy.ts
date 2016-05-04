@@ -32,11 +32,21 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the join table used in the many-to-many relations.
      */
-    joinTableName(firstTableName: string, secondTableName: string, firstColumnName: string, secondColumnName: string): string;
+    joinTableName(firstTableName: string, 
+                  secondTableName: string, 
+                  firstColumnName: string, 
+                  secondColumnName: string,
+                  firstPropertyName: string,
+                  secondPropertyName: string): string;
 
     /**
      * Gets the name of the column used for columns in the junction tables.
      */
-    joinTableColumnName(tableName: string, columnName: string): string;
+    joinTableColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string;
+
+    /**
+     * Gets the name of the column used for second column name in the junction tables.
+     */
+    joinTableInverseColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string;
 
 }

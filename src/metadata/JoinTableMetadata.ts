@@ -84,6 +84,8 @@ export class JoinTableMetadata extends PropertyMetadata {
         return this.relation.entityMetadata.namingStrategy.joinTableName(
             this.relation.entityMetadata.table.name,
             this.relation.inverseEntityMetadata.table.name,
+            this.relation.name,
+            this.relation.hasInverseSide ? this.relation.inverseRelation.name : "",
             this.referencedColumn.name,
             this.inverseReferencedColumn.name
         );
@@ -96,7 +98,15 @@ export class JoinTableMetadata extends PropertyMetadata {
         if (this._joinColumnName)
             return this._joinColumnName;
         
-        return this.relation.entityMetadata.namingStrategy.joinTableColumnName(this.relation.entityMetadata.table.name, this.referencedColumn.name);
+        return this.relation
+            .entityMetadata
+            .namingStrategy
+            .joinTableColumnName(
+                this.relation.entityMetadata.table.name, 
+                this.referencedColumn.name,
+                this.relation.inverseEntityMetadata.table.name, 
+                this.inverseReferencedColumn.name
+            );
     }
 
     /**
@@ -106,7 +116,15 @@ export class JoinTableMetadata extends PropertyMetadata {
         if (this._inverseJoinColumnName)
             return this._inverseJoinColumnName;
         
-        return this.relation.entityMetadata.namingStrategy.joinTableColumnName(this.relation.inverseEntityMetadata.table.name, this.inverseReferencedColumn.name);
+        return this.relation
+            .entityMetadata
+            .namingStrategy
+            .joinTableInverseColumnName(
+                this.relation.inverseEntityMetadata.table.name,
+                this.inverseReferencedColumn.name,
+                this.relation.entityMetadata.table.name,
+                this.referencedColumn.name
+            );
     }
 
     /**
