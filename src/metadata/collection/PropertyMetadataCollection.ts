@@ -18,4 +18,12 @@ export class PropertyMetadataCollection<T extends PropertyMetadata> extends Targ
         return collection;
     }
 
+    findByProperty(propertyName: string) {
+        return this.find(item => item.propertyName === propertyName);
+    }
+
+    hasWithProperty(propertyName: string) {
+        return !!this.findByProperty(propertyName);
+    }
+
 }

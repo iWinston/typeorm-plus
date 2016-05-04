@@ -18,9 +18,8 @@ export class EntityMetadata {
     readonly table: TableMetadata;
     readonly columns: ColumnMetadata[];
     readonly relations: RelationMetadata[];
-    // readonly indices: IndexMetadata[];
     readonly compositeIndices: CompositeIndexMetadata[];
-    readonly foreignKeys: ForeignKeyMetadata[];
+    readonly foreignKeys: ForeignKeyMetadata[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -29,15 +28,11 @@ export class EntityMetadata {
     constructor(table: TableMetadata,
                 columns: ColumnMetadata[],
                 relations: RelationMetadata[],
-                // indices: IndexMetadata[],
-                compositeIndices: CompositeIndexMetadata[],
-                foreignKeys: ForeignKeyMetadata[]) {
+                compositeIndices: CompositeIndexMetadata[]) {
         this.table = table;
         this.columns = columns;
         this.relations = relations;
-        // this.indices = indices;
         this.compositeIndices = compositeIndices;
-        this.foreignKeys = foreignKeys;
         
         // this.relations.forEach(relation => relation.entityMetadata = this);
         this.compositeIndices.forEach(index => index.entityMetadata = this);
@@ -77,6 +72,10 @@ export class EntityMetadata {
 
     get ownerManyToManyRelations(): RelationMetadata[] {
         return this.relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_MANY && relation.isOwning);
+    }
+    
+    get relationsWithJoinColumns() {
+        return this.ownerOneToOneRelations.concat(this.manyToOneRelations);
     }
 
     get primaryColumn(): ColumnMetadata {
