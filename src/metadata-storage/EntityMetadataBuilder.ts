@@ -70,8 +70,8 @@ export class EntityMetadataBuilder {
         const tableMetadatas = allTableMetadatas.filterByClasses(entityClasses).filter(table => !table.isAbstract);
 
         // set naming strategy
-        allMetadataStorage.tableMetadatas.forEach(tableMetadata => tableMetadata.namingStrategy = this.namingStrategy);
-        allTableMetadatas.forEach(column => column.namingStrategy = this.namingStrategy);
+        // allMetadataStorage.tableMetadatas.forEach(tableMetadata => tableMetadata.namingStrategy = this.namingStrategy);
+        // allTableMetadatas.forEach(column => column.namingStrategy = this.namingStrategy);
         // entityMetadata.relations.forEach(relation => relation.namingStrategy = this.namingStrategy);
 
         const entityMetadatas = tableMetadatas.map(tableMetadata => {
@@ -79,7 +79,7 @@ export class EntityMetadataBuilder {
             const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
 
             // set naming strategy
-            tableMetadata.namingStrategy = this.namingStrategy;
+            // tableMetadata.namingStrategy = this.namingStrategy;
             mergedMetadata.columnMetadatas.forEach(column => column.namingStrategy = this.namingStrategy);
             mergedMetadata.relationMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
             mergedMetadata.indexMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
@@ -90,12 +90,12 @@ export class EntityMetadataBuilder {
 
             // create a new entity metadata
             const entityMetadata = new EntityMetadata(
+                this.namingStrategy,
                 tableMetadata,
                 mergedMetadata.columnMetadatas,
                 mergedMetadata.relationMetadatas,
                 mergedMetadata.compositeIndexMetadatas
             );
-            entityMetadata.namingStrategy = this.namingStrategy;
 
             // create entity's relations join tables
             entityMetadata.manyToManyRelations.forEach(relation => {
@@ -149,7 +149,6 @@ export class EntityMetadataBuilder {
                 let relationalColumn = metadata.columns.find(column => column.name === relation.name); // todo?: ColumnCollection.findByName
                 if (!relationalColumn) {
                     const options: ColumnOptions = {
-                        name: relation.joinColumn.name,
                         type: inverseSideColumn.type,
                         oldColumnName: relation.oldColumnName,
                         nullable: relation.isNullable
@@ -180,16 +179,6 @@ export class EntityMetadataBuilder {
         const junctionEntityMetadatas: EntityMetadata[] = [];
         entityMetadatas.forEach(metadata => {
             metadata.ownerManyToManyRelations.map(relation => {
-                const inverseSideMetadata = relation.inverseEntityMetadata;
-                // const inverseSideColumn = relation.inverseSideColumn;
-
-                // generate table name for junction table
-                /*const tableName = this.namingStrategy.joinTableName(
-                    metadata.table.name,
-                    inverseSideMetadata.table.name,
-                    relation.name,
-                    inverseSideColumn.name
-                );*/
                 const tableMetadata = new JunctionTableMetadata(relation.joinTable.name);
                 const column1 = relation.joinTable.referencedColumn;
                 const column2 = relation.joinTable.inverseReferencedColumn;
@@ -214,10 +203,10 @@ export class EntityMetadataBuilder {
                         options: column2options
                     })
                 ];
-                const junctionEntityMetadata = new EntityMetadata(tableMetadata, columns, [], []);
+                const junctionEntityMetadata = new EntityMetadata(this.namingStrategy, tableMetadata, columns, [], []);
                 junctionEntityMetadata.foreignKeys.push(
                     new ForeignKeyMetadata(tableMetadata, [columns[0]], metadata.table, [column1]),
-                    new ForeignKeyMetadata(tableMetadata, [columns[1]], inverseSideMetadata.table, [column2])
+                    new ForeignKeyMetadata(tableMetadata, [columns[1]], relation.inverseEntityMetadata.table, [column2])
                 );
                 junctionEntityMetadatas.push(junctionEntityMetadata);
                 relation.junctionEntityMetadata = junctionEntityMetadata;

@@ -1,5 +1,5 @@
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
 import {TargetMetadata} from "./TargetMetadata";
+import {EntityMetadata} from "./EntityMetadata";
 
 /**
  * This metadata interface contains all information about specific table.
@@ -13,7 +13,7 @@ export class TableMetadata extends TargetMetadata {
     /**
      * Naming strategy used to generate and normalize table name.
      */
-    namingStrategy: NamingStrategyInterface;
+    entityMetadata: EntityMetadata;
 
     // ---------------------------------------------------------------------
     // Readonly Properties
@@ -60,7 +60,7 @@ export class TableMetadata extends TargetMetadata {
         if (this._name)
             return this._name;
 
-        return this.namingStrategy ? this.namingStrategy.tableName((<any>this.target).name) : (<any>this.target).name;
+        return this.entityMetadata.namingStrategy.tableName((<any>this.target).name);
     }
 
     /**

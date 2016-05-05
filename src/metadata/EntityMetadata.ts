@@ -11,18 +11,14 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
  */
 export class EntityMetadata {
 
-    // ---------------------------------------------------------------------
-    // Public Properties
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // Readonly Properties
+    // -------------------------------------------------------------------------
 
     /**
      * Naming strategy used to generate and normalize column name.
      */
-    namingStrategy: NamingStrategyInterface;
-
-    // -------------------------------------------------------------------------
-    // Readonly Properties
-    // -------------------------------------------------------------------------
+    readonly namingStrategy: NamingStrategyInterface;
 
     readonly table: TableMetadata;
     readonly columns: ColumnMetadata[];
@@ -34,15 +30,18 @@ export class EntityMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(table: TableMetadata,
-                columns: ColumnMetadata[],
-                relations: RelationMetadata[],
-                compositeIndices: CompositeIndexMetadata[]) {
-        this.table = table;
-        this.columns = columns;
-        this.relations = relations;
-        this.compositeIndices = compositeIndices;
-        
+    constructor(namingStrategy: NamingStrategyInterface,
+                tableMetadata: TableMetadata,
+                columnMetadatas: ColumnMetadata[],
+                relationMetadatas: RelationMetadata[],
+                compositeIndexMetadatas: CompositeIndexMetadata[]) {
+        this.namingStrategy = namingStrategy;
+        this.table = tableMetadata;
+        this.columns = columnMetadatas;
+        this.relations = relationMetadatas;
+        this.compositeIndices = compositeIndexMetadatas;
+
+        this.table.entityMetadata = this;
         this.relations.forEach(relation => relation.entityMetadata = this);
         this.compositeIndices.forEach(index => index.entityMetadata = this);
     }

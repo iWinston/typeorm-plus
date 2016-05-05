@@ -43,7 +43,10 @@ createConnection(options).then(connection => {
         .persist(post)
         .then(post => {
             console.log("Post has been saved. Lets load it now.");
-            return postRepository.find({ alias: "post", leftJoinAndSelect: { categories: "post.categories"} });
+            return postRepository.find({ alias: "post", leftJoinAndSelect: { 
+                categories: "post.categories",
+                author: "post.user" // note that table column is used, not object property
+            }});
         })
         .then(loadedPosts => {
             console.log("loadedPosts: ", loadedPosts);

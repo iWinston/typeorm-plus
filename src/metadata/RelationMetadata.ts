@@ -158,6 +158,9 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     get name(): string {
+        if (this.joinColumn && this.joinColumn.name)
+            return this.joinColumn.name;
+        
         return this.namingStrategy ? this.namingStrategy.relationName(this._name) : this._name;
     }
 
