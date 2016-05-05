@@ -10,7 +10,4 @@ export class Category {
     @Column()
     name: string;
 
-    @Column("int")
-    postId: number;
-
 }

@@ -569,15 +569,17 @@ export class QueryBuilder<Entity> {
     protected createJoinExpression() {
         return this.joins.map(join => {
             const joinType = join.type; // === "INNER" ? "INNER" : "LEFT";
-            const appendedCondition = join.condition ? " AND " + join.condition : ""; 
-            const parentAlias = join.alias.parentAliasName;
-            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.findAliasByName(parentAlias));
-            const parentTable = parentMetadata.table.name;
-            const parentTableColumn = parentMetadata.primaryColumn.name;
-            const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
-            const junctionMetadata = relation.junctionEntityMetadata;
             const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
             const joinTableName = joinMetadata.table.name;
+            const parentAlias = join.alias.parentAliasName;
+            if (!parentAlias) {
+                return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
+            }
+            
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.findAliasByName(parentAlias));
+            const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
+            const junctionMetadata = relation.junctionEntityMetadata;
+            const appendedCondition = join.condition ? " AND " + join.condition : "";
             
             if (relation.isManyToMany) {
                 const junctionTable = junctionMetadata.table.name;
@@ -603,7 +605,7 @@ export class QueryBuilder<Entity> {
                 return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
        
             } else {
-                return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
+                throw new Error("Unexpected relation type"); // this should not be possible
             }
         }).join(" ");
     }

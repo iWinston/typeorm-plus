@@ -22,6 +22,8 @@ const options: CreateConnectionOptions = {
 
 createConnection(options).then(connection => {
 
+    let entityManager = connection.entityManager;
+
     let postRepository = connection.getRepository(Post);
     let authorRepository = connection.getRepository(Author);
     let categoryRepository = connection.getRepository(Category);
@@ -38,24 +40,24 @@ createConnection(options).then(connection => {
     let post = postRepository.create();
     post.text = "Hello how are you?";
     post.title = "hello";
-    post.author = author;
-    post.categories = [category1, category2];
+    post.authorId = 1;
+    // post.author = author;
+    // post.categories = [category1, category2];
 
-    postRepository
-        .persist(post)
-        .then(post => {
-            console.log("Post has been saved.");
-            console.log(post);
-
-            console.log("Now lets load posts ");
-            /*return postRepository.find({
-                alias: "post",
-                leftJoinAndSelect: {
-                    author: "post.author",
-                    metadata: "post.metadata",
-                    categories: "post.categories"
-                }
-            });*/
+    Promise.all<any>([
+        postRepository.persist(post),
+        authorRepository.persist(author),
+        categoryRepository.persist(category1),
+        categoryRepository.persist(category2),
+    ])
+        .then(() => {
+            console.log("Everything has been saved.");
+        })
+        .then(() => {
+            return postRepository
+                .createQueryBuilder("post")
+                .leftJoin(Author, "author", "ON", "author.id=post.authorId")
+                .getResults();
 
             // let secondPost = postRepository.create();
             // secondPost.text = "Second post";
@@ -64,6 +66,13 @@ createConnection(options).then(connection => {
 
         }).then(post => {
             console.log("Loaded posts: ", post);
+
+            return entityManager
+                .createQueryBuilder(Author, "author")
+                .getResults();
+
+        }).then(authors => {
+            console.log("Loaded authors: ", authors);
         })
         /*    posts[0].title = "should be updated second post";
 

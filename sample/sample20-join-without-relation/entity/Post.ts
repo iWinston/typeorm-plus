@@ -6,7 +6,7 @@ import {Category} from "./Category";
 @Table("sample20_post")
 export class Post {
 
-    @PrimaryColumn("int")
+    @PrimaryColumn("int", { generated: true })
     id: number;
 
     @Column()
@@ -15,8 +15,7 @@ export class Post {
     @Column()
     text: string;
 
-    author: Author;
-
-    categories: Category[];
+    @Column("int")
+    authorId: number;
 
 }

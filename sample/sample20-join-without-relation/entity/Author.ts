@@ -9,8 +9,5 @@ export class Author {
 
     @Column()
     name: string;
-
-    @Column("int")
-    postId: number;
     
 }
