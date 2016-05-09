@@ -45,7 +45,11 @@ export class RawSqlResultsToEntityTransformer {
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => alias.getPrimaryKeyValue(result, metadata.primaryColumn));
         return groupedResults
             .map(group => this.transformIntoSingleResult(group.items, alias, metadata))
-            .filter(res => !!res);
+            .filter(res => !!res)
+            .map(res => {
+                // console.log("res: ", res);
+                return res;
+            });
     }
 
 
@@ -70,8 +74,9 @@ export class RawSqlResultsToEntityTransformer {
             const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.name);
             if (relationAlias) {
                 const relatedEntities = this.groupAndTransform(rawSqlResults, relationAlias);
-                const result = (relation.isManyToOne || relation.isOneToOne) ? relatedEntities[0] : relatedEntities;
-                if (result) {
+                const isResultArray = relation.isManyToMany || relation.isOneToMany;
+                const result = !isResultArray ? relatedEntities[0] : relatedEntities;
+                if (result && (!isResultArray || result.length > 0)) {
                     if (relation.isLazy) {
                         entity["__" + relation.propertyName + "__"] = result;
                     } else {
