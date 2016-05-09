@@ -148,13 +148,13 @@ export class QueryBuilder<Entity> {
     innerJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
         this.addSelect(alias);
-        return this.join("INNER", entityOrProperty, alias, conditionType, condition);
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
     innerJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     innerJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     innerJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
-        return this.join("INNER", entityOrProperty, alias, conditionType, condition);
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
     leftJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
@@ -362,7 +362,12 @@ export class QueryBuilder<Entity> {
             .getSql();
         return this.driver
             .query<any[]>(countQuery)
-            .then(results => parseInt(results[0]["cnt"]));
+            .then(results => {
+                if (!results || !results[0] || !results[0]["cnt"])
+                    return 0;
+
+                return parseInt(results[0]["cnt"]);
+            });
     }
 
     getResultsAndCount(): Promise<[Entity[], number]> {
@@ -588,9 +593,16 @@ export class QueryBuilder<Entity> {
                 const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
                 const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
                 const inverseJoinColumnName = joinTable.inverseReferencedColumn.name; // not sure if this is correct
-                const condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn; // todo: use column names from junction table somehow
-                const condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
-                
+
+                let condition1 = "", condition2 = "";
+                if (relation.isOwning) {
+                    condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn;
+                    condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
+                } else {
+                    condition1 = junctionAlias + "." + junctionMetadata.columns[1].name + "=" + parentAlias + "." + joinTableColumn;
+                    condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[0].name;
+                }
+
                 return " " + joinType + " JOIN " + junctionTable + " " + junctionAlias + " " + join.conditionType + " " + condition1 +
                        " " + joinType + " JOIN " + joinTableName + " " + joinAlias + " " + join.conditionType + " " + condition2 + appendedCondition;
                 
@@ -647,7 +659,7 @@ export class QueryBuilder<Entity> {
     protected replaceParameters(sql: string) {
         Object.keys(this.parameters).forEach(key => {
             const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
-            sql = sql.replace(":" + key, value); // todo: make replace only in value statements, otherwise problems
+            sql = sql.replace(new RegExp(":" + key, "g"), value); // todo: make replace only in value statements, otherwise problems
         });
         return sql;
     }

@@ -47,7 +47,8 @@ createConnection(options).then(connection => {
             author.posts = Promise.resolve([secondPost]);
             
             return authorRepository.persist(author);
-         }).then(author => {
+        })
+        .then(author => {
             console.log("Author with a new post has been saved. Lets try to update post in the author");
         
             return author.posts.then(posts => {

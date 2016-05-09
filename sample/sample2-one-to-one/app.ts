@@ -28,7 +28,7 @@ createConnection(options).then(connection => {
     details.metadata = "post,details,one-to-one";
     
     let post = new Post();
-    post.text = "Hello how are you?";
+    post.text = "hello how are you?";
     post.title = "hello";
     post.details = details;
 
@@ -36,7 +36,19 @@ createConnection(options).then(connection => {
 
     postRepository
         .persist(post)
-        .then(post => console.log("Post has been saved"))
+        .then(post => {
+            console.log("Post has been saved. Lets try to find this post using query builder: ");
+            return postRepository
+                .createQueryBuilder("post")
+                .where("post.id=:keyword")
+                .orWhere("post.title=:keyword")
+                .orWhere("post.details=:keyword")
+                .setParameter("keyword", "hello")
+                .getResults();
+        })
+        .then(post => {
+            console.log("Loaded post: ", post);
+        })
         .catch(error => console.log("Cannot save. Error: ", error));
 
 }, error => console.log("Cannot connect: ", error));
