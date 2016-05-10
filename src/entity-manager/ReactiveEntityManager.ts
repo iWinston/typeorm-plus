@@ -1,10 +1,11 @@
 import {Connection} from "../connection/Connection";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {FindOptions} from "./FindOptions";
-import {Repository} from "./Repository";
+import {FindOptions} from "../repository/FindOptions";
+import {Repository} from "../repository/Repository";
 import {ConstructorFunction} from "../common/ConstructorFunction";
-import {ReactiveRepository} from "./ReactiveRepository";
+import {ReactiveRepository} from "../repository/ReactiveRepository";
 import * as Rx from "rxjs/Rx";
+import {ReactiveTreeRepository} from "../repository/ReactiveTreeRepository";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
@@ -35,6 +36,13 @@ export class ReactiveEntityManager {
      */
     getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveRepository<Entity> {
         return this.connection.getReactiveRepository(entityClass);
+    }
+
+    /**
+     * Gets reactive tree repository of the given entity.
+     */
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveTreeRepository<Entity> {
+        return this.connection.getReactiveTreeRepository(entityClass);
     }
     
     /**
@@ -231,6 +239,69 @@ export class ReactiveEntityManager {
                 return this.connection.driver.endTransaction();
             })
             .then(() => runInTransactionResult));
+    }
+
+    /**
+     * Roots are entities that have no ancestors. Finds them all.
+     */
+    findRoots<Entity>(entityClass: ConstructorFunction<Entity>|Function): Promise<Entity[]> {
+        return this.getReactiveTreeRepository(entityClass).findRoots();
+    }
+
+    /**
+     * Creates a query builder used to get descendants of the entities in a tree.
+     */
+    createDescendantsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
+        return this.getReactiveTreeRepository(entityClass).createDescendantsQueryBuilder(alias, closureTableAlias, entity);
+    }
+
+    /**
+     * Gets all children (descendants) of the given entity. Returns them all in a flat array.
+     */
+    findDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity[]> {
+        return this.getReactiveTreeRepository(entityClass).findDescendants(entity);
+    }
+
+    /**
+     * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
+     */
+    findDescendantsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity> {
+        return this.getReactiveTreeRepository(entityClass).findDescendantsTree(entity);
+    }
+
+    /**
+     * Gets number of descendants of the entity.
+     */
+    countDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<number> {
+        return this.getReactiveTreeRepository(entityClass).countDescendants(entity);
+    }
+
+    /**
+     * Creates a query builder used to get ancestors of the entities in the tree.
+     */
+    createAncestorsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
+        return this.getReactiveTreeRepository(entityClass).createAncestorsQueryBuilder(alias, closureTableAlias, entity);
+    }
+
+    /**
+     * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
+     */
+    findAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity[]> {
+        return this.getReactiveTreeRepository(entityClass).findAncestors(entity);
+    }
+
+    /**
+     * Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
+     */
+    findAncestorsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity> {
+        return this.getReactiveTreeRepository(entityClass).findAncestorsTree(entity);
+    }
+
+    /**
+     * Gets number of ancestors of the entity.
+     */
+    countAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<number> {
+        return this.getReactiveTreeRepository(entityClass).countAncestors(entity);
     }
 
 }

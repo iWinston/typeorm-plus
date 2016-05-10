@@ -304,4 +304,26 @@ export class MysqlDriver extends BaseDriver implements Driver {
         return this.mysqlConnection.escape(value);
     }
 
+    /**
+     * Inserts rows into closure table.
+     */
+    insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+        let sql = "";
+        if (hasLevel) {
+            sql = `INSERT INTO ${tableName}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${tableName} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+        } else {
+            sql = `INSERT INTO ${tableName}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${tableName} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+        }
+        return this.query(sql).then(() => {
+            return this.query(`SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
+            
+        }).then((results: any) => {
+            return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+        });
+    }
+
 }

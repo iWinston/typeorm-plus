@@ -1,12 +1,11 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationTypes, RelationType} from "./types/RelationTypes";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
 import {RelationMetadataArgs} from "./args/RelationMetadataArgs";
-import {ColumnMetadata} from "./ColumnMetadata";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -61,6 +60,16 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
+
+    /**
+     * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
+     */
+    readonly isTreeParent: boolean = false;
+
+    /**
+     * Indicates if this is a children (can be only one-to-many relation) relation in the tree tables.
+     */
+    readonly isTreeChildren: boolean = false;
 
     /**
      * Relation type.
@@ -128,8 +137,9 @@ export class RelationMetadata extends PropertyMetadata {
     constructor(args: RelationMetadataArgs) {
         super(args.target, args.propertyName);
         this.relationType = args.relationType;
-        this._inverseSideProperty = args.inverseSideProperty;
-
+        
+        if (args.inverseSideProperty)
+            this._inverseSideProperty = args.inverseSideProperty;
         if (args.options.name)
             this._name = args.options.name;
         if (args.propertyType)
@@ -146,6 +156,10 @@ export class RelationMetadata extends PropertyMetadata {
             this.isNullable = args.options.nullable;
         if (args.options.onDelete)
             this.onDelete = args.options.onDelete;
+        if (args.isTreeParent)
+            this.isTreeParent = true;
+        if (args.isTreeChildren)
+            this.isTreeChildren = true;
 
         if (!this._type)
             this._type = args.type;
@@ -178,11 +192,23 @@ export class RelationMetadata extends PropertyMetadata {
     }
 
     get inverseSideProperty(): string {
-        return this.computeInverseSide(this._inverseSideProperty);
+        
+        if (this._inverseSideProperty) {
+            return this.computeInverseSide(this._inverseSideProperty);
+            
+        } else if (this.isTreeParent) {
+            return this.entityMetadata.treeChildrenRelation.propertyName;
+            
+        } else if (this.isTreeChildren) {
+            return this.entityMetadata.treeParentRelation.propertyName;
+            
+        } 
+        
+        return "";
     }
 
     get inverseRelation(): RelationMetadata {
-        return this.inverseEntityMetadata.findRelationWithPropertyName(this.computeInverseSide(this._inverseSideProperty));
+        return this.inverseEntityMetadata.findRelationWithPropertyName(this.inverseSideProperty);
     }
 
     get isOneToOne(): boolean {

@@ -10,6 +10,8 @@ import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
 import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
+import {PropertyMetadata} from "../metadata/PropertyMetadata";
+import {RelationsCountMetadata} from "../metadata/RelationsCountMetadata";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -36,41 +38,13 @@ export class MetadataStorage {
     readonly joinTableMetadatas = new PropertyMetadataCollection<JoinTableMetadata>();
     readonly indexMetadatas = new PropertyMetadataCollection<IndexMetadata>();
     readonly entityListenerMetadatas = new PropertyMetadataCollection<EntityListenerMetadata>();
+    readonly relationCountMetadatas = new PropertyMetadataCollection<RelationsCountMetadata>();
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(tableMetadatas?: TargetMetadataCollection<TableMetadata>,
-                namingStrategyMetadatas?: TargetMetadataCollection<NamingStrategyMetadata>,
-                eventSubscriberMetadatas?: TargetMetadataCollection<EventSubscriberMetadata>,
-                compositeIndexMetadatas?: TargetMetadataCollection<CompositeIndexMetadata>,
-                columnMetadatas?: PropertyMetadataCollection<ColumnMetadata>,
-                relationMetadatas?: PropertyMetadataCollection<RelationMetadata>,
-                joinColumnMetadatas?: PropertyMetadataCollection<JoinColumnMetadata>,
-                joinTableMetadatas?: PropertyMetadataCollection<JoinTableMetadata>,
-                indexMetadatas?: PropertyMetadataCollection<IndexMetadata>,
-                entityListenerMetadatas?: PropertyMetadataCollection<EntityListenerMetadata>) {
-        if (tableMetadatas)
-            this.tableMetadatas = tableMetadatas;
-        if (namingStrategyMetadatas)
-            this.namingStrategyMetadatas = namingStrategyMetadatas;
-        if (eventSubscriberMetadatas)
-            this.eventSubscriberMetadatas = eventSubscriberMetadatas;
-        if (compositeIndexMetadatas)
-            this.compositeIndexMetadatas = compositeIndexMetadatas;
-        if (columnMetadatas)
-            this.columnMetadatas = columnMetadatas;
-        if (relationMetadatas)
-            this.relationMetadatas = relationMetadatas;
-        if (joinColumnMetadatas)
-            this.joinColumnMetadatas = joinColumnMetadatas;
-        if (joinTableMetadatas)
-            this.joinTableMetadatas = joinTableMetadatas;
-        if (indexMetadatas)
-            this.indexMetadatas = indexMetadatas;
-        if (entityListenerMetadatas)
-            this.entityListenerMetadatas = entityListenerMetadatas;
+    constructor() {
     }
     
     // -------------------------------------------------------------------------
@@ -91,6 +65,7 @@ export class MetadataStorage {
         const joinTableMetadatas = this.joinTableMetadatas.filterByClass(tableMetadata.target);
         const indexMetadatas = this.indexMetadatas.filterByClass(tableMetadata.target);
         const entityListenerMetadatas = this.entityListenerMetadatas.filterByClass(tableMetadata.target);
+        const relationCountMetadatas = this.relationCountMetadatas.filterByClass(tableMetadata.target);
 
         allTableMetadatas
             .filter(metadata => tableMetadata.isInherited(metadata))
@@ -103,6 +78,7 @@ export class MetadataStorage {
                 joinTableMetadatas.push(...metadatasFromAbstract.joinTableMetadatas.filterRepeatedMetadatas(joinTableMetadatas));
                 indexMetadatas.push(...metadatasFromAbstract.indexMetadatas.filterRepeatedMetadatas(indexMetadatas));
                 entityListenerMetadatas.push(...metadatasFromAbstract.entityListenerMetadatas.filterRepeatedMetadatas(entityListenerMetadatas));
+                relationCountMetadatas.push(...metadatasFromAbstract.relationCountMetadatas.filterRepeatedMetadatas(relationCountMetadatas));
             });
 
         return {
@@ -112,7 +88,8 @@ export class MetadataStorage {
             joinColumnMetadatas: joinColumnMetadatas,
             joinTableMetadatas: joinTableMetadatas,
             indexMetadatas: indexMetadatas,
-            entityListenerMetadatas: entityListenerMetadatas
+            entityListenerMetadatas: entityListenerMetadatas,
+            relationCountMetadatas: relationCountMetadatas
         };
     }
     

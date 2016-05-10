@@ -1,4 +1,5 @@
 import {ColumnOptions} from "../options/ColumnOptions";
+import {ColumnMode} from "../ColumnMetadata";
 
 /**
  * Constructor arguments for ColumnMetadata class.
@@ -26,24 +27,14 @@ export interface ColumnMetadataArgs {
     isPrimaryKey?: boolean;
 
     /**
-     * Indicates if this column is create date column or not.
-     */
-    isCreateDate?: boolean;
-
-    /**
-     * Indicates if this column is update date column or not.
-     */
-    isUpdateDate?: boolean;
-
-    /**
      * Indicates if this column is virtual or not.
      */
     isVirtual?: boolean;
 
     /**
-     * Indicates if this column is version column.
+     * Column mode.
      */
-    isVersion?: boolean;
+    mode?: ColumnMode;
 
     /**
      * Indicates if this column is order id column.

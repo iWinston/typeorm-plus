@@ -1,26 +1,18 @@
-import {MetadataStorage} from "./MetadataStorage";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnOptions} from "../metadata/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {JunctionTableMetadata} from "../metadata/JunctionTableMetadata";
-import {defaultMetadataStorage} from "../typeorm";
-import {UsingJoinTableIsNotAllowedError} from "./error/UsingJoinTableIsNotAllowedError";
-import {UsingJoinTableOnlyOnOneSideAllowedError} from "./error/UsingJoinTableOnlyOnOneSideAllowedError";
-import {UsingJoinColumnIsNotAllowedError} from "./error/UsingJoinColumnIsNotAllowedError";
-import {UsingJoinColumnOnlyOnOneSideAllowedError} from "./error/UsingJoinColumnOnlyOnOneSideAllowedError";
-import {MissingJoinColumnError} from "./error/MissingJoinColumnError";
-import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadataValidator} from "./EntityMetadataValidator";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
 import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
 import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
-import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
-import {JoinTableOptions} from "../metadata/options/JoinTableOptions";
 import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {JoinColumnOptions} from "../metadata/options/JoinColumnOptions";
+import {TableMetadata} from "../metadata/TableMetadata";
+import {ColumnTypes} from "../metadata/types/ColumnTypes";
+import {defaultMetadataStorage} from "../typeorm";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -88,6 +80,10 @@ export class EntityMetadataBuilder {
             // merge indices and composite indices because simple indices actually are compose indices with only one column
             this.mergeIndicesAndCompositeIndices(mergedMetadata.indexMetadatas, mergedMetadata.compositeIndexMetadatas);
 
+            // todo: check if multiple tree parent metadatas in validator
+            // todo: tree decorators can be used only on closure table (validation)
+            // todo: throw error if parent tree metadata was not specified in a closure table
+            
             // create a new entity metadata
             const entityMetadata = new EntityMetadata(
                 this.namingStrategy,
@@ -175,11 +171,58 @@ export class EntityMetadataBuilder {
             });
         });
 
+        // generate closure tables
+        const closureJunctionEntityMetadatas: EntityMetadata[] = [];
+        entityMetadatas
+            .filter(metadata => metadata.table.isClosure)
+            .forEach(metadata => {
+                const closureTableName = this.namingStrategy.closureJunctionTableName(metadata.table.name);
+                const closureJunctionTableMetadata = new TableMetadata(undefined, closureTableName, "closureJunction");
+
+                const columns = [
+                    new ColumnMetadata({
+                        propertyType: metadata.primaryColumn.type,
+                        options: {
+                            length: metadata.primaryColumn.length,
+                            type: metadata.primaryColumn.type,
+                            name: "ancestor"
+                        }
+                    }),
+                    new ColumnMetadata({
+                        propertyType: metadata.primaryColumn.type,
+                        options: {
+                            length: metadata.primaryColumn.length,
+                            type: metadata.primaryColumn.type,
+                            name: "descendant"
+                        }
+                    })
+                ];
+
+                if (metadata.treeLevelColumn) {
+                    columns.push(new ColumnMetadata({
+                        propertyType: ColumnTypes.INTEGER,
+                        options: {
+                            type: ColumnTypes.INTEGER,
+                            name: "level"
+                        }
+                    }));
+                }
+
+                const closureJunctionEntityMetadata = new EntityMetadata(this.namingStrategy, closureJunctionTableMetadata, columns, [], []);
+                closureJunctionEntityMetadata.foreignKeys.push(
+                    new ForeignKeyMetadata(closureJunctionTableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),
+                    new ForeignKeyMetadata(closureJunctionTableMetadata, [columns[1]], metadata.table, [metadata.primaryColumn])
+                );
+                closureJunctionEntityMetadatas.push(closureJunctionEntityMetadata);
+
+                metadata.closureJunctionTable = closureJunctionEntityMetadata;
+            });
+        
         // generate junction tables with its columns and foreign keys
         const junctionEntityMetadatas: EntityMetadata[] = [];
         entityMetadatas.forEach(metadata => {
             metadata.ownerManyToManyRelations.map(relation => {
-                const tableMetadata = new JunctionTableMetadata(relation.joinTable.name);
+                const tableMetadata = new TableMetadata(undefined, relation.joinTable.name, "junction");
                 const column1 = relation.joinTable.referencedColumn;
                 const column2 = relation.joinTable.inverseReferencedColumn;
                 
@@ -215,7 +258,9 @@ export class EntityMetadataBuilder {
             });
         });
 
-        return entityMetadatas.concat(junctionEntityMetadatas);
+        return entityMetadatas
+            .concat(junctionEntityMetadatas)
+            .concat(closureJunctionEntityMetadatas);
     }
 
 }

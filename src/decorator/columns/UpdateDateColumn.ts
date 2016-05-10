@@ -24,7 +24,7 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
-            isUpdateDate: true,
+            mode: "updateDate",
             options: options
         }));
     };

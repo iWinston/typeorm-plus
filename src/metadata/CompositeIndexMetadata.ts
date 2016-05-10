@@ -1,5 +1,5 @@
 import {TargetMetadata} from "./TargetMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "./EntityMetadata";
 import {CompositeIndexOptions} from "./options/CompositeIndexOptions";
 

@@ -1,4 +1,4 @@
-import {NamingStrategyInterface} from "./NamingStrategy";
+import {NamingStrategyInterface} from "./NamingStrategyInterface";
 import * as _ from "lodash";
 
 /**
@@ -51,6 +51,10 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const column1 = tableName + "_" + columnName;
         const column2 = secondTableName + "_" + secondColumnName;
         return column1 === column2 ? column1 + "_2" : column1;
+    }
+
+    closureJunctionTableName(tableName: string): string {
+        return tableName + "_closure";
     }
     
 }

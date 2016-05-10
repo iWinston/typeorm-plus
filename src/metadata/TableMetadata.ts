@@ -2,6 +2,11 @@ import {TargetMetadata} from "./TargetMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 
 /**
+ * Table type.
+ */
+export type TableType = "regular"|"abstract"|"junction"|"closure"|"closureJunction";
+
+/**
  * This metadata interface contains all information about specific table.
  */
 export class TableMetadata extends TargetMetadata {
@@ -16,42 +21,56 @@ export class TableMetadata extends TargetMetadata {
     entityMetadata: EntityMetadata;
 
     // ---------------------------------------------------------------------
-    // Readonly Properties
+    // Private Properties
     // ---------------------------------------------------------------------
 
     /**
      * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
      */
-    readonly isAbstract = false;
-
-    // ---------------------------------------------------------------------
-    // Private Properties
-    // ---------------------------------------------------------------------
+    private readonly tableType: TableType;
 
     /**
      * Table name in the database.
      */
-    private _name: string;
+    private readonly _name: string;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target?: Function, name?: string);
-    constructor(target: Function, isAbstract: boolean);
-    constructor(target: Function, nameOrIsAbstract?: string|boolean, maybeIsAbstract?: boolean) {
+    constructor(target?: Function, name?: string, type: TableType = "regular") {
         super(target);
-        if (typeof nameOrIsAbstract === "string")
-            this._name = nameOrIsAbstract;
-        if (typeof nameOrIsAbstract === "boolean")
-            this.isAbstract = nameOrIsAbstract;
-        if (typeof maybeIsAbstract === "boolean")
-            this.isAbstract = maybeIsAbstract;
+        
+        if (name)
+            this._name = name;
+        if (type)
+            this.tableType = type;
     }
 
     // ---------------------------------------------------------------------
-    // Getters
+    // Accessors
     // ---------------------------------------------------------------------
+
+    /**
+     * Checks if this table is abstract.
+     */
+    get isAbstract() {
+        return this.tableType === "abstract";
+    }
+
+    /**
+     * Checks if this table is regular (non abstract and non closure).
+     */
+    get isRegular() {
+        return this.tableType === "regular";
+    }
+
+    /**
+     * Checks if this table is a closure table.
+     */
+    get isClosure() {
+        return this.tableType === "closure";
+    }
 
     /**
      * Table name in the database.
@@ -62,6 +81,10 @@ export class TableMetadata extends TargetMetadata {
 
         return this.entityMetadata.namingStrategy.tableName((<any>this.target).name);
     }
+
+    // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
 
     /**
      * Checks if this table is inherited from another table.

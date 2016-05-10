@@ -7,7 +7,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaCreator} from "../schema-creator/SchemaCreator";
 import {ConstructorFunction} from "../common/ConstructorFunction";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
-import {EntityManager} from "../repository/EntityManager";
+import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
 import {defaultMetadataStorage, getContainer} from "../typeorm";
 import {EntityMetadataBuilder} from "../metadata-storage/EntityMetadataBuilder";
@@ -19,7 +19,9 @@ import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConn
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
 import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
 import {ReactiveRepository} from "../repository/ReactiveRepository";
-import {ReactiveEntityManager} from "../repository/ReactiveEntityManager";
+import {ReactiveEntityManager} from "../entity-manager/ReactiveEntityManager";
+import {TreeRepository} from "../repository/TreeRepository";
+import {ReactiveTreeRepository} from "../repository/ReactiveTreeRepository";
 
 /**
  * Temporary type to store and link both repository and its metadata.
@@ -254,7 +256,25 @@ export class Connection {
     }
 
     /**
-     * Gets repository for the given entity class.
+     * Gets tree repository for the given entity class.
+     */
+    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): TreeRepository<Entity> {
+        const repository = this.getRepository(entityClass);
+        if (!this.isConnected)
+            throw new NoConnectionForRepositoryError(this.name);
+
+        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
+        if (!repoMeta)
+            throw new RepositoryNotFoundError(this.name, entityClass);
+        if (!repoMeta.metadata.table.isClosure)
+            throw new Error(`Cannot get a tree repository. ${repoMeta.metadata.name} is not a tree table. Try to use @ClosureTable decorator instead of @Table.`);
+
+        return <TreeRepository<Entity>> repoMeta.repository;
+    }
+
+    /**
+     * Gets reactive repository for the given entity class.
      */
     getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveRepository<Entity> {
         if (!this.isConnected)
@@ -266,6 +286,23 @@ export class Connection {
             throw new RepositoryNotFoundError(this.name, entityClass);
 
         return repoMeta.reactiveRepository;
+    }
+
+    /**
+     * Gets reactive tree repository for the given entity class.
+     */
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveTreeRepository<Entity> {
+        if (!this.isConnected)
+            throw new NoConnectionForRepositoryError(this.name);
+
+        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
+        if (!repoMeta)
+            throw new RepositoryNotFoundError(this.name, entityClass);
+        if (!repoMeta.metadata.table.isClosure)
+            throw new Error(`Cannot get a tree repository. ${repoMeta.metadata.name} is not a tree table. Try to use @ClosureTable decorator instead of @Table.`);
+
+        return <ReactiveTreeRepository<Entity>> repoMeta.reactiveRepository;
     }
 
     // -------------------------------------------------------------------------
@@ -321,12 +358,21 @@ export class Connection {
      * Creates a temporary object RepositoryAndMetadata to store relation between repository and metadata.
      */
     private createRepoMeta(metadata: EntityMetadata): RepositoryAndMetadata {
-        const repository = new Repository<any>(this, this.entityMetadatas, metadata);
-        return {
-            metadata: metadata,
-            repository: repository,
-            reactiveRepository: new ReactiveRepository(repository)
-        };
+        if (metadata.table.isClosure) {
+            const repository = new TreeRepository<any>(this, this.entityMetadatas, metadata);
+            return {
+                metadata: metadata,
+                repository: repository,
+                reactiveRepository: new ReactiveTreeRepository(repository)
+            };
+        } else {
+            const repository = new Repository<any>(this, this.entityMetadatas, metadata);
+            return {
+                metadata: metadata,
+                repository: repository,
+                reactiveRepository: new ReactiveRepository(repository)
+            };
+        }
     }
 
 }

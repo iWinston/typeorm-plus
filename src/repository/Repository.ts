@@ -31,9 +31,9 @@ export class Repository<Entity> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection, 
-                private entityMetadatas: EntityMetadataCollection,
-                private metadata: EntityMetadata) {
+    constructor(protected connection: Connection, 
+                protected entityMetadatas: EntityMetadataCollection,
+                protected metadata: EntityMetadata) {
         this.driver = connection.driver;
         this.broadcaster = new Broadcaster(entityMetadatas, connection.eventSubscribers, connection.entityListeners); // todo: inject broadcaster from connection
         this.persistOperationExecutor = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);

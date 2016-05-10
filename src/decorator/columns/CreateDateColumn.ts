@@ -24,7 +24,7 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
-            isCreateDate: true,
+            mode: "createDate",
             options: options
         }));
     };

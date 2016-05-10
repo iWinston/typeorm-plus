@@ -98,5 +98,10 @@ export interface Driver {
      * Escapes given value.
      */
     escape(value: any): any;
+
+    /**
+     * Inserts new values into closure table.
+     */
+    insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
     
 }

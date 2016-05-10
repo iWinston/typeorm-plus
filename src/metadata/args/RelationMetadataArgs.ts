@@ -36,11 +36,21 @@ export interface RelationMetadataArgs {
     /**
      * Inverse side of the relation.
      */
-    inverseSideProperty: PropertyTypeInFunction<any>;
+    inverseSideProperty?: PropertyTypeInFunction<any>;
 
     /**
      * Additional relation options.
      */
     options: RelationOptions;
+
+    /**
+     * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
+     */
+    isTreeParent?: boolean;
+
+    /**
+     * Indicates if this is a children (can be only one-to-many relation) relation in the tree tables.
+     */
+    isTreeChildren?: boolean;
     
 }

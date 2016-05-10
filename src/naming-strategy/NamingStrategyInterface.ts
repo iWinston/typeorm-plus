@@ -49,4 +49,9 @@ export interface NamingStrategyInterface {
      */
     joinTableInverseColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string;
 
+    /**
+     * Gets the name for the closure junction table.
+     */
+    closureJunctionTableName(tableName: string): string;
+    
 }

@@ -15,6 +15,7 @@ export interface Join {
     type: "LEFT"|"INNER";
     conditionType: "ON"|"WITH";
     condition: string;
+    tableName: string;
 }
 
 export class QueryBuilder<Entity> {
@@ -175,17 +176,20 @@ export class QueryBuilder<Entity> {
     join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH", condition: string, parameters?: { [key: string]: any }): this;
     join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
 
+        let tableName = "";
         const aliasObj = new Alias(alias);
         this.aliasMap.addAlias(aliasObj);
         if (entityOrProperty instanceof Function) {
             aliasObj.target = entityOrProperty;
 
-        } else if (typeof entityOrProperty === "string") {
+        } else if (typeof entityOrProperty === "string" && entityOrProperty.indexOf(".") !== -1) {
             aliasObj.parentAliasName = entityOrProperty.split(".")[0];
             aliasObj.parentPropertyName = entityOrProperty.split(".")[1];
+        } else if (typeof entityOrProperty === "string") {
+            tableName = entityOrProperty;
         }
 
-        const join: Join = { type: joinType, alias: aliasObj, conditionType: conditionType, condition: condition };
+        const join: Join = { type: joinType, alias: aliasObj, tableName: tableName, conditionType: conditionType, condition: condition };
         this.joins.push(join);
         if (parameters) this.addParameters(parameters);
         return this;
@@ -306,10 +310,18 @@ export class QueryBuilder<Entity> {
 
     getSingleScalarResult<T>(): Promise<T> {
         return this.getScalarResults().then(results => results[0]);
+
     }
 
     getResults(): Promise<Entity[]> {
+        return this.getResultsAndScalarResults().then(results => {
+            return results.entities;
+        });
+    }
+
+    getResultsAndScalarResults(): Promise<{ entities: Entity[], scalarResults: any[] }> {
         const mainAlias = this.aliasMap.mainAlias.name;
+        let scalarResults: any[];
         if (this.firstResult || this.maxResults) {
             const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
             let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAlias}_${metadata.primaryColumn.name}) as ids`;
@@ -325,6 +337,7 @@ export class QueryBuilder<Entity> {
             return this.driver
                 .query<any[]>(idsQuery)
                 .then((results: any[]) => {
+                    scalarResults = results;
                     const ids = results.map(result => result["ids"]).join(", ");
                     if (ids.length === 0)
                         return Promise.resolve([]);
@@ -335,17 +348,32 @@ export class QueryBuilder<Entity> {
                 })
                 .then(results => this.rawResultsToEntities(results))
                 .then(results => this.addLazyProperties(results))
-                .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results));
+                .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results))
+                .then(results => {
+                    return {
+                        entities: results,
+                        scalarResults: scalarResults
+                    };
+                });
 
         } else {
             return this.driver
                 .query<any[]>(this.getSql())
-                .then(results => this.rawResultsToEntities(results))
+                .then(results => {
+                    scalarResults = results;
+                    return this.rawResultsToEntities(results);
+                })
                 .then(results => this.addLazyProperties(results))
                 .then(results => {
                     return this.broadcaster
                         .broadcastLoadEventsForAll(results)
                         .then(() => results);
+                })
+                .then(results => {
+                    return {
+                        entities: results,
+                        scalarResults: scalarResults
+                    };
                 });
         }
     }
@@ -399,7 +427,7 @@ export class QueryBuilder<Entity> {
         }
 
         this.joins.forEach(join => {
-            const property = join.alias.target || (join.alias.parentAliasName + "." + join.alias.parentPropertyName);
+            const property = join.tableName || join.alias.target || (join.alias.parentAliasName + "." + join.alias.parentPropertyName);
             qb.join(join.type, property, join.alias.name, join.conditionType, join.condition);
         });
 
@@ -574,8 +602,7 @@ export class QueryBuilder<Entity> {
     protected createJoinExpression() {
         return this.joins.map(join => {
             const joinType = join.type; // === "INNER" ? "INNER" : "LEFT";
-            const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
-            const joinTableName = joinMetadata.table.name;
+            const joinTableName = join.tableName ? join.tableName : this.aliasMap.getEntityMetadataByAlias(join.alias).table.name;
             const parentAlias = join.alias.parentAliasName;
             if (!parentAlias) {
                 return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + join.condition;

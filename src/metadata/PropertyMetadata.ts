@@ -3,7 +3,7 @@ import {TargetMetadata} from "./TargetMetadata";
 /**
  * This represents metadata of some object's property.
  */
-export abstract class PropertyMetadata extends TargetMetadata {
+export class PropertyMetadata extends TargetMetadata {
 
     // ---------------------------------------------------------------------
     // Readonly Properties

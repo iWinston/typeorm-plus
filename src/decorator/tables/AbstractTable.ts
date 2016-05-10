@@ -6,6 +6,6 @@ import {defaultMetadataStorage} from "../../typeorm";
  */
 export function AbstractTable() {
     return function (cls: Function) {
-        defaultMetadataStorage().tableMetadatas.add(new TableMetadata(cls, true));
+        defaultMetadataStorage().tableMetadatas.add(new TableMetadata(cls, undefined, "abstract"));
     };
 }

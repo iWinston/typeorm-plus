@@ -1,7 +1,9 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
-import {ColumnType} from "./types/ColumnTypes";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadataArgs} from "./args/ColumnMetadataArgs";
+import {ColumnType} from "./types/ColumnTypes";
+
+export type ColumnMode = "regular"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel";
 
 /**
  * This metadata contains all information about class's column.
@@ -32,6 +34,11 @@ export class ColumnMetadata extends PropertyMetadata {
     readonly type: ColumnType;
 
     /**
+     * The mode of the column.
+     */
+    readonly mode: ColumnMode;
+
+    /**
      * Maximum length in the database.
      */
     readonly length = "";
@@ -57,22 +64,7 @@ export class ColumnMetadata extends PropertyMetadata {
     readonly isNullable = false;
 
     /**
-     * Indicates if column will contain a created date or not.
-     */
-    readonly isCreateDate = false;
-
-    /**
-     * Indicates if column will contain an updated date or not.
-     */
-    readonly isUpdateDate = false;
-
-    /**
-     * Indicates if column will contain a version.
-     */
-    readonly isVersion = false;
-
-    /**
-     * Indicates if column will contain an updated date or not.
+     * Indicates if column is virtual. Virtual columns are not mapped to the entity.
      */
     readonly isVirtual = false;
 
@@ -126,12 +118,8 @@ export class ColumnMetadata extends PropertyMetadata {
 
         if (args.isPrimaryKey)
             this.isPrimary = args.isPrimaryKey;
-        if (args.isCreateDate)
-            this.isCreateDate = args.isCreateDate;
-        if (args.isUpdateDate)
-            this.isUpdateDate = args.isUpdateDate;
-        if (args.isVersion)
-            this.isVersion = args.isVersion;
+        if (args.mode)
+            this.mode = args.mode;
         if (args.isVirtual)
             this.isVirtual = args.isVirtual;
         if (args.propertyType)
@@ -175,6 +163,18 @@ export class ColumnMetadata extends PropertyMetadata {
             return this._name;
         
         return this.namingStrategy ? this.namingStrategy.columnName(this.propertyName) : this.propertyName;
+    }
+    
+    get isUpdateDate() {
+        return this.mode === "updateDate";
+    }
+    
+    get isCreateDate() {
+        return this.mode === "createDate";
+    }
+    
+    get isVersion() {
+        return this.mode === "version";
     }
 
 }

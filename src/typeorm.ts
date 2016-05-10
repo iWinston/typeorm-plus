@@ -92,7 +92,7 @@ export {CreateConnectionOptions} from "./connection-manager/CreateConnectionOpti
 export {Driver} from "./driver/Driver";
 export {MysqlDriver} from "./driver/MysqlDriver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";
-export {EntityManager} from "./repository/EntityManager";
+export {EntityManager} from "./entity-manager/EntityManager";
 export {Repository} from "./repository/Repository";
 export {FindOptions} from "./repository/FindOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";

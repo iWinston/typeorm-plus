@@ -13,7 +13,7 @@ export class ReactiveRepository<Entity> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private repository: Repository<Entity>) {
+    constructor(protected repository: Repository<Entity>) {
 
     }
 

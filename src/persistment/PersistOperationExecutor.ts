@@ -37,6 +37,8 @@ export class PersistOperationExecutor {
             .then(() => this.broadcastBeforeEvents(persistOperation))
             .then(() => this.driver.beginTransaction())
             .then(() => this.executeInsertOperations(persistOperation))
+            .then(() => this.executeInsertClosureTableOperations(persistOperation))
+            .then(() => this.executeUpdateTreeLevelOperations(persistOperation))
             .then(() => this.executeInsertJunctionsOperations(persistOperation))
             .then(() => this.executeRemoveJunctionsOperations(persistOperation))
             .then(() => this.executeUpdateRelationsOperations(persistOperation))
@@ -58,10 +60,6 @@ export class PersistOperationExecutor {
      * Broadcast all before persistment events - beforeInsert, beforeUpdate and beforeRemove events.
      */
     private broadcastBeforeEvents(persistOperation: PersistOperation) {
-
-        /*console.log("persistOperation.allPersistedEntities: ", persistOperation.allPersistedEntities);
-        console.log("inserts", persistOperation.inserts);
-        console.log("updates", persistOperation.updates);*/
 
         const insertEvents = persistOperation.inserts.map(insertOperation => {
             const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);
@@ -118,6 +116,33 @@ export class PersistOperationExecutor {
     }
 
     /**
+     * Executes insert operations for closure tables.
+     */
+    private executeInsertClosureTableOperations(persistOperation: PersistOperation) {
+        const promises = persistOperation.inserts
+            .filter(operation => {
+                const metadata = this.entityMetadatas.findByTarget(operation.entity.constructor);
+                return metadata.table.isClosure;
+            })
+            .map(operation => {
+                const relationsUpdateMap = this.findUpdateOperationForEntity(persistOperation.updatesByRelations, persistOperation.inserts, operation.entity);
+                return this.insertIntoClosureTable(operation, relationsUpdateMap).then(level => {
+                    operation.treeLevel = level;
+                });
+            });
+        return Promise.all(promises);
+    }
+
+    /**
+     * Executes update tree level operations in inserted entities right after data into closure table inserted.
+     */
+    private executeUpdateTreeLevelOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.inserts.map(operation => {
+            return this.updateTreeLevel(operation);
+        }));
+    }
+
+    /**
      * Executes insert junction operations.
      */
     private executeInsertJunctionsOperations(persistOperation: PersistOperation) {
@@ -140,7 +165,7 @@ export class PersistOperationExecutor {
      */
     private executeUpdateRelationsOperations(persistOperation: PersistOperation) {
         return Promise.all(persistOperation.updatesByRelations.map(updateByRelation => {
-            this.updateByRelation(updateByRelation, persistOperation.inserts);
+            return this.updateByRelation(updateByRelation, persistOperation.inserts);
         }));
     }
 
@@ -198,6 +223,14 @@ export class PersistOperationExecutor {
                 insertOperation.entity[metadata.createDateColumn.propertyName] = insertOperation.date;
             if (metadata.versionColumn)
                 insertOperation.entity[metadata.versionColumn.propertyName]++;
+            if (metadata.treeLevelColumn) {
+                // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
+                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.name] || 0) : 0;
+                insertOperation.entity[metadata.treeLevelColumn.propertyName] = insertOperation.treeLevel;
+            }
+            if (metadata.treeChildrenCountColumn) {
+                insertOperation.entity[metadata.treeChildrenCountColumn.propertyName] = 0;
+            }
         });
         persistOperation.updates.forEach(updateOperation => {
             const metadata = this.entityMetadatas.findByTarget(updateOperation.entity.constructor);
@@ -222,6 +255,27 @@ export class PersistOperationExecutor {
             if (removedEntity)
                 removedEntity.entity[metadata.primaryColumn.propertyName] = undefined;
         });
+    }
+
+    private findUpdateOperationForEntity(operations: UpdateByRelationOperation[], insertOperations: InsertOperation[], target: any): { [key: string]: any } {
+
+        let updateMap: { [key: string]: any } = {};
+        operations
+            .forEach(operation => { // duplication with updateByRelation method
+                const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
+                const idInInserts = relatedInsertOperation ? relatedInsertOperation.entityId : null;
+                if (operation.updatedRelation.isOneToMany) {
+                    const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.entity.constructor);
+                    if (operation.insertOperation.entity === target)
+                        updateMap[operation.updatedRelation.inverseRelation.name] = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
+
+                } else {
+                    if (operation.targetEntity === target)
+                        updateMap[operation.updatedRelation.name] = operation.insertOperation.entityId;
+                }
+            });
+
+        return updateMap;
     }
 
     private updateByRelation(operation: UpdateByRelationOperation, insertOperations: InsertOperation[]) {
@@ -325,7 +379,56 @@ export class PersistOperationExecutor {
             allValues.push(this.driver.preparePersistentValue(1, metadata.versionColumn));
         }
         
+        if (metadata.treeLevelColumn) {
+            const parentEntity = entity[metadata.treeParentRelation.propertyName];
+            const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.name] || 0) : 0;
+            
+            allColumns.push(metadata.treeLevelColumn.name);
+            allValues.push(parentLevel + 1);
+        }
+        
+        if (metadata.treeChildrenCountColumn) {
+            allColumns.push(metadata.treeChildrenCountColumn.name);
+            allValues.push(0);
+        }
+        
         return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));
+    }
+
+    private insertIntoClosureTable(operation: InsertOperation, updateMap: { [key: string]: any }) {
+        const entity = operation.entity;
+        const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+        const parentEntity = entity[metadata.treeParentRelation.propertyName];
+        const hasLevel = !!metadata.treeLevelColumn;
+
+        let parentEntityId: any = 0;
+        if (parentEntity && parentEntity[metadata.primaryColumn.name]) {
+            parentEntityId = parentEntity[metadata.primaryColumn.name];
+        } else if (updateMap && updateMap[metadata.treeParentRelation.propertyName]) { // todo: name or propertyName: depend how update will be implemented. or even find relation of this treeParent and use its name?
+            parentEntityId = updateMap[metadata.treeParentRelation.propertyName];
+        }
+        
+        return this.driver.insertIntoClosureTable(metadata.closureJunctionTable.table.name, operation.entityId, parentEntityId, hasLevel)
+            /*.then(() => {
+                // we also need to update children count in parent
+                if (parentEntity && parentEntityId) {
+                    const values = { [metadata.treeChildrenCountColumn.name]: parentEntity[metadata.treeChildrenCountColumn.name] + 1 };
+                    return this.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: parentEntityId });
+                }
+                return;
+            })*/;
+    }
+
+    private updateTreeLevel(operation: InsertOperation) {
+        const metadata = this.entityMetadatas.findByTarget(operation.entity.constructor);
+
+        if (metadata.treeLevelColumn && operation.treeLevel) {
+            const values = { [metadata.treeLevelColumn.name]: operation.treeLevel };
+            return this.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: operation.entityId });
+        }
+        
+        return Promise.resolve();
+
     }
 
     private insertJunctions(junctionOperation: JunctionInsertOperation, insertOperations: InsertOperation[]) {

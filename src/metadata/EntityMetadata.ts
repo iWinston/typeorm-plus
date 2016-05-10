@@ -4,13 +4,20 @@ import {RelationMetadata} from "./RelationMetadata";
 import {CompositeIndexMetadata} from "./CompositeIndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {PropertyMetadata} from "./PropertyMetadata";
 
 /**
  * Contains all entity metadata.
  */
 export class EntityMetadata {
 
+    // -------------------------------------------------------------------------
+    // Properties
+    // -------------------------------------------------------------------------
+
+    closureJunctionTable: EntityMetadata;
+    
     // -------------------------------------------------------------------------
     // Readonly Properties
     // -------------------------------------------------------------------------
@@ -51,6 +58,9 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     get name(): string {
+        if (!this.table || !this.table.target)
+            throw new Error("No table target set to the entity metadata.");
+        
         return (<any> this.table.target).name;
     }
 
@@ -91,17 +101,25 @@ export class EntityMetadata {
     }
 
     get createDateColumn(): ColumnMetadata {
-        return this.columns.find(column => column.isCreateDate);
+        return this.columns.find(column => column.mode === "createDate");
     }
 
     get updateDateColumn(): ColumnMetadata {
-        return this.columns.find(column => column.isUpdateDate);
+        return this.columns.find(column => column.mode === "updateDate");
     }
 
     get versionColumn(): ColumnMetadata {
-        return this.columns.find(column => column.isVersion);
+        return this.columns.find(column => column.mode === "version");
     }
 
+    get treeChildrenCountColumn(): ColumnMetadata {
+        return this.columns.find(column => column.mode === "treeChildrenCount");
+    }
+
+    get treeLevelColumn(): ColumnMetadata {
+        return this.columns.find(column => column.mode === "treeLevel");
+    }
+    
     get hasPrimaryKey(): boolean {
         return !!this.primaryColumn;
     }
@@ -190,6 +208,14 @@ export class EntityMetadata {
 
     hasRelationWithManyWithName(name: string): boolean {
         return !!this.findRelationWithManyWithDbName(name);
+    }
+
+    get treeParentRelation() {
+        return this.relations.find(relation => relation.isTreeParent);
+    }
+
+    get treeChildrenRelation() {
+        return this.relations.find(relation => relation.isTreeChildren);
     }
     
 }

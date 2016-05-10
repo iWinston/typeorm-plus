@@ -1,5 +1,5 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategy";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 
 /**
  * This metadata interface contains all information about some index on a field.
