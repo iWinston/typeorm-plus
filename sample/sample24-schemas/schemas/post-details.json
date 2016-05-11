@@ -1,0 +1,29 @@
+{
+  "name": "PostDetails",
+  "table": {
+    "name": "sample24_post_details"
+  },
+  "columns": {
+    "id": {
+      "type": "int",
+      "primary": true,
+      "generated": true
+    },
+    "comment": {
+      "type": "string",
+      "nullable": false
+    },
+    "metadata": {
+      "type": "string",
+      "nullable": false
+    }
+  },
+  "relations": {
+    "post": {
+      "target": "Post",
+      "type": "one-to-one",
+      "owner": false,
+      "inverseSide": "postDetails"
+    }
+  }
+}

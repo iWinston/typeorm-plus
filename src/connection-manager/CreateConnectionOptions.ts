@@ -36,6 +36,11 @@ export interface CreateConnectionOptions {
     namingStrategies?: Function[];
 
     /**
+     * Entity schemas to be loaded for the new connection.
+     */
+    entitySchemas?: any[];
+
+    /**
      * List of directories from where entities will be loaded.
      */
     entityDirectories?: string[];
@@ -49,4 +54,9 @@ export interface CreateConnectionOptions {
      * List of directories from where naming strategies will be loaded.
      */
     namingStrategyDirectories?: string[];
+
+    /**
+     * List of directories from where entity schemas will be loaded.
+     */
+    entitySchemaDirectories?: string[];
 }

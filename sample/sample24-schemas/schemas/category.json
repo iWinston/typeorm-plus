@@ -1,0 +1,27 @@
+{
+  "name": "Category",
+  "table": {
+    "name": "sample24_category"
+  },
+  "columns": {
+    "id": {
+      "type": "int",
+      "primary": true,
+      "generated": true
+    },
+    "description": {
+      "type": "string",
+      "nullable": false
+    }
+  },
+  "relations": {
+    "posts": {
+      "target": "Post",
+      "type": "many-to-many",
+      "cascadeInsert": true,
+      "cascadeUpdate": true,
+      "cascadeRemove": true,
+      "inverseSide": "categories"
+    }
+  }
+}

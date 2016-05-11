@@ -24,17 +24,47 @@ export class EntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets repository of the given entity.
+     * Gets repository for the given entity class.
      */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
-        return this.connection.getRepository(entityClass);
+    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity>;
+    // getRepository<Entity>(entityClass: Function): Repository<Entity>;
+
+    /**
+     * Gets repository for the given entity name.
+     */
+    getRepository<Entity>(entityClass: string): Repository<Entity>;
+
+    /**
+     * Gets repository for the given entity class or name.
+     */
+    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity> {
+        if (typeof entityClassOrName === "string") {
+            return this.connection.getRepository<Entity>(entityClassOrName);
+        } else {
+            return this.connection.getRepository(<ConstructorFunction<Entity>|Function> entityClassOrName);
+        }
     }
 
     /**
-     * Gets a tree repository of the given entity.
+     * Gets repository for the given entity class.
      */
-    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): TreeRepository<Entity> {
-        return this.connection.getTreeRepository(entityClass);
+    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): TreeRepository<Entity>;
+    // getTreeRepository<Entity>(entityClass: Function): TreeRepository<Entity>;
+
+    /**
+     * Gets repository for the given entity name.
+     */
+    getTreeRepository<Entity>(entityClass: string): TreeRepository<Entity>;
+
+    /**
+     * Gets repository for the given entity class or name.
+     */
+    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): TreeRepository<Entity> {
+        if (typeof entityClassOrName === "string") {
+            return this.connection.getTreeRepository<Entity>(entityClassOrName);
+        } else {
+            return this.connection.getTreeRepository(<ConstructorFunction<Entity>|Function> entityClassOrName);
+        }
     }
 
     /**

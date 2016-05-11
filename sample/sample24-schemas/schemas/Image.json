@@ -1,0 +1,39 @@
+{
+  "name": "Image",
+  "table": {
+    "name": "sample24_image"
+  },
+  "columns": {
+    "id": {
+      "type": "int",
+      "primary": true,
+      "generated": true
+    },
+    "name": {
+      "type": "string",
+      "nullable": false
+    },
+    "url": {
+      "type": "string",
+      "nullable": false
+    }
+  },
+  "relations": {
+    "post": {
+      "target": "Post",
+      "type": "many-to-one",
+      "cascadeInsert": true,
+      "cascadeUpdate": true,
+      "cascadeRemove": true,
+      "inverseSide": "images"
+    },
+    "secondaryImages": {
+      "target": "Post",
+      "type": "many-to-one",
+      "cascadeInsert": true,
+      "cascadeUpdate": true,
+      "cascadeRemove": true,
+      "inverseSide": "secondaryImages"
+    }
+  }
+}

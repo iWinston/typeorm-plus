@@ -21,5 +21,13 @@ export class EntityMetadataCollection extends Array<EntityMetadata> {
         
         return metadata;
     }
+
+    findByName(name: string) {
+        const metadata = this.find(metadata => metadata.name === name);
+        if (!metadata)
+            throw new EntityMetadataNotFound(name);
+        
+        return metadata;
+    }
     
 }

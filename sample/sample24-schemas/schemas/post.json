@@ -1,0 +1,54 @@
+{
+  "name": "Post",
+  "table": {
+    "name": "sample24_post"
+  },
+  "columns": {
+    "id": {
+      "type": "int",
+      "primary": true,
+      "generated": true
+    },
+    "title": {
+      "type": "string",
+      "nullable": false
+    },
+    "text": {
+      "type": "string",
+      "nullable": false
+    }
+  },
+  "relations": {
+    "details": {
+      "target": "PostDetails",
+      "type": "one-to-one",
+      "owner": true,
+      "inverseSide": "post",
+      "cascadeInsert": true,
+      "cascadeUpdate": true,
+      "cascadeRemove": true
+    },
+    "images": {
+      "target": "Image",
+      "type": "one-to-many",
+      "inverseSide": "post",
+      "cascadeInsert": true,
+      "cascadeUpdate": true,
+      "cascadeRemove": true
+    },
+    "secondaryImages": {
+      "target": "Image",
+      "type": "one-to-many",
+      "inverseSide": "secondaryPost"
+    },
+    "categories": {
+      "target": "Category",
+      "type": "many-to-many",
+      "owner": true,
+      "cascadeInsert": true,
+      "cascadeUpdate": true,
+      "cascadeRemove": true,
+      "inverseSide": "posts"
+    }
+  }
+}

@@ -243,30 +243,63 @@ export class Connection {
     /**
      * Gets repository for the given entity class.
      */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
+    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity>;
+    // getRepository<Entity>(entityClass: Function): Repository<Entity>;
+
+    /**
+     * Gets repository for the given entity name.
+     */
+    getRepository<Entity>(entityClass: string): Repository<Entity>;
+
+    /**
+     * Gets repository for the given entity class or name.
+     */
+    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        let metadata: EntityMetadata;
+        if (typeof entityClassOrName === "string") {
+            metadata = this.entityMetadatas.findByName(entityClassOrName);
+        } else {
+            metadata = this.entityMetadatas.findByTarget(entityClassOrName);
+        }
+        
         const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
         if (!repoMeta)
-            throw new RepositoryNotFoundError(this.name, entityClass);
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
         return repoMeta.repository;
     }
 
     /**
-     * Gets tree repository for the given entity class.
+     * Gets repository for the given entity class.
      */
-    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): TreeRepository<Entity> {
-        const repository = this.getRepository(entityClass);
+    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): TreeRepository<Entity>;
+    // getTreeRepository<Entity>(entityClass: Function): TreeRepository<Entity>;
+
+    /**
+     * Gets repository for the given entity name.
+     */
+    getTreeRepository<Entity>(entityClass: string): TreeRepository<Entity>;
+
+    /**
+     * Gets repository for the given entity class or name.
+     */
+    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): TreeRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        let metadata: EntityMetadata;
+        if (typeof entityClassOrName === "string") {
+            metadata = this.entityMetadatas.findByName(entityClassOrName);
+        } else {
+            metadata = this.entityMetadatas.findByTarget(entityClassOrName);
+        }
+
         const repoMeta = this.repositoryAndMetadatas.find(repoMeta => repoMeta.metadata === metadata);
         if (!repoMeta)
-            throw new RepositoryNotFoundError(this.name, entityClass);
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
         if (!repoMeta.metadata.table.isClosure)
             throw new Error(`Cannot get a tree repository. ${repoMeta.metadata.name} is not a tree table. Try to use @ClosureTable decorator instead of @Table.`);
 
