@@ -149,7 +149,8 @@ export class EntityPersistOperationBuilder {
 
         } else if (diff.length) {
             const entityId = newEntity[metadata.primaryColumn.name];
-            operations.push(new UpdateOperation(newEntity, entityId, diff));
+            if (entityId)
+                operations.push(new UpdateOperation(newEntity, entityId, diff));
         }
 
         metadata.relations.forEach(relation => {
