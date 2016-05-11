@@ -143,14 +143,15 @@ export class EntityPersistOperationBuilder {
         if (!dbEntity)
             return operations;
 
-        const diff = this.diffColumns(metadata, newEntity, dbEntity);
-        if (diff.length && fromRelation && !this.checkCascadesAllowed("update", metadata, fromRelation)) {
+        const diffColumns = this.diffColumns(metadata, newEntity, dbEntity);
+        const diffRelations = this.diffRelations(metadata, newEntity, dbEntity);
+        if (diffColumns.length && fromRelation && !this.checkCascadesAllowed("update", metadata, fromRelation)) {
             return operations;
 
-        } else if (diff.length) {
+        } else if (diffColumns.length || diffRelations.length) {
             const entityId = newEntity[metadata.primaryColumn.name];
             if (entityId)
-                operations.push(new UpdateOperation(newEntity, entityId, diff));
+                operations.push(new UpdateOperation(newEntity, entityId, diffColumns, diffRelations));
         }
 
         metadata.relations.forEach(relation => {
@@ -167,13 +168,11 @@ export class EntityPersistOperationBuilder {
                     const subDbEntity = dbValue.find((subDbEntity: any) => {
                         return subDbEntity[relationIdColumnName] === subEntity[relationIdColumnName];
                     });
-                    const relationOperations = this.findCascadeUpdateEntities(relMetadata, subDbEntity, subEntity, relation, operations);
-                    operations.push(...relationOperations);
+                    this.findCascadeUpdateEntities(relMetadata, subDbEntity, subEntity, relation, operations);
                 });
                 
             } else {
-                const relationOperations = this.findCascadeUpdateEntities(relMetadata, dbValue, value, relation, operations);
-                operations.push(...relationOperations);
+                this.findCascadeUpdateEntities(relMetadata, dbValue, value, relation, operations);
             }
         });
 
@@ -344,7 +343,13 @@ export class EntityPersistOperationBuilder {
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
         return metadata.columns
             .filter(column => !column.isVirtual && !column.isUpdateDate && !column.isVersion && !column.isCreateDate)
-            .filter(column => newEntity[column.propertyName] !== dbEntity[column.propertyName]);
+            .filter(column => newEntity[column.propertyName] !== dbEntity[column.name]);
+    }
+
+    private diffRelations(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
+        return metadata.relations
+            .filter(relation => relation.isManyToOne || (relation.isOneToOne && relation.isOwning))
+            .filter(relation => newEntity[relation.propertyName] !== dbEntity[relation.name]);
     }
 
     private findEntityWithId(entityWithIds: EntityWithId[], entityClass: Function, id: any) {

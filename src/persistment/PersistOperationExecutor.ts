@@ -304,14 +304,20 @@ export class PersistOperationExecutor {
     private update(updateOperation: UpdateOperation) {
         const entity = updateOperation.entity;
         const metadata = this.entityMetadatas.findByTarget(entity.constructor);
-        const values: any = updateOperation.columns.reduce((object, column) => {
-            const value = this.driver.preparePersistentValue(entity[column.propertyName], column);
-            (<any> object)[column.name] = value;
-            return object;
-        }, {});
-
-        // todo: what if number of updated columns = 0 ? + probably no need to update updated date and version columns
+        const values: { [key: string]: any } = {};
         
+        updateOperation.columns.forEach(column => {
+            values[column.name] = this.driver.preparePersistentValue(entity[column.propertyName], column);
+        });
+        
+        updateOperation.relations.forEach(relation => {
+            values[relation.name] = entity[relation.propertyName] ? entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName] : null;
+        });
+
+        // if number of updated columns = 0 no need to update updated date and version columns
+        if (Object.keys(values).length === 0)
+            return Promise.resolve();
+
         if (metadata.updateDateColumn)
             values[metadata.updateDateColumn.name] = this.driver.preparePersistentValue(new Date(), metadata.updateDateColumn);
 

@@ -39,6 +39,9 @@ createConnection(options).then(connection => {
     author.name = "Umed";
     post.author = author;
 
+    let author2 = new Author();
+    author2.name = "Bakhrom";
+
     postRepository
         .persist(post)
         .then(post => {
@@ -56,11 +59,54 @@ createConnection(options).then(connection => {
             let category3 = new Category();
             category3.name = "category #3";
             post.categories.push(category3);
-            
-            let author2 = new Author();
-            author2.name = "Bakhrom";
+
             post.author = author2;
             
+            return postRepository.persist(post);
+        })
+        .then(updatedPost => {
+            return postRepository
+                .createQueryBuilder("post")
+                .leftJoinAndSelect("post.author", "author")
+                .leftJoinAndSelect("post.categories", "categories")
+                .where("post.id=:id", { id: post.id })
+                .getSingleResult();
+        })
+        .then(loadedPost => {
+            console.log(loadedPost);
+            console.log("Lets update a post - return old author back:");
+
+            console.log("updating with: ", author);
+            loadedPost.title = "Umed's post";
+            loadedPost.author = author;
+            return postRepository.persist(loadedPost);
+        })
+        .then(updatedPost => {
+            return postRepository
+                .createQueryBuilder("post")
+                .leftJoinAndSelect("post.author", "author")
+                .leftJoinAndSelect("post.categories", "categories")
+                .where("post.id=:id", { id: post.id })
+                .getSingleResult();
+        })
+        .then(loadedPost => {
+            console.log(loadedPost);
+            console.log("Now lets remove post's author:");
+            post.author = null;
+            return postRepository.persist(post);
+        })
+        .then(updatedPost => {
+            return postRepository
+                .createQueryBuilder("post")
+                .leftJoinAndSelect("post.author", "author")
+                .leftJoinAndSelect("post.categories", "categories")
+                .where("post.id=:id", { id: post.id })
+                .getSingleResult();
+        })
+        .then(loadedPost => {
+            console.log(loadedPost);
+            console.log("Finally bakhrom's post:");
+            post.author = author2;
             return postRepository.persist(post);
         })
         .then(updatedPost => {
