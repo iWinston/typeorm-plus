@@ -444,7 +444,15 @@ export class PersistOperationExecutor {
         const columns = junctionMetadata.columns.map(column => column.name);
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity1).entityId;
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.name] || insertOperations.find(o => o.entity === junctionOperation.entity2).entityId;
-        const values = [id1, id2]; // todo: order may differ, find solution (column.table to compare with entity metadata table?)
+        
+        let values: any[]; 
+        // order may differ, find solution (column.table to compare with entity metadata table?)
+        if (metadata1.table === junctionMetadata.foreignKeys[0].table) {
+            values = [id1, id2];
+        } else {
+            values = [id2, id1];
+        }
+        
         return this.driver.insert(junctionMetadata.table.name, this.zipObject(columns, values));
     }
 
