@@ -1,9 +1,7 @@
 import {Alias} from "./alias/Alias";
 import {AliasMap} from "./alias/AliasMap";
-import {Connection} from "../connection/Connection";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
 
@@ -16,6 +14,15 @@ export interface Join {
     conditionType: "ON"|"WITH";
     condition: string;
     tableName: string;
+    mapToProperty: string|undefined;
+    isMappingMany: boolean;
+}
+
+export interface JoinMapping {
+    alias: Alias;
+    parentName: string;
+    propertyName: string;
+    isMany: boolean;
 }
 
 export class QueryBuilder<Entity> {
@@ -145,6 +152,20 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
+    innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    innerJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+        this.addSelect(alias);
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
+    }
+
+    innerJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    innerJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+        this.addSelect(alias);
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
+    }
+
     innerJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     innerJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
@@ -158,6 +179,20 @@ export class QueryBuilder<Entity> {
         return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
+    leftJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    leftJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+        this.addSelect(alias);
+        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
+    }
+
+    leftJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    leftJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
+    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+        this.addSelect(alias);
+        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
+    }
+
     leftJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     leftJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
@@ -169,30 +204,6 @@ export class QueryBuilder<Entity> {
     leftJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
     leftJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
         return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters);
-    }
-
-    join(joinType: "INNER"|"LEFT", property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    join(joinType: "INNER"|"LEFT", entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH", condition: string, parameters?: { [key: string]: any }): this;
-    join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
-
-        let tableName = "";
-        const aliasObj = new Alias(alias);
-        this.aliasMap.addAlias(aliasObj);
-        if (entityOrProperty instanceof Function) {
-            aliasObj.target = entityOrProperty;
-
-        } else if (typeof entityOrProperty === "string" && entityOrProperty.indexOf(".") !== -1) {
-            aliasObj.parentAliasName = entityOrProperty.split(".")[0];
-            aliasObj.parentPropertyName = entityOrProperty.split(".")[1];
-        } else if (typeof entityOrProperty === "string") {
-            tableName = entityOrProperty;
-        }
-
-        const join: Join = { type: joinType, alias: aliasObj, tableName: tableName, conditionType: conditionType, condition: condition };
-        this.joins.push(join);
-        if (parameters) this.addParameters(parameters);
-        return this;
     }
 
     where(where: string, parameters?: { [key: string]: any }): this {
@@ -428,7 +439,7 @@ export class QueryBuilder<Entity> {
 
         this.joins.forEach(join => {
             const property = join.tableName || join.alias.target || (join.alias.parentAliasName + "." + join.alias.parentPropertyName);
-            qb.join(join.type, property, join.alias.name, join.conditionType, join.condition);
+            qb.join(join.type, property, join.alias.name, join.conditionType, join.condition, undefined, join.mapToProperty, join.isMappingMany);
         });
 
         this.groupBys.forEach(groupBy => qb.addGroupBy(groupBy));
@@ -474,13 +485,12 @@ export class QueryBuilder<Entity> {
         return qb;
     }
 
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
     protected rawResultsToEntities(results: any[]) {
-        const transformer = new RawSqlResultsToEntityTransformer(this.driver, this.aliasMap);
+        const transformer = new RawSqlResultsToEntityTransformer(this.driver, this.aliasMap, this.extractJoinMappings());
         return transformer.transform(results);
     }
 
@@ -689,6 +699,47 @@ export class QueryBuilder<Entity> {
             sql = sql.replace(new RegExp(":" + key, "g"), value); // todo: make replace only in value statements, otherwise problems
         });
         return sql;
+    }
+
+    protected extractJoinMappings(): JoinMapping[] {
+        return this.joins
+            .filter(join => !!join.mapToProperty)
+            .map(join => {
+                const [parentName, propertyName] = (join.mapToProperty as string).split(".");
+                return {
+                    alias: join.alias,
+                    parentName: parentName,
+                    propertyName: propertyName,
+                    isMany: join.isMappingMany
+                } as JoinMapping;
+            });
+    }
+
+    protected join(joinType: "INNER"|"LEFT", property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
+    protected join(joinType: "INNER"|"LEFT", entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
+    protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH", condition: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
+    protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany: boolean = false): this {
+
+        if (!mapToProperty && typeof entityOrProperty === "string")
+            mapToProperty = entityOrProperty;
+
+        let tableName = "";
+        const aliasObj = new Alias(alias);
+        this.aliasMap.addAlias(aliasObj);
+        if (entityOrProperty instanceof Function) {
+            aliasObj.target = entityOrProperty;
+
+        } else if (typeof entityOrProperty === "string" && entityOrProperty.indexOf(".") !== -1) {
+            aliasObj.parentAliasName = entityOrProperty.split(".")[0];
+            aliasObj.parentPropertyName = entityOrProperty.split(".")[1];
+        } else if (typeof entityOrProperty === "string") {
+            tableName = entityOrProperty;
+        }
+
+        const join: Join = { type: joinType, alias: aliasObj, tableName: tableName, conditionType: conditionType, condition: condition, mapToProperty: mapToProperty, isMappingMany: isMappingMany };
+        this.joins.push(join);
+        if (parameters) this.addParameters(parameters);
+        return this;
     }
 
 }

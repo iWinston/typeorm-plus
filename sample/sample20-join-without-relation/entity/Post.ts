@@ -2,6 +2,8 @@ import {PrimaryColumn, Column} from "../../../src/columns";
 import {Table} from "../../../src/tables";
 import {Author} from "./Author";
 import {Category} from "./Category";
+import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
+import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample20_post")
 export class Post {
@@ -17,5 +19,13 @@ export class Post {
 
     @Column("int")
     authorId: number;
+
+    @ManyToMany(type => Category)
+    @JoinTable()
+    categories: Category[];
+
+    superCategories: Category[];
+
+    author: Author;
 
 }

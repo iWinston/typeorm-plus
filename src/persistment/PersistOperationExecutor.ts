@@ -447,7 +447,7 @@ export class PersistOperationExecutor {
         
         let values: any[]; 
         // order may differ, find solution (column.table to compare with entity metadata table?)
-        if (metadata1.table === junctionMetadata.foreignKeys[0].table) {
+        if (metadata1.table === junctionMetadata.foreignKeys[0].referencedTable) {
             values = [id1, id2];
         } else {
             values = [id2, id1];

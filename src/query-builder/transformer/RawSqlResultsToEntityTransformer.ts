@@ -3,6 +3,7 @@ import {Alias} from "../alias/Alias";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {Driver} from "../../driver/Driver";
+import {JoinMapping} from "../QueryBuilder";
 
 /**
  * Transforms raw sql results returned from the database into entity object. 
@@ -17,7 +18,8 @@ export class RawSqlResultsToEntityTransformer {
     // -------------------------------------------------------------------------
     
     constructor(private driver: Driver,
-                private aliasMap: AliasMap) {
+                private aliasMap: AliasMap,
+                private joinMappings: JoinMapping[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -39,17 +41,10 @@ export class RawSqlResultsToEntityTransformer {
     private groupAndTransform(rawSqlResults: any[], alias: Alias) {
         
         const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
-        if (!metadata.hasPrimaryKey)
-            throw new Error("Metadata does not have primary key. You must have it to make convertation to object possible.");
-
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => alias.getPrimaryKeyValue(result, metadata.primaryColumn));
         return groupedResults
             .map(group => this.transformIntoSingleResult(group.items, alias, metadata))
-            .filter(res => !!res)
-            .map(res => {
-                // console.log("res: ", res);
-                return res;
-            });
+            .filter(res => !!res);
     }
 
 
@@ -59,10 +54,23 @@ export class RawSqlResultsToEntityTransformer {
     private transformIntoSingleResult(rawSqlResults: any[], alias: Alias, metadata: EntityMetadata) {
         const entity: any = metadata.create();
         let hasData = false;
+        
+        this.joinMappings
+            .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.parentAliasName && joinMapping.alias.target)
+            .map(joinMapping => {
+                const relatedEntities = this.groupAndTransform(rawSqlResults, joinMapping.alias);
+                const isResultArray = joinMapping.isMany;
+                const result = !isResultArray ? relatedEntities[0] : relatedEntities;
+
+                if (result && (!isResultArray || result.length > 0)) {
+                    entity[joinMapping.propertyName] = result;
+                    hasData = true;
+                }
+            });
 
         // get value from columns selections and put them into object
         metadata.columns.forEach(column => {
-            const valueInObject = alias.getColumnValue(rawSqlResults[0], column); // we use zero index since its grouped data
+            const valueInObject = alias.getColumnValue(rawSqlResults[0], column.name); // we use zero index since its grouped data
             if (valueInObject && column.propertyName && !column.isVirtual) {
                 entity[column.propertyName] = this.driver.prepareHydratedValue(valueInObject, column);
                 hasData = true;
@@ -73,14 +81,21 @@ export class RawSqlResultsToEntityTransformer {
         metadata.relations.forEach(relation => {
             const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.name);
             if (relationAlias) {
+                const joinMapping = this.joinMappings.find(joinMapping => joinMapping.alias === relationAlias);
                 const relatedEntities = this.groupAndTransform(rawSqlResults, relationAlias);
                 const isResultArray = relation.isManyToMany || relation.isOneToMany;
                 const result = !isResultArray ? relatedEntities[0] : relatedEntities;
+                
                 if (result && (!isResultArray || result.length > 0)) {
+                    let propertyName = relation.propertyName;
+                    if (joinMapping) {
+                        propertyName = joinMapping.propertyName;
+                    }
+                    
                     if (relation.isLazy) {
-                        entity["__" + relation.propertyName + "__"] = result;
+                        entity["__" + propertyName + "__"] = result;
                     } else {
-                        entity[relation.propertyName] = result;
+                        entity[propertyName] = result;
                     }
                     hasData = true;
                 }

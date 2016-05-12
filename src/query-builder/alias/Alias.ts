@@ -18,8 +18,8 @@ export class Alias {
         return result[this.name + "_" + primaryColumn.name];
     }
     
-    getColumnValue(result: any, column: ColumnMetadata) {
-        return result[this.name + "_" + column.name];
+    getColumnValue(result: any, columnName: string) {
+        return result[this.name + "_" + columnName];
     }
     
 }

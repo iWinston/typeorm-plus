@@ -42,30 +42,28 @@ createConnection(options).then(connection => {
     post.title = "hello";
     post.authorId = 1;
     // post.author = author;
-    // post.categories = [category1, category2];
+    post.categories = [category1, category2];
 
     Promise.all<any>([
-        postRepository.persist(post),
         authorRepository.persist(author),
         categoryRepository.persist(category1),
         categoryRepository.persist(category2),
     ])
+        .then(() => {
+            return postRepository.persist(post);
+        })
         .then(() => {
             console.log("Everything has been saved.");
         })
         .then(() => {
             return postRepository
                 .createQueryBuilder("post")
-                .leftJoin(Author, "author", "ON", "author.id=post.authorId")
+                .leftJoinAndMapMany("post.superCategories", "post.categories", "categories")
+                .leftJoinAndMapOne("post.author", Author, "author", "ON", "author.id=post.authorId")
                 .getResults();
 
-            // let secondPost = postRepository.create();
-            // secondPost.text = "Second post";
-            // secondPost.title = "About second post";
-            // return authorRepository.persist(author);
-
-        }).then(post => {
-            console.log("Loaded posts: ", post);
+        }).then(posts => {
+            console.log("Loaded posts: ", posts);
 
             return entityManager
                 .createQueryBuilder(Author, "author")
