@@ -4,7 +4,6 @@ import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPri
 import {defaultMetadataStorage} from "../../typeorm";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
-import "reflect-metadata";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this 
@@ -32,11 +31,11 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
     return function (object: Object, propertyName: string) {
         
         // todo: need to store not string type, but original type instead? (like in relation metadata)
-        const reflectedType = ColumnTypes.typeToString(Reflect.getMetadata("design:type", object, propertyName));
+        const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
 
         // if type is not given implicitly then try to guess it
         if (!type)
-            type = ColumnTypes.determineTypeFromFunction(Reflect.getMetadata("design:type", object, propertyName));
+            type = ColumnTypes.determineTypeFromFunction((<any> Reflect).getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;

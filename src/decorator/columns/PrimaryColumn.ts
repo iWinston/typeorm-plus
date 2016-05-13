@@ -4,7 +4,6 @@ import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {defaultMetadataStorage} from "../../typeorm";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
-import "reflect-metadata";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -34,11 +33,11 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
     }
     return function (object: Object, propertyName: string) {
 
-        const reflectedType = ColumnTypes.typeToString(Reflect.getMetadata("design:type", object, propertyName));
+        const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
 
         // if type is not given implicitly then try to guess it
         if (!type)
-            type = ColumnTypes.determineTypeFromFunction(Reflect.getMetadata("design:type", object, propertyName));
+            type = ColumnTypes.determineTypeFromFunction((<any> Reflect).getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;

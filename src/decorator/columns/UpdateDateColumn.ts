@@ -2,7 +2,6 @@ import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {defaultMetadataStorage} from "../../typeorm";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import "reflect-metadata";
 
 /**
  * This column will store an update date of the updated object. This date is being updated each time you persist the
@@ -11,7 +10,7 @@ import "reflect-metadata";
 export function UpdateDateColumn(options?: ColumnOptions): Function {
     return function (object: Object, propertyName: string) {
 
-        const reflectedType = ColumnTypes.typeToString(Reflect.getMetadata("design:type", object, propertyName));
+        const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;

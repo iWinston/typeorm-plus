@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
 import {defaultMetadataStorage} from "../typeorm";
 

@@ -38,7 +38,7 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        const reflectedType = Reflect.getMetadata("design:type", object, propertyName);
+        const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
 
         defaultMetadataStorage().relationMetadatas.add(new RelationMetadata({
             target: object.constructor,
