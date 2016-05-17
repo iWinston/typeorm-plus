@@ -709,7 +709,7 @@ export class QueryBuilder<Entity> {
         return sql;
     }
 
-    protected extractJoinMappings(): JoinMapping[] {
+    private extractJoinMappings(): JoinMapping[] {
         return this.joins
             .filter(join => !!join.mapToProperty)
             .map(join => {
