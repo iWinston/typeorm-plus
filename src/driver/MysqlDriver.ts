@@ -183,6 +183,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
         const updateValues = this.escapeObjectMap(valuesMap).join(",");
         const conditionString = this.escapeObjectMap(conditions).join(" AND ");
         const query = `UPDATE ${tableName} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        // console.log("executing update: ", query);
         return this.query(query).then(() => {});
         // const qb = this.createQueryBuilder().update(tableName, valuesMap).from(tableName, "t");
         // Object.keys(conditions).forEach(key => qb.andWhere(key + "=:" + key, { [key]: (<any> conditions)[key] }));

@@ -8,6 +8,7 @@ import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
+import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -43,6 +44,7 @@ export class PersistOperationExecutor {
             .then(() => this.executeRemoveJunctionsOperations(persistOperation))
             .then(() => this.executeRemoveRelationOperations(persistOperation))
             .then(() => this.executeUpdateRelationsOperations(persistOperation))
+            .then(() => this.executeUpdateInverseRelationsOperations(persistOperation))
             .then(() => this.executeUpdateOperations(persistOperation))
             .then(() => this.executeRemoveOperations(persistOperation))
             .then(() => this.driver.endTransaction())
@@ -166,6 +168,15 @@ export class PersistOperationExecutor {
     private executeUpdateRelationsOperations(persistOperation: PersistOperation) {
         return Promise.all(persistOperation.updatesByRelations.map(updateByRelation => {
             return this.updateByRelation(updateByRelation, persistOperation.inserts);
+        }));
+    }
+
+    /**
+     * Executes update relations operations.
+     */
+    private executeUpdateInverseRelationsOperations(persistOperation: PersistOperation) {
+        return Promise.all(persistOperation.updatesByInverseRelations.map(updateInverseOperation => {
+            return this.updateInverseRelation(updateInverseOperation);
         }));
     }
 
@@ -299,6 +310,36 @@ export class PersistOperationExecutor {
             id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
         }
         return this.driver.update(tableName, { [relationName]: relationId }, { [idColumn]: id });
+    }
+
+    private updateInverseRelation(operation: UpdateByInverseSideOperation) {
+        /*let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
+        const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
+        const idInInserts = relatedInsertOperation ? relatedInsertOperation.entityId : null;
+        if (operation.updatedRelation.isOneToMany) {
+            const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.entity.constructor);
+            tableName = metadata.table.name;
+            relationName = operation.updatedRelation.inverseRelation.name;
+            relationId = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
+            idColumn = metadata.primaryColumn.name;
+            id = operation.insertOperation.entityId;
+
+        } else {
+            const metadata = this.entityMetadatas.findByTarget(operation.targetEntity.constructor);
+            tableName = metadata.table.name;
+            relationName = operation.updatedRelation.name;
+            relationId = operation.insertOperation.entityId;
+            idColumn = metadata.primaryColumn.name;
+            id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
+        }*/
+        const targetEntityMetadata = this.entityMetadatas.findByTarget(operation.targetEntity.constructor);
+        const tableName = targetEntityMetadata.table.name;
+        const targetRelation = operation.fromRelation.inverseRelation;
+        const targetEntityId = operation.fromEntity[targetRelation.joinColumn.referencedColumn.name];
+        const idColumn = targetEntityMetadata.primaryColumn.name;
+        const id = targetEntityMetadata.getEntityId(operation.targetEntity);
+        
+        return this.driver.update(tableName, { [targetRelation.name]: targetEntityId }, { [idColumn]: id });
     }
 
     private update(updateOperation: UpdateOperation) {

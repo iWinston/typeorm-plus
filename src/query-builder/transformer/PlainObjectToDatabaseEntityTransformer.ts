@@ -31,9 +31,12 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
         const needToLoad = this.buildLoadMap(object, metadata, true);
 
         this.join(queryBuilder, needToLoad, alias);
-        return queryBuilder
+
+        queryBuilder
             .where(alias + "." + metadata.primaryColumn.name + "=:id")
-            .setParameter("id", object[metadata.primaryColumn.name])
+            .setParameter("id", object[metadata.primaryColumn.name]);
+
+        return queryBuilder
             .getSingleResult();
     }
 

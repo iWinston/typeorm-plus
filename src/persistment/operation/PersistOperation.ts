@@ -4,6 +4,7 @@ import {UpdateOperation} from "./UpdateOperation";
 import {JunctionInsertOperation} from "./JunctionInsertOperation";
 import {JunctionRemoveOperation} from "./JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./UpdateByRelationOperation";
+import {UpdateByInverseSideOperation} from "./UpdateByInverseSideOperation";
 
 /**
  * @internal
@@ -30,6 +31,7 @@ export class PersistOperation {
     junctionInserts: JunctionInsertOperation[] = [];
     junctionRemoves: JunctionRemoveOperation[] = [];
     updatesByRelations: UpdateByRelationOperation[] = [];
+    updatesByInverseRelations: UpdateByInverseSideOperation[] = [];
     
     log() {
         console.log("---------------------------------------------------------");
@@ -72,6 +74,10 @@ export class PersistOperation {
         console.log("UPDATES BY RELATIONS");
         console.log("---------------------------------------------------------");
         console.log(this.updatesByRelations);
+        console.log("---------------------------------------------------------");
+        console.log("UPDATES BY INVERSE RELATIONS");
+        console.log("---------------------------------------------------------");
+        console.log(this.updatesByInverseRelations);
         console.log("---------------------------------------------------------");
     }
     

@@ -1,6 +1,5 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {Connection} from "../connection/Connection";
 import {PersistOperation, EntityWithId} from "./operation/PersistOperation";
 import {InsertOperation} from "./operation/InsertOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
@@ -9,6 +8,7 @@ import {UpdateOperation} from "./operation/UpdateOperation";
 import {CascadesNotAllowedError} from "./error/CascadesNotAllowedError";
 import {RemoveOperation} from "./operation/RemoveOperation";
 import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 
 /**
  * 1. collect all exist objects from the db entity
@@ -72,10 +72,12 @@ export class EntityPersistOperationBuilder {
         persistOperation.allPersistedEntities = allPersistedEntities;
         persistOperation.inserts = this.findCascadeInsertedEntities(persistedEntity, dbEntities);
         persistOperation.updatesByRelations = this.updateRelations(persistOperation.inserts, persistedEntity);
+        persistOperation.updatesByInverseRelations = this.updateInverseRelations(metadata, dbEntity, persistedEntity);
         persistOperation.updates = this.findCascadeUpdateEntities(persistOperation.updatesByRelations, metadata, dbEntity, persistedEntity);
         persistOperation.junctionInserts = this.findJunctionInsertOperations(metadata, persistedEntity, dbEntities);
         persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, undefined, undefined, undefined);
         persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
+
         return persistOperation;
     }
 
@@ -221,6 +223,31 @@ export class EntityPersistOperationBuilder {
         return operations;
     }
 
+    private updateInverseRelations(metadata: EntityMetadata,
+                                   dbEntity: any,
+                                   newEntity: any,
+                                   operations: UpdateByInverseSideOperation[] = []): UpdateByInverseSideOperation[] {
+        metadata.relations
+            .filter(relation => relation.isOneToMany) // todo: maybe need to check isOneToOne and not owner
+            .filter(relation => newEntity[relation.propertyName] instanceof Array) // todo: what to do with empty relations? need to set to NULL from inverse side?
+            .forEach(relation => {
+                
+                // to find new objects in relation go throw all objects in newEntity and check if they don't exist in dbEntity
+                newEntity[relation.propertyName].filter((subEntity: any) => {
+                    if (!dbEntity /* are you sure about this? */ || !dbEntity[relation.propertyName]) // if there is no items in dbEntity - then all items in newEntity are new
+                        return true;
+                    
+                    return !dbEntity[relation.propertyName].find((dbSubEntity: any) => {
+                        return relation.inverseEntityMetadata.getEntityId(subEntity) === relation.inverseEntityMetadata.getEntityId(dbSubEntity);
+                    });
+                }).forEach((subEntity: any) => {
+                    operations.push(new UpdateByInverseSideOperation(subEntity, newEntity, relation));
+                });
+            });
+        
+        return operations;
+    }
+
     /**
      * To update relation, you need:
      *   update table where this relation (owner side)
@@ -351,7 +378,16 @@ export class EntityPersistOperationBuilder {
         return metadata.relations
             .filter(relation => relation.isManyToOne || (relation.isOneToOne && relation.isOwning))
             .filter(relation => !updatesByRelations.find(operation => operation.targetEntity === newEntity && operation.updatedRelation === relation)) // try to find if there is update by relation operation - we dont need to generate update relation operation for this
-            .filter(relation => newEntity[relation.propertyName] !== dbEntity[relation.name]);
+            .filter(relation => {
+                if (!newEntity[relation.propertyName] && !dbEntity[relation.name])
+                    return false;
+                if (!newEntity[relation.propertyName] || !dbEntity[relation.name])
+                    return true;
+
+                const newEntityRelationMetadata = this.entityMetadatas.findByTarget(newEntity[relation.propertyName].constructor);
+                const dbEntityRelationMetadata = this.entityMetadatas.findByTarget(dbEntity[relation.name].constructor);
+                return newEntityRelationMetadata.getEntityId(newEntity[relation.propertyName]) !== dbEntityRelationMetadata.getEntityId(dbEntity[relation.name]);
+            });
     }
 
     private findEntityWithId(entityWithIds: EntityWithId[], entityClass: Function, id: any) {
