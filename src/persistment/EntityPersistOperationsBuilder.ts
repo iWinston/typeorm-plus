@@ -71,9 +71,9 @@ export class EntityPersistOperationBuilder {
         persistOperation.allDbEntities = dbEntities;
         persistOperation.allPersistedEntities = allPersistedEntities;
         persistOperation.inserts = this.findCascadeInsertedEntities(persistedEntity, dbEntities);
-        persistOperation.updates = this.findCascadeUpdateEntities(metadata, dbEntity, persistedEntity);
-        persistOperation.junctionInserts = this.findJunctionInsertOperations(metadata, persistedEntity, dbEntities);
         persistOperation.updatesByRelations = this.updateRelations(persistOperation.inserts, persistedEntity);
+        persistOperation.updates = this.findCascadeUpdateEntities(persistOperation.updatesByRelations, metadata, dbEntity, persistedEntity);
+        persistOperation.junctionInserts = this.findJunctionInsertOperations(metadata, persistedEntity, dbEntities);
         persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, undefined, undefined, undefined);
         persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
         return persistOperation;
@@ -135,7 +135,8 @@ export class EntityPersistOperationBuilder {
         return operations;
     }
 
-    private findCascadeUpdateEntities(metadata: EntityMetadata,
+    private findCascadeUpdateEntities(updatesByRelations: UpdateByRelationOperation[],
+                                      metadata: EntityMetadata,
                                       dbEntity: any,
                                       newEntity: any,
                                       fromRelation?: RelationMetadata,
@@ -144,7 +145,7 @@ export class EntityPersistOperationBuilder {
             return operations;
 
         const diffColumns = this.diffColumns(metadata, newEntity, dbEntity);
-        const diffRelations = this.diffRelations(metadata, newEntity, dbEntity);
+        const diffRelations = this.diffRelations(updatesByRelations, metadata, newEntity, dbEntity);
         if (diffColumns.length && fromRelation && !this.checkCascadesAllowed("update", metadata, fromRelation)) {
             return operations;
 
@@ -168,11 +169,11 @@ export class EntityPersistOperationBuilder {
                     const subDbEntity = dbValue.find((subDbEntity: any) => {
                         return subDbEntity[relationIdColumnName] === subEntity[relationIdColumnName];
                     });
-                    this.findCascadeUpdateEntities(relMetadata, subDbEntity, subEntity, relation, operations);
+                    this.findCascadeUpdateEntities(updatesByRelations, relMetadata, subDbEntity, subEntity, relation, operations);
                 });
                 
             } else {
-                this.findCascadeUpdateEntities(relMetadata, dbValue, value, relation, operations);
+                this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValue, value, relation, operations);
             }
         });
 
@@ -346,9 +347,10 @@ export class EntityPersistOperationBuilder {
             .filter(column => newEntity[column.propertyName] !== dbEntity[column.name]);
     }
 
-    private diffRelations(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
+    private diffRelations(updatesByRelations: UpdateByRelationOperation[], metadata: EntityMetadata, newEntity: any, dbEntity: any) {
         return metadata.relations
             .filter(relation => relation.isManyToOne || (relation.isOneToOne && relation.isOwning))
+            .filter(relation => !updatesByRelations.find(operation => operation.targetEntity === newEntity && operation.updatedRelation === relation)) // try to find if there is update by relation operation - we dont need to generate update relation operation for this
             .filter(relation => newEntity[relation.propertyName] !== dbEntity[relation.name]);
     }
 

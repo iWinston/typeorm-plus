@@ -18,6 +18,9 @@ export interface Join {
     isMappingMany: boolean;
 }
 
+/**
+ * @internal
+ */
 export interface JoinMapping {
     alias: Alias;
     parentName: string;
@@ -416,7 +419,7 @@ export class QueryBuilder<Entity> {
         ]);
     }
 
-    clone(options?: { skipOrderBys?: boolean }) {
+    clone(options?: { skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean }) {
         const qb = new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster);
         
         switch (this.type) {
@@ -477,9 +480,13 @@ export class QueryBuilder<Entity> {
         
         Object.keys(this.parameters).forEach(key => qb.setParameter(key, this.parameters[key]));
 
-        qb.setLimit(this.limit)
-            .setOffset(this.offset)
-            .setFirstResult(this.firstResult)
+        if (!options || !options.skipLimit)
+            qb.setLimit(this.limit);
+
+        if (!options || !options.skipOffset)
+            qb.setOffset(this.offset);
+
+        qb.setFirstResult(this.firstResult)
             .setMaxResults(this.maxResults);
 
         return qb;
@@ -536,8 +543,12 @@ export class QueryBuilder<Entity> {
 
         let alias: string = "", tableName: string;
         const allSelects: string[] = [];
-        
-        if (this.fromEntity) {
+
+        if (this.fromTableName) {
+            tableName = this.fromTableName;
+            alias = this.fromTableAlias;
+
+        } else if (this.fromEntity) {
             const metadata = this.aliasMap.getEntityMetadataByAlias(this.fromEntity.alias);
             tableName = metadata.table.name;
             alias = this.fromEntity.alias.name;
@@ -548,10 +559,7 @@ export class QueryBuilder<Entity> {
                     allSelects.push(alias + "." + column.name + " AS " + alias + "_" + column.name);
                 });
             }
-            
-        } else if (this.fromTableName) {
-            tableName = this.fromTableName;
-            
+
         } else {
             throw new Error("No from given");
         }

@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
