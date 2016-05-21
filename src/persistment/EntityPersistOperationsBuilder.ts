@@ -312,42 +312,50 @@ export class EntityPersistOperationBuilder {
         return operations;
     }
 
-    private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[]): JunctionInsertOperation[] {
+    private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[], isRoot = true): JunctionInsertOperation[] {
         const dbEntity = dbEntities.find(dbEntity => {
             return dbEntity.id === newEntity[metadata.primaryColumn.name] && dbEntity.entity.constructor === metadata.target;
         });
         return metadata.relations
-            .filter(relation => relation.isManyToMany)
-            // .filter(relation => newEntity[relation.propertyName] instanceof Array)
+            .filter(relation => newEntity[relation.propertyName] !== null && newEntity[relation.propertyName] !== undefined)
             .reduce((operations, relation) => {
                 const relationMetadata = relation.inverseEntityMetadata;
                 const relationIdProperty = relationMetadata.primaryColumn.name;
                 const value = this.getEntityRelationValue(relation, newEntity);
                 const dbValue = dbEntity ? this.getEntityRelationValue(relation, dbEntity.entity) : null;
-                
-                if (!(value instanceof Array))
-                    return operations;
-                
-                value.forEach((subEntity: any) => {
 
-                    const has = !dbValue || !dbValue.find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
+                if (value instanceof Array) {
+                    value.forEach((subEntity: any) => {
 
-                    if (has) {
-                        operations.push({
-                            metadata: relation.junctionEntityMetadata,
-                            entity1: newEntity,
-                            entity2: subEntity
-                        });
+                        if (relation.isManyToMany) {
+                            const has = !dbValue || !dbValue.find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
+
+                            if (has) {
+                                operations.push({
+                                    metadata: relation.junctionEntityMetadata,
+                                    entity1: newEntity,
+                                    entity2: subEntity
+                                });
+                            }
+                        }
+
+                        if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
+                            const subOperations = this.findJunctionInsertOperations(relationMetadata, subEntity, dbEntities, false);
+                            operations.push(...subOperations);
+                        }
+                    });
+                } else {
+                    if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
+                        const subOperations = this.findJunctionInsertOperations(relationMetadata, value, dbEntities, false);
+                        operations.push(...subOperations);
                     }
+                }
 
-                    const subOperations = this.findJunctionInsertOperations(relationMetadata, subEntity, dbEntities);
-                    operations.push(...subOperations);
-                });
                 return operations;
             }, <JunctionInsertOperation[]> []);
     }
 
-    private findJunctionRemoveOperations(metadata: EntityMetadata, dbEntity: any, newEntities: EntityWithId[]): JunctionInsertOperation[] {
+    private findJunctionRemoveOperations(metadata: EntityMetadata, dbEntity: any, newEntities: EntityWithId[], isRoot = true): JunctionInsertOperation[] {
         if (!dbEntity) // if new entity is persisted then it does not have anything to be deleted
             return [];
 
@@ -355,32 +363,40 @@ export class EntityPersistOperationBuilder {
             return newEntity.id === dbEntity[metadata.primaryColumn.name] && newEntity.entity.constructor === metadata.target;
         });
         return metadata.relations
-            .filter(relation => relation.isManyToMany)
-            // .filter(relation => dbEntity[relation.propertyName] instanceof Array)
+            .filter(relation => dbEntity[relation.propertyName] !== null && dbEntity[relation.propertyName] !== undefined)
             .reduce((operations, relation) => {
                 const relationMetadata = relation.inverseEntityMetadata;
                 const relationIdProperty = relationMetadata.primaryColumn.name;
                 const value = newEntity ? this.getEntityRelationValue(relation, newEntity.entity) : null;
                 const dbValue = this.getEntityRelationValue(relation, dbEntity);
 
-                if (!(dbValue instanceof Array))
-                    return operations;
-                
-                dbValue.forEach((subEntity: any) => {
+                if (dbValue instanceof Array) {
+                    dbValue.forEach((subEntity: any) => {
 
-                    const has = !value || !value.find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
+                        if (relation.isManyToMany) {
+                            const has = !value || !value.find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
 
-                    if (has) {
-                        operations.push({
-                            metadata: relation.junctionEntityMetadata,
-                            entity1: dbEntity,
-                            entity2: subEntity
-                        });
+                            if (has) {
+                                operations.push({
+                                    metadata: relation.junctionEntityMetadata,
+                                    entity1: dbEntity,
+                                    entity2: subEntity
+                                });
+                            }
+                        }
+
+                        if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
+                            const subOperations = this.findJunctionRemoveOperations(relationMetadata, subEntity, newEntities, false);
+                            operations.push(...subOperations);
+                        }
+                    });
+                } else {
+                    if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
+                        const subOperations = this.findJunctionRemoveOperations(relationMetadata, dbValue, newEntities, false);
+                        operations.push(...subOperations);
                     }
+                }
 
-                    const subOperations = this.findJunctionRemoveOperations(relationMetadata, subEntity, newEntities);
-                    operations.push(...subOperations);
-                });
                 return operations;
             }, <JunctionInsertOperation[]> []);
     }
