@@ -229,20 +229,37 @@ export class EntityPersistOperationBuilder {
                                    operations: UpdateByInverseSideOperation[] = []): UpdateByInverseSideOperation[] {
         metadata.relations
             .filter(relation => relation.isOneToMany) // todo: maybe need to check isOneToOne and not owner
-            .filter(relation => newEntity[relation.propertyName] instanceof Array) // todo: what to do with empty relations? need to set to NULL from inverse side?
+            // .filter(relation => newEntity[relation.propertyName] instanceof Array) // todo: what to do with empty relations? need to set to NULL from inverse side?
             .forEach(relation => {
                 
                 // to find new objects in relation go throw all objects in newEntity and check if they don't exist in dbEntity
-                newEntity[relation.propertyName].filter((subEntity: any) => {
-                    if (!dbEntity /* are you sure about this? */ || !dbEntity[relation.propertyName]) // if there is no items in dbEntity - then all items in newEntity are new
-                        return true;
-                    
-                    return !dbEntity[relation.propertyName].find((dbSubEntity: any) => {
-                        return relation.inverseEntityMetadata.getEntityId(subEntity) === relation.inverseEntityMetadata.getEntityId(dbSubEntity);
+                if (newEntity && newEntity[relation.propertyName] instanceof Array) {
+                    newEntity[relation.propertyName].filter((newSubEntity: any) => {
+                        if (!dbEntity /* are you sure about this? */ || !dbEntity[relation.propertyName]) // if there are no items in dbEntity - then all items in newEntity are new
+                            return true;
+
+                        return !dbEntity[relation.propertyName].find((dbSubEntity: any) => {
+                            return relation.inverseEntityMetadata.getEntityId(newSubEntity) === relation.inverseEntityMetadata.getEntityId(dbSubEntity);
+                        });
+                    }).forEach((subEntity: any) => {
+                        operations.push(new UpdateByInverseSideOperation("update", subEntity, newEntity, relation));
                     });
-                }).forEach((subEntity: any) => {
-                    operations.push(new UpdateByInverseSideOperation(subEntity, newEntity, relation));
-                });
+                }
+                
+                // we also need to find removed elements. to find them need to traverse dbEntity and find its elements missing in newEntity
+                if (dbEntity && dbEntity[relation.propertyName] instanceof Array) {
+                    dbEntity[relation.propertyName].filter((dbSubEntity: any) => {
+                        if (!newEntity /* are you sure about this? */ || !newEntity[relation.propertyName]) // if there are no items in newEntity - then all items in dbEntity are removed
+                            return true;
+
+                        return !newEntity[relation.propertyName].find((newSubEntity: any) => {
+                            return relation.inverseEntityMetadata.getEntityId(dbSubEntity) === relation.inverseEntityMetadata.getEntityId(newSubEntity);
+                        });
+                    }).forEach((subEntity: any) => {
+                        operations.push(new UpdateByInverseSideOperation("remove", subEntity, newEntity, relation));
+                    });
+                }
+                
             });
         
         return operations;
@@ -371,7 +388,7 @@ export class EntityPersistOperationBuilder {
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
         return metadata.columns
             .filter(column => !column.isVirtual && !column.isUpdateDate && !column.isVersion && !column.isCreateDate)
-            .filter(column => newEntity[column.propertyName] !== dbEntity[column.name]);
+            .filter(column => newEntity[column.propertyName] !== dbEntity[column.propertyName]);
     }
 
     private diffRelations(updatesByRelations: UpdateByRelationOperation[], metadata: EntityMetadata, newEntity: any, dbEntity: any) {
@@ -379,14 +396,14 @@ export class EntityPersistOperationBuilder {
             .filter(relation => relation.isManyToOne || (relation.isOneToOne && relation.isOwning))
             .filter(relation => !updatesByRelations.find(operation => operation.targetEntity === newEntity && operation.updatedRelation === relation)) // try to find if there is update by relation operation - we dont need to generate update relation operation for this
             .filter(relation => {
-                if (!newEntity[relation.propertyName] && !dbEntity[relation.name])
+                if (!newEntity[relation.propertyName] && !dbEntity[relation.propertyName])
                     return false;
-                if (!newEntity[relation.propertyName] || !dbEntity[relation.name])
+                if (!newEntity[relation.propertyName] || !dbEntity[relation.propertyName])
                     return true;
-
+                
                 const newEntityRelationMetadata = this.entityMetadatas.findByTarget(newEntity[relation.propertyName].constructor);
-                const dbEntityRelationMetadata = this.entityMetadatas.findByTarget(dbEntity[relation.name].constructor);
-                return newEntityRelationMetadata.getEntityId(newEntity[relation.propertyName]) !== dbEntityRelationMetadata.getEntityId(dbEntity[relation.name]);
+                const dbEntityRelationMetadata = this.entityMetadatas.findByTarget(dbEntity[relation.propertyName].constructor);
+                return newEntityRelationMetadata.getEntityId(newEntity[relation.propertyName]) !== dbEntityRelationMetadata.getEntityId(dbEntity[relation.propertyName]);
             });
     }
 

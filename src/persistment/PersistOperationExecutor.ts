@@ -176,7 +176,7 @@ export class PersistOperationExecutor {
      */
     private executeUpdateInverseRelationsOperations(persistOperation: PersistOperation) {
         return Promise.all(persistOperation.updatesByInverseRelations.map(updateInverseOperation => {
-            return this.updateInverseRelation(updateInverseOperation);
+            return this.updateInverseRelation(updateInverseOperation, persistOperation.inserts);
         }));
     }
 
@@ -312,7 +312,7 @@ export class PersistOperationExecutor {
         return this.driver.update(tableName, { [relationName]: relationId }, { [idColumn]: id });
     }
 
-    private updateInverseRelation(operation: UpdateByInverseSideOperation) {
+    private updateInverseRelation(operation: UpdateByInverseSideOperation, insertOperations: InsertOperation[]) {
         /*let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
         const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
         const idInInserts = relatedInsertOperation ? relatedInsertOperation.entityId : null;
@@ -332,12 +332,25 @@ export class PersistOperationExecutor {
             idColumn = metadata.primaryColumn.name;
             id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
         }*/
+
         const targetEntityMetadata = this.entityMetadatas.findByTarget(operation.targetEntity.constructor);
+        const fromEntityMetadata = this.entityMetadatas.findByTarget(operation.fromEntity.constructor);
         const tableName = targetEntityMetadata.table.name;
         const targetRelation = operation.fromRelation.inverseRelation;
-        const targetEntityId = operation.fromEntity[targetRelation.joinColumn.referencedColumn.name];
         const idColumn = targetEntityMetadata.primaryColumn.name;
         const id = targetEntityMetadata.getEntityId(operation.targetEntity);
+
+        const fromEntityInsertOperation = insertOperations.find(o => o.entity === operation.fromEntity);
+        let targetEntityId: any; // todo: better do it during insertion - pass UpdateByInverseSideOperation[] to insert and do it there
+        if (operation.operationType === "remove") {
+            targetEntityId = null;
+        } else {
+            if (fromEntityInsertOperation && targetRelation.joinColumn.referencedColumn === fromEntityMetadata.primaryColumn) {
+                targetEntityId = fromEntityInsertOperation.entityId;
+            } else {
+                targetEntityId = operation.fromEntity[targetRelation.joinColumn.referencedColumn.name];
+            }
+        }
         
         return this.driver.update(tableName, { [targetRelation.name]: targetEntityId }, { [idColumn]: id });
     }

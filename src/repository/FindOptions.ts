@@ -32,24 +32,24 @@ import {ConnectionOptions} from "../connection/ConnectionOptions";
  *         user: "categories.user",
  *         profile: "user.profile"
  *     },
- *     innerJoin: [
+ *     innerJoin: {
  *         author: "photo.author",
  *         categories: "categories",
  *         user: "categories.user",
  *         profile: "user.profile"
- *     ],
+ *     },
  *     leftJoinAndSelect: {
  *         author: "photo.author",
  *         categories: "categories",
  *         user: "categories.user",
  *         profile: "user.profile"
  *     },
- *     innerJoinAndSelect: [
+ *     innerJoinAndSelect: {
  *         author: "photo.author",
  *         categories: "categories",
  *         user: "categories.user",
  *         profile: "user.profile"
- *     ]
+ *     }
  * };
  */
 export interface FindOptions {
