@@ -2,6 +2,7 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOptions} from "./FindOptions";
 import {Repository} from "./Repository";
 import * as Rx from "rxjs/Rx";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -206,6 +207,14 @@ export class ReactiveRepository<Entity> {
      */
     transaction(runInTransaction: () => Promise<any>): Rx.Observable<any> {
         return Rx.Observable.fromPromise(this.repository.transaction(runInTransaction));
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    static ownsMetadata(reactiveRepository: ReactiveRepository<any>, metadata: EntityMetadata) {
+        return Repository.ownsMetadata(reactiveRepository.repository, metadata);
     }
 
 }

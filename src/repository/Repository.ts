@@ -15,17 +15,17 @@ import {Driver} from "../driver/Driver";
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
  */
 export class Repository<Entity> {
-
+    
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
 
-    private driver: Driver;
-    private broadcaster: Broadcaster;
-    private persistOperationExecutor: PersistOperationExecutor;
-    private entityPersistOperationBuilder: EntityPersistOperationBuilder;
-    private plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
-    private plainObjectToDatabaseEntityTransformer: PlainObjectToDatabaseEntityTransformer<Entity>;
+    protected driver: Driver;
+    protected broadcaster: Broadcaster;
+    protected persistOperationExecutor: PersistOperationExecutor;
+    protected entityPersistOperationBuilder: EntityPersistOperationBuilder;
+    protected plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
+    protected plainObjectToDatabaseEntityTransformer: PlainObjectToDatabaseEntityTransformer<Entity>;
     
     // -------------------------------------------------------------------------
     // Constructor
@@ -410,6 +410,14 @@ export class Repository<Entity> {
                 });
             });
         return entity;
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    static ownsMetadata(repository: Repository<any>, metadata: EntityMetadata) {
+        return repository.metadata === metadata;
     }
 
 }
