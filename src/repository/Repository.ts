@@ -364,7 +364,7 @@ export class Repository<Entity> {
             })
             .filter(result => !!result);
         
-        return Promise.all(promises).then(() => {
+        return Promise.all<any>(promises).then(() => {
             if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
                 entityWithIds.push({
                     id: entity[metadata.primaryColumn.name],

@@ -213,8 +213,8 @@ export class Connection {
     importEntities(entities: Function[]): this {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("entities", this.name);
-        
-        this.entityClasses.push(...entities);
+
+        entities.forEach(cls => this.entityClasses.push(cls));
         return this;
     }
 
@@ -224,8 +224,8 @@ export class Connection {
     importSubscribers(subscriberClasses: Function[]): this {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("event subscribers", this.name);
-        
-        this.subscriberClasses.push(...subscriberClasses);
+
+        subscriberClasses.forEach(cls => this.subscriberClasses.push(cls));
         return this;
     }
 
@@ -236,7 +236,7 @@ export class Connection {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("naming strategies", this.name);
         
-        this.namingStrategyClasses.push(...strategies);
+        strategies.forEach(cls => this.namingStrategyClasses.push(cls));
         return this;
     }
 
@@ -349,7 +349,7 @@ export class Connection {
         
         // first register naming strategies
         const metadatas = defaultMetadataStorage().namingStrategyMetadatas.filterByClasses(this.namingStrategyClasses);
-        this.namingStrategyMetadatas.push(...metadatas);
+        metadatas.forEach(cls => this.namingStrategyMetadatas.push(cls));
 
         // second register subscriber metadatas
         const subscribers = defaultMetadataStorage()
@@ -363,9 +363,9 @@ export class Connection {
         const entityMetadatas = entityMetadataBuilder.build(this.entityClasses);
         const entityListenerMetadatas = defaultMetadataStorage().entityListenerMetadatas.filterByClasses(this.entityClasses);
 
-        this.entityMetadatas.push(...entityMetadatas);
-        this.entityListeners.push(...entityListenerMetadatas);
-        this.repositoryAndMetadatas.push(...entityMetadatas.map(metadata => this.createRepoMeta(metadata)));
+        entityMetadatas.forEach(cls => this.entityMetadatas.push(cls));
+        entityListenerMetadatas.forEach(cls => this.entityListeners.push(cls));
+        entityMetadatas.map(metadata => this.createRepoMeta(metadata)).forEach(cls => this.repositoryAndMetadatas.push(cls));
     }
 
     /**
@@ -376,6 +376,9 @@ export class Connection {
             return new DefaultNamingStrategy();
 
         const namingMetadata = this.namingStrategyMetadatas.find(strategy => strategy.name === this.options.namingStrategy);
+        if (!namingMetadata)
+            throw new Error(`Naming strategy called "${this.options.namingStrategy}" was not found.`);
+        
         return this.createContainerInstance(namingMetadata.target);
     }
 

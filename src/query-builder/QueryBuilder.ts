@@ -334,11 +334,14 @@ export class QueryBuilder<Entity> {
     }
 
     getResultsAndScalarResults(): Promise<{ entities: Entity[], scalarResults: any[] }> {
-        const mainAlias = this.aliasMap.mainAlias.name;
+        if (!this.aliasMap.hasMainAlias)
+            throw new Error(`Alias is not set. Looks like nothing is selected. Use select*, delete, update method to set an alias.`);
+        
+        const mainAliasName = this.aliasMap.mainAlias.name;
         let scalarResults: any[];
         if (this.firstResult || this.maxResults) {
             const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
-            let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAlias}_${metadata.primaryColumn.name}) as ids`;
+            let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAliasName}_${metadata.primaryColumn.name}) as ids`;
             if (this.orderBys && this.orderBys.length > 0)
                 idsQuery += ", " + this.orderBys.map(orderBy => orderBy.sort.replace(".", "_")).join(", ");
             idsQuery += ` FROM (${this.getSql()}) distinctAlias`;
@@ -356,7 +359,7 @@ export class QueryBuilder<Entity> {
                     if (ids.length === 0)
                         return Promise.resolve([]);
                     const queryWithIds = this.clone()
-                        .andWhere(mainAlias + "." + metadata.primaryColumn.name + " IN (" + ids + ")")
+                        .andWhere(mainAliasName + "." + metadata.primaryColumn.name + " IN (" + ids + ")")
                         .getSql();
                     return this.driver.query<any[]>(queryWithIds);
                 })
@@ -626,7 +629,11 @@ export class QueryBuilder<Entity> {
                 return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
             }
             
-            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.findAliasByName(parentAlias));
+            const foundAlias = this.aliasMap.findAliasByName(parentAlias);
+            if (!foundAlias)
+                throw new Error(`Alias "${parentAlias}" was not found`);
+            
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
             const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
             const appendedCondition = join.condition ? " AND " + join.condition : "";

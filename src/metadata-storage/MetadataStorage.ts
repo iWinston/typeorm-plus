@@ -10,7 +10,6 @@ import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
 import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
-import {PropertyMetadata} from "../metadata/PropertyMetadata";
 import {RelationsCountMetadata} from "../metadata/RelationsCountMetadata";
 
 /**
@@ -72,13 +71,33 @@ export class MetadataStorage {
             .forEach(parentMetadata => {
                 const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
 
-                columnMetadatas.push(...metadatasFromAbstract.columnMetadatas.filterRepeatedMetadatas(columnMetadatas));
-                relationMetadatas.push(...metadatasFromAbstract.relationMetadatas.filterRepeatedMetadatas(relationMetadatas));
-                joinColumnMetadatas.push(...metadatasFromAbstract.joinColumnMetadatas.filterRepeatedMetadatas(joinColumnMetadatas));
-                joinTableMetadatas.push(...metadatasFromAbstract.joinTableMetadatas.filterRepeatedMetadatas(joinTableMetadatas));
-                indexMetadatas.push(...metadatasFromAbstract.indexMetadatas.filterRepeatedMetadatas(indexMetadatas));
-                entityListenerMetadatas.push(...metadatasFromAbstract.entityListenerMetadatas.filterRepeatedMetadatas(entityListenerMetadatas));
-                relationCountMetadatas.push(...metadatasFromAbstract.relationCountMetadatas.filterRepeatedMetadatas(relationCountMetadatas));
+                metadatasFromAbstract.columnMetadatas
+                    .filterRepeatedMetadatas(columnMetadatas)
+                    .forEach(metadata => columnMetadatas.push(metadata));
+                
+                metadatasFromAbstract.relationMetadatas
+                    .filterRepeatedMetadatas(relationMetadatas)
+                    .forEach(metadata => relationMetadatas.push(metadata));
+                
+                metadatasFromAbstract.joinColumnMetadatas
+                    .filterRepeatedMetadatas(joinColumnMetadatas)
+                    .forEach(metadata => joinColumnMetadatas.push(metadata));
+                
+                metadatasFromAbstract.joinTableMetadatas
+                    .filterRepeatedMetadatas(joinTableMetadatas)
+                    .forEach(metadata => joinTableMetadatas.push(metadata));
+                
+                metadatasFromAbstract.indexMetadatas
+                    .filterRepeatedMetadatas(indexMetadatas)
+                    .forEach(metadata => indexMetadatas.push(metadata));
+                
+                metadatasFromAbstract.entityListenerMetadatas
+                    .filterRepeatedMetadatas(entityListenerMetadatas)
+                    .forEach(metadata => entityListenerMetadatas.push(metadata));
+                
+                metadatasFromAbstract.relationCountMetadatas
+                    .filterRepeatedMetadatas(relationCountMetadatas)
+                    .forEach(metadata => relationCountMetadatas.push(metadata));
             });
 
         return {

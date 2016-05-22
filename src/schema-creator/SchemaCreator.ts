@@ -87,7 +87,7 @@ export class SchemaCreator {
 
     private removePrimaryKeyForAll(metadatas: EntityMetadata[]) {
         const queries = metadatas
-            .filter(metadata => !metadata.primaryColumn)
+            .filter(metadata => !metadata.hasPrimaryColumn)
             .map(metadata => this.removePrimaryKey(metadata.table));
         return Promise.all(queries);
     }
@@ -164,6 +164,9 @@ export class SchemaCreator {
         return this.schemaBuilder.getChangedColumns(table.name, columns).then(changedColumns => {
             const updateQueries = changedColumns.map(changedColumn => {
                 const column = columns.find(column => column.name === changedColumn.columnName);
+                if (!column)
+                    throw new Error(`Column ${changedColumn.columnName} was not found in the given columns`);
+                
                 return this.schemaBuilder.changeColumnQuery(table.name, column.name, column, changedColumn.hasPrimaryKey);
             });
 

@@ -58,10 +58,14 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     get name(): string {
-        if (!this.table || !this.table.target)
+        if (!this.table) {
             throw new Error("No table target set to the entity metadata.");
+        }
         
-        return (<any> this.table.target).name;
+        if (this.table.target)
+            return (<any> this.table.target).name;
+        
+        return this.table.name;
     }
 
     get target(): Function {
@@ -95,29 +99,77 @@ export class EntityMetadata {
     get relationsWithJoinColumns() {
         return this.ownerOneToOneRelations.concat(this.manyToOneRelations);
     }
+    
+    get hasPrimaryColumn(): boolean {
+        return !!this.columns.find(column => column.isPrimary);
+    }
 
     get primaryColumn(): ColumnMetadata {
-        return this.columns.find(column => column.isPrimary);
+        const primaryKey = this.columns.find(column => column.isPrimary);
+        if (!primaryKey)
+            throw new Error(`Primary key is not set for the ${this.name} entity.`);
+
+        return primaryKey;
+    }
+    
+    get hasCreateDateColumn(): boolean {
+        return !!this.columns.find(column => column.mode === "createDate");
     }
 
     get createDateColumn(): ColumnMetadata {
-        return this.columns.find(column => column.mode === "createDate");
+        const column = this.columns.find(column => column.mode === "createDate");
+        if (!column)
+            throw new Error(`CreateDateColumn was not found in entity ${this.name}`);
+        
+        return column;
+    }
+
+    get hasUpdateDateColumn(): boolean {
+        return !!this.columns.find(column => column.mode === "updateDate");
     }
 
     get updateDateColumn(): ColumnMetadata {
-        return this.columns.find(column => column.mode === "updateDate");
+        const column = this.columns.find(column => column.mode === "updateDate");
+        if (!column)
+            throw new Error(`UpdateDateColumn was not found in entity ${this.name}`);
+
+        return column;
+    }
+
+    get hasVersionColumn(): boolean {
+        return !!this.columns.find(column => column.mode === "version");
     }
 
     get versionColumn(): ColumnMetadata {
-        return this.columns.find(column => column.mode === "version");
+        const column = this.columns.find(column => column.mode === "version");
+        if (!column)
+            throw new Error(`VersionColumn was not found in entity ${this.name}`);
+        
+        return column;
+    }
+
+    get hasTreeChildrenCountColumn(): boolean {
+        return !!this.columns.find(column => column.mode === "treeChildrenCount");
     }
 
     get treeChildrenCountColumn(): ColumnMetadata {
-        return this.columns.find(column => column.mode === "treeChildrenCount");
+        const column = this.columns.find(column => column.mode === "treeChildrenCount");
+        if (!column)
+            throw new Error(`TreeChildrenCountColumn was not found in entity ${this.name}`);
+
+        return column;
+    }
+
+    get hasTreeLevelColumn(): boolean {
+        return !!this.columns.find(column => column.mode === "treeLevel");
     }
 
     get treeLevelColumn(): ColumnMetadata {
-        return this.columns.find(column => column.mode === "treeLevel");
+        const column = this.columns.find(column => column.mode === "treeLevel");
+        if (!column)
+            throw new Error(`TreeLevelColumn was not found in entity ${this.name}`);
+
+        return column;
     }
     
     get hasPrimaryKey(): boolean {
@@ -147,75 +199,107 @@ export class EntityMetadata {
     }
 
     hasColumnWithPropertyName(propertyName: string): boolean {
-        return !!this.findColumnWithPropertyName(propertyName);
+        return !!this.columns.find(column => column.propertyName === propertyName);
     }
 
     hasColumnWithDbName(name: string): boolean {
-        return !!this.findColumnWithDbName(name);
-    }
-
-    findColumnWithPropertyName(propertyName: string): ColumnMetadata {
-        return this.columns.find(column => column.propertyName === propertyName);
-    }
-
-    findColumnWithDbName(name: string): ColumnMetadata {
-        return this.columns.find(column => column.name === name);
+        return !!this.columns.find(column => column.name === name);
     }
 
     hasRelationWithPropertyName(propertyName: string): boolean {
-        return !!this.findRelationWithPropertyName(propertyName);
-    }
-
-    hasRelationWithDbName(dbName: string): boolean {
-        return !!this.findRelationWithDbName(dbName);
+        return !!this.relations.find(relation => relation.propertyName === propertyName);
     }
 
     findRelationWithPropertyName(propertyName: string): RelationMetadata {
-        return this.relations.find(relation => relation.propertyName === propertyName);
+        const relation = this.relations.find(relation => relation.propertyName === propertyName);
+        if (!relation)
+            throw new Error(`Relation with property name ${propertyName} in ${this.name} entity was not found.`);
+        
+        return relation;
+    }
+
+    hasRelationWithDbName(dbName: string): boolean {
+        return !!this.relations.find(relation => relation.name === dbName);
     }
 
     findRelationWithDbName(propertyName: string): RelationMetadata {
-        return this.relations.find(relation => relation.name === propertyName);
-    }
+        const relation = this.relations.find(relation => relation.name === propertyName);
+        if (!relation)
+            throw new Error(`Relation with name ${propertyName} in ${this.name} entity was not found.`);
 
-    findRelationWithOneWithPropertyName(propertyName: string): RelationMetadata {
-        return this.relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
-    }
-
-    findRelationWithOneWithDbName(name: string): RelationMetadata {
-        return this.relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
-    }
-
-    findRelationWithManyWithPropertyName(propertyName: string): RelationMetadata {
-        return this.relations.find(relation => relation.propertyName === propertyName && (relation.isManyToOne || relation.isManyToMany));
-    }
-
-    findRelationWithManyWithDbName(name: string): RelationMetadata {
-        return this.relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
+        return relation;
     }
 
     hasRelationWithOneWithPropertyName(propertyName: string): boolean {
-        return !!this.findRelationWithOneWithPropertyName(propertyName);
+        return !!this.relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
     }
 
-    hasRelationWithManyWithPropertyName(propertyName: string): boolean {
-        return !!this.findRelationWithManyWithPropertyName(propertyName);
+    findRelationWithOneWithPropertyName(propertyName: string): RelationMetadata {
+        const relation = this.relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
+        if (!relation)
+            throw new Error(`Relation with one with property name ${propertyName} in ${this.name} entity was not found.`);
+
+        return relation;
     }
 
-    hasRelationWithOneWithName(name: string): boolean {
-        return !!this.findRelationWithOneWithDbName(name);
+    hasRelationWithOneWithDbName(name: string): boolean {
+        return !!this.relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
     }
 
-    hasRelationWithManyWithName(name: string): boolean {
-        return !!this.findRelationWithManyWithDbName(name);
+    findRelationWithOneWithDbName(name: string): RelationMetadata {
+        const relation = this.relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
+        if (!relation)
+            throw new Error(`Relation with one with name ${name} in ${this.name} entity was not found.`);
+
+        return relation;
+    }
+
+    hasRelationWithManyWithPropertyName(name: string): boolean {
+        return !!this.relations.find(relation => relation.propertyName === name && (relation.isManyToOne || relation.isManyToMany));
+    }
+
+    findRelationWithManyWithPropertyName(name: string): RelationMetadata {
+        const relation = this.relations.find(relation => relation.propertyName === name && (relation.isManyToOne || relation.isManyToMany));
+        if (!relation)
+            throw new Error(`Relation with many with property name ${name} in ${this.name} entity was not found.`);
+
+        return relation;
+    }
+
+    hasRelationWithManyWithDbName(name: string): boolean {
+        return !!this.relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
+    }
+
+    findRelationWithManyWithDbName(name: string): RelationMetadata {
+        const relation = this.relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
+        if (!relation)
+            throw new Error(`Relation with many with name ${name} in ${this.name} entity was not found.`);
+
+        return relation;
+    }
+
+    get hasTreeParentRelation() {
+        return !!this.relations.find(relation => relation.isTreeParent);
     }
 
     get treeParentRelation() {
-        return this.relations.find(relation => relation.isTreeParent);
+        const relation = this.relations.find(relation => relation.isTreeParent);
+        if (!relation)
+            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
+        
+        return relation;
+    }
+
+    get hasTreeChildrenRelation() {
+        return !!this.relations.find(relation => relation.isTreeChildren);
     }
 
     get treeChildrenRelation() {
-        return this.relations.find(relation => relation.isTreeChildren);
+        const relation = this.relations.find(relation => relation.isTreeChildren);
+        if (!relation)
+            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
+
+        return relation;
     }
     
 }

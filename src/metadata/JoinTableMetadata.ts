@@ -131,8 +131,13 @@ export class JoinTableMetadata extends PropertyMetadata {
      * Referenced join column.
      */
     get referencedColumn(): ColumnMetadata {
-        if (this._joinColumnReferencedColumnName)
-            return this.relation.entityMetadata.columns.find(column => column.name === this._joinColumnReferencedColumnName);
+        if (this._joinColumnReferencedColumnName) {
+            const referencedColumn = this.relation.entityMetadata.columns.find(column => column.name === this._joinColumnReferencedColumnName);
+            if (!referencedColumn)
+                throw new Error(`Referenced column ${this._joinColumnReferencedColumnName} was not found in entity ${this.name}`);
+            
+            return referencedColumn;
+        }
 
         return this.relation.entityMetadata.primaryColumn;
     }
@@ -141,8 +146,13 @@ export class JoinTableMetadata extends PropertyMetadata {
      * Referenced join column of the inverse side.
      */
     get inverseReferencedColumn(): ColumnMetadata {
-        if (this._joinColumnReferencedColumnName)
-            return this.relation.inverseEntityMetadata.columns.find(column => column.name === this._inverseJoinColumnReferencedColumnName);
+        if (this._inverseJoinColumnReferencedColumnName) {
+            const referencedColumn = this.relation.inverseEntityMetadata.columns.find(column => column.name === this._inverseJoinColumnReferencedColumnName);
+            if (!referencedColumn)
+                throw new Error(`Referenced column ${this._inverseJoinColumnReferencedColumnName} was not found in entity ${this.name}`);
+
+            return referencedColumn;
+        }
 
         return this.relation.inverseEntityMetadata.primaryColumn;
     }

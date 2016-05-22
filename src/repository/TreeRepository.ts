@@ -145,12 +145,15 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const parentProperty = this.metadata.treeParentRelation.propertyName;
         const entityId = entity[this.metadata.primaryColumn.propertyName];
         const parentRelationMap = relationMaps.find(relationMap => relationMap.id === entityId);
-        if (parentRelationMap) {
-            const parentEntity = entities.find(entity => entity[this.metadata.primaryColumn.propertyName] === parentRelationMap.parentId);
-            if (parentEntity) {
-                entity[parentProperty] = parentEntity;
-                this.buildParentEntityTree(entity[parentProperty], entities, relationMaps);
-            }
+        const parentEntity = entities.find(entity => {
+            if (!parentRelationMap)
+                return false;
+                
+            return entity[this.metadata.primaryColumn.propertyName] === parentRelationMap.parentId;
+        });
+        if (parentEntity) {
+            entity[parentProperty] = parentEntity;
+            this.buildParentEntityTree(entity[parentProperty], entities, relationMaps);
         }
     }
     

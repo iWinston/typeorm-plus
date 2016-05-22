@@ -24,9 +24,8 @@ export class AliasMap {
     // -------------------------------------------------------------------------
 
     addMainAlias(alias: Alias) {
-        const mainAlias = this.mainAlias;
-        if (mainAlias)
-            this.aliases.splice(this.aliases.indexOf(mainAlias), 1);
+        if (this.hasMainAlias)
+            this.aliases.splice(this.aliases.indexOf(this.mainAlias), 1);
 
         alias.isMain = true;
         this.aliases.push(alias);
@@ -35,9 +34,17 @@ export class AliasMap {
     addAlias(alias: Alias) {
         this.aliases.push(alias);
     }
+    
+    get hasMainAlias() {
+        return !!this.aliases.find(alias => alias.isMain);
+    }
 
     get mainAlias() {
-        return this.aliases.find(alias => alias.isMain);
+        const alias = this.aliases.find(alias => alias.isMain);
+        if (!alias)
+            throw new Error(`Main alias is not set.`);
+        
+        return alias;
     }
 
     findAliasByName(name: string) {
@@ -55,12 +62,16 @@ export class AliasMap {
             return this.findMetadata(alias.target);
 
         } else if (alias.parentAliasName && alias.parentPropertyName) {
-            const parentAlias = this.findAliasByName(alias.parentAliasName); // todo: throw exceptions everywhere
+
+            const parentAlias = this.findAliasByName(alias.parentAliasName);
+            if (!parentAlias)
+                throw new Error(`Alias "${alias.parentAliasName}" was not found`);
+            
             const parentEntityMetadata = this.getEntityMetadataByAlias(parentAlias);
-            const relation = parentEntityMetadata.findRelationWithDbName(alias.parentPropertyName);
-            if (!relation)
+            if (!parentEntityMetadata.hasRelationWithDbName(alias.parentPropertyName))
                 throw new Error("Relation metadata for " + alias.parentAliasName + "#" + alias.parentPropertyName + " was not found.");
 
+            const relation = parentEntityMetadata.findRelationWithDbName(alias.parentPropertyName);
             return relation.inverseEntityMetadata;
         }
 

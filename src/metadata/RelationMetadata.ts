@@ -208,7 +208,11 @@ export class RelationMetadata extends PropertyMetadata {
     }
 
     get inverseRelation(): RelationMetadata {
-        return this.inverseEntityMetadata.findRelationWithPropertyName(this.inverseSideProperty);
+        const relation = this.inverseEntityMetadata.findRelationWithPropertyName(this.inverseSideProperty);
+        if (!relation)
+            throw new Error(`Inverse side was not found in the relation ${this.entityMetadata.name}#${this.inverseSideProperty}`);
+        
+        return relation;
     }
 
     get isOneToOne(): boolean {
@@ -228,7 +232,7 @@ export class RelationMetadata extends PropertyMetadata {
     }
     
     get hasInverseSide(): boolean {
-        return this.inverseEntityMetadata && !!this.inverseRelation;
+        return this.inverseEntityMetadata && this.inverseEntityMetadata.hasRelationWithPropertyName(this.inverseSideProperty);
     }
     
     get isLazy(): boolean {

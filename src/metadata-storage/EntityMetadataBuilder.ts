@@ -128,7 +128,11 @@ export class EntityMetadataBuilder {
         // after all metadatas created we set inverse side (related) entity metadatas for all relation metadatas
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.relations.forEach(relation => {
-                relation.inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type);
+                const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type);
+                if (!inverseEntityMetadata)
+                    throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.name + " was not found.");
+                
+                relation.inverseEntityMetadata = inverseEntityMetadata;
             });
         });
 
@@ -198,7 +202,7 @@ export class EntityMetadataBuilder {
                     })
                 ];
 
-                if (metadata.treeLevelColumn) {
+                if (metadata.hasTreeLevelColumn) {
                     columns.push(new ColumnMetadata({
                         propertyType: ColumnTypes.INTEGER,
                         options: {

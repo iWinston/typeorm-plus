@@ -25,9 +25,11 @@ export class Broadcaster {
     broadcastBeforeInsertEvent(entity: any): Promise<void> {
 
         const subscribers = this.subscriberMetadatas
-            .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
-            .filter(subscriber => !!subscriber.beforeInsert)
-            .map(subscriber => subscriber.beforeInsert({ entity: entity }));
+            .filter(subscriber => !!subscriber)
+            .map(subscriber => {
+                if (subscriber.beforeInsert)
+                    return subscriber.beforeInsert({ entity: entity });
+            });
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT)
@@ -41,8 +43,13 @@ export class Broadcaster {
 
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
-            .filter(subscriber => !!subscriber.beforeUpdate)
-            .map(subscriber => subscriber.beforeUpdate({ entity: entity, updatedColumns: updatedColumns }));
+            .map(subscriber => {
+                if (!subscriber.beforeUpdate)
+                    return undefined;
+
+                return subscriber.beforeUpdate({ entity: entity, updatedColumns: updatedColumns });
+            })
+            .filter(subscriber => !!subscriber);
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE)
@@ -56,8 +63,13 @@ export class Broadcaster {
 
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
-            .filter(subscriber => !!subscriber.beforeRemove)
-            .map(subscriber => subscriber.beforeRemove({ entity: entity, entityId: entityId }));
+            .map(subscriber => {
+                if (!subscriber.beforeRemove)
+                    return undefined;
+
+                return subscriber.beforeRemove({ entity: entity, entityId: entityId });
+            })
+            .filter(subscriber => !!subscriber);
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE)
@@ -71,8 +83,13 @@ export class Broadcaster {
 
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
-            .filter(subscriber => !!subscriber.afterInsert)
-            .map(subscriber => subscriber.afterInsert({ entity: entity }));
+            .map(subscriber => {
+                if (!subscriber.afterInsert)
+                    return undefined;
+
+                return subscriber.afterInsert({ entity: entity });
+            })
+            .filter(subscriber => !!subscriber);
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT)
@@ -86,8 +103,13 @@ export class Broadcaster {
 
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
-            .filter(subscriber => !!subscriber.afterUpdate)
-            .map(subscriber => subscriber.afterUpdate({ entity: entity, updatedColumns: updatedColumns }));
+            .map(subscriber => {
+                if (!subscriber.afterUpdate)
+                    return undefined;
+
+                return subscriber.afterUpdate({ entity: entity, updatedColumns: updatedColumns });
+            })
+            .filter(subscriber => !!subscriber);
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE)
@@ -101,8 +123,13 @@ export class Broadcaster {
 
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
-            .filter(subscriber => !!subscriber.afterRemove)
-            .map(subscriber => subscriber.afterRemove({ entity: entity, entityId: entityId }));
+            .map(subscriber => {
+                if (!subscriber.afterRemove)
+                    return undefined;
+
+                return subscriber.afterRemove({ entity: entity, entityId: entityId });
+            })
+            .filter(subscriber => !!subscriber);
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE)
@@ -133,8 +160,10 @@ export class Broadcaster {
 
         this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscribers(subscriber, entity))
-            .filter(subscriber => !!subscriber.afterLoad)
-            .forEach(subscriber => promises.push(<any> subscriber.afterLoad(entity)));
+            .forEach(subscriber => {
+                if (subscriber.afterLoad)
+                    promises.push(<any> subscriber.afterLoad(entity));
+            });
 
         this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD)

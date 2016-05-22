@@ -10,7 +10,7 @@ export class MissingJoinTableError extends Error {
     constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
         super();
 
-        if (relation.inverseRelation) {
+        if (relation.hasInverseSide) {
             this.message = `JoinTable is missing on both sides of ${entityMetadata.name}#${relation.name} and ` + 
                 `${relation.inverseEntityMetadata.name}#${relation.inverseRelation.name} many-to-many relationship. ` + 
                 `You need to put decorator decorator on one of the sides.`;

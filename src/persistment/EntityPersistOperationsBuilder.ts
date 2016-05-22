@@ -212,11 +212,11 @@ export class EntityPersistOperationBuilder {
             if (dbValue instanceof Array) {
                 dbValue.forEach((subDbEntity: any) => {
                     const relationOperations = this.findCascadeRemovedEntities(relMetadata, subDbEntity, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.name], isObjectRemoved);
-                    operations.push(...relationOperations);
+                    relationOperations.forEach(o => operations.push(o));
                 });
             } else {
                 const relationOperations = this.findCascadeRemovedEntities(relMetadata, dbValue, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.name], isObjectRemoved);
-                operations.push(...relationOperations);
+                relationOperations.forEach(o => operations.push(o));
             }
         }, []);
 
@@ -295,7 +295,7 @@ export class EntityPersistOperationBuilder {
                         operations.push(new UpdateByRelationOperation(entityToSearchIn, insertOperation, relation));
 
                     const subOperations = this.findRelationsWithEntityInside(insertOperation, sub);
-                    operations.push(...subOperations);
+                    subOperations.forEach(o => operations.push(o));
                 });
 
             } else if (value) {
@@ -304,7 +304,7 @@ export class EntityPersistOperationBuilder {
                     operations.push(new UpdateByRelationOperation(entityToSearchIn, insertOperation, relation));
                 }
                 const subOperations = this.findRelationsWithEntityInside(insertOperation, value);
-                operations.push(...subOperations);
+                subOperations.forEach(o => operations.push(o));
 
             }
         });
@@ -341,13 +341,13 @@ export class EntityPersistOperationBuilder {
 
                         if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
                             const subOperations = this.findJunctionInsertOperations(relationMetadata, subEntity, dbEntities, false);
-                            operations.push(...subOperations);
+                            subOperations.forEach(o => operations.push(o));
                         }
                     });
                 } else {
                     if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
                         const subOperations = this.findJunctionInsertOperations(relationMetadata, value, dbEntities, false);
-                        operations.push(...subOperations);
+                        subOperations.forEach(o => operations.push(o));
                     }
                 }
 
@@ -387,13 +387,13 @@ export class EntityPersistOperationBuilder {
 
                         if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
                             const subOperations = this.findJunctionRemoveOperations(relationMetadata, subEntity, newEntities, false);
-                            operations.push(...subOperations);
+                            subOperations.forEach(o => operations.push(o));
                         }
                     });
                 } else {
                     if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
                         const subOperations = this.findJunctionRemoveOperations(relationMetadata, dbValue, newEntities, false);
-                        operations.push(...subOperations);
+                        subOperations.forEach(o => operations.push(o));
                     }
                 }
 
