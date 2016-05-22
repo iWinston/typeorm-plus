@@ -31,7 +31,7 @@ export class Repository<Entity> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection, 
+    constructor(protected connection: Connection,
                 protected entityMetadatas: EntityMetadataCollection,
                 protected metadata: EntityMetadata) {
         this.driver = connection.driver;

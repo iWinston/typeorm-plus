@@ -32,9 +32,7 @@ export function setupConnection(entities: Function[], callback?: (connection: Co
 
 export function reloadDatabase(connection: Connection) {
     return function () {
-        return connection.driver
-            .clearDatabase()
-            .then(() => connection.syncSchema())
+        return connection.syncSchema(true)
             .catch(e => console.log("Error during schema re-creation: ", e));
     };
 }

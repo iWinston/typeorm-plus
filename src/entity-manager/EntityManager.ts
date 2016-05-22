@@ -331,5 +331,4 @@ export class EntityManager {
         return this.getTreeRepository(entityClass).countAncestors(entity);
     }
 
-
 }

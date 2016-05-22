@@ -50,9 +50,7 @@ describe("one-to-one", function() {
 
     // clean up database before each test
     function reloadDatabase() {
-        return connection.driver
-            .clearDatabase()
-            .then(() => connection.syncSchema());
+        return connection.syncSchema(true);
     }
 
     let postRepository: Repository<Post>,

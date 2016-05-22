@@ -23,7 +23,10 @@ import {ReactiveEntityManager} from "../entity-manager/ReactiveEntityManager";
 import {TreeRepository} from "../repository/TreeRepository";
 import {ReactiveTreeRepository} from "../repository/ReactiveTreeRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {RepositoryBuilder} from "../repository/RepositoryBuilder";
+import {NamingStrategyNotFoundError} from "./error/NamingStrategyNotFoundError";
+import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
+import {RepositoryFactory} from "../repository/RepositoryFactory";
+import {SchemaCreatorFactory} from "../schema-creator/SchemaCreatorFactory";
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -34,8 +37,19 @@ export class Connection {
     // Properties
     // -------------------------------------------------------------------------
 
+    /**
+     * All connection's repositories.
+     */
     private repositories: Repository<any>[] = [];
+
+    /**
+     * All connection's reactive repositories.
+     */
     private reactiveRepositories: ReactiveRepository<any>[] = [];
+
+    private repositoryFactory = getFromContainer(RepositoryFactory);
+
+    private schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
 
     // -------------------------------------------------------------------------
     // Readonly properties
@@ -119,8 +133,8 @@ export class Connection {
         this.driver = driver;
         this.driver.connectionOptions = options;
         this.options = options;
-        this.entityManager = new EntityManager(this);
-        this.reactiveEntityManager = new ReactiveEntityManager(this);
+        this.entityManager = getFromContainer(EntityManagerFactory).createEntityManager(this);
+        this.reactiveEntityManager = getFromContainer(EntityManagerFactory).createReactiveEntityManager(this);
     }
 
     // -------------------------------------------------------------------------
@@ -173,9 +187,12 @@ export class Connection {
     /**
      * Creates database schema for all entities registered in this connection.
      */
-    syncSchema() {
+    async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
+        if (dropBeforeSync)
+            await this.driver.clearDatabase();
+
         const schemaBuilder = this.driver.createSchemaBuilder();
-        const schemaCreator = new SchemaCreator(schemaBuilder, this.entityMetadatas);
+        const schemaCreator = this.schemaCreatorFactory.create(schemaBuilder, this.entityMetadatas);
         return schemaCreator.create();
     }
 
@@ -254,13 +271,7 @@ export class Connection {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        let metadata: EntityMetadata;
-        if (typeof entityClassOrName === "string") {
-            metadata = this.entityMetadatas.findByName(entityClassOrName);
-        } else {
-            metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        }
-
+        const metadata = this.entityMetadatas.findByNameOrTarget(entityClassOrName);
         const repository = this.repositories.find(repository => Repository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
@@ -286,13 +297,7 @@ export class Connection {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        let metadata: EntityMetadata;
-        if (typeof entityClassOrName === "string") {
-            metadata = this.entityMetadatas.findByName(entityClassOrName);
-        } else {
-            metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        }
-
+        const metadata = this.entityMetadatas.findByNameOrTarget(entityClassOrName);
         const repository = this.repositories.find(repository => Repository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
@@ -365,15 +370,15 @@ export class Connection {
     }
 
     /**
-     * Gets the naming strategy to be used for this connection.
+     * Creates a naming strategy to be used for this connection.
      */
     private createNamingStrategy(): NamingStrategyInterface {
         if (!this.options.namingStrategy)
-            return new DefaultNamingStrategy();
+            return getFromContainer(DefaultNamingStrategy);
 
         const namingMetadata = this.namingStrategyMetadatas.find(strategy => strategy.name === this.options.namingStrategy);
         if (!namingMetadata)
-            throw new Error(`Naming strategy called "${this.options.namingStrategy}" was not found.`);
+            throw new NamingStrategyNotFoundError(this.options.namingStrategy, this.name);
 
         return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
     }
@@ -383,13 +388,15 @@ export class Connection {
      */
     private createRepository(metadata: EntityMetadata) {
         if (metadata.table.isClosure) {
-            const repository = new TreeRepository<any>(this, this.entityMetadatas, metadata);
+            const repository = this.repositoryFactory.createRepository(this, this.entityMetadatas, metadata);
+            const reactiveRepository = this.repositoryFactory.createReactiveRepository(repository);
             this.repositories.push(repository);
-            this.reactiveRepositories.push(new ReactiveTreeRepository(repository));
+            this.reactiveRepositories.push(reactiveRepository);
         } else {
-            const repository = new Repository<any>(this, this.entityMetadatas, metadata);
+            const repository = this.repositoryFactory.createTreeRepository(this, this.entityMetadatas, metadata);
+            const reactiveRepository = this.repositoryFactory.createReactiveTreeRepository(repository);
             this.repositories.push(repository);
-            this.reactiveRepositories.push(new ReactiveRepository(repository));
+            this.reactiveRepositories.push(reactiveRepository);
         }
     }
 
