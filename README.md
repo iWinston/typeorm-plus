@@ -104,7 +104,7 @@ Now lets run bootstrap our application and connect to the database. Create
 `app.ts`:
 
 ```typescript
-import {createConnection, CreateConnectionOptions} from "typeorm/typeorm";
+import {createConnection, CreateConnectionOptions} from "typeorm";
 import {Photo} from "./Photo";
 
 const options: CreateConnectionOptions = {

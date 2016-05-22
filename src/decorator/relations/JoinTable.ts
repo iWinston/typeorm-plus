@@ -1,4 +1,4 @@
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 import {JoinTableOptions} from "../../metadata/options/JoinTableOptions";
 import {JoinTableMetadata} from "../../metadata/JoinTableMetadata";
 

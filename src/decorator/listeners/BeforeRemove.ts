@@ -1,4 +1,4 @@
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 import {EventListenerTypes} from "../../metadata/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../../metadata/EntityListenerMetadata";
 

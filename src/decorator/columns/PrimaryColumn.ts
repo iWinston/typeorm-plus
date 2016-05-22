@@ -1,7 +1,7 @@
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
 

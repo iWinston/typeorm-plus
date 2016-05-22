@@ -1,4 +1,4 @@
-import {CreateConnectionOptions, createConnection} from "../../src/typeorm";
+import {CreateConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {PostAuthor} from "./entity/PostAuthor";
 

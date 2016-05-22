@@ -1,4 +1,4 @@
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";

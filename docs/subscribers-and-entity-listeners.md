@@ -11,7 +11,7 @@ First you need to create a new subscriber class and implement `EventSubscriberIn
 
 ```typescript
 import {EventSubscriber, UpdateEvent, RemoveEvent, InsertEvent} from "typeorm/listeners"
-import {EventSubscriberInterface} from "typeorm/typeorm";
+import {EventSubscriberInterface} from "typeorm";
 
 @EventSubscriber()
 export class MySubscriber implements EventSubscriberInterface<any> {

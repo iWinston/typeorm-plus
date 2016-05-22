@@ -1,7 +1,7 @@
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 

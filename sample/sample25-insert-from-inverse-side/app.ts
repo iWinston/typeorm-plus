@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createConnection, CreateConnectionOptions} from "../../src/typeorm";
+import {createConnection, CreateConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
 

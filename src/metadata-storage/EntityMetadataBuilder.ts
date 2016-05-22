@@ -12,7 +12,7 @@ import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {JoinColumnOptions} from "../metadata/options/JoinColumnOptions";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {defaultMetadataStorage} from "../typeorm";
+import {defaultMetadataStorage} from "../index";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.

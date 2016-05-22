@@ -2,7 +2,7 @@ import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createConnection, CreateConnectionOptions} from "../../src/typeorm";
+import {createConnection, CreateConnectionOptions} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {Post} from "../../sample/sample1-simple-entity/entity/Post";

@@ -1,5 +1,5 @@
 import {CreateConnectionOptions} from "../../src/connection-manager/CreateConnectionOptions";
-import {createConnection} from "../../src/typeorm";
+import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 
 export function setupConnection(entities: Function[], callback?: (connection: Connection) => any) {

@@ -1,5 +1,5 @@
 import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
-import {defaultMetadataStorage} from "../typeorm";
+import {defaultMetadataStorage} from "../index";
 
 /**
  * Decorator registers a new naming strategy to be used in naming things.

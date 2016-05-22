@@ -1,5 +1,5 @@
 import {CompositeIndexMetadata} from "../../metadata/CompositeIndexMetadata";
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 import {CompositeIndexOptions} from "../../metadata/options/CompositeIndexOptions";
 
 /**

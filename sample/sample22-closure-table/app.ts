@@ -1,4 +1,4 @@
-import {createConnection, CreateConnectionOptions} from "../../src/typeorm";
+import {createConnection, CreateConnectionOptions} from "../../src/index";
 import {Category} from "./entity/Category";
 
 const options: CreateConnectionOptions = {

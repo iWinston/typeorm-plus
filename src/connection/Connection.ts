@@ -9,7 +9,7 @@ import {ConstructorFunction} from "../common/ConstructorFunction";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
-import {defaultMetadataStorage, getContainer} from "../typeorm";
+import {defaultMetadataStorage, getContainer} from "../index";
 import {EntityMetadataBuilder} from "../metadata-storage/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";

@@ -1,5 +1,5 @@
 import {TableMetadata} from "../../metadata/TableMetadata";
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 
 /**
  * Allows to use columns and relations data from the inherited metadata.

@@ -1,4 +1,4 @@
-import {defaultMetadataStorage} from "../../typeorm";
+import {defaultMetadataStorage} from "../../index";
 import {RelationOptions} from "../../metadata/options/RelationOptions";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {RelationTypes} from "../../metadata/types/RelationTypes";
