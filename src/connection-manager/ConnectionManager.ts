@@ -85,7 +85,7 @@ export class ConnectionManager {
         if (existConnection)
             this.connections.splice(this.connections.indexOf(existConnection), 1);
         
-        const connection = new Connection(name, <Driver> driver, options);
+        const connection = new Connection(name, driver, options);
         this.connections.push(connection);
         return connection;
     }

@@ -91,7 +91,7 @@ export class RawSqlResultsToEntityTransformer {
                     if (joinMapping) {
                         propertyName = joinMapping.propertyName;
                     }
-                    
+
                     if (relation.isLazy) {
                         entity["__" + propertyName + "__"] = result;
                     } else {
