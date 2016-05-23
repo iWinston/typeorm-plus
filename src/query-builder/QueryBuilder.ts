@@ -665,7 +665,7 @@ export class QueryBuilder<Entity> {
 
             } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {
                 const joinTableColumn = relation.inverseRelation.joinColumn.referencedColumn.name;
-                const condition = join.alias.name + "." + relation.inverseSideProperty + "=" + parentAlias + "." + joinTableColumn;
+                const condition = join.alias.name + "." + relation.inverseRelation.name + "=" + parentAlias + "." + joinTableColumn;
                 return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
        
             } else {
