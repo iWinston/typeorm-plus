@@ -79,7 +79,7 @@ export class RawSqlResultsToEntityTransformer {
 
         // if relation is loaded then go into it recursively and transform its values too
         metadata.relations.forEach(relation => {
-            const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.name);
+            const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.propertyName);
             if (relationAlias) {
                 const joinMapping = this.joinMappings.find(joinMapping => joinMapping.alias === relationAlias);
                 const relatedEntities = this.groupAndTransform(rawSqlResults, relationAlias);
