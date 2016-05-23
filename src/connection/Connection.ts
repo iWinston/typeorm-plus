@@ -4,7 +4,6 @@ import {Repository} from "../repository/Repository";
 import {EventSubscriberInterface} from "../subscriber/EventSubscriberInterface";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {SchemaCreator} from "../schema-creator/SchemaCreator";
 import {ConstructorFunction} from "../common/ConstructorFunction";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
@@ -27,6 +26,8 @@ import {NamingStrategyNotFoundError} from "./error/NamingStrategyNotFoundError";
 import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {SchemaCreatorFactory} from "../schema-creator/SchemaCreatorFactory";
+import {ReactiveRepositoryNotFoundError} from "./error/ReactiveRepositoryNotFoundError";
+import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -46,10 +47,6 @@ export class Connection {
      * All connection's reactive repositories.
      */
     private reactiveRepositories: ReactiveRepository<any>[] = [];
-
-    private repositoryFactory = getFromContainer(RepositoryFactory);
-
-    private schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
 
     // -------------------------------------------------------------------------
     // Readonly properties
@@ -192,7 +189,8 @@ export class Connection {
             await this.driver.clearDatabase();
 
         const schemaBuilder = this.driver.createSchemaBuilder();
-        const schemaCreator = this.schemaCreatorFactory.create(schemaBuilder, this.entityMetadatas);
+        const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
+        const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.entityMetadatas);
         return schemaCreator.create();
     }
 
@@ -302,7 +300,7 @@ export class Connection {
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
         if (!metadata.table.isClosure)
-            throw new Error(`Cannot get a tree repository. ${metadata.name} is not a tree table. Try to use @ClosureTable decorator instead of @Table.`);
+            throw new RepositoryNotTreeError(entityClassOrName);
 
         return <TreeRepository<Entity>> repository;
     }
@@ -310,14 +308,14 @@ export class Connection {
     /**
      * Gets reactive repository for the given entity class.
      */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveRepository<Entity> {
+    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        const metadata = this.entityMetadatas.findByNameOrTarget(entityClass);
         const repository = this.reactiveRepositories.find(repository => ReactiveRepository.ownsMetadata(repository, metadata));
         if (!repository)
-            throw new RepositoryNotFoundError(this.name, entityClass); // todo throw ReactiveRepositoryNotFoundError
+            throw new ReactiveRepositoryNotFoundError(this.name, entityClass);
 
         return repository;
     }
@@ -325,16 +323,16 @@ export class Connection {
     /**
      * Gets reactive tree repository for the given entity class.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveTreeRepository<Entity> {
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        const metadata = this.entityMetadatas.findByNameOrTarget(entityClass);
         const repository = this.reactiveRepositories.find(repository => ReactiveRepository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClass);
         if (!metadata.table.isClosure)
-            throw new Error(`Cannot get a tree repository. ${metadata.name} is not a tree table. Try to use @ClosureTable decorator instead of @Table.`);
+            throw new RepositoryNotTreeError(entityClass);
 
         return <ReactiveTreeRepository<Entity>> repository;
     }
@@ -348,25 +346,32 @@ export class Connection {
      */
     private buildMetadatas() {
 
-        // first register naming strategies
-        const metadatas = defaultMetadataStorage().namingStrategyMetadatas.filterByClasses(this.namingStrategyClasses);
-        metadatas.forEach(cls => this.namingStrategyMetadatas.push(cls));
+        // take imported naming strategy metadatas
+        defaultMetadataStorage()
+            .namingStrategyMetadatas
+            .filterByClasses(this.namingStrategyClasses)
+            .forEach(namingStrategy => this.namingStrategyMetadatas.push(namingStrategy));
 
-        // second register subscriber metadatas
-        const subscribers = defaultMetadataStorage()
+        // take imported event subscribers
+        defaultMetadataStorage()
             .eventSubscriberMetadatas
             .filterByClasses(this.subscriberClasses)
-            .map(metadata => getFromContainer(metadata.target));
-        this.eventSubscribers.push(...subscribers);
+            .map(metadata => getFromContainer(metadata.target))
+            .forEach(subscriber => this.eventSubscribers.push(subscriber));
 
-        // third register entity and entity listener metadatas
-        const entityMetadataBuilder = new EntityMetadataBuilder(this.createNamingStrategy());
-        const entityMetadatas = entityMetadataBuilder.build(this.entityClasses);
-        const entityListenerMetadatas = defaultMetadataStorage().entityListenerMetadatas.filterByClasses(this.entityClasses);
+        // take imported entity listeners
+        defaultMetadataStorage()
+            .entityListenerMetadatas
+            .filterByClasses(this.entityClasses)
+            .forEach(entityListener => this.entityListeners.push(entityListener));
 
-        entityMetadatas.forEach(cls => this.entityMetadatas.push(cls));
-        entityListenerMetadatas.forEach(cls => this.entityListeners.push(cls));
-        entityMetadatas.forEach(metadata => this.createRepository(metadata));
+        // build entity metadatas for the current connection
+        getFromContainer(EntityMetadataBuilder)
+            .build(this.createNamingStrategy(), this.entityClasses)
+            .forEach(metadata => {
+                this.entityMetadatas.push(metadata);
+                this.createRepository(metadata);
+            });
     }
 
     /**
@@ -387,14 +392,15 @@ export class Connection {
      * Creates repository and reactive repository for the given entity metadata.
      */
     private createRepository(metadata: EntityMetadata) {
+        const repositoryFactory = getFromContainer(RepositoryFactory);
         if (metadata.table.isClosure) {
-            const repository = this.repositoryFactory.createRepository(this, this.entityMetadatas, metadata);
-            const reactiveRepository = this.repositoryFactory.createReactiveRepository(repository);
+            const repository = repositoryFactory.createRepository(this, this.entityMetadatas, metadata);
+            const reactiveRepository = repositoryFactory.createReactiveRepository(repository);
             this.repositories.push(repository);
             this.reactiveRepositories.push(reactiveRepository);
         } else {
-            const repository = this.repositoryFactory.createTreeRepository(this, this.entityMetadatas, metadata);
-            const reactiveRepository = this.repositoryFactory.createReactiveTreeRepository(repository);
+            const repository = repositoryFactory.createTreeRepository(this, this.entityMetadatas, metadata);
+            const reactiveRepository = repositoryFactory.createReactiveTreeRepository(repository);
             this.repositories.push(repository);
             this.reactiveRepositories.push(reactiveRepository);
         }

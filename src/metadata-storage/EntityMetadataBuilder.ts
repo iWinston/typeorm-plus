@@ -29,13 +29,6 @@ export class EntityMetadataBuilder {
     private entityValidator = new EntityMetadataValidator();
     
     // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-
-    constructor(private namingStrategy: NamingStrategyInterface) {
-    }
-
-    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -53,7 +46,8 @@ export class EntityMetadataBuilder {
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    build(entityClasses: Function[]): EntityMetadata[] {
+    build(namingStrategy: NamingStrategyInterface, 
+          entityClasses: Function[]): EntityMetadata[] {
         
         const allMetadataStorage = defaultMetadataStorage();
 
@@ -62,20 +56,20 @@ export class EntityMetadataBuilder {
         const tableMetadatas = allTableMetadatas.filterByClasses(entityClasses).filter(table => !table.isAbstract);
 
         // set naming strategy
-        // allMetadataStorage.tableMetadatas.forEach(tableMetadata => tableMetadata.namingStrategy = this.namingStrategy);
-        // allTableMetadatas.forEach(column => column.namingStrategy = this.namingStrategy);
-        // entityMetadata.relations.forEach(relation => relation.namingStrategy = this.namingStrategy);
+        // allMetadataStorage.tableMetadatas.forEach(tableMetadata => tableMetadata.namingStrategy = namingStrategy);
+        // allTableMetadatas.forEach(column => column.namingStrategy = namingStrategy);
+        // entityMetadata.relations.forEach(relation => relation.namingStrategy = namingStrategy);
 
         const entityMetadatas = tableMetadatas.map(tableMetadata => {
 
             const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
 
             // set naming strategy
-            // tableMetadata.namingStrategy = this.namingStrategy;
-            mergedMetadata.columnMetadatas.forEach(column => column.namingStrategy = this.namingStrategy);
-            mergedMetadata.relationMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
-            mergedMetadata.indexMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
-            mergedMetadata.compositeIndexMetadatas.forEach(relation => relation.namingStrategy = this.namingStrategy);
+            // tableMetadata.namingStrategy = namingStrategy;
+            mergedMetadata.columnMetadatas.forEach(column => column.namingStrategy = namingStrategy);
+            mergedMetadata.relationMetadatas.forEach(relation => relation.namingStrategy = namingStrategy);
+            mergedMetadata.indexMetadatas.forEach(relation => relation.namingStrategy = namingStrategy);
+            mergedMetadata.compositeIndexMetadatas.forEach(relation => relation.namingStrategy = namingStrategy);
             
             // merge indices and composite indices because simple indices actually are compose indices with only one column
             this.mergeIndicesAndCompositeIndices(mergedMetadata.indexMetadatas, mergedMetadata.compositeIndexMetadatas);
@@ -86,7 +80,7 @@ export class EntityMetadataBuilder {
             
             // create a new entity metadata
             const entityMetadata = new EntityMetadata(
-                this.namingStrategy,
+                namingStrategy,
                 tableMetadata,
                 mergedMetadata.columnMetadatas,
                 mergedMetadata.relationMetadatas,
@@ -180,7 +174,7 @@ export class EntityMetadataBuilder {
         entityMetadatas
             .filter(metadata => metadata.table.isClosure)
             .forEach(metadata => {
-                const closureTableName = this.namingStrategy.closureJunctionTableName(metadata.table.name);
+                const closureTableName = namingStrategy.closureJunctionTableName(metadata.table.name);
                 const closureJunctionTableMetadata = new TableMetadata(undefined, closureTableName, "closureJunction");
 
                 const columns = [
@@ -212,7 +206,7 @@ export class EntityMetadataBuilder {
                     }));
                 }
 
-                const closureJunctionEntityMetadata = new EntityMetadata(this.namingStrategy, closureJunctionTableMetadata, columns, [], []);
+                const closureJunctionEntityMetadata = new EntityMetadata(namingStrategy, closureJunctionTableMetadata, columns, [], []);
                 closureJunctionEntityMetadata.foreignKeys.push(
                     new ForeignKeyMetadata(closureJunctionTableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),
                     new ForeignKeyMetadata(closureJunctionTableMetadata, [columns[1]], metadata.table, [metadata.primaryColumn])
@@ -250,7 +244,7 @@ export class EntityMetadataBuilder {
                         options: column2options
                     })
                 ];
-                const junctionEntityMetadata = new EntityMetadata(this.namingStrategy, tableMetadata, columns, [], []);
+                const junctionEntityMetadata = new EntityMetadata(namingStrategy, tableMetadata, columns, [], []);
                 junctionEntityMetadata.foreignKeys.push(
                     new ForeignKeyMetadata(tableMetadata, [columns[0]], metadata.table, [column1]),
                     new ForeignKeyMetadata(tableMetadata, [columns[1]], relation.inverseEntityMetadata.table, [column2])
