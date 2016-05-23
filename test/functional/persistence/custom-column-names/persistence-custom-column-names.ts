@@ -98,7 +98,7 @@ describe("persistence > custom-column-names", function() {
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.categoryId" } })
+                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category" } })
                 .then(post => loadedPost = post);
         });
 
@@ -133,7 +133,7 @@ describe("persistence > custom-column-names", function() {
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.categoryId" } })
+                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category" } })
                 .then(post => loadedPost = post);
         });
 
@@ -163,7 +163,7 @@ describe("persistence > custom-column-names", function() {
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.categoryId" } })
+                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category" } })
                 .then(post => loadedPost = post);
         });
 
@@ -211,7 +211,7 @@ describe("persistence > custom-column-names", function() {
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.categoryId", metadata: "category.metadataId" } })
+                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } })
                 .then(post => loadedPost = post);
         });
 
@@ -256,7 +256,7 @@ describe("persistence > custom-column-names", function() {
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.categoryId", metadata: "category.metadataId" } })
+                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } })
                 .then(post => loadedPost = post);
         });
 
