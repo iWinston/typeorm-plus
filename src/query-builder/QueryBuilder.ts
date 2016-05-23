@@ -634,7 +634,7 @@ export class QueryBuilder<Entity> {
                 throw new Error(`Alias "${parentAlias}" was not found`);
 
             const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
-            const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
+            const relation = parentMetadata.findRelationWithPropertyName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
             const appendedCondition = join.condition ? " AND " + join.condition : "";
             
@@ -660,7 +660,7 @@ export class QueryBuilder<Entity> {
                 
             } else if (relation.isManyToOne || (relation.isOneToOne && relation.isOwning)) {
                 const joinTableColumn = relation.joinColumn.referencedColumn.name;
-                const condition = join.alias.name + "." + joinTableColumn + "=" + parentAlias + "." + join.alias.parentPropertyName;
+                const condition = join.alias.name + "." + joinTableColumn + "=" + parentAlias + "." + relation.name;
                 return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + condition + appendedCondition;
 
             } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {

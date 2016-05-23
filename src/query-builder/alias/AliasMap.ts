@@ -68,10 +68,10 @@ export class AliasMap {
                 throw new Error(`Alias "${alias.parentAliasName}" was not found`);
             
             const parentEntityMetadata = this.getEntityMetadataByAlias(parentAlias);
-            if (!parentEntityMetadata.hasRelationWithDbName(alias.parentPropertyName))
+            if (!parentEntityMetadata.hasRelationWithPropertyName(alias.parentPropertyName))
                 throw new Error("Relation metadata for " + alias.parentAliasName + "#" + alias.parentPropertyName + " was not found.");
 
-            const relation = parentEntityMetadata.findRelationWithDbName(alias.parentPropertyName);
+            const relation = parentEntityMetadata.findRelationWithPropertyName(alias.parentPropertyName);
             return relation.inverseEntityMetadata;
         }
 
