@@ -189,8 +189,8 @@ export class EntityMetadata {
 
     createPropertiesMap(): any {
         const entity: any = {};
-        this.columns.forEach(column => entity[column.name] = column.name);
-        this.relations.forEach(relation => entity[relation.name] = relation.name);
+        this.columns.forEach(column => entity[column.propertyName] = column.propertyName);
+        this.relations.forEach(relation => entity[relation.propertyName] = relation.propertyName);
         return entity;
     }
 

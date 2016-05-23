@@ -248,7 +248,7 @@ export class PersistOperationExecutor {
                 insertOperation.entity[metadata.versionColumn.propertyName]++;
             if (metadata.hasTreeLevelColumn) {
                 // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
-                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.name] || 0) : 0;
+                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
                 insertOperation.entity[metadata.treeLevelColumn.propertyName] = insertOperation.treeLevel;
             }
             if (metadata.hasTreeChildrenCountColumn) {
@@ -273,7 +273,7 @@ export class PersistOperationExecutor {
         persistOperation.removes.forEach(removeOperation => {
             const metadata = this.entityMetadatas.findByTarget(removeOperation.entity.constructor);
             const removedEntity = persistOperation.allPersistedEntities.find(allNewEntity => {
-                return allNewEntity.entity.constructor === removeOperation.entity.constructor && allNewEntity.id === removeOperation.entity[metadata.primaryColumn.name];
+                return allNewEntity.entity.constructor === removeOperation.entity.constructor && allNewEntity.id === removeOperation.entity[metadata.primaryColumn.propertyName];
             });
             if (removedEntity)
                 removedEntity.entity[metadata.primaryColumn.propertyName] = undefined;
@@ -290,11 +290,11 @@ export class PersistOperationExecutor {
                 if (operation.updatedRelation.isOneToMany) {
                     const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.entity.constructor);
                     if (operation.insertOperation.entity === target)
-                        updateMap[operation.updatedRelation.inverseRelation.name] = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
+                        updateMap[operation.updatedRelation.inverseRelation.propertyName] = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
 
                 } else {
                     if (operation.targetEntity === target)
-                        updateMap[operation.updatedRelation.name] = operation.insertOperation.entityId;
+                        updateMap[operation.updatedRelation.propertyName] = operation.insertOperation.entityId;
                 }
             });
 
@@ -325,26 +325,6 @@ export class PersistOperationExecutor {
     }
 
     private updateInverseRelation(operation: UpdateByInverseSideOperation, insertOperations: InsertOperation[]) {
-        /*let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
-        const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
-        const idInInserts = relatedInsertOperation ? relatedInsertOperation.entityId : null;
-        if (operation.updatedRelation.isOneToMany) {
-            const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.entity.constructor);
-            tableName = metadata.table.name;
-            relationName = operation.updatedRelation.inverseRelation.name;
-            relationId = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
-            idColumn = metadata.primaryColumn.name;
-            id = operation.insertOperation.entityId;
-
-        } else {
-            const metadata = this.entityMetadatas.findByTarget(operation.targetEntity.constructor);
-            tableName = metadata.table.name;
-            relationName = operation.updatedRelation.name;
-            relationId = operation.insertOperation.entityId;
-            idColumn = metadata.primaryColumn.name;
-            id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
-        }*/
-
         const targetEntityMetadata = this.entityMetadatas.findByTarget(operation.targetEntity.constructor);
         const fromEntityMetadata = this.entityMetadatas.findByTarget(operation.fromEntity.constructor);
         const tableName = targetEntityMetadata.table.name;
@@ -424,14 +404,14 @@ export class PersistOperationExecutor {
         const relationColumns = metadata.relations
             .filter(relation => relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .filter(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.name])
+            .filter(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName])
             .map(relation => relation.name);
 
         const relationValues = metadata.relations
             .filter(relation => relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.inverseEntityMetadata.primaryColumn.name))
-            .map(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.name]);
+            .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.inverseEntityMetadata.primaryColumn.propertyName))
+            .map(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName]);
 
         const allColumns = columns.concat(relationColumns);
         const allValues = values.concat(relationValues);
@@ -452,8 +432,8 @@ export class PersistOperationExecutor {
         }
         
         if (metadata.hasTreeLevelColumn && metadata.hasTreeParentRelation) {
-            const parentEntity = entity[metadata.treeParentRelation.propertyName];
-            const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.name] || 0) : 0;
+            const parentEntity = entity[metadata.treeParentRelation.name]; // todo: are you sure here we should use name and not propertyName ?
+            const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
             
             allColumns.push(metadata.treeLevelColumn.name);
             allValues.push(parentLevel + 1);
@@ -473,8 +453,9 @@ export class PersistOperationExecutor {
         const parentEntity = entity[metadata.treeParentRelation.propertyName];
 
         let parentEntityId: any = 0;
-        if (parentEntity && parentEntity[metadata.primaryColumn.name]) {
-            parentEntityId = parentEntity[metadata.primaryColumn.name];
+        if (parentEntity && parentEntity[metadata.primaryColumn.propertyName]) {
+            parentEntityId = parentEntity[metadata.primaryColumn.propertyName];
+
         } else if (updateMap && updateMap[metadata.treeParentRelation.propertyName]) { // todo: name or propertyName: depend how update will be implemented. or even find relation of this treeParent and use its name?
             parentEntityId = updateMap[metadata.treeParentRelation.propertyName];
         }
@@ -510,8 +491,8 @@ export class PersistOperationExecutor {
         const insertOperation1 = insertOperations.find(o => o.entity === junctionOperation.entity1);
         const insertOperation2 = insertOperations.find(o => o.entity === junctionOperation.entity2);
 
-        let id1 = junctionOperation.entity1[metadata1.primaryColumn.name];
-        let id2 = junctionOperation.entity2[metadata2.primaryColumn.name];
+        let id1 = junctionOperation.entity1[metadata1.primaryColumn.propertyName];
+        let id2 = junctionOperation.entity2[metadata2.primaryColumn.propertyName];
         
         if (!id1) {
             if (insertOperation1) {
@@ -545,8 +526,8 @@ export class PersistOperationExecutor {
         const metadata1 = this.entityMetadatas.findByTarget(junctionOperation.entity1.constructor);
         const metadata2 = this.entityMetadatas.findByTarget(junctionOperation.entity2.constructor);
         const columns = junctionMetadata.columns.map(column => column.name);
-        const id1 = junctionOperation.entity1[metadata1.primaryColumn.name];
-        const id2 = junctionOperation.entity2[metadata2.primaryColumn.name];
+        const id1 = junctionOperation.entity1[metadata1.primaryColumn.propertyName];
+        const id2 = junctionOperation.entity2[metadata2.primaryColumn.propertyName];
         return this.driver.delete(junctionMetadata.table.name, { [columns[0]]: id1, [columns[1]]: id2 });
     }
 

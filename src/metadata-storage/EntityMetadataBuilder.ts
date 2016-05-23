@@ -130,7 +130,7 @@ export class EntityMetadataBuilder {
             entityMetadata.relations.forEach(relation => {
                 const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type);
                 if (!inverseEntityMetadata)
-                    throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.name + " was not found.");
+                    throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyName + " was not found.");
                 
                 relation.inverseEntityMetadata = inverseEntityMetadata;
             });

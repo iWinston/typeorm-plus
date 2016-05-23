@@ -632,7 +632,7 @@ export class QueryBuilder<Entity> {
             const foundAlias = this.aliasMap.findAliasByName(parentAlias);
             if (!foundAlias)
                 throw new Error(`Alias "${parentAlias}" was not found`);
-            
+
             const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
             const relation = parentMetadata.findRelationWithDbName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
@@ -735,9 +735,6 @@ export class QueryBuilder<Entity> {
     protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH", condition: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
     protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany: boolean = false): this {
 
-        if (!mapToProperty && typeof entityOrProperty === "string")
-            mapToProperty = entityOrProperty;
-
         let tableName = "";
         const aliasObj = new Alias(alias);
         this.aliasMap.addAlias(aliasObj);
@@ -747,8 +744,11 @@ export class QueryBuilder<Entity> {
         } else if (typeof entityOrProperty === "string" && entityOrProperty.indexOf(".") !== -1) {
             aliasObj.parentAliasName = entityOrProperty.split(".")[0];
             aliasObj.parentPropertyName = entityOrProperty.split(".")[1];
+            
         } else if (typeof entityOrProperty === "string") {
             tableName = entityOrProperty;
+            if (!mapToProperty)
+                mapToProperty = entityOrProperty;
         }
 
         const join: Join = { type: joinType, alias: aliasObj, tableName: tableName, conditionType: conditionType, condition: condition, mapToProperty: mapToProperty, isMappingMany: isMappingMany };
