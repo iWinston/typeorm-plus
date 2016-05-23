@@ -71,7 +71,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
                     value = Object.assign({}, ...value);
 
                 const child = value ? this.buildLoadMap(value, relation.inverseEntityMetadata) : [];
-                return <LoadMap> { name: relation.name, child: child };
+                return <LoadMap> { name: relation.propertyName, child: child };
             });
     }
 
