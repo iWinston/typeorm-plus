@@ -49,13 +49,13 @@ export class CompositeIndexMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(metadata: CompositeIndexMetadataArgs) {
-        super(metadata.target);
-        this._columns = metadata.columns;
-        if (metadata.name)
-            this._name = metadata.name;
-        if (metadata.options && metadata.options.unique)
-            this.isUnique = metadata.options.unique;
+    constructor(args: CompositeIndexMetadataArgs) {
+        super(args.target);
+        this._columns = args.columns;
+        if (args.name)
+            this._name = args.name;
+        if (args.options && args.options.unique)
+            this.isUnique = args.options.unique;
     }
 
     // ---------------------------------------------------------------------

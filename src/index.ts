@@ -6,7 +6,7 @@ import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {ConnectionManager} from "./connection-manager/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
-import {MetadataArgsStorage} from "./metadata-storage/MetadataStorage";
+import {MetadataArgsStorage} from "./metadata-storage/MetadataArgsStorage";
 import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 
 // -------------------------------------------------------------------------

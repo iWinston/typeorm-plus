@@ -4,6 +4,7 @@ import {IndexMetadataArgs} from "./args/IndexMetadataArgs";
 
 /**
  * This metadata interface contains all information about some index on a field.
+ * @deprecated
  */
 export class IndexMetadata extends PropertyMetadata {
 
@@ -29,10 +30,10 @@ export class IndexMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(metadata: IndexMetadataArgs) {
-        super(metadata.target, metadata.propertyName);
+    constructor(args: IndexMetadataArgs) {
+        super(args.target, args.propertyName);
         
-        if (metadata.name)
+        if (args.name)
             this.name = name; // todo: if there is no name, then generate it (using naming strategy?)
     }
 

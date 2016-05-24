@@ -20,9 +20,9 @@ export class EntityListenerMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(metadata: EntityListenerMetadataArgs) {
-        super(metadata.target, metadata.propertyName);
-        this.type = metadata.type;
+    constructor(args: EntityListenerMetadataArgs) {
+        super(args.target, args.propertyName);
+        this.type = args.type;
     }
 
 

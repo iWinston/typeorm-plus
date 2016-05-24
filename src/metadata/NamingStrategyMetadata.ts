@@ -19,9 +19,9 @@ export class NamingStrategyMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(metadata: NamingStrategyMetadataArgs) {
-        super(metadata.target);
-        this.name = metadata.name;
+    constructor(args: NamingStrategyMetadataArgs) {
+        super(args.target);
+        this.name = args.name;
     }
 
 }

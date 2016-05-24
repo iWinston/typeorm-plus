@@ -40,17 +40,17 @@ export class TableMetadata extends TargetMetadata {
     // ---------------------------------------------------------------------
 
     constructor(target: Function|undefined, name: string, type: TableType);
-    constructor(metadata: TableMetadataArgs);
-    constructor(metadataOrTarget: TableMetadataArgs|Function|undefined, name?: string, type?: TableType) {
+    constructor(args: TableMetadataArgs);
+    constructor(argsOrTarget: TableMetadataArgs|Function|undefined, name?: string, type?: TableType) {
         if (arguments.length === 1) {
-            const metadata = metadataOrTarget as TableMetadataArgs;
+            const metadata = argsOrTarget as TableMetadataArgs;
             super(metadata.target);
             this.tableType = metadata.type;
             if (metadata.name)
                 this._name = metadata.name;
             
         } else {
-            super(metadataOrTarget as Function);
+            super(argsOrTarget as Function);
             if (name)
                 this._name = name;
             if (type)

@@ -36,13 +36,13 @@ export class JoinColumnMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(metadata: JoinColumnMetadataArgs) {
-        super(metadata.target, metadata.propertyName);
+    constructor(args: JoinColumnMetadataArgs) {
+        super(args.target, args.propertyName);
         
-        if (metadata.options.name)
-            this._name = metadata.options.name;
-        if (metadata.options.referencedColumnName)
-            this._referencedColumnName = metadata.options.referencedColumnName;
+        if (args.options.name)
+            this._name = args.options.name;
+        if (args.options.referencedColumnName)
+            this._referencedColumnName = args.options.referencedColumnName;
     }
 
     // ---------------------------------------------------------------------
