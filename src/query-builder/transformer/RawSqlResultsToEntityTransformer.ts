@@ -41,9 +41,18 @@ export class RawSqlResultsToEntityTransformer {
     private groupAndTransform(rawSqlResults: any[], alias: Alias) {
         
         const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
-        const groupedResults = OrmUtils.groupBy(rawSqlResults, result => alias.getPrimaryKeyValue(result, metadata.primaryColumn));
+        if (!metadata)
+            throw new Error("Cannot get entity metadata for the given alias " + alias.name);
+        
+        const groupedResults = OrmUtils.groupBy(rawSqlResults, result => {
+            if (!metadata) return;
+            return alias.getPrimaryKeyValue(result, metadata.primaryColumn);
+        });
         return groupedResults
-            .map(group => this.transformIntoSingleResult(group.items, alias, metadata))
+            .map(group => {
+                if (!metadata) return;
+                return this.transformIntoSingleResult(group.items, alias, metadata);
+            })
             .filter(res => !!res);
     }
 

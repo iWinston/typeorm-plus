@@ -57,7 +57,7 @@ export class AliasMap {
         });
     }
 
-    getEntityMetadataByAlias(alias: Alias): EntityMetadata {
+    getEntityMetadataByAlias(alias: Alias): EntityMetadata|undefined {
         if (alias.target) {
             return this.findMetadata(alias.target);
 
@@ -68,6 +68,9 @@ export class AliasMap {
                 throw new Error(`Alias "${alias.parentAliasName}" was not found`);
             
             const parentEntityMetadata = this.getEntityMetadataByAlias(parentAlias);
+            if (!parentEntityMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + alias.name);
+            
             if (!parentEntityMetadata.hasRelationWithPropertyName(alias.parentPropertyName))
                 throw new Error("Relation metadata for " + alias.parentAliasName + "#" + alias.parentPropertyName + " was not found.");
 
@@ -75,7 +78,7 @@ export class AliasMap {
             return relation.inverseEntityMetadata;
         }
 
-        throw new Error("Cannot get entity metadata for the given alias " + alias.name);
+        return undefined;
     }
     
     // -------------------------------------------------------------------------
