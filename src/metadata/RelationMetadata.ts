@@ -175,6 +175,13 @@ export class RelationMetadata extends PropertyMetadata {
         
         return this.inverseEntityMetadata.primaryColumn.propertyName;
     }
+    
+    get referencedColumnName(): string {
+        if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
+            return this.joinColumn.referencedColumn.name;
+        
+        return this.inverseEntityMetadata.primaryColumn.propertyName;
+    }
 
     /**
      * Indicates if this side is an owner of this relation.

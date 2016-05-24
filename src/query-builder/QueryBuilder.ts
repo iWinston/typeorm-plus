@@ -467,13 +467,13 @@ export class QueryBuilder<Entity> {
         this.havings.forEach(having => {
             switch (having.type) {
                 case "simple":
-                    qb.where(having.condition);
+                    qb.having(having.condition);
                     break;
                 case "and":
-                    qb.andWhere(having.condition);
+                    qb.andHaving(having.condition);
                     break;
                 case "or":
-                    qb.orWhere(having.condition);
+                    qb.orHaving(having.condition);
                     break;
             }
         });
@@ -553,6 +553,8 @@ export class QueryBuilder<Entity> {
 
         } else if (this.fromEntity) {
             const metadata = this.aliasMap.getEntityMetadataByAlias(this.fromEntity.alias);
+            if (!metadata)
+                throw new Error("Cannot get entity metadata for the given alias " + this.fromEntity.alias.name);
             tableName = metadata.table.name;
             alias = this.fromEntity.alias.name;
 
@@ -572,6 +574,8 @@ export class QueryBuilder<Entity> {
             .filter(join => this.selects.indexOf(join.alias.name) !== -1)
             .forEach(join => {
                 const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
+                if (!joinMetadata)
+                    throw new Error("Cannot get entity metadata for the given alias " + join.alias.name);
                 joinMetadata.columns.forEach(column => {
                     allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
                 });
@@ -595,6 +599,7 @@ export class QueryBuilder<Entity> {
             case "update":
                 const updateSet = Object.keys(this.updateQuerySet).map(key => key + "=:updateQuerySet_" + key);
                 const params = Object.keys(this.updateQuerySet).reduce((object, key) => {
+                    // todo: map propertyNames to names ?
                     (<any> object)["updateQuerySet_" + key] = (<any> this.updateQuerySet)[key];
                     return object;
                 }, {});
@@ -611,19 +616,45 @@ export class QueryBuilder<Entity> {
         return " WHERE " + this.wheres.map((where, index) => {
             switch (where.type) {
                 case "and":
-                    return (index > 0 ? "AND " : "") + where.condition;
+                    return (index > 0 ? "AND " : "") + this.replacePropertyNames(where.condition);
                 case "or":
-                    return (index > 0 ? "OR " : "") + where.condition;
+                    return (index > 0 ? "OR " : "") + this.replacePropertyNames(where.condition);
                 default:
-                    return where.condition;
+                    return this.replacePropertyNames(where.condition);
             }
         }).join(" ");
+    }
+
+    /**
+     * Replaces all entity's propertyName to name in the given statement.
+     */
+    private replacePropertyNames(statement: string) {
+        this.aliasMap.aliases.forEach(alias => {
+            const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
+            if (!metadata) return;
+            metadata.columns.forEach(column => {
+                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName, 'g'), alias.name + "." + column.name);
+            });
+            metadata.relations.forEach(relation => {
+                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName, 'g'), alias.name + "." + relation.name);
+            });
+        });
+        return statement;
+
     }
 
     protected createJoinExpression() {
         return this.joins.map(join => {
             const joinType = join.type; // === "INNER" ? "INNER" : "LEFT";
-            const joinTableName = join.tableName ? join.tableName : this.aliasMap.getEntityMetadataByAlias(join.alias).table.name;
+            let joinTableName: string = join.tableName;
+            if (!joinTableName) {
+                const metadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
+                if (!metadata)
+                    throw new Error("Cannot get entity metadata for the given alias " + join.alias.name);
+                
+                joinTableName = metadata.table.name;
+            }
+            
             const parentAlias = join.alias.parentAliasName;
             if (!parentAlias) {
                 return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
@@ -634,9 +665,12 @@ export class QueryBuilder<Entity> {
                 throw new Error(`Alias "${parentAlias}" was not found`);
 
             const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
+            if (!parentMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + foundAlias.name);
+            
             const relation = parentMetadata.findRelationWithPropertyName(join.alias.parentPropertyName);
             const junctionMetadata = relation.junctionEntityMetadata;
-            const appendedCondition = join.condition ? " AND " + join.condition : "";
+            const appendedCondition = join.condition ? " AND " + this.replacePropertyNames(join.condition) : "";
             
             if (relation.isManyToMany) {
                 const junctionTable = junctionMetadata.table.name;
@@ -676,7 +710,7 @@ export class QueryBuilder<Entity> {
 
     protected createGroupByExpression() {
         if (!this.groupBys || !this.groupBys.length) return "";
-        return " GROUP BY " + this.groupBys.join(", ");
+        return " GROUP BY " + this.replacePropertyNames(this.groupBys.join(", "));
     }
 
     protected createHavingExpression() {
@@ -684,18 +718,18 @@ export class QueryBuilder<Entity> {
         return " HAVING " + this.havings.map(having => {
                 switch (having.type) {
                     case "and":
-                        return " AND " + having.condition;
+                        return " AND " + this.replacePropertyNames(having.condition);
                     case "or":
-                        return " OR " + having.condition;
+                        return " OR " + this.replacePropertyNames(having.condition);
                     default:
-                        return " " + having.condition;
+                        return " " + this.replacePropertyNames(having.condition);
                 }
             }).join(" ");
     }
 
     protected createOrderByExpression() {
         if (!this.orderBys || !this.orderBys.length) return "";
-        return " ORDER BY " + this.orderBys.map(order => order.sort + " " + order.order).join(", ");
+        return " ORDER BY " + this.orderBys.map(order => this.replacePropertyNames(order.sort) + " " + order.order).join(", ");
     }
 
     protected createLimitExpression() {
