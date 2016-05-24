@@ -1,11 +1,16 @@
-import {TableMetadata} from "../../metadata/TableMetadata";
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
+import {TableMetadataArgs} from "../../metadata/args/TableMetadataArgs";
 
 /**
  * Allows to use columns and relations data from the inherited metadata.
  */
 export function AbstractTable() {
-    return function (cls: Function) {
-        defaultMetadataStorage().tableMetadatas.add(new TableMetadata(cls, undefined, "abstract"));
+    return function (target: Function) {
+        const metadata: TableMetadataArgs = {
+            target: target,
+            name: undefined,
+            type: "abstract"
+        };
+        getMetadataArgsStorage().tableMetadatas.add(metadata);
     };
 }

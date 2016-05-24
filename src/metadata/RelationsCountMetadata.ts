@@ -1,4 +1,5 @@
 import {PropertyMetadata} from "./PropertyMetadata";
+import {RelationsCountMetadataArgs} from "./args/RelationsCountMetadataArgs";
 
 /**
  */
@@ -17,9 +18,9 @@ export class RelationsCountMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, propertyName: string, relation: string|((object: any) => any)) {
-        super(target, propertyName);
-        this.relation = relation;
+    constructor(args: RelationsCountMetadataArgs) {
+        super(args.target, args.propertyName);
+        this.relation = args.relation;
     }
 
 }

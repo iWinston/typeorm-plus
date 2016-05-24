@@ -1,5 +1,5 @@
-import {defaultMetadataStorage} from "../../index";
-import {EventSubscriberMetadata} from "../../metadata/EventSubscriberMetadata";
+import {getMetadataArgsStorage} from "../../index";
+import {EventSubscriberMetadataArgs} from "../../metadata/args/EventSubscriberMetadataArgs";
 
 /**
  * Classes decorated with this decorator will listen to ORM events and their methods will be triggered when event
@@ -7,6 +7,9 @@ import {EventSubscriberMetadata} from "../../metadata/EventSubscriberMetadata";
  */
 export function EventSubscriber() {
     return function (target: Function) {
-        defaultMetadataStorage().eventSubscriberMetadatas.add(new EventSubscriberMetadata(target));
+        const metadata: EventSubscriberMetadataArgs = {
+            target: target
+        };
+        getMetadataArgsStorage().eventSubscriberMetadatas.add(metadata);
     };
 }

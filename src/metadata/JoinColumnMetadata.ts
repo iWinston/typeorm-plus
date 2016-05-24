@@ -3,6 +3,7 @@ import {JoinColumnOptions} from "./options/JoinColumnOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RelationMetadata} from "./RelationMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {JoinColumnMetadataArgs} from "./args/JoinColumnMetadataArgs";
 
 /**
  */
@@ -35,15 +36,13 @@ export class JoinColumnMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, 
-                propertyName: string, 
-                options: JoinColumnOptions) {
-        super(target, propertyName);
+    constructor(metadata: JoinColumnMetadataArgs) {
+        super(metadata.target, metadata.propertyName);
         
-        if (options.name)
-            this._name = options.name;
-        if (options.referencedColumnName)
-            this._referencedColumnName = options.referencedColumnName;
+        if (metadata.options.name)
+            this._name = metadata.options.name;
+        if (metadata.options.referencedColumnName)
+            this._referencedColumnName = metadata.options.referencedColumnName;
     }
 
     // ---------------------------------------------------------------------

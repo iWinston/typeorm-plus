@@ -1,7 +1,7 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {JoinTableOptions} from "./options/JoinTableOptions";
 import {RelationMetadata} from "./RelationMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {JoinTableMetadataArgs} from "./args/JoinTableMetadataArgs";
 
 /**
  */
@@ -49,24 +49,24 @@ export class JoinTableMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, propertyName: string, options: JoinTableOptions) {
-        super(target, propertyName);
+    constructor(metadata: JoinTableMetadataArgs) {
+        super(metadata.target, metadata.propertyName);
         
-        if (options.name)
-            this._name = options.name;
+        if (metadata.options.name)
+            this._name = metadata.options.name;
         
-        if (options.joinColumn) {
-            if (options.joinColumn.name)
-                this._joinColumnName = options.joinColumn.name;
-            if (options.joinColumn.referencedColumnName)
-                this._joinColumnReferencedColumnName = options.joinColumn.referencedColumnName;
+        if (metadata.options.joinColumn) {
+            if (metadata.options.joinColumn.name)
+                this._joinColumnName = metadata.options.joinColumn.name;
+            if (metadata.options.joinColumn.referencedColumnName)
+                this._joinColumnReferencedColumnName = metadata.options.joinColumn.referencedColumnName;
         }
         
-        if (options.inverseJoinColumn) {
-            if (options.inverseJoinColumn.name)
-                this._inverseJoinColumnName = options.inverseJoinColumn.name;
-            if (options.inverseJoinColumn.referencedColumnName)
-                this._inverseJoinColumnReferencedColumnName = options.inverseJoinColumn.referencedColumnName;
+        if (metadata.options.inverseJoinColumn) {
+            if (metadata.options.inverseJoinColumn.name)
+                this._inverseJoinColumnName = metadata.options.inverseJoinColumn.name;
+            if (metadata.options.inverseJoinColumn.referencedColumnName)
+                this._inverseJoinColumnReferencedColumnName = metadata.options.inverseJoinColumn.referencedColumnName;
         }
     }
 

@@ -11,12 +11,23 @@ import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
 import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
 import {RelationsCountMetadata} from "../metadata/RelationsCountMetadata";
+import {RelationMetadataArgs} from "../metadata/args/RelationMetadataArgs";
+import {ColumnMetadataArgs} from "../metadata/args/ColumnMetadataArgs";
+import {RelationsCountMetadataArgs} from "../metadata/args/RelationsCountMetadataArgs";
+import {CompositeIndexMetadataArgs} from "../metadata/args/CompositeIndexMetadataArgs";
+import {IndexMetadataArgs} from "../metadata/args/IndexMetadataArgs";
+import {EntityListenerMetadataArgs} from "../metadata/args/EntityListenerMetadataArgs";
+import {TableMetadataArgs} from "../metadata/args/TableMetadataArgs";
+import {NamingStrategyMetadataArgs} from "../metadata/args/NamingStrategyMetadataArgs";
+import {EventSubscriberMetadataArgs} from "../metadata/args/EventSubscriberMetadataArgs";
+import {JoinTableMetadataArgs} from "../metadata/args/JoinTableMetadataArgs";
+import {JoinColumnMetadataArgs} from "../metadata/args/JoinColumnMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
  * Each metadata represents some specifications of what it represents.
  */
-export class MetadataStorage {
+export class MetadataArgsStorage {
 
     // todo: type in function validation, inverse side function validation
     // todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
@@ -27,17 +38,17 @@ export class MetadataStorage {
     // Properties
     // -------------------------------------------------------------------------
 
-    readonly tableMetadatas = new TargetMetadataCollection<TableMetadata>();
-    readonly namingStrategyMetadatas = new TargetMetadataCollection<NamingStrategyMetadata>();
-    readonly eventSubscriberMetadatas = new TargetMetadataCollection<EventSubscriberMetadata>();
-    readonly compositeIndexMetadatas = new TargetMetadataCollection<CompositeIndexMetadata>();
-    readonly columnMetadatas = new PropertyMetadataCollection<ColumnMetadata>();
-    readonly relationMetadatas = new PropertyMetadataCollection<RelationMetadata>();
-    readonly joinColumnMetadatas = new PropertyMetadataCollection<JoinColumnMetadata>();
-    readonly joinTableMetadatas = new PropertyMetadataCollection<JoinTableMetadata>();
-    readonly indexMetadatas = new PropertyMetadataCollection<IndexMetadata>();
-    readonly entityListenerMetadatas = new PropertyMetadataCollection<EntityListenerMetadata>();
-    readonly relationCountMetadatas = new PropertyMetadataCollection<RelationsCountMetadata>();
+    readonly tableMetadatas = new TargetMetadataCollection<TableMetadataArgs>();
+    readonly namingStrategyMetadatas = new TargetMetadataCollection<NamingStrategyMetadataArgs>();
+    readonly eventSubscriberMetadatas = new TargetMetadataCollection<EventSubscriberMetadataArgs>();
+    readonly compositeIndexMetadatas = new TargetMetadataCollection<CompositeIndexMetadataArgs>();
+    readonly columnMetadatas = new PropertyMetadataCollection<ColumnMetadataArgs>();
+    readonly relationMetadatas = new PropertyMetadataCollection<RelationMetadataArgs>();
+    readonly joinColumnMetadatas = new PropertyMetadataCollection<JoinColumnMetadataArgs>();
+    readonly joinTableMetadatas = new PropertyMetadataCollection<JoinTableMetadataArgs>();
+    readonly indexMetadatas = new PropertyMetadataCollection<IndexMetadataArgs>();
+    readonly entityListenerMetadatas = new PropertyMetadataCollection<EntityListenerMetadataArgs>();
+    readonly relationCountMetadatas = new PropertyMetadataCollection<RelationsCountMetadataArgs>();
 
     // -------------------------------------------------------------------------
     // Constructor

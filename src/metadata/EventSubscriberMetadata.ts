@@ -5,4 +5,8 @@ import {TargetMetadata} from "./TargetMetadata";
  */
 export class EventSubscriberMetadata extends TargetMetadata {
 
+    constructor(metadata: EventSubscriberMetadata) {
+        super(metadata.target);
+    }
+    
 }

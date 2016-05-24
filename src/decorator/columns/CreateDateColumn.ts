@@ -1,7 +1,8 @@
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
-import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {defaultMetadataStorage} from "../../index";
+import {ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {getMetadataArgsStorage} from "../../index";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
 
 /**
  * This column will store a creation date of the inserted object. Creation date is generated and inserted only once,
@@ -19,13 +20,14 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
         options.type = ColumnTypes.DATETIME;
 
         // create and register a new column metadata
-        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
+        const metadata: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             mode: "createDate",
             options: options
-        }));
+        };
+        getMetadataArgsStorage().columnMetadatas.add(metadata);
     };
 }
 

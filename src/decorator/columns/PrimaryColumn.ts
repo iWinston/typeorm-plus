@@ -1,9 +1,9 @@
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
-import {defaultMetadataStorage} from "../../index";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {getMetadataArgsStorage} from "../../index";
 import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
+import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -55,13 +55,14 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
         // create and register a new column metadata
-        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
+        const metadata: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             isPrimaryKey: true,
             options: options
-        }));
+        };
+        getMetadataArgsStorage().columnMetadatas.add(metadata);
     };
 }
 

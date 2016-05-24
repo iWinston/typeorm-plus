@@ -1,5 +1,6 @@
 import {TargetMetadata} from "./TargetMetadata";
 import {EntityMetadata} from "./EntityMetadata";
+import {TableMetadataArgs} from "./args/TableMetadataArgs";
 
 /**
  * Table type.
@@ -38,15 +39,14 @@ export class TableMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target?: Function, name?: string, type: TableType = "regular") {
-        super(target);
-        
-        if (name)
-            this._name = name;
-        if (type)
-            this.tableType = type;
-    }
+    constructor(metadata: TableMetadataArgs) {
+        super(metadata.target);
 
+        this.tableType = metadata.type;
+        if (metadata.name)
+            this._name = name;
+    }
+    
     // ---------------------------------------------------------------------
     // Accessors
     // ---------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import {TargetMetadata} from "./TargetMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "./EntityMetadata";
-import {CompositeIndexOptions} from "./options/CompositeIndexOptions";
+import {CompositeIndexMetadataArgs} from "./args/CompositeIndexMetadataArgs";
 
 /**
  * This metadata interface contains all information about table's composite index.
@@ -49,16 +49,13 @@ export class CompositeIndexMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, 
-                name: string|undefined, 
-                columns: ((object: any) => any[])|string[],
-                options?: CompositeIndexOptions) {
-        super(target);
-        this._columns = columns;
-        if (name)
-            this._name = name;
-        if (options && options.unique)
-            this.isUnique = options.unique;
+    constructor(metadata: CompositeIndexMetadataArgs) {
+        super(metadata.target);
+        this._columns = metadata.columns;
+        if (metadata.name)
+            this._name = metadata.name;
+        if (metadata.options && metadata.options.unique)
+            this.isUnique = metadata.options.unique;
     }
 
     // ---------------------------------------------------------------------

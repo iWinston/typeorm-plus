@@ -8,7 +8,7 @@ import {ConstructorFunction} from "../common/ConstructorFunction";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
-import {defaultMetadataStorage, getFromContainer} from "../index";
+import {getMetadataArgsStorage, getFromContainer} from "../index";
 import {EntityMetadataBuilder} from "../metadata-storage/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
@@ -347,20 +347,20 @@ export class Connection {
     private buildMetadatas() {
 
         // take imported naming strategy metadatas
-        defaultMetadataStorage()
+        getMetadataArgsStorage()
             .namingStrategyMetadatas
             .filterByClasses(this.namingStrategyClasses)
             .forEach(namingStrategy => this.namingStrategyMetadatas.push(namingStrategy));
 
         // take imported event subscribers
-        defaultMetadataStorage()
+        getMetadataArgsStorage()
             .eventSubscriberMetadatas
             .filterByClasses(this.subscriberClasses)
             .map(metadata => getFromContainer(metadata.target))
             .forEach(subscriber => this.eventSubscribers.push(subscriber));
 
         // take imported entity listeners
-        defaultMetadataStorage()
+        getMetadataArgsStorage()
             .entityListenerMetadatas
             .filterByClasses(this.entityClasses)
             .forEach(entityListener => this.entityListeners.push(entityListener));

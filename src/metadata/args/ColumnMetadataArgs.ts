@@ -9,12 +9,12 @@ export interface ColumnMetadataArgs {
     /**
      * Class to which this column is applied.
      */
-    target?: Function;
+    target: Function;
 
     /**
      * Class's property name to which this column is applied.
      */
-    propertyName?: string;
+    propertyName: string;
 
     /**
      * Class's property type (reflected) to which this column is applied.

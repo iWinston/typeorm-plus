@@ -1,7 +1,7 @@
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {defaultMetadataStorage} from "../../index";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {getMetadataArgsStorage} from "../../index";
+import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
 
 /**
  * This column will store an update date of the updated object. This date is being updated each time you persist the
@@ -19,13 +19,14 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
         options.type = ColumnTypes.DATETIME;
 
         // create and register a new column metadata
-        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
+        const metadata: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             mode: "updateDate",
             options: options
-        }));
+        };
+        getMetadataArgsStorage().columnMetadatas.add(metadata);
     };
 }
 

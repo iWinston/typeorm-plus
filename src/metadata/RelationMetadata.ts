@@ -116,11 +116,6 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Column name for this relation.
-     */
-    private _name: string;
-
-    /**
      * The type of the field.
      */
     private _type: RelationTypeInFunction;
@@ -140,8 +135,6 @@ export class RelationMetadata extends PropertyMetadata {
         
         if (args.inverseSideProperty)
             this._inverseSideProperty = args.inverseSideProperty;
-        if (args.options.name)
-            this._name = args.options.name;
         if (args.propertyType)
             this.propertyType = args.propertyType;
         if (args.options.cascadeInsert || args.options.cascadeAll)
@@ -163,8 +156,6 @@ export class RelationMetadata extends PropertyMetadata {
 
         if (!this._type)
             this._type = args.type;
-        if (!this._name)
-            this._name = args.propertyName;
     }
 
     // ---------------------------------------------------------------------
@@ -175,7 +166,7 @@ export class RelationMetadata extends PropertyMetadata {
         if (this.joinColumn && this.joinColumn.name)
             return this.joinColumn.name;
         
-        return this.namingStrategy ? this.namingStrategy.relationName(this._name) : this._name;
+        return this.namingStrategy ? this.namingStrategy.relationName(this.propertyName) : this.propertyName;
     }
     
     get referencedColumnName(): string {

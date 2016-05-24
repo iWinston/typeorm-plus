@@ -1,7 +1,7 @@
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
 
 /**
  * Creates a "level"/"length" column to the table that holds a closure table.
@@ -18,13 +18,14 @@ export function TreeLevelColumn(): Function {
         options.type = ColumnTypes.INTEGER;
 
         // create and register a new column metadata
-        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
+        const metadata: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             mode: "treeLevel",
             options: options
-        }));
+        };
+        getMetadataArgsStorage().columnMetadatas.add(metadata);
     };
 }
 

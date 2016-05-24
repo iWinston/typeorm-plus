@@ -1,6 +1,6 @@
-import {CompositeIndexMetadata} from "../../metadata/CompositeIndexMetadata";
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
 import {CompositeIndexOptions} from "../../metadata/options/CompositeIndexOptions";
+import {CompositeIndexMetadataArgs} from "../../metadata/args/CompositeIndexMetadataArgs";
 
 /**
  * Composite indexes must be set on entity classes and must specify fields to be indexed.
@@ -17,6 +17,12 @@ export function CompositeIndex(nameOrFields: string|string[]|((object: any) => a
     const options = typeof maybeFieldsOrOptions === "object" ? <CompositeIndexOptions> maybeFieldsOrOptions : maybeOptions;
     
     return function (cls: Function) {
-        defaultMetadataStorage().compositeIndexMetadatas.add(new CompositeIndexMetadata(cls, name, fields, options));
+        const metadata: CompositeIndexMetadataArgs = {
+            target: cls,
+            name: name,
+            columns: fields,
+            options: options
+        };
+        getMetadataArgsStorage().compositeIndexMetadatas.add(metadata);
     };
 }

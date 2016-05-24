@@ -6,7 +6,7 @@ import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {ConnectionManager} from "./connection-manager/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
-import {MetadataStorage} from "./metadata-storage/MetadataStorage";
+import {MetadataArgsStorage} from "./metadata-storage/MetadataStorage";
 import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 
 // -------------------------------------------------------------------------
@@ -50,17 +50,20 @@ export function getFromContainer<T>(someClass: { new (...args: any[]): T }|Funct
 /**
  * Default metadata storage used as singleton and can be used to storage all metadatas in the system.
  */
-let metadataStorage: MetadataStorage;
+let metadataArgsStorage: MetadataArgsStorage;
 
-export function defaultMetadataStorage() {
-    if (!metadataStorage && container) {
-        metadataStorage = container.get(MetadataStorage);
+/**
+ * Gets metadata args storage.
+ */
+export function getMetadataArgsStorage() {
+    if (!metadataArgsStorage && container) {
+        metadataArgsStorage = container.get(MetadataArgsStorage);
         
-    } else if (!metadataStorage) {
-        metadataStorage = new MetadataStorage();
+    } else if (!metadataArgsStorage) {
+        metadataArgsStorage = new MetadataArgsStorage();
     }
     
-    return metadataStorage;
+    return metadataArgsStorage;
 }
 
 // -------------------------------------------------------------------------

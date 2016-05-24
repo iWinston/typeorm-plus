@@ -1,7 +1,7 @@
-import {TargetMetadata} from "../TargetMetadata";
 import {MetadataAlreadyExistsError} from "../../metadata-storage/error/MetadataAlreadyExistsError";
+import {TableMetadataArgs} from "../args/TableMetadataArgs";
 
-export class TargetMetadataCollection<T extends TargetMetadata> extends Array<T> {
+export class TargetMetadataCollection<T extends TableMetadataArgs> extends Array<T> {
     
     // -------------------------------------------------------------------------
     // Public Methods

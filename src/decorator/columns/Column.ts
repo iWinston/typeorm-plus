@@ -1,9 +1,9 @@
 import {ColumnOptions} from "../../metadata/options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
-import {defaultMetadataStorage} from "../../index";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {getMetadataArgsStorage} from "../../index";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this 
@@ -53,11 +53,12 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata
-        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
+        const metadata: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             options: options
-        }));
+        };
+        getMetadataArgsStorage().columnMetadatas.add(metadata);
     };
 }

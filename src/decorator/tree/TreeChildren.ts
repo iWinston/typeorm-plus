@@ -1,7 +1,7 @@
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
 import {RelationOptions} from "../../metadata/options/RelationOptions";
-import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {RelationTypes} from "../../metadata/types/RelationTypes";
+import {RelationMetadataArgs} from "../../metadata/args/RelationMetadataArgs";
 
 /**
  * Marks a specific property of the class as a children of the tree.
@@ -13,7 +13,7 @@ export function TreeChildren(options?: RelationOptions): Function {
         const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
         
         // add one-to-many relation for this 
-        defaultMetadataStorage().relationMetadatas.add(new RelationMetadata({
+        const metadata: RelationMetadataArgs = {
             isTreeChildren: true,
             target: object.constructor,
             propertyName: propertyName,
@@ -21,7 +21,8 @@ export function TreeChildren(options?: RelationOptions): Function {
             relationType: RelationTypes.ONE_TO_MANY,
             type: () => object.constructor,
             options: options
-        }));
+        };
+        getMetadataArgsStorage().relationMetadatas.add(metadata);
     };
 }
 

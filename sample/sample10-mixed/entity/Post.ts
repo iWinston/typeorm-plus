@@ -43,10 +43,10 @@ export class Post {
     secondaryImages: Image[];
 
     @ManyToOne(type => Cover, cover => cover.posts, {
-        name: "coverId",
         cascadeInsert: true,
         cascadeRemove: true
     })
+    @JoinColumn({ name: "coverId" })
     cover: Cover;
 
     @Column("int", {

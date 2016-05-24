@@ -6,11 +6,6 @@ import {OnDeleteType} from "../../metadata/ForeignKeyMetadata";
 export interface RelationOptions {
 
     /**
-     * Field name to be used in the database.
-     */
-    name?: string;
-
-    /**
      * If set to true then it means that related object can be allowed to be inserted / updated / removed to the db.
      * This is option a shortcut if you would like to set cascadeInsert, cascadeUpdate and cascadeRemove to true.
      */

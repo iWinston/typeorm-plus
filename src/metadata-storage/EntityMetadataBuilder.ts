@@ -12,7 +12,7 @@ import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {JoinColumnOptions} from "../metadata/options/JoinColumnOptions";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {defaultMetadataStorage} from "../index";
+import {getMetadataArgsStorage} from "../index";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -49,7 +49,7 @@ export class EntityMetadataBuilder {
     build(namingStrategy: NamingStrategyInterface, 
           entityClasses: Function[]): EntityMetadata[] {
         
-        const allMetadataStorage = defaultMetadataStorage();
+        const allMetadataStorage = getMetadataArgsStorage();
 
         // filter the only metadata we need - those which are bind to the given table classes
         const allTableMetadatas = allMetadataStorage.tableMetadatas.filterByClasses(entityClasses);
