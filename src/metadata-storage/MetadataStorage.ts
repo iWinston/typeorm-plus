@@ -22,6 +22,7 @@ import {NamingStrategyMetadataArgs} from "../metadata/args/NamingStrategyMetadat
 import {EventSubscriberMetadataArgs} from "../metadata/args/EventSubscriberMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata/args/JoinTableMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata/args/JoinColumnMetadataArgs";
+import {TargetMetadataArgs} from "../metadata/args/TargetMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -65,8 +66,8 @@ export class MetadataArgsStorage {
      * Creates a new copy of the MetadataStorage with same metadatas as in current metadata storage, but filtered
      * by classes.
      */
-    mergeWithAbstract(allTableMetadatas: TargetMetadataCollection<TableMetadata>,
-                      tableMetadata: TableMetadata) {
+    mergeWithAbstract(allTableMetadatas: TargetMetadataCollection<TableMetadataArgs>,
+                      tableMetadata: TableMetadataArgs) {
 
         const compositeIndexMetadatas = this.compositeIndexMetadatas.filterByClass(tableMetadata.target);
         const columnMetadatas = this.columnMetadatas.filterByClass(tableMetadata.target);
@@ -78,7 +79,7 @@ export class MetadataArgsStorage {
         const relationCountMetadatas = this.relationCountMetadatas.filterByClass(tableMetadata.target);
 
         allTableMetadatas
-            .filter(metadata => tableMetadata.isInherited(metadata))
+            .filter(metadata => this.isInherited(tableMetadata, metadata))
             .forEach(parentMetadata => {
                 const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
 
@@ -122,5 +123,16 @@ export class MetadataArgsStorage {
             relationCountMetadatas: relationCountMetadatas
         };
     }
-    
+
+    /**
+     * Checks if this table is inherited from another table.
+     */
+    private isInherited(firstTargetMetadata: TargetMetadataArgs, secondTargetMetadata: TargetMetadataArgs) {
+        return Object.getPrototypeOf(firstTargetMetadata.target.prototype).constructor === secondTargetMetadata.target;
+        // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
+        // properties get inherited in a right order. To achieve it we can only check a first parent of the class
+        // return this.target.prototype instanceof anotherTable.target;
+    }
+
+
 }

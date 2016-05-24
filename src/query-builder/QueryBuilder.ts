@@ -633,10 +633,10 @@ export class QueryBuilder<Entity> {
             const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
             if (!metadata) return;
             metadata.columns.forEach(column => {
-                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName, 'g'), alias.name + "." + column.name);
+                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName, "g"), alias.name + "." + column.name);
             });
             metadata.relations.forEach(relation => {
-                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName, 'g'), alias.name + "." + relation.name);
+                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName, "g"), alias.name + "." + relation.name);
             });
         });
         return statement;

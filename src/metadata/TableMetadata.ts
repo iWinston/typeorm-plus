@@ -39,12 +39,23 @@ export class TableMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(metadata: TableMetadataArgs) {
-        super(metadata.target);
-
-        this.tableType = metadata.type;
-        if (metadata.name)
-            this._name = name;
+    constructor(target: Function|undefined, name: string, type: TableType);
+    constructor(metadata: TableMetadataArgs);
+    constructor(metadataOrTarget: TableMetadataArgs|Function|undefined, name?: string, type?: TableType) {
+        if (arguments.length === 1) {
+            const metadata = metadataOrTarget as TableMetadataArgs;
+            super(metadata.target);
+            this.tableType = metadata.type;
+            if (metadata.name)
+                this._name = metadata.name;
+            
+        } else {
+            super(metadataOrTarget as Function);
+            if (name)
+                this._name = name;
+            if (type)
+                this.tableType = type;
+        }
     }
     
     // ---------------------------------------------------------------------
@@ -81,19 +92,4 @@ export class TableMetadata extends TargetMetadata {
 
         return this.entityMetadata.namingStrategy.tableName((<any>this.target).name);
     }
-
-    // ---------------------------------------------------------------------
-    // Public Methods
-    // ---------------------------------------------------------------------
-
-    /**
-     * Checks if this table is inherited from another table.
-     */
-    isInherited(anotherTable: TableMetadata) {
-        return Object.getPrototypeOf(this.target.prototype).constructor === anotherTable.target;
-        // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
-        // properties get inherited in a right order. To achieve it we can only check a first parent of the class
-        // return this.target.prototype instanceof anotherTable.target;
-    }
-
 }

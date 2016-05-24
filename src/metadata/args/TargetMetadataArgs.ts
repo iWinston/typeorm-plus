@@ -1,7 +1,7 @@
 /**
  * Constructor arguments for ColumnMetadata class.
  */
-export interface ColumnMetadataArgs {
+export interface TargetMetadataArgs {
 
     /**
      * Class to which this column is applied.

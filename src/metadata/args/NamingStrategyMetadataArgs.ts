@@ -1,10 +1,8 @@
+import {TargetMetadataArgs} from "./TargetMetadataArgs";
+
 /**
  */
-export interface NamingStrategyMetadataArgs {
-
-    /**
-     */
-    target: Function;
+export interface NamingStrategyMetadataArgs extends TargetMetadataArgs {
 
     /**
      */
