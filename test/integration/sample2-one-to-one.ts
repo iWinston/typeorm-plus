@@ -41,7 +41,7 @@ describe("one-to-one", function() {
     before(function() {
         return createConnection(options)
             .then(con => connection = con)
-            .catch(e => console.log("Error during connection to db: " + e));
+            .catch(e => console.log("Error during connection to db: " + e, e.stack));
     });
 
     after(function() {

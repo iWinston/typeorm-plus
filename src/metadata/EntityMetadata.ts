@@ -70,6 +70,7 @@ export class EntityMetadata {
         this.indices = indices;
 
         table.entityMetadata = this;
+        columns.forEach(column => column.entityMetadata = this);
         relations.forEach(relation => relation.entityMetadata = this);
         indices.forEach(index => index.entityMetadata = this);
     }

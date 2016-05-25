@@ -109,8 +109,19 @@ export class ColumnMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: ColumnMetadataArgs) {
-        super(args.target, args.propertyName);
+    constructor(args: ColumnMetadataArgs);
+    constructor(entityMetadata: EntityMetadata, args: ColumnMetadataArgs);
+    constructor(entityMetadataOrArgs: EntityMetadata|ColumnMetadataArgs, args?: ColumnMetadataArgs) {
+        super(
+            args ? args.target : (entityMetadataOrArgs as ColumnMetadataArgs).target,
+            args ? args.propertyName : (entityMetadataOrArgs as ColumnMetadataArgs).propertyName
+        );
+        
+        if (entityMetadataOrArgs && args) {
+            this.entityMetadata = entityMetadataOrArgs as EntityMetadata;
+        }
+        
+        args = args ? args : entityMetadataOrArgs as ColumnMetadataArgs;
 
         if (args.mode)
             this.mode = args.mode;

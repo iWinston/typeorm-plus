@@ -37,11 +37,11 @@ export class EntityMetadataBuilder {
     build(namingStrategy: NamingStrategyInterface, 
           entityClasses: Function[]): EntityMetadata[] {
         
-        const allMetadataStorage = getMetadataArgsStorage();
+        const allMetadataArgsStorage = getMetadataArgsStorage();
 
         // filter the only metadata we need - those which are bind to the given table classes
-        const allTableMetadatas = allMetadataStorage.tables.filterByClasses(entityClasses);
-        const tableMetadatas = allTableMetadatas
+        const allTableMetadataArgs = allMetadataArgsStorage.tables.filterByClasses(entityClasses);
+        const tableMetadatas = allTableMetadataArgs
             .filterByClasses(entityClasses)
             .filter(metadata => metadata.type !== "abstract");
 
@@ -52,13 +52,13 @@ export class EntityMetadataBuilder {
 
         const entityMetadatas = tableMetadatas.map(tableMetadata => {
 
-            const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
+            const mergedArgs = allMetadataArgsStorage.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
 
             // create layouts from metadatas
             const table = new TableMetadata(tableMetadata);
-            const columns = mergedMetadata.columns.map(metadata => new ColumnMetadata(metadata));
-            const relations = mergedMetadata.relations.map(metadata => new RelationMetadata(metadata));
-            const indices = mergedMetadata.indices.map(metadata => new IndexMetadata(metadata));
+            const columns = mergedArgs.columns.map(args => new ColumnMetadata(args));
+            const relations = mergedArgs.relations.map(args => new RelationMetadata(args));
+            const indices = mergedArgs.indices.map(args => new IndexMetadata(args));
 
             // todo no need to set naming strategy everywhere - childs can obtain it from their parents
             // tableMetadata.namingStrategy = namingStrategy;
@@ -79,7 +79,7 @@ export class EntityMetadataBuilder {
 
             // create entity's relations join tables
             entityMetadata.manyToManyRelations.forEach(relation => {
-                const joinTableMetadata = mergedMetadata.joinTables.findByProperty(relation.propertyName);
+                const joinTableMetadata = mergedArgs.joinTables.findByProperty(relation.propertyName);
                 if (joinTableMetadata) {
                     const joinTable = new JoinTableMetadata(joinTableMetadata);
                     relation.joinTable = joinTable;
@@ -89,7 +89,7 @@ export class EntityMetadataBuilder {
 
             // create entity's relations join columns
             entityMetadata.relations.forEach(relation => {
-                const joinColumnMetadata = mergedMetadata.joinColumns.findByProperty(relation.propertyName);
+                const joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
                 if (joinColumnMetadata) {
                     const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
                     relation.joinColumn = joinColumn;
@@ -100,7 +100,7 @@ export class EntityMetadataBuilder {
             // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
             // throw all of them which don't have JoinColumn decorators and create it for them
             entityMetadata.manyToOneRelations.forEach(relation => {
-                let joinColumnMetadata = mergedMetadata.joinColumns.findByProperty(relation.propertyName);
+                let joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
                 if (!joinColumnMetadata) {
                     joinColumnMetadata = { target: relation.target, propertyName: relation.propertyName, options: <JoinColumnOptions> {} };
                     const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
@@ -140,7 +140,7 @@ export class EntityMetadataBuilder {
                         oldColumnName: relation.oldColumnName,
                         nullable: relation.isNullable
                     };
-                    relationalColumn = new ColumnMetadata({
+                    relationalColumn = new ColumnMetadata(metadata, {
                         target: metadata.target,
                         propertyName: relation.name,
                         propertyType: inverseSideColumn.propertyType,
@@ -172,7 +172,7 @@ export class EntityMetadataBuilder {
                 const closureJunctionTableMetadata = new TableMetadata(undefined, closureTableName, "closureJunction");
 
                 const columns = [
-                    new ColumnMetadata({
+                    new ColumnMetadata(metadata, {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: metadata.primaryColumn.type,
@@ -183,7 +183,7 @@ export class EntityMetadataBuilder {
                             name: "ancestor"
                         }
                     }),
-                    new ColumnMetadata({
+                    new ColumnMetadata(metadata, {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: metadata.primaryColumn.type,
@@ -197,7 +197,7 @@ export class EntityMetadataBuilder {
                 ];
 
                 if (metadata.hasTreeLevelColumn) {
-                    columns.push(new ColumnMetadata({
+                    columns.push(new ColumnMetadata(metadata, {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: ColumnTypes.INTEGER,
@@ -242,14 +242,14 @@ export class EntityMetadataBuilder {
                     name: relation.joinTable.inverseJoinColumnName // inverseSideMetadata.table.name + "_" + column2.name
                 };
                 const columns = [
-                    new ColumnMetadata({
+                    new ColumnMetadata(metadata, {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: column2.type,
                         mode: "regular", // or virtual?
                         options: column1options
                     }),
-                    new ColumnMetadata({
+                    new ColumnMetadata(metadata, {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: column2.type,
