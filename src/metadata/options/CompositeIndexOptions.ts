@@ -6,6 +6,6 @@ export interface CompositeIndexOptions {
     /**
      * Indicates if this composite index must be unique or not.
      */
-    unique?: boolean;
+    readonly unique?: boolean;
 
 }

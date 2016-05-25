@@ -1,7 +1,7 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadataArgs} from "./args/ColumnMetadataArgs";
 import {ColumnType} from "./types/ColumnTypes";
+import {EntityMetadata} from "./EntityMetadata";
 
 /**
  * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
@@ -10,7 +10,7 @@ import {ColumnType} from "./types/ColumnTypes";
 export type ColumnMode = "regular"|"virtual"|"primary"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel";
 
 /**
- * This metadata contains all information about class's column.
+ * This metadata contains all information about entity's column.
  */
 export class ColumnMetadata extends PropertyMetadata {
 
@@ -19,12 +19,12 @@ export class ColumnMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Naming strategy to be used to generate column name.
+     * Entity metadata where this column metadata is.
      */
-    namingStrategy: NamingStrategyInterface;
+    entityMetadata: EntityMetadata;
 
     // ---------------------------------------------------------------------
-    // Readonly Properties
+    // Public Readonly Properties
     // ---------------------------------------------------------------------
 
     /**
@@ -33,37 +33,38 @@ export class ColumnMetadata extends PropertyMetadata {
     readonly propertyType: string;
 
     /**
-     * The type of the column.
+     * The database type of the column.
      */
     readonly type: ColumnType;
 
     /**
-     * The mode of the column.
+     * Column's mode in which this column is working.
      */
     readonly mode: ColumnMode;
 
     /**
-     * Maximum length in the database.
+     * Type's length in the database.
      */
     readonly length = "";
 
     /**
-     * Indicates if this column is auto increment.
+     * Indicates if this column is generated (auto increment or generated other way).
      */
-    readonly isAutoIncrement = false;
+    readonly isGenerated = false;
 
     /**
-     * Indicates if value should be unique or not.
+     * Indicates if value in the database should be unique or not.
      */
     readonly isUnique = false;
 
     /**
-     * Indicates if can contain nulls or not.
+     * Indicates if column can contain nulls or not.
      */
     readonly isNullable = false;
 
     /**
-     * Extra sql definition for the given column.
+     * Extra sql definition for the given column. 
+     * Can be used to make temporary tweaks. Not recommended to use.
      */
     readonly columnDefinition = "";
 
@@ -73,7 +74,8 @@ export class ColumnMetadata extends PropertyMetadata {
     readonly comment = "";
 
     /**
-     * Old column name. Used to correctly alter tables when column name is changed.
+     * Old column name. Used to correctly alter tables when column name is changed. 
+     * Can be used to make temporary tweaks. Not recommended to use.
      */
     readonly oldColumnName: string;
 
@@ -122,7 +124,7 @@ export class ColumnMetadata extends PropertyMetadata {
         if (args.options.length)
             this.length = args.options.length;
         if (args.options.generated)
-            this.isAutoIncrement = args.options.generated;
+            this.isGenerated = args.options.generated;
         if (args.options.unique)
             this.isUnique = args.options.unique;
         if (args.options.nullable)
@@ -149,35 +151,17 @@ export class ColumnMetadata extends PropertyMetadata {
      * Column name in the database.
      */
     get name(): string {
-        if (this._name)
-            return this._name;
         
-        return this.namingStrategy ? this.namingStrategy.columnName(this.propertyName) : this.propertyName;
+        // if custom column name is set implicitly then return it
+        if (this._name)
+            return this.entityMetadata.namingStrategy.columnNameCustomized(this._name);
+
+        // if there is a naming strategy then use it to normalize propertyName as column name
+        return this.entityMetadata.namingStrategy.columnName(this.propertyName);
     }
 
     /**
-     * Indicates if this column contains an entity update date.
-     */
-    get isUpdateDate() {
-        return this.mode === "updateDate";
-    }
-
-    /**
-     * Indicates if this column contains an entity creation date.
-     */
-    get isCreateDate() {
-        return this.mode === "createDate";
-    }
-
-    /**
-     * Indicates if this column contains an entity version.
-     */
-    get isVersion() {
-        return this.mode === "version";
-    }
-
-    /**
-     * Indicates if this column is primary key.
+     * Indicates if this column is a primary key.
      */
     get isPrimary() {
         return this.mode === "primary";
@@ -188,6 +172,27 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     get isVirtual() {
         return this.mode === "virtual";
+    }
+
+    /**
+     * Indicates if this column contains an entity creation date.
+     */
+    get isCreateDate() {
+        return this.mode === "createDate";
+    }
+
+    /**
+     * Indicates if this column contains an entity update date.
+     */
+    get isUpdateDate() {
+        return this.mode === "updateDate";
+    }
+
+    /**
+     * Indicates if this column contains an entity version.
+     */
+    get isVersion() {
+        return this.mode === "version";
     }
 
 }

@@ -10,12 +10,24 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return _.snakeCase(className);
     }
 
+    tableNameCustomized(customName: string): string {
+        return customName;
+    }
+
     columnName(propertyName: string): string {
         return propertyName;
     }
 
+    columnNameCustomized(customName: string): string {
+        return customName;
+    }
+
     relationName(propertyName: string): string {
         return propertyName;
+    }
+
+    relationNameCustomized(customName: string): string {
+        return customName;
     }
 
     indexName(target: Function, name: string|undefined, columns: string[]): string {
@@ -55,6 +67,11 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     closureJunctionTableName(tableName: string): string {
         return tableName + "_closure";
+    }
+
+    foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string {
+        const key = `${tableName}_${columnNames.join("_")}_${referencedTableName}_${referencedColumnNames.join("_")}`;
+        return "fk_" + require("sha1")(key); // todo: use crypto instead?
     }
     
 }

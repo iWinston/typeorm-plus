@@ -3,7 +3,7 @@ import {EventListenerType} from "./types/EventListenerTypes";
 import {EntityListenerMetadataArgs} from "./args/EntityListenerMetadataArgs";
 
 /**
- * This metadata interface contains all information about some index on a field.
+ * This metadata contains all information about entity's listeners.
  */
 export class EntityListenerMetadata extends PropertyMetadata {
 

@@ -10,7 +10,7 @@ export function TreeChildren(options?: RelationOptions): Function {
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
+        const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
         
         // add one-to-many relation for this 
         const args: RelationMetadataArgs = {

@@ -35,7 +35,7 @@ export function OneToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T>
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
+        const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
 
         const args: RelationMetadataArgs = {
             target: object.constructor,

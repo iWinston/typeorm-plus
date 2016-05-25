@@ -81,7 +81,7 @@ export class SchemaCreator {
     }
 
     private createIndicesForAll(metadatas: EntityMetadata[]) {
-        return Promise.all(metadatas.map(metadata => this.createIndices(metadata.table, metadata.compositeIndices)));
+        return Promise.all(metadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
     }
 
     private removePrimaryKeyForAll(metadatas: EntityMetadata[]) {

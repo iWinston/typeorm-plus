@@ -4,6 +4,7 @@ import {ColumnMetadata} from "./ColumnMetadata";
 import {JoinTableMetadataArgs} from "./args/JoinTableMetadataArgs";
 
 /**
+ * JoinTableMetadata contains all information about relation's join table.
  */
 export class JoinTableMetadata extends PropertyMetadata {
 

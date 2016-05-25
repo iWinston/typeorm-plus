@@ -10,14 +10,29 @@ export interface NamingStrategyInterface {
     tableName(className: string): string;
 
     /**
+     * Gets the table name from the given custom table name.
+     */
+    tableNameCustomized(customName: string): string;
+
+    /**
      * Gets the table's column name from the given property name.
      */
     columnName(propertyName: string): string;
+    
+    /**
+     * Gets the column name from the given custom column name.
+     */
+    columnNameCustomized(customName: string): string;
 
     /**
      * Gets the table's relation name from the given property name.
      */
     relationName(propertyName: string): string;
+
+    /**
+     * Gets the relation name from the given custom relation name.
+     */
+    relationNameCustomized(customName: string): string;
 
     /**
      * Gets the name of the index - simple and compose index.
@@ -53,5 +68,10 @@ export interface NamingStrategyInterface {
      * Gets the name for the closure junction table.
      */
     closureJunctionTableName(tableName: string): string;
+
+    /**
+     * Gets the name of the foreign key.
+     */
+    foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string;
     
 }

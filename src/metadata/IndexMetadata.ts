@@ -1,5 +1,4 @@
 import {TargetMetadata} from "./TargetMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "./EntityMetadata";
 import {IndexMetadataArgs} from "./args/IndexMetadataArgs";
 
@@ -11,11 +10,6 @@ export class IndexMetadata extends TargetMetadata {
     // ---------------------------------------------------------------------
     // Public Properties
     // ---------------------------------------------------------------------
-
-    /**
-     * Naming strategy used to generate and normalize index name.
-     */
-    namingStrategy: NamingStrategyInterface;
 
     /**
      * Entity metadata of the class to which this index is applied.
@@ -60,11 +54,17 @@ export class IndexMetadata extends TargetMetadata {
     // Accessors
     // ---------------------------------------------------------------------
 
-    get name() { // throw exception if naming strategy is not set
-        return this.namingStrategy.indexName(this.target, this._name, this.columns);
+    /**
+     * Gets index's name.
+     */
+    get name() {
+        return this.entityMetadata.namingStrategy.indexName(this.target, this._name, this.columns);
     }
-    
-    get columns() {
+
+    /**
+     * Gets the column names which are in this index.
+     */
+    get columns(): string[] {
         
         // if columns already an array of string then simply return it
         if (this._columns instanceof Array)

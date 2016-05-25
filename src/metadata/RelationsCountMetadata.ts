@@ -2,6 +2,7 @@ import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationsCountMetadataArgs} from "./args/RelationsCountMetadataArgs";
 
 /**
+ * Contains all information about entity's relation count.
  */
 export class RelationsCountMetadata extends PropertyMetadata {
 
@@ -10,7 +11,7 @@ export class RelationsCountMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * The real reflected property type.
+     * Relation which need to count.
      */
     readonly relation: string|((object: any) => any);
 

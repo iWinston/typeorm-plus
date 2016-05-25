@@ -55,15 +55,13 @@ export class EntityMetadataBuilder {
             const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
 
             // create layouts from metadatas
+            const table = new TableMetadata(tableMetadata);
             const columns = mergedMetadata.columns.map(metadata => new ColumnMetadata(metadata));
             const relations = mergedMetadata.relations.map(metadata => new RelationMetadata(metadata));
             const indices = mergedMetadata.indices.map(metadata => new IndexMetadata(metadata));
 
             // todo no need to set naming strategy everywhere - childs can obtain it from their parents
             // tableMetadata.namingStrategy = namingStrategy;
-            columns.forEach(column => column.namingStrategy = namingStrategy);
-            relations.forEach(relation => relation.namingStrategy = namingStrategy);
-            indices.forEach(index => index.namingStrategy = namingStrategy);
 
             // todo: check if multiple tree parent metadatas in validator
             // todo: tree decorators can be used only on closure table (validation)
@@ -72,11 +70,12 @@ export class EntityMetadataBuilder {
             // create a new entity metadata
             const entityMetadata = new EntityMetadata(
                 namingStrategy,
-                new TableMetadata(tableMetadata),
+                table,
                 columns,
                 relations,
                 indices
             );
+
 
             // create entity's relations join tables
             entityMetadata.manyToManyRelations.forEach(relation => {
@@ -153,6 +152,7 @@ export class EntityMetadataBuilder {
 
                 // create and add foreign key
                 const foreignKey = new ForeignKeyMetadata(
+                    metadata,
                     metadata.table,
                     [relationalColumn],
                     relation.inverseEntityMetadata.table,
@@ -211,8 +211,8 @@ export class EntityMetadataBuilder {
 
                 const closureJunctionEntityMetadata = new EntityMetadata(namingStrategy, closureJunctionTableMetadata, columns, [], []);
                 closureJunctionEntityMetadata.foreignKeys.push(
-                    new ForeignKeyMetadata(closureJunctionTableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),
-                    new ForeignKeyMetadata(closureJunctionTableMetadata, [columns[1]], metadata.table, [metadata.primaryColumn])
+                    new ForeignKeyMetadata(closureJunctionEntityMetadata, closureJunctionTableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),
+                    new ForeignKeyMetadata(closureJunctionEntityMetadata, closureJunctionTableMetadata, [columns[1]], metadata.table, [metadata.primaryColumn])
                 );
                 closureJunctionEntityMetadatas.push(closureJunctionEntityMetadata);
 
@@ -259,8 +259,8 @@ export class EntityMetadataBuilder {
                 ];
                 const junctionEntityMetadata = new EntityMetadata(namingStrategy, tableMetadata, columns, [], []);
                 junctionEntityMetadata.foreignKeys.push(
-                    new ForeignKeyMetadata(tableMetadata, [columns[0]], metadata.table, [column1]),
-                    new ForeignKeyMetadata(tableMetadata, [columns[1]], relation.inverseEntityMetadata.table, [column2])
+                    new ForeignKeyMetadata(junctionEntityMetadata, tableMetadata, [columns[0]], metadata.table, [column1]),
+                    new ForeignKeyMetadata(junctionEntityMetadata, tableMetadata, [columns[1]], relation.inverseEntityMetadata.table, [column2])
                 );
                 junctionEntityMetadatas.push(junctionEntityMetadata);
                 relation.junctionEntityMetadata = junctionEntityMetadata;

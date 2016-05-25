@@ -1,10 +1,5 @@
 # TypeORM
-ColumnRecord
-ColumnLayout
-ColumnAttribute
-ColumnProperty
-ColumnParameter
-ColumnArgument
+
 > Note: docs are not always up to date because orm is in active development.
 > Samples are more up to date, try to find your questions there.
 > Otherwise create a github issue.

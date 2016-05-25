@@ -31,11 +31,11 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
     return function (object: Object, propertyName: string) {
         
         // todo: need to store not string type, but original type instead? (like in relation metadata)
-        const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
+        const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // if type is not given implicitly then try to guess it
         if (!type)
-            type = ColumnTypes.determineTypeFromFunction((<any> Reflect).getMetadata("design:type", object, propertyName));
+            type = ColumnTypes.determineTypeFromFunction((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;

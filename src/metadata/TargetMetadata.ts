@@ -6,7 +6,10 @@ export abstract class TargetMetadata {
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
-    
+
+    /**
+     * Target class to which metadata is applied.
+     */
     readonly target: Function;
 
     // ---------------------------------------------------------------------

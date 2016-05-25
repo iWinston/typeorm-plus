@@ -251,9 +251,9 @@ export class PersistOperationExecutor {
                 // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
                 insertOperation.entity[metadata.treeLevelColumn.propertyName] = insertOperation.treeLevel;
             }
-            if (metadata.hasTreeChildrenCountColumn) {
+            /*if (metadata.hasTreeChildrenCountColumn) {
                 insertOperation.entity[metadata.treeChildrenCountColumn.propertyName] = 0;
-            }
+            }*/
         });
         persistOperation.updates.forEach(updateOperation => {
             const metadata = this.entityMetadatas.findByTarget(updateOperation.entity.constructor);
@@ -439,10 +439,10 @@ export class PersistOperationExecutor {
             allValues.push(parentLevel + 1);
         }
         
-        if (metadata.hasTreeChildrenCountColumn) {
+        /*if (metadata.hasTreeChildrenCountColumn) {
             allColumns.push(metadata.treeChildrenCountColumn.name);
             allValues.push(0);
-        }
+        }*/
         
         return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));
     }

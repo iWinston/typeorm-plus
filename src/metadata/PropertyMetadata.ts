@@ -10,7 +10,7 @@ export class PropertyMetadata extends TargetMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Class's property name to which this decorator is applied.
+     * Target's property name to which this metadata is applied.
      */
     readonly propertyName: string;
 

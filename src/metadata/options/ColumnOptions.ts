@@ -6,14 +6,14 @@ import {ColumnType} from "../types/ColumnTypes";
 export interface ColumnOptions {
 
     /**
+     * Column type. Must be one of the value from the ColumnTypes class.
+     */
+    type?: ColumnType;
+
+    /**
      * Column name.
      */
     readonly name?: string;
-
-    /**
-     * Column type. Must be one of the value from the ColumnTypes class.
-     */
-    readonly type?: ColumnType;
 
     /**
      * Column type's length. For example type = "string" and length = 100 means that ORM will create a column with
