@@ -1,7 +1,6 @@
-import {TargetMetadataCollection} from "./TargetMetadataCollection";
-import {PropertyMetadata} from "../PropertyMetadata";
+import {TargetMetadataArgsCollection} from "./TargetMetadataArgsCollection";
 
-export class PropertyMetadataCollection<T extends PropertyMetadata> extends TargetMetadataCollection<T>  {
+export class PropertyMetadataArgsCollection<T extends { target?: Function, propertyName?: string }> extends TargetMetadataArgsCollection<T>  {
 
     // -------------------------------------------------------------------------
     // Public Methods

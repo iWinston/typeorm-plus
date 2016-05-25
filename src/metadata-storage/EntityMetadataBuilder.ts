@@ -12,6 +12,9 @@ import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../index";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
+import {JoinTableMetadataArgs} from "../metadata/args/JoinTableMetadataArgs";
+import {PropertyMetadataArgsCollection} from "../metadata/collection/PropertyMetadataArgsCollection";
+import {ColumnMetadataArgs} from "../metadata/args/ColumnMetadataArgs";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -22,8 +25,10 @@ export class EntityMetadataBuilder {
 
     // todo: type in function validation, inverse side function validation
     // todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
-
     // todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
+    // todo: check if multiple tree parent metadatas in validator
+    // todo: tree decorators can be used only on closure table (validation)
+    // todo: throw error if parent tree metadata was not specified in a closure table
     
     private entityValidator = new EntityMetadataValidator();
     
@@ -34,49 +39,25 @@ export class EntityMetadataBuilder {
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    build(namingStrategy: NamingStrategyInterface, 
-          entityClasses: Function[]): EntityMetadata[] {
+    build(namingStrategy: NamingStrategyInterface, entityClasses: Function[]): EntityMetadata[] {
         
-        const allMetadataArgsStorage = getMetadataArgsStorage();
+        const entityMetadatas = getMetadataArgsStorage().getMergedTableMetadatas(entityClasses).map(mergedArgs => {
 
-        // filter the only metadata we need - those which are bind to the given table classes
-        const allTableMetadataArgs = allMetadataArgsStorage.tables.filterByClasses(entityClasses);
-        const tableMetadatas = allTableMetadataArgs
-            .filterByClasses(entityClasses)
-            .filter(metadata => metadata.type !== "abstract");
-
-        // set naming strategy
-        // allMetadataStorage.tableMetadatas.forEach(tableMetadata => tableMetadata.namingStrategy = namingStrategy);
-        // allTableMetadatas.forEach(column => column.namingStrategy = namingStrategy);
-        // entityMetadata.relations.forEach(relation => relation.namingStrategy = namingStrategy);
-
-        const entityMetadatas = tableMetadatas.map(tableMetadata => {
-
-            const mergedArgs = allMetadataArgsStorage.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
-
-            // create layouts from metadatas
-            const table = new TableMetadata(tableMetadata);
+            // create metadatas from args
+            const table = new TableMetadata(mergedArgs.table);
             const columns = mergedArgs.columns.map(args => new ColumnMetadata(args));
             const relations = mergedArgs.relations.map(args => new RelationMetadata(args));
             const indices = mergedArgs.indices.map(args => new IndexMetadata(args));
 
-            // todo no need to set naming strategy everywhere - childs can obtain it from their parents
-            // tableMetadata.namingStrategy = namingStrategy;
-
-            // todo: check if multiple tree parent metadatas in validator
-            // todo: tree decorators can be used only on closure table (validation)
-            // todo: throw error if parent tree metadata was not specified in a closure table
-            
             // create a new entity metadata
-            const entityMetadata = new EntityMetadata(
-                namingStrategy,
-                table,
-                columns,
-                relations,
-                indices
-            );
+            const entityMetadata = new EntityMetadata(namingStrategy, table, columns, relations, indices);
 
-
+            // set entity metadata everywhere its used
+            table.entityMetadata = entityMetadata;
+            columns.forEach(column => column.entityMetadata = entityMetadata);
+            relations.forEach(relation => relation.entityMetadata = entityMetadata);
+            indices.forEach(index => index.entityMetadata = entityMetadata);
+            
             // create entity's relations join tables
             entityMetadata.manyToManyRelations.forEach(relation => {
                 const joinTableMetadata = mergedArgs.joinTables.findByProperty(relation.propertyName);
@@ -88,27 +69,27 @@ export class EntityMetadataBuilder {
             });
 
             // create entity's relations join columns
-            entityMetadata.relations.forEach(relation => {
-                const joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
-                if (joinColumnMetadata) {
-                    const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
-                    relation.joinColumn = joinColumn;
-                    joinColumn.relation = relation;
-                }
-            });
+            entityMetadata.oneToOneRelations
+                .concat(entityMetadata.manyToOneRelations)
+                .forEach(relation => {
 
-            // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
-            // throw all of them which don't have JoinColumn decorators and create it for them
-            entityMetadata.manyToOneRelations.forEach(relation => {
-                let joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
-                if (!joinColumnMetadata) {
-                    joinColumnMetadata = { target: relation.target, propertyName: relation.propertyName, options: <JoinColumnOptions> {} };
-                    const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
-                    relation.joinColumn = joinColumn;
-                    joinColumn.relation = relation;
-                }
-            });
-            
+                    // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
+                    // throw all of them which don't have JoinColumn decorators and create it for them
+                    let joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
+                    if (!joinColumnMetadata && relation.isManyToOne) {
+                        joinColumnMetadata = {
+                            target: relation.target,
+                            propertyName: relation.propertyName
+                        };
+                    }
+
+                    if (joinColumnMetadata) {
+                        const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
+                        relation.joinColumn = joinColumn;
+                        joinColumn.relation = relation;
+                    }
+                });
+
             return entityMetadata;
         });
 
@@ -171,45 +152,44 @@ export class EntityMetadataBuilder {
                 const closureTableName = namingStrategy.closureJunctionTableName(metadata.table.name);
                 const closureJunctionTableMetadata = new TableMetadata(undefined, closureTableName, "closureJunction");
 
+                const column1Args: ColumnMetadataArgs = {
+                    propertyType: metadata.primaryColumn.type,
+                    mode: "virtual",
+                    options: <ColumnOptions> {
+                        length: metadata.primaryColumn.length,
+                        type: metadata.primaryColumn.type,
+                        name: "ancestor"
+                    }
+                };
+                const column2Args: ColumnMetadataArgs = {
+                    propertyType: metadata.primaryColumn.type,
+                    mode: "virtual",
+                    options: <ColumnOptions> {
+                        length: metadata.primaryColumn.length,
+                        type: metadata.primaryColumn.type,
+                        name: "descendant"
+                    }
+                };
+                
+                const column3Args: ColumnMetadataArgs = {
+                    propertyType: ColumnTypes.INTEGER,
+                    mode: "virtual",
+                    options: {
+                        type: ColumnTypes.INTEGER,
+                        name: "level"
+                    }
+                };
+                
                 const columns = [
-                    new ColumnMetadata(metadata, {
-                        target: Function, // todo: temp, fix it later
-                        propertyName: "",  // todo: temp, fix it later
-                        propertyType: metadata.primaryColumn.type,
-                        mode: "regular", // or virtual?
-                        options: <ColumnOptions> {
-                            length: metadata.primaryColumn.length,
-                            type: metadata.primaryColumn.type,
-                            name: "ancestor"
-                        }
-                    }),
-                    new ColumnMetadata(metadata, {
-                        target: Function, // todo: temp, fix it later
-                        propertyName: "",  // todo: temp, fix it later
-                        propertyType: metadata.primaryColumn.type,
-                        mode: "regular", // or virtual?
-                        options: <ColumnOptions> {
-                            length: metadata.primaryColumn.length,
-                            type: metadata.primaryColumn.type,
-                            name: "descendant"
-                        }
-                    })
+                    new ColumnMetadata(metadata, column1Args),
+                    new ColumnMetadata(metadata, column2Args)
                 ];
 
-                if (metadata.hasTreeLevelColumn) {
-                    columns.push(new ColumnMetadata(metadata, {
-                        target: Function, // todo: temp, fix it later
-                        propertyName: "",  // todo: temp, fix it later
-                        propertyType: ColumnTypes.INTEGER,
-                        mode: "regular", // or virtual?
-                        options: {
-                            type: ColumnTypes.INTEGER,
-                            name: "level"
-                        }
-                    }));
-                }
+                if (metadata.hasTreeLevelColumn)
+                    columns.push(new ColumnMetadata(metadata, column3Args));
 
                 const closureJunctionEntityMetadata = new EntityMetadata(namingStrategy, closureJunctionTableMetadata, columns, [], []);
+                closureJunctionTableMetadata.entityMetadata = closureJunctionEntityMetadata;
                 closureJunctionEntityMetadata.foreignKeys.push(
                     new ForeignKeyMetadata(closureJunctionEntityMetadata, closureJunctionTableMetadata, [columns[0]], metadata.table, [metadata.primaryColumn]),
                     new ForeignKeyMetadata(closureJunctionEntityMetadata, closureJunctionTableMetadata, [columns[1]], metadata.table, [metadata.primaryColumn])
@@ -258,6 +238,7 @@ export class EntityMetadataBuilder {
                     })
                 ];
                 const junctionEntityMetadata = new EntityMetadata(namingStrategy, tableMetadata, columns, [], []);
+                tableMetadata.entityMetadata = junctionEntityMetadata;
                 junctionEntityMetadata.foreignKeys.push(
                     new ForeignKeyMetadata(junctionEntityMetadata, tableMetadata, [columns[0]], metadata.table, [column1]),
                     new ForeignKeyMetadata(junctionEntityMetadata, tableMetadata, [columns[1]], relation.inverseEntityMetadata.table, [column2])

@@ -1,5 +1,3 @@
-import {JoinColumnOptions} from "../options/JoinColumnOptions";
-
 /**
  * Arguments for JoinColumnMetadata class.
  */
@@ -16,8 +14,13 @@ export interface JoinColumnMetadataArgs {
     readonly propertyName: string;
 
     /**
-     * Class's property type (reflected) to which join column is applied.
+     * Name of the column.
      */
-    readonly options: JoinColumnOptions;
+    readonly name?: string;
+
+    /**
+     * Name of the column in the entity to which this column is referenced.
+     */
+    readonly referencedColumnName?: string;
     
 }

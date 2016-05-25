@@ -1,7 +1,7 @@
 import {MetadataAlreadyExistsError} from "../../metadata-storage/error/MetadataAlreadyExistsError";
 import {TargetMetadataArgs} from "../args/TargetMetadataArgs";
 
-export class TargetMetadataCollection<T extends TargetMetadataArgs> extends Array<T> {
+export class TargetMetadataArgsCollection<T extends { target?: Function }> extends Array<T> {
     
     // -------------------------------------------------------------------------
     // Public Methods
@@ -13,21 +13,23 @@ export class TargetMetadataCollection<T extends TargetMetadataArgs> extends Arra
 
     filterByClasses(classes: Function[]): this {
         const collection = new (<any> this.constructor)();
-        this.filter(metadata => classes.indexOf(metadata.target) !== -1)
+        this
+            .filter(metadata => {
+                if (!metadata.target) return false;
+                return classes.indexOf(metadata.target) !== -1;
+            })
             .forEach(metadata => collection.add(metadata));
         return collection;
     }
 
     add(metadata: T, checkForDuplicateTargets = false) {
-        if (checkForDuplicateTargets && this.hasWithTarget(metadata.target))
-            throw new MetadataAlreadyExistsError((<any> metadata.constructor).name, metadata.target);
+        if (checkForDuplicateTargets) {
+            if (!metadata.target)
+                throw new Error(`Target is not set in the given metadata.`);
 
-        this.push(metadata);
-    }
-
-    addUniq(metadata: T) {
-        if (this.hasWithTarget(metadata.target))
-            throw new MetadataAlreadyExistsError((<any> metadata.constructor).name, metadata.target);
+            if (this.hasWithTarget(metadata.target))
+                throw new MetadataAlreadyExistsError((<any> metadata.constructor).name, metadata.target);
+        }
 
         this.push(metadata);
     }

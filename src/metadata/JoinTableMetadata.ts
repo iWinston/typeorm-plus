@@ -53,21 +53,21 @@ export class JoinTableMetadata extends PropertyMetadata {
     constructor(args: JoinTableMetadataArgs) {
         super(args.target, args.propertyName);
         
-        if (args.options.name)
-            this._name = args.options.name;
+        if (args.name)
+            this._name = args.name;
         
-        if (args.options.joinColumn) {
-            if (args.options.joinColumn.name)
-                this._joinColumnName = args.options.joinColumn.name;
-            if (args.options.joinColumn.referencedColumnName)
-                this._joinColumnReferencedColumnName = args.options.joinColumn.referencedColumnName;
+        if (args.joinColumn) {
+            if (args.joinColumn.name)
+                this._joinColumnName = args.joinColumn.name;
+            if (args.joinColumn.referencedColumnName)
+                this._joinColumnReferencedColumnName = args.joinColumn.referencedColumnName;
         }
         
-        if (args.options.inverseJoinColumn) {
-            if (args.options.inverseJoinColumn.name)
-                this._inverseJoinColumnName = args.options.inverseJoinColumn.name;
-            if (args.options.inverseJoinColumn.referencedColumnName)
-                this._inverseJoinColumnReferencedColumnName = args.options.inverseJoinColumn.referencedColumnName;
+        if (args.inverseJoinColumn) {
+            if (args.inverseJoinColumn.name)
+                this._inverseJoinColumnName = args.inverseJoinColumn.name;
+            if (args.inverseJoinColumn.referencedColumnName)
+                this._inverseJoinColumnReferencedColumnName = args.inverseJoinColumn.referencedColumnName;
         }
     }
 

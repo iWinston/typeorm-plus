@@ -1,4 +1,4 @@
-import {JoinTableOptions} from "../options/JoinTableOptions";
+import {JoinColumnOptions} from "../options/JoinColumnOptions";
 
 /**
  * Arguments for JoinTableMetadata class.
@@ -16,8 +16,19 @@ export interface JoinTableMetadataArgs {
     readonly propertyName: string;
 
     /**
-     * Class's property type (reflected) to which this column is applied.
+     * Name of the table that will be created to store values of the both tables (join table).
+     * By default is auto generated.
      */
-    readonly options: JoinTableOptions;
+    readonly name?: string;
+
+    /**
+     * First column of the join table.
+     */
+    readonly joinColumn?: JoinColumnOptions;
+
+    /**
+     * Second (inverse) column of the join table.
+     */
+    readonly inverseJoinColumn?: JoinColumnOptions;
     
 }

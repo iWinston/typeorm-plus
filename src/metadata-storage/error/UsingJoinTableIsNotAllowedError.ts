@@ -9,8 +9,8 @@ export class UsingJoinTableIsNotAllowedError extends Error {
 
     constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
         super();
-        this.message = `Using JoinTable on ${entityMetadata.name}#${relation.name} is wrong. ` + 
-            `${entityMetadata.name}#${relation.name} has ${relation.relationType} relation, ` + 
+        this.message = `Using JoinTable on ${entityMetadata.name}#${relation.propertyName} is wrong. ` + 
+            `${entityMetadata.name}#${relation.propertyName} has ${relation.relationType} relation, ` + 
             `however you can use JoinTable only on many-to-many relations.`;
     }
 

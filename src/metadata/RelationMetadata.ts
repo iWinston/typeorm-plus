@@ -166,12 +166,7 @@ export class RelationMetadata extends PropertyMetadata {
         if (!this.isOwning || this.isManyToMany)
             throw new Error(`Relation name cannot be retrieved for many-to-many relations or not owning relations.`);
         
-        // todo: maybe need to throw exception if its a many-to-many relation?
-        
-        if (this.joinColumn && this.joinColumn.name)
-            return this.entityMetadata.namingStrategy.relationNameCustomized(this.joinColumn.name);
-        
-        return this.entityMetadata.namingStrategy.relationName(this.propertyName);
+        return this.joinColumn.name;
     }
 
     /**
@@ -180,11 +175,24 @@ export class RelationMetadata extends PropertyMetadata {
      * Also only owning sides of the relations have this property.
      */
     get referencedColumnName(): string {
+        if (!this.isOwning)
+            throw new Error(`Only owning side of the relations can have information about referenced column names.`);
+        
+        // for many-to-one and owner one-to-one relations we get referenced column from join column
         if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
             return this.joinColumn.referencedColumn.name;
         
-        // todo: maybe join column should never be null, and this data should come from join column?
-        return this.inverseEntityMetadata.primaryColumn.propertyName;
+        // for many-to-many relation we give referenced column depend of owner side
+        if (this.joinTable) { // need to check if this algorithm works correctly
+            if (this.isOwning) {
+                return this.joinTable.referencedColumn.name;
+            } else {
+                return this.joinTable.inverseReferencedColumn.name;
+            }
+        }
+        
+        // this should not be possible, but anyway throw error
+        throw new Error(`Cannot get referenced column name of the relation ${this.entityMetadata.name}#${this.name}`);
     }
 
     /**

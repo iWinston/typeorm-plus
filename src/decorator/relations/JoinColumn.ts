@@ -10,7 +10,8 @@ export function JoinColumn(options?: JoinColumnOptions): Function {
         const args: JoinColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            options: options
+            name: options.name,
+            referencedColumnName: options.referencedColumnName
         };
         getMetadataArgsStorage().joinColumns.add(args);
     };

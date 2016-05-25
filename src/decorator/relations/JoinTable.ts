@@ -10,7 +10,9 @@ export function JoinTable(options?: JoinTableOptions): Function {
         const args: JoinTableMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            options: options
+            name: options.name,
+            joinColumn: options.joinColumn,
+            inverseJoinColumn: options.inverseJoinColumn
         };
         getMetadataArgsStorage().joinTables.add(args);
     };

@@ -1,15 +1,5 @@
-import {TableMetadata} from "../metadata/TableMetadata";
-import {RelationMetadata} from "../metadata/RelationMetadata";
-import {IndexMetadata} from "../metadata/IndexMetadata";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {EventSubscriberMetadata} from "../metadata/EventSubscriberMetadata";
-import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
-import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
-import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
-import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
-import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
-import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
-import {RelationsCountMetadata} from "../metadata/RelationsCountMetadata";
+import {TargetMetadataArgsCollection} from "../metadata/collection/TargetMetadataArgsCollection";
+import {PropertyMetadataArgsCollection} from "../metadata/collection/PropertyMetadataArgsCollection";
 import {RelationMetadataArgs} from "../metadata/args/RelationMetadataArgs";
 import {ColumnMetadataArgs} from "../metadata/args/ColumnMetadataArgs";
 import {RelationsCountMetadataArgs} from "../metadata/args/RelationsCountMetadataArgs";
@@ -37,27 +27,43 @@ export class MetadataArgsStorage {
     // Properties
     // -------------------------------------------------------------------------
 
-    readonly tables = new TargetMetadataCollection<TableMetadataArgs>();
-    readonly namingStrategies = new TargetMetadataCollection<NamingStrategyMetadataArgs>();
-    readonly eventSubscribers = new TargetMetadataCollection<EventSubscriberMetadataArgs>();
-    readonly indices = new TargetMetadataCollection<IndexMetadataArgs>();
-    readonly columns = new PropertyMetadataCollection<ColumnMetadataArgs>();
-    readonly relations = new PropertyMetadataCollection<RelationMetadataArgs>();
-    readonly joinColumns = new PropertyMetadataCollection<JoinColumnMetadataArgs>();
-    readonly joinTables = new PropertyMetadataCollection<JoinTableMetadataArgs>();
-    readonly entityListeners = new PropertyMetadataCollection<EntityListenerMetadataArgs>();
-    readonly relationCounts = new PropertyMetadataCollection<RelationsCountMetadataArgs>();
+    readonly tables = new TargetMetadataArgsCollection<TableMetadataArgs>();
+    readonly namingStrategies = new TargetMetadataArgsCollection<NamingStrategyMetadataArgs>();
+    readonly eventSubscribers = new TargetMetadataArgsCollection<EventSubscriberMetadataArgs>();
+    readonly indices = new TargetMetadataArgsCollection<IndexMetadataArgs>();
+    readonly columns = new PropertyMetadataArgsCollection<ColumnMetadataArgs>();
+    readonly relations = new PropertyMetadataArgsCollection<RelationMetadataArgs>();
+    readonly joinColumns = new PropertyMetadataArgsCollection<JoinColumnMetadataArgs>();
+    readonly joinTables = new PropertyMetadataArgsCollection<JoinTableMetadataArgs>();
+    readonly entityListeners = new PropertyMetadataArgsCollection<EntityListenerMetadataArgs>();
+    readonly relationCounts = new PropertyMetadataArgsCollection<RelationsCountMetadataArgs>();
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
     /**
+     * Gets merged (with all abstract classes) table metadatas for the given classes.
+     */
+    getMergedTableMetadatas(classes: Function[]) {
+        const allTableMetadataArgs = this.tables.filterByClasses(classes);
+        const tableMetadatas = this.tables.filterByClasses(classes).filter(table => table.type !== "abstract");
+
+        return tableMetadatas.map(tableMetadata => {
+            return this.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    /**
      * Creates a new copy of the MetadataStorage with same metadatas as in current metadata storage, but filtered
      * by classes.
      */
-    mergeWithAbstract(allTableMetadatas: TargetMetadataCollection<TableMetadataArgs>,
-                      tableMetadata: TableMetadataArgs) {
+    private mergeWithAbstract(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
+                              tableMetadata: TableMetadataArgs) {
 
         const indices = this.indices.filterByClass(tableMetadata.target);
         const columns = this.columns.filterByClass(tableMetadata.target);
@@ -75,29 +81,30 @@ export class MetadataArgsStorage {
                 metadatasFromAbstract.columns
                     .filterRepeatedMetadatas(columns)
                     .forEach(metadata => columns.push(metadata));
-                
+
                 metadatasFromAbstract.relations
                     .filterRepeatedMetadatas(relations)
                     .forEach(metadata => relations.push(metadata));
-                
+
                 metadatasFromAbstract.joinColumns
                     .filterRepeatedMetadatas(joinColumns)
                     .forEach(metadata => joinColumns.push(metadata));
-                
+
                 metadatasFromAbstract.joinTables
                     .filterRepeatedMetadatas(joinTables)
                     .forEach(metadata => joinTables.push(metadata));
-                
+
                 metadatasFromAbstract.entityListeners
                     .filterRepeatedMetadatas(entityListeners)
                     .forEach(metadata => entityListeners.push(metadata));
-                
+
                 metadatasFromAbstract.relationCounts
                     .filterRepeatedMetadatas(relationCounts)
                     .forEach(metadata => relationCounts.push(metadata));
             });
 
         return {
+            table: tableMetadata,
             indices: indices,
             columns: columns,
             relations: relations,
@@ -108,10 +115,6 @@ export class MetadataArgsStorage {
         };
     }
 
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
     /**
      * Checks if this table is inherited from another table.
      */
@@ -119,6 +122,8 @@ export class MetadataArgsStorage {
         // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
         // properties get inherited in a right order. To achieve it we can only check a first parent of the class
         // return this.target.prototype instanceof anotherTable.target;
+        if (!firstTargetMetadata.target)
+            return false;
         return Object.getPrototypeOf(firstTargetMetadata.target.prototype).constructor === secondTargetMetadata.target;
     }
 

@@ -6,6 +6,6 @@ export interface TargetMetadataArgs {
     /**
      * Class to which this arguments is applied.
      */
-    readonly target: Function;
+    readonly target?: Function;
     
 }

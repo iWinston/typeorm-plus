@@ -24,12 +24,12 @@ export class JoinColumnMetadata extends PropertyMetadata {
     /**
      * Join column name.
      */
-    private readonly _name: string;
+    private readonly _name: string|undefined;
     
     /**
      * Join column referenced column name.
      */
-    private readonly _referencedColumnName: string;
+    private readonly referencedColumnName: string|undefined;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -37,11 +37,8 @@ export class JoinColumnMetadata extends PropertyMetadata {
 
     constructor(args: JoinColumnMetadataArgs) {
         super(args.target, args.propertyName);
-        
-        if (args.options.name)
-            this._name = args.options.name;
-        if (args.options.referencedColumnName)
-            this._referencedColumnName = args.options.referencedColumnName;
+        this._name = args.name;
+        this.referencedColumnName = args.referencedColumnName;
     }
 
     // ---------------------------------------------------------------------
@@ -59,10 +56,10 @@ export class JoinColumnMetadata extends PropertyMetadata {
      * Referenced join column.
      */
     get referencedColumn(): ColumnMetadata {
-        if (this._referencedColumnName) {
-            const referencedColumn = this.relation.inverseEntityMetadata.columns.find(column => column.name === this._referencedColumnName);
+        if (this.referencedColumnName) {
+            const referencedColumn = this.relation.inverseEntityMetadata.columns.find(column => column.name === this.referencedColumnName);
             if (!referencedColumn)
-                throw new Error(`Referenced column ${this._referencedColumnName} was not found in entity ${this.name}`);
+                throw new Error(`Referenced column ${this.referencedColumnName} was not found in entity ${this.name}`);
         }
 
         return this.relation.inverseEntityMetadata.primaryColumn;
