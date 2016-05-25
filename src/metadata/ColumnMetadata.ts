@@ -1,5 +1,5 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {ColumnMetadataArgs} from "./args/ColumnMetadataArgs";
+import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnType} from "./types/ColumnTypes";
 import {EntityMetadata} from "./EntityMetadata";
 

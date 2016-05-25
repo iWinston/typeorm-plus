@@ -1,7 +1,7 @@
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {ColumnOptions} from "../../metadata/options/ColumnOptions";
-import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
+import {ColumnOptions} from "../options/ColumnOptions";
+import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
  * Creates a "level"/"length" column to the table that holds a closure table.

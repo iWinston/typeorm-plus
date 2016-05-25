@@ -1,5 +1,5 @@
 import {getMetadataArgsStorage} from "../../index";
-import {TableMetadataArgs} from "../../metadata/args/TableMetadataArgs";
+import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 
 /**
  * This decorator is used to mark classes that will be a tables. Database schema will be created for all classes

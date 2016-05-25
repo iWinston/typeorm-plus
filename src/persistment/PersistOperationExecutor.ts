@@ -6,7 +6,7 @@ import {InsertOperation} from "./operation/InsertOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 

@@ -1,5 +1,5 @@
 import {getMetadataArgsStorage} from "../../index";
-import {TableMetadataArgs} from "../../metadata/args/TableMetadataArgs";
+import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 
 /**
  * Allows to use columns and relations data from the inherited metadata.

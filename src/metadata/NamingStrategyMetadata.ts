@@ -1,5 +1,5 @@
 import {TargetMetadata} from "./TargetMetadata";
-import {NamingStrategyMetadataArgs} from "./args/NamingStrategyMetadataArgs";
+import {NamingStrategyMetadataArgs} from "../metadata-args/NamingStrategyMetadataArgs";
 
 /**
  * This metadata interface contains all information about naming strategy.

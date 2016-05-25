@@ -7,7 +7,7 @@ import {JunctionInsertOperation} from "./operation/JunctionInsertOperation";
 import {UpdateOperation} from "./operation/UpdateOperation";
 import {CascadesNotAllowedError} from "./error/CascadesNotAllowedError";
 import {RemoveOperation} from "./operation/RemoveOperation";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 
 /**

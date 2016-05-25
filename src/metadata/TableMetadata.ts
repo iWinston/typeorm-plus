@@ -1,6 +1,6 @@
 import {TargetMetadata} from "./TargetMetadata";
 import {EntityMetadata} from "./EntityMetadata";
-import {TableMetadataArgs} from "./args/TableMetadataArgs";
+import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 
 /**
  * Table type.

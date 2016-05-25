@@ -1,16 +1,15 @@
-import {TargetMetadataArgsCollection} from "../metadata/collection/TargetMetadataArgsCollection";
-import {PropertyMetadataArgsCollection} from "../metadata/collection/PropertyMetadataArgsCollection";
-import {RelationMetadataArgs} from "../metadata/args/RelationMetadataArgs";
-import {ColumnMetadataArgs} from "../metadata/args/ColumnMetadataArgs";
-import {RelationsCountMetadataArgs} from "../metadata/args/RelationsCountMetadataArgs";
-import {IndexMetadataArgs} from "../metadata/args/IndexMetadataArgs";
-import {EntityListenerMetadataArgs} from "../metadata/args/EntityListenerMetadataArgs";
-import {TableMetadataArgs} from "../metadata/args/TableMetadataArgs";
-import {NamingStrategyMetadataArgs} from "../metadata/args/NamingStrategyMetadataArgs";
-import {EventSubscriberMetadataArgs} from "../metadata/args/EventSubscriberMetadataArgs";
-import {JoinTableMetadataArgs} from "../metadata/args/JoinTableMetadataArgs";
-import {JoinColumnMetadataArgs} from "../metadata/args/JoinColumnMetadataArgs";
-import {TargetMetadataArgs} from "../metadata/args/TargetMetadataArgs";
+import {TargetMetadataArgsCollection} from "./collection/TargetMetadataArgsCollection";
+import {PropertyMetadataArgsCollection} from "./collection/PropertyMetadataArgsCollection";
+import {RelationMetadataArgs} from "./RelationMetadataArgs";
+import {ColumnMetadataArgs} from "./ColumnMetadataArgs";
+import {RelationsCountMetadataArgs} from "./RelationsCountMetadataArgs";
+import {IndexMetadataArgs} from "./IndexMetadataArgs";
+import {EntityListenerMetadataArgs} from "./EntityListenerMetadataArgs";
+import {TableMetadataArgs} from "./TableMetadataArgs";
+import {NamingStrategyMetadataArgs} from "./NamingStrategyMetadataArgs";
+import {EventSubscriberMetadataArgs} from "./EventSubscriberMetadataArgs";
+import {JoinTableMetadataArgs} from "./JoinTableMetadataArgs";
+import {JoinColumnMetadataArgs} from "./JoinColumnMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -74,7 +73,7 @@ export class MetadataArgsStorage {
         const relationCounts = this.relationCounts.filterByClass(tableMetadata.target);
 
         allTableMetadatas
-            .filter(metadata => this.isInherited(tableMetadata, metadata))
+            .filter(metadata => this.isInherited(tableMetadata.target, metadata.target))
             .forEach(parentMetadata => {
                 const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
 
@@ -118,13 +117,11 @@ export class MetadataArgsStorage {
     /**
      * Checks if this table is inherited from another table.
      */
-    private isInherited(firstTargetMetadata: TargetMetadataArgs, secondTargetMetadata: TargetMetadataArgs) {
+    private isInherited(target1: Function, target2: Function) {
         // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
         // properties get inherited in a right order. To achieve it we can only check a first parent of the class
         // return this.target.prototype instanceof anotherTable.target;
-        if (!firstTargetMetadata.target)
-            return false;
-        return Object.getPrototypeOf(firstTargetMetadata.target.prototype).constructor === secondTargetMetadata.target;
+        return Object.getPrototypeOf(target1.prototype).constructor === target2;
     }
 
 

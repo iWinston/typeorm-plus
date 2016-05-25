@@ -1,6 +1,6 @@
 import {TreeRepository} from "./TreeRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Connection} from "../connection/Connection";
 import {Repository} from "./Repository";
 import {ReactiveRepository} from "./ReactiveRepository";

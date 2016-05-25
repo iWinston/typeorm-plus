@@ -1,4 +1,4 @@
-import {ColumnType} from "../types/ColumnTypes";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
  * Describes all column's options.

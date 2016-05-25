@@ -1,4 +1,4 @@
-import {EntityMetadata} from "../EntityMetadata";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {EntityMetadataNotFound} from "../error/EntityMetadataNotFound";
 
 /**

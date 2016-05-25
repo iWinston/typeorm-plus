@@ -1,5 +1,4 @@
-import {MetadataAlreadyExistsError} from "../../metadata-storage/error/MetadataAlreadyExistsError";
-import {TargetMetadataArgs} from "../args/TargetMetadataArgs";
+import {MetadataAlreadyExistsError} from "../../metadata-builder/error/MetadataAlreadyExistsError";
 
 export class TargetMetadataArgsCollection<T extends { target?: Function }> extends Array<T> {
     

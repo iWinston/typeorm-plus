@@ -1,5 +1,5 @@
 import {getMetadataArgsStorage} from "../../index";
-import {IndexMetadataArgs} from "../../metadata/args/IndexMetadataArgs";
+import {IndexMetadataArgs} from "../../metadata-args/IndexMetadataArgs";
 
 /**
  * Fields that needs to be indexed must be marked with this decorator.

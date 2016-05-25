@@ -1,5 +1,3 @@
-import {TargetMetadataArgs} from "./TargetMetadataArgs";
-
 /**
  * Arguments for NamingStrategyMetadata class.
  */

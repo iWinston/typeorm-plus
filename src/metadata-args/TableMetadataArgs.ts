@@ -1,4 +1,4 @@
-import {TableType} from "../TableMetadata";
+import {TableType} from "../metadata/TableMetadata";
 
 /**
  * Arguments for TableMetadata class.

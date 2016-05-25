@@ -1,7 +1,7 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
-import {JoinColumnMetadataArgs} from "./args/JoinColumnMetadataArgs";
+import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 
 /**
  * JoinColumnMetadata contains all information about relation's join column.

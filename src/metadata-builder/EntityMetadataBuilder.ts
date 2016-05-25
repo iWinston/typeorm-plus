@@ -1,20 +1,20 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {ColumnOptions} from "../metadata/options/ColumnOptions";
+import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadataValidator} from "./EntityMetadataValidator";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
-import {JoinColumnOptions} from "../metadata/options/JoinColumnOptions";
+import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../index";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
-import {JoinTableMetadataArgs} from "../metadata/args/JoinTableMetadataArgs";
-import {PropertyMetadataArgsCollection} from "../metadata/collection/PropertyMetadataArgsCollection";
-import {ColumnMetadataArgs} from "../metadata/args/ColumnMetadataArgs";
+import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
+import {PropertyMetadataArgsCollection} from "../metadata-args/collection/PropertyMetadataArgsCollection";
+import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.

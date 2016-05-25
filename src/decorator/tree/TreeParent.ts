@@ -1,7 +1,7 @@
 import {getMetadataArgsStorage} from "../../index";
-import {RelationOptions} from "../../metadata/options/RelationOptions";
+import {RelationOptions} from "../options/RelationOptions";
 import {RelationTypes} from "../../metadata/types/RelationTypes";
-import {RelationMetadataArgs} from "../../metadata/args/RelationMetadataArgs";
+import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 /**
  * Marks a specific property of the class as a parent of the tree.

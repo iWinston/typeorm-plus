@@ -1,5 +1,5 @@
 import {TargetMetadata} from "./TargetMetadata";
-import {EventSubscriberMetadataArgs} from "./args/EventSubscriberMetadataArgs";
+import {EventSubscriberMetadataArgs} from "../metadata-args/EventSubscriberMetadataArgs";
 
 /**
  * Contains metadata information about ORM event subscribers.

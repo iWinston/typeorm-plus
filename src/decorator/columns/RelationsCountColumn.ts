@@ -1,5 +1,5 @@
 import {getMetadataArgsStorage} from "../../index";
-import {RelationsCountMetadataArgs} from "../../metadata/args/RelationsCountMetadataArgs";
+import {RelationsCountMetadataArgs} from "../../metadata-args/RelationsCountMetadataArgs";
 
 /**
  * Holds a number of children in the closure table of the column.

@@ -1,6 +1,6 @@
 import {getMetadataArgsStorage} from "../../index";
-import {JoinColumnOptions} from "../../metadata/options/JoinColumnOptions";
-import {JoinColumnMetadataArgs} from "../../metadata/args/JoinColumnMetadataArgs";
+import {JoinColumnOptions} from "../options/JoinColumnOptions";
+import {JoinColumnMetadataArgs} from "../../metadata-args/JoinColumnMetadataArgs";
 
 /**
  */

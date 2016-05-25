@@ -7,7 +7,7 @@ import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperati
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {Driver} from "../driver/Driver";
 

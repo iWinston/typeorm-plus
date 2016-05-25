@@ -1,6 +1,6 @@
-import {RelationType} from "../types/RelationTypes";
-import {RelationOptions} from "../options/RelationOptions";
-import {PropertyTypeInFunction, RelationTypeInFunction} from "../RelationMetadata";
+import {RelationType} from "../metadata/types/RelationTypes";
+import {RelationOptions} from "../decorator/options/RelationOptions";
+import {PropertyTypeInFunction, RelationTypeInFunction} from "../metadata/RelationMetadata";
 
 /**
  * Arguments for RelationMetadata class.

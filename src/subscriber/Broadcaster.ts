@@ -2,7 +2,7 @@ import {EventSubscriberInterface} from "./EventSubscriberInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.

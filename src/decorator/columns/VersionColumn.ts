@@ -1,7 +1,7 @@
-import {ColumnOptions} from "../../metadata/options/ColumnOptions";
+import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
-import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
+import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
  * This column will store a number - version of the entity. Every time your entity will be persisted, this number will

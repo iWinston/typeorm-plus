@@ -1,4 +1,4 @@
-import {JoinColumnOptions} from "../options/JoinColumnOptions";
+import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 
 /**
  * Arguments for JoinTableMetadata class.

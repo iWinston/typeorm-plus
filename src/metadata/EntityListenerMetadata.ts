@@ -1,6 +1,6 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {EventListenerType} from "./types/EventListenerTypes";
-import {EntityListenerMetadataArgs} from "./args/EntityListenerMetadataArgs";
+import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadataArgs";
 
 /**
  * This metadata contains all information about entity's listeners.

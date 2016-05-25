@@ -1,6 +1,6 @@
 import {TargetMetadata} from "./TargetMetadata";
 import {EntityMetadata} from "./EntityMetadata";
-import {IndexMetadataArgs} from "./args/IndexMetadataArgs";
+import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 
 /**
  * Index metadata contains all information about table's index.

@@ -1,5 +1,5 @@
 import {getMetadataArgsStorage} from "../index";
-import {NamingStrategyMetadataArgs} from "../metadata/args/NamingStrategyMetadataArgs";
+import {NamingStrategyMetadataArgs} from "../metadata-args/NamingStrategyMetadataArgs";
 
 /**
  * Decorator registers a new naming strategy to be used in naming things.

@@ -1,6 +1,6 @@
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {SchemaCreator} from "./SchemaCreator";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 
 /**
  */

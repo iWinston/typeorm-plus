@@ -1,5 +1,5 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {RelationsCountMetadataArgs} from "./args/RelationsCountMetadataArgs";
+import {RelationsCountMetadataArgs} from "../metadata-args/RelationsCountMetadataArgs";
 
 /**
  * Contains all information about entity's relation count.

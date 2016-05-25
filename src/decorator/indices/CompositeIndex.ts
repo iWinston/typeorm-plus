@@ -1,6 +1,6 @@
 import {getMetadataArgsStorage} from "../../index";
-import {CompositeIndexOptions} from "../../metadata/options/CompositeIndexOptions";
-import {IndexMetadataArgs} from "../../metadata/args/IndexMetadataArgs";
+import {CompositeIndexOptions} from "../options/CompositeIndexOptions";
+import {IndexMetadataArgs} from "../../metadata-args/IndexMetadataArgs";
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.

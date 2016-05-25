@@ -1,8 +1,8 @@
-import {ColumnOptions} from "../../metadata/options/ColumnOptions";
+import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
+import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
  * This column will store a creation date of the inserted object. Creation date is generated and inserted only once,

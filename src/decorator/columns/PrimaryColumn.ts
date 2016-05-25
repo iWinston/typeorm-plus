@@ -1,9 +1,9 @@
-import {ColumnOptions} from "../../metadata/options/ColumnOptions";
+import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {getMetadataArgsStorage} from "../../index";
 import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
-import {ColumnMetadataArgs} from "../../metadata/args/ColumnMetadataArgs";
+import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this

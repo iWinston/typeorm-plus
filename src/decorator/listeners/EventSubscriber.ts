@@ -1,5 +1,5 @@
 import {getMetadataArgsStorage} from "../../index";
-import {EventSubscriberMetadataArgs} from "../../metadata/args/EventSubscriberMetadataArgs";
+import {EventSubscriberMetadataArgs} from "../../metadata-args/EventSubscriberMetadataArgs";
 
 /**
  * Classes decorated with this decorator will listen to ORM events and their methods will be triggered when event

@@ -4,7 +4,7 @@ import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
-import {RelationMetadataArgs} from "./args/RelationMetadataArgs";
+import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
