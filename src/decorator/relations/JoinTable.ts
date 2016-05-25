@@ -7,12 +7,12 @@ import {JoinTableMetadataArgs} from "../../metadata/args/JoinTableMetadataArgs";
 export function JoinTable(options?: JoinTableOptions): Function {
     return function (object: Object, propertyName: string) {
         options = options || {} as JoinTableOptions;
-        const metadata: JoinTableMetadataArgs = {
+        const args: JoinTableMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             options: options
         };
-        getMetadataArgsStorage().joinTableMetadatas.add(metadata);
+        getMetadataArgsStorage().joinTables.add(args);
     };
 }
 

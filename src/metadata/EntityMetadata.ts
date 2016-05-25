@@ -1,11 +1,10 @@
 import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {RelationMetadata} from "./RelationMetadata";
-import {CompositeIndexMetadata} from "./CompositeIndexMetadata";
+import {IndexMetadata} from "./IndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {PropertyMetadata} from "./PropertyMetadata";
 
 /**
  * Contains all entity metadata.
@@ -30,7 +29,7 @@ export class EntityMetadata {
     readonly table: TableMetadata;
     readonly columns: ColumnMetadata[];
     readonly relations: RelationMetadata[];
-    readonly compositeIndices: CompositeIndexMetadata[];
+    readonly compositeIndices: IndexMetadata[];
     readonly foreignKeys: ForeignKeyMetadata[] = [];
 
     // -------------------------------------------------------------------------
@@ -41,7 +40,7 @@ export class EntityMetadata {
                 tableMetadata: TableMetadata,
                 columnMetadatas: ColumnMetadata[],
                 relationMetadatas: RelationMetadata[],
-                compositeIndexMetadatas: CompositeIndexMetadata[]) {
+                compositeIndexMetadatas: IndexMetadata[]) {
         this.namingStrategy = namingStrategy;
         this.table = tableMetadata;
         this.columns = columnMetadatas;

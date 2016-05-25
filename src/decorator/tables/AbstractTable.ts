@@ -6,11 +6,11 @@ import {TableMetadataArgs} from "../../metadata/args/TableMetadataArgs";
  */
 export function AbstractTable() {
     return function (target: Function) {
-        const metadata: TableMetadataArgs = {
+        const args: TableMetadataArgs = {
             target: target,
             name: undefined,
             type: "abstract"
         };
-        getMetadataArgsStorage().tableMetadatas.add(metadata);
+        getMetadataArgsStorage().tables.add(args);
     };
 }

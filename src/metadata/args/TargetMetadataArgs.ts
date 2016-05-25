@@ -4,8 +4,8 @@
 export interface TargetMetadataArgs {
 
     /**
-     * Class to which this column is applied.
+     * Class to which this arguments is applied.
      */
-    target: Function;
+    readonly target: Function;
     
 }

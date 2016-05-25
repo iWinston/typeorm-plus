@@ -13,7 +13,7 @@ export function TreeChildren(options?: RelationOptions): Function {
         const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
         
         // add one-to-many relation for this 
-        const metadata: RelationMetadataArgs = {
+        const args: RelationMetadataArgs = {
             isTreeChildren: true,
             target: object.constructor,
             propertyName: propertyName,
@@ -22,7 +22,7 @@ export function TreeChildren(options?: RelationOptions): Function {
             type: () => object.constructor,
             options: options
         };
-        getMetadataArgsStorage().relationMetadatas.add(metadata);
+        getMetadataArgsStorage().relations.add(args);
     };
 }
 

@@ -11,12 +11,12 @@ export function RelationsCountColumn<T>(relation: string|((object: T) => any)): 
         // const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
 
         // create and register a new column metadata
-        const metadata: RelationsCountMetadataArgs = {
+        const args: RelationsCountMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             relation: relation
         };
-        getMetadataArgsStorage().relationCountMetadatas.add(metadata);
+        getMetadataArgsStorage().relationCounts.add(args);
     };
 }
 

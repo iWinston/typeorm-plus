@@ -4,13 +4,14 @@ import {IndexMetadataArgs} from "../../metadata/args/IndexMetadataArgs";
 /**
  * Fields that needs to be indexed must be marked with this decorator.
  */
-export function Index(name?: string) {
+export function Index(name?: string, options?: { unique: boolean }) {
     return function (object: Object, propertyName: string) {
-        const metadata: IndexMetadataArgs = {
+        const args: IndexMetadataArgs = {
+            name: name,
             target: object.constructor,
-            propertyName: propertyName,
-            name: name
+            columns: [propertyName],
+            unique: options && options.unique ? true : false
         };
-        getMetadataArgsStorage().indexMetadatas.add(metadata);
+        getMetadataArgsStorage().indices.add(args);
     };
 }

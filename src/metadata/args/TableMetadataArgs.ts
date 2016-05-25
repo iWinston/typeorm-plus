@@ -1,18 +1,23 @@
 import {TableType} from "../TableMetadata";
 
 /**
+ * Arguments for TableMetadata class.
  */
 export interface TableMetadataArgs {
 
     /**
+     * Class to which table is applied.
      */
-    target: Function;
+    readonly target: Function;
 
     /**
+     * Table name.
      */
-    name?: string;
+    readonly name?: string;
 
     /**
+     * Table type.
      */
-    type: TableType;
+    readonly type: TableType;
+    
 }

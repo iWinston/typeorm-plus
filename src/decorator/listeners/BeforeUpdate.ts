@@ -7,11 +7,11 @@ import {EntityListenerMetadataArgs} from "../../metadata/args/EntityListenerMeta
  */
 export function BeforeUpdate() {
     return function (object: Object, propertyName: string) {
-        const metadata: EntityListenerMetadataArgs = {
+        const args: EntityListenerMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             type: EventListenerTypes.BEFORE_UPDATE
         };
-        getMetadataArgsStorage().entityListenerMetadatas.add(metadata);
+        getMetadataArgsStorage().entityListeners.add(args);
     };
 }

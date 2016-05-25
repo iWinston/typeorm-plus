@@ -18,14 +18,14 @@ export function TreeLevelColumn(): Function {
         options.type = ColumnTypes.INTEGER;
 
         // create and register a new column metadata
-        const metadata: ColumnMetadataArgs = {
+        const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             mode: "treeLevel",
             options: options
         };
-        getMetadataArgsStorage().columnMetadatas.add(metadata);
+        getMetadataArgsStorage().columns.add(args);
     };
 }
 

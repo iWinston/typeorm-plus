@@ -17,7 +17,7 @@ export class CustomNamingStrategy implements NamingStrategyInterface {
         return _.snakeCase(propertyName);
     }
 
-    indexName(target: Function, name: string, columns: string[]): string {
+    indexName(target: Function, name: string|undefined, columns: string[]): string {
         if (name)
             return name;
 

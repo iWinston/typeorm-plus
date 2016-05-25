@@ -3,7 +3,11 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {ColumnMetadataArgs} from "./args/ColumnMetadataArgs";
 import {ColumnType} from "./types/ColumnTypes";
 
-export type ColumnMode = "regular"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel";
+/**
+ * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
+ * we are working with.
+ */
+export type ColumnMode = "regular"|"virtual"|"primary"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel";
 
 /**
  * This metadata contains all information about class's column.
@@ -44,11 +48,6 @@ export class ColumnMetadata extends PropertyMetadata {
     readonly length = "";
 
     /**
-     * Indicates if this column is primary key.
-     */
-    readonly isPrimary = false;
-
-    /**
      * Indicates if this column is auto increment.
      */
     readonly isAutoIncrement = false;
@@ -62,11 +61,6 @@ export class ColumnMetadata extends PropertyMetadata {
      * Indicates if can contain nulls or not.
      */
     readonly isNullable = false;
-
-    /**
-     * Indicates if column is virtual. Virtual columns are not mapped to the entity.
-     */
-    readonly isVirtual = false;
 
     /**
      * Extra sql definition for the given column.
@@ -116,12 +110,8 @@ export class ColumnMetadata extends PropertyMetadata {
     constructor(args: ColumnMetadataArgs) {
         super(args.target, args.propertyName);
 
-        if (args.isPrimaryKey)
-            this.isPrimary = args.isPrimaryKey;
         if (args.mode)
             this.mode = args.mode;
-        if (args.isVirtual)
-            this.isVirtual = args.isVirtual;
         if (args.propertyType)
             this.propertyType = args.propertyType.toLowerCase();
         if (args.options.name)
@@ -164,17 +154,40 @@ export class ColumnMetadata extends PropertyMetadata {
         
         return this.namingStrategy ? this.namingStrategy.columnName(this.propertyName) : this.propertyName;
     }
-    
+
+    /**
+     * Indicates if this column contains an entity update date.
+     */
     get isUpdateDate() {
         return this.mode === "updateDate";
     }
-    
+
+    /**
+     * Indicates if this column contains an entity creation date.
+     */
     get isCreateDate() {
         return this.mode === "createDate";
     }
-    
+
+    /**
+     * Indicates if this column contains an entity version.
+     */
     get isVersion() {
         return this.mode === "version";
+    }
+
+    /**
+     * Indicates if this column is primary key.
+     */
+    get isPrimary() {
+        return this.mode === "primary";
+    }
+
+    /**
+     * Indicates if column is virtual. Virtual columns are not mapped to the entity.
+     */
+    get isVirtual() {
+        return this.mode === "virtual";
     }
 
 }

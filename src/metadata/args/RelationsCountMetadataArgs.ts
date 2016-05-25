@@ -1,20 +1,21 @@
-import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnMode} from "../ColumnMetadata";
-
 /**
- * Constructor arguments for ColumnMetadata class.
+ * Arguments for RelationsCountMetadata class.
  */
 export interface RelationsCountMetadataArgs {
 
     /**
      * Class to which this column is applied.
      */
-    target: Function;
+    readonly target: Function;
 
     /**
      * Class's property name to which this column is applied.
      */
-    propertyName: string;
+    readonly propertyName: string;
+
+    /**
+     * Target's relation which it should count.
+     */
+    readonly relation: string|((object: any) => any);
     
-    relation: string|((object: any) => any);
 }

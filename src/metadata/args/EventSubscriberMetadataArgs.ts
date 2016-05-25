@@ -1,12 +1,12 @@
-import {TargetMetadataArgs} from "./TargetMetadataArgs";
 
 /**
+ * Arguments for EventSubscriberMetadata class.
  */
-export interface EventSubscriberMetadataArgs extends TargetMetadataArgs {
+export interface EventSubscriberMetadataArgs {
 
     /**
-     * Class to which this subscriber is applied.
+     * Class to which subscriber is applied.
      */
-    target: Function;
+    readonly target: Function;
     
 }

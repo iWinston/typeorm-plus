@@ -1,14 +1,30 @@
 import {getMetadataArgsStorage} from "../../index";
 import {CompositeIndexOptions} from "../../metadata/options/CompositeIndexOptions";
-import {CompositeIndexMetadataArgs} from "../../metadata/args/CompositeIndexMetadataArgs";
+import {IndexMetadataArgs} from "../../metadata/args/IndexMetadataArgs";
 
 /**
- * Composite indexes must be set on entity classes and must specify fields to be indexed.
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
 export function CompositeIndex(name: string, fields: string[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(fields: string[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(fields: (object: any) => any[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(name: string, fields: (object: any) => any[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(nameOrFields: string|string[]|((object: any) => any[]), 
                                maybeFieldsOrOptions?: ((object: any) => any[])|CompositeIndexOptions|string[],
                                maybeOptions?: CompositeIndexOptions): Function {
@@ -17,12 +33,12 @@ export function CompositeIndex(nameOrFields: string|string[]|((object: any) => a
     const options = typeof maybeFieldsOrOptions === "object" ? <CompositeIndexOptions> maybeFieldsOrOptions : maybeOptions;
     
     return function (cls: Function) {
-        const metadata: CompositeIndexMetadataArgs = {
+        const args: IndexMetadataArgs = {
             target: cls,
             name: name,
             columns: fields,
-            options: options
+            unique: options && options.unique ? true : false
         };
-        getMetadataArgsStorage().compositeIndexMetadatas.add(metadata);
+        getMetadataArgsStorage().indices.add(args);
     };
 }

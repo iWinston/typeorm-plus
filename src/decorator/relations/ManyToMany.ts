@@ -40,7 +40,7 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ConstructorFunction<
         
         const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
 
-        const metadata: RelationMetadataArgs = {
+        const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
@@ -49,7 +49,7 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ConstructorFunction<
             inverseSideProperty: inverseSideProperty,
             options: options
         };
-        getMetadataArgsStorage().relationMetadatas.add(metadata);
+        getMetadataArgsStorage().relations.add(args);
     };
 }
 

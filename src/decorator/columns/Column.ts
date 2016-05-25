@@ -53,12 +53,13 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata
-        const metadata: ColumnMetadataArgs = {
+        const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
+            mode: "regular",
             options: options
         };
-        getMetadataArgsStorage().columnMetadatas.add(metadata);
+        getMetadataArgsStorage().columns.add(args);
     };
 }

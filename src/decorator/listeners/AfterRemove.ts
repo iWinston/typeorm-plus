@@ -7,11 +7,11 @@ import {EntityListenerMetadataArgs} from "../../metadata/args/EntityListenerMeta
  */
 export function AfterRemove() {
     return function (object: Object, propertyName: string) {
-        const metadata: EntityListenerMetadataArgs = {
+        const args: EntityListenerMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             type: EventListenerTypes.AFTER_REMOVE
         };
-        getMetadataArgsStorage().entityListenerMetadatas.add(metadata);
+        getMetadataArgsStorage().entityListeners.add(args);
     };
 }

@@ -1,7 +1,6 @@
 import {TableMetadata} from "../metadata/TableMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
-import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EventSubscriberMetadata} from "../metadata/EventSubscriberMetadata";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
@@ -14,7 +13,6 @@ import {RelationsCountMetadata} from "../metadata/RelationsCountMetadata";
 import {RelationMetadataArgs} from "../metadata/args/RelationMetadataArgs";
 import {ColumnMetadataArgs} from "../metadata/args/ColumnMetadataArgs";
 import {RelationsCountMetadataArgs} from "../metadata/args/RelationsCountMetadataArgs";
-import {CompositeIndexMetadataArgs} from "../metadata/args/CompositeIndexMetadataArgs";
 import {IndexMetadataArgs} from "../metadata/args/IndexMetadataArgs";
 import {EntityListenerMetadataArgs} from "../metadata/args/EntityListenerMetadataArgs";
 import {TableMetadataArgs} from "../metadata/args/TableMetadataArgs";
@@ -39,25 +37,17 @@ export class MetadataArgsStorage {
     // Properties
     // -------------------------------------------------------------------------
 
-    readonly tableMetadatas = new TargetMetadataCollection<TableMetadataArgs>();
-    readonly namingStrategyMetadatas = new TargetMetadataCollection<NamingStrategyMetadataArgs>();
-    readonly eventSubscriberMetadatas = new TargetMetadataCollection<EventSubscriberMetadataArgs>();
-    readonly compositeIndexMetadatas = new TargetMetadataCollection<CompositeIndexMetadataArgs>();
-    readonly columnMetadatas = new PropertyMetadataCollection<ColumnMetadataArgs>();
-    readonly relationMetadatas = new PropertyMetadataCollection<RelationMetadataArgs>();
-    readonly joinColumnMetadatas = new PropertyMetadataCollection<JoinColumnMetadataArgs>();
-    readonly joinTableMetadatas = new PropertyMetadataCollection<JoinTableMetadataArgs>();
-    readonly indexMetadatas = new PropertyMetadataCollection<IndexMetadataArgs>();
-    readonly entityListenerMetadatas = new PropertyMetadataCollection<EntityListenerMetadataArgs>();
-    readonly relationCountMetadatas = new PropertyMetadataCollection<RelationsCountMetadataArgs>();
+    readonly tables = new TargetMetadataCollection<TableMetadataArgs>();
+    readonly namingStrategies = new TargetMetadataCollection<NamingStrategyMetadataArgs>();
+    readonly eventSubscribers = new TargetMetadataCollection<EventSubscriberMetadataArgs>();
+    readonly indices = new TargetMetadataCollection<IndexMetadataArgs>();
+    readonly columns = new PropertyMetadataCollection<ColumnMetadataArgs>();
+    readonly relations = new PropertyMetadataCollection<RelationMetadataArgs>();
+    readonly joinColumns = new PropertyMetadataCollection<JoinColumnMetadataArgs>();
+    readonly joinTables = new PropertyMetadataCollection<JoinTableMetadataArgs>();
+    readonly entityListeners = new PropertyMetadataCollection<EntityListenerMetadataArgs>();
+    readonly relationCounts = new PropertyMetadataCollection<RelationsCountMetadataArgs>();
 
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-
-    constructor() {
-    }
-    
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -69,69 +59,67 @@ export class MetadataArgsStorage {
     mergeWithAbstract(allTableMetadatas: TargetMetadataCollection<TableMetadataArgs>,
                       tableMetadata: TableMetadataArgs) {
 
-        const compositeIndexMetadatas = this.compositeIndexMetadatas.filterByClass(tableMetadata.target);
-        const columnMetadatas = this.columnMetadatas.filterByClass(tableMetadata.target);
-        const relationMetadatas = this.relationMetadatas.filterByClass(tableMetadata.target);
-        const joinColumnMetadatas = this.joinColumnMetadatas.filterByClass(tableMetadata.target);
-        const joinTableMetadatas = this.joinTableMetadatas.filterByClass(tableMetadata.target);
-        const indexMetadatas = this.indexMetadatas.filterByClass(tableMetadata.target);
-        const entityListenerMetadatas = this.entityListenerMetadatas.filterByClass(tableMetadata.target);
-        const relationCountMetadatas = this.relationCountMetadatas.filterByClass(tableMetadata.target);
+        const indices = this.indices.filterByClass(tableMetadata.target);
+        const columns = this.columns.filterByClass(tableMetadata.target);
+        const relations = this.relations.filterByClass(tableMetadata.target);
+        const joinColumns = this.joinColumns.filterByClass(tableMetadata.target);
+        const joinTables = this.joinTables.filterByClass(tableMetadata.target);
+        const entityListeners = this.entityListeners.filterByClass(tableMetadata.target);
+        const relationCounts = this.relationCounts.filterByClass(tableMetadata.target);
 
         allTableMetadatas
             .filter(metadata => this.isInherited(tableMetadata, metadata))
             .forEach(parentMetadata => {
                 const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
 
-                metadatasFromAbstract.columnMetadatas
-                    .filterRepeatedMetadatas(columnMetadatas)
-                    .forEach(metadata => columnMetadatas.push(metadata));
+                metadatasFromAbstract.columns
+                    .filterRepeatedMetadatas(columns)
+                    .forEach(metadata => columns.push(metadata));
                 
-                metadatasFromAbstract.relationMetadatas
-                    .filterRepeatedMetadatas(relationMetadatas)
-                    .forEach(metadata => relationMetadatas.push(metadata));
+                metadatasFromAbstract.relations
+                    .filterRepeatedMetadatas(relations)
+                    .forEach(metadata => relations.push(metadata));
                 
-                metadatasFromAbstract.joinColumnMetadatas
-                    .filterRepeatedMetadatas(joinColumnMetadatas)
-                    .forEach(metadata => joinColumnMetadatas.push(metadata));
+                metadatasFromAbstract.joinColumns
+                    .filterRepeatedMetadatas(joinColumns)
+                    .forEach(metadata => joinColumns.push(metadata));
                 
-                metadatasFromAbstract.joinTableMetadatas
-                    .filterRepeatedMetadatas(joinTableMetadatas)
-                    .forEach(metadata => joinTableMetadatas.push(metadata));
+                metadatasFromAbstract.joinTables
+                    .filterRepeatedMetadatas(joinTables)
+                    .forEach(metadata => joinTables.push(metadata));
                 
-                metadatasFromAbstract.indexMetadatas
-                    .filterRepeatedMetadatas(indexMetadatas)
-                    .forEach(metadata => indexMetadatas.push(metadata));
+                metadatasFromAbstract.entityListeners
+                    .filterRepeatedMetadatas(entityListeners)
+                    .forEach(metadata => entityListeners.push(metadata));
                 
-                metadatasFromAbstract.entityListenerMetadatas
-                    .filterRepeatedMetadatas(entityListenerMetadatas)
-                    .forEach(metadata => entityListenerMetadatas.push(metadata));
-                
-                metadatasFromAbstract.relationCountMetadatas
-                    .filterRepeatedMetadatas(relationCountMetadatas)
-                    .forEach(metadata => relationCountMetadatas.push(metadata));
+                metadatasFromAbstract.relationCounts
+                    .filterRepeatedMetadatas(relationCounts)
+                    .forEach(metadata => relationCounts.push(metadata));
             });
 
         return {
-            compositeIndexMetadatas: compositeIndexMetadatas,
-            columnMetadatas: columnMetadatas,
-            relationMetadatas: relationMetadatas,
-            joinColumnMetadatas: joinColumnMetadatas,
-            joinTableMetadatas: joinTableMetadatas,
-            indexMetadatas: indexMetadatas,
-            entityListenerMetadatas: entityListenerMetadatas,
-            relationCountMetadatas: relationCountMetadatas
+            indices: indices,
+            columns: columns,
+            relations: relations,
+            joinColumns: joinColumns,
+            joinTables: joinTables,
+            entityListeners: entityListeners,
+            relationCounts: relationCounts
         };
     }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
 
     /**
      * Checks if this table is inherited from another table.
      */
     private isInherited(firstTargetMetadata: TargetMetadataArgs, secondTargetMetadata: TargetMetadataArgs) {
-        return Object.getPrototypeOf(firstTargetMetadata.target.prototype).constructor === secondTargetMetadata.target;
         // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
         // properties get inherited in a right order. To achieve it we can only check a first parent of the class
         // return this.target.prototype instanceof anotherTable.target;
+        return Object.getPrototypeOf(firstTargetMetadata.target.prototype).constructor === secondTargetMetadata.target;
     }
 
 

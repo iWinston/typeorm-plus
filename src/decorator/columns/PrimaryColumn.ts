@@ -55,14 +55,14 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
         // create and register a new column metadata
-        const metadata: ColumnMetadataArgs = {
+        const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
-            isPrimaryKey: true,
+            mode: "primary",
             options: options
         };
-        getMetadataArgsStorage().columnMetadatas.add(metadata);
+        getMetadataArgsStorage().columns.add(args);
     };
 }
 

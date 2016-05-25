@@ -37,7 +37,7 @@ export function OneToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T>
 
         const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
 
-        const metadata: RelationMetadataArgs = {
+        const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
@@ -46,6 +46,6 @@ export function OneToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T>
             inverseSideProperty: inverseSideProperty,
             options: options
         };
-        getMetadataArgsStorage().relationMetadatas.add(metadata);
+        getMetadataArgsStorage().relations.add(args);
     };
 }

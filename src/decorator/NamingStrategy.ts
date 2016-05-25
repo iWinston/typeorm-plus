@@ -7,10 +7,10 @@ import {NamingStrategyMetadataArgs} from "../metadata/args/NamingStrategyMetadat
 export function NamingStrategy(name?: string): Function {
     return function (target: Function) {
         const strategyName = name ? name : (<any> target).name;
-        const metadata: NamingStrategyMetadataArgs = {
+        const args: NamingStrategyMetadataArgs = {
             target: target,
             name: strategyName
         };
-        getMetadataArgsStorage().namingStrategyMetadatas.add(metadata);
+        getMetadataArgsStorage().namingStrategies.add(args);
     };
 }

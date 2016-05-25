@@ -5,9 +5,6 @@ import {ColumnOptions} from "../metadata/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadataValidator} from "./EntityMetadataValidator";
 import {IndexMetadata} from "../metadata/IndexMetadata";
-import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
-import {PropertyMetadataCollection} from "../metadata/collection/PropertyMetadataCollection";
-import {TargetMetadataCollection} from "../metadata/collection/TargetMetadataCollection";
 import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {JoinColumnOptions} from "../metadata/options/JoinColumnOptions";
 import {TableMetadata} from "../metadata/TableMetadata";
@@ -43,7 +40,7 @@ export class EntityMetadataBuilder {
         const allMetadataStorage = getMetadataArgsStorage();
 
         // filter the only metadata we need - those which are bind to the given table classes
-        const allTableMetadatas = allMetadataStorage.tableMetadatas.filterByClasses(entityClasses);
+        const allTableMetadatas = allMetadataStorage.tables.filterByClasses(entityClasses);
         const tableMetadatas = allTableMetadatas
             .filterByClasses(entityClasses)
             .filter(metadata => metadata.type !== "abstract");
@@ -58,21 +55,15 @@ export class EntityMetadataBuilder {
             const mergedMetadata = allMetadataStorage.mergeWithAbstract(allTableMetadatas, tableMetadata);
 
             // create layouts from metadatas
-            const columns = mergedMetadata.columnMetadatas.map(metadata => new ColumnMetadata(metadata));
-            const relations = mergedMetadata.relationMetadatas.map(metadata => new RelationMetadata(metadata));
-            const compositeIndices = mergedMetadata.compositeIndexMetadatas.map(metadata => new CompositeIndexMetadata(metadata));
-
-            // merge indices and composite indices because simple indices actually are compose indices with only one column
-            // todo: no need to create index layout for this, use index metadata instead
-            const indices = mergedMetadata.indexMetadatas.map(metadata => new IndexMetadata(metadata));
-            const compositeFromSimpleIndices = this.createCompositeIndicesFromSimpleIndices(indices);
-            compositeIndices.push(...compositeFromSimpleIndices);
+            const columns = mergedMetadata.columns.map(metadata => new ColumnMetadata(metadata));
+            const relations = mergedMetadata.relations.map(metadata => new RelationMetadata(metadata));
+            const indices = mergedMetadata.indices.map(metadata => new IndexMetadata(metadata));
 
             // todo no need to set naming strategy everywhere - childs can obtain it from their parents
             // tableMetadata.namingStrategy = namingStrategy;
             columns.forEach(column => column.namingStrategy = namingStrategy);
             relations.forEach(relation => relation.namingStrategy = namingStrategy);
-            compositeIndices.forEach(index => index.namingStrategy = namingStrategy);
+            indices.forEach(index => index.namingStrategy = namingStrategy);
 
             // todo: check if multiple tree parent metadatas in validator
             // todo: tree decorators can be used only on closure table (validation)
@@ -84,12 +75,12 @@ export class EntityMetadataBuilder {
                 new TableMetadata(tableMetadata),
                 columns,
                 relations,
-                compositeIndices
+                indices
             );
 
             // create entity's relations join tables
             entityMetadata.manyToManyRelations.forEach(relation => {
-                const joinTableMetadata = mergedMetadata.joinTableMetadatas.findByProperty(relation.propertyName);
+                const joinTableMetadata = mergedMetadata.joinTables.findByProperty(relation.propertyName);
                 if (joinTableMetadata) {
                     const joinTable = new JoinTableMetadata(joinTableMetadata);
                     relation.joinTable = joinTable;
@@ -99,7 +90,7 @@ export class EntityMetadataBuilder {
 
             // create entity's relations join columns
             entityMetadata.relations.forEach(relation => {
-                const joinColumnMetadata = mergedMetadata.joinColumnMetadatas.findByProperty(relation.propertyName);
+                const joinColumnMetadata = mergedMetadata.joinColumns.findByProperty(relation.propertyName);
                 if (joinColumnMetadata) {
                     const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
                     relation.joinColumn = joinColumn;
@@ -110,7 +101,7 @@ export class EntityMetadataBuilder {
             // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
             // throw all of them which don't have JoinColumn decorators and create it for them
             entityMetadata.manyToOneRelations.forEach(relation => {
-                let joinColumnMetadata = mergedMetadata.joinColumnMetadatas.findByProperty(relation.propertyName);
+                let joinColumnMetadata = mergedMetadata.joinColumns.findByProperty(relation.propertyName);
                 if (!joinColumnMetadata) {
                     joinColumnMetadata = { target: relation.target, propertyName: relation.propertyName, options: <JoinColumnOptions> {} };
                     const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
@@ -154,7 +145,7 @@ export class EntityMetadataBuilder {
                         target: metadata.target,
                         propertyName: relation.name,
                         propertyType: inverseSideColumn.propertyType,
-                        isVirtual: true,
+                        mode: "virtual",
                         options: options
                     });
                     metadata.columns.push(relationalColumn);
@@ -185,6 +176,7 @@ export class EntityMetadataBuilder {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: metadata.primaryColumn.type,
+                        mode: "regular", // or virtual?
                         options: <ColumnOptions> {
                             length: metadata.primaryColumn.length,
                             type: metadata.primaryColumn.type,
@@ -195,6 +187,7 @@ export class EntityMetadataBuilder {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: metadata.primaryColumn.type,
+                        mode: "regular", // or virtual?
                         options: <ColumnOptions> {
                             length: metadata.primaryColumn.length,
                             type: metadata.primaryColumn.type,
@@ -208,6 +201,7 @@ export class EntityMetadataBuilder {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: ColumnTypes.INTEGER,
+                        mode: "regular", // or virtual?
                         options: {
                             type: ColumnTypes.INTEGER,
                             name: "level"
@@ -252,12 +246,14 @@ export class EntityMetadataBuilder {
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: column2.type,
+                        mode: "regular", // or virtual?
                         options: column1options
                     }),
                     new ColumnMetadata({
                         target: Function, // todo: temp, fix it later
                         propertyName: "",  // todo: temp, fix it later
                         propertyType: column2.type,
+                        mode: "regular", // or virtual?
                         options: column2options
                     })
                 ];
@@ -282,16 +278,5 @@ export class EntityMetadataBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private createCompositeIndicesFromSimpleIndices(indices: IndexMetadata[]) {
-        return indices.map(index => {
-            return new CompositeIndexMetadata({
-                name: index.name,
-                target: index.target,
-                columns: [index.propertyName]
-            });
-        });
-
-        // later need to check if no duplicate keys in composite indices?
-    }
 
 }

@@ -20,14 +20,14 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
         options.type = ColumnTypes.DATETIME;
 
         // create and register a new column metadata
-        const metadata: ColumnMetadataArgs = {
+        const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             mode: "createDate",
             options: options
         };
-        getMetadataArgsStorage().columnMetadatas.add(metadata);
+        getMetadataArgsStorage().columns.add(args);
     };
 }
 

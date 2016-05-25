@@ -1,6 +1,4 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {JoinColumnOptions} from "./options/JoinColumnOptions";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RelationMetadata} from "./RelationMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {JoinColumnMetadataArgs} from "./args/JoinColumnMetadataArgs";

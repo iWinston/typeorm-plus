@@ -7,9 +7,9 @@ import {EventSubscriberMetadataArgs} from "../../metadata/args/EventSubscriberMe
  */
 export function EventSubscriber() {
     return function (target: Function) {
-        const metadata: EventSubscriberMetadataArgs = {
+        const args: EventSubscriberMetadataArgs = {
             target: target
         };
-        getMetadataArgsStorage().eventSubscriberMetadatas.add(metadata);
+        getMetadataArgsStorage().eventSubscribers.add(args);
     };
 }

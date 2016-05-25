@@ -1,23 +1,23 @@
 import {JoinColumnOptions} from "../options/JoinColumnOptions";
 
 /**
- * Constructor arguments for ColumnMetadata class.
+ * Arguments for JoinColumnMetadata class.
  */
 export interface JoinColumnMetadataArgs {
 
     /**
      * Class to which this column is applied.
      */
-    target: Function;
+    readonly target: Function;
 
     /**
      * Class's property name to which this column is applied.
      */
-    propertyName: string;
+    readonly propertyName: string;
 
     /**
-     * Class's property type (reflected) to which this column is applied.
+     * Class's property type (reflected) to which join column is applied.
      */
-    options: JoinColumnOptions;
+    readonly options: JoinColumnOptions;
     
 }

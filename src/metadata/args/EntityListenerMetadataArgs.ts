@@ -1,22 +1,23 @@
 import {EventListenerType} from "../types/EventListenerTypes";
 
 /**
+ * Arguments for EntityListenerMetadata class.
  */
 export interface EntityListenerMetadataArgs {
 
     /**
-     * Class to which this column is applied.
+     * Class to which listener is applied.
      */
-    target: Function;
+    readonly target: Function;
 
     /**
-     * Class's property name to which this column is applied.
+     * Class's property name to which listener is applied.
      */
-    propertyName: string;
+    readonly propertyName: string;
 
     /**
      * The type of the listener.
      */
-    type: EventListenerType;
+    readonly type: EventListenerType;
     
 }

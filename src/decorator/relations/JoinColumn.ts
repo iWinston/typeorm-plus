@@ -7,12 +7,12 @@ import {JoinColumnMetadataArgs} from "../../metadata/args/JoinColumnMetadataArgs
 export function JoinColumn(options?: JoinColumnOptions): Function {
     return function (object: Object, propertyName: string) {
         options = options || {} as JoinColumnOptions;
-        const metadata: JoinColumnMetadataArgs = {
+        const args: JoinColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             options: options
         };
-        getMetadataArgsStorage().joinColumnMetadatas.add(metadata);
+        getMetadataArgsStorage().joinColumns.add(args);
     };
 }
 

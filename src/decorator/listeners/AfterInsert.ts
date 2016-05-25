@@ -8,11 +8,11 @@ import {EntityListenerMetadataArgs} from "../../metadata/args/EntityListenerMeta
 export function AfterInsert() {
     return function (object: Object, propertyName: string) {
 
-        const metadata: EntityListenerMetadataArgs = {
+        const args: EntityListenerMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             type: EventListenerTypes.AFTER_INSERT
         };
-        getMetadataArgsStorage().entityListenerMetadatas.add(metadata);
+        getMetadataArgsStorage().entityListeners.add(args);
     };
 }

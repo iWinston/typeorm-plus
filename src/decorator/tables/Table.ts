@@ -7,11 +7,11 @@ import {TableMetadataArgs} from "../../metadata/args/TableMetadataArgs";
  */
 export function Table(name?: string) {
     return function (target: Function) {
-        const metadata: TableMetadataArgs = {
+        const args: TableMetadataArgs = {
             target: target,
             name: name,
             type: "regular"
         };
-        getMetadataArgsStorage().tableMetadatas.add(metadata);
+        getMetadataArgsStorage().tables.add(args);
     };
 }

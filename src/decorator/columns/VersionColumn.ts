@@ -21,14 +21,14 @@ export function VersionColumn(options?: ColumnOptions): Function {
         // todo: check if reflectedType is number too
 
         // create and register a new column metadata
-        const metadata: ColumnMetadataArgs = {
+        const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             mode: "version",
             options: options
         };
-        getMetadataArgsStorage().columnMetadatas.add(metadata);
+        getMetadataArgsStorage().columns.add(args);
     };
 }
 

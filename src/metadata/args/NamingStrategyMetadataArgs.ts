@@ -1,11 +1,18 @@
 import {TargetMetadataArgs} from "./TargetMetadataArgs";
 
 /**
+ * Arguments for NamingStrategyMetadata class.
  */
-export interface NamingStrategyMetadataArgs extends TargetMetadataArgs {
+export interface NamingStrategyMetadataArgs {
 
     /**
+     * Class to which this column is applied.
      */
-    name: string;
+    readonly target: Function;
+
+    /**
+     * Strategy name.
+     */
+    readonly name: string;
     
 }

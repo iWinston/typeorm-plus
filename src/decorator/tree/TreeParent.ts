@@ -11,7 +11,7 @@ export function TreeParent(options?: RelationOptions): Function {
         if (!options) options = {} as RelationOptions;
 
         const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
-        const metadata: RelationMetadataArgs = {
+        const args: RelationMetadataArgs = {
             isTreeParent: true,
             target: object.constructor,
             propertyName: propertyName,
@@ -20,7 +20,7 @@ export function TreeParent(options?: RelationOptions): Function {
             type: () => object.constructor,
             options: options
         };
-        getMetadataArgsStorage().relationMetadatas.add(metadata);
+        getMetadataArgsStorage().relations.add(args);
     };
 }
 
