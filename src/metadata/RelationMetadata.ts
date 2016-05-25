@@ -163,6 +163,8 @@ export class RelationMetadata extends PropertyMetadata {
      * Also only owning sides of the relations have this property.
      */
     get name(): string {
+        if (!this.isOwning || this.isManyToMany)
+            throw new Error(`Relation name cannot be retrieved for many-to-many relations or not owning relations.`);
         
         // todo: maybe need to throw exception if its a many-to-many relation?
         
@@ -251,10 +253,10 @@ export class RelationMetadata extends PropertyMetadata {
         if (this._inverseSideProperty) {
             return this.computeInverseSide(this._inverseSideProperty);
 
-        } else if (this.isTreeParent) {
+        } else if (this.isTreeParent && this.entityMetadata.hasTreeChildrenRelation) {
             return this.entityMetadata.treeChildrenRelation.propertyName;
 
-        } else if (this.isTreeChildren) {
+        } else if (this.isTreeChildren && this.entityMetadata.hasTreeParentRelation) {
             return this.entityMetadata.treeParentRelation.propertyName;
 
         }

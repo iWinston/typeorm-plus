@@ -264,18 +264,30 @@ export class EntityMetadata {
         return entity[this.primaryColumn.propertyName];
     }
 
+    /**
+     * Checks if column with the given property name exist.
+     */
     hasColumnWithPropertyName(propertyName: string): boolean {
         return !!this.columns.find(column => column.propertyName === propertyName);
     }
 
+    /**
+     * Checks if column with the given database name exist.
+     */
     hasColumnWithDbName(name: string): boolean {
         return !!this.columns.find(column => column.name === name);
     }
 
+    /**
+     * Checks if relation with the given property name exist.
+     */
     hasRelationWithPropertyName(propertyName: string): boolean {
         return !!this.relations.find(relation => relation.propertyName === propertyName);
     }
 
+    /**
+     * Finds relation with the given property name.
+     */
     findRelationWithPropertyName(propertyName: string): RelationMetadata {
         const relation = this.relations.find(relation => relation.propertyName === propertyName);
         if (!relation)
@@ -284,70 +296,34 @@ export class EntityMetadata {
         return relation;
     }
 
+    /**
+     * Checks if relation with the given name exist.
+     */
     hasRelationWithDbName(dbName: string): boolean {
-        return !!this.relations.find(relation => relation.name === dbName);
+        return !!this.relationsWithJoinColumns.find(relation => relation.name === dbName);
     }
 
-    findRelationWithDbName(propertyName: string): RelationMetadata {
-        const relation = this.relations.find(relation => relation.name === propertyName);
+    /**
+     * Finds relation with the given name.
+     */
+    findRelationWithDbName(name: string): RelationMetadata {
+        const relation = this.relationsWithJoinColumns.find(relation => relation.name === name);
         if (!relation)
-            throw new Error(`Relation with name ${propertyName} in ${this.name} entity was not found.`);
+            throw new Error(`Relation with name ${name} in ${this.name} entity was not found.`);
 
         return relation;
     }
 
-    hasRelationWithOneWithPropertyName(propertyName: string): boolean {
-        return !!this.relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
-    }
-
-    findRelationWithOneWithPropertyName(propertyName: string): RelationMetadata {
-        const relation = this.relations.find(relation => relation.propertyName === propertyName && (relation.isOneToMany || relation.isOneToOne));
-        if (!relation)
-            throw new Error(`Relation with one with property name ${propertyName} in ${this.name} entity was not found.`);
-
-        return relation;
-    }
-
-    hasRelationWithOneWithDbName(name: string): boolean {
-        return !!this.relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
-    }
-
-    findRelationWithOneWithDbName(name: string): RelationMetadata {
-        const relation = this.relations.find(relation => relation.name === name && (relation.isOneToMany || relation.isOneToOne));
-        if (!relation)
-            throw new Error(`Relation with one with name ${name} in ${this.name} entity was not found.`);
-
-        return relation;
-    }
-
-    hasRelationWithManyWithPropertyName(name: string): boolean {
-        return !!this.relations.find(relation => relation.propertyName === name && (relation.isManyToOne || relation.isManyToMany));
-    }
-
-    findRelationWithManyWithPropertyName(name: string): RelationMetadata {
-        const relation = this.relations.find(relation => relation.propertyName === name && (relation.isManyToOne || relation.isManyToMany));
-        if (!relation)
-            throw new Error(`Relation with many with property name ${name} in ${this.name} entity was not found.`);
-
-        return relation;
-    }
-
-    hasRelationWithManyWithDbName(name: string): boolean {
-        return !!this.relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
-    }
-
-    findRelationWithManyWithDbName(name: string): RelationMetadata {
-        const relation = this.relations.find(relation => relation.name === name && (relation.isManyToOne || relation.isManyToMany));
-        if (!relation)
-            throw new Error(`Relation with many with name ${name} in ${this.name} entity was not found.`);
-
-        return relation;
-    }
-
+    /**
+     * Checks if there is a tree parent relation. Used only in tree-tables.
+     */
     get hasTreeParentRelation() {
         return !!this.relations.find(relation => relation.isTreeParent);
     }
 
+    /**
+     * Tree parent relation. Used only in tree-tables.
+     */
     get treeParentRelation() {
         const relation = this.relations.find(relation => relation.isTreeParent);
         if (!relation)
@@ -356,10 +332,16 @@ export class EntityMetadata {
         return relation;
     }
 
+    /**
+     * Checks if there is a tree children relation. Used only in tree-tables.
+     */
     get hasTreeChildrenRelation() {
         return !!this.relations.find(relation => relation.isTreeChildren);
     }
 
+    /**
+     * Tree children relation. Used only in tree-tables.
+     */
     get treeChildrenRelation() {
         const relation = this.relations.find(relation => relation.isTreeChildren);
         if (!relation)

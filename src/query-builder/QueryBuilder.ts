@@ -635,7 +635,7 @@ export class QueryBuilder<Entity> {
             metadata.columns.forEach(column => {
                 statement = statement.replace(new RegExp(alias.name + "." + column.propertyName, "g"), alias.name + "." + column.name);
             });
-            metadata.relations.forEach(relation => {
+            metadata.relationsWithJoinColumns.forEach(relation => {
                 statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName, "g"), alias.name + "." + relation.name);
             });
         });

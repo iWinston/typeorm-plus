@@ -46,11 +46,11 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     joinTableName(firstTableName: string,
                   secondTableName: string,
-                  firstColumnName: string,
-                  secondColumnName: string,
                   firstPropertyName: string,
-                  secondPropertyName: string): string {
-        return _.snakeCase(firstTableName + "_" + firstColumnName + "_" + secondTableName + "_" + secondPropertyName);
+                  secondPropertyName: string,
+                  firstColumnName: string,
+                  secondColumnName: string): string {
+        return _.snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName + "_" + secondColumnName);
     }
 
     joinTableColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string {

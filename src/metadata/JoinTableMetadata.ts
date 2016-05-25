@@ -85,8 +85,8 @@ export class JoinTableMetadata extends PropertyMetadata {
         return this.relation.entityMetadata.namingStrategy.joinTableName(
             this.relation.entityMetadata.table.name,
             this.relation.inverseEntityMetadata.table.name,
-            this.relation.name,
-            this.relation.hasInverseSide ? this.relation.inverseRelation.name : "",
+            this.relation.propertyName,
+            this.relation.hasInverseSide ? this.relation.inverseRelation.propertyName : "",
             this.referencedColumn.name,
             this.inverseReferencedColumn.name
         );
