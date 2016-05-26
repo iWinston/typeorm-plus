@@ -288,15 +288,17 @@ export class Repository<Entity> {
         if (relation.isManyToMany)
             throw new Error(`Many-to-many relation is not supported for this operation. Use #addToRelation method for many-to-many relations.`);
 
-        let values: any = {}, conditions: any = {};
+        let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
+            table = relation.entityMetadata.table.name;
             values[relation.name] = relatedEntityId;
             conditions[relation.joinColumn.referencedColumn.name] = entityId;
         } else {
-            values[relation.inverseRelation.name] = entityId;
-            conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = relatedEntityId;
+            table = relation.inverseEntityMetadata.table.name;
+            values[relation.inverseRelation.name] = relatedEntityId;
+            conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = entityId;
         }
-        return this.driver.update(relation.entityMetadata.table.name, values, conditions).then(() => {});
+        return this.driver.update(table, values, conditions).then(() => {});
     }
 
     /**
@@ -315,8 +317,8 @@ export class Repository<Entity> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
-        const values: any = { };
-        relatedEntityIds.forEach(relatedEntityId => {
+        const insertPromises = relatedEntityIds.map(relatedEntityId => {
+            const values: any = { };
             if (relation.isOwning) {
                 values[relation.junctionEntityMetadata.columns[0].name] = entityId;
                 values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
@@ -324,8 +326,10 @@ export class Repository<Entity> {
                 values[relation.junctionEntityMetadata.columns[1].name] = entityId;
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
+
+            return this.driver.insert(relation.junctionEntityMetadata.table.name, values)
         });
-        return this.driver.insert(relation.junctionEntityMetadata.table.name, values).then(() => {});
+        return Promise.all(insertPromises).then(() => {});
     }
 
     /**
@@ -351,7 +355,7 @@ export class Repository<Entity> {
         const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
 
         relatedEntityIds.forEach((relatedEntityId, index) => {
-            qb.orWhere(`(junctionEntity.${firstColumnName}=:entityId AND junctionEntity.${secondColumnName}=:relatedEntity_${index})`)
+            qb.orWhere(`(${firstColumnName}=:entityId AND ${secondColumnName}=:relatedEntity_${index})`)
                 .setParameter("relatedEntity_" + index, relatedEntityId);
         });
 
@@ -396,7 +400,7 @@ export class Repository<Entity> {
         const alias = this.metadata.table.name;
         return this.createQueryBuilder(alias)
             .delete()
-            .where(alias + "." + this.metadata.primaryColumn.propertyName + " IN :ids", { ids: ids })
+            .where(alias + "." + this.metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids })
             .execute()
             .then(() => {});
     }

@@ -597,7 +597,7 @@ export class QueryBuilder<Entity> {
             case "select":
                 return "SELECT " + allSelects.join(", ") + " FROM " + tableName + " " + alias;
             case "delete":
-                return "DELETE FROM " + tableName + " " + (alias ? alias : "");
+                return "DELETE " + (alias ? alias : "") + " FROM " + tableName + " " + (alias ? alias : "");
             case "update":
                 const updateSet = Object.keys(this.updateQuerySet).map(key => key + "=:updateQuerySet_" + key);
                 const params = Object.keys(this.updateQuerySet).reduce((object, key) => {
