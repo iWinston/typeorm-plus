@@ -327,7 +327,7 @@ export class Repository<Entity> {
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
 
-            return this.driver.insert(relation.junctionEntityMetadata.table.name, values)
+            return this.driver.insert(relation.junctionEntityMetadata.table.name, values);
         });
         return Promise.all(insertPromises).then(() => {});
     }
@@ -370,9 +370,9 @@ export class Repository<Entity> {
      * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async addAndRemoveFromRelation(relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
-    async addAndRemoveFromRelation(relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
-    async addAndRemoveFromRelation(relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void> {
+    addAndRemoveFromRelation(relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+    addAndRemoveFromRelation(relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+    addAndRemoveFromRelation(relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void> {
         return Promise.all([
             this.addToRelation(relation as any, entityId, addRelatedEntityIds),
             this.removeFromRelation(relation as any, entityId, removeRelatedEntityIds)
