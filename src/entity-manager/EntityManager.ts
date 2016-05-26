@@ -306,9 +306,9 @@ export class EntityManager {
      * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
-    async addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
-    async addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void> {
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void> {
         return this.getRepository(entityClass).addAndRemoveFromRelation(relation as any, entityId, addRelatedEntityIds, removeRelatedEntityIds);
     }
 
@@ -316,7 +316,7 @@ export class EntityManager {
      * Removes entity with the given id.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any) {
+    removeById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any): Promise<void> {
         return this.getRepository(entityClass).removeById(id);
     }
 
@@ -324,7 +324,7 @@ export class EntityManager {
      * Removes all entities with the given ids.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeByIds<Entity>(entityClass: ConstructorFunction<Entity>|Function, ids: any[]) {
+    removeByIds<Entity>(entityClass: ConstructorFunction<Entity>|Function, ids: any[]): Promise<void> {
         return this.getRepository(entityClass).removeByIds(ids);
     }
 

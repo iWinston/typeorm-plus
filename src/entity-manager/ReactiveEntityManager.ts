@@ -289,7 +289,7 @@ export class ReactiveEntityManager {
      * Removes entity with the given id.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any) {
+    removeById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).removeById(id);
     }
 
@@ -297,11 +297,10 @@ export class ReactiveEntityManager {
      * Removes all entities with the given ids.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeByIds<Entity>(entityClass: ConstructorFunction<Entity>|Function, ids: any[]) {
+    removeByIds<Entity>(entityClass: ConstructorFunction<Entity>|Function, ids: any[]): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).removeByIds(ids);
     }
-
-
+    
     /**
      * Roots are entities that have no ancestors. Finds them all.
      */

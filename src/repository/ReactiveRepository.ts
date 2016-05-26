@@ -257,7 +257,7 @@ export class ReactiveRepository<Entity> {
      * Removes entity with the given id.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeById(id: any) {
+    removeById(id: any): Rx.Observable<void> {
         return Rx.Observable.fromPromise(this.repository.removeById(id));
     }
 
@@ -265,7 +265,7 @@ export class ReactiveRepository<Entity> {
      * Removes all entities with the given ids.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeByIds(ids: any[]) {
+    removeByIds(ids: any[]): Rx.Observable<void> {
         return Rx.Observable.fromPromise(this.repository.removeByIds(ids));
     }
 
