@@ -1,16 +1,17 @@
 {
-  "ambientDevDependencies": {
-    "assertion-error": "github:DefinitelyTyped/DefinitelyTyped/assertion-error/assertion-error.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
-    "chai": "github:DefinitelyTyped/DefinitelyTyped/chai/chai.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
-    "chai-as-promised": "github:DefinitelyTyped/DefinitelyTyped/chai-as-promised/chai-as-promised.d.ts#d6e3f732183ca0ee4c4b438323253b384f5b4091",
-    "mocha": "github:DefinitelyTyped/DefinitelyTyped/mocha/mocha.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645",
-    "mockery": "github:DefinitelyTyped/DefinitelyTyped/mockery/mockery.d.ts#6f6e5c7dd9effe21fee14eb65fe340ecbbc8580a",
-    "promises-a-plus": "github:DefinitelyTyped/DefinitelyTyped/promises-a-plus/promises-a-plus.d.ts#56068d3354648384ff32db20b6fcda4262856f33",
-    "sinon": "github:DefinitelyTyped/DefinitelyTyped/sinon/sinon.d.ts#7a3ca1f0b8a0960af9fc1838f3234cc9d6ce0645"
+  "globalDevDependencies": {
+    "assertion-error": "registry:dt/assertion-error#1.0.0+20160316155526",
+    "chai": "registry:dt/chai#3.4.0+20160317120654",
+    "chai-as-promised": "registry:dt/chai-as-promised#0.0.0+20160423070304",
+    "mocha": "registry:dt/mocha#2.2.5+20160317120654",
+    "promises-a-plus": "registry:dt/promises-a-plus#0.0.0+20160317120654",
+    "sinon": "registry:dt/sinon#1.16.0+20160517064723"
   },
-  "ambientDependencies": {
-    "es6-shim": "github:DefinitelyTyped/DefinitelyTyped/es6-shim/es6-shim.d.ts#6697d6f7dadbf5773cb40ecda35a76027e0783b2",
-    "lodash": "github:DefinitelyTyped/DefinitelyTyped/lodash/lodash.d.ts#7b7aa2027a8fb6219a8bcf1b6bb12bcd0ff9539d",
-    "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#cf7f980ba6cf09f75aaa9b5e53010db3c00b9aaf"
+  "globalDependencies": {
+    "es6-shim": "registry:dt/es6-shim#0.31.2+20160317120654",
+    "node": "registry:dt/node#6.0.0+20160524002506"
+  },
+  "dependencies": {
+    "lodash": "registry:npm/lodash#4.0.0+20160416211519"
   }
 }
