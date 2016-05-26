@@ -1,9 +1,10 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {JoinTableOptions} from "./options/JoinTableOptions";
 import {RelationMetadata} from "./RelationMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 
 /**
+ * JoinTableMetadata contains all information about relation's join table.
  */
 export class JoinTableMetadata extends PropertyMetadata {
 
@@ -49,24 +50,24 @@ export class JoinTableMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, propertyName: string, options: JoinTableOptions) {
-        super(target, propertyName);
+    constructor(args: JoinTableMetadataArgs) {
+        super(args.target, args.propertyName);
         
-        if (options.name)
-            this._name = options.name;
+        if (args.name)
+            this._name = args.name;
         
-        if (options.joinColumn) {
-            if (options.joinColumn.name)
-                this._joinColumnName = options.joinColumn.name;
-            if (options.joinColumn.referencedColumnName)
-                this._joinColumnReferencedColumnName = options.joinColumn.referencedColumnName;
+        if (args.joinColumn) {
+            if (args.joinColumn.name)
+                this._joinColumnName = args.joinColumn.name;
+            if (args.joinColumn.referencedColumnName)
+                this._joinColumnReferencedColumnName = args.joinColumn.referencedColumnName;
         }
         
-        if (options.inverseJoinColumn) {
-            if (options.inverseJoinColumn.name)
-                this._inverseJoinColumnName = options.inverseJoinColumn.name;
-            if (options.inverseJoinColumn.referencedColumnName)
-                this._inverseJoinColumnReferencedColumnName = options.inverseJoinColumn.referencedColumnName;
+        if (args.inverseJoinColumn) {
+            if (args.inverseJoinColumn.name)
+                this._inverseJoinColumnName = args.inverseJoinColumn.name;
+            if (args.inverseJoinColumn.referencedColumnName)
+                this._inverseJoinColumnReferencedColumnName = args.inverseJoinColumn.referencedColumnName;
         }
     }
 
@@ -84,8 +85,8 @@ export class JoinTableMetadata extends PropertyMetadata {
         return this.relation.entityMetadata.namingStrategy.joinTableName(
             this.relation.entityMetadata.table.name,
             this.relation.inverseEntityMetadata.table.name,
-            this.relation.name,
-            this.relation.hasInverseSide ? this.relation.inverseRelation.name : "",
+            this.relation.propertyName,
+            this.relation.hasInverseSide ? this.relation.inverseRelation.propertyName : "",
             this.referencedColumn.name,
             this.inverseReferencedColumn.name
         );

@@ -2,7 +2,7 @@ import {Alias} from "./alias/Alias";
 import {AliasMap} from "./alias/AliasMap";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
 
 /**
@@ -574,11 +574,13 @@ export class QueryBuilder<Entity> {
             .filter(join => this.selects.indexOf(join.alias.name) !== -1)
             .forEach(join => {
                 const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
-                if (!joinMetadata)
-                    throw new Error("Cannot get entity metadata for the given alias " + join.alias.name);
-                joinMetadata.columns.forEach(column => {
-                    allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
-                });
+                if (joinMetadata) {
+                    joinMetadata.columns.forEach(column => {
+                        allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
+                    });
+                } else {
+                    allSelects.push(join.alias.name);
+                }
             });
         
         // add all other selects
@@ -595,7 +597,7 @@ export class QueryBuilder<Entity> {
             case "select":
                 return "SELECT " + allSelects.join(", ") + " FROM " + tableName + " " + alias;
             case "delete":
-                return "DELETE FROM " + tableName + " " + (alias ? alias : "");
+                return "DELETE " + (alias ? alias : "") + " FROM " + tableName + " " + (alias ? alias : "");
             case "update":
                 const updateSet = Object.keys(this.updateQuerySet).map(key => key + "=:updateQuerySet_" + key);
                 const params = Object.keys(this.updateQuerySet).reduce((object, key) => {
@@ -633,10 +635,10 @@ export class QueryBuilder<Entity> {
             const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
             if (!metadata) return;
             metadata.columns.forEach(column => {
-                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName, 'g'), alias.name + "." + column.name);
+                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName, "g"), alias.name + "." + column.name);
             });
-            metadata.relations.forEach(relation => {
-                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName, 'g'), alias.name + "." + relation.name);
+            metadata.relationsWithJoinColumns.forEach(relation => {
+                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName, "g"), alias.name + "." + relation.name);
             });
         });
         return statement;
@@ -775,9 +777,8 @@ export class QueryBuilder<Entity> {
         if (entityOrProperty instanceof Function) {
             aliasObj.target = entityOrProperty;
 
-        } else if (typeof entityOrProperty === "string" && entityOrProperty.indexOf(".") !== -1) {
-            aliasObj.parentAliasName = entityOrProperty.split(".")[0];
-            aliasObj.parentPropertyName = entityOrProperty.split(".")[1];
+        } else if (this.isPropertyAlias(entityOrProperty)) {
+            [aliasObj.parentAliasName, aliasObj.parentPropertyName] = entityOrProperty.split(".");
             
         } else if (typeof entityOrProperty === "string") {
             tableName = entityOrProperty;
@@ -789,6 +790,26 @@ export class QueryBuilder<Entity> {
         this.joins.push(join);
         if (parameters) this.addParameters(parameters);
         return this;
+    }
+
+    private isPropertyAlias(str: any): str is string {
+        if (!(typeof str === "string"))
+            return false;
+        if (str.indexOf(".") === -1)
+            return false;
+
+        const aliasName = str.split(".")[0];
+        const propertyName = str.split(".")[1];
+
+        if (!aliasName || !propertyName)
+            return false;
+
+        const aliasNameRegexp = /^[a-zA-Z0-9_-]+$/;
+        const propertyNameRegexp = aliasNameRegexp;
+        if (!aliasNameRegexp.test(aliasName) || !propertyNameRegexp.test(propertyName))
+            return false;
+
+        return true;
     }
 
 }

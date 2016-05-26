@@ -1,16 +1,25 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {TableMetadata} from "./TableMetadata";
+import {EntityMetadata} from "./EntityMetadata";
 
+/**
+ * ON_DELETE type to be used to specify delete strategy when some relation is being deleted from the database.
+ */
 export type OnDeleteType = "RESTRICT"|"CASCADE"|"SET NULL";
 
 /**
- * This metadata interface contains all information foreign keys.
+ * Contains all information about entity's foreign key.
  */
 export class ForeignKeyMetadata {
 
     // -------------------------------------------------------------------------
-    // Readonly Properties
+    // Public Readonly Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Entity metadata where this foreign key is.
+     */
+    readonly entityMetadata: EntityMetadata;
 
     /**
      * Table to which this foreign key is applied.
@@ -18,7 +27,7 @@ export class ForeignKeyMetadata {
     readonly table: TableMetadata;
 
     /**
-     * Array of columns.
+     * Array of columns of this foreign key.
      */
     readonly columns: ColumnMetadata[];
 
@@ -41,11 +50,13 @@ export class ForeignKeyMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(table: TableMetadata, 
+    constructor(entityMetadata: EntityMetadata,
+                table: TableMetadata, 
                 columns: ColumnMetadata[], 
                 referencedTable: TableMetadata, 
                 referencedColumns: ColumnMetadata[],
                 onDelete?: OnDeleteType) {
+        this.entityMetadata = entityMetadata;
         this.table = table;
         this.columns = columns;
         this.referencedTable = referencedTable;
@@ -59,27 +70,24 @@ export class ForeignKeyMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Array of column names.
+     * Gets array of column names.
      */
     get columnNames(): string[] {
         return this.columns.map(column => column.name);
     }
 
     /**
-     * Array of referenced column names.
+     * Gets array of referenced column names.
      */
     get referencedColumnNames(): string[] {
         return this.referencedColumns.map(column => column.name);
     }
 
     /**
-     * Foreign key name.
+     * Gets foreign key name.
      */
     get name() {
-        // todo: use naming strategy
-        const key = `${this.table.name}_${this.columnNames.join("_")}` +
-                    `_${this.referencedTable.name}_${this.referencedColumnNames.join("_")}`;
-        return "fk_" + require("sha1")(key); // todo: use crypto instead?
+        return this.entityMetadata.namingStrategy.foreignKeyName(this.table.name, this.columnNames, this.referencedTable.name, this.referencedColumnNames);
     }
 
 }

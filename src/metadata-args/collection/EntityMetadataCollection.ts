@@ -1,0 +1,41 @@
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {EntityMetadataNotFound} from "../error/EntityMetadataNotFound";
+
+/**
+ * Array for the entity metadatas.
+ */
+export class EntityMetadataCollection extends Array<EntityMetadata> {
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    hasTarget(target: Function) {
+        return !!this.find(metadata => metadata.target === target);
+    }
+    
+    findByTarget(target: Function) {
+        const metadata = this.find(metadata => metadata.target === target);
+        if (!metadata)
+            throw new EntityMetadataNotFound(target);
+        
+        return metadata;
+    }
+    
+    findByNameOrTarget(nameOrTarget: Function|string) {
+        if (typeof nameOrTarget === "string") {
+            return this.findByName(nameOrTarget);
+        } else {
+            return this.findByTarget(nameOrTarget);
+        }
+    }
+
+    findByName(name: string) {
+        const metadata = this.find(metadata => metadata.name === name);
+        if (!metadata)
+            throw new EntityMetadataNotFound(name);
+        
+        return metadata;
+    }
+    
+}

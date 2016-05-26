@@ -1,9 +1,9 @@
-import {ColumnOptions} from "../../metadata/options/ColumnOptions";
+import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
-import {defaultMetadataStorage} from "../../index";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {getMetadataArgsStorage} from "../../index";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this 
@@ -31,11 +31,11 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
     return function (object: Object, propertyName: string) {
         
         // todo: need to store not string type, but original type instead? (like in relation metadata)
-        const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
+        const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // if type is not given implicitly then try to guess it
         if (!type)
-            type = ColumnTypes.determineTypeFromFunction((<any> Reflect).getMetadata("design:type", object, propertyName));
+            type = ColumnTypes.determineTypeFromFunction((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
@@ -53,11 +53,13 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata
-        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
+        const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
+            mode: "regular",
             options: options
-        }));
+        };
+        getMetadataArgsStorage().columns.add(args);
     };
 }

@@ -1,14 +1,19 @@
-import {defaultMetadataStorage} from "../../index";
-import {JoinColumnMetadata} from "../../metadata/JoinColumnMetadata";
-import {JoinColumnOptions} from "../../metadata/options/JoinColumnOptions";
+import {getMetadataArgsStorage} from "../../index";
+import {JoinColumnOptions} from "../options/JoinColumnOptions";
+import {JoinColumnMetadataArgs} from "../../metadata-args/JoinColumnMetadataArgs";
 
 /**
  */
 export function JoinColumn(options?: JoinColumnOptions): Function {
     return function (object: Object, propertyName: string) {
         options = options || {} as JoinColumnOptions;
-        const metadata = new JoinColumnMetadata(object.constructor, propertyName, options);
-        defaultMetadataStorage().joinColumnMetadatas.add(metadata);
+        const args: JoinColumnMetadataArgs = {
+            target: object.constructor,
+            propertyName: propertyName,
+            name: options.name,
+            referencedColumnName: options.referencedColumnName
+        };
+        getMetadataArgsStorage().joinColumns.add(args);
     };
 }
 

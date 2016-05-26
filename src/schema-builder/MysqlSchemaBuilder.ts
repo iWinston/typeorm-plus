@@ -3,7 +3,7 @@ import {MysqlDriver} from "../driver/MysqlDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
-import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
+import {IndexMetadata} from "../metadata/IndexMetadata";
 
 /**
  * @internal
@@ -30,7 +30,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
                 return  dbData.COLUMN_TYPE !== newType ||
                     dbData.COLUMN_COMMENT !== column.comment ||
                     dbData.IS_NULLABLE !== isNullable ||
-                    hasDbColumnAutoIncrement !== column.isAutoIncrement ||
+                    hasDbColumnAutoIncrement !== column.isGenerated ||
                     hasDbColumnPrimaryIndex !== column.isPrimary;
                 
             }).map(column => {
@@ -118,7 +118,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         return this.query(sql).then(() => {});
     }
 
-    createIndex(tableName: string, index: CompositeIndexMetadata): Promise<void> {
+    createIndex(tableName: string, index: IndexMetadata): Promise<void> {
         const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON ${tableName}(${index.columns.join(", ")})`;
         return this.query(sql).then(() => {});
     }
@@ -159,7 +159,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
             c += " NOT NULL";
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
-        if (column.isAutoIncrement === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";

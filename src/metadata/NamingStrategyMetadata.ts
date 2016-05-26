@@ -1,4 +1,5 @@
 import {TargetMetadata} from "./TargetMetadata";
+import {NamingStrategyMetadataArgs} from "../metadata-args/NamingStrategyMetadataArgs";
 
 /**
  * This metadata interface contains all information about naming strategy.
@@ -18,9 +19,9 @@ export class NamingStrategyMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, name: string) {
-        super(target);
-        this.name = name;
+    constructor(args: NamingStrategyMetadataArgs) {
+        super(args.target);
+        this.name = args.name;
     }
 
 }

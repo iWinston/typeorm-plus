@@ -1,16 +1,16 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationTypes, RelationType} from "./types/RelationTypes";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
-import {RelationMetadataArgs} from "./args/RelationMetadataArgs";
+import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
  */
 export type RelationTypeInFunction = ((type?: any) => Function);
+
 
 /**
  * Contains the name of the property of the object, or the function that returns this name.
@@ -19,18 +19,13 @@ export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
 
 
 /**
- * This metadata interface contains all information about some document's relation.
+ * Contains all information about some entity's relation.
  */
 export class RelationMetadata extends PropertyMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
     // ---------------------------------------------------------------------
-
-    /**
-     * Naming strategy used to generate and normalize column name.
-     */
-    namingStrategy: NamingStrategyInterface;
 
     /**
      * Its own entity metadata.
@@ -116,11 +111,6 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Column name for this relation.
-     */
-    private _name: string;
-
-    /**
      * The type of the field.
      */
     private _type: RelationTypeInFunction;
@@ -140,8 +130,6 @@ export class RelationMetadata extends PropertyMetadata {
         
         if (args.inverseSideProperty)
             this._inverseSideProperty = args.inverseSideProperty;
-        if (args.options.name)
-            this._name = args.options.name;
         if (args.propertyType)
             this.propertyType = args.propertyType;
         if (args.options.cascadeInsert || args.options.cascadeAll)
@@ -163,87 +151,150 @@ export class RelationMetadata extends PropertyMetadata {
 
         if (!this._type)
             this._type = args.type;
-        if (!this._name)
-            this._name = args.propertyName;
     }
 
     // ---------------------------------------------------------------------
     // Accessors
     // ---------------------------------------------------------------------
 
+    /**
+     * Gets the name of column in the database. 
+     * Cannot be used with many-to-many relations since they don't have a column in the database.
+     * Also only owning sides of the relations have this property.
+     */
     get name(): string {
-        if (this.joinColumn && this.joinColumn.name)
-            return this.joinColumn.name;
+        if (!this.isOwning || this.isManyToMany)
+            throw new Error(`Relation name cannot be retrieved for many-to-many relations or not owning relations.`);
         
-        return this.namingStrategy ? this.namingStrategy.relationName(this._name) : this._name;
+        return this.joinColumn.name;
     }
-    
+
+    /**
+     * Gets the name of column to which this relation is referenced. 
+     * Cannot be used with many-to-many relations since all referenced are in the junction table.
+     * Also only owning sides of the relations have this property.
+     */
     get referencedColumnName(): string {
+        if (!this.isOwning)
+            throw new Error(`Only owning side of the relations can have information about referenced column names.`);
+        
+        // for many-to-one and owner one-to-one relations we get referenced column from join column
         if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
             return this.joinColumn.referencedColumn.name;
         
-        return this.inverseEntityMetadata.primaryColumn.propertyName;
+        // for many-to-many relation we give referenced column depend of owner side
+        if (this.joinTable) { // need to check if this algorithm works correctly
+            if (this.isOwning) {
+                return this.joinTable.referencedColumn.name;
+            } else {
+                return this.joinTable.inverseReferencedColumn.name;
+            }
+        }
+        
+        // this should not be possible, but anyway throw error
+        throw new Error(`Cannot get referenced column name of the relation ${this.entityMetadata.name}#${this.name}`);
+    }
+
+    /**
+     * Gets the property's type to which this relation is applied.
+     */
+    get type(): Function {
+        return this._type();
+    }
+
+    /**
+     * Checks if this relation is lazy-load style relation.
+     */
+    get isLazy(): boolean {
+        return this.propertyType && this.propertyType.name && this.propertyType.name.toLowerCase() === "promise";
     }
 
     /**
      * Indicates if this side is an owner of this relation.
      */
     get isOwning() {
-        return  this.isManyToOne || 
-                (this.isManyToMany && this.joinTable) || 
-                (this.isOneToOne && this.joinColumn);
+        return  !!(this.isManyToOne ||
+            (this.isManyToMany && this.joinTable) ||
+            (this.isOneToOne && this.joinColumn));
     }
 
-    get type(): Function {
-        return this._type();
-    }
-
-    get inverseSideProperty(): string {
-        
-        if (this._inverseSideProperty) {
-            return this.computeInverseSide(this._inverseSideProperty);
-            
-        } else if (this.isTreeParent) {
-            return this.entityMetadata.treeChildrenRelation.propertyName;
-            
-        } else if (this.isTreeChildren) {
-            return this.entityMetadata.treeParentRelation.propertyName;
-            
-        } 
-        
-        return "";
-    }
-
-    get inverseRelation(): RelationMetadata {
-        const relation = this.inverseEntityMetadata.findRelationWithPropertyName(this.inverseSideProperty);
-        if (!relation)
-            throw new Error(`Inverse side was not found in the relation ${this.entityMetadata.name}#${this.inverseSideProperty}`);
-        
-        return relation;
-    }
-
+    /**
+     * Checks if this relation's type is "one-to-one".
+     */
     get isOneToOne(): boolean {
         return this.relationType === RelationTypes.ONE_TO_ONE;
     }
 
+    /**
+     * Checks if this relation is owner side of the "one-to-one" relation.
+     */
+    get isOneToOneOwner(): boolean {
+        return this.isOneToOne && this.isOwning;
+    }
+
+    /**
+     * Checks if this relation is NOT owner side of the "one-to-one" relation.
+     */
+    get isOneToOneNotOwner(): boolean {
+        return this.isOneToOne && !this.isOwning;
+    }
+
+    /**
+     * Checks if this relation's type is "one-to-many".
+     */
     get isOneToMany(): boolean {
         return this.relationType === RelationTypes.ONE_TO_MANY;
     }
 
+    /**
+     * Checks if this relation's type is "many-to-one".
+     */
     get isManyToOne(): boolean {
         return this.relationType === RelationTypes.MANY_TO_ONE;
     }
 
+    /**
+     * Checks if this relation's type is "many-to-many".
+     */
     get isManyToMany(): boolean {
         return this.relationType === RelationTypes.MANY_TO_MANY;
     }
-    
+
+    /**
+     * Checks if inverse side is specified by a relation.
+     */
     get hasInverseSide(): boolean {
         return this.inverseEntityMetadata && this.inverseEntityMetadata.hasRelationWithPropertyName(this.inverseSideProperty);
     }
-    
-    get isLazy(): boolean {
-        return this.propertyType && this.propertyType.name && this.propertyType.name.toLowerCase() === "promise";
+
+    /**
+     * Gets the property name of the inverse side of the relation.
+     */
+    get inverseSideProperty(): string {
+
+        if (this._inverseSideProperty) {
+            return this.computeInverseSide(this._inverseSideProperty);
+
+        } else if (this.isTreeParent && this.entityMetadata.hasTreeChildrenRelation) {
+            return this.entityMetadata.treeChildrenRelation.propertyName;
+
+        } else if (this.isTreeChildren && this.entityMetadata.hasTreeParentRelation) {
+            return this.entityMetadata.treeParentRelation.propertyName;
+
+        }
+
+        return "";
+    }
+
+    /**
+     * Gets the relation metadata of the inverse side of this relation.
+     */
+    get inverseRelation(): RelationMetadata {
+        const relation = this.inverseEntityMetadata.findRelationWithPropertyName(this.inverseSideProperty);
+        if (!relation)
+            throw new Error(`Inverse side was not found in the relation ${this.entityMetadata.name}#${this.inverseSideProperty}`);
+
+        return relation;
     }
 
     // ---------------------------------------------------------------------

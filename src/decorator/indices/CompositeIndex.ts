@@ -1,14 +1,30 @@
-import {CompositeIndexMetadata} from "../../metadata/CompositeIndexMetadata";
-import {defaultMetadataStorage} from "../../index";
-import {CompositeIndexOptions} from "../../metadata/options/CompositeIndexOptions";
+import {getMetadataArgsStorage} from "../../index";
+import {CompositeIndexOptions} from "../options/CompositeIndexOptions";
+import {IndexMetadataArgs} from "../../metadata-args/IndexMetadataArgs";
 
 /**
- * Composite indexes must be set on entity classes and must specify fields to be indexed.
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
 export function CompositeIndex(name: string, fields: string[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(fields: string[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(fields: (object: any) => any[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(name: string, fields: (object: any) => any[], options?: CompositeIndexOptions): Function;
+
+/**
+ * Composite index must be set on entity classes and must specify entity's fields to be indexed.
+ */
 export function CompositeIndex(nameOrFields: string|string[]|((object: any) => any[]), 
                                maybeFieldsOrOptions?: ((object: any) => any[])|CompositeIndexOptions|string[],
                                maybeOptions?: CompositeIndexOptions): Function {
@@ -17,6 +33,12 @@ export function CompositeIndex(nameOrFields: string|string[]|((object: any) => a
     const options = typeof maybeFieldsOrOptions === "object" ? <CompositeIndexOptions> maybeFieldsOrOptions : maybeOptions;
     
     return function (cls: Function) {
-        defaultMetadataStorage().compositeIndexMetadatas.add(new CompositeIndexMetadata(cls, name, fields, options));
+        const args: IndexMetadataArgs = {
+            target: cls,
+            name: name,
+            columns: fields,
+            unique: options && options.unique ? true : false
+        };
+        getMetadataArgsStorage().indices.add(args);
     };
 }

@@ -1,5 +1,5 @@
-import {defaultMetadataStorage} from "../../index";
-import {RelationsCountMetadata} from "../../metadata/RelationsCountMetadata";
+import {getMetadataArgsStorage} from "../../index";
+import {RelationsCountMetadataArgs} from "../../metadata-args/RelationsCountMetadataArgs";
 
 /**
  * Holds a number of children in the closure table of the column.
@@ -8,10 +8,15 @@ export function RelationsCountColumn<T>(relation: string|((object: T) => any)): 
     return function (object: Object, propertyName: string) {
 
         // todo: need to check if property type is number?
-        // const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
+        // const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // create and register a new column metadata
-        defaultMetadataStorage().relationCountMetadatas.add(new RelationsCountMetadata(object.constructor, propertyName, relation));
+        const args: RelationsCountMetadataArgs = {
+            target: object.constructor,
+            propertyName: propertyName,
+            relation: relation
+        };
+        getMetadataArgsStorage().relationCounts.add(args);
     };
 }
 

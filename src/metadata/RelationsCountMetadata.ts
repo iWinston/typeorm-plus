@@ -1,6 +1,8 @@
 import {PropertyMetadata} from "./PropertyMetadata";
+import {RelationsCountMetadataArgs} from "../metadata-args/RelationsCountMetadataArgs";
 
 /**
+ * Contains all information about entity's relation count.
  */
 export class RelationsCountMetadata extends PropertyMetadata {
 
@@ -9,7 +11,7 @@ export class RelationsCountMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * The real reflected property type.
+     * Relation which need to count.
      */
     readonly relation: string|((object: any) => any);
 
@@ -17,9 +19,9 @@ export class RelationsCountMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, propertyName: string, relation: string|((object: any) => any)) {
-        super(target, propertyName);
-        this.relation = relation;
+    constructor(args: RelationsCountMetadataArgs) {
+        super(args.target, args.propertyName);
+        this.relation = args.relation;
     }
 
 }

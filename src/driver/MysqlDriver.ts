@@ -254,9 +254,9 @@ export class MysqlDriver extends BaseDriver implements Driver {
             case ColumnTypes.DATE:
                 return moment(value).format("YYYY-MM-DD");
             case ColumnTypes.TIME:
-                return moment(value).format("hh:mm:ss");
+                return moment(value).format("HH:mm:ss");
             case ColumnTypes.DATETIME:
-                return moment(value).format("YYYY-MM-DD hh:mm:ss");
+                return moment(value).format("YYYY-MM-DD HH:mm:ss");
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
             case ColumnTypes.SIMPLE_ARRAY:
@@ -273,6 +273,9 @@ export class MysqlDriver extends BaseDriver implements Driver {
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any {
         switch (column.type) {
+            case ColumnTypes.BOOLEAN:
+                return value ? true : false;
+            
             case ColumnTypes.DATE:
                 if (value instanceof Date)
                     return value;
@@ -280,13 +283,13 @@ export class MysqlDriver extends BaseDriver implements Driver {
                 return moment(value, "YYYY-MM-DD").toDate();
             
             case ColumnTypes.TIME:
-                return moment(value, "hh:mm:ss").toDate();
+                return moment(value, "HH:mm:ss").toDate();
             
             case ColumnTypes.DATETIME:
                 if (value instanceof Date)
                     return value;
                 
-                return moment(value, "YYYY-MM-DD hh:mm:ss").toDate();
+                return moment(value, "YYYY-MM-DD HH:mm:ss").toDate();
             
             case ColumnTypes.JSON:
                 return JSON.parse(value);

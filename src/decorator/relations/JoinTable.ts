@@ -1,14 +1,20 @@
-import {defaultMetadataStorage} from "../../index";
-import {JoinTableOptions} from "../../metadata/options/JoinTableOptions";
-import {JoinTableMetadata} from "../../metadata/JoinTableMetadata";
+import {getMetadataArgsStorage} from "../../index";
+import {JoinTableOptions} from "../options/JoinTableOptions";
+import {JoinTableMetadataArgs} from "../../metadata-args/JoinTableMetadataArgs";
 
 /**
  */
 export function JoinTable(options?: JoinTableOptions): Function {
     return function (object: Object, propertyName: string) {
         options = options || {} as JoinTableOptions;
-        const metadata = new JoinTableMetadata(object.constructor, propertyName, options);
-        defaultMetadataStorage().joinTableMetadatas.add(metadata);
+        const args: JoinTableMetadataArgs = {
+            target: object.constructor,
+            propertyName: propertyName,
+            name: options.name,
+            joinColumn: options.joinColumn,
+            inverseJoinColumn: options.inverseJoinColumn
+        };
+        getMetadataArgsStorage().joinTables.add(args);
     };
 }
 

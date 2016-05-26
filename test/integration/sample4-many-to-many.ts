@@ -39,7 +39,7 @@ describe("many-to-many", function() {
     before(function() {
         return createConnection(options)
             .then(con => connection = con)
-            .catch(e => console.log("Error during connection to db: " + e));
+            .catch(e => console.log("Error during connection to db: " + e, e.stack));
     });
 
 
@@ -49,9 +49,7 @@ describe("many-to-many", function() {
 
     // clean up database before each test
     function reloadDatabase() {
-        return connection.driver
-            .clearDatabase()
-            .then(() => connection.syncSchema());
+        return connection.syncSchema(true);
     }
 
     let postRepository: Repository<Post>,

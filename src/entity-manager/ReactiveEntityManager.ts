@@ -242,9 +242,69 @@ export class ReactiveEntityManager {
     }
 
     /**
+     * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
+     * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    setRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string, entityId: any, relatedEntityId: any): Rx.Observable<void>;
+    setRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityId: any): Rx.Observable<void>;
+    setRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Rx.Observable<void> {
+        return this.getReactiveRepository(entityClass).setRelation(relationName as any, entityId, relatedEntityId);
+    }
+
+    /**
+     * Adds a new relation between two entities into relation's many-to-many table.
+     * Should be used when you want quickly and efficiently add a relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string, entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void> {
+        return this.getReactiveRepository(entityClass).addToRelation(relationName as any, entityId, relatedEntityIds);
+    }
+
+    /**
+     * Removes a relation between two entities from relation's many-to-many table.
+     * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string, entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void> {
+        return this.getReactiveRepository(entityClass).removeFromRelation(relationName as any, entityId, relatedEntityIds);
+    }
+
+    /**
+     * Performs both #addToRelation and #removeFromRelation operations.
+     * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void>;
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void>;
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void> {
+        return this.getReactiveRepository(entityClass).addAndRemoveFromRelation(relation as any, entityId, addRelatedEntityIds, removeRelatedEntityIds);
+    }
+
+    /**
+     * Removes entity with the given id.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any): Rx.Observable<void> {
+        return this.getReactiveRepository(entityClass).removeById(id);
+    }
+
+    /**
+     * Removes all entities with the given ids.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeByIds<Entity>(entityClass: ConstructorFunction<Entity>|Function, ids: any[]): Rx.Observable<void> {
+        return this.getReactiveRepository(entityClass).removeByIds(ids);
+    }
+    
+    /**
      * Roots are entities that have no ancestors. Finds them all.
      */
-    findRoots<Entity>(entityClass: ConstructorFunction<Entity>|Function): Promise<Entity[]> {
+    findRoots<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findRoots();
     }
 
@@ -258,21 +318,21 @@ export class ReactiveEntityManager {
     /**
      * Gets all children (descendants) of the given entity. Returns them all in a flat array.
      */
-    findDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity[]> {
+    findDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findDescendants(entity);
     }
 
     /**
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
      */
-    findDescendantsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity> {
+    findDescendantsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity> {
         return this.getReactiveTreeRepository(entityClass).findDescendantsTree(entity);
     }
 
     /**
      * Gets number of descendants of the entity.
      */
-    countDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<number> {
+    countDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<number> {
         return this.getReactiveTreeRepository(entityClass).countDescendants(entity);
     }
 
@@ -286,21 +346,21 @@ export class ReactiveEntityManager {
     /**
      * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
      */
-    findAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity[]> {
+    findAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findAncestors(entity);
     }
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
      */
-    findAncestorsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<Entity> {
+    findAncestorsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity> {
         return this.getReactiveTreeRepository(entityClass).findAncestorsTree(entity);
     }
 
     /**
      * Gets number of ancestors of the entity.
      */
-    countAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Promise<number> {
+    countAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<number> {
         return this.getReactiveTreeRepository(entityClass).countAncestors(entity);
     }
 

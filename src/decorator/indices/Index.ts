@@ -1,11 +1,17 @@
-import {defaultMetadataStorage} from "../../index";
-import {IndexMetadata} from "../../metadata/IndexMetadata";
+import {getMetadataArgsStorage} from "../../index";
+import {IndexMetadataArgs} from "../../metadata-args/IndexMetadataArgs";
 
 /**
  * Fields that needs to be indexed must be marked with this decorator.
  */
-export function Index(name?: string) {
+export function Index(name?: string, options?: { unique: boolean }) {
     return function (object: Object, propertyName: string) {
-        defaultMetadataStorage().indexMetadatas.add(new IndexMetadata(object.constructor, propertyName, name));
+        const args: IndexMetadataArgs = {
+            name: name,
+            target: object.constructor,
+            columns: [propertyName],
+            unique: options && options.unique ? true : false
+        };
+        getMetadataArgsStorage().indices.add(args);
     };
 }

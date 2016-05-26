@@ -3,9 +3,8 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
-import {EntityMetadataCollection} from "../metadata/collection/EntityMetadataCollection";
+import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {IndexMetadata} from "../metadata/IndexMetadata";
-import {CompositeIndexMetadata} from "../metadata/CompositeIndexMetadata";
 
 /**
  * Creates indexes based on the given metadata.
@@ -82,7 +81,7 @@ export class SchemaCreator {
     }
 
     private createIndicesForAll(metadatas: EntityMetadata[]) {
-        return Promise.all(metadatas.map(metadata => this.createIndices(metadata.table, metadata.compositeIndices)));
+        return Promise.all(metadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
     }
 
     private removePrimaryKeyForAll(metadatas: EntityMetadata[]) {
@@ -214,7 +213,7 @@ export class SchemaCreator {
      * Creates indices which are missing in db yet, and drops indices which exist in the db,
      * but does not exist in the metadata anymore.
      */
-    private createIndices(table: TableMetadata, compositeIndices: CompositeIndexMetadata[]) {
+    private createIndices(table: TableMetadata, compositeIndices: IndexMetadata[]) {
         return this.schemaBuilder.getTableIndicesQuery(table.name).then(tableIndices => {
 
             // drop all indices that exist in the table, but does not exist in the given composite indices

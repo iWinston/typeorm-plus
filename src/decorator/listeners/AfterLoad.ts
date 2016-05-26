@@ -1,16 +1,17 @@
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
 import {EventListenerTypes} from "../../metadata/types/EventListenerTypes";
-import {EntityListenerMetadata} from "../../metadata/EntityListenerMetadata";
+import {EntityListenerMetadataArgs} from "../../metadata-args/EntityListenerMetadataArgs";
 
 /**
  * Calls a method on which this decorator is applied after entity is loaded.
  */
 export function AfterLoad() {
     return function (object: Object, propertyName: string) {
-        defaultMetadataStorage().entityListenerMetadatas.add(new EntityListenerMetadata(
-            object.constructor, 
-            propertyName, 
-            EventListenerTypes.AFTER_LOAD
-        ));
+        const args: EntityListenerMetadataArgs = {
+            target: object.constructor,
+            propertyName: propertyName,
+            type: EventListenerTypes.AFTER_LOAD
+        };
+        getMetadataArgsStorage().entityListeners.add(args);
     };
 }

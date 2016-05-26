@@ -32,7 +32,7 @@ describe("insertion", function() {
     before(function() {
         return createConnection(parameters)
             .then(con => connection = con)
-            .catch(e => console.log("Error during connection to db: " + e));
+            .catch(e => console.log("Error during connection to db: " + e, e.stack));
     });
 
     after(function() {
@@ -41,10 +41,8 @@ describe("insertion", function() {
 
     // clean up database before each test
     function reloadDatabase() {
-        return connection.driver
-            .clearDatabase()
-            .then(() => connection.syncSchema())
-            .catch(e => console.log("Error during schema re-creation: ", e));
+        return connection.syncSchema(true)
+            .catch(e => console.log("Error during schema re-creation: ", e, e.stack));
     }
 
     let postRepository: Repository<Post>;

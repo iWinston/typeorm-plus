@@ -1,8 +1,8 @@
-import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {RelationOptions} from "../../metadata/options/RelationOptions";
+import {RelationOptions} from "../options/RelationOptions";
 import {RelationTypes} from "../../metadata/types/RelationTypes";
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
 import {ConstructorFunction} from "../../common/ConstructorFunction";
+import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 /**
  * One-to-one relation allows to create direct relation between two entities. Entity1 have only one Entity2.
@@ -35,9 +35,9 @@ export function OneToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T>
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
+        const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
 
-        defaultMetadataStorage().relationMetadatas.add(new RelationMetadata({
+        const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
@@ -45,6 +45,7 @@ export function OneToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T>
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options
-        }));
+        };
+        getMetadataArgsStorage().relations.add(args);
     };
 }

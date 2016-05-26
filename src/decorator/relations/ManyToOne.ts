@@ -1,8 +1,8 @@
-import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {RelationOptions} from "../../metadata/options/RelationOptions";
+import {RelationOptions} from "../options/RelationOptions";
 import {RelationTypes} from "../../metadata/types/RelationTypes";
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
 import {ConstructorFunction} from "../../common/ConstructorFunction";
+import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 /**
  * Many-to-one relation allows to create type of relation when Entity1 can have single instance of Entity2, but
@@ -38,9 +38,9 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
+        const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
 
-        defaultMetadataStorage().relationMetadatas.add(new RelationMetadata({
+        const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
@@ -48,6 +48,7 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options
-        }));
+        };
+        getMetadataArgsStorage().relations.add(args);
     };
 }

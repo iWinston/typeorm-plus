@@ -45,9 +45,7 @@ describe("persistence > one-to-many", function() {
 
     // clean up database before each test
     function reloadDatabase() {
-        return connection.driver
-            .clearDatabase()
-            .then(() => connection.syncSchema())
+        return connection.syncSchema(true)
             .catch(e => console.log("Error during schema re-creation: ", e));
     }
 

@@ -1,8 +1,8 @@
-import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {RelationOptions} from "../../metadata/options/RelationOptions";
+import {RelationOptions} from "../options/RelationOptions";
 import {RelationTypes} from "../../metadata/types/RelationTypes";
-import {defaultMetadataStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../index";
 import {ConstructorFunction} from "../../common/ConstructorFunction";
+import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
@@ -38,9 +38,9 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ConstructorFunction<
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
         
-        const reflectedType = (<any> Reflect).getMetadata("design:type", object, propertyName);
+        const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
 
-        defaultMetadataStorage().relationMetadatas.add(new RelationMetadata({
+        const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
@@ -48,7 +48,8 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ConstructorFunction<
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options
-        }));
+        };
+        getMetadataArgsStorage().relations.add(args);
     };
 }
 

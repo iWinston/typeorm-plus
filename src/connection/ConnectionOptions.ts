@@ -1,5 +1,5 @@
 /**
- * Connection options passed to the document.
+ * Connection options passed to the connection.
  */
 export interface ConnectionOptions {
 

@@ -1,5 +1,6 @@
 import {TargetMetadata} from "./TargetMetadata";
 import {EntityMetadata} from "./EntityMetadata";
+import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 
 /**
  * Table type.
@@ -27,35 +28,51 @@ export class TableMetadata extends TargetMetadata {
     /**
      * Indicates if this table is abstract or not. Regular tables can inherit columns from abstract tables.
      */
-    private readonly tableType: TableType;
+    private readonly tableType: TableType = "regular";
 
     /**
      * Table name in the database.
      */
-    private readonly _name: string;
+    private readonly _name: string|undefined;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target?: Function, name?: string, type: TableType = "regular") {
-        super(target);
-        
-        if (name)
+    constructor(target?: Function, name?: string, type?: TableType);
+    constructor(args: TableMetadataArgs);
+    constructor(argsOrTarget: TableMetadataArgs|Function|undefined, name?: string, type: TableType = "regular") {
+        super(arguments.length === 1 ? (argsOrTarget as TableMetadataArgs).target : argsOrTarget as Function);
+        if (arguments.length === 1) {
+            const metadata = argsOrTarget as TableMetadataArgs;
+            this.tableType = metadata.type;
+            this._name = metadata.name;
+            
+        } else {
             this._name = name;
-        if (type)
             this.tableType = type;
+        }
     }
-
+    
     // ---------------------------------------------------------------------
     // Accessors
     // ---------------------------------------------------------------------
 
     /**
-     * Checks if this table is abstract.
+     * Table name in the database.
      */
-    get isAbstract() {
-        return this.tableType === "abstract";
+    get name() {
+
+        // if custom name is given then use it
+        if (this._name)
+            return this.entityMetadata.namingStrategy.tableNameCustomized(this._name);
+
+        // otherwise use target's table name
+        if (this.target)
+            return this.entityMetadata.namingStrategy.tableName((this.target as any).name);
+        
+        // in the case if error 
+        throw new Error("Table does not have neither table name neither target specified.");
     }
 
     /**
@@ -66,34 +83,17 @@ export class TableMetadata extends TargetMetadata {
     }
 
     /**
+     * Checks if this table is abstract.
+     */
+    get isAbstract() {
+        return this.tableType === "abstract";
+    }
+
+    /**
      * Checks if this table is a closure table.
      */
     get isClosure() {
         return this.tableType === "closure";
     }
-
-    /**
-     * Table name in the database.
-     */
-    get name() {
-        if (this._name)
-            return this._name;
-
-        return this.entityMetadata.namingStrategy.tableName((<any>this.target).name);
-    }
-
-    // ---------------------------------------------------------------------
-    // Public Methods
-    // ---------------------------------------------------------------------
-
-    /**
-     * Checks if this table is inherited from another table.
-     */
-    isInherited(anotherTable: TableMetadata) {
-        return Object.getPrototypeOf(this.target.prototype).constructor === anotherTable.target;
-        // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
-        // properties get inherited in a right order. To achieve it we can only check a first parent of the class
-        // return this.target.prototype instanceof anotherTable.target;
-    }
-
+    
 }

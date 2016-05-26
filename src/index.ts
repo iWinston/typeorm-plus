@@ -6,7 +6,7 @@ import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {ConnectionManager} from "./connection-manager/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
-import {MetadataStorage} from "./metadata-storage/MetadataStorage";
+import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
 import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 
 // -------------------------------------------------------------------------
@@ -14,21 +14,33 @@ import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOpti
 // -------------------------------------------------------------------------
 
 /**
- * Container to be used by TypeORM for inversion control.
+ * Container to be used by this library for inversion control. If container was not implicitly set then by default
+ * container simply creates a new instance of the given class.
  */
-let container: { get(someClass: any): any };
+let container: { get<T>(someClass: { new (...args: any[]): T }|Function): T } = new (class {
+    private instances: any[] = [];
+    get<T>(someClass: { new (...args: any[]): T }): T {
+        if (!this.instances[<any>someClass])
+            this.instances[<any>someClass] = new someClass();
+
+        return this.instances[<any>someClass];
+    }
+})();
 
 /**
- * Sets container to be used by TypeORM.
- * 
+ * Sets container to be used by this library.
+ *
  * @param iocContainer
  */
 export function useContainer(iocContainer: { get(someClass: any): any }) {
     container = iocContainer;
 }
 
-export function getContainer() {
-    return container;
+/**
+ * Gets the IOC container used by this library.
+ */
+export function getFromContainer<T>(someClass: { new (...args: any[]): T }|Function): T {
+    return container.get<T>(someClass);
 }
 
 // -------------------------------------------------------------------------
@@ -38,17 +50,20 @@ export function getContainer() {
 /**
  * Default metadata storage used as singleton and can be used to storage all metadatas in the system.
  */
-let metadataStorage: MetadataStorage;
+let metadataArgsStorage: MetadataArgsStorage;
 
-export function defaultMetadataStorage() {
-    if (!metadataStorage && container) {
-        metadataStorage = container.get(MetadataStorage);
+/**
+ * Gets metadata args storage.
+ */
+export function getMetadataArgsStorage() {
+    if (!metadataArgsStorage && container) {
+        metadataArgsStorage = container.get(MetadataArgsStorage);
         
-    } else if (!metadataStorage) {
-        metadataStorage = new MetadataStorage();
+    } else if (!metadataArgsStorage) {
+        metadataArgsStorage = new MetadataArgsStorage();
     }
     
-    return metadataStorage;
+    return metadataArgsStorage;
 }
 
 // -------------------------------------------------------------------------

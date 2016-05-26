@@ -1,8 +1,9 @@
 import {PropertyMetadata} from "./PropertyMetadata";
 import {EventListenerType} from "./types/EventListenerTypes";
+import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadataArgs";
 
 /**
- * This metadata interface contains all information about some index on a field.
+ * This metadata contains all information about entity's listeners.
  */
 export class EntityListenerMetadata extends PropertyMetadata {
 
@@ -19,9 +20,9 @@ export class EntityListenerMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target: Function, propertyName: string, type: EventListenerType) {
-        super(target, propertyName);
-        this.type = type;
+    constructor(args: EntityListenerMetadataArgs) {
+        super(args.target, args.propertyName);
+        this.type = args.type;
     }
 
 

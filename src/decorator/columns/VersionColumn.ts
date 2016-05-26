@@ -1,7 +1,7 @@
-import {ColumnOptions} from "../../metadata/options/ColumnOptions";
+import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {defaultMetadataStorage} from "../../index";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {getMetadataArgsStorage} from "../../index";
+import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
  * This column will store a number - version of the entity. Every time your entity will be persisted, this number will
@@ -10,7 +10,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 export function VersionColumn(options?: ColumnOptions): Function {
     return function (object: Object, propertyName: string) {
 
-        const reflectedType = ColumnTypes.typeToString((<any> Reflect).getMetadata("design:type", object, propertyName));
+        const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
@@ -21,13 +21,14 @@ export function VersionColumn(options?: ColumnOptions): Function {
         // todo: check if reflectedType is number too
 
         // create and register a new column metadata
-        defaultMetadataStorage().columnMetadatas.add(new ColumnMetadata({
+        const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             mode: "version",
             options: options
-        }));
+        };
+        getMetadataArgsStorage().columns.add(args);
     };
 }
 

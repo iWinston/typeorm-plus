@@ -24,7 +24,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity> {
     transform(object: any, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity> {
         
         // if object does not have id then nothing to load really
-        if (!metadata.hasPrimaryKey || !object[metadata.primaryColumn.name])
+        if (!metadata.hasPrimaryColumn || !object[metadata.primaryColumn.name])
             return Promise.reject<Entity>("Given object does not have a primary column, cannot transform it to database entity.");
         
         const alias = queryBuilder.alias;
