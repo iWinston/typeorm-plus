@@ -1,6 +1,6 @@
 import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
-import {RelationMetadata} from "./RelationMetadata";
+import {RelationMetadata, PropertyTypeInFunction} from "./RelationMetadata";
 import {IndexMetadata} from "./IndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
@@ -250,6 +250,13 @@ export class EntityMetadata {
         this.columns.forEach(column => entity[column.propertyName] = column.propertyName);
         this.relations.forEach(relation => entity[relation.propertyName] = relation.propertyName);
         return entity;
+    }
+
+    /**
+     * Computes property name of the entity using given PropertyTypeInFunction.
+     */
+    computePropertyName(nameOrFn: PropertyTypeInFunction<any>) {
+        return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.createPropertiesMap());
     }
 
     /**

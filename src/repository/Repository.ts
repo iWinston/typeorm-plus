@@ -270,6 +270,137 @@ export class Repository<Entity> {
             .then(() => runInTransactionResult);
     }
 
+    /**
+     * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
+     * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    setRelation(relationName: string, entityId: any, relatedEntityId: any): Promise<void>;
+    setRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void>;
+    setRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
+        const propertyName = this.metadata.computePropertyName(relationName);
+        if (!this.metadata.hasRelationWithPropertyName(propertyName))
+            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
+
+        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+        // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
+        //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+        if (relation.isManyToMany)
+            throw new Error(`Many-to-many relation is not supported for this operation. Use #addToRelation method for many-to-many relations.`);
+
+        let values: any = {}, conditions: any = {};
+        if (relation.isOwning) {
+            values[relation.name] = relatedEntityId;
+            conditions[relation.joinColumn.referencedColumn.name] = entityId;
+        } else {
+            values[relation.inverseRelation.name] = entityId;
+            conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = relatedEntityId;
+        }
+        return this.driver.update(relation.entityMetadata.table.name, values, conditions).then(() => {});
+    }
+
+    /**
+     * Adds a new relation between two entities into relation's many-to-many table.
+     * Should be used when you want quickly and efficiently add a relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    addToRelation(relationName: string, entityId: any, relatedEntityIds: any[]): Promise<void>;
+    addToRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void>;
+    addToRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
+        const propertyName = this.metadata.computePropertyName(relationName);
+        if (!this.metadata.hasRelationWithPropertyName(propertyName))
+            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
+
+        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+        if (!relation.isManyToMany)
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+
+        const values: any = { };
+        relatedEntityIds.forEach(relatedEntityId => {
+            if (relation.isOwning) {
+                values[relation.junctionEntityMetadata.columns[0].name] = entityId;
+                values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
+            } else {
+                values[relation.junctionEntityMetadata.columns[1].name] = entityId;
+                values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
+            }
+        });
+        return this.driver.insert(relation.junctionEntityMetadata.table.name, values).then(() => {});
+    }
+
+    /**
+     * Removes a relation between two entities from relation's many-to-many table.
+     * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeFromRelation(relationName: string, entityId: any, relatedEntityIds: any[]): Promise<void>;
+    removeFromRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void>;
+    removeFromRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
+        const propertyName = this.metadata.computePropertyName(relationName);
+        if (!this.metadata.hasRelationWithPropertyName(propertyName))
+            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
+
+        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+        if (!relation.isManyToMany)
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+
+        const qb = this.createQueryBuilder("junctionEntity")
+            .delete(relation.junctionEntityMetadata.table.name);
+
+        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
+        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
+
+        relatedEntityIds.forEach((relatedEntityId, index) => {
+            qb.orWhere(`(junctionEntity.${firstColumnName}=:entityId AND junctionEntity.${secondColumnName}=:relatedEntity_${index})`)
+                .setParameter("relatedEntity_" + index, relatedEntityId);
+        });
+
+        return qb
+            .setParameter("entityId", entityId)
+            .execute()
+            .then(() => {});
+    }
+
+    /**
+     * Performs both #addToRelation and #removeFromRelation operations.
+     * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    async addAndRemoveFromRelation(relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+    async addAndRemoveFromRelation(relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+    async addAndRemoveFromRelation(relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void> {
+        return Promise.all([
+            this.addToRelation(relation as any, entityId, addRelatedEntityIds),
+            this.removeFromRelation(relation as any, entityId, removeRelatedEntityIds)
+        ]).then(() => {});
+    }
+
+    /**
+     * Removes entity with the given id.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeById(id: any) {
+        const alias = this.metadata.table.name;
+        return this.createQueryBuilder(alias)
+            .delete()
+            .where(alias + "." + this.metadata.primaryColumn.propertyName + "=:id", { id: id })
+            .execute()
+            .then(() => {});
+    }
+
+    /**
+     * Removes all entities with the given ids.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeByIds(ids: any[]) {
+        const alias = this.metadata.table.name;
+        return this.createQueryBuilder(alias)
+            .delete()
+            .where(alias + "." + this.metadata.primaryColumn.propertyName + " IN :ids", { ids: ids })
+            .execute()
+            .then(() => {});
+    }
+
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------

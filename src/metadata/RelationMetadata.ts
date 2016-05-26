@@ -213,9 +213,9 @@ export class RelationMetadata extends PropertyMetadata {
      * Indicates if this side is an owner of this relation.
      */
     get isOwning() {
-        return  this.isManyToOne ||
+        return  !!(this.isManyToOne ||
             (this.isManyToMany && this.joinTable) ||
-            (this.isOneToOne && this.joinColumn);
+            (this.isOneToOne && this.joinColumn));
     }
 
     /**
@@ -223,6 +223,20 @@ export class RelationMetadata extends PropertyMetadata {
      */
     get isOneToOne(): boolean {
         return this.relationType === RelationTypes.ONE_TO_ONE;
+    }
+
+    /**
+     * Checks if this relation is owner side of the "one-to-one" relation.
+     */
+    get isOneToOneOwner(): boolean {
+        return this.isOneToOne && this.isOwning;
+    }
+
+    /**
+     * Checks if this relation is NOT owner side of the "one-to-one" relation.
+     */
+    get isOneToOneNotOwner(): boolean {
+        return this.isOneToOne && !this.isOwning;
     }
 
     /**
