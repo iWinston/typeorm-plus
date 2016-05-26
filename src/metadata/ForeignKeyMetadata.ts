@@ -13,13 +13,17 @@ export type OnDeleteType = "RESTRICT"|"CASCADE"|"SET NULL";
 export class ForeignKeyMetadata {
 
     // -------------------------------------------------------------------------
-    // Public Readonly Properties
+    // Public Properties
     // -------------------------------------------------------------------------
 
     /**
      * Entity metadata where this foreign key is.
      */
-    readonly entityMetadata: EntityMetadata;
+    entityMetadata: EntityMetadata;
+
+    // -------------------------------------------------------------------------
+    // Public Readonly Properties
+    // -------------------------------------------------------------------------
 
     /**
      * Table to which this foreign key is applied.
@@ -50,13 +54,11 @@ export class ForeignKeyMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(entityMetadata: EntityMetadata,
-                table: TableMetadata, 
+    constructor(table: TableMetadata, 
                 columns: ColumnMetadata[], 
                 referencedTable: TableMetadata, 
                 referencedColumns: ColumnMetadata[],
                 onDelete?: OnDeleteType) {
-        this.entityMetadata = entityMetadata;
         this.table = table;
         this.columns = columns;
         this.referencedTable = referencedTable;

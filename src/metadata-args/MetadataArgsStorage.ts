@@ -73,7 +73,10 @@ export class MetadataArgsStorage {
         const relationCounts = this.relationCounts.filterByClass(tableMetadata.target);
 
         allTableMetadatas
-            .filter(metadata => this.isInherited(tableMetadata.target, metadata.target))
+            .filter(metadata => {
+                if (!tableMetadata.target || !metadata.target) return false;
+                return this.isInherited(tableMetadata.target, metadata.target);
+            })
             .forEach(parentMetadata => {
                 const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
 

@@ -6,7 +6,12 @@ export class TargetMetadataArgsCollection<T extends { target?: Function }> exten
     // Public Methods
     // -------------------------------------------------------------------------
 
-    filterByClass(cls: Function): this {
+    filterByClass(cls?: Function): this {
+        
+        // if no class specified then simply return empty collection
+        if (!cls)
+            return new (<any> this.constructor)();
+            
         return this.filterByClasses([cls]);
     }
 

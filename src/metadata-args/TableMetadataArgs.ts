@@ -8,7 +8,7 @@ export interface TableMetadataArgs {
     /**
      * Class to which table is applied.
      */
-    readonly target: Function;
+    readonly target?: Function;
 
     /**
      * Table name.
