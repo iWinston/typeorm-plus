@@ -416,10 +416,10 @@ export class EntityPersistOperationBuilder {
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
         return metadata.columns
             .filter(column => !column.isVirtual && !column.isUpdateDate && !column.isVersion && !column.isCreateDate)
-            .filter(column => newEntity[column.propertyName] !== dbEntity[column.propertyName])
+            .filter(column => column.getEntityValue(newEntity) !== column.getEntityValue(dbEntity))
             .filter(column => {
                 // filter out "relational columns" only in the case if there is a relation object in entity
-                if (metadata.hasRelationWithDbName(column.propertyName)) {
+                if (!column.isInEmbedded && metadata.hasRelationWithDbName(column.propertyName)) {
                     const relation = metadata.findRelationWithDbName(column.propertyName);
                     if (newEntity[relation.propertyName] !== null && newEntity[relation.propertyName] !== undefined)
                         return false;

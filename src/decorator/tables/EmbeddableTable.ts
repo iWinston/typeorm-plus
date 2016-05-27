@@ -8,7 +8,6 @@ export function EmbeddableTable(): Function {
     return function (target: Function) {
         const args: TableMetadataArgs = {
             target: target,
-            name: name,
             type: "embeddable"
         };
         getMetadataArgsStorage().tables.add(args);

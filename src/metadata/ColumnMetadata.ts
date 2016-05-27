@@ -2,6 +2,7 @@ import {PropertyMetadata} from "./PropertyMetadata";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnType} from "./types/ColumnTypes";
 import {EntityMetadata} from "./EntityMetadata";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
 
 /**
  * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
@@ -22,6 +23,11 @@ export class ColumnMetadata extends PropertyMetadata {
      * Entity metadata where this column metadata is.
      */
     entityMetadata: EntityMetadata;
+
+    /**
+     * Embedded metadata where this column metadata is.
+     */
+    embeddedMetadata: EmbeddedMetadata;
 
     // ---------------------------------------------------------------------
     // Public Readonly Properties
@@ -109,19 +115,8 @@ export class ColumnMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: ColumnMetadataArgs);
-    constructor(entityMetadata: EntityMetadata, args: ColumnMetadataArgs);
-    constructor(entityMetadataOrArgs: EntityMetadata|ColumnMetadataArgs, args?: ColumnMetadataArgs) {
-        super(
-            args ? args.target : (entityMetadataOrArgs as ColumnMetadataArgs).target,
-            args ? args.propertyName : (entityMetadataOrArgs as ColumnMetadataArgs).propertyName
-        );
-        
-        if (entityMetadataOrArgs && args) {
-            this.entityMetadata = entityMetadataOrArgs as EntityMetadata;
-        }
-        
-        args = args ? args : entityMetadataOrArgs as ColumnMetadataArgs;
+    constructor(args: ColumnMetadataArgs) {
+        super(args.target, args.propertyName);
 
         if (args.mode)
             this.mode = args.mode;
@@ -163,12 +158,30 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     get name(): string {
         
-        // if custom column name is set implicitly then return it
-        if (this._name)
-            return this.entityMetadata.namingStrategy.columnNameCustomized(this._name);
+        // if this column is embedded's column then apply different entity
+        if (this.embeddedMetadata) {
+            if (this._name)
+                return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnNameCustomized(this.embeddedMetadata.propertyName, this._name);
 
-        // if there is a naming strategy then use it to normalize propertyName as column name
-        return this.entityMetadata.namingStrategy.columnName(this.propertyName);
+            return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.propertyName, this.propertyName);
+        }
+            
+        if (this.entityMetadata) {
+            if (this._name)
+                return this.entityMetadata.namingStrategy.columnNameCustomized(this._name);
+
+            // if there is a naming strategy then use it to normalize propertyName as column name
+            return this.entityMetadata.namingStrategy.columnName(this.propertyName);
+        }
+        
+        throw new Error(`Column${this._name ? this._name + " " : ""} is not attached to any entity or embedded.`);
+    }
+
+    /**
+     * Indicates if this column is in embedded, not directly in the table.
+     */
+    get isInEmbedded(): boolean {
+        return !!this.embeddedMetadata;
     }
 
     /**
@@ -204,6 +217,41 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     get isVersion() {
         return this.mode === "version";
+    }
+
+    /**
+     * Gets embedded property in which column is.
+     */
+    get embeddedProperty() {
+        if (!this.embeddedMetadata)
+            throw new Error(`This column${ this._name ? this._name + " " : "" } is not in embedded entity.`);
+        
+        return this.embeddedMetadata.propertyName;
+    }
+    
+    // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
+
+    hasEntityValue(entity: any) {
+        if (!entity)
+            return false;
+        
+        if (this.isInEmbedded) {
+            return entity.hasOwnProperty(this.embeddedProperty) && 
+                entity[this.embeddedProperty].hasOwnProperty(this.propertyName);
+            
+        } else {
+            return entity.hasOwnProperty(this.propertyName);
+        }
+    }
+
+    getEntityValue(entity: any) {
+        if (this.isInEmbedded) {
+            return entity[this.embeddedProperty][this.propertyName];
+        } else {
+            return entity[this.propertyName];
+        }
     }
 
 }

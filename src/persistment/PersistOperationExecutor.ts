@@ -9,6 +9,7 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -353,7 +354,7 @@ export class PersistOperationExecutor {
         const values: { [key: string]: any } = {};
         
         updateOperation.columns.forEach(column => {
-            values[column.name] = this.driver.preparePersistentValue(entity[column.propertyName], column);
+            values[column.name] = this.driver.preparePersistentValue(column.getEntityValue(entity), column);
         });
         
         updateOperation.relations.forEach(relation => {
@@ -393,14 +394,13 @@ export class PersistOperationExecutor {
     private insert(operation: InsertOperation) {
         const entity = operation.entity;
         const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+        
         const columns = metadata.columns
-            .filter(column => !column.isVirtual)
-            .filter(column => entity.hasOwnProperty(column.propertyName))
-            .map(column => column.name);
-        const values = metadata.columns
-            .filter(column => !column.isVirtual)
-            .filter(column => entity.hasOwnProperty(column.propertyName))
-            .map(column => this.driver.preparePersistentValue(entity[column.propertyName], column));
+            .filter(column => !column.isVirtual && column.hasEntityValue(entity));
+        
+        const columnNames = columns.map(column => column.name);
+        const values = columns.map(column => this.driver.preparePersistentValue(column.getEntityValue(entity), column));
+        
         const relationColumns = metadata.relations
             .filter(relation => relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
@@ -413,7 +413,7 @@ export class PersistOperationExecutor {
             .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.inverseEntityMetadata.primaryColumn.propertyName))
             .map(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName]);
 
-        const allColumns = columns.concat(relationColumns);
+        const allColumns = columnNames.concat(relationColumns);
         const allValues = values.concat(relationValues);
 
         if (metadata.hasCreateDateColumn) {

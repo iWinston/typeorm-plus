@@ -23,41 +23,35 @@ const options: CreateConnectionOptions = {
 
 createConnection(options).then(connection => {
 
-    let postRepository = connection.getRepository(Post);
     let questionRepository = connection.getRepository(Question);
+    
+    const question = new Question();
+    question.title = "Hello question!";
+    question.counters = new Counters();
+    question.counters.stars = 5;
+    question.counters.raiting = 10;
+    question.counters.commentCount = 3;
+    question.counters.metadata = "#question #question-counter";
 
-    const questionPromise = questionRepository.findOneById(1).then(question => {
-        if (!question) {
-            question = new Question();
-            question.title = "Umed";
-            return questionRepository.persist(question).then(savedAuthor => {
-                return questionRepository.findOneById(1);
-            });
-        }
-        return question;
-    });
-
-    const postPromise = postRepository.findOneById(1).then(post => {
-        if (!post) {
-            post = new Post();
-            post.title = "Hello post";
-            post.text = "This is post contents";
-            return postRepository.persist(post).then(savedPost => {
-                return postRepository.findOneById(1);
-            });
-        }
-        return post;
-    });
-
-    return Promise.all<any>([questionPromise, postPromise])
-        .then(results => {
-            const [question, post] = results;
-            question.posts = [post];
-            return questionRepository.persist(question);
+    questionRepository
+        .persist(question)
+        .then(savedQuestion => {
+            console.log("question has been saved: ", savedQuestion);
+            
+            // lets load it now:
+            return questionRepository.findOneById(savedQuestion.id);
         })
-        .then(savedAuthor => {
-            console.log("Question has been saved: ", savedAuthor);
+        .then(loadedQuestion => {
+            console.log("question has been loaded: ", loadedQuestion);
+
+            loadedQuestion.counters.commentCount = 7;
+            loadedQuestion.counters.metadata = "#updated question";
+            
+            return questionRepository.persist(loadedQuestion);
         })
-        .catch(error => console.log(error.stack));
+        .then(updatedQuestion => {
+            console.log("question has been updated: ", updatedQuestion);
+        })
+        .catch(e => console.log(e));
 
 }, error => console.log("Cannot connect: ", error));

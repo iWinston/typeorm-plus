@@ -37,11 +37,6 @@ export class EntityMetadata {
     readonly table: TableMetadata;
 
     /**
-     * Entity's column metadatas.
-     */
-    readonly columns: ColumnMetadata[];
-
-    /**
      * Entity's relation metadatas.
      */
     readonly relations: RelationMetadata[];
@@ -62,20 +57,29 @@ export class EntityMetadata {
     readonly embeddeds: EmbeddedMetadata[];
 
     // -------------------------------------------------------------------------
+    // Private properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Entity's column metadatas.
+     */
+    private readonly _columns: ColumnMetadata[];
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(args: EntityMetadataArgs) {
         this.namingStrategy = args.namingStrategy;
         this.table = args.tableMetadata;
-        this.columns = args.columnMetadatas || [];
+        this._columns = args.columnMetadatas || [];
         this.relations = args.relationMetadatas || [];
         this.indices = args.indexMetadatas || [];
         this.foreignKeys = args.foreignKeyMetadatas || [];
         this.embeddeds = args.embeddedMetadatas || [];
 
         this.table.entityMetadata = this;
-        this.columns.forEach(column => column.entityMetadata = this);
+        this._columns.forEach(column => column.entityMetadata = this);
         this.relations.forEach(relation => relation.entityMetadata = this);
         this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
         this.indices.forEach(index => index.entityMetadata = this);
@@ -100,6 +104,17 @@ export class EntityMetadata {
     }
 
     /**
+     * All columns of the entity, including columns that are coming from the embeddeds of this entity.
+     */
+    get columns() {
+        let allColumns: ColumnMetadata[] = [].concat(this._columns);
+        this.embeddeds.forEach(embedded => {
+            allColumns = allColumns.concat(embedded.columns);
+        });
+        return allColumns;
+    }
+    
+    /**
      * Target class to which this entity metadata is bind.
      */
     get target(): Function {
@@ -111,14 +126,14 @@ export class EntityMetadata {
      * Special entity metadatas like for junction tables and closure junction tables don't have a primary column.
      */
     get hasPrimaryColumn(): boolean {
-        return !!this.columns.find(column => column.isPrimary);
+        return !!this._columns.find(column => column.isPrimary);
     }
 
     /**
      * Gets the primary column.
      */
     get primaryColumn(): ColumnMetadata {
-        const primaryKey = this.columns.find(column => column.isPrimary);
+        const primaryKey = this._columns.find(column => column.isPrimary);
         if (!primaryKey)
             throw new Error(`Primary key is not set for the ${this.name} entity.`);
 
@@ -129,14 +144,14 @@ export class EntityMetadata {
      * Checks if entity has a create date column.
      */
     get hasCreateDateColumn(): boolean {
-        return !!this.columns.find(column => column.mode === "createDate");
+        return !!this._columns.find(column => column.mode === "createDate");
     }
 
     /**
      * Gets entity column which contains a create date value.
      */
     get createDateColumn(): ColumnMetadata {
-        const column = this.columns.find(column => column.mode === "createDate");
+        const column = this._columns.find(column => column.mode === "createDate");
         if (!column)
             throw new Error(`CreateDateColumn was not found in entity ${this.name}`);
         
@@ -147,14 +162,14 @@ export class EntityMetadata {
      * Checks if entity has an update date column.
      */
     get hasUpdateDateColumn(): boolean {
-        return !!this.columns.find(column => column.mode === "updateDate");
+        return !!this._columns.find(column => column.mode === "updateDate");
     }
 
     /**
      * Gets entity column which contains an update date value.
      */
     get updateDateColumn(): ColumnMetadata {
-        const column = this.columns.find(column => column.mode === "updateDate");
+        const column = this._columns.find(column => column.mode === "updateDate");
         if (!column)
             throw new Error(`UpdateDateColumn was not found in entity ${this.name}`);
 
@@ -165,14 +180,14 @@ export class EntityMetadata {
      * Checks if entity has a version column.
      */
     get hasVersionColumn(): boolean {
-        return !!this.columns.find(column => column.mode === "version");
+        return !!this._columns.find(column => column.mode === "version");
     }
 
     /**
      * Gets entity column which contains an entity version.
      */
     get versionColumn(): ColumnMetadata {
-        const column = this.columns.find(column => column.mode === "version");
+        const column = this._columns.find(column => column.mode === "version");
         if (!column)
             throw new Error(`VersionColumn was not found in entity ${this.name}`);
         
@@ -183,11 +198,11 @@ export class EntityMetadata {
      * Checks if entity has a tree level column.
      */
     get hasTreeLevelColumn(): boolean {
-        return !!this.columns.find(column => column.mode === "treeLevel");
+        return !!this._columns.find(column => column.mode === "treeLevel");
     }
 
     get treeLevelColumn(): ColumnMetadata {
-        const column = this.columns.find(column => column.mode === "treeLevel");
+        const column = this._columns.find(column => column.mode === "treeLevel");
         if (!column)
             throw new Error(`TreeLevelColumn was not found in entity ${this.name}`);
 
@@ -243,6 +258,42 @@ export class EntityMetadata {
         return this.ownerOneToOneRelations.concat(this.manyToOneRelations);
     }
 
+    /**
+     * Checks if there is a tree parent relation. Used only in tree-tables.
+     */
+    get hasTreeParentRelation() {
+        return !!this.relations.find(relation => relation.isTreeParent);
+    }
+
+    /**
+     * Tree parent relation. Used only in tree-tables.
+     */
+    get treeParentRelation() {
+        const relation = this.relations.find(relation => relation.isTreeParent);
+        if (!relation)
+            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
+
+        return relation;
+    }
+
+    /**
+     * Checks if there is a tree children relation. Used only in tree-tables.
+     */
+    get hasTreeChildrenRelation() {
+        return !!this.relations.find(relation => relation.isTreeChildren);
+    }
+
+    /**
+     * Tree children relation. Used only in tree-tables.
+     */
+    get treeChildrenRelation() {
+        const relation = this.relations.find(relation => relation.isTreeChildren);
+        if (!relation)
+            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
+
+        return relation;
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -259,7 +310,7 @@ export class EntityMetadata {
      */
     createPropertiesMap(): { [name: string]: string|any } {
         const entity: { [name: string]: string|any } = {};
-        this.columns.forEach(column => entity[column.propertyName] = column.propertyName);
+        this._columns.forEach(column => entity[column.propertyName] = column.propertyName);
         this.relations.forEach(relation => entity[relation.propertyName] = relation.propertyName);
         return entity;
     }
@@ -282,14 +333,14 @@ export class EntityMetadata {
      * Checks if column with the given property name exist.
      */
     hasColumnWithPropertyName(propertyName: string): boolean {
-        return !!this.columns.find(column => column.propertyName === propertyName);
+        return !!this._columns.find(column => column.propertyName === propertyName);
     }
 
     /**
      * Checks if column with the given database name exist.
      */
     hasColumnWithDbName(name: string): boolean {
-        return !!this.columns.find(column => column.name === name);
+        return !!this._columns.find(column => column.name === name);
     }
 
     /**
@@ -327,41 +378,10 @@ export class EntityMetadata {
 
         return relation;
     }
-
-    /**
-     * Checks if there is a tree parent relation. Used only in tree-tables.
-     */
-    get hasTreeParentRelation() {
-        return !!this.relations.find(relation => relation.isTreeParent);
-    }
-
-    /**
-     * Tree parent relation. Used only in tree-tables.
-     */
-    get treeParentRelation() {
-        const relation = this.relations.find(relation => relation.isTreeParent);
-        if (!relation)
-            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
-        
-        return relation;
-    }
-
-    /**
-     * Checks if there is a tree children relation. Used only in tree-tables.
-     */
-    get hasTreeChildrenRelation() {
-        return !!this.relations.find(relation => relation.isTreeChildren);
-    }
-
-    /**
-     * Tree children relation. Used only in tree-tables.
-     */
-    get treeChildrenRelation() {
-        const relation = this.relations.find(relation => relation.isTreeChildren);
-        if (!relation)
-            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
-
-        return relation;
+    
+    addColumn(column: ColumnMetadata) {
+        this._columns.push(column);
+        column.entityMetadata = this;
     }
     
 }

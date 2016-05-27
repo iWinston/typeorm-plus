@@ -39,15 +39,15 @@ export class EntityMetadataBuilder {
         
         const embeddableMergedArgs = getMetadataArgsStorage().getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas = getMetadataArgsStorage().getMergedTableMetadatas(entityClasses).map(mergedArgs => {
-            
+
             // find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
             const embeddeds: EmbeddedMetadata[] = [];
             mergedArgs.embeddeds.forEach(embedded => {
-                const embeddableTable = embeddableMergedArgs.find(mergedArs => mergedArgs.table.target === embedded.type);
+                const embeddableTable = embeddableMergedArgs.find(mergedArgs => mergedArgs.table.target === embedded.type());
                 if (embeddableTable) {
-                    const table = new TableMetadata(mergedArgs.table);
-                    const columns = mergedArgs.columns.map(args => new ColumnMetadata(args));
-                    embeddeds.push(new EmbeddedMetadata(table, columns));
+                    const table = new TableMetadata(embeddableTable.table);
+                    const columns = embeddableTable.columns.map(args => new ColumnMetadata(args));
+                    embeddeds.push(new EmbeddedMetadata(embedded.type(), embedded.propertyName, table, columns));
                 }
             });
             
@@ -135,8 +135,7 @@ export class EntityMetadataBuilder {
                             nullable: relation.isNullable
                         }
                     });
-                    relationalColumn.entityMetadata = metadata;
-                    metadata.columns.push(relationalColumn);
+                    metadata.addColumn(relationalColumn);
                 }
 
                 // create and add foreign key

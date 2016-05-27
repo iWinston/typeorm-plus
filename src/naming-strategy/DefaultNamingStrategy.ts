@@ -22,6 +22,14 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return customName;
     }
 
+    embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string): string {
+        return embeddedPropertyName + "_" + columnPropertyName;
+    }
+
+    embeddedColumnNameCustomized(embeddedPropertyName: string, columnCustomName: string): string {
+        return embeddedPropertyName + "_" + columnCustomName;
+    }
+
     relationName(propertyName: string): string {
         return propertyName;
     }

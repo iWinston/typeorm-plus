@@ -81,7 +81,16 @@ export class RawSqlResultsToEntityTransformer {
         metadata.columns.forEach(column => {
             const valueInObject = alias.getColumnValue(rawSqlResults[0], column.name); // we use zero index since its grouped data
             if (valueInObject && column.propertyName && !column.isVirtual) {
-                entity[column.propertyName] = this.driver.prepareHydratedValue(valueInObject, column);
+                const value = this.driver.prepareHydratedValue(valueInObject, column);
+                
+                if (column.isInEmbedded) {
+                    if (!entity[column.embeddedProperty])
+                        entity[column.embeddedProperty] = column.embeddedMetadata.create();
+
+                    entity[column.embeddedProperty][column.propertyName] = value;
+                } else {
+                    entity[column.propertyName] = value;
+                }
                 hasData = true;
             }
         });

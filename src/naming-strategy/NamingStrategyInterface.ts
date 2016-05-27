@@ -25,6 +25,16 @@ export interface NamingStrategyInterface {
     columnNameCustomized(customName: string): string;
 
     /**
+     * Gets the embedded's column name from the given property name.
+     */
+    embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string): string;
+    
+    /**
+     * Gets the embedded's column name from the given custom column name.
+     */
+    embeddedColumnNameCustomized(embeddedPropertyName: string, columnCustomName: string): string;
+
+    /**
      * Gets the table's relation name from the given property name.
      */
     relationName(propertyName: string): string;
