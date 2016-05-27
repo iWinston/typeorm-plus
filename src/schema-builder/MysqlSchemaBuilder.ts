@@ -27,7 +27,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
                 const isNullable = column.isNullable === true ? "YES" : "NO";
                 const hasDbColumnAutoIncrement = dbData.EXTRA.indexOf("auto_increment") !== -1;
                 const hasDbColumnPrimaryIndex = dbData.COLUMN_KEY.indexOf("PRI") !== -1;
-                return  dbData.COLUMN_TYPE !== newType ||
+                return  dbData.COLUMN_TYPE.toLowerCase() !== newType.toLowerCase() ||
                     dbData.COLUMN_COMMENT !== column.comment ||
                     dbData.IS_NULLABLE !== isNullable ||
                     hasDbColumnAutoIncrement !== column.isGenerated ||
@@ -185,7 +185,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
             case "text":
                 return "text";
             case "boolean":
-                return "boolean";
+                return "tinyint(1)";
             case "integer":
             case "int":
                 return "INT(" + (column.length ? column.length : 11) + ")";

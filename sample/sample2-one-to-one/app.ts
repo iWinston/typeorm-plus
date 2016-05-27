@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import {CreateConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
@@ -15,7 +16,10 @@ const options: CreateConnectionOptions = {
         username: "root",
         password: "admin",
         database: "test",
-        autoSchemaCreate: true
+        autoSchemaCreate: true,
+        logging: {
+            logQueries: true
+        }
     },
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };
