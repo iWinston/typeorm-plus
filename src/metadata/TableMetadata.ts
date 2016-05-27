@@ -35,23 +35,26 @@ export class TableMetadata extends TargetMetadata {
      */
     private readonly _name: string|undefined;
 
+    /**
+     * Array of properties that will be used in a composite primary key of the table.
+     */
+    private readonly primaryKeys: string|((object: any) => string|any)[]|undefined;
+
+    /**
+     * A property name by which queries will perform ordering by default when fetching rows.
+     */
+    private readonly orderBy: string|((object: any) => string|any)|undefined;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target?: Function, name?: string, type?: TableType);
-    constructor(args: TableMetadataArgs);
-    constructor(argsOrTarget: TableMetadataArgs|Function|undefined, name?: string, type: TableType = "regular") {
-        super(arguments.length === 1 ? (argsOrTarget as TableMetadataArgs).target : argsOrTarget as Function);
-        if (arguments.length === 1) {
-            const metadata = argsOrTarget as TableMetadataArgs;
-            this.tableType = metadata.type;
-            this._name = metadata.name;
-            
-        } else {
-            this._name = name;
-            this.tableType = type;
-        }
+    constructor(args: TableMetadataArgs) {
+        super(args.target);
+        this._name = args.name;
+        this.tableType = args.type;
+        this.orderBy = args.orderBy;
+        this.primaryKeys = args.primaryKeys;
     }
     
     // ---------------------------------------------------------------------

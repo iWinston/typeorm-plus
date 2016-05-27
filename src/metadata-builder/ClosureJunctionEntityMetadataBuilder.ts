@@ -60,7 +60,10 @@ export class ClosureJunctionEntityMetadataBuilder {
             }));
         }
 
-        const closureJunctionTableMetadata = new TableMetadata(undefined, args.table.name, "closureJunction");
+        const closureJunctionTableMetadata = new TableMetadata({
+            name: args.table.name,
+            type: "closureJunction"
+        });
 
         return new EntityMetadata({
             namingStrategy: args.namingStrategy,
