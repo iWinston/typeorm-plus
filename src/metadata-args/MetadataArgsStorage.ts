@@ -10,6 +10,7 @@ import {NamingStrategyMetadataArgs} from "./NamingStrategyMetadataArgs";
 import {EventSubscriberMetadataArgs} from "./EventSubscriberMetadataArgs";
 import {JoinTableMetadataArgs} from "./JoinTableMetadataArgs";
 import {JoinColumnMetadataArgs} from "./JoinColumnMetadataArgs";
+import {EmbeddedMetadataArgs} from "./EmbeddedMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -36,6 +37,7 @@ export class MetadataArgsStorage {
     readonly joinTables = new PropertyMetadataArgsCollection<JoinTableMetadataArgs>();
     readonly entityListeners = new PropertyMetadataArgsCollection<EntityListenerMetadataArgs>();
     readonly relationCounts = new PropertyMetadataArgsCollection<RelationsCountMetadataArgs>();
+    readonly embeddeds = new PropertyMetadataArgsCollection<EmbeddedMetadataArgs>();
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -46,10 +48,21 @@ export class MetadataArgsStorage {
      */
     getMergedTableMetadatas(classes: Function[]) {
         const allTableMetadataArgs = this.tables.filterByClasses(classes);
-        const tableMetadatas = this.tables.filterByClasses(classes).filter(table => table.type !== "abstract");
+        const tableMetadatas = this.tables.filterByClasses(classes).filter(table => table.type === "regular" || table.type === "closure");
 
         return tableMetadatas.map(tableMetadata => {
             return this.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
+        });
+    }
+
+    /**
+     * Gets merged (with all abstract classes) embeddable table metadatas for the given classes.
+     */
+    getMergedEmbeddableTableMetadatas(classes: Function[]) {
+        const embeddableTableMetadatas = this.tables.filterByClasses(classes).filter(table => table.type === "embeddable");
+
+        return embeddableTableMetadatas.map(embeddableTableMetadata => {
+            return this.mergeWithEmbeddable(embeddableTableMetadatas, embeddableTableMetadata);
         });
     }
 
@@ -58,8 +71,6 @@ export class MetadataArgsStorage {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a new copy of the MetadataStorage with same metadatas as in current metadata storage, but filtered
-     * by classes.
      */
     private mergeWithAbstract(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
                               tableMetadata: TableMetadataArgs) {
@@ -71,6 +82,7 @@ export class MetadataArgsStorage {
         const joinTables = this.joinTables.filterByClass(tableMetadata.target);
         const entityListeners = this.entityListeners.filterByClass(tableMetadata.target);
         const relationCounts = this.relationCounts.filterByClass(tableMetadata.target);
+        const embeddeds = this.embeddeds.filterByClass(tableMetadata.target);
 
         allTableMetadatas
             .filter(metadata => {
@@ -103,6 +115,10 @@ export class MetadataArgsStorage {
                 metadatasFromAbstract.relationCounts
                     .filterRepeatedMetadatas(relationCounts)
                     .forEach(metadata => relationCounts.push(metadata));
+
+                metadatasFromAbstract.embeddeds
+                    .filterRepeatedMetadatas(embeddeds)
+                    .forEach(metadata => embeddeds.push(metadata));
             });
 
         return {
@@ -113,7 +129,33 @@ export class MetadataArgsStorage {
             joinColumns: joinColumns,
             joinTables: joinTables,
             entityListeners: entityListeners,
-            relationCounts: relationCounts
+            relationCounts: relationCounts,
+            embeddeds: embeddeds
+        };
+    }
+    
+    /**
+     */
+    private mergeWithEmbeddable(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
+                                tableMetadata: TableMetadataArgs) {
+        const columns = this.columns.filterByClass(tableMetadata.target);
+
+        allTableMetadatas
+            .filter(metadata => {
+                if (!tableMetadata.target || !metadata.target) return false;
+                return this.isInherited(tableMetadata.target, metadata.target);
+            })
+            .forEach(parentMetadata => {
+                const metadatasFromParents = this.mergeWithEmbeddable(allTableMetadatas, parentMetadata);
+
+                metadatasFromParents.columns
+                    .filterRepeatedMetadatas(columns)
+                    .forEach(metadata => columns.push(metadata));
+            });
+
+        return {
+            table: tableMetadata,
+            columns: columns
         };
     }
 

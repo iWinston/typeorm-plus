@@ -6,6 +6,13 @@ export class TargetMetadataArgsCollection<T extends { target?: Function }> exten
     // Public Methods
     // -------------------------------------------------------------------------
 
+    filter(callbackfn: (value: T, index: number, array: T[]) => boolean, thisArg?: any): this {
+        const collection = new (<any> this.constructor)();
+        super.filter(callbackfn)
+            .forEach(metadata => collection.add(metadata));
+        return collection;
+    }
+
     filterByClass(cls?: Function): this {
         
         // if no class specified then simply return empty collection
@@ -16,14 +23,10 @@ export class TargetMetadataArgsCollection<T extends { target?: Function }> exten
     }
 
     filterByClasses(classes: Function[]): this {
-        const collection = new (<any> this.constructor)();
-        this
-            .filter(metadata => {
-                if (!metadata.target) return false;
-                return classes.indexOf(metadata.target) !== -1;
-            })
-            .forEach(metadata => collection.add(metadata));
-        return collection;
+        return this.filter(metadata => {
+            if (!metadata.target) return false;
+            return classes.indexOf(metadata.target) !== -1;
+        });
     }
 
     add(metadata: T, checkForDuplicateTargets = false) {

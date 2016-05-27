@@ -7,14 +7,9 @@ export class PropertyMetadataArgsCollection<T extends { target?: Function, prope
     // -------------------------------------------------------------------------
 
     filterRepeatedMetadatas(existsMetadatas: T[]): this {
-        const collection = new (<any> this.constructor)();
-        this
-            .filter(metadata => {
-                return !existsMetadatas.find(fieldFromDocument => fieldFromDocument.propertyName === metadata.propertyName);
-            })
-            .forEach(metadata => collection.add(metadata));
-        
-        return collection;
+        return this.filter(metadata => {
+            return !existsMetadatas.find(fieldFromDocument => fieldFromDocument.propertyName === metadata.propertyName);
+        });
     }
 
     findByProperty(propertyName: string) {

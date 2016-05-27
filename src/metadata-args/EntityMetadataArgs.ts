@@ -4,6 +4,7 @@ import {TableMetadata} from "../metadata/TableMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
+import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 
 /**
  * Arguments for EntityMetadata class.
@@ -16,5 +17,6 @@ export interface EntityMetadataArgs {
     readonly relationMetadatas?: RelationMetadata[];
     readonly indexMetadatas?: IndexMetadata[];
     readonly foreignKeyMetadatas?: ForeignKeyMetadata[];
+    readonly embeddedMetadatas?: EmbeddedMetadata[];
     
 }

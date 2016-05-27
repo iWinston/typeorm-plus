@@ -6,6 +6,7 @@ import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadataArgs} from "../metadata-args/EntityMetadataArgs";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
 
 /**
  * Contains all entity metadata.
@@ -55,6 +56,11 @@ export class EntityMetadata {
      */
     readonly foreignKeys: ForeignKeyMetadata[] = [];
 
+    /**
+     * Entity's embedded metadatas.
+     */
+    readonly embeddeds: EmbeddedMetadata[];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -66,12 +72,14 @@ export class EntityMetadata {
         this.relations = args.relationMetadatas || [];
         this.indices = args.indexMetadatas || [];
         this.foreignKeys = args.foreignKeyMetadatas || [];
+        this.embeddeds = args.embeddedMetadatas || [];
 
         this.table.entityMetadata = this;
         this.columns.forEach(column => column.entityMetadata = this);
         this.relations.forEach(relation => relation.entityMetadata = this);
         this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
         this.indices.forEach(index => index.entityMetadata = this);
+        this.embeddeds.forEach(embedded => embedded.entityMetadata = this);
     }
 
     // -------------------------------------------------------------------------

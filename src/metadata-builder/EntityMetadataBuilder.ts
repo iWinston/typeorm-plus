@@ -12,6 +12,7 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 import {JunctionEntityMetadataBuilder} from "./JunctionEntityMetadataBuilder";
 import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetadataBuilder";
+import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -36,8 +37,20 @@ export class EntityMetadataBuilder {
      */
     build(namingStrategy: NamingStrategyInterface, entityClasses: Function[]): EntityMetadata[] {
         
+        const embeddableMergedArgs = getMetadataArgsStorage().getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas = getMetadataArgsStorage().getMergedTableMetadatas(entityClasses).map(mergedArgs => {
-
+            
+            // find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
+            const embeddeds: EmbeddedMetadata[] = [];
+            mergedArgs.embeddeds.forEach(embedded => {
+                const embeddableTable = embeddableMergedArgs.find(mergedArs => mergedArgs.table.target === embedded.type);
+                if (embeddableTable) {
+                    const table = new TableMetadata(mergedArgs.table);
+                    const columns = mergedArgs.columns.map(args => new ColumnMetadata(args));
+                    embeddeds.push(new EmbeddedMetadata(table, columns));
+                }
+            });
+            
             // create metadatas from args
             const table = new TableMetadata(mergedArgs.table);
             const columns = mergedArgs.columns.map(args => new ColumnMetadata(args));
@@ -50,7 +63,8 @@ export class EntityMetadataBuilder {
                 tableMetadata: table,
                 columnMetadatas: columns,
                 relationMetadatas: relations,
-                indexMetadatas: indices
+                indexMetadatas: indices,
+                embeddedMetadatas: embeddeds
             });
             
             // create entity's relations join tables

@@ -5,7 +5,7 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 /**
  * Table type.
  */
-export type TableType = "regular"|"abstract"|"junction"|"closure"|"closureJunction";
+export type TableType = "regular"|"abstract"|"junction"|"closure"|"closureJunction"|"embeddable";
 
 /**
  * This metadata interface contains all information about specific table.
@@ -97,6 +97,13 @@ export class TableMetadata extends TargetMetadata {
      */
     get isClosure() {
         return this.tableType === "closure";
+    }
+
+    /**
+     * Checks if this table is an embeddable table.
+     */
+    get isEmbeddable() {
+        return this.tableType === "embeddable";
     }
     
 }
