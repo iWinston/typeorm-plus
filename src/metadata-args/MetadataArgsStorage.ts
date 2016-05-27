@@ -7,10 +7,10 @@ import {IndexMetadataArgs} from "./IndexMetadataArgs";
 import {EntityListenerMetadataArgs} from "./EntityListenerMetadataArgs";
 import {TableMetadataArgs} from "./TableMetadataArgs";
 import {NamingStrategyMetadataArgs} from "./NamingStrategyMetadataArgs";
-import {EventSubscriberMetadataArgs} from "./EventSubscriberMetadataArgs";
 import {JoinTableMetadataArgs} from "./JoinTableMetadataArgs";
 import {JoinColumnMetadataArgs} from "./JoinColumnMetadataArgs";
 import {EmbeddedMetadataArgs} from "./EmbeddedMetadataArgs";
+import {EntitySubscriberMetadataArgs} from "./EntitySubscriberMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -29,7 +29,7 @@ export class MetadataArgsStorage {
 
     readonly tables = new TargetMetadataArgsCollection<TableMetadataArgs>();
     readonly namingStrategies = new TargetMetadataArgsCollection<NamingStrategyMetadataArgs>();
-    readonly eventSubscribers = new TargetMetadataArgsCollection<EventSubscriberMetadataArgs>();
+    readonly entitySubscribers = new TargetMetadataArgsCollection<EntitySubscriberMetadataArgs>();
     readonly indices = new TargetMetadataArgsCollection<IndexMetadataArgs>();
     readonly columns = new PropertyMetadataArgsCollection<ColumnMetadataArgs>();
     readonly relations = new PropertyMetadataArgsCollection<RelationMetadataArgs>();

@@ -1,7 +1,7 @@
 import {Driver} from "../driver/Driver";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {Repository} from "../repository/Repository";
-import {EventSubscriberInterface} from "../subscriber/EventSubscriberInterface";
+import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ConstructorFunction} from "../common/ConstructorFunction";
@@ -80,7 +80,7 @@ export class Connection {
     /**
      * All subscribers that are registered for this connection.
      */
-    readonly eventSubscribers: EventSubscriberInterface<any>[] = [];
+    readonly entitySubscribers: EntitySubscriberInterface<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Private Properties
@@ -234,7 +234,7 @@ export class Connection {
      */
     importSubscribers(subscriberClasses: Function[]): this {
         if (this.isConnected)
-            throw new CannotImportAlreadyConnectedError("event subscribers", this.name);
+            throw new CannotImportAlreadyConnectedError("entity subscribers", this.name);
 
         subscriberClasses.forEach(cls => this.subscriberClasses.push(cls));
         return this;
@@ -354,10 +354,10 @@ export class Connection {
 
         // take imported event subscribers
         getMetadataArgsStorage()
-            .eventSubscribers
+            .entitySubscribers
             .filterByClasses(this.subscriberClasses)
             .map(metadata => getFromContainer(metadata.target))
-            .forEach(subscriber => this.eventSubscribers.push(subscriber));
+            .forEach(subscriber => this.entitySubscribers.push(subscriber));
 
         // take imported entity listeners
         getMetadataArgsStorage()

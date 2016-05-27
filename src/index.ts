@@ -113,4 +113,4 @@ export {FindOptions} from "./repository/FindOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
-export {EventSubscriberInterface} from "./subscriber/EventSubscriberInterface";
+export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";

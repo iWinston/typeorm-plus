@@ -1,11 +1,11 @@
-import {EventSubscriber} from "../../../src/decorator/listeners/EventSubscriber";
-import {EventSubscriberInterface} from "../../../src/subscriber/EventSubscriberInterface";
+import {EntityEventSubscriber} from "../../../src/decorator/listeners/EventSubscriber";
+import {EntitySubscriberInterface} from "../../../src/subscriber/EntitySubscriberInterface";
 import {InsertEvent} from "../../../src/subscriber/event/InsertEvent";
 import {RemoveEvent} from "../../../src/subscriber/event/RemoveEvent";
 import {UpdateEvent} from "../../../src/subscriber/event/UpdateEvent";
 
-@EventSubscriber()
-export class EverythingSubscriber implements EventSubscriberInterface<any> {
+@EntityEventSubscriber()
+export class EverythingSubscriber implements EntitySubscriberInterface<any> {
     
     /**
      * Called after entity insertion.

@@ -1,4 +1,4 @@
-import {EventSubscriberInterface} from "./EventSubscriberInterface";
+import {EntitySubscriberInterface} from "./EntitySubscriberInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
@@ -14,7 +14,7 @@ export class Broadcaster {
     // -------------------------------------------------------------------------
 
     constructor(private entityMetadatas: EntityMetadataCollection,
-                private subscriberMetadatas: EventSubscriberInterface<any>[],
+                private subscriberMetadatas: EntitySubscriberInterface<any>[],
                 private entityListeners: EntityListenerMetadata[]) {
     }
 
@@ -182,7 +182,7 @@ export class Broadcaster {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private isAllowedSubscribers(subscriber: EventSubscriberInterface<any>, cls: Function) {
+    private isAllowedSubscribers(subscriber: EntitySubscriberInterface<any>, cls: Function) {
         return  !subscriber.listenTo ||
                 !subscriber.listenTo() ||
                 subscriber.listenTo() === Object ||

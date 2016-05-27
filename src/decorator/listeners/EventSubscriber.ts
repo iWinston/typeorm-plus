@@ -1,15 +1,15 @@
 import {getMetadataArgsStorage} from "../../index";
-import {EventSubscriberMetadataArgs} from "../../metadata-args/EventSubscriberMetadataArgs";
+import {EntitySubscriberMetadataArgs} from "../../metadata-args/EntitySubscriberMetadataArgs";
 
 /**
  * Classes decorated with this decorator will listen to ORM events and their methods will be triggered when event
  * occurs. Those classes must implement EventSubscriberInterface interface.
  */
-export function EventSubscriber() {
+export function EntityEventSubscriber() {
     return function (target: Function) {
-        const args: EventSubscriberMetadataArgs = {
+        const args: EntitySubscriberMetadataArgs = {
             target: target
         };
-        getMetadataArgsStorage().eventSubscribers.add(args);
+        getMetadataArgsStorage().entitySubscribers.add(args);
     };
 }

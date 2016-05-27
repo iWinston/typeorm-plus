@@ -1,8 +1,8 @@
 
 /**
- * Arguments for EventSubscriberMetadata class.
+ * Arguments for EntitySubscriberMetadata class.
  */
-export interface EventSubscriberMetadataArgs {
+export interface EntitySubscriberMetadataArgs {
 
     /**
      * Class to which subscriber is applied.
