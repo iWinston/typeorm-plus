@@ -57,7 +57,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     addForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void> {
-        let sql = `ALTER TABLE ${foreignKey.table.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+        let sql = `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
             `FOREIGN KEY (${foreignKey.columnNames.join(", ")}) ` +
             `REFERENCES ${foreignKey.referencedTable.name}(${foreignKey.referencedColumnNames.join(",")})`;
         if (foreignKey.onDelete)
@@ -70,7 +70,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     dropForeignKeyQuery(tableNameOrForeignKey: string|ForeignKeyMetadata, foreignKeyName?: string): Promise<void> {
         let tableName = <string> tableNameOrForeignKey;
         if (tableNameOrForeignKey instanceof ForeignKeyMetadata) {
-            tableName = tableNameOrForeignKey.table.name;
+            tableName = tableNameOrForeignKey.tableName;
             foreignKeyName = tableNameOrForeignKey.name;
         }
 

@@ -66,6 +66,12 @@ export class EntityMetadata {
         this.relations = args.relationMetadatas || [];
         this.indices = args.indexMetadatas || [];
         this.foreignKeys = args.foreignKeyMetadatas || [];
+
+        this.table.entityMetadata = this;
+        this.columns.forEach(column => column.entityMetadata = this);
+        this.relations.forEach(relation => relation.entityMetadata = this);
+        this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
+        this.indices.forEach(index => index.entityMetadata = this);
     }
 
     // -------------------------------------------------------------------------

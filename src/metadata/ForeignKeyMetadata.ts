@@ -26,11 +26,6 @@ export class ForeignKeyMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Table to which this foreign key is applied.
-     */
-    readonly table: TableMetadata;
-
-    /**
      * Array of columns of this foreign key.
      */
     readonly columns: ColumnMetadata[];
@@ -54,12 +49,10 @@ export class ForeignKeyMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(table: TableMetadata, 
-                columns: ColumnMetadata[], 
+    constructor(columns: ColumnMetadata[], 
                 referencedTable: TableMetadata, 
                 referencedColumns: ColumnMetadata[],
                 onDelete?: OnDeleteType) {
-        this.table = table;
         this.columns = columns;
         this.referencedTable = referencedTable;
         this.referencedColumns = referencedColumns;
@@ -70,6 +63,20 @@ export class ForeignKeyMetadata {
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
+
+    /**
+     * Gets the table name to which this foreign key is applied.
+     */
+    get tableName() {
+        return this.entityMetadata.table.name;
+    }
+
+    /**
+     * Gets foreign key name.
+     */
+    get name() {
+        return this.entityMetadata.namingStrategy.foreignKeyName(this.tableName, this.columnNames, this.referencedTable.name, this.referencedColumnNames);
+    }
 
     /**
      * Gets array of column names.
@@ -83,13 +90,6 @@ export class ForeignKeyMetadata {
      */
     get referencedColumnNames(): string[] {
         return this.referencedColumns.map(column => column.name);
-    }
-
-    /**
-     * Gets foreign key name.
-     */
-    get name() {
-        return this.entityMetadata.namingStrategy.foreignKeyName(this.table.name, this.columnNames, this.referencedTable.name, this.referencedColumnNames);
     }
 
 }

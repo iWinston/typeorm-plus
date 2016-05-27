@@ -25,7 +25,7 @@ export interface JunctionEntityMetadataBuilderArgs {
  */
 export class JunctionEntityMetadataBuilder {
     
-    createJunctionEntityMetadata(args: JunctionEntityMetadataBuilderArgs) {
+    build(args: JunctionEntityMetadataBuilderArgs) {
 
         const column1 = args.joinTable.referencedColumn;
         const column2 = args.joinTable.inverseReferencedColumn;
@@ -34,7 +34,7 @@ export class JunctionEntityMetadataBuilder {
             name: args.joinTable.name,
             type: "junction"
         });
-        
+
         const junctionColumn1 = new ColumnMetadata({
             propertyType: column1.type,
             mode: "virtual",
@@ -53,22 +53,19 @@ export class JunctionEntityMetadataBuilder {
                 name: args.joinTable.inverseJoinColumnName
             }
         });
-        const junctionColumns = [junctionColumn1, junctionColumn2];
-
-        const foreignKey1 = new ForeignKeyMetadata(tableMetadata, [junctionColumns[0]], args.firstTable, [column2]);
-        const foreignKey2 = new ForeignKeyMetadata(tableMetadata, [junctionColumns[1]], args.secondTable, [column2]);
-        const foreignKeys = [foreignKey1, foreignKey2];
         
-        const junctionEntityMetadata = new EntityMetadata({
+        return new EntityMetadata({
             namingStrategy: args.namingStrategy,
             tableMetadata: tableMetadata,
-            columnMetadatas: junctionColumns,
-            foreignKeyMetadatas: foreignKeys,
+            columnMetadatas: [
+                junctionColumn1, 
+                junctionColumn2
+            ],
+            foreignKeyMetadatas: [
+                new ForeignKeyMetadata([junctionColumn1], args.firstTable, [column1]),
+                new ForeignKeyMetadata([junctionColumn2], args.secondTable, [column2])
+            ]
         });
-        junctionColumns.forEach(column => column.entityMetadata = junctionEntityMetadata);
-        foreignKeys.forEach(column => column.entityMetadata = junctionEntityMetadata);
-        tableMetadata.entityMetadata = junctionEntityMetadata;
-        return junctionEntityMetadata;
     }
     
 }
