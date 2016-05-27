@@ -5,6 +5,7 @@ import {IndexMetadata} from "./IndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {EntityMetadataArgs} from "../metadata-args/EntityMetadataArgs";
 
 /**
  * Contains all entity metadata.
@@ -58,16 +59,19 @@ export class EntityMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(namingStrategy: NamingStrategyInterface,
-                table: TableMetadata,
-                columns: ColumnMetadata[],
-                relations: RelationMetadata[],
-                indices: IndexMetadata[]) {
-        this.namingStrategy = namingStrategy;
-        this.table = table;
-        this.columns = columns;
-        this.relations = relations;
-        this.indices = indices;
+    constructor(args: EntityMetadataArgs) {
+        this.namingStrategy = args.namingStrategy;
+        this.table = args.tableMetadata;
+        this.columns = args.columnMetadatas || [];
+        this.relations = args.relationMetadatas || [];
+        this.indices = args.indexMetadatas || [];
+        this.foreignKeys = args.foreignKeyMetadatas || [];
+
+        this.table.entityMetadata = this;
+        this.columns.forEach(column => column.entityMetadata = this);
+        this.relations.forEach(relation => relation.entityMetadata = this);
+        this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
+        this.indices.forEach(index => index.entityMetadata = this);
     }
 
     // -------------------------------------------------------------------------
