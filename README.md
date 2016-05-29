@@ -772,7 +772,7 @@ usages.
 ## Todos
 
 ORM development is in progress. Api can be changed a lot. More documentation and features expected to be soon.
-Feel free to contribute ;) List of todos is [here](https://github.com/pleerock/typeorm/issues/2).
+Feel free to contribute.
 
 
 
