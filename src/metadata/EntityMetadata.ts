@@ -329,7 +329,7 @@ export class EntityMetadata {
      * Returns entity id of the given entity.
      */
     getEntityId(entity: any) {
-        return entity[this.primaryColumn.propertyName];
+        return entity ? entity[this.primaryColumn.propertyName] : undefined;
     }
 
     /**

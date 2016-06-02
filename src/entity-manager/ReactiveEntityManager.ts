@@ -27,29 +27,33 @@ export class ReactiveEntityManager {
     /**
      * Gets repository of the given entity.
      */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity> {
+    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): Repository<Entity> {
         return this.connection.getRepository(entityClass);
     }
 
     /**
      * Gets reactive repository of the given entity.
      */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveRepository<Entity> {
+    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity> {
         return this.connection.getReactiveRepository(entityClass);
     }
 
     /**
      * Gets reactive tree repository of the given entity.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveTreeRepository<Entity> {
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity> {
         return this.connection.getReactiveTreeRepository(entityClass);
     }
     
     /**
      * Checks if entity has an id.
      */
-    hasId(entity: Function): boolean {
-        return this.getReactiveRepository(entity.constructor).hasId(entity);
+    hasId(entity: Function): boolean;
+    hasId(target: Function|string, entity: Function): boolean;
+    hasId(targetOrEntity: Function|string, maybeEntity?: Function): boolean {
+        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+        const entity = arguments.length === 2 ? <Function> maybeEntity : <Function> targetOrEntity;
+        return this.getReactiveRepository(target).hasId(entity);
     }
 
     /**
@@ -94,17 +98,25 @@ export class ReactiveEntityManager {
     /**
      * Persists (saves) a given entity in the database.
      */
-    persist<Entity>(entity: Entity): Rx.Observable<Entity> {
+    persist<Entity>(entity: Entity): Rx.Observable<Entity>;
+    persist<Entity>(targetOrEntity: Function|string, entity: Entity): Rx.Observable<Entity>;
+    persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
         // todo: extra casting is used strange tsc error here, check later maybe typescript bug
-        return <any> this.getReactiveRepository(<any> entity.constructor).persist(entity);
+        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
+        return <any> this.getReactiveRepository(<any> target).persist(entity);
     }
 
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(entity: Entity): Rx.Observable<Entity[]> {
+    remove<Entity>(entity: Entity): Rx.Observable<Entity>;
+    remove<Entity>(targetOrEntity: Function|string, entity: Entity): Rx.Observable<Entity>;
+    remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
         // todo: extra casting is used strange tsc error here, check later maybe typescript bug
-        return <any> this.getReactiveRepository(<any> entity.constructor).remove(entity);
+        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
+        return <any> this.getReactiveRepository(<any> target).remove(entity);
     }
 
     /**

@@ -46,9 +46,9 @@ export class MetadataArgsStorage {
     /**
      * Gets merged (with all abstract classes) table metadatas for the given classes.
      */
-    getMergedTableMetadatas(classes: Function[]) {
-        const allTableMetadataArgs = this.tables.filterByTargets(classes);
-        const tableMetadatas = this.tables.filterByTargets(classes).filter(table => table.type === "regular" || table.type === "closure");
+    getMergedTableMetadatas(classes?: Function[]) {
+        const allTableMetadataArgs = classes ? this.tables.filterByTargets(classes) : this.tables;
+        const tableMetadatas = allTableMetadataArgs.filter(table => table.type === "regular" || table.type === "closure");
 
         return tableMetadatas.map(tableMetadata => {
             return this.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
@@ -58,8 +58,9 @@ export class MetadataArgsStorage {
     /**
      * Gets merged (with all abstract classes) embeddable table metadatas for the given classes.
      */
-    getMergedEmbeddableTableMetadatas(classes: Function[]) {
-        const embeddableTableMetadatas = this.tables.filterByTargets(classes).filter(table => table.type === "embeddable");
+    getMergedEmbeddableTableMetadatas(classes?: Function[]) {
+        const tables = classes ? this.tables.filterByTargets(classes) : this.tables;
+        const embeddableTableMetadatas = tables.filter(table => table.type === "embeddable");
 
         return embeddableTableMetadatas.map(embeddableTableMetadata => {
             return this.mergeWithEmbeddable(embeddableTableMetadatas, embeddableTableMetadata);

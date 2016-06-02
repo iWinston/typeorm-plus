@@ -22,8 +22,8 @@ export class PersistOperation {
     
     // todo: what if we have two same entities in the insert operations?
 
-    dbEntity: any;
-    persistedEntity: any;
+    dbEntity: EntityWithId;
+    persistedEntity: EntityWithId;
     allDbEntities: EntityWithId[];
     allPersistedEntities: EntityWithId[];
     inserts: InsertOperation[] = [];

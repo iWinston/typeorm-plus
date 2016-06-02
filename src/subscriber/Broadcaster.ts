@@ -139,22 +139,22 @@ export class Broadcaster {
         return Promise.all(subscribers.concat(listeners)).then(() => {});
     }
 
-    broadcastLoadEvents(entity: any): Promise<void> {
+    broadcastLoadEvents(target: Function|string, entity: any): Promise<void> {
         if (entity instanceof Promise)
             return Promise.resolve();
         
-        const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+        const metadata = this.entityMetadatas.findByTarget(target);
         let promises: Promise<any>[] = [];
 
         metadata
             .relations
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .map(relation => entity[relation.propertyName])
-            .map(value => {
+            .map(relation => {
+                const value = entity[relation.propertyName];
                 if (value instanceof Array) {
-                    promises = promises.concat(this.broadcastLoadEventsForAll(value));
+                    promises = promises.concat(this.broadcastLoadEventsForAll(relation.inverseEntityMetadata.target, value));
                 } else {
-                    promises.push(this.broadcastLoadEvents(value));
+                    promises.push(this.broadcastLoadEvents(relation.inverseEntityMetadata.target, value));
                 }
             });
 
@@ -173,8 +173,8 @@ export class Broadcaster {
         return Promise.all(promises).then(() => {});
     }
 
-    broadcastLoadEventsForAll(entities: any[]): Promise<void> {
-        const promises = entities.map(entity => this.broadcastLoadEvents(entity));
+    broadcastLoadEventsForAll(target: Function|string, entities: any[]): Promise<void> {
+        const promises = entities.map(entity => this.broadcastLoadEvents(target, entity));
         return Promise.all(promises).then(() => {});
     }
 

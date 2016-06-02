@@ -8,7 +8,7 @@ export interface JoinTableMetadataArgs {
     /**
      * Class to which this column is applied.
      */
-    readonly target: Function;
+    readonly target: Function|string;
 
     /**
      * Class's property name to which this column is applied.

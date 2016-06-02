@@ -280,12 +280,15 @@ export class Connection {
      * Gets repository for the given entity class.
      */
     getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity>;
-    // getRepository<Entity>(entityClass: Function): Repository<Entity>;
 
     /**
      * Gets repository for the given entity name.
      */
     getRepository<Entity>(entityClass: string): Repository<Entity>;
+    /**
+     * Gets repository for the given entity name.
+     */
+    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity>;
 
     /**
      * Gets repository for the given entity class or name.
@@ -294,7 +297,7 @@ export class Connection {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByNameOrTarget(entityClassOrName);
+        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
         const repository = this.repositories.find(repository => Repository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
@@ -320,7 +323,7 @@ export class Connection {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByNameOrTarget(entityClassOrName);
+        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
         const repository = this.repositories.find(repository => Repository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
@@ -337,7 +340,7 @@ export class Connection {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByNameOrTarget(entityClass);
+        const metadata = this.entityMetadatas.findByTarget(entityClass);
         const repository = this.reactiveRepositories.find(repository => ReactiveRepository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new ReactiveRepositoryNotFoundError(this.name, entityClass);
@@ -352,7 +355,7 @@ export class Connection {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByNameOrTarget(entityClass);
+        const metadata = this.entityMetadatas.findByTarget(entityClass);
         const repository = this.reactiveRepositories.find(repository => ReactiveRepository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClass);

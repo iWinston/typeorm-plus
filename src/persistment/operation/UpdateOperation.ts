@@ -5,7 +5,8 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
  * @internal
  */
 export class UpdateOperation {
-    constructor(public entity: any,
+    constructor(public target: Function|string,
+                public entity: any,
                 public entityId: any,
                 public columns: ColumnMetadata[],
                 public relations: RelationMetadata[],

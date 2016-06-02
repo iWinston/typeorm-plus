@@ -126,7 +126,17 @@ export class Repository<Entity> {
                 return this.findNotLoadedIds(entityWithIds, allPersistedEntities);
             }) // need to find db entities that were not loaded by initialize method
             .then(allDbEntities => {
-                return this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, loadedDbEntity, entity, allDbEntities, allPersistedEntities);
+                const persistedEntity: EntityWithId = {
+                    id: this.metadata.getEntityId(entity),
+                    entityTarget: this.metadata.target,
+                    entity: entity
+                };
+                const dbEntity: EntityWithId = {
+                    id: this.metadata.getEntityId(loadedDbEntity),
+                    entityTarget: this.metadata.target,
+                    entity: loadedDbEntity
+                };
+                return this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
             })
             .then(persistOperation => {
                 return this.persistOperationExecutor.executePersistOperation(persistOperation);
@@ -151,7 +161,18 @@ export class Repository<Entity> {
             })
             // .then(([dbEntities, allPersistedEntities]: [EntityWithId[], EntityWithId[]]) => {
             .then(results => {
-                const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntity, entity, results[0], results[1]);
+                const entityWithId: EntityWithId = {
+                    id: this.metadata.getEntityId(entity),
+                    entityTarget: this.metadata.target,
+                    entity: entity
+                };
+                const dbEntityWithId: EntityWithId = {
+                    id: this.metadata.getEntityId(dbEntity),
+                    entityTarget: this.metadata.target,
+                    entity: dbEntity
+                };
+                
+                const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, results[0], results[1]);
                 return this.persistOperationExecutor.executePersistOperation(persistOperation);
             }).then(() => entity);
     }
@@ -438,10 +459,10 @@ export class Repository<Entity> {
     private findNotLoadedIds(dbEntities: EntityWithId[], persistedEntities: EntityWithId[]): Promise<EntityWithId[]> {
         const missingDbEntitiesLoad = persistedEntities
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
-            .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entity.constructor === entityWithId.entity.constructor && dbEntity.id === entityWithId.id))
+            .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
-                const metadata = this.entityMetadatas.findByTarget(entityWithId.entity.constructor);
-                const repository = this.connection.getRepository(entityWithId.entity.constructor);
+                const metadata = this.entityMetadatas.findByTarget(entityWithId.entityTarget);
+                const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
                 return repository.findOneById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;
 

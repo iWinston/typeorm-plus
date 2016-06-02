@@ -4,7 +4,9 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
  * @internal
  */
 export class UpdateByInverseSideOperation {
-    constructor(public operationType: "update"|"remove",
+    constructor(public entityTarget: Function|string, // todo: probably must be entity metadata here?
+                public fromEntityTarget: Function|string,
+                public operationType: "update"|"remove",
                 public targetEntity: any,
                 public fromEntity: any,
                 public fromRelation: RelationMetadata) {

@@ -9,6 +9,7 @@ import {CascadesNotAllowedError} from "./error/CascadesNotAllowedError";
 import {RemoveOperation} from "./operation/RemoveOperation";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
+import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 
 /**
  * 1. collect all exist objects from the db entity
@@ -57,8 +58,8 @@ export class EntityPersistOperationBuilder {
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
     buildFullPersistment(metadata: EntityMetadata, 
-                         dbEntity: any, 
-                         persistedEntity: any, 
+                         dbEntity: EntityWithId, 
+                         persistedEntity: EntityWithId, 
                          dbEntities: EntityWithId[],
                          allPersistedEntities: EntityWithId[]): PersistOperation {
         
@@ -87,8 +88,8 @@ export class EntityPersistOperationBuilder {
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
     buildOnlyRemovement(metadata: EntityMetadata,
-                        dbEntity: any,
-                        persistedEntity: any,
+                        dbEntity: EntityWithId,
+                        persistedEntity: EntityWithId,
                         dbEntities: EntityWithId[],
                         allPersistedEntities: EntityWithId[]): PersistOperation {
         // const dbEntities = this.extractObjectsById(dbEntity, metadata);
@@ -109,12 +110,12 @@ export class EntityPersistOperationBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private findCascadeInsertedEntities(newEntity: any,
+    private findCascadeInsertedEntities(newEntityWithId: EntityWithId,
                                         dbEntities: EntityWithId[],
                                         fromRelation?: RelationMetadata,
                                         operations: InsertOperation[] = []): InsertOperation[] {
-        // const metadata = this.connection.getEntityMetadata(newEntity.constructor);
-        const metadata = this.entityMetadatas.findByTarget(newEntity.constructor);
+        const newEntity = newEntityWithId.entity;
+        const metadata = this.entityMetadatas.findByTarget(newEntityWithId.entityTarget);
         const isObjectNew = !this.findEntityWithId(dbEntities, metadata.target, newEntity[metadata.primaryColumn.propertyName]);
 
         // if object is new and should be inserted, we check if cascades are allowed before add it to operations list
@@ -122,17 +123,30 @@ export class EntityPersistOperationBuilder {
             return operations; // looks like object is new here, but cascades are not allowed - then we should stop iteration
 
         } else if (isObjectNew && !operations.find(o => o.entity === newEntity)) { // object is new and cascades are allow here
-            operations.push(new InsertOperation(newEntity));
+            operations.push(new InsertOperation(newEntityWithId.entityTarget, newEntity));
         }
 
         metadata.relations.forEach(relation => {
             const value = this.getEntityRelationValue(relation, newEntity);
+            const inverseMetadata = relation.inverseEntityMetadata;
             if (!value) return;
 
             if (value instanceof Array) {
-                value.map((subValue: any) => this.findCascadeInsertedEntities(subValue, dbEntities, relation, operations));
+                value.forEach((subValue: any) => {
+                    const subValueWithId: EntityWithId = {
+                        id: inverseMetadata.getEntityId(subValue),
+                        entity: subValue,
+                        entityTarget: inverseMetadata.target
+                    };
+                    this.findCascadeInsertedEntities(subValueWithId, dbEntities, relation, operations);
+                });
             } else {
-                this.findCascadeInsertedEntities(value, dbEntities, relation, operations);
+                const valueWithId: EntityWithId = {
+                    id: inverseMetadata.getEntityId(value),
+                    entity: value,
+                    entityTarget: inverseMetadata.target
+                };
+                this.findCascadeInsertedEntities(valueWithId, dbEntities, relation, operations);
             }
         });
 
@@ -141,11 +155,14 @@ export class EntityPersistOperationBuilder {
 
     private findCascadeUpdateEntities(updatesByRelations: UpdateByRelationOperation[],
                                       metadata: EntityMetadata,
-                                      dbEntity: any,
-                                      newEntity: any,
+                                      dbEntityWithId: EntityWithId,
+                                      newEntityWithId: EntityWithId,
                                       dbEntities: EntityWithId[],
                                       fromRelation?: RelationMetadata,
                                       operations: UpdateOperation[] = []): UpdateOperation[] {
+        const dbEntity = dbEntityWithId.entity;
+        const newEntity = newEntityWithId.entity;
+        
         if (!dbEntity)
             return operations;
 
@@ -157,7 +174,7 @@ export class EntityPersistOperationBuilder {
         } else if (diffColumns.length || diffRelations.length) {
             const entityId = newEntity[metadata.primaryColumn.propertyName];
             if (entityId)
-                operations.push(new UpdateOperation(newEntity, entityId, diffColumns, diffRelations));
+                operations.push(new UpdateOperation(newEntityWithId.entityTarget, newEntity, entityId, diffColumns, diffRelations));
         }
 
         metadata.relations.forEach(relation => {
@@ -179,16 +196,40 @@ export class EntityPersistOperationBuilder {
                     const dbValue = dbEntities.find(dbValue => {
                         return dbValue.entityTarget === valueTarget && dbValue.entity[referencedColumnName] === subEntity[relationIdColumnName];
                     });
-                    if (dbValue)
-                        this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValue.entity, subEntity, dbEntities, relation, operations);
+                    if (dbValue) {
+                        const dbValueWithId: EntityWithId = {
+                            id: relMetadata.getEntityId(dbValue.entity),
+                            entity: dbValue.entity,
+                            entityTarget: relMetadata.target
+                        };
+                        const subEntityWithId: EntityWithId = {
+                            id: relMetadata.getEntityId(subEntity),
+                            entity: subEntity,
+                            entityTarget: relMetadata.target
+                        };
+                        this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValueWithId, subEntityWithId, dbEntities, relation, operations);
+                    }
                 });
                 
             } else {
                 const dbValue = dbEntities.find(dbValue => {
                     return dbValue.entityTarget === valueTarget && dbValue.entity[referencedColumnName] === value[relationIdColumnName];
                 });
-                if (dbValue)
-                    this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValue.entity, value, dbEntities, relation, operations);
+                if (dbValue) {
+
+                    const dbValueWithId: EntityWithId = {
+                        id: relMetadata.getEntityId(dbValue.entity),
+                        entity: dbValue.entity,
+                        entityTarget: relMetadata.target
+                    };
+                    const valueWithId: EntityWithId = {
+                        id: relMetadata.getEntityId(value),
+                        entity: value,
+                        entityTarget: relMetadata.target
+                    };
+                    
+                    this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValueWithId, valueWithId, dbEntities, relation, operations);
+                }
             }
         });
 
@@ -196,12 +237,14 @@ export class EntityPersistOperationBuilder {
     }
 
     private findCascadeRemovedEntities(metadata: EntityMetadata,
-                                       dbEntity: any,
+                                       dbEntityWithId: EntityWithId,
                                        allPersistedEntities: EntityWithId[],
                                        fromRelation: RelationMetadata|undefined,
                                        fromMetadata: EntityMetadata|undefined,
                                        fromEntityId: any,
                                        parentAlreadyRemoved: boolean = false): RemoveOperation[] {
+        const dbEntity = dbEntityWithId.entity;
+        
         let operations: RemoveOperation[] = [];
         if (!dbEntity)
             return operations;
@@ -214,7 +257,7 @@ export class EntityPersistOperationBuilder {
             return operations; // looks like object is removed here, but cascades are not allowed - then we should stop iteration
 
         } else if (isObjectRemoved) {  // object is remove and cascades are allow here
-            operations.push(new RemoveOperation(dbEntity, entityId, <EntityMetadata> fromMetadata, fromRelation, fromEntityId));
+            operations.push(new RemoveOperation(dbEntityWithId.entityTarget, dbEntity, entityId, <EntityMetadata> fromMetadata, fromRelation, fromEntityId));
         }
 
         metadata.relations.forEach(relation => {
@@ -224,11 +267,23 @@ export class EntityPersistOperationBuilder {
             
             if (dbValue instanceof Array) {
                 dbValue.forEach((subDbEntity: any) => {
-                    const relationOperations = this.findCascadeRemovedEntities(relMetadata, subDbEntity, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.propertyName], isObjectRemoved);
+                    const subDbEntityWithId: EntityWithId = {
+                        id: relMetadata.getEntityId(subDbEntity),
+                        entity: subDbEntity,
+                        entityTarget: relMetadata.target
+                    };
+                    
+                    const relationOperations = this.findCascadeRemovedEntities(relMetadata, subDbEntityWithId, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.propertyName], isObjectRemoved);
                     relationOperations.forEach(o => operations.push(o));
                 });
             } else {
-                const relationOperations = this.findCascadeRemovedEntities(relMetadata, dbValue, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.propertyName], isObjectRemoved);
+                const dbValueWithId: EntityWithId = {
+                    id: relMetadata.getEntityId(dbValue),
+                    entity: dbValue,
+                    entityTarget: relMetadata.target
+                };
+                
+                const relationOperations = this.findCascadeRemovedEntities(relMetadata, dbValueWithId, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.propertyName], isObjectRemoved);
                 relationOperations.forEach(o => operations.push(o));
             }
         }, []);
@@ -237,13 +292,16 @@ export class EntityPersistOperationBuilder {
     }
 
     private updateInverseRelations(metadata: EntityMetadata,
-                                   dbEntity: any,
-                                   newEntity: any,
+                                   dbEntityWithId: EntityWithId,
+                                   newEntityWithId: EntityWithId,
                                    operations: UpdateByInverseSideOperation[] = []): UpdateByInverseSideOperation[] {
+        const dbEntity = dbEntityWithId.entity;
+        const newEntity = newEntityWithId.entity;
         metadata.relations
             .filter(relation => relation.isOneToMany) // todo: maybe need to check isOneToOne and not owner
             // .filter(relation => newEntity[relation.propertyName] instanceof Array) // todo: what to do with empty relations? need to set to NULL from inverse side?
             .forEach(relation => {
+                const relationMetadata = relation.inverseEntityMetadata;
                 
                 // to find new objects in relation go throw all objects in newEntity and check if they don't exist in dbEntity
                 if (newEntity && newEntity[relation.propertyName] instanceof Array) {
@@ -255,7 +313,7 @@ export class EntityPersistOperationBuilder {
                             return relation.inverseEntityMetadata.getEntityId(newSubEntity) === relation.inverseEntityMetadata.getEntityId(dbSubEntity);
                         });
                     }).forEach((subEntity: any) => {
-                        operations.push(new UpdateByInverseSideOperation("update", subEntity, newEntity, relation));
+                        operations.push(new UpdateByInverseSideOperation(relationMetadata.target, newEntityWithId.entityTarget, "update", subEntity, newEntity, relation));
                     });
                 }
                 
@@ -269,7 +327,7 @@ export class EntityPersistOperationBuilder {
                             return relation.inverseEntityMetadata.getEntityId(dbSubEntity) === relation.inverseEntityMetadata.getEntityId(newSubEntity);
                         });
                     }).forEach((subEntity: any) => {
-                        operations.push(new UpdateByInverseSideOperation("remove", subEntity, newEntity, relation));
+                        operations.push(new UpdateByInverseSideOperation(relationMetadata.target, newEntityWithId.entityTarget, "remove", subEntity, newEntity, relation));
                     });
                 }
                 
@@ -286,37 +344,49 @@ export class EntityPersistOperationBuilder {
      *
      */
 
-    private updateRelations(insertOperations: InsertOperation[], newEntity: any): UpdateByRelationOperation[] {
+    private updateRelations(insertOperations: InsertOperation[], newEntity: EntityWithId): UpdateByRelationOperation[] {
         return insertOperations.reduce((operations, insertOperation) => {
             return operations.concat(this.findRelationsWithEntityInside(insertOperation, newEntity));
         }, <UpdateByRelationOperation[]> []);
     }
 
-    private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchIn: any): UpdateByRelationOperation[] {
-        // updateByt metadata = this.connection.getEntityMetadata(entityToSearchIn.constructor);
-        const metadata = this.entityMetadatas.findByTarget(entityToSearchIn.constructor);
+    private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchInWithId: EntityWithId): UpdateByRelationOperation[] {
+        const entityToSearchIn = entityToSearchInWithId.entity;
+        const metadata = this.entityMetadatas.findByTarget(entityToSearchInWithId.entityTarget);
 
         const operations: UpdateByRelationOperation[] = [];
         metadata.relations.forEach(relation => {
             const value = this.getEntityRelationValue(relation, entityToSearchIn);
+            const inverseMetadata = relation.inverseEntityMetadata;
             if (!value) return;
 
             if (value instanceof Array) {
                 value.forEach((sub: any) => {
 
                     if (!relation.isManyToMany && sub === insertOperation.entity)
-                        operations.push(new UpdateByRelationOperation(entityToSearchIn, insertOperation, relation));
+                        operations.push(new UpdateByRelationOperation(entityToSearchInWithId.entityTarget, entityToSearchIn, insertOperation, relation));
 
-                    const subOperations = this.findRelationsWithEntityInside(insertOperation, sub);
+                    const subWithId: EntityWithId = {
+                        id: inverseMetadata.getEntityId(sub),
+                        entity: sub,
+                        entityTarget: inverseMetadata.target
+                    };
+                    const subOperations = this.findRelationsWithEntityInside(insertOperation, subWithId);
                     subOperations.forEach(o => operations.push(o));
                 });
 
             } else if (value) {
 
                 if (value === insertOperation.entity) {
-                    operations.push(new UpdateByRelationOperation(entityToSearchIn, insertOperation, relation));
+                    operations.push(new UpdateByRelationOperation(entityToSearchInWithId.entityTarget, entityToSearchIn, insertOperation, relation));
                 }
-                const subOperations = this.findRelationsWithEntityInside(insertOperation, value);
+
+                const valueWithId: EntityWithId = {
+                    id: inverseMetadata.getEntityId(value),
+                    entity: value,
+                    entityTarget: inverseMetadata.target
+                };
+                const subOperations = this.findRelationsWithEntityInside(insertOperation, valueWithId);
                 subOperations.forEach(o => operations.push(o));
 
             }
@@ -325,7 +395,8 @@ export class EntityPersistOperationBuilder {
         return operations;
     }
 
-    private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[], isRoot = true): JunctionInsertOperation[] {
+    private findJunctionInsertOperations(metadata: EntityMetadata, newEntityWithId: EntityWithId, dbEntities: EntityWithId[], isRoot = true): JunctionInsertOperation[] {
+        const newEntity = newEntityWithId.entity;
         const dbEntity = dbEntities.find(dbEntity => {
             return dbEntity.id === newEntity[metadata.primaryColumn.propertyName] && dbEntity.entityTarget === metadata.target;
         });
@@ -347,19 +418,31 @@ export class EntityPersistOperationBuilder {
                                 operations.push({
                                     metadata: relation.junctionEntityMetadata,
                                     entity1: newEntity,
-                                    entity2: subEntity
+                                    entity2: subEntity,
+                                    entity1Target: newEntityWithId.entityTarget,
+                                    entity2Target: relationMetadata.target
                                 });
                             }
                         }
 
                         if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
-                            const subOperations = this.findJunctionInsertOperations(relationMetadata, subEntity, dbEntities, false);
+                            const subEntityWithId: EntityWithId = {
+                                id: relationMetadata.getEntityId(subEntity),
+                                entity: subEntity,
+                                entityTarget: relationMetadata.target
+                            };
+                            const subOperations = this.findJunctionInsertOperations(relationMetadata, subEntityWithId, dbEntities, false);
                             subOperations.forEach(o => operations.push(o));
                         }
                     });
                 } else {
                     if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
-                        const subOperations = this.findJunctionInsertOperations(relationMetadata, value, dbEntities, false);
+                        const valueWithId: EntityWithId = {
+                            id: relationMetadata.getEntityId(value),
+                            entity: value,
+                            entityTarget: relationMetadata.target
+                        };
+                        const subOperations = this.findJunctionInsertOperations(relationMetadata, valueWithId, dbEntities, false);
                         subOperations.forEach(o => operations.push(o));
                     }
                 }
@@ -368,7 +451,8 @@ export class EntityPersistOperationBuilder {
             }, <JunctionInsertOperation[]> []);
     }
 
-    private findJunctionRemoveOperations(metadata: EntityMetadata, dbEntity: any, newEntities: EntityWithId[], isRoot = true): JunctionInsertOperation[] {
+    private findJunctionRemoveOperations(metadata: EntityMetadata, dbEntityWithId: EntityWithId, newEntities: EntityWithId[], isRoot = true): JunctionInsertOperation[] {
+        const dbEntity = dbEntityWithId.entity;
         if (!dbEntity) // if new entity is persisted then it does not have anything to be deleted
             return [];
 
@@ -393,25 +477,39 @@ export class EntityPersistOperationBuilder {
                                 operations.push({
                                     metadata: relation.junctionEntityMetadata,
                                     entity1: dbEntity,
-                                    entity2: subEntity
+                                    entity2: subEntity,
+                                    entity1Target: dbEntityWithId.entityTarget,
+                                    entity2Target: relationMetadata.target
                                 });
                             }
                         }
 
                         if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
-                            const subOperations = this.findJunctionRemoveOperations(relationMetadata, subEntity, newEntities, false);
+                            const subEntityWithId: EntityWithId = {
+                                id: relationMetadata.getEntityId(subEntity),
+                                entity: subEntity,
+                                entityTarget: relationMetadata.target
+                            };
+                            
+                            const subOperations = this.findJunctionRemoveOperations(relationMetadata, subEntityWithId, newEntities, false);
                             subOperations.forEach(o => operations.push(o));
                         }
                     });
                 } else {
                     if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
-                        const subOperations = this.findJunctionRemoveOperations(relationMetadata, dbValue, newEntities, false);
+                        const dbValueWithId: EntityWithId = {
+                            id: relationMetadata.getEntityId(dbValue),
+                            entity: dbValue,
+                            entityTarget: relationMetadata.target
+                        };
+                        
+                        const subOperations = this.findJunctionRemoveOperations(relationMetadata, dbValueWithId, newEntities, false);
                         subOperations.forEach(o => operations.push(o));
                     }
                 }
 
                 return operations;
-            }, <JunctionInsertOperation[]> []);
+            }, <JunctionRemoveOperation[]> []);
     }
 
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
@@ -441,14 +539,12 @@ export class EntityPersistOperationBuilder {
                 const entityTarget = relation.target;
                 
                 const newEntityRelationMetadata = this.entityMetadatas.findByTarget(entityTarget);
-                const dbEntityRelationMetadata = this.entityMetadatas.findByTarget(dbEntity[relation.propertyName].constructor);
+                const dbEntityRelationMetadata = this.entityMetadatas.findByTarget(entityTarget);
                 return newEntityRelationMetadata.getEntityId(newEntity[relation.propertyName]) !== dbEntityRelationMetadata.getEntityId(dbEntity[relation.propertyName]);
             });
     }
 
     private findEntityWithId(entityWithIds: EntityWithId[], entityTarget: Function|string, id: any) {
-        // console.log(entityWithId.entityTarget);
-        // console.log(entityWithId.entity.constructor);
         return entityWithIds.find(entityWithId => entityWithId.id === id && entityWithId.entityTarget === entityTarget);
     }
 

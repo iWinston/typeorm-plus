@@ -15,15 +15,15 @@ const options: CreateConnectionOptions = {
     },
     // entitySchemaDirectories: [__dirname + "/schemas"],
     entitySchemas: [
-        require("./schemas/post.json"),
-        require("./schemas/post-details.json"),
-        require("./schemas/category.json"),
-        require("./schemas/image.json")
+        require(__dirname + "/../../../../sample/sample24-schemas/schemas/post.json"),
+        require(__dirname + "/../../../../sample/sample24-schemas/schemas/post-details.json"),
+        require(__dirname + "/../../../../sample/sample24-schemas/schemas/category.json"),
+        require(__dirname + "/../../../../sample/sample24-schemas/schemas/image.json")
     ]
 };
 
 createConnection(options).then(connection => {
-    let postRepository = connection.getRepository<Post>("post");
+    let postRepository = connection.getRepository<Post>("Post");
 
     let post: Post = {
         title: "Hello post",

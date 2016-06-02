@@ -37,6 +37,11 @@ export class EntityManager {
     /**
      * Gets repository for the given entity class or name.
      */
+    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity>;
+
+    /**
+     * Gets repository for the given entity class or name.
+     */
     getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity> {
         if (typeof entityClassOrName === "string") {
             return this.connection.getRepository<Entity>(entityClassOrName);
@@ -77,8 +82,12 @@ export class EntityManager {
     /**
      * Checks if entity has an id.
      */
-    hasId(entity: Function): boolean {
-        return this.getRepository(entity.constructor).hasId(entity);
+    hasId(entity: Function): boolean;
+    hasId(target: Function|string, entity: Function): boolean;
+    hasId(targetOrEntity: Function|string, maybeEntity?: Function): boolean {
+        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+        const entity = arguments.length === 2 ? <Function> maybeEntity : <Function> targetOrEntity;
+        return this.getRepository(target).hasId(entity);
     }
 
     /**
@@ -123,17 +132,26 @@ export class EntityManager {
     /**
      * Persists (saves) a given entity in the database.
      */
-    persist<Entity>(entity: Entity): Promise<Entity> {
-        return this.getRepository(<any> entity.constructor).persist(entity);
+    persist<Entity>(entity: Entity): Promise<Entity>;
+    persist<Entity>(targetOrEntity: Function|string, entity: Entity): Promise<Entity>;
+    persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
+        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
+        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
+        return <any> this.getRepository(<any> target).persist(entity);
     }
 
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(entity: Entity) {
-        return this.getRepository(<any> entity.constructor).remove(entity);
+    remove<Entity>(entity: Entity): Promise<Entity>;
+    remove<Entity>(targetOrEntity: Function|string, entity: Entity): Promise<Entity>;
+    remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
+        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
+        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
+        return <any> this.getRepository(<any> target).remove(entity);
     }
-
     /**
      * Finds entities that match given conditions.
      */

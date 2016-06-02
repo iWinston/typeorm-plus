@@ -1,4 +1,5 @@
 import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 
 /**
  * All options to help to create a new connection.
@@ -38,7 +39,7 @@ export interface CreateConnectionOptions {
     /**
      * Entity schemas to be loaded for the new connection.
      */
-    entitySchemas?: any[];
+    entitySchemas?: EntitySchema[];
 
     /**
      * List of directories from where entities will be loaded.

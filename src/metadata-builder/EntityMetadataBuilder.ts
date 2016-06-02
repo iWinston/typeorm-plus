@@ -1,6 +1,6 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {ColumnMetadata, ColumnMode} from "../metadata/ColumnMetadata";
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadataValidator} from "./EntityMetadataValidator";
@@ -18,6 +18,9 @@ import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
+import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
+import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
+import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -57,10 +60,24 @@ export class EntityMetadataBuilder {
             // add columns metadata args from the schema
             Object.keys(schema.columns).forEach(columnName => {
                 const columnSchema = schema.columns[columnName];
+                let mode: ColumnMode = "regular";
+                if (columnSchema.primary)
+                    mode = "primary";
+                if (columnSchema.createDate)
+                    mode = "createDate";
+                if (columnSchema.updateDate)
+                    mode = "updateDate";
+                if (columnSchema.version)
+                    mode = "version";
+                if (columnSchema.treeChildrenCount)
+                    mode = "treeChildrenCount";
+                if (columnSchema.treeLevel)
+                    mode = "treeLevel";
+                
                 const column: ColumnMetadataArgs = {
                     target: schema.target || schema.name,
                     // targetId: schema.name,
-                    mode: columnSchema.mode,
+                    mode: mode,
                     propertyName: columnName,
                     // todo: what to do with it?: propertyType: 
                     options: {
@@ -90,8 +107,8 @@ export class EntityMetadataBuilder {
                     // targetId: schema.name,
                     propertyName: relationName,
                     // todo: what to do with it?: propertyType: 
-                    relationType: relationSchema.relationType,
-                    type: relationSchema.type,
+                    relationType: relationSchema.type,
+                    type: relationSchema.target,
                     inverseSideProperty: relationSchema.inverseSide,
                     isTreeParent: relationSchema.isTreeParent,
                     isTreeChildren: relationSchema.isTreeChildren,
@@ -107,20 +124,63 @@ export class EntityMetadataBuilder {
                 };
 
                 metadataArgsStorage.relations.add(relation);
+                
+                // add join column
+                if (relationSchema.joinColumn) {
+                    if (typeof relationSchema.joinColumn === "boolean") {
+                        const joinColumn: JoinColumnMetadataArgs = {
+                            target: schema.target || schema.name,
+                            // targetId: schema.name,
+                            propertyName: relationName
+                        };
+                        metadataArgsStorage.joinColumns.push(joinColumn);
+                    } else {
+                        const joinColumn: JoinColumnMetadataArgs = {
+                            target: schema.target || schema.name,
+                            // targetId: schema.name,
+                            propertyName: relationName,
+                            name: relationSchema.joinColumn.name,
+                            referencedColumnName: relationSchema.joinColumn.referencedColumnName
+                        };
+                        metadataArgsStorage.joinColumns.push(joinColumn);
+                    }
+                }
+                
+                // add join table
+                if (relationSchema.joinTable) {
+                    if (typeof relationSchema.joinTable === "boolean") {
+                        const joinTable: JoinTableMetadataArgs = {
+                            target: schema.target || schema.name,
+                            // targetId: schema.name,
+                            propertyName: relationName
+                        };
+                        metadataArgsStorage.joinTables.push(joinTable);
+                    } else {                        
+                        const joinTable: JoinTableMetadataArgs = {
+                            target: schema.target || schema.name,
+                            // targetId: schema.name,
+                            propertyName: relationName,
+                            name: relationSchema.joinTable.name,
+                            joinColumn: relationSchema.joinTable.joinColumn,
+                            inverseJoinColumn: relationSchema.joinTable.inverseJoinColumn
+                        };
+                        metadataArgsStorage.joinTables.push(joinTable);
+                    }
+                }
             });
         });
         
-        return this.buildFromAnyMetadataArgsStorage(metadataArgsStorage, namingStrategy, []);
+        return this.buildFromAnyMetadataArgsStorage(metadataArgsStorage, namingStrategy);
     }
 
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    buildFromMetadataArgsStorage(namingStrategy: NamingStrategyInterface, entityClasses: Function[]): EntityMetadata[] {
+    buildFromMetadataArgsStorage(namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
         return this.buildFromAnyMetadataArgsStorage(getMetadataArgsStorage(), namingStrategy, entityClasses);
     }
     
-    buildFromAnyMetadataArgsStorage(metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses: Function[]): EntityMetadata[] {
+    buildFromAnyMetadataArgsStorage(metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
         const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas = metadataArgsStorage.getMergedTableMetadatas(entityClasses).map(mergedArgs => {
 

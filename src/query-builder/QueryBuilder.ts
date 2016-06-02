@@ -366,7 +366,7 @@ export class QueryBuilder<Entity> {
                 })
                 .then(results => this.rawResultsToEntities(results))
                 .then(results => this.addLazyProperties(results))
-                .then(results => this.broadcaster.broadcastLoadEventsForAll(results).then(() => results))
+                .then(results => this.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results))
                 .then(results => {
                     return {
                         entities: results,
@@ -384,7 +384,7 @@ export class QueryBuilder<Entity> {
                 .then(results => this.addLazyProperties(results))
                 .then(results => {
                     return this.broadcaster
-                        .broadcastLoadEventsForAll(results)
+                        .broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results)
                         .then(() => results);
                 })
                 .then(results => {

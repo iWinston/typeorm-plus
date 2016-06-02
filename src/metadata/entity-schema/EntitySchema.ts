@@ -3,6 +3,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {TableType} from "../TableMetadata";
 import {RelationType} from "../types/RelationTypes";
 import {OnDeleteType} from "../ForeignKeyMetadata";
+import {JoinColumnOptions} from "../../decorator/options/JoinColumnOptions";
 
 export interface EntitySchema {
 
@@ -54,11 +55,34 @@ export interface EntitySchema {
         [columnName: string]: {
 
             /**
-             * Column mode in which column will work.
-             * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
-             * date column.
+             * Indicates if this column is a primary column.
              */
-            mode: ColumnMode;
+            primary: boolean;
+
+            /**
+             * Indicates if this column is a created date column.
+             */
+            createDate: boolean;
+
+            /**
+             * Indicates if this column is an update date column.
+             */
+            updateDate: boolean;
+
+            /**
+             * Indicates if this column is a version column.
+             */
+            version: boolean;
+
+            /**
+             * Indicates if this column is a treeChildrenCount column.
+             */
+            treeChildrenCount: boolean;
+
+            /**
+             * Indicates if this column is a treeLevel column.
+             */
+            treeLevel: boolean;
 
             /**
              * Column type. Must be one of the value from the ColumnTypes class.
@@ -135,15 +159,14 @@ export interface EntitySchema {
         [relationName: string]: {
 
             /**
-             * Type of relation. Can be one of the value of the RelationTypes class.
+             * Indicates with which entity this relation is made.
              */
-            relationType: RelationType;
+            target: Function|string;
 
             /**
-             * Type of the relation. This type is in function because of language specifics and problems with recursive
-             * referenced classes.
+             * Type of relation. Can be one of the value of the RelationTypes class.
              */
-            type: string;
+            type: RelationType;
 
             /**
              * Inverse side of the relation.
@@ -154,6 +177,22 @@ export interface EntitySchema {
              * Join table options of this column. If set to true then it simply means that it has a join table.
              */
             joinTable?: boolean|{
+
+                /**
+                 * Name of the table that will be created to store values of the both tables (join table).
+                 * By default is auto generated.
+                 */
+                name?: string;
+
+                /**
+                 * First column of the join table.
+                 */
+                joinColumn?: JoinColumnOptions;
+                
+                /**
+                 * Second (inverse) column of the join table.
+                 */
+                inverseJoinColumn?: JoinColumnOptions;
                 
             };
 

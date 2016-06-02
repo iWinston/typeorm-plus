@@ -22,7 +22,7 @@
     "details": {
       "target": "PostDetails",
       "type": "one-to-one",
-      "owner": true,
+      "joinColumn": true,
       "inverseSide": "post",
       "cascadeInsert": true,
       "cascadeUpdate": true,
@@ -44,7 +44,7 @@
     "categories": {
       "target": "Category",
       "type": "many-to-many",
-      "owner": true,
+      "joinTable": true,
       "cascadeInsert": true,
       "cascadeUpdate": true,
       "cascadeRemove": true,

@@ -21,14 +21,6 @@ export class EntityMetadataCollection extends Array<EntityMetadata> {
         
         return metadata;
     }
-    
-    findByNameOrTarget(nameOrTarget: Function|string) {
-        if (typeof nameOrTarget === "string") {
-            return this.findByName(nameOrTarget);
-        } else {
-            return this.findByTarget(nameOrTarget);
-        }
-    }
 
     findByName(name: string) {
         const metadata = this.find(metadata => metadata.name === name);
