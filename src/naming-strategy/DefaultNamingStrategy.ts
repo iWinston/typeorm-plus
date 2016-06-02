@@ -38,7 +38,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return customName;
     }
 
-    indexName(target: Function, name: string|undefined, columns: string[]): string {
+    indexName(name: string|undefined, columns: string[]): string {
         if (name)
             return name;
         

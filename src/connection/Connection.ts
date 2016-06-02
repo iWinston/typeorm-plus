@@ -374,20 +374,20 @@ export class Connection {
         // take imported naming strategy metadatas
         getMetadataArgsStorage()
             .namingStrategies
-            .filterByClasses(this.namingStrategyClasses)
+            .filterByTargets(this.namingStrategyClasses)
             .forEach(metadata => this.namingStrategyMetadatas.push(new NamingStrategyMetadata(metadata)));
 
         // take imported event subscribers
         getMetadataArgsStorage()
             .entitySubscribers
-            .filterByClasses(this.subscriberClasses)
+            .filterByTargets(this.subscriberClasses)
             .map(metadata => getFromContainer(metadata.target))
             .forEach(subscriber => this.entitySubscribers.push(subscriber));
 
         // take imported entity listeners
         getMetadataArgsStorage()
             .entityListeners
-            .filterByClasses(this.entityClasses)
+            .filterByTargets(this.entityClasses)
             .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
 
         // build entity metadatas from metadata args storage (collected from decorators)

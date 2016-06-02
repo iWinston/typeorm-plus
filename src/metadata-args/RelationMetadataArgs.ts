@@ -10,13 +10,13 @@ export interface RelationMetadataArgs {
     /**
      * Class to which this relation is applied.
      */
-    readonly target?: Function;
+    readonly target?: Function|string;
 
     /**
      * In the case if this relation is without a target, targetId must be specified.
      * This is used for entity schemas without classes.
      */
-    readonly targetId?: string;
+    // readonly targetId?: string;
 
     /**
      * Class's property name to which this relation is applied.

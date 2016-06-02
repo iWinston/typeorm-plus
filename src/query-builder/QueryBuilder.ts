@@ -142,6 +142,7 @@ export class QueryBuilder<Entity> {
 
     from(tableName: string, alias: string): this;
     from(entity: Function, alias: string): this;
+    from(entity: Function|string, alias: string): this;
     from(entityOrTableName: Function|string, alias: string): this {
         if (entityOrTableName instanceof Function) {
             const aliasObj = new Alias(alias);
@@ -517,6 +518,7 @@ export class QueryBuilder<Entity> {
                             if (entity[index])
                                 return Promise.resolve(entity[index]);
                             // find object metadata and try to load
+                            // const target = relation.target instanceof Function ? <Function> relation.target : <string> relation.target;
                             return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
                                 .select(relation.propertyName)
                                 .from(relation.target, relation.propertyName) // todo: change `id` after join column implemented

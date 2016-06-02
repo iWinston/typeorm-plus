@@ -18,7 +18,7 @@ export class PropertyMetadata extends TargetMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(target?: Function, propertyName?: string) {
+    constructor(target?: Function|string, propertyName?: string) {
         super(target);
         
         if (propertyName)

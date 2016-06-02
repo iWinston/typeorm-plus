@@ -10,13 +10,13 @@ export abstract class TargetMetadata {
     /**
      * Target class to which metadata is applied.
      */
-    readonly target: Function;
+    readonly target: Function|string;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
     
-    constructor(target?: Function) {
+    constructor(target?: Function|string) {
         if (target)
             this.target = target;
     }

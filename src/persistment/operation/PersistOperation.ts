@@ -11,6 +11,7 @@ import {UpdateByInverseSideOperation} from "./UpdateByInverseSideOperation";
  */
 export interface EntityWithId {
     id: any;
+    entityTarget: Function|string;
     entity: any;
 }
 

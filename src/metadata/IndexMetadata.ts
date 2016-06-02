@@ -58,7 +58,7 @@ export class IndexMetadata extends TargetMetadata {
      * Gets index's name.
      */
     get name() {
-        return this.entityMetadata.namingStrategy.indexName(this.target, this._name, this.columns);
+        return this.entityMetadata.namingStrategy.indexName(this._name, this.columns);
     }
 
     /**

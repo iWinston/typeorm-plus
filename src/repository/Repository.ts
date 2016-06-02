@@ -447,6 +447,7 @@ export class Repository<Entity> {
 
                     return <EntityWithId> {
                         id: (<any> loadedEntity)[metadata.primaryColumn.name],
+                        entityTarget: metadata.target,
                         entity: loadedEntity
                     };
                 });
@@ -461,48 +462,29 @@ export class Repository<Entity> {
      * Extracts unique objects from given entity and all its downside relations.
      */
     private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> {
-        const promises = metadata.relations
-            // .filter(relation => !!entity[relation.propertyName])
-            .map(relation => {
-                const relMetadata = relation.inverseEntityMetadata;
-                // const value = ;
+        const promises = metadata.relations.map(relation => {
+            const relMetadata = relation.inverseEntityMetadata;
 
-                const value = (entity[relation.propertyName] instanceof Promise && relation.isLazy) ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
-                if (!value)
-                    return undefined;
+            const value = (entity[relation.propertyName] instanceof Promise && relation.isLazy) ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
+            if (!value)
+                return undefined;
+            
+            if (value instanceof Array) {
+                const subPromises = value.map((subEntity: any) => {
+                    return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
+                });
+                return Promise.all(subPromises);
                 
-                if (value instanceof Array) {
-                    const subPromises = value.map((subEntity: any) => {
-                        return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
-                    });
-                    return Promise.all(subPromises);
-
-                /*} else if (value instanceof Promise && relation.isLazy) {
-                    
-                    return value.then((resolvedValue: any) => { // todo: duplicate logic
-
-                        if (resolvedValue && resolvedValue instanceof Array) {
-                            const promises = resolvedValue.map((subEntity: any) => {
-                                return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
-                            });
-                            return Promise.all(promises);
-                            
-                        } else if (resolvedValue) {
-                            return this.extractObjectsById(resolvedValue, relMetadata, entityWithIds);
-                        }
-                        
-                    });*/
-                    
-                } else {
-                    return this.extractObjectsById(value, relMetadata, entityWithIds);
-                }
-            })
-            .filter(result => !!result);
+            } else {
+                return this.extractObjectsById(value, relMetadata, entityWithIds);
+            }
+        });
         
-        return Promise.all<any>(promises).then(() => {
+        return Promise.all<any>(promises.filter(result => !!result)).then(() => {
             if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
                 entityWithIds.push({
                     id: entity[metadata.primaryColumn.name],
+                    entityTarget: metadata.target,
                     entity: entity
                 });
             }

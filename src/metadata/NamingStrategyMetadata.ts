@@ -4,11 +4,16 @@ import {NamingStrategyMetadataArgs} from "../metadata-args/NamingStrategyMetadat
 /**
  * This metadata interface contains all information about naming strategy.
  */
-export class NamingStrategyMetadata extends TargetMetadata {
+export class NamingStrategyMetadata {
 
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
+
+    /**
+     * Target class to which metadata is applied.
+     */
+    readonly target: Function;
 
     /**
      * Naming strategy name.
@@ -20,7 +25,7 @@ export class NamingStrategyMetadata extends TargetMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: NamingStrategyMetadataArgs) {
-        super(args.target);
+        this.target = args.target;
         this.name = args.name;
     }
 

@@ -97,6 +97,9 @@ export class EntityMetadata {
         if (!this.table)
             throw new Error("No table target set to the entity metadata.");
         
+        if (typeof this.table.target === "string")
+            return this.table.target;
+        
         if (this.target)
             return (<any> this.target).name;
         
@@ -117,7 +120,7 @@ export class EntityMetadata {
     /**
      * Target class to which this entity metadata is bind.
      */
-    get target(): Function {
+    get target(): Function|string {
         return this.table.target;
     }
 

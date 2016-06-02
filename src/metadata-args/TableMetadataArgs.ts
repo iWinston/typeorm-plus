@@ -8,13 +8,13 @@ export interface TableMetadataArgs {
     /**
      * Class to which table is applied.
      */
-    readonly target?: Function;
+    readonly target?: Function|string;
 
     /**
      * In the case if this table is without a target, targetId must be specified.
      * This is used for entity schemas without classes.
      */
-    readonly targetId?: string;
+    // readonly targetId?: string;
 
     /**
      * Table name.

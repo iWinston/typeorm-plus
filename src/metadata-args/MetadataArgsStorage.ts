@@ -47,8 +47,8 @@ export class MetadataArgsStorage {
      * Gets merged (with all abstract classes) table metadatas for the given classes.
      */
     getMergedTableMetadatas(classes: Function[]) {
-        const allTableMetadataArgs = this.tables.filterByClasses(classes);
-        const tableMetadatas = this.tables.filterByClasses(classes).filter(table => table.type === "regular" || table.type === "closure");
+        const allTableMetadataArgs = this.tables.filterByTargets(classes);
+        const tableMetadatas = this.tables.filterByTargets(classes).filter(table => table.type === "regular" || table.type === "closure");
 
         return tableMetadatas.map(tableMetadata => {
             return this.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
@@ -59,7 +59,7 @@ export class MetadataArgsStorage {
      * Gets merged (with all abstract classes) embeddable table metadatas for the given classes.
      */
     getMergedEmbeddableTableMetadatas(classes: Function[]) {
-        const embeddableTableMetadatas = this.tables.filterByClasses(classes).filter(table => table.type === "embeddable");
+        const embeddableTableMetadatas = this.tables.filterByTargets(classes).filter(table => table.type === "embeddable");
 
         return embeddableTableMetadatas.map(embeddableTableMetadata => {
             return this.mergeWithEmbeddable(embeddableTableMetadatas, embeddableTableMetadata);
@@ -75,19 +75,20 @@ export class MetadataArgsStorage {
     private mergeWithAbstract(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
                               tableMetadata: TableMetadataArgs) {
 
-        const indices = this.indices.filterByClass(tableMetadata.target);
-        const columns = this.columns.filterByClass(tableMetadata.target);
-        const relations = this.relations.filterByClass(tableMetadata.target);
-        const joinColumns = this.joinColumns.filterByClass(tableMetadata.target);
-        const joinTables = this.joinTables.filterByClass(tableMetadata.target);
-        const entityListeners = this.entityListeners.filterByClass(tableMetadata.target);
-        const relationCounts = this.relationCounts.filterByClass(tableMetadata.target);
-        const embeddeds = this.embeddeds.filterByClass(tableMetadata.target);
+        const indices = this.indices.filterByTarget(tableMetadata.target);
+        const columns = this.columns.filterByTarget(tableMetadata.target);
+        const relations = this.relations.filterByTarget(tableMetadata.target);
+        const joinColumns = this.joinColumns.filterByTarget(tableMetadata.target);
+        const joinTables = this.joinTables.filterByTarget(tableMetadata.target);
+        const entityListeners = this.entityListeners.filterByTarget(tableMetadata.target);
+        const relationCounts = this.relationCounts.filterByTarget(tableMetadata.target);
+        const embeddeds = this.embeddeds.filterByTarget(tableMetadata.target);
 
         allTableMetadatas
             .filter(metadata => {
                 if (!tableMetadata.target || !metadata.target) return false;
-                return this.isInherited(tableMetadata.target, metadata.target);
+                if (!(tableMetadata.target instanceof Function) || !(metadata.target instanceof Function)) return false;
+                return this.isInherited(tableMetadata.target, metadata.target); // todo: fix it
             })
             .forEach(parentMetadata => {
                 const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
@@ -138,12 +139,13 @@ export class MetadataArgsStorage {
      */
     private mergeWithEmbeddable(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
                                 tableMetadata: TableMetadataArgs) {
-        const columns = this.columns.filterByClass(tableMetadata.target);
+        const columns = this.columns.filterByTarget(tableMetadata.target);
 
         allTableMetadatas
             .filter(metadata => {
                 if (!tableMetadata.target || !metadata.target) return false;
-                return this.isInherited(tableMetadata.target, metadata.target);
+                if (!(tableMetadata.target instanceof Function) || !(metadata.target instanceof Function)) return false;
+                return this.isInherited(tableMetadata.target, metadata.target); // todo: fix it for entity schema
             })
             .forEach(parentMetadata => {
                 const metadatasFromParents = this.mergeWithEmbeddable(allTableMetadatas, parentMetadata);

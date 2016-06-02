@@ -164,6 +164,7 @@ export class EntityPersistOperationBuilder {
             const relMetadata = relation.inverseEntityMetadata;
             const relationIdColumnName = relMetadata.primaryColumn.propertyName;
             const value = this.getEntityRelationValue(relation, newEntity);
+            const valueTarget = relation.target;
             const referencedColumnName = relation.isOwning ? relation.referencedColumnName : relation.inverseRelation.referencedColumnName;
             // const dbValue = this.getEntityRelationValue(relation, dbEntity);
 
@@ -176,7 +177,7 @@ export class EntityPersistOperationBuilder {
                         return subDbEntity[relationIdColumnName] === subEntity[relationIdColumnName];
                     });*/
                     const dbValue = dbEntities.find(dbValue => {
-                        return dbValue.entity.constructor === subEntity.constructor && dbValue.entity[referencedColumnName] === subEntity[relationIdColumnName];
+                        return dbValue.entityTarget === valueTarget && dbValue.entity[referencedColumnName] === subEntity[relationIdColumnName];
                     });
                     if (dbValue)
                         this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValue.entity, subEntity, dbEntities, relation, operations);
@@ -184,7 +185,7 @@ export class EntityPersistOperationBuilder {
                 
             } else {
                 const dbValue = dbEntities.find(dbValue => {
-                    return dbValue.entity.constructor === value.constructor && dbValue.entity[referencedColumnName] === value[relationIdColumnName];
+                    return dbValue.entityTarget === valueTarget && dbValue.entity[referencedColumnName] === value[relationIdColumnName];
                 });
                 if (dbValue)
                     this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValue.entity, value, dbEntities, relation, operations);
@@ -326,7 +327,7 @@ export class EntityPersistOperationBuilder {
 
     private findJunctionInsertOperations(metadata: EntityMetadata, newEntity: any, dbEntities: EntityWithId[], isRoot = true): JunctionInsertOperation[] {
         const dbEntity = dbEntities.find(dbEntity => {
-            return dbEntity.id === newEntity[metadata.primaryColumn.propertyName] && dbEntity.entity.constructor === metadata.target;
+            return dbEntity.id === newEntity[metadata.primaryColumn.propertyName] && dbEntity.entityTarget === metadata.target;
         });
         return metadata.relations
             .filter(relation => newEntity[relation.propertyName] !== null && newEntity[relation.propertyName] !== undefined)
@@ -372,7 +373,7 @@ export class EntityPersistOperationBuilder {
             return [];
 
         const newEntity = newEntities.find(newEntity => {
-            return newEntity.id === dbEntity[metadata.primaryColumn.propertyName] && newEntity.entity.constructor === metadata.target;
+            return newEntity.id === dbEntity[metadata.primaryColumn.propertyName] && newEntity.entityTarget === metadata.target;
         });
         return metadata.relations
             .filter(relation => dbEntity[relation.propertyName] !== null && dbEntity[relation.propertyName] !== undefined)
@@ -437,15 +438,18 @@ export class EntityPersistOperationBuilder {
                     return false;
                 if (!newEntity[relation.propertyName] || !dbEntity[relation.propertyName])
                     return true;
+                const entityTarget = relation.target;
                 
-                const newEntityRelationMetadata = this.entityMetadatas.findByTarget(newEntity[relation.propertyName].constructor);
+                const newEntityRelationMetadata = this.entityMetadatas.findByTarget(entityTarget);
                 const dbEntityRelationMetadata = this.entityMetadatas.findByTarget(dbEntity[relation.propertyName].constructor);
                 return newEntityRelationMetadata.getEntityId(newEntity[relation.propertyName]) !== dbEntityRelationMetadata.getEntityId(dbEntity[relation.propertyName]);
             });
     }
 
-    private findEntityWithId(entityWithIds: EntityWithId[], entityClass: Function, id: any) {
-        return entityWithIds.find(entityWithId => entityWithId.id === id && entityWithId.entity.constructor === entityClass);
+    private findEntityWithId(entityWithIds: EntityWithId[], entityTarget: Function|string, id: any) {
+        // console.log(entityWithId.entityTarget);
+        // console.log(entityWithId.entity.constructor);
+        return entityWithIds.find(entityWithId => entityWithId.id === id && entityWithId.entityTarget === entityTarget);
     }
 
     private checkCascadesAllowed(type: "insert"|"update"|"remove", metadata: EntityMetadata, relation: RelationMetadata) {

@@ -45,10 +45,10 @@ export class EntityMetadataBuilder {
             // add table metadata args from the schema
             const tableSchema = schema.table || {} as any;
             const table: TableMetadataArgs = {
-                target: schema.target,
+                target: schema.target || schema.name,
                 name: tableSchema.name,
                 type: tableSchema.type || "regular",
-                targetId: schema.name,
+                // targetId: schema.name,
                 orderBy: tableSchema.orderBy,
                 primaryKeys: tableSchema.primaryKeys
             };
@@ -58,8 +58,8 @@ export class EntityMetadataBuilder {
             Object.keys(schema.columns).forEach(columnName => {
                 const columnSchema = schema.columns[columnName];
                 const column: ColumnMetadataArgs = {
-                    target: schema.target,
-                    targetId: schema.name,
+                    target: schema.target || schema.name,
+                    // targetId: schema.name,
                     mode: columnSchema.mode,
                     propertyName: columnName,
                     // todo: what to do with it?: propertyType: 
@@ -86,8 +86,8 @@ export class EntityMetadataBuilder {
             Object.keys(schema.relations).forEach(relationName => {
                 const relationSchema = schema.relations[relationName];
                 const relation: RelationMetadataArgs = {
-                    target: schema.target,
-                    targetId: schema.name,
+                    target: schema.target || schema.name,
+                    // targetId: schema.name,
                     propertyName: relationName,
                     // todo: what to do with it?: propertyType: 
                     relationType: relationSchema.relationType,
