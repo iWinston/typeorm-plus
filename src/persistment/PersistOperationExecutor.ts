@@ -306,7 +306,7 @@ export class PersistOperationExecutor {
         let tableName: string, relationName: string, relationId: any, idColumn: string, id: any;
         const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
         const idInInserts = relatedInsertOperation ? relatedInsertOperation.entityId : null;
-        if (operation.updatedRelation.isOneToMany) {
+        if (operation.updatedRelation.isOneToMany || operation.updatedRelation.isOneToOneNotOwner) {
             const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.entity.constructor);
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.inverseRelation.name;
