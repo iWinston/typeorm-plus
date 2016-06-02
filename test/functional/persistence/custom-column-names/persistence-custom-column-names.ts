@@ -8,6 +8,7 @@ import {Category} from "./entity/Category";
 import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
 import {createConnection} from "../../../../src/index";
 import {CategoryMetadata} from "./entity/CategoryMetadata";
+import {setupConnection} from "../../../utils/utils";
 
 chai.should();
 chai.use(require("sinon-chai"));
@@ -19,35 +20,10 @@ describe("persistence > custom-column-names", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const parameters: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
-            host: "192.168.99.100",
-            port: 3306,
-            username: "root",
-            password: "admin",
-            database: "test",
-            autoSchemaCreate: true,
-            logging: {
-                logFailedQueryError: true
-            }
-        },
-        entities: [Post, Category, CategoryMetadata]
-    };
     // connect to db
     let connection: Connection;
-    before(function() {
-        return createConnection(parameters)
-            .then(con => connection = con)
-            .catch(e => {
-                console.log("Error during connection to db: " + e);
-                throw e;
-            });
-    });
-
-    after(function() {
-        connection.close();
-    });
+    before(setupConnection(con => connection = con, [Post, Category, CategoryMetadata]));
+    after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {

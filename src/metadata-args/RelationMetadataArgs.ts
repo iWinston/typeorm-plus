@@ -10,7 +10,13 @@ export interface RelationMetadataArgs {
     /**
      * Class to which this relation is applied.
      */
-    readonly target: Function;
+    readonly target?: Function;
+
+    /**
+     * In the case if this relation is without a target, targetId must be specified.
+     * This is used for entity schemas without classes.
+     */
+    readonly targetId?: string;
 
     /**
      * Class's property name to which this relation is applied.
@@ -19,8 +25,10 @@ export interface RelationMetadataArgs {
 
     /**
      * Original (reflected) class's property type.
+     * 
+     * todo: this can be empty for relations from entity schemas.
      */
-    readonly propertyType: any;
+    readonly propertyType?: any;
 
     /**
      * Type of relation. Can be one of the value of the RelationTypes class.

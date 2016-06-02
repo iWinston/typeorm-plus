@@ -13,6 +13,11 @@ import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 import {JunctionEntityMetadataBuilder} from "./JunctionEntityMetadataBuilder";
 import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetadataBuilder";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
+import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
+import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
+import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
+import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
+import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -31,14 +36,93 @@ export class EntityMetadataBuilder {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
-    
+
+    buildFromSchemas(namingStrategy: NamingStrategyInterface, schemas: EntitySchema[]): EntityMetadata[] {
+        const metadataArgsStorage = new MetadataArgsStorage();
+
+        schemas.forEach(schema => {
+            
+            // add table metadata args from the schema
+            const tableSchema = schema.table || {} as any;
+            const table: TableMetadataArgs = {
+                target: schema.target,
+                name: tableSchema.name,
+                type: tableSchema.type || "regular",
+                targetId: schema.name,
+                orderBy: tableSchema.orderBy,
+                primaryKeys: tableSchema.primaryKeys
+            };
+            metadataArgsStorage.tables.add(table);
+            
+            // add columns metadata args from the schema
+            Object.keys(schema.columns).forEach(columnName => {
+                const columnSchema = schema.columns[columnName];
+                const column: ColumnMetadataArgs = {
+                    target: schema.target,
+                    targetId: schema.name,
+                    mode: columnSchema.mode,
+                    propertyName: columnName,
+                    // todo: what to do with it?: propertyType: 
+                    options: {
+                        type: columnSchema.type,
+                        name: columnSchema.name,
+                        length: columnSchema.length,
+                        generated: columnSchema.generated,
+                        unique: columnSchema.unique,
+                        nullable: columnSchema.nullable,
+                        columnDefinition: columnSchema.columnDefinition,
+                        comment: columnSchema.comment,
+                        oldColumnName: columnSchema.oldColumnName,
+                        precision: columnSchema.precision,
+                        scale: columnSchema.scale,
+                        collation: columnSchema.collation
+                    }
+                };
+                
+                metadataArgsStorage.columns.add(column);
+            });
+            
+            // add relation metadata args from the schema
+            Object.keys(schema.relations).forEach(relationName => {
+                const relationSchema = schema.relations[relationName];
+                const relation: RelationMetadataArgs = {
+                    target: schema.target,
+                    targetId: schema.name,
+                    propertyName: relationName,
+                    // todo: what to do with it?: propertyType: 
+                    relationType: relationSchema.relationType,
+                    type: relationSchema.type,
+                    inverseSideProperty: relationSchema.inverseSide,
+                    isTreeParent: relationSchema.isTreeParent,
+                    isTreeChildren: relationSchema.isTreeChildren,
+                    options: {
+                        cascadeAll: relationSchema.cascadeAll,
+                        cascadeInsert: relationSchema.cascadeInsert,
+                        cascadeUpdate: relationSchema.cascadeUpdate,
+                        cascadeRemove: relationSchema.cascadeRemove,
+                        oldColumnName: relationSchema.oldColumnName,
+                        nullable: relationSchema.nullable,
+                        onDelete: relationSchema.onDelete
+                    }
+                };
+
+                metadataArgsStorage.relations.add(relation);
+            });
+        });
+        
+        return this.buildFromAnyMetadataArgsStorage(metadataArgsStorage, namingStrategy, []);
+    }
+
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    build(namingStrategy: NamingStrategyInterface, entityClasses: Function[]): EntityMetadata[] {
-        
-        const embeddableMergedArgs = getMetadataArgsStorage().getMergedEmbeddableTableMetadatas(entityClasses);
-        const entityMetadatas = getMetadataArgsStorage().getMergedTableMetadatas(entityClasses).map(mergedArgs => {
+    buildFromMetadataArgsStorage(namingStrategy: NamingStrategyInterface, entityClasses: Function[]): EntityMetadata[] {
+        return this.buildFromAnyMetadataArgsStorage(getMetadataArgsStorage(), namingStrategy, entityClasses);
+    }
+    
+    buildFromAnyMetadataArgsStorage(metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses: Function[]): EntityMetadata[] {
+        const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
+        const entityMetadatas = metadataArgsStorage.getMergedTableMetadatas(entityClasses).map(mergedArgs => {
 
             // find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
             const embeddeds: EmbeddedMetadata[] = [];

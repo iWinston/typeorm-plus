@@ -49,7 +49,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
     }
     
     /**
-     * Access to the native implementation of the database.
+     * Access to the native connection to the database.
      */
     get nativeConnection(): any {
         return this.mysqlConnection;
@@ -80,8 +80,9 @@ export class MysqlDriver extends BaseDriver implements Driver {
         if (!mysql && require) {
             try {
                 mysql = require("mysql");
+                
             } catch (e) {
-                throw new Error("Mysql package was not found installed. Try to install it: npm install mysql --save");
+                throw new Error("Mysql package has not been found installed. Try to install it: npm install mysql --save");
             }
         } else {
             throw new Error("Cannot load mysql driver dependencies. Try to install all required dependencies.");

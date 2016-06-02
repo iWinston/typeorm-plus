@@ -2,7 +2,7 @@ import {CreateConnectionOptions} from "../../src/connection-manager/CreateConnec
 import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 
-export function setupConnection(entities: Function[], callback?: (connection: Connection) => any) {
+export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
 
     const parameters: CreateConnectionOptions = {
         driver: "mysql",

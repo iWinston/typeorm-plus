@@ -7,7 +7,7 @@ import {ReactiveRepository} from "../repository/ReactiveRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 
 /**
- * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
+ * Entity manager supposed to work with any entity, automatically find its repository and call its methods, whatever
  * entity type are you passing.
  */
 export class EntityManager {

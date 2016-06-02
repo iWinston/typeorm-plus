@@ -29,6 +29,12 @@ export class ConnectionManager {
         const driver = this.createDriver(options.driver);
         const connection = this.createConnection(options.connectionName || "default", driver, options.connection);
 
+        if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
+            connection.importEntitySchemaFromDirectories(options.entitySchemaDirectories);
+
+        if (options.entitySchemas)
+            connection.importEntities(options.entitySchemas);
+
         if (options.entityDirectories && options.entityDirectories.length > 0)
             connection.importEntitiesFromDirectories(options.entityDirectories);
 

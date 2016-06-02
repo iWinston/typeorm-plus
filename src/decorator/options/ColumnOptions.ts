@@ -69,10 +69,5 @@ export interface ColumnOptions {
      * Column collation. Note that not all databases support it.
      */
     readonly collation?: string; // todo: looks like this is not used
-
-    /**
-     * Indicates if this column is order id column.
-     */
-    readonly isOrderId?: boolean; // todo: looks like this is not implemented yet
     
 }

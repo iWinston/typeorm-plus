@@ -1,10 +1,10 @@
+import * as Rx from "rxjs/Rx";
 import {Connection} from "../connection/Connection";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOptions} from "../repository/FindOptions";
 import {Repository} from "../repository/Repository";
 import {ConstructorFunction} from "../common/ConstructorFunction";
 import {ReactiveRepository} from "../repository/ReactiveRepository";
-import * as Rx from "rxjs/Rx";
 import {ReactiveTreeRepository} from "../repository/ReactiveTreeRepository";
 
 /**
@@ -303,6 +303,7 @@ export class ReactiveEntityManager {
     
     /**
      * Roots are entities that have no ancestors. Finds them all.
+     * Used on the tree-type (e.g. closure table) entities.
      */
     findRoots<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findRoots();
@@ -310,6 +311,7 @@ export class ReactiveEntityManager {
 
     /**
      * Creates a query builder used to get descendants of the entities in a tree.
+     * Used on the tree-type (e.g. closure table) entities.
      */
     createDescendantsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
         return this.getReactiveTreeRepository(entityClass).createDescendantsQueryBuilder(alias, closureTableAlias, entity);
@@ -317,6 +319,7 @@ export class ReactiveEntityManager {
 
     /**
      * Gets all children (descendants) of the given entity. Returns them all in a flat array.
+     * Used on the tree-type (e.g. closure table) entities.
      */
     findDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findDescendants(entity);
@@ -324,6 +327,7 @@ export class ReactiveEntityManager {
 
     /**
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
+     * Used on the tree-type (e.g. closure table) entities.
      */
     findDescendantsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity> {
         return this.getReactiveTreeRepository(entityClass).findDescendantsTree(entity);
@@ -331,6 +335,7 @@ export class ReactiveEntityManager {
 
     /**
      * Gets number of descendants of the entity.
+     * Used on the tree-type (e.g. closure table) entities.
      */
     countDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<number> {
         return this.getReactiveTreeRepository(entityClass).countDescendants(entity);
@@ -338,6 +343,7 @@ export class ReactiveEntityManager {
 
     /**
      * Creates a query builder used to get ancestors of the entities in the tree.
+     * Used on the tree-type (e.g. closure table) entities.
      */
     createAncestorsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
         return this.getReactiveTreeRepository(entityClass).createAncestorsQueryBuilder(alias, closureTableAlias, entity);
@@ -345,20 +351,23 @@ export class ReactiveEntityManager {
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
+     *  Used on the tree-type (e.g. closure table) entities.
      */
     findAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findAncestors(entity);
     }
 
     /**
-     * Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
+     * Gets all parents (ancestors) of the given entity. \Returns them in a tree - nested into each other.
+     *  Used on the tree-type (e.g. closure table) entities.
      */
     findAncestorsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity> {
         return this.getReactiveTreeRepository(entityClass).findAncestorsTree(entity);
     }
 
     /**
-     * Gets number of ancestors of the entity.
+     * Gets number of ancestors of the entity. 
+     * Used on the tree-type (e.g. closure table) entities.
      */
     countAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<number> {
         return this.getReactiveTreeRepository(entityClass).countAncestors(entity);

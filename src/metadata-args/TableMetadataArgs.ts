@@ -11,6 +11,12 @@ export interface TableMetadataArgs {
     readonly target?: Function;
 
     /**
+     * In the case if this table is without a target, targetId must be specified.
+     * This is used for entity schemas without classes.
+     */
+    readonly targetId?: string;
+
+    /**
      * Table name.
      */
     readonly name?: string;

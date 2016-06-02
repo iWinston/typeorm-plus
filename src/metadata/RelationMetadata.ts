@@ -9,7 +9,7 @@ import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
  */
-export type RelationTypeInFunction = ((type?: any) => Function);
+export type RelationTypeInFunction = ((type?: any) => Function)|string; // todo: |string ?
 
 
 /**
@@ -198,8 +198,8 @@ export class RelationMetadata extends PropertyMetadata {
     /**
      * Gets the property's type to which this relation is applied.
      */
-    get type(): Function {
-        return this._type();
+    get type(): Function|string {
+        return this._type instanceof Function ? this._type() : this._type;
     }
 
     /**
