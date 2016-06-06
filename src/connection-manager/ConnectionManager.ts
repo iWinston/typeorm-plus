@@ -26,7 +26,7 @@ export class ConnectionManager {
     /**
      * Creates a new connection based on the given connection options and registers a new connection in the manager.
      */
-    create(options: CreateConnectionOptions): Promise<Connection> {
+    create(options: CreateConnectionOptions): Connection {
         const driver = this.createDriver(options.driver);
         const connection = this.createConnection(options.connectionName || "default", driver, options.connection);
 
@@ -54,7 +54,7 @@ export class ConnectionManager {
         if (options.namingStrategies)
             connection.importNamingStrategies(options.namingStrategies);
 
-        return connection.connect();
+        return connection;
     }
 
     /**

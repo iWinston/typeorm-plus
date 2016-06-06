@@ -93,7 +93,7 @@ export function getConnectionManager() {
  * Allows to quickly create a connection based on the given options. Uses ConnectionManager.
  */
 export function createConnection(options: CreateConnectionOptions) {
-    return getConnectionManager().create(options);
+    return getConnectionManager().create(options).connect();
 }
 
 // -------------------------------------------------------------------------

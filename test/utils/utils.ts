@@ -1,6 +1,7 @@
 import {CreateConnectionOptions} from "../../src/connection-manager/CreateConnectionOptions";
 import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
+import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 
 export interface TestingConnectionOptions {
     entities?: Function[];
@@ -12,74 +13,49 @@ export function closeConnections(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.close()));
 }
 
-export async function setupTestingConnections(options?: TestingConnectionOptions): Promise<Connection[]> {
+export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"postgres"|"postgresSecondary"): ConnectionOptions {
     // const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
     const parameters = require(__dirname + "/../../config/parameters.json"); // path is relative to compile directory
+
+    return {
+        host: parameters.connections[type].host,
+        port: parameters.connections[type].port,
+        username: parameters.connections[type].username,
+        password: parameters.connections[type].password,
+        database: parameters.connections[type].database,
+        autoSchemaCreate: true,
+        logging: {
+            logFailedQueryError: true
+        }
+    };
+}
+
+export async function setupTestingConnections(options?: TestingConnectionOptions): Promise<Connection[]> {
     
     const mysqlParameters: CreateConnectionOptions = {
         driver: "mysql",
-        connection: {
-            host: parameters.connections.mysql.host,
-            port: parameters.connections.mysql.port,
-            username: parameters.connections.mysql.username,
-            password: parameters.connections.mysql.password,
-            database: parameters.connections.mysql.database,
-            autoSchemaCreate: true,
-            logging: {
-                logFailedQueryError: true
-            }
-        },
+        connection: createTestingConnectionOptions("mysql"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
-
+    
     const mysqlSecondaryParameters: CreateConnectionOptions = {
         driver: "mysql",
-        connection: {
-            host: parameters.connections.mysqlSecondary.host,
-            port: parameters.connections.mysqlSecondary.port,
-            username: parameters.connections.mysqlSecondary.username,
-            password: parameters.connections.mysqlSecondary.password,
-            database: parameters.connections.mysqlSecondary.database,
-            autoSchemaCreate: true,
-            logging: {
-                logFailedQueryError: true
-            }
-        },
+        connection: createTestingConnectionOptions("mysqlSecondary"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
     const postgresParameters: CreateConnectionOptions = {
         driver: "postgres",
-        connection: {
-            host: parameters.connections.postgres.host,
-            port: parameters.connections.postgres.port,
-            username: parameters.connections.postgres.username,
-            password: parameters.connections.postgres.password,
-            database: parameters.connections.postgres.database,
-            autoSchemaCreate: true,
-            logging: {
-                logFailedQueryError: true
-            }
-        },
+        connection: createTestingConnectionOptions("postgres"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
     const postgresSecondaryParameters: CreateConnectionOptions = {
         driver: "postgres",
-        connection: {
-            host: parameters.connections.postgresSecondary.host,
-            port: parameters.connections.postgresSecondary.port,
-            username: parameters.connections.postgresSecondary.username,
-            password: parameters.connections.postgresSecondary.password,
-            database: parameters.connections.postgresSecondary.database,
-            autoSchemaCreate: true,
-            logging: {
-                logFailedQueryError: true
-            }
-        },
+        connection: createTestingConnectionOptions("postgresSecondary"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };

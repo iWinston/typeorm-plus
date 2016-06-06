@@ -23,6 +23,14 @@ export class ReactiveRepository<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Repository's target is an object (or unique string in the case if entity is loaded from a schema) that is managed
+     * by this repository.
+     */
+    get target(): Function|string {
+        return this.repository.target;
+    }
+
+    /**
      * Checks if entity has an id.
      */
     hasId(entity: Entity): boolean {
