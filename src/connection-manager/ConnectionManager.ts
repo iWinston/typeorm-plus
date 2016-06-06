@@ -34,7 +34,7 @@ export class ConnectionManager {
             connection.importEntitySchemaFromDirectories(options.entitySchemaDirectories);
 
         if (options.entitySchemas)
-            connection.importSchemas(options.entitySchemas);
+            connection.importEntitySchemas(options.entitySchemas);
 
         if (options.entityDirectories && options.entityDirectories.length > 0)
             connection.importEntitiesFromDirectories(options.entityDirectories);

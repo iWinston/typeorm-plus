@@ -19,6 +19,8 @@ import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoCo
 import {RepositoryNotFoundError} from "../../../src/connection/error/RepositoryNotFoundError";
 import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStrategy";
 import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
+import {CannotUseNamingStrategyNotConnectedError} from "../../../src/connection/error/CannotUseNamingStrategyNotConnectedError";
+import {NamingStrategyNotFoundError} from "../../../src/connection/error/NamingStrategyNotFoundError";
 
 chai.should();
 chai.use(require("sinon-chai"));
@@ -49,22 +51,24 @@ describe("Connection", () => {
         });
 
         it("import entities, entity schemas, subscribers and naming strategies should work", () => {
-            connection.importEntities([Post]).should.be.fulfilled;
-            connection.importSchemas([]).should.be.fulfilled;
-            connection.importSubscribers([]).should.be.fulfilled;
-            connection.importNamingStrategies([]).should.be.fulfilled;
-            connection.importEntitiesFromDirectories([]).should.be.fulfilled;
-            connection.importEntitySchemaFromDirectories([]).should.be.fulfilled;
-            connection.importSubscribersFromDirectories([]).should.be.fulfilled;
-            connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled;
+            return Promise.all([
+                connection.importEntities([Post]).should.be.fulfilled,
+                connection.importEntitySchemas([]).should.be.fulfilled,
+                connection.importSubscribers([]).should.be.fulfilled,
+                connection.importNamingStrategies([]).should.be.fulfilled,
+                connection.importEntitiesFromDirectories([]).should.be.fulfilled,
+                connection.importEntitySchemaFromDirectories([]).should.be.fulfilled,
+                connection.importSubscribersFromDirectories([]).should.be.fulfilled,
+                connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled
+            ]);
         });
 
         it("should not be able to close", () => {
-            connection.close().should.be.rejectedWith(CannotCloseNotConnectedError);
+            return connection.close().should.be.rejectedWith(CannotCloseNotConnectedError);
         });
 
         it("should not be able to sync a schema", () => {
-            connection.syncSchema().should.be.rejectedWith(CannotSyncNotConnectedError);
+            return connection.syncSchema().should.be.rejectedWith(CannotSyncNotConnectedError);
         });
 
         it("should not be able to use repositories", () => {
@@ -75,7 +79,6 @@ describe("Connection", () => {
         });
 
         it("should be able to connect", () => {
-            // connection.connect().should.eventually.
             return connection.connect().should.be.fulfilled;
         });
 
@@ -92,22 +95,28 @@ describe("Connection", () => {
         }));
 
         it("import entities, entity schemas, subscribers and naming strategies should not be possible once connection is done", () => connections.forEach(connection => {
-            connection.importEntities([Post]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
-            connection.importSchemas([]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
-            connection.importSubscribers([]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
-            connection.importNamingStrategies([]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
-            connection.importEntitiesFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
-            connection.importEntitySchemaFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
-            connection.importSubscribersFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
-            connection.importNamingStrategiesFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError);
+            return Promise.all([
+                connection.importEntities([Post]).should.be.rejectedWith(CannotImportAlreadyConnectedError),
+                connection.importEntitySchemas([]).should.be.rejectedWith(CannotImportAlreadyConnectedError),
+                connection.importSubscribers([]).should.be.rejectedWith(CannotImportAlreadyConnectedError),
+                connection.importNamingStrategies([]).should.be.rejectedWith(CannotImportAlreadyConnectedError),
+                connection.importEntitiesFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError),
+                connection.importEntitySchemaFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError),
+                connection.importSubscribersFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError),
+                connection.importNamingStrategiesFromDirectories([]).should.be.rejectedWith(CannotImportAlreadyConnectedError)
+            ]);
         }));
 
         it("should not be able to connect again", () => connections.forEach(connection => {
-            connection.connect().should.be.rejectedWith(CannotConnectAlreadyConnectedError);
+            return connection.connect().should.be.rejectedWith(CannotConnectAlreadyConnectedError);
+        }));
+
+        it("should not be able to change used naming strategy", () => connections.forEach(connection => {
+            expect(() => connection.useNamingStrategy("something")).to.throw(CannotUseNamingStrategyNotConnectedError);
         }));
 
         it("should be able to close a connection", () => connections.forEach(connection => {
-            connection.close().should.be.fulfilled;
+            return connection.close().should.be.fulfilled;
         }));
 
     });
@@ -173,7 +182,7 @@ describe("Connection", () => {
         }));
         
         it("should not be able to close already closed connection", () => connections.forEach(connection => {
-            connection.close().should.be.rejectedWith(CannotCloseNotConnectedError);
+            return connection.close().should.be.rejectedWith(CannotCloseNotConnectedError);
         }));
 
         it("connection.isConnected should be false", () => connections.forEach(connection => {
@@ -182,21 +191,18 @@ describe("Connection", () => {
 
     });
 
-    describe("import entities / entity schemas / subscribers / naming strategies", function() {
+    describe("import entities and entity schemas", function() {
 
         let firstConnection: Connection, secondConnection: Connection;
-
         beforeEach(async () => {
-            const firstOptions: CreateConnectionOptions = {
+            firstConnection = await getConnectionManager().create({
                 driver: "mysql",
                 connection: createTestingConnectionOptions("mysql")
-            };
-            const secondOptions: CreateConnectionOptions = {
+            });
+            secondConnection = await getConnectionManager().create({
                 driver: "mysql",
                 connection: createTestingConnectionOptions("mysql")
-            };
-            firstConnection = await getConnectionManager().create(firstOptions);
-            secondConnection = await getConnectionManager().create(secondOptions);
+            });
         });
 
         it("should import first connection's entities only", async () => {
@@ -217,22 +223,65 @@ describe("Connection", () => {
             secondConnection.close();
         });
 
-        it("should import first connection's naming strategies only", async () => {
-            firstConnection.importEntities([Post]);
-            firstConnection.importNamingStrategies([FirstCustomNamingStrategy]);
-            firstConnection.useNamingStrategy(FirstCustomNamingStrategy);
+        it("should import first connection's entity schemas only", async () => {
+            firstConnection.importEntitySchemas([ require("./schema/user.json") ]);
             await firstConnection.connect();
-            firstConnection.getMetadata(Post).table.name.should.be.equal("POST");
+            firstConnection.getRepository("User").should.be.instanceOf(Repository);
+            firstConnection.getRepository("User").target.should.be.equal("User");
+            expect(() => firstConnection.getRepository("Photo")).to.throw(RepositoryNotFoundError);
             firstConnection.close();
         });
 
-        it("should import second connection's entities only", async () => {
-            secondConnection.importEntities([Category]);
-            secondConnection.importNamingStrategies([SecondCustomNamingStrategy]);
-            secondConnection.useNamingStrategy("secondCustomNamingStrategy");
+        it("should import second connection's entity schemas only", async () => {
+            secondConnection.importEntitySchemas([ require("./schema/photo.json") ]);
             await secondConnection.connect();
-            secondConnection.getMetadata(Category).table.name.should.be.equal("category");
+            secondConnection.getRepository("Photo").should.be.instanceOf(Repository);
+            secondConnection.getRepository("Photo").target.should.be.equal("Photo");
+            expect(() => secondConnection.getRepository("User")).to.throw(RepositoryNotFoundError);
             secondConnection.close();
+        });
+
+    });
+
+    describe("using naming strategy", function() {
+
+        let connection: Connection;
+        beforeEach(async () => {
+            connection = await getConnectionManager().create({
+                driver: "mysql",
+                connection: createTestingConnectionOptions("mysql")
+            });
+        });
+        afterEach(() => connection.isConnected ? connection.close() : {});
+
+        it("should use naming strategy when its class passed to useNamingStrategy method", async () => {
+            connection.importEntities([Post]);
+            connection.importNamingStrategies([FirstCustomNamingStrategy]);
+            connection.useNamingStrategy(FirstCustomNamingStrategy);
+            await connection.connect();
+            connection.getMetadata(Post).table.name.should.be.equal("POST");
+        });
+
+        it("should use naming strategy when its name passed to useNamingStrategy method", async () => {
+            connection.importEntities([Category]);
+            connection.importNamingStrategies([SecondCustomNamingStrategy]);
+            connection.useNamingStrategy("secondCustomNamingStrategy");
+            await connection.connect();
+            connection.getMetadata(Category).table.name.should.be.equal("category");
+        });
+
+        it("should throw an error if not registered naming strategy was used (assert by name)", () => {
+            connection.importEntities([Category]);
+            connection.importNamingStrategies([FirstCustomNamingStrategy]);
+            connection.useNamingStrategy("secondCustomNamingStrategy");
+            return connection.connect().should.be.rejectedWith(NamingStrategyNotFoundError);
+        });
+
+        it("should throw an error if not registered naming strategy was used (assert by Function)", () => {
+            connection.importEntities([Category]);
+            connection.importNamingStrategies([SecondCustomNamingStrategy]);
+            connection.useNamingStrategy(FirstCustomNamingStrategy);
+            return connection.connect().should.be.rejectedWith(NamingStrategyNotFoundError);
         });
 
     });

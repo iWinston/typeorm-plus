@@ -224,7 +224,7 @@ export class Connection {
      * Imports entity schemas from the given paths (directories) for the current connection.
      */
     async importEntitySchemaFromDirectories(paths: string[]): Promise<this> {
-        this.importSchemas(importClassesFromDirectories(paths) as any[]); // todo: check it.
+        this.importEntitySchemas(importClassesFromDirectories(paths) as any[]); // todo: check it.
         return this;
     }
 
@@ -258,7 +258,7 @@ export class Connection {
     /**
      * Imports schemas for the current connection.
      */
-    async importSchemas(schemas: EntitySchema[]): Promise<this> {
+    async importEntitySchemas(schemas: EntitySchema[]): Promise<this> {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("schemas", this.name);
 

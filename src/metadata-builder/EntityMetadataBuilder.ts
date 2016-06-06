@@ -98,69 +98,71 @@ export class EntityMetadataBuilder {
             });
             
             // add relation metadata args from the schema
-            Object.keys(schema.relations).forEach(relationName => {
-                const relationSchema = schema.relations[relationName];
-                const relation: RelationMetadataArgs = {
-                    target: schema.target || schema.name,
-                    propertyName: relationName,
-                    // todo: what to do with it?: propertyType: 
-                    relationType: relationSchema.type,
-                    type: relationSchema.target,
-                    inverseSideProperty: relationSchema.inverseSide,
-                    isTreeParent: relationSchema.isTreeParent,
-                    isTreeChildren: relationSchema.isTreeChildren,
-                    options: {
-                        cascadeAll: relationSchema.cascadeAll,
-                        cascadeInsert: relationSchema.cascadeInsert,
-                        cascadeUpdate: relationSchema.cascadeUpdate,
-                        cascadeRemove: relationSchema.cascadeRemove,
-                        oldColumnName: relationSchema.oldColumnName,
-                        nullable: relationSchema.nullable,
-                        onDelete: relationSchema.onDelete
-                    }
-                };
+            if (schema.relations) {
+                Object.keys(schema.relations).forEach(relationName => {
+                    const relationSchema = schema.relations[relationName];
+                    const relation: RelationMetadataArgs = {
+                        target: schema.target || schema.name,
+                        propertyName: relationName,
+                        // todo: what to do with it?: propertyType:
+                        relationType: relationSchema.type,
+                        type: relationSchema.target,
+                        inverseSideProperty: relationSchema.inverseSide,
+                        isTreeParent: relationSchema.isTreeParent,
+                        isTreeChildren: relationSchema.isTreeChildren,
+                        options: {
+                            cascadeAll: relationSchema.cascadeAll,
+                            cascadeInsert: relationSchema.cascadeInsert,
+                            cascadeUpdate: relationSchema.cascadeUpdate,
+                            cascadeRemove: relationSchema.cascadeRemove,
+                            oldColumnName: relationSchema.oldColumnName,
+                            nullable: relationSchema.nullable,
+                            onDelete: relationSchema.onDelete
+                        }
+                    };
 
-                metadataArgsStorage.relations.add(relation);
-                
-                // add join column
-                if (relationSchema.joinColumn) {
-                    if (typeof relationSchema.joinColumn === "boolean") {
-                        const joinColumn: JoinColumnMetadataArgs = {
-                            target: schema.target || schema.name,
-                            propertyName: relationName
-                        };
-                        metadataArgsStorage.joinColumns.push(joinColumn);
-                    } else {
-                        const joinColumn: JoinColumnMetadataArgs = {
-                            target: schema.target || schema.name,
-                            propertyName: relationName,
-                            name: relationSchema.joinColumn.name,
-                            referencedColumnName: relationSchema.joinColumn.referencedColumnName
-                        };
-                        metadataArgsStorage.joinColumns.push(joinColumn);
+                    metadataArgsStorage.relations.add(relation);
+
+                    // add join column
+                    if (relationSchema.joinColumn) {
+                        if (typeof relationSchema.joinColumn === "boolean") {
+                            const joinColumn: JoinColumnMetadataArgs = {
+                                target: schema.target || schema.name,
+                                propertyName: relationName
+                            };
+                            metadataArgsStorage.joinColumns.push(joinColumn);
+                        } else {
+                            const joinColumn: JoinColumnMetadataArgs = {
+                                target: schema.target || schema.name,
+                                propertyName: relationName,
+                                name: relationSchema.joinColumn.name,
+                                referencedColumnName: relationSchema.joinColumn.referencedColumnName
+                            };
+                            metadataArgsStorage.joinColumns.push(joinColumn);
+                        }
                     }
-                }
-                
-                // add join table
-                if (relationSchema.joinTable) {
-                    if (typeof relationSchema.joinTable === "boolean") {
-                        const joinTable: JoinTableMetadataArgs = {
-                            target: schema.target || schema.name,
-                            propertyName: relationName
-                        };
-                        metadataArgsStorage.joinTables.push(joinTable);
-                    } else {                        
-                        const joinTable: JoinTableMetadataArgs = {
-                            target: schema.target || schema.name,
-                            propertyName: relationName,
-                            name: relationSchema.joinTable.name,
-                            joinColumn: relationSchema.joinTable.joinColumn,
-                            inverseJoinColumn: relationSchema.joinTable.inverseJoinColumn
-                        };
-                        metadataArgsStorage.joinTables.push(joinTable);
+
+                    // add join table
+                    if (relationSchema.joinTable) {
+                        if (typeof relationSchema.joinTable === "boolean") {
+                            const joinTable: JoinTableMetadataArgs = {
+                                target: schema.target || schema.name,
+                                propertyName: relationName
+                            };
+                            metadataArgsStorage.joinTables.push(joinTable);
+                        } else {
+                            const joinTable: JoinTableMetadataArgs = {
+                                target: schema.target || schema.name,
+                                propertyName: relationName,
+                                name: relationSchema.joinTable.name,
+                                joinColumn: relationSchema.joinTable.joinColumn,
+                                inverseJoinColumn: relationSchema.joinTable.inverseJoinColumn
+                            };
+                            metadataArgsStorage.joinTables.push(joinTable);
+                        }
                     }
-                }
-            });
+                });
+            }
         });
         
         return this.build(metadataArgsStorage, namingStrategy);
