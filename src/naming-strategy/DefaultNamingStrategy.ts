@@ -6,36 +6,20 @@ import * as _ from "lodash";
  */
 export class DefaultNamingStrategy implements NamingStrategyInterface {
 
-    tableName(className: string): string {
-        return _.snakeCase(className);
+    tableName(className: string, customName: string): string {
+        return customName ? customName : _.snakeCase(className);
     }
 
-    tableNameCustomized(customName: string): string {
-        return customName;
+    columnName(propertyName: string, customName: string): string {
+        return customName ? customName : propertyName;
     }
 
-    columnName(propertyName: string): string {
-        return propertyName;
-    }
-
-    columnNameCustomized(customName: string): string {
-        return customName;
-    }
-
-    embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string): string {
-        return embeddedPropertyName + "_" + columnPropertyName;
-    }
-
-    embeddedColumnNameCustomized(embeddedPropertyName: string, columnCustomName: string): string {
-        return embeddedPropertyName + "_" + columnCustomName;
+    embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string, columnCustomName?: string): string {
+        return embeddedPropertyName + "_" + (columnCustomName ? columnCustomName : columnPropertyName);
     }
 
     relationName(propertyName: string): string {
         return propertyName;
-    }
-
-    relationNameCustomized(customName: string): string {
-        return customName;
     }
 
     indexName(name: string|undefined, columns: string[]): string {

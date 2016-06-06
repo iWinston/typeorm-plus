@@ -5,44 +5,29 @@
 export interface NamingStrategyInterface {
 
     /**
-     * Gets the table name from the given class name.
+     * Naming strategy name.
      */
-    tableName(className: string): string;
+    name?: string;
 
     /**
-     * Gets the table name from the given custom table name.
+     * Gets the table name from the given class name.
      */
-    tableNameCustomized(customName: string): string;
+    tableName(className: string, customName?: string): string;
 
     /**
      * Gets the table's column name from the given property name.
      */
-    columnName(propertyName: string): string;
-    
-    /**
-     * Gets the column name from the given custom column name.
-     */
-    columnNameCustomized(customName: string): string;
+    columnName(propertyName: string, customName?: string): string;
 
     /**
      * Gets the embedded's column name from the given property name.
      */
-    embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string): string;
-    
-    /**
-     * Gets the embedded's column name from the given custom column name.
-     */
-    embeddedColumnNameCustomized(embeddedPropertyName: string, columnCustomName: string): string;
+    embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string, columnCustomName?: string): string;
 
     /**
      * Gets the table's relation name from the given property name.
      */
     relationName(propertyName: string): string;
-
-    /**
-     * Gets the relation name from the given custom relation name.
-     */
-    relationNameCustomized(customName: string): string;
 
     /**
      * Gets the name of the index - simple and compose index.

@@ -5,7 +5,7 @@ import {TreeParent} from "../../../../src/decorator/tree/TreeParent";
 import {TreeChildren} from "../../../../src/decorator/tree/TreeChildren";
 import {TreeLevelColumn} from "../../../../src/decorator/tree/TreeLevelColumn";
 
-@ClosureTable("category")
+@ClosureTable("CaTeGoRy")
 export class Category {
 
     @PrimaryColumn("int", { generated: true })

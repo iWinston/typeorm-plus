@@ -22,6 +22,11 @@ export interface CreateConnectionOptions {
     connectionName?: string;
 
     /**
+     * Name of the naming strategy or target class of the naming strategy to be used on this connection.
+     */
+    usedNamingStrategy?: string|Function;
+
+    /**
      * Entities to be loaded for the new connection.
      */
     entities?: Function[];

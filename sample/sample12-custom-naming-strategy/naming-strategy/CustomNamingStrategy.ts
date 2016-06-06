@@ -6,16 +6,12 @@ import {DefaultNamingStrategy} from "../../../src/naming-strategy/DefaultNamingS
 @NamingStrategy("custom_strategy")
 export class CustomNamingStrategy extends DefaultNamingStrategy implements NamingStrategyInterface {
 
-    tableName(className: string): string {
-        return _.snakeCase(className);
+    tableName(className: string, customName: string): string {
+        return customName ? customName : _.snakeCase(className);
     }
 
-    tableNameCustomized(customName: string): string {
-        return customName;
-    }
-
-    columnName(propertyName: string): string {
-        return _.snakeCase(propertyName);
+    columnName(propertyName: string, customName: string): string {
+        return customName ? customName : _.snakeCase(propertyName);
     }
 
     columnNameCustomized(customName: string): string {

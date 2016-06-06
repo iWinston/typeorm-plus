@@ -161,20 +161,12 @@ export class ColumnMetadata extends PropertyMetadata {
     get name(): string {
         
         // if this column is embedded's column then apply different entity
-        if (this.embeddedMetadata) {
-            if (this._name)
-                return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnNameCustomized(this.embeddedMetadata.propertyName, this._name);
+        if (this.embeddedMetadata)
+            return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.propertyName, this.propertyName, this._name);
 
-            return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.propertyName, this.propertyName);
-        }
-            
-        if (this.entityMetadata) {
-            if (this._name)
-                return this.entityMetadata.namingStrategy.columnNameCustomized(this._name);
-
-            // if there is a naming strategy then use it to normalize propertyName as column name
-            return this.entityMetadata.namingStrategy.columnName(this.propertyName);
-        }
+        // if there is a naming strategy then use it to normalize propertyName as column name
+        if (this.entityMetadata)
+            return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
         
         throw new Error(`Column${this._name ? this._name + " " : ""} is not attached to any entity or embedded.`);
     }

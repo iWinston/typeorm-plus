@@ -4,9 +4,10 @@
 export class NamingStrategyNotFoundError extends Error {
     name = "NamingStrategyNotFoundError";
 
-    constructor(strategyName: string, connectionName: string) {
+    constructor(strategyName: string|Function, connectionName: string) {
         super();
-        this.message = `Naming strategy named "${strategyName}" was not found. Looks like this naming strategy does not ` +
+        const name = strategyName instanceof Function ? (strategyName as any).name : strategyName;
+        this.message = `Naming strategy "${name}" was not found. Looks like this naming strategy does not ` +
             `exist or it was not registered in current "${connectionName}" connection?`;
     }
 

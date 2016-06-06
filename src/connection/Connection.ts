@@ -12,7 +12,7 @@ import {getMetadataArgsStorage, getFromContainer} from "../index";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
+// import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
 import {NoConnectionForRepositoryError} from "./error/NoConnectionForRepositoryError";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
@@ -30,6 +30,7 @@ import {ReactiveRepositoryNotFoundError} from "./error/ReactiveRepositoryNotFoun
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
+import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingStrategyNotConnectedError";
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -101,7 +102,7 @@ export class Connection {
     /**
      * All naming strategy metadatas that are registered for this connection.
      */
-    private readonly namingStrategyMetadatas: NamingStrategyMetadata[] = [];
+    // private readonly namingStrategyMetadatas: NamingStrategyMetadata[] = [];
 
     /**
      * Registered entity classes to be used for this connection.
@@ -123,6 +124,11 @@ export class Connection {
      */
     private readonly namingStrategyClasses: Function[] = [];
 
+    /**
+     * Naming strategy to be used in this connection.
+     */
+    private usedNamingStrategy: Function|string;
+    
     /**
      * Indicates if connection has been done or not.
      */
@@ -283,6 +289,34 @@ export class Connection {
     }
 
     /**
+     * Sets given naming strategy to be used. Naming strategy must be set to be used before connection is established.
+     */
+    useNamingStrategy(name: string): this;
+
+    /**
+     * Sets given naming strategy to be used. Naming strategy must be set to be used before connection is established.
+     */
+    useNamingStrategy(strategy: Function): this;
+
+    /**
+     * Sets given naming strategy to be used. Naming strategy must be set to be used before connection is established.
+     */
+    useNamingStrategy(strategyClassOrName: string|Function): this {
+        if (this.isConnected)
+            throw new CannotUseNamingStrategyNotConnectedError(this.name);
+
+        this.usedNamingStrategy = strategyClassOrName;
+        return this;
+    }
+
+    /**
+     * Gets the entity metadata of the given entity target.
+     */
+    getMetadata(entity: Function) {
+        return this.entityMetadatas.findByTarget(entity);
+    }
+
+    /**
      * Gets repository for the given entity class.
      */
     getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity>;
@@ -302,6 +336,9 @@ export class Connection {
     getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
+
+        if (!this.entityMetadatas.hasTarget(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
         const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
         const repository = this.repositories.find(repository => Repository.ownsMetadata(repository, metadata));
@@ -379,14 +416,8 @@ export class Connection {
      * Builds all registered metadatas.
      */
     private buildMetadatas() {
-
-        // take imported naming strategy metadatas
-        if (this.namingStrategyClasses && this.namingStrategyClasses.length) {
-            getMetadataArgsStorage()
-                .namingStrategies
-                .filterByTargets(this.namingStrategyClasses)
-                .forEach(metadata => this.namingStrategyMetadatas.push(new NamingStrategyMetadata(metadata)));
-        }
+        
+        const namingStrategy = this.createNamingStrategy();
 
         // take imported event subscribers
         if (this.subscriberClasses && this.subscriberClasses.length) {
@@ -408,7 +439,7 @@ export class Connection {
         // build entity metadatas from metadata args storage (collected from decorators)
         if (this.entityClasses && this.entityClasses.length) {
             getFromContainer(EntityMetadataBuilder)
-                .buildFromMetadataArgsStorage(this.createNamingStrategy(), this.entityClasses)
+                .buildFromMetadataArgsStorage(namingStrategy, this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.createRepository(metadata);
@@ -418,27 +449,39 @@ export class Connection {
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
             getFromContainer(EntityMetadataBuilder)
-                .buildFromSchemas(this.createNamingStrategy(), this.entitySchemas)
+                .buildFromSchemas(namingStrategy, this.entitySchemas)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.createRepository(metadata);
                 });
         }
-
     }
 
     /**
      * Creates a naming strategy to be used for this connection.
      */
     private createNamingStrategy(): NamingStrategyInterface {
-        if (!this.options.namingStrategy)
-            return getFromContainer(DefaultNamingStrategy);
+        
+        if (this.namingStrategyClasses && this.namingStrategyClasses.length && this.usedNamingStrategy) {
+            const metadatas = getMetadataArgsStorage()
+                .namingStrategies
+                .filterByTargets(this.namingStrategyClasses);
 
-        const namingMetadata = this.namingStrategyMetadatas.find(strategy => strategy.name === this.options.namingStrategy);
-        if (!namingMetadata)
-            throw new NamingStrategyNotFoundError(this.options.namingStrategy, this.name);
+            if (typeof this.usedNamingStrategy === "string") {
+                const namingMetadata = metadatas.find(strategy => strategy.name === this.usedNamingStrategy);
+                if (!namingMetadata)
+                    throw new NamingStrategyNotFoundError(this.usedNamingStrategy, this.name);
+                return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
 
-        return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
+            } else {
+                const namingMetadata = metadatas.find(strategy => strategy.target === this.usedNamingStrategy);
+                if (!namingMetadata)
+                    throw new NamingStrategyNotFoundError(this.usedNamingStrategy, this.name);
+                return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
+            }
+        }
+        
+        return getFromContainer(DefaultNamingStrategy);
     }
 
     /**

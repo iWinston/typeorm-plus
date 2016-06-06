@@ -53,6 +53,12 @@ export class ConnectionManager {
 
         if (options.namingStrategies)
             connection.importNamingStrategies(options.namingStrategies);
+        
+        if (options.usedNamingStrategy && typeof options.usedNamingStrategy === "string")
+            connection.useNamingStrategy(options.usedNamingStrategy);
+        
+        if (options.usedNamingStrategy && options.usedNamingStrategy instanceof Function)
+            connection.useNamingStrategy(options.usedNamingStrategy);
 
         return connection;
     }

@@ -11,9 +11,9 @@ const options: CreateConnectionOptions = {
         username: "root",
         password: "admin",
         database: "test",
-        autoSchemaCreate: true,
-        namingStrategy: "custom_strategy"
+        autoSchemaCreate: true
     },
+    usedNamingStrategy: "custom_strategy",
     entities: [Post],
     namingStrategies: [CustomNamingStrategy]
 };

@@ -14,6 +14,11 @@ import {ReactiveRepository} from "../../../src/repository/ReactiveRepository";
 import {ReactiveTreeRepository} from "../../../src/repository/ReactiveTreeRepository";
 import {getConnectionManager} from "../../../src/index";
 import {CreateConnectionOptions} from "../../../src/connection-manager/CreateConnectionOptions";
+import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
+import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
+import {RepositoryNotFoundError} from "../../../src/connection/error/RepositoryNotFoundError";
+import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStrategy";
+import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
 
 chai.should();
 chai.use(require("sinon-chai"));
@@ -32,12 +37,18 @@ describe("Connection", () => {
             };
             connection = await getConnectionManager().create(options);
         });
+        after(() => {
+            if (connection.isConnected)
+                return connection.close();
+            
+            return Promise.resolve();
+        });
 
         it("connection.isConnected should be false", () => {
             connection.isConnected.should.be.false;
         });
 
-        it("import entities, entity schemas, subscribers and naming strategies should work", () => () => {
+        it("import entities, entity schemas, subscribers and naming strategies should work", () => {
             connection.importEntities([Post]).should.be.fulfilled;
             connection.importSchemas([]).should.be.fulfilled;
             connection.importSubscribers([]).should.be.fulfilled;
@@ -48,12 +59,24 @@ describe("Connection", () => {
             connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled;
         });
 
-        it("should not be able to connect", () => () => {
-            connection.connect().should.be.fulfilled;
+        it("should not be able to close", () => {
+            connection.close().should.be.rejectedWith(CannotCloseNotConnectedError);
         });
 
-        it("should be able to close a connection", () => () => {
-            connection.close().should.be.fulfilled;
+        it("should not be able to sync a schema", () => {
+            connection.syncSchema().should.be.rejectedWith(CannotSyncNotConnectedError);
+        });
+
+        it("should not be able to use repositories", () => {
+            expect(() => connection.getRepository(Post)).to.throw(NoConnectionForRepositoryError);
+            expect(() => connection.getTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
+            expect(() => connection.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
+            expect(() => connection.getReactiveTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
+        });
+
+        it("should be able to connect", () => {
+            // connection.connect().should.eventually.
+            return connection.connect().should.be.fulfilled;
         });
 
     });
@@ -156,6 +179,61 @@ describe("Connection", () => {
         it("connection.isConnected should be false", () => connections.forEach(connection => {
             connection.isConnected.should.be.false;
         }));
+
+    });
+
+    describe("import entities / entity schemas / subscribers / naming strategies", function() {
+
+        let firstConnection: Connection, secondConnection: Connection;
+
+        beforeEach(async () => {
+            const firstOptions: CreateConnectionOptions = {
+                driver: "mysql",
+                connection: createTestingConnectionOptions("mysql")
+            };
+            const secondOptions: CreateConnectionOptions = {
+                driver: "mysql",
+                connection: createTestingConnectionOptions("mysql")
+            };
+            firstConnection = await getConnectionManager().create(firstOptions);
+            secondConnection = await getConnectionManager().create(secondOptions);
+        });
+
+        it("should import first connection's entities only", async () => {
+            firstConnection.importEntities([Post]);
+            await firstConnection.connect();
+            firstConnection.getRepository(Post).should.be.instanceOf(Repository);
+            firstConnection.getRepository(Post).target.should.be.equal(Post);
+            expect(() => firstConnection.getRepository(Category)).to.throw(RepositoryNotFoundError);
+            firstConnection.close();
+        });
+
+        it("should import second connection's entities only", async () => {
+            secondConnection.importEntities([Category]);
+            await secondConnection.connect();
+            secondConnection.getRepository(Category).should.be.instanceOf(Repository);
+            secondConnection.getRepository(Category).target.should.be.equal(Category);
+            expect(() => secondConnection.getRepository(Post)).to.throw(RepositoryNotFoundError);
+            secondConnection.close();
+        });
+
+        it("should import first connection's naming strategies only", async () => {
+            firstConnection.importEntities([Post]);
+            firstConnection.importNamingStrategies([FirstCustomNamingStrategy]);
+            firstConnection.useNamingStrategy(FirstCustomNamingStrategy);
+            await firstConnection.connect();
+            firstConnection.getMetadata(Post).table.name.should.be.equal("POST");
+            firstConnection.close();
+        });
+
+        it("should import second connection's entities only", async () => {
+            secondConnection.importEntities([Category]);
+            secondConnection.importNamingStrategies([SecondCustomNamingStrategy]);
+            secondConnection.useNamingStrategy("secondCustomNamingStrategy");
+            await secondConnection.connect();
+            secondConnection.getMetadata(Category).table.name.should.be.equal("category");
+            secondConnection.close();
+        });
 
     });
     

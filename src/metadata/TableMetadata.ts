@@ -68,19 +68,10 @@ export class TableMetadata extends TargetMetadata {
 
         if (this.isClosureJunction && this._name)
             return this.entityMetadata.namingStrategy.closureJunctionTableName(this._name);
-
-        // if custom name is given then use it
-        if (this._name)
-            return this.entityMetadata.namingStrategy.tableNameCustomized(this._name);
-
-        // otherwise use target's table name
-        if (this.target) {
-            const name = typeof this.target === "string" ? this.target : (this.target as any).name;
-            return this.entityMetadata.namingStrategy.tableName(name);
-        }
         
-        // in the case if error 
-        throw new Error("Table does not have neither table name neither target specified.");
+        // otherwise use target's table name
+        const name = this.target instanceof Function ? (this.target as any).name : this.target;
+        return this.entityMetadata.namingStrategy.tableName(name, this._name);
     }
 
     /**
