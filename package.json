@@ -35,6 +35,7 @@
     "gulpclass": "0.1.1",
     "mocha": "^2.5.3",
     "mysql": "^2.10.2",
+    "pg": "^4.5.5",
     "sinon": "^1.17.4",
     "sinon-chai": "^2.8.0",
     "tslint": "next",

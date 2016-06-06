@@ -28,13 +28,6 @@ export interface Driver {
     readonly db: string;
     
     /**
-     * todo: driver should not define which query builder to create, it should create its own helper for query builder.
-     * 
-     * Creates a query builder which can be used to build an sql queries.
-     */
-    readonly queryBuilderClass: Function;
-    
-    /**
      * Creates a schema builder which can be used to build database/table schemas.
      */
     createSchemaBuilder(): SchemaBuilder;

@@ -1,17 +1,14 @@
 import {Driver} from "./Driver";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
-import {MysqlSchemaBuilder} from "../schema-builder/MysqlSchemaBuilder";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
 import {BaseDriver} from "./BaseDriver";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import * as moment from "moment";
 import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {PostgresSchemaBuilder} from "../schema-builder/PostgresSchemaBuilder";
 
 /**
- * This driver organizes work with mysql database.
+ * This driver organizes work with postgres database.
  */
-export class MysqlDriver extends BaseDriver implements Driver {
+export class PostgresDriver extends BaseDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -27,14 +24,14 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Mysql library.
+     * Postgres library.
      */
-    private mysql: any;
+    private postgres: any;
 
     /**
-     * Connection to mysql database.
+     * Connection to postgres database.
      */
-    private mysqlConnection: any;
+    private postgresConnection: any;
     
     // -------------------------------------------------------------------------
     // Getter Methods
@@ -44,22 +41,22 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Access to the native implementation of the database.
      */
     get native(): any {
-        return this.mysql;
+        return this.postgres;
     }
     
     /**
      * Access to the native connection to the database.
      */
     get nativeConnection(): any {
-        return this.mysqlConnection;
+        return this.postgresConnection;
     }
 
     /**
      * Database name to which this connection is made.
      */
     get db(): string {
-        if (this.mysqlConnection && this.mysqlConnection.config.database)
-            return this.mysqlConnection.config.database;
+        // if (this.postgresConnection && this.postgresConnection.config.database)
+        //     return this.postgresConnection.config.database;
 
         if (this.connectionOptions.database)
             return this.connectionOptions.database;
@@ -72,22 +69,22 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(mysql?: any) {
+    constructor(postgres?: any) {
         super();
 
         // if driver dependency is not given explicitly, then try to load it via "require"
-        if (!mysql && require) {
+        if (!postgres && require) {
             try {
-                mysql = require("mysql");
+                postgres = require("pg");
                 
             } catch (e) {
-                throw new Error("Mysql package has not been found installed. Try to install it: npm install mysql --save");
+                throw new Error("Postgres package has not been found installed. Try to install it: npm install pg --save");
             }
         } else {
-            throw new Error("Cannot load mysql driver dependencies. Try to install all required dependencies.");
+            throw new Error("Cannot load postgres driver dependencies. Try to install all required dependencies.");
         }
 
-        this.mysql = mysql;
+        this.postgres = postgres;
     }
 
     // -------------------------------------------------------------------------
@@ -98,22 +95,22 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Creates a schema builder which can be used to build database/table schemas.
      */
     createSchemaBuilder(): SchemaBuilder {
-        return new MysqlSchemaBuilder(this);
+        return new PostgresSchemaBuilder(this);
     }
 
     /**
      * Performs connection to the database based on given connection options.
      */
     connect(): Promise<void> {
-        this.mysqlConnection = this.mysql.createConnection({
-            host: this.connectionOptions.host,
-            user: this.connectionOptions.username,
-            password: this.connectionOptions.password,
-            database: this.connectionOptions.database,
-            port: this.connectionOptions.port
-        });
         return new Promise<void>((ok, fail) => {
-            this.mysqlConnection.connect((err: any) => err ? fail(err) : ok());
+            this.postgresConnection = new this.postgres.Client({
+                host: this.connectionOptions.host,
+                user: this.connectionOptions.username,
+                password: this.connectionOptions.password,
+                database: this.connectionOptions.database,
+                port: this.connectionOptions.port
+            });
+            this.postgresConnection.connect((err: any) => err ? fail(err) : ok());
         });
     }
 
@@ -124,7 +121,8 @@ export class MysqlDriver extends BaseDriver implements Driver {
         this.checkIfConnectionSet();
         
         return new Promise<void>((ok, fail) => {
-            this.mysqlConnection.end((err: any) => err ? fail(err) : ok());
+            this.postgresConnection.end(/*(err: any) => err ? fail(err) : ok()*/); // todo: check if it can emit errors
+            ok();
         });
     }
 
@@ -132,7 +130,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Escapes given value.
      */
     escape(value: any): any {
-        return this.mysqlConnection.escape(value);
+        return this.postgresConnection.escape(value);
     }
 
     /**
@@ -142,13 +140,13 @@ export class MysqlDriver extends BaseDriver implements Driver {
         this.checkIfConnectionSet();
         
         this.logQuery(query);
-        return new Promise<T>((ok, fail) => this.mysqlConnection.query(query, (err: any, result: any) => {
+        return new Promise<T>((ok, fail) => this.postgresConnection.query(query, (err: any, result: any) => {
             if (err) {
                 this.logFailedQuery(query);
                 this.logQueryError(err);
                 fail(err);
             } else {
-                ok(result);
+                ok(result.rows);
             }
         }));
     }
@@ -157,7 +155,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Clears all tables in the currently connected database.
      */
     clearDatabase(): Promise<void> {
-        this.checkIfConnectionSet();
+        this.checkIfConnectionSet(); // todo:
         
         const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
         const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS q FROM ` +
@@ -176,8 +174,8 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // -------------------------------------------------------------------------
 
     protected checkIfConnectionSet() {
-        if (!this.mysqlConnection)
-            throw new ConnectionIsNotSetError("mysql");
+        if (!this.postgresConnection)
+            throw new ConnectionIsNotSetError("postgres");
     }
 
 }

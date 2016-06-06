@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import {createConnection, CreateConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";

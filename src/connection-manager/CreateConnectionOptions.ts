@@ -7,9 +7,9 @@ import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 export interface CreateConnectionOptions {
 
     /**
-     * Driver type. Mysql is the only driver supported at this moment.
+     * Driver type. Mysql and postgres are the only drivers supported at this moment.
      */
-    driver: "mysql";
+    driver: "mysql"|"postgres";
 
     /**
      * Database connection options.

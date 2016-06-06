@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import {createConnection, CreateConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 
@@ -13,6 +14,21 @@ const options: CreateConnectionOptions = {
     },
     entities: [Post]
 };
+/*const options: CreateConnectionOptions = {
+    driver: "postgres",
+    connection: {
+        host: "192.168.99.100",
+        port: 5432,
+        username: "test",
+        password: "admin",
+        database: "test",
+        autoSchemaCreate: true,
+        logging: {
+            logQueries: true
+        }
+    },
+    entities: [Post]
+};*/
 
 createConnection(options).then(connection => {
 

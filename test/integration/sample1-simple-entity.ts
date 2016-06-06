@@ -4,7 +4,6 @@ import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
 import {createConnection, CreateConnectionOptions} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
-import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {Post} from "../../sample/sample1-simple-entity/entity/Post";
 
 chai.should();
@@ -26,6 +25,18 @@ describe("insertion", function() {
         },
         entities: [Post]
     };
+    /*const parameters: CreateConnectionOptions = {
+        driver: "postgres",
+        connection: {
+            host: "192.168.99.100",
+            port: 5432,
+            username: "test",
+            password: "admin",
+            database: "test",
+            autoSchemaCreate: true
+        },
+        entities: [Post]
+    };*/
     
     // connect to db
     let connection: Connection;

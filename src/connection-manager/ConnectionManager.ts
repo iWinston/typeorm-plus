@@ -5,6 +5,7 @@ import {CreateConnectionOptions} from "./CreateConnectionOptions";
 import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {Driver} from "../driver/Driver";
 import {MissingDriverError} from "./error/MissingDriverError";
+import {PostgresDriver} from "../driver/PostgresDriver";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -74,10 +75,12 @@ export class ConnectionManager {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private createDriver(driverName: string) {
+    private createDriver(driverName: string): Driver {
         switch (driverName) {
             case "mysql":
                 return new MysqlDriver();
+            case "postgres":
+                return new PostgresDriver();
             default:
                 throw new MissingDriverError(driverName);
         }
