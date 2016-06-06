@@ -66,7 +66,7 @@ export class TableMetadata extends TargetMetadata {
      */
     get name() {
 
-        if (this.isClosure && this._name)
+        if (this.isClosureJunction && this._name)
             return this.entityMetadata.namingStrategy.closureJunctionTableName(this._name);
 
         // if custom name is given then use it
@@ -102,6 +102,13 @@ export class TableMetadata extends TargetMetadata {
      */
     get isClosure() {
         return this.tableType === "closure";
+    }
+
+    /**
+     * Checks if this table is a junction table of the closure table.
+     */
+    get isClosureJunction() {
+        return this.tableType === "closureJunction";
     }
 
     /**

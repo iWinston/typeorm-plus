@@ -20,7 +20,6 @@ import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
-import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -76,7 +75,6 @@ export class EntityMetadataBuilder {
                 
                 const column: ColumnMetadataArgs = {
                     target: schema.target || schema.name,
-                    // targetId: schema.name,
                     mode: mode,
                     propertyName: columnName,
                     // todo: what to do with it?: propertyType: 
@@ -104,7 +102,6 @@ export class EntityMetadataBuilder {
                 const relationSchema = schema.relations[relationName];
                 const relation: RelationMetadataArgs = {
                     target: schema.target || schema.name,
-                    // targetId: schema.name,
                     propertyName: relationName,
                     // todo: what to do with it?: propertyType: 
                     relationType: relationSchema.type,
@@ -130,14 +127,12 @@ export class EntityMetadataBuilder {
                     if (typeof relationSchema.joinColumn === "boolean") {
                         const joinColumn: JoinColumnMetadataArgs = {
                             target: schema.target || schema.name,
-                            // targetId: schema.name,
                             propertyName: relationName
                         };
                         metadataArgsStorage.joinColumns.push(joinColumn);
                     } else {
                         const joinColumn: JoinColumnMetadataArgs = {
                             target: schema.target || schema.name,
-                            // targetId: schema.name,
                             propertyName: relationName,
                             name: relationSchema.joinColumn.name,
                             referencedColumnName: relationSchema.joinColumn.referencedColumnName
@@ -151,14 +146,12 @@ export class EntityMetadataBuilder {
                     if (typeof relationSchema.joinTable === "boolean") {
                         const joinTable: JoinTableMetadataArgs = {
                             target: schema.target || schema.name,
-                            // targetId: schema.name,
                             propertyName: relationName
                         };
                         metadataArgsStorage.joinTables.push(joinTable);
                     } else {                        
                         const joinTable: JoinTableMetadataArgs = {
                             target: schema.target || schema.name,
-                            // targetId: schema.name,
                             propertyName: relationName,
                             name: relationSchema.joinTable.name,
                             joinColumn: relationSchema.joinTable.joinColumn,
@@ -170,17 +163,17 @@ export class EntityMetadataBuilder {
             });
         });
         
-        return this.buildFromAnyMetadataArgsStorage(metadataArgsStorage, namingStrategy);
+        return this.build(metadataArgsStorage, namingStrategy);
     }
 
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
     buildFromMetadataArgsStorage(namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
-        return this.buildFromAnyMetadataArgsStorage(getMetadataArgsStorage(), namingStrategy, entityClasses);
+        return this.build(getMetadataArgsStorage(), namingStrategy, entityClasses);
     }
     
-    buildFromAnyMetadataArgsStorage(metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
+    private build(metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
         const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas = metadataArgsStorage.getMergedTableMetadatas(entityClasses).map(mergedArgs => {
 

@@ -1,0 +1,32 @@
+{
+  "connections": {
+    "mysql": {
+      "host": "192.168.99.100",
+      "port": 3306,
+      "username": "root",
+      "password": "admin",
+      "database": "test"
+    },
+    "mysqlSecondary": {
+      "host": "192.168.99.100",
+      "port": 3306,
+      "username": "root",
+      "password": "admin",
+      "database": "test2"
+    },
+    "postgres": {
+      "host": "192.168.99.100",
+      "port": 5432,
+      "username": "root",
+      "password": "admin",
+      "database": "test"
+    },
+    "postgresSecondary": {
+      "host": "192.168.99.100",
+      "port": 5432,
+      "username": "root",
+      "password": "admin",
+      "database": "test2"
+    }
+  }
+}

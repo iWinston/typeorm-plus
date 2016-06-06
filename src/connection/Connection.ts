@@ -29,6 +29,7 @@ import {SchemaCreatorFactory} from "../schema-creator/SchemaCreatorFactory";
 import {ReactiveRepositoryNotFoundError} from "./error/ReactiveRepositoryNotFoundError";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
+import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -168,12 +169,13 @@ export class Connection {
         // build all metadatas registered in the current connection
         this.buildMetadatas();
 
+        // set connected status for the current connection
+        this._isConnected = true;
+
         // second build schema
         if (this.options.autoSchemaCreate === true)
             await this.syncSchema();
-
-        // set connected status for the current connection
-        this._isConnected = true;
+        
         return this;
     }
 
@@ -184,13 +186,17 @@ export class Connection {
         if (!this.isConnected)
             throw new CannotCloseNotConnectedError(this.name);
 
-        return this.driver.disconnect();
+        await this.driver.disconnect();
+        this._isConnected = false;
     }
 
     /**
      * Creates database schema for all entities registered in this connection.
      */
     async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
+        if (!this.isConnected)
+            throw new CannotSyncNotConnectedError(this.name);
+        
         if (dropBeforeSync)
             await this.driver.clearDatabase();
 
@@ -203,7 +209,7 @@ export class Connection {
     /**
      * Imports entities from the given paths (directories) for the current connection.
      */
-    importEntitiesFromDirectories(paths: string[]): this {
+    async importEntitiesFromDirectories(paths: string[]): Promise<this> {
         this.importEntities(importClassesFromDirectories(paths));
         return this;
     }
@@ -211,7 +217,7 @@ export class Connection {
     /**
      * Imports entity schemas from the given paths (directories) for the current connection.
      */
-    importEntitySchemaFromDirectories(paths: string[]): this {
+    async importEntitySchemaFromDirectories(paths: string[]): Promise<this> {
         this.importSchemas(importClassesFromDirectories(paths) as any[]); // todo: check it.
         return this;
     }
@@ -219,7 +225,7 @@ export class Connection {
     /**
      * Imports subscribers from the given paths (directories) for the current connection.
      */
-    importSubscribersFromDirectories(paths: string[]): this {
+    async importSubscribersFromDirectories(paths: string[]): Promise<this> {
         this.importSubscribers(importClassesFromDirectories(paths));
         return this;
     }
@@ -227,7 +233,7 @@ export class Connection {
     /**
      * Imports naming strategies from the given paths (directories) for the current connection.
      */
-    importNamingStrategiesFromDirectories(paths: string[]): this {
+    async importNamingStrategiesFromDirectories(paths: string[]): Promise<this> {
         this.importEntities(importClassesFromDirectories(paths));
         return this;
     }
@@ -235,7 +241,7 @@ export class Connection {
     /**
      * Imports entities for the current connection.
      */
-    importEntities(entities: Function[]): this {
+    async importEntities(entities: Function[]): Promise<this> {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("entities", this.name);
 
@@ -246,7 +252,7 @@ export class Connection {
     /**
      * Imports schemas for the current connection.
      */
-    importSchemas(schemas: EntitySchema[]): this {
+    async importSchemas(schemas: EntitySchema[]): Promise<this> {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("schemas", this.name);
 
@@ -257,7 +263,7 @@ export class Connection {
     /**
      * Imports entities for the given connection. If connection name is not given then default connection is used.
      */
-    importSubscribers(subscriberClasses: Function[]): this {
+    async importSubscribers(subscriberClasses: Function[]): Promise<this> {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("entity subscribers", this.name);
 
@@ -268,7 +274,7 @@ export class Connection {
     /**
      * Imports entities for the current connection.
      */
-    importNamingStrategies(strategies: Function[]): this {
+    async importNamingStrategies(strategies: Function[]): Promise<this> {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("naming strategies", this.name);
 
@@ -375,26 +381,32 @@ export class Connection {
     private buildMetadatas() {
 
         // take imported naming strategy metadatas
-        getMetadataArgsStorage()
-            .namingStrategies
-            .filterByTargets(this.namingStrategyClasses)
-            .forEach(metadata => this.namingStrategyMetadatas.push(new NamingStrategyMetadata(metadata)));
+        if (this.namingStrategyClasses && this.namingStrategyClasses.length) {
+            getMetadataArgsStorage()
+                .namingStrategies
+                .filterByTargets(this.namingStrategyClasses)
+                .forEach(metadata => this.namingStrategyMetadatas.push(new NamingStrategyMetadata(metadata)));
+        }
 
         // take imported event subscribers
-        getMetadataArgsStorage()
-            .entitySubscribers
-            .filterByTargets(this.subscriberClasses)
-            .map(metadata => getFromContainer(metadata.target))
-            .forEach(subscriber => this.entitySubscribers.push(subscriber));
+        if (this.subscriberClasses && this.subscriberClasses.length) {
+            getMetadataArgsStorage()
+                .entitySubscribers
+                .filterByTargets(this.subscriberClasses)
+                .map(metadata => getFromContainer(metadata.target))
+                .forEach(subscriber => this.entitySubscribers.push(subscriber));
+        }
 
         // take imported entity listeners
-        getMetadataArgsStorage()
-            .entityListeners
-            .filterByTargets(this.entityClasses)
-            .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
-
+        if (this.entityClasses && this.entityClasses.length) {
+            getMetadataArgsStorage()
+                .entityListeners
+                .filterByTargets(this.entityClasses)
+                .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
+        }
+        
         // build entity metadatas from metadata args storage (collected from decorators)
-        if (this.entityClasses) {
+        if (this.entityClasses && this.entityClasses.length) {
             getFromContainer(EntityMetadataBuilder)
                 .buildFromMetadataArgsStorage(this.createNamingStrategy(), this.entityClasses)
                 .forEach(metadata => {
@@ -404,7 +416,7 @@ export class Connection {
         }
 
         // build entity metadatas from given entity schemas
-        if (this.entitySchemas) {
+        if (this.entitySchemas && this.entitySchemas.length) {
             getFromContainer(EntityMetadataBuilder)
                 .buildFromSchemas(this.createNamingStrategy(), this.entitySchemas)
                 .forEach(metadata => {
