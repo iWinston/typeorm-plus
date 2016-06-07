@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/metadata/RelationMetadata.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">src/metadata/</a> RelationMetadata.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">81.16% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>56/69</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">77.33% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>58/75</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">93.75% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>15/16</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">81.16% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>56/69</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">44×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">48×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">488×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">488×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-yes">67×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">197×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">543×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1526×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">841×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">379×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1727×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1878×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">188×</span>
+<span class="cline-any cline-yes">172×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">128×</span>
+<span class="cline-any cline-yes">128×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">128×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">172×</span>
+<span class="cline-any cline-yes">172×</span>
+<span class="cline-any cline-yes">172×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const PropertyMetadata_1 = require("./PropertyMetadata");
+const RelationTypes_1 = require("./types/RelationTypes");
+/**
+ * Contains all information about some entity's relation.
+ */
+class RelationMetadata extends PropertyMetadata_1.PropertyMetadata {
+    // ---------------------------------------------------------------------
+    // Constructor
+    // ---------------------------------------------------------------------
+    constructor(args) {
+        super(args.target, args.propertyName);
+        // ---------------------------------------------------------------------
+        // Readonly Properties
+        // ---------------------------------------------------------------------
+        /**
+         * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
+         */
+        this.isTreeParent = false;
+        /**
+         * Indicates if this is a children (can be only one-to-many relation) relation in the tree tables.
+         */
+        this.isTreeChildren = false;
+        /**
+         * Indicates if relation column value can be nullable or not.
+         */
+        this.isNullable = true;
+        this.relationType = args.relationType;
+        if (args.inverseSideProperty)
+            this._inverseSideProperty = args.inverseSideProperty;
+        if (args.propertyType)
+            this.propertyType = args.propertyType;
+        if (args.options.cascadeInsert || args.options.cascadeAll)
+            this.isCascadeInsert = true;
+        if (args.options.cascadeUpdate || args.options.cascadeAll)
+            this.isCascadeUpdate = true;
+        if (args.options.cascadeRemove || args.options.cascadeAll)
+            this.isCascadeRemove = true;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.oldColumnName)
+<span class="cstat-no" title="statement not covered" >            this.oldColumnName = args.options.oldColumnName;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.nullable)
+<span class="cstat-no" title="statement not covered" >            this.isNullable = args.options.nullable;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.onDelete)
+<span class="cstat-no" title="statement not covered" >            this.onDelete = args.options.onDelete;</span>
+        if (args.isTreeParent)
+            this.isTreeParent = true;
+        if (args.isTreeChildren)
+            this.isTreeChildren = true;
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (!this._type)
+            this._type = args.type;
+    }
+    // ---------------------------------------------------------------------
+    // Accessors
+    // ---------------------------------------------------------------------
+    /**
+     * Gets the name of column in the database.
+     * Cannot be used with many-to-many relations since they don't have a column in the database.
+     * Also only owning sides of the relations have this property.
+     */
+    get name() {
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.isOwning || this.isManyToMany)
+<span class="cstat-no" title="statement not covered" >            throw new Error(`Relation name cannot be retrieved for many-to-many relations or not owning relations.`);</span>
+        return this.joinColumn.name;
+    }
+    /**
+     * Gets the name of column to which this relation is referenced.
+     * Cannot be used with many-to-many relations since all referenced are in the junction table.
+     * Also only owning sides of the relations have this property.
+     */
+    get referencedColumnName() {
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.isOwning)
+<span class="cstat-no" title="statement not covered" >            throw new Error(`Only owning side of the relations can have information about referenced column names.`);</span>
+        // for many-to-one and owner one-to-one relations we get referenced column from join column
+        if (this.joinColumn &amp;&amp; this.joinColumn.referencedColumn &amp;&amp; this.joinColumn.referencedColumn.name)
+            return this.joinColumn.referencedColumn.name;
+        // for many-to-many relation we give referenced column depend of owner side
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (this.joinTable) {
+            <span class="missing-if-branch" title="else path not taken" >E</span>if (this.isOwning) {
+                return this.joinTable.referencedColumn.name;
+            }
+            else {
+<span class="cstat-no" title="statement not covered" >                return this.joinTable.inverseReferencedColumn.name;</span>
+            }
+        }
+        // this should not be possible, but anyway throw error
+<span class="cstat-no" title="statement not covered" >        throw new Error(`Cannot get referenced column name of the relation ${this.entityMetadata.name}#${this.name}`);</span>
+    }
+    /**
+     * Gets the property's type to which this relation is applied.
+     */
+    get type() {
+        return this._type instanceof Function ? this._type() : <span class="branch-1 cbranch-no" title="branch not covered" >this._type;</span>
+    }
+    /**
+     * Checks if this relation is lazy-load style relation.
+     */
+    get isLazy() {
+        return this.propertyType &amp;&amp; this.propertyType.name &amp;&amp; this.propertyType.name.toLowerCase() === "promise";
+    }
+    /**
+     * Indicates if this side is an owner of this relation.
+     */
+    get isOwning() {
+        return !!(this.isManyToOne ||
+            (this.isManyToMany &amp;&amp; this.joinTable) ||
+            (this.isOneToOne &amp;&amp; this.joinColumn));
+    }
+    /**
+     * Checks if this relation's type is "one-to-one".
+     */
+    get isOneToOne() {
+        return this.relationType === RelationTypes_1.RelationTypes.ONE_TO_ONE;
+    }
+    /**
+     * Checks if this relation is owner side of the "one-to-one" relation.
+     */
+    get isOneToOneOwner<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        return this.isOneToOne &amp;&amp; this.isOwning;</span>
+    }
+    /**
+     * Checks if this relation is NOT owner side of the "one-to-one" relation.
+     */
+    get isOneToOneNotOwner() {
+        return this.isOneToOne &amp;&amp; !this.isOwning;
+    }
+    /**
+     * Checks if this relation's type is "one-to-many".
+     */
+    get isOneToMany() {
+        return this.relationType === RelationTypes_1.RelationTypes.ONE_TO_MANY;
+    }
+    /**
+     * Checks if this relation's type is "many-to-one".
+     */
+    get isManyToOne() {
+        return this.relationType === RelationTypes_1.RelationTypes.MANY_TO_ONE;
+    }
+    /**
+     * Checks if this relation's type is "many-to-many".
+     */
+    get isManyToMany() {
+        return this.relationType === RelationTypes_1.RelationTypes.MANY_TO_MANY;
+    }
+    /**
+     * Checks if inverse side is specified by a relation.
+     */
+    get hasInverseSide() {
+        return this.inverseEntityMetadata &amp;&amp; this.inverseEntityMetadata.hasRelationWithPropertyName(this.inverseSideProperty);
+    }
+    /**
+     * Gets the property name of the inverse side of the relation.
+     */
+    get inverseSideProperty() {
+        if (this._inverseSideProperty) {
+            return this.computeInverseSide(this._inverseSideProperty);
+        }
+        else if (this.isTreeParent &amp;&amp; this.entityMetadata.hasTreeChildrenRelation) {
+            return this.entityMetadata.treeChildrenRelation.propertyName;
+        }
+        else <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isTreeChildren &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >this.entityMetadata.hasTreeParentRelation)</span> {
+<span class="cstat-no" title="statement not covered" >            return this.entityMetadata.treeParentRelation.propertyName;</span>
+        }
+        return "";
+    }
+    /**
+     * Gets the relation metadata of the inverse side of this relation.
+     */
+    get inverseRelation() {
+        const relation = this.inverseEntityMetadata.findRelationWithPropertyName(this.inverseSideProperty);
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!relation)
+<span class="cstat-no" title="statement not covered" >            throw new Error(`Inverse side was not found in the relation ${this.entityMetadata.name}#${this.inverseSideProperty}`);</span>
+        return relation;
+    }
+    // ---------------------------------------------------------------------
+    // Private Methods
+    // ---------------------------------------------------------------------
+    computeInverseSide(inverseSide) {
+        const ownerEntityPropertiesMap = this.inverseEntityMetadata.createPropertiesMap();
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (typeof inverseSide === "function")
+            return inverseSide(ownerEntityPropertiesMap);
+<span class="cstat-no" title="statement not covered" >        if (typeof inverseSide === "string")</span>
+<span class="cstat-no" title="statement not covered" >            return inverseSide;</span>
+        // throw new Error("Cannot compute inverse side of the relation");
+<span class="cstat-no" title="statement not covered" >        return "";</span>
+    }
+}
+exports.RelationMetadata = RelationMetadata;
+//# sourceMappingURL=RelationMetadata.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

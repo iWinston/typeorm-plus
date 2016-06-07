@@ -1,0 +1,1484 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/persistment/EntityPersistOperationsBuilder.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">src/persistment/</a> EntityPersistOperationsBuilder.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">95.56% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>237/248</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">88.62% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>148/167</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>16/16</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">97.87% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>230/235</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">173×</span>
+<span class="cline-any cline-yes">173×</span>
+<span class="cline-any cline-yes">173×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">173×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">173×</span>
+<span class="cline-any cline-yes">110×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">173×</span>
+<span class="cline-any cline-yes">370×</span>
+<span class="cline-any cline-yes">370×</span>
+<span class="cline-any cline-yes">370×</span>
+<span class="cline-any cline-yes">237×</span>
+<span class="cline-any cline-yes">133×</span>
+<span class="cline-any cline-yes">107×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">173×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">132×</span>
+<span class="cline-any cline-yes">132×</span>
+<span class="cline-any cline-yes">132×</span>
+<span class="cline-any cline-yes">91×</span>
+<span class="cline-any cline-yes">41×</span>
+<span class="cline-any cline-yes">41×</span>
+<span class="cline-any cline-yes">41×</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">98×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">46×</span>
+<span class="cline-any cline-yes">36×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">137×</span>
+<span class="cline-any cline-yes">137×</span>
+<span class="cline-any cline-yes">137×</span>
+<span class="cline-any cline-yes">91×</span>
+<span class="cline-any cline-yes">46×</span>
+<span class="cline-any cline-yes">46×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">46×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-yes">111×</span>
+<span class="cline-any cline-yes">111×</span>
+<span class="cline-any cline-yes">111×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">53×</span>
+<span class="cline-any cline-yes">47×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">294×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">110×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">168×</span>
+<span class="cline-any cline-yes">168×</span>
+<span class="cline-any cline-yes">168×</span>
+<span class="cline-any cline-yes">168×</span>
+<span class="cline-any cline-yes">377×</span>
+<span class="cline-any cline-yes">377×</span>
+<span class="cline-any cline-yes">377×</span>
+<span class="cline-any cline-yes">226×</span>
+<span class="cline-any cline-yes">151×</span>
+<span class="cline-any cline-yes">125×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">168×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">170×</span>
+<span class="cline-any cline-yes">170×</span>
+<span class="cline-any cline-yes">119×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">170×</span>
+<span class="cline-any cline-yes">367×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">133×</span>
+<span class="cline-any cline-yes">133×</span>
+<span class="cline-any cline-yes">133×</span>
+<span class="cline-any cline-yes">133×</span>
+<span class="cline-any cline-yes">133×</span>
+<span class="cline-any cline-yes">107×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">133×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">137×</span>
+<span class="cline-any cline-yes">137×</span>
+<span class="cline-any cline-yes">91×</span>
+<span class="cline-any cline-yes">46×</span>
+<span class="cline-any cline-yes">72×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">46×</span>
+<span class="cline-any cline-yes">118×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">55×</span>
+<span class="cline-any cline-yes">55×</span>
+<span class="cline-any cline-yes">55×</span>
+<span class="cline-any cline-yes">55×</span>
+<span class="cline-any cline-yes">55×</span>
+<span class="cline-any cline-yes">49×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">55×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">41×</span>
+<span class="cline-any cline-yes">161×</span>
+<span class="cline-any cline-yes">107×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">41×</span>
+<span class="cline-any cline-yes">109×</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-yes">48×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">216×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1235×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const PersistOperation_1 = require("./operation/PersistOperation");
+const InsertOperation_1 = require("./operation/InsertOperation");
+const UpdateByRelationOperation_1 = require("./operation/UpdateByRelationOperation");
+const UpdateOperation_1 = require("./operation/UpdateOperation");
+const CascadesNotAllowedError_1 = require("./error/CascadesNotAllowedError");
+const RemoveOperation_1 = require("./operation/RemoveOperation");
+const UpdateByInverseSideOperation_1 = require("./operation/UpdateByInverseSideOperation");
+/**
+ * 1. collect all exist objects from the db entity
+ * 2. collect all objects from the new entity
+ * 3. first need to go throw all relations of the new entity and:
+ *      3.1. find all objects that are new (e.g. cascade="insert") by comparing ids from the exist objects
+ *      3.2. check if relation has rights to do cascade operation and throw exception if it cannot
+ *      3.3. save new objects for insert operation
+ * 4. second need to go throw all relations of the db entity and:
+ *      4.1. find all objects that are removed (e.g. cascade="remove") by comparing data with collected objects of the new entity
+ *      4.2. check if relation has rights to do cascade operation and throw exception if it cannot
+ *      4.3. save new objects for remove operation
+ * 5. third need to go throw collection of all new entities
+ *      5.1. compare with entities from the collection of db entities, find difference and generate a change set
+ *      5.2. check if relation has rights to do cascade operation and throw exception if it cannot
+ *      5.3.
+ * 6. go throw all relations and find junction
+ *      6.1.
+ *
+ * if relation has "all" then all of above:
+ * if relation has "insert" it can insert a new entity
+ * if relation has "update" it can only update related entity
+ * if relation has "remove" it can only remove related entity
+ * @internal
+ */
+class EntityPersistOperationBuilder {
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+    constructor(entityMetadatas) {
+        this.entityMetadatas = entityMetadatas;
+        // -------------------------------------------------------------------------
+        // Properties
+        // -------------------------------------------------------------------------
+        this.strictCascadesMode = false;
+    }
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+    /**
+     * Finds columns and relations from entity2 which does not exist or does not match in entity1.
+     */
+    buildFullPersistment(metadata, dbEntity, persistedEntity, dbEntities, allPersistedEntities) {
+        // const dbEntities = this.extractObjectsById(dbEntity, metadata);
+        // const allPersistedEntities = this.extractObjectsById(persistedEntity, metadata);
+        const persistOperation = new PersistOperation_1.PersistOperation();
+        persistOperation.dbEntity = dbEntity;
+        persistOperation.persistedEntity = persistedEntity;
+        persistOperation.allDbEntities = dbEntities;
+        persistOperation.allPersistedEntities = allPersistedEntities;
+        persistOperation.inserts = this.findCascadeInsertedEntities(persistedEntity, dbEntities);
+        persistOperation.updatesByRelations = this.updateRelations(persistOperation.inserts, persistedEntity);
+        persistOperation.updatesByInverseRelations = this.updateInverseRelations(metadata, dbEntity, persistedEntity);
+        persistOperation.updates = this.findCascadeUpdateEntities(persistOperation.updatesByRelations, metadata, dbEntity, persistedEntity, dbEntities);
+        persistOperation.junctionInserts = this.findJunctionInsertOperations(metadata, persistedEntity, dbEntities);
+        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, undefined, undefined, undefined);
+        persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
+        // persistOperation.log();
+        return persistOperation;
+    }
+    /**
+     * Finds columns and relations from entity2 which does not exist or does not match in entity1.
+     */
+    buildOnlyRemovement(metadata, dbEntity, persistedEntity, dbEntities, allPersistedEntities) {
+        // const dbEntities = this.extractObjectsById(dbEntity, metadata);
+        // const allEntities = this.extractObjectsById(newEntity, metadata);
+        const persistOperation = new PersistOperation_1.PersistOperation();
+        persistOperation.dbEntity = dbEntity;
+        persistOperation.persistedEntity = persistedEntity;
+        persistOperation.allDbEntities = dbEntities;
+        persistOperation.allPersistedEntities = allPersistedEntities;
+        persistOperation.removes = this.findCascadeRemovedEntities(metadata, dbEntity, allPersistedEntities, undefined, undefined, undefined);
+        persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
+        return persistOperation;
+    }
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+    findCascadeInsertedEntities(newEntityWithId, dbEntities, fromRelation, operations = []) {
+        const newEntity = newEntityWithId.entity;
+        const metadata = this.entityMetadatas.findByTarget(newEntityWithId.entityTarget);
+        const isObjectNew = !this.findEntityWithId(dbEntities, metadata.target, newEntity[metadata.primaryColumn.propertyName]);
+        // if object is new and should be inserted, we check if cascades are allowed before add it to operations list
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (isObjectNew &amp;&amp; fromRelation &amp;&amp; !this.checkCascadesAllowed("insert", metadata, fromRelation)) {
+<span class="cstat-no" title="statement not covered" >            return operations; </span>// looks like object is new here, but cascades are not allowed - then we should stop iteration
+        }
+        else if (isObjectNew &amp;&amp; !operations.find(o =&gt; o.entity === newEntity)) {
+            operations.push(new InsertOperation_1.InsertOperation(newEntityWithId.entityTarget, newEntity));
+        }
+        metadata.relations.forEach(relation =&gt; {
+            const value = this.getEntityRelationValue(relation, newEntity);
+            const inverseMetadata = relation.inverseEntityMetadata;
+            if (!value)
+                return;
+            if (value instanceof Array) {
+                value.forEach((subValue) =&gt; {
+                    const subValueWithId = {
+                        id: inverseMetadata.getEntityId(subValue),
+                        entity: subValue,
+                        entityTarget: inverseMetadata.target
+                    };
+                    this.findCascadeInsertedEntities(subValueWithId, dbEntities, relation, operations);
+                });
+            }
+            else {
+                const valueWithId = {
+                    id: inverseMetadata.getEntityId(value),
+                    entity: value,
+                    entityTarget: inverseMetadata.target
+                };
+                this.findCascadeInsertedEntities(valueWithId, dbEntities, relation, operations);
+            }
+        });
+        return operations;
+    }
+    findCascadeUpdateEntities(updatesByRelations, metadata, dbEntityWithId, newEntityWithId, dbEntities, fromRelation, operations = []) {
+        const dbEntity = dbEntityWithId.entity;
+        const newEntity = newEntityWithId.entity;
+        if (!dbEntity)
+            return operations;
+        const diffColumns = this.diffColumns(metadata, newEntity, dbEntity);
+        const diffRelations = this.diffRelations(updatesByRelations, metadata, newEntity, dbEntity);
+        if (diffColumns.length &amp;&amp; fromRelation &amp;&amp; !this.checkCascadesAllowed("update", metadata, fromRelation)) {
+            return operations;
+        }
+        else if (diffColumns.length || diffRelations.length) {
+            const entityId = newEntity[metadata.primaryColumn.propertyName];
+            <span class="missing-if-branch" title="else path not taken" >E</span>if (entityId)
+                operations.push(new UpdateOperation_1.UpdateOperation(newEntityWithId.entityTarget, newEntity, entityId, diffColumns, diffRelations));
+        }
+        metadata.relations.forEach(relation =&gt; {
+            const relMetadata = relation.inverseEntityMetadata;
+            const relationIdColumnName = relMetadata.primaryColumn.propertyName;
+            const value = this.getEntityRelationValue(relation, newEntity);
+            const valueTarget = relation.target;
+            const referencedColumnName = relation.isOwning ? relation.referencedColumnName : relation.inverseRelation.referencedColumnName;
+            // const dbValue = this.getEntityRelationValue(relation, dbEntity);
+            if (!value /* || !dbValue*/)
+                return;
+            if (value instanceof Array) {
+                value.forEach((subEntity) =&gt; {
+                    /*const subDbEntity = dbValue.find((subDbEntity: any) =&gt; {
+                        return subDbEntity[relationIdColumnName] === subEntity[relationIdColumnName];
+                    });*/
+                    const dbValue = dbEntities.find(dbValue =&gt; {
+                        return dbValue.entityTarget === valueTarget &amp;&amp; dbValue.entity[referencedColumnName] === subEntity[relationIdColumnName];
+                    });
+                    if (dbValue) {
+                        const dbValueWithId = {
+                            id: relMetadata.getEntityId(dbValue.entity),
+                            entity: dbValue.entity,
+                            entityTarget: relMetadata.target
+                        };
+                        const subEntityWithId = {
+                            id: relMetadata.getEntityId(subEntity),
+                            entity: subEntity,
+                            entityTarget: relMetadata.target
+                        };
+                        this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValueWithId, subEntityWithId, dbEntities, relation, operations);
+                    }
+                });
+            }
+            else {
+                const dbValue = dbEntities.find(dbValue =&gt; {
+                    return dbValue.entityTarget === valueTarget &amp;&amp; dbValue.entity[referencedColumnName] === value[relationIdColumnName];
+                });
+                <span class="missing-if-branch" title="else path not taken" >E</span>if (dbValue) {
+                    const dbValueWithId = {
+                        id: relMetadata.getEntityId(dbValue.entity),
+                        entity: dbValue.entity,
+                        entityTarget: relMetadata.target
+                    };
+                    const valueWithId = {
+                        id: relMetadata.getEntityId(value),
+                        entity: value,
+                        entityTarget: relMetadata.target
+                    };
+                    this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValueWithId, valueWithId, dbEntities, relation, operations);
+                }
+            }
+        });
+        return operations;
+    }
+    findCascadeRemovedEntities(metadata, dbEntityWithId, allPersistedEntities, fromRelation, fromMetadata, fromEntityId, parentAlreadyRemoved = false) {
+        const dbEntity = dbEntityWithId.entity;
+        let operations = [];
+        if (!dbEntity)
+            return operations;
+        const entityId = dbEntity[metadata.primaryColumn.propertyName];
+        const isObjectRemoved = parentAlreadyRemoved || !this.findEntityWithId(allPersistedEntities, metadata.target, entityId);
+        // if object is removed and should be removed, we check if cascades are allowed before add it to operations list
+        if (isObjectRemoved &amp;&amp; fromRelation &amp;&amp; !this.checkCascadesAllowed("remove", metadata, fromRelation)) {
+            return operations; // looks like object is removed here, but cascades are not allowed - then we should stop iteration
+        }
+        else if (isObjectRemoved) {
+            operations.push(new RemoveOperation_1.RemoveOperation(dbEntityWithId.entityTarget, dbEntity, entityId, fromMetadata, fromRelation, fromEntityId));
+        }
+        metadata.relations.forEach(relation =&gt; {
+            const dbValue = this.getEntityRelationValue(relation, dbEntity);
+            const relMetadata = relation.inverseEntityMetadata;
+            if (!dbValue)
+                return;
+            if (dbValue instanceof Array) {
+                dbValue.forEach((subDbEntity) =&gt; {
+                    const subDbEntityWithId = {
+                        id: relMetadata.getEntityId(subDbEntity),
+                        entity: subDbEntity,
+                        entityTarget: relMetadata.target
+                    };
+                    const relationOperations = this.findCascadeRemovedEntities(relMetadata, subDbEntityWithId, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.propertyName], isObjectRemoved);
+                    relationOperations.forEach(o =&gt; operations.push(o));
+                });
+            }
+            else {
+                const dbValueWithId = {
+                    id: relMetadata.getEntityId(dbValue),
+                    entity: dbValue,
+                    entityTarget: relMetadata.target
+                };
+                const relationOperations = this.findCascadeRemovedEntities(relMetadata, dbValueWithId, allPersistedEntities, relation, metadata, dbEntity[metadata.primaryColumn.propertyName], isObjectRemoved);
+                relationOperations.forEach(o =&gt; operations.push(o));
+            }
+        }, []);
+        return operations;
+    }
+    updateInverseRelations(metadata, dbEntityWithId, newEntityWithId, operations = []) {
+        const dbEntity = dbEntityWithId.entity;
+        const newEntity = newEntityWithId.entity;
+        metadata.relations
+            .filter(relation =&gt; relation.isOneToMany) // todo: maybe need to check isOneToOne and not owner
+            .forEach(relation =&gt; {
+            const relationMetadata = relation.inverseEntityMetadata;
+            // to find new objects in relation go throw all objects in newEntity and check if they don't exist in dbEntity
+            if (newEntity &amp;&amp; newEntity[relation.propertyName] instanceof Array) {
+                newEntity[relation.propertyName].filter((newSubEntity) =&gt; {
+                    if (!dbEntity /* are you sure about this? */ || !dbEntity[relation.propertyName])
+                        return true;
+                    return !dbEntity[relation.propertyName].find((dbSubEntity) =&gt; {
+                        return relation.inverseEntityMetadata.getEntityId(newSubEntity) === relation.inverseEntityMetadata.getEntityId(dbSubEntity);
+                    });
+                }).forEach((subEntity) =&gt; {
+                    operations.push(new UpdateByInverseSideOperation_1.UpdateByInverseSideOperation(relationMetadata.target, newEntityWithId.entityTarget, "update", subEntity, newEntity, relation));
+                });
+            }
+            // we also need to find removed elements. to find them need to traverse dbEntity and find its elements missing in newEntity
+            if (dbEntity &amp;&amp; dbEntity[relation.propertyName] instanceof Array) {
+                dbEntity[relation.propertyName].filter((dbSubEntity) =&gt; {
+                    if (!newEntity /* are you sure about this? */ || !newEntity[relation.propertyName])
+                        return true;
+                    return !newEntity[relation.propertyName].find((newSubEntity) =&gt; {
+                        return relation.inverseEntityMetadata.getEntityId(dbSubEntity) === relation.inverseEntityMetadata.getEntityId(newSubEntity);
+                    });
+                }).forEach((subEntity) =&gt; {
+                    operations.push(new UpdateByInverseSideOperation_1.UpdateByInverseSideOperation(relationMetadata.target, newEntityWithId.entityTarget, "remove", subEntity, newEntity, relation));
+                });
+            }
+        });
+        return operations;
+    }
+    /**
+     * To update relation, you need:
+     *   update table where this relation (owner side)
+     *   set its relation property to inserted id
+     *   where
+     *
+     */
+    updateRelations(insertOperations, newEntity) {
+        return insertOperations.reduce((operations, insertOperation) =&gt; {
+            return operations.concat(this.findRelationsWithEntityInside(insertOperation, newEntity));
+        }, []);
+    }
+    findRelationsWithEntityInside(insertOperation, entityToSearchInWithId) {
+        const entityToSearchIn = entityToSearchInWithId.entity;
+        const metadata = this.entityMetadatas.findByTarget(entityToSearchInWithId.entityTarget);
+        const operations = [];
+        metadata.relations.forEach(relation =&gt; {
+            const value = this.getEntityRelationValue(relation, entityToSearchIn);
+            const inverseMetadata = relation.inverseEntityMetadata;
+            if (!value)
+                return;
+            if (value instanceof Array) {
+                value.forEach((sub) =&gt; {
+                    if (!relation.isManyToMany &amp;&amp; sub === insertOperation.entity)
+                        operations.push(new UpdateByRelationOperation_1.UpdateByRelationOperation(entityToSearchInWithId.entityTarget, entityToSearchIn, insertOperation, relation));
+                    const subWithId = {
+                        id: inverseMetadata.getEntityId(sub),
+                        entity: sub,
+                        entityTarget: inverseMetadata.target
+                    };
+                    const subOperations = this.findRelationsWithEntityInside(insertOperation, subWithId);
+                    subOperations.forEach(o =&gt; <span class="cstat-no" title="statement not covered" >operations.push(o))</span>;
+                });
+            }
+            else <span class="missing-if-branch" title="else path not taken" >E</span>if (value) {
+                if (value === insertOperation.entity) {
+                    operations.push(new UpdateByRelationOperation_1.UpdateByRelationOperation(entityToSearchInWithId.entityTarget, entityToSearchIn, insertOperation, relation));
+                }
+                const valueWithId = {
+                    id: inverseMetadata.getEntityId(value),
+                    entity: value,
+                    entityTarget: inverseMetadata.target
+                };
+                const subOperations = this.findRelationsWithEntityInside(insertOperation, valueWithId);
+                subOperations.forEach(o =&gt; <span class="cstat-no" title="statement not covered" >operations.push(o))</span>;
+            }
+        });
+        return operations;
+    }
+    findJunctionInsertOperations(metadata, newEntityWithId, dbEntities, isRoot = true) {
+        const newEntity = newEntityWithId.entity;
+        const dbEntity = dbEntities.find(dbEntity =&gt; {
+            return dbEntity.id === newEntity[metadata.primaryColumn.propertyName] &amp;&amp; dbEntity.entityTarget === metadata.target;
+        });
+        return metadata.relations
+            .filter(relation =&gt; newEntity[relation.propertyName] !== null &amp;&amp; newEntity[relation.propertyName] !== undefined)
+            .reduce((operations, relation) =&gt; {
+            const relationMetadata = relation.inverseEntityMetadata;
+            const relationIdProperty = relationMetadata.primaryColumn.propertyName;
+            const value = this.getEntityRelationValue(relation, newEntity);
+            const dbValue = dbEntity ? this.getEntityRelationValue(relation, dbEntity.entity) : null;
+            if (value instanceof Array) {
+                value.forEach((subEntity) =&gt; {
+                    if (relation.isManyToMany) {
+                        const has = !dbValue || !dbValue.find((e) =&gt; e[relationIdProperty] === subEntity[relationIdProperty]);
+                        if (has) {
+                            operations.push({
+                                metadata: relation.junctionEntityMetadata,
+                                entity1: newEntity,
+                                entity2: subEntity,
+                                entity1Target: newEntityWithId.entityTarget,
+                                entity2Target: relationMetadata.target
+                            });
+                        }
+                    }
+                    if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
+                        const subEntityWithId = {
+                            id: relationMetadata.getEntityId(subEntity),
+                            entity: subEntity,
+                            entityTarget: relationMetadata.target
+                        };
+                        const subOperations = this.findJunctionInsertOperations(relationMetadata, subEntityWithId, dbEntities, false);
+                        subOperations.forEach(o =&gt; <span class="cstat-no" title="statement not covered" >operations.push(o))</span>;
+                    }
+                });
+            }
+            else {
+                if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
+                    const valueWithId = {
+                        id: relationMetadata.getEntityId(value),
+                        entity: value,
+                        entityTarget: relationMetadata.target
+                    };
+                    const subOperations = this.findJunctionInsertOperations(relationMetadata, valueWithId, dbEntities, false);
+                    subOperations.forEach(o =&gt; operations.push(o));
+                }
+            }
+            return operations;
+        }, []);
+    }
+    findJunctionRemoveOperations(metadata, dbEntityWithId, newEntities, isRoot = true) {
+        const dbEntity = dbEntityWithId.entity;
+        if (!dbEntity)
+            return [];
+        const newEntity = newEntities.find(newEntity =&gt; {
+            return newEntity.id === dbEntity[metadata.primaryColumn.propertyName] &amp;&amp; newEntity.entityTarget === metadata.target;
+        });
+        return metadata.relations
+            .filter(relation =&gt; dbEntity[relation.propertyName] !== null &amp;&amp; dbEntity[relation.propertyName] !== undefined)
+            .reduce((operations, relation) =&gt; {
+            const relationMetadata = relation.inverseEntityMetadata;
+            const relationIdProperty = relationMetadata.primaryColumn.propertyName;
+            const value = newEntity ? this.getEntityRelationValue(relation, newEntity.entity) : null;
+            const dbValue = this.getEntityRelationValue(relation, dbEntity);
+            if (dbValue instanceof Array) {
+                dbValue.forEach((subEntity) =&gt; {
+                    if (relation.isManyToMany) {
+                        const has = !value || !value.find((e) =&gt; e[relationIdProperty] === subEntity[relationIdProperty]);
+                        if (has) {
+                            operations.push({
+                                metadata: relation.junctionEntityMetadata,
+                                entity1: dbEntity,
+                                entity2: subEntity,
+                                entity1Target: dbEntityWithId.entityTarget,
+                                entity2Target: relationMetadata.target
+                            });
+                        }
+                    }
+                    <span class="missing-if-branch" title="else path not taken" >E</span>if (isRoot || <span class="branch-1 cbranch-no" title="branch not covered" >this.checkCascadesAllowed("update", metadata, relation))</span> {
+                        const subEntityWithId = {
+                            id: relationMetadata.getEntityId(subEntity),
+                            entity: subEntity,
+                            entityTarget: relationMetadata.target
+                        };
+                        const subOperations = this.findJunctionRemoveOperations(relationMetadata, subEntityWithId, newEntities, false);
+                        subOperations.forEach(o =&gt; <span class="cstat-no" title="statement not covered" >operations.push(o))</span>;
+                    }
+                });
+            }
+            else {
+                <span class="missing-if-branch" title="else path not taken" >E</span>if (isRoot || <span class="branch-1 cbranch-no" title="branch not covered" >this.checkCascadesAllowed("update", metadata, relation))</span> {
+                    const dbValueWithId = {
+                        id: relationMetadata.getEntityId(dbValue),
+                        entity: dbValue,
+                        entityTarget: relationMetadata.target
+                    };
+                    const subOperations = this.findJunctionRemoveOperations(relationMetadata, dbValueWithId, newEntities, false);
+                    subOperations.forEach(o =&gt; <span class="cstat-no" title="statement not covered" >operations.push(o))</span>;
+                }
+            }
+            return operations;
+        }, []);
+    }
+    diffColumns(metadata, newEntity, dbEntity) {
+        return metadata.columns
+            .filter(column =&gt; !column.isVirtual &amp;&amp; !column.isUpdateDate &amp;&amp; !column.isVersion &amp;&amp; !column.isCreateDate)
+            .filter(column =&gt; column.getEntityValue(newEntity) !== column.getEntityValue(dbEntity))
+            .filter(column =&gt; {
+            // filter out "relational columns" only in the case if there is a relation object in entity
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (!column.isInEmbedded &amp;&amp; metadata.hasRelationWithDbName(column.propertyName)) {
+<span class="cstat-no" title="statement not covered" >                const relation = metadata.findRelationWithDbName(column.propertyName);</span>
+<span class="cstat-no" title="statement not covered" >                if (newEntity[relation.propertyName] !== null &amp;&amp; newEntity[relation.propertyName] !== undefined)</span>
+<span class="cstat-no" title="statement not covered" >                    return false;</span>
+            }
+            return true;
+        });
+    }
+    diffRelations(updatesByRelations, metadata, newEntity, dbEntity) {
+        return metadata.relations
+            .filter(relation =&gt; relation.isManyToOne || (relation.isOneToOne &amp;&amp; relation.isOwning))
+            .filter(relation =&gt; !updatesByRelations.find(operation =&gt; <span class="cstat-no" title="statement not covered" >operation.targetEntity === newEntity &amp;&amp; operation.updatedRelation === relation)</span>) // try to find if there is update by relation operation - we dont need to generate update relation operation for this
+            .filter(relation =&gt; {
+            if (!newEntity[relation.propertyName] &amp;&amp; !dbEntity[relation.propertyName])
+                return false;
+            if (!newEntity[relation.propertyName] || !dbEntity[relation.propertyName])
+                return true;
+            const entityTarget = relation.target;
+            const newEntityRelationMetadata = this.entityMetadatas.findByTarget(entityTarget);
+            const dbEntityRelationMetadata = this.entityMetadatas.findByTarget(entityTarget);
+            return newEntityRelationMetadata.getEntityId(newEntity[relation.propertyName]) !== dbEntityRelationMetadata.getEntityId(dbEntity[relation.propertyName]);
+        });
+    }
+    findEntityWithId(entityWithIds, entityTarget, id) {
+        return entityWithIds.find(entityWithId =&gt; entityWithId.id === id &amp;&amp; entityWithId.entityTarget === entityTarget);
+    }
+    checkCascadesAllowed(type, metadata, relation) {
+        let isAllowed = false;
+        switch (type) {
+            case "insert":
+                isAllowed = relation.isCascadeInsert;
+                break;
+            case "update":
+                isAllowed = relation.isCascadeUpdate;
+                break;
+            case "remove":
+                isAllowed = relation.isCascadeRemove;
+                break;
+        }
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (isAllowed === false &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >this.strictCascadesMode)</span>
+<span class="cstat-no" title="statement not covered" >            throw new CascadesNotAllowedError_1.CascadesNotAllowedError(type, metadata, relation);</span>
+        return isAllowed;
+    }
+    getEntityRelationValue(relation, entity) {
+        return (entity[relation.propertyName] instanceof Promise &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >relation.isLazy)</span> ? <span class="branch-0 cbranch-no" title="branch not covered" >entity["__" + relation.propertyName + "__"] </span>: entity[relation.propertyName];
+    }
+}
+exports.EntityPersistOperationBuilder = EntityPersistOperationBuilder;
+//# sourceMappingURL=EntityPersistOperationsBuilder.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

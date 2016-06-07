@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/metadata/ColumnMetadata.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">src/metadata/</a> ColumnMetadata.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">72.88% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>43/59</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">50% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>23/46</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">90.91% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>10/11</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">72.88% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>43/59</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line medium'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">166×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-yes">29×</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">178×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13882×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13882×</span>
+<span class="cline-any cline-yes">13882×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1198×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5347×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1104×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">107×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">107×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">107×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">282×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">282×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">282×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">376×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">376×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const PropertyMetadata_1 = require("./PropertyMetadata");
+/**
+ * This metadata contains all information about entity's column.
+ */
+class ColumnMetadata extends PropertyMetadata_1.PropertyMetadata {
+    // ---------------------------------------------------------------------
+    // Constructor
+    // ---------------------------------------------------------------------
+    constructor(args) {
+        super(args.target, args.propertyName);
+        /**
+         * Type's length in the database.
+         */
+        this.length = "";
+        /**
+         * Indicates if this column is generated (auto increment or generated other way).
+         */
+        this.isGenerated = false;
+        /**
+         * Indicates if value in the database should be unique or not.
+         */
+        this.isUnique = false;
+        /**
+         * Indicates if column can contain nulls or not.
+         */
+        this.isNullable = false;
+        /**
+         * Extra sql definition for the given column.
+         * Can be used to make temporary tweaks. Not recommended to use.
+         */
+        this.columnDefinition = "";
+        /**
+         * Column comment.
+         */
+        this.comment = "";
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (args.mode)
+            this.mode = args.mode;
+        if (args.propertyType)
+            this.propertyType = args.propertyType.toLowerCase();
+        if (args.options.name)
+            this._name = args.options.name;
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (args.options.type)
+            this.type = args.options.type;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.length)
+<span class="cstat-no" title="statement not covered" >            this.length = args.options.length;</span>
+        if (args.options.generated)
+            this.isGenerated = args.options.generated;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.unique)
+<span class="cstat-no" title="statement not covered" >            this.isUnique = args.options.unique;</span>
+        if (args.options.nullable)
+            this.isNullable = args.options.nullable;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.columnDefinition)
+<span class="cstat-no" title="statement not covered" >            this.columnDefinition = args.options.columnDefinition;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.comment)
+<span class="cstat-no" title="statement not covered" >            this.comment = args.options.comment;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.oldColumnName)
+<span class="cstat-no" title="statement not covered" >            this.oldColumnName = args.options.oldColumnName;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.scale)
+<span class="cstat-no" title="statement not covered" >            this.scale = args.options.scale;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.precision)
+<span class="cstat-no" title="statement not covered" >            this.precision = args.options.precision;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (args.options.collation)
+<span class="cstat-no" title="statement not covered" >            this.collation = args.options.collation;</span>
+    }
+    // ---------------------------------------------------------------------
+    // Accessors
+    // ---------------------------------------------------------------------
+    /**
+     * Column name in the database.
+     */
+    get name() {
+        // if this column is embedded's column then apply different entity
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.embeddedMetadata)
+<span class="cstat-no" title="statement not covered" >            return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.propertyName, this.propertyName, this._name);</span>
+        // if there is a naming strategy then use it to normalize propertyName as column name
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (this.entityMetadata)
+            return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
+<span class="cstat-no" title="statement not covered" >        throw new Error(`Column${this._name ? this._name + " " : ""} is not attached to any entity or embedded.`);</span>
+    }
+    /**
+     * Indicates if this column is in embedded, not directly in the table.
+     */
+    get isInEmbedded() {
+        return !!this.embeddedMetadata;
+    }
+    /**
+     * Indicates if this column is a primary key.
+     */
+    get isPrimary() {
+        return this.mode === "primary";
+    }
+    /**
+     * Indicates if column is virtual. Virtual columns are not mapped to the entity.
+     */
+    get isVirtual() {
+        return this.mode === "virtual";
+    }
+    /**
+     * Indicates if this column contains an entity creation date.
+     */
+    get isCreateDate() {
+        return this.mode === "createDate";
+    }
+    /**
+     * Indicates if this column contains an entity update date.
+     */
+    get isUpdateDate() {
+        return this.mode === "updateDate";
+    }
+    /**
+     * Indicates if this column contains an entity version.
+     */
+    get isVersion() {
+        return this.mode === "version";
+    }
+    /**
+     * Gets embedded property in which column is.
+     */
+    get embeddedProperty<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        if (!this.embeddedMetadata)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error(`This column${this._name ? this._name + " " : ""} is not in embedded entity.`);</span>
+<span class="cstat-no" title="statement not covered" >        return this.embeddedMetadata.propertyName;</span>
+    }
+    // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
+    hasEntityValue(entity) {
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!entity)
+<span class="cstat-no" title="statement not covered" >            return false;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isInEmbedded) {
+<span class="cstat-no" title="statement not covered" >            return entity.hasOwnProperty(this.embeddedProperty) &amp;&amp;</span>
+                entity[this.embeddedProperty].hasOwnProperty(this.propertyName);
+        }
+        else {
+            return entity.hasOwnProperty(this.propertyName);
+        }
+    }
+    getEntityValue(entity) {
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isInEmbedded) {
+<span class="cstat-no" title="statement not covered" >            return entity[this.embeddedProperty][this.propertyName];</span>
+        }
+        else {
+            return entity[this.propertyName];
+        }
+    }
+}
+exports.ColumnMetadata = ColumnMetadata;
+//# sourceMappingURL=ColumnMetadata.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

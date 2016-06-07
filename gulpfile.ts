@@ -8,6 +8,7 @@ const mocha = require("gulp-mocha");
 const chai = require("chai");
 const tslint = require("gulp-tslint");
 const stylish = require("tslint-stylish");
+const istanbul = require("gulp-istanbul");
 
 @Gulpclass()
 export class Gulpfile {
@@ -156,6 +157,7 @@ export class Gulpfile {
     unit() {
         chai.should();
         chai.use(require("sinon-chai"));
+        chai.use(require("chai-as-promised"));
         return gulp.src("./build/es5/test/unit/**/*.js")
             .pipe(mocha());
     }
@@ -166,6 +168,29 @@ export class Gulpfile {
     @SequenceTask()
     tests() {
         return ["compile", "tslint", "unit", "integration", "functional"];
+    }
+
+    /**
+     * Runs test coverage report.
+     */
+    @Task()
+    preCoverage() {
+        return gulp.src(["./build/es5/src/**/*.js"])
+            .pipe(istanbul())
+            .pipe(istanbul.hookRequire());
+    }
+
+    /**
+     * Runs test coverage report.
+     */
+    @Task("coverage", ["preCoverage"])
+    coverage() {
+        chai.should();
+        chai.use(require("sinon-chai"));
+        chai.use(require("chai-as-promised"));
+        return gulp.src("./build/es5/test/**/*.js")
+            .pipe(mocha())
+            .pipe(istanbul.writeReports());
     }
 
 }

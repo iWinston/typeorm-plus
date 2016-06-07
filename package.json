@@ -28,6 +28,7 @@
     "chai-as-promised": "^5.3.0",
     "del": "^2.2.0",
     "gulp": "^3.9.1",
+    "gulp-istanbul": "^0.10.4",
     "gulp-mocha": "^2.2.0",
     "gulp-replace": "^0.5.4",
     "gulp-shell": "^0.5.1",

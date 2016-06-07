@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/entity-manager/ReactiveEntityManager.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">src/entity-manager/</a> ReactiveEntityManager.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">5.17% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>3/58</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/30</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">3.03% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>1/33</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">5.17% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>3/58</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const Rx = require("rxjs/Rx");
+/**
+ * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
+ * entity type are you passing. This version of ReactiveEntityManager works with reactive streams and observables.
+ */
+class ReactiveEntityManager {
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+    constructor(connection) {
+        this.connection = connection;
+    }
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+    /**
+     * Gets repository of the given entity.
+     */
+    getRepository<span class="fstat-no" title="function not covered" >(entityClass) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.connection.getRepository(entityClass);</span>
+    }
+    /**
+     * Gets reactive repository of the given entity.
+     */
+    getReactiveRepository<span class="fstat-no" title="function not covered" >(entityClass) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.connection.getReactiveRepository(entityClass);</span>
+    }
+    /**
+     * Gets reactive tree repository of the given entity.
+     */
+    getReactiveTreeRepository<span class="fstat-no" title="function not covered" >(entityClass) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.connection.getReactiveTreeRepository(entityClass);</span>
+    }
+    hasId<span class="fstat-no" title="function not covered" >(targetOrEntity, maybeEntity) {</span>
+<span class="cstat-no" title="statement not covered" >        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;</span>
+<span class="cstat-no" title="statement not covered" >        const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(target).hasId(entity);</span>
+    }
+    /**
+     * Creates a new query builder that can be used to build an sql query.
+     */
+    createQueryBuilder<span class="fstat-no" title="function not covered" >(entityClass, alias) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).createQueryBuilder(alias);</span>
+    }
+    /**
+     * Creates a new entity. If fromRawEntity is given then it creates a new entity and copies all entity properties
+     * from this object into a new entity (copies only properties that should be in a new entity).
+     */
+    create<span class="fstat-no" title="function not covered" >(entityClass, fromRawEntity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).create(fromRawEntity);</span>
+    }
+    /**
+     * Creates a entities from the given array of plain javascript objects.
+     */
+    createMany<span class="fstat-no" title="function not covered" >(entityClass, copyFromObjects) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).createMany(copyFromObjects);</span>
+    }
+    /**
+     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * it loads it (and everything related to it), replaces all values with the new ones from the given object
+     * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
+     * replaced from the new object.
+     */
+    initialize<span class="fstat-no" title="function not covered" >(entityClass, object) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).initialize(object);</span>
+    }
+    /**
+     * Merges two entities into one new entity.
+     */
+    merge<span class="fstat-no" title="function not covered" >(entity1, entity2) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entity1).merge(entity1, entity2);</span>
+    }
+    persist<span class="fstat-no" title="function not covered" >(targetOrEntity, maybeEntity) {</span>
+        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
+<span class="cstat-no" title="statement not covered" >        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;</span>
+<span class="cstat-no" title="statement not covered" >        const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(target).persist(entity);</span>
+    }
+    remove<span class="fstat-no" title="function not covered" >(targetOrEntity, maybeEntity) {</span>
+        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
+<span class="cstat-no" title="statement not covered" >        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;</span>
+<span class="cstat-no" title="statement not covered" >        const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(target).remove(entity);</span>
+    }
+    /**
+     * Finds entities that match given conditions.
+     */
+    find<span class="fstat-no" title="function not covered" >(entityClass, conditionsOrFindOptions, options) {</span>
+<span class="cstat-no" title="statement not covered" >        if (conditionsOrFindOptions &amp;&amp; options) {</span>
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).find(conditionsOrFindOptions, options);</span>
+        }
+        else <span class="cstat-no" title="statement not covered" >if (conditionsOrFindOptions) {</span>
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).find(conditionsOrFindOptions);</span>
+        }
+        else {
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).find();</span>
+        }
+    }
+    /**
+     * Finds entities that match given conditions.
+     */
+    findAndCount<span class="fstat-no" title="function not covered" >(entityClass, conditionsOrFindOptions, options) {</span>
+<span class="cstat-no" title="statement not covered" >        if (conditionsOrFindOptions &amp;&amp; options) {</span>
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).findAndCount(conditionsOrFindOptions, options);</span>
+        }
+        else <span class="cstat-no" title="statement not covered" >if (conditionsOrFindOptions) {</span>
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).findAndCount(conditionsOrFindOptions);</span>
+        }
+        else {
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).findAndCount();</span>
+        }
+    }
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOne<span class="fstat-no" title="function not covered" >(entityClass, conditionsOrFindOptions, options) {</span>
+<span class="cstat-no" title="statement not covered" >        if (conditionsOrFindOptions &amp;&amp; options) {</span>
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).findOne(conditionsOrFindOptions, options);</span>
+        }
+        else <span class="cstat-no" title="statement not covered" >if (conditionsOrFindOptions) {</span>
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).findOne(conditionsOrFindOptions);</span>
+        }
+        else {
+<span class="cstat-no" title="statement not covered" >            return this.getReactiveRepository(entityClass).findOne();</span>
+        }
+    }
+    /**
+     * Finds entity with given id.
+     */
+    findOneById<span class="fstat-no" title="function not covered" >(entityClass, id, options) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).findOneById(id, options);</span>
+    }
+    /**
+     * Executes raw SQL query and returns raw database results.
+     */
+    query<span class="fstat-no" title="function not covered" >(query) {</span>
+<span class="cstat-no" title="statement not covered" >        return Rx.Observable.fromPromise(this.connection.driver.query(query));</span>
+    }
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     */
+    transaction<span class="fstat-no" title="function not covered" >(runInTransaction) {</span>
+<span class="cstat-no" title="statement not covered" >        let runInTransactionResult;</span>
+<span class="cstat-no" title="statement not covered" >        return Rx.Observable.fromPromise(this.connection.driver</span>
+            .beginTransaction()
+            .then(() =&gt; <span class="cstat-no" title="statement not covered" >runInTransaction())</span>
+            .then(result =&gt; {
+<span class="cstat-no" title="statement not covered" >            runInTransactionResult = result;</span>
+<span class="cstat-no" title="statement not covered" >            return this.connection.driver.endTransaction();</span>
+        })
+            .then(() =&gt; <span class="cstat-no" title="statement not covered" >runInTransactionResult)</span>);
+    }
+    setRelation<span class="fstat-no" title="function not covered" >(entityClass, relationName, entityId, relatedEntityId) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).setRelation(relationName, entityId, relatedEntityId);</span>
+    }
+    addToRelation<span class="fstat-no" title="function not covered" >(entityClass, relationName, entityId, relatedEntityIds) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).addToRelation(relationName, entityId, relatedEntityIds);</span>
+    }
+    removeFromRelation<span class="fstat-no" title="function not covered" >(entityClass, relationName, entityId, relatedEntityIds) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).removeFromRelation(relationName, entityId, relatedEntityIds);</span>
+    }
+    addAndRemoveFromRelation<span class="fstat-no" title="function not covered" >(entityClass, relation, entityId, addRelatedEntityIds, removeRelatedEntityIds) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).addAndRemoveFromRelation(relation, entityId, addRelatedEntityIds, removeRelatedEntityIds);</span>
+    }
+    /**
+     * Removes entity with the given id.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeById<span class="fstat-no" title="function not covered" >(entityClass, id) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).removeById(id);</span>
+    }
+    /**
+     * Removes all entities with the given ids.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
+    removeByIds<span class="fstat-no" title="function not covered" >(entityClass, ids) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveRepository(entityClass).removeByIds(ids);</span>
+    }
+    /**
+     * Roots are entities that have no ancestors. Finds them all.
+     * Used on the tree-type (e.g. closure table) entities.
+     */
+    findRoots<span class="fstat-no" title="function not covered" >(entityClass) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).findRoots();</span>
+    }
+    /**
+     * Creates a query builder used to get descendants of the entities in a tree.
+     * Used on the tree-type (e.g. closure table) entities.
+     */
+    createDescendantsQueryBuilder<span class="fstat-no" title="function not covered" >(entityClass, alias, closureTableAlias, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).createDescendantsQueryBuilder(alias, closureTableAlias, entity);</span>
+    }
+    /**
+     * Gets all children (descendants) of the given entity. Returns them all in a flat array.
+     * Used on the tree-type (e.g. closure table) entities.
+     */
+    findDescendants<span class="fstat-no" title="function not covered" >(entityClass, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).findDescendants(entity);</span>
+    }
+    /**
+     * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
+     * Used on the tree-type (e.g. closure table) entities.
+     */
+    findDescendantsTree<span class="fstat-no" title="function not covered" >(entityClass, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).findDescendantsTree(entity);</span>
+    }
+    /**
+     * Gets number of descendants of the entity.
+     * Used on the tree-type (e.g. closure table) entities.
+     */
+    countDescendants<span class="fstat-no" title="function not covered" >(entityClass, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).countDescendants(entity);</span>
+    }
+    /**
+     * Creates a query builder used to get ancestors of the entities in the tree.
+     * Used on the tree-type (e.g. closure table) entities.
+     */
+    createAncestorsQueryBuilder<span class="fstat-no" title="function not covered" >(entityClass, alias, closureTableAlias, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).createAncestorsQueryBuilder(alias, closureTableAlias, entity);</span>
+    }
+    /**
+     * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
+     *  Used on the tree-type (e.g. closure table) entities.
+     */
+    findAncestors<span class="fstat-no" title="function not covered" >(entityClass, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).findAncestors(entity);</span>
+    }
+    /**
+     * Gets all parents (ancestors) of the given entity. \Returns them in a tree - nested into each other.
+     *  Used on the tree-type (e.g. closure table) entities.
+     */
+    findAncestorsTree<span class="fstat-no" title="function not covered" >(entityClass, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).findAncestorsTree(entity);</span>
+    }
+    /**
+     * Gets number of ancestors of the entity.
+     * Used on the tree-type (e.g. closure table) entities.
+     */
+    countAncestors<span class="fstat-no" title="function not covered" >(entityClass, entity) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.getReactiveTreeRepository(entityClass).countAncestors(entity);</span>
+    }
+}
+exports.ReactiveEntityManager = ReactiveEntityManager;
+//# sourceMappingURL=ReactiveEntityManager.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

@@ -14,8 +14,8 @@ export function closeConnections(connections: Connection[]) {
 }
 
 export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"postgres"|"postgresSecondary"): ConnectionOptions {
-    // const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
-    const parameters = require(__dirname + "/../../config/parameters.json"); // path is relative to compile directory
+    const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
+    // const parameters = require(__dirname + "/../../config/parameters.json");
 
     return {
         host: parameters.connections[type].host,

@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/metadata-args/MetadataArgsStorage.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">src/metadata-args/</a> MetadataArgsStorage.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">57.58% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>38/66</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">59.09% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>13/22</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">83.33% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>5/6</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">56.25% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>36/64</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line medium'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">204×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">204×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">198×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">198×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const TargetMetadataArgsCollection_1 = require("./collection/TargetMetadataArgsCollection");
+const PropertyMetadataArgsCollection_1 = require("./collection/PropertyMetadataArgsCollection");
+/**
+ * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
+ * Each metadata represents some specifications of what it represents.
+ */
+class MetadataArgsStorage {
+    constructor() {
+        // todo: type in function validation, inverse side function validation
+        // todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
+        // todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
+        // todo: check for duplicate targets too since this check has been removed too
+        // -------------------------------------------------------------------------
+        // Properties
+        // -------------------------------------------------------------------------
+        this.tables = new TargetMetadataArgsCollection_1.TargetMetadataArgsCollection();
+        this.namingStrategies = new TargetMetadataArgsCollection_1.TargetMetadataArgsCollection();
+        this.entitySubscribers = new TargetMetadataArgsCollection_1.TargetMetadataArgsCollection();
+        this.indices = new TargetMetadataArgsCollection_1.TargetMetadataArgsCollection();
+        this.columns = new PropertyMetadataArgsCollection_1.PropertyMetadataArgsCollection();
+        this.relations = new PropertyMetadataArgsCollection_1.PropertyMetadataArgsCollection();
+        this.joinColumns = new PropertyMetadataArgsCollection_1.PropertyMetadataArgsCollection();
+        this.joinTables = new PropertyMetadataArgsCollection_1.PropertyMetadataArgsCollection();
+        this.entityListeners = new PropertyMetadataArgsCollection_1.PropertyMetadataArgsCollection();
+        this.relationCounts = new PropertyMetadataArgsCollection_1.PropertyMetadataArgsCollection();
+        this.embeddeds = new PropertyMetadataArgsCollection_1.PropertyMetadataArgsCollection();
+    }
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+    /**
+     * Gets merged (with all abstract classes) table metadatas for the given classes.
+     */
+    getMergedTableMetadatas(classes) {
+        const allTableMetadataArgs = classes ? this.tables.filterByTargets(classes) : this.tables;
+        const tableMetadatas = allTableMetadataArgs.filter(table =&gt; table.type === "regular" || table.type === "closure");
+        return tableMetadatas.map(tableMetadata =&gt; {
+            return this.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
+        });
+    }
+    /**
+     * Gets merged (with all abstract classes) embeddable table metadatas for the given classes.
+     */
+    getMergedEmbeddableTableMetadatas(classes) {
+        const tables = classes ? this.tables.filterByTargets(classes) : this.tables;
+        const embeddableTableMetadatas = tables.filter(table =&gt; table.type === "embeddable");
+        return embeddableTableMetadatas.map(embeddableTableMetadata =&gt; {
+<span class="cstat-no" title="statement not covered" >            return this.mergeWithEmbeddable(embeddableTableMetadatas, embeddableTableMetadata);</span>
+        });
+    }
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+    /**
+     */
+    mergeWithAbstract(allTableMetadatas, tableMetadata) {
+        const indices = this.indices.filterByTarget(tableMetadata.target);
+        const columns = this.columns.filterByTarget(tableMetadata.target);
+        const relations = this.relations.filterByTarget(tableMetadata.target);
+        const joinColumns = this.joinColumns.filterByTarget(tableMetadata.target);
+        const joinTables = this.joinTables.filterByTarget(tableMetadata.target);
+        const entityListeners = this.entityListeners.filterByTarget(tableMetadata.target);
+        const relationCounts = this.relationCounts.filterByTarget(tableMetadata.target);
+        const embeddeds = this.embeddeds.filterByTarget(tableMetadata.target);
+        allTableMetadatas
+            .filter(metadata =&gt; {
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (!tableMetadata.target || !metadata.target)
+<span class="cstat-no" title="statement not covered" >                return false;</span>
+            if (!(tableMetadata.target instanceof Function) || !(metadata.target instanceof Function))
+                return false;
+            return this.isInherited(tableMetadata.target, metadata.target); // todo: fix it
+        })
+            .forEach(parentMetadata =&gt; {
+<span class="cstat-no" title="statement not covered" >            const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);</span>
+<span class="cstat-no" title="statement not covered" >            metadatasFromAbstract.columns</span>
+                .filterRepeatedMetadatas(columns)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >columns.push(metadata))</span>;
+<span class="cstat-no" title="statement not covered" >            metadatasFromAbstract.relations</span>
+                .filterRepeatedMetadatas(relations)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >relations.push(metadata))</span>;
+<span class="cstat-no" title="statement not covered" >            metadatasFromAbstract.joinColumns</span>
+                .filterRepeatedMetadatas(joinColumns)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >joinColumns.push(metadata))</span>;
+<span class="cstat-no" title="statement not covered" >            metadatasFromAbstract.joinTables</span>
+                .filterRepeatedMetadatas(joinTables)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >joinTables.push(metadata))</span>;
+<span class="cstat-no" title="statement not covered" >            metadatasFromAbstract.entityListeners</span>
+                .filterRepeatedMetadatas(entityListeners)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >entityListeners.push(metadata))</span>;
+<span class="cstat-no" title="statement not covered" >            metadatasFromAbstract.relationCounts</span>
+                .filterRepeatedMetadatas(relationCounts)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >relationCounts.push(metadata))</span>;
+<span class="cstat-no" title="statement not covered" >            metadatasFromAbstract.embeddeds</span>
+                .filterRepeatedMetadatas(embeddeds)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >embeddeds.push(metadata))</span>;
+        });
+        return {
+            table: tableMetadata,
+            indices: indices,
+            columns: columns,
+            relations: relations,
+            joinColumns: joinColumns,
+            joinTables: joinTables,
+            entityListeners: entityListeners,
+            relationCounts: relationCounts,
+            embeddeds: embeddeds
+        };
+    }
+    /**
+     */
+    mergeWithEmbeddable<span class="fstat-no" title="function not covered" >(allTableMetadatas, tableMetadata) {</span>
+<span class="cstat-no" title="statement not covered" >        const columns = this.columns.filterByTarget(tableMetadata.target);</span>
+<span class="cstat-no" title="statement not covered" >        allTableMetadatas</span>
+            .filter(metadata =&gt; {
+<span class="cstat-no" title="statement not covered" >            if (!tableMetadata.target || !metadata.target)</span>
+<span class="cstat-no" title="statement not covered" >                return false;</span>
+<span class="cstat-no" title="statement not covered" >            if (!(tableMetadata.target instanceof Function) || !(metadata.target instanceof Function))</span>
+<span class="cstat-no" title="statement not covered" >                return false;</span>
+<span class="cstat-no" title="statement not covered" >            return this.isInherited(tableMetadata.target, metadata.target); </span>// todo: fix it for entity schema
+        })
+            .forEach(parentMetadata =&gt; {
+<span class="cstat-no" title="statement not covered" >            const metadatasFromParents = this.mergeWithEmbeddable(allTableMetadatas, parentMetadata);</span>
+<span class="cstat-no" title="statement not covered" >            metadatasFromParents.columns</span>
+                .filterRepeatedMetadatas(columns)
+                .forEach(metadata =&gt; <span class="cstat-no" title="statement not covered" >columns.push(metadata))</span>;
+        });
+<span class="cstat-no" title="statement not covered" >        return {</span>
+            table: tableMetadata,
+            columns: columns
+        };
+    }
+    /**
+     * Checks if this table is inherited from another table.
+     */
+    isInherited(target1, target2) {
+        // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
+        // properties get inherited in a right order. To achieve it we can only check a first parent of the class
+        // return this.target.prototype instanceof anotherTable.target;
+        return Object.getPrototypeOf(target1.prototype).constructor === target2;
+    }
+}
+exports.MetadataArgsStorage = MetadataArgsStorage;
+//# sourceMappingURL=MetadataArgsStorage.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

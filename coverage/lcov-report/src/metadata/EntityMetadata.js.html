@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/metadata/EntityMetadata.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">src/metadata/</a> EntityMetadata.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">58.87% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>73/124</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">45.24% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>19/42</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">69.44% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>25/36</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">57.14% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>52/91</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line medium'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">157×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3260×</span>
+<span class="cline-any cline-yes">3260×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3260×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11512×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">484×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2987×</span>
+<span class="cline-any cline-yes">2987×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2987×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">809×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">854×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">854×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1161×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">657×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">715×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">335×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">320×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">180×</span>
+<span class="cline-any cline-yes">544×</span>
+<span class="cline-any cline-yes">383×</span>
+<span class="cline-any cline-yes">180×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">522×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1253×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1624×</span>
+<span class="cline-any cline-yes">741×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">741×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const RelationTypes_1 = require("./types/RelationTypes");
+/**
+ * Contains all entity metadata.
+ */
+class EntityMetadata {
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+    constructor(args) {
+        /**
+         * Entity's foreign key metadatas.
+         */
+        this.foreignKeys = [];
+        this.namingStrategy = args.namingStrategy;
+        this.table = args.tableMetadata;
+        this._columns = args.columnMetadatas || <span class="branch-1 cbranch-no" title="branch not covered" >[];</span>
+        this.relations = args.relationMetadatas || [];
+        this.indices = args.indexMetadatas || [];
+        this.foreignKeys = args.foreignKeyMetadatas || [];
+        this.embeddeds = args.embeddedMetadatas || [];
+        this.table.entityMetadata = this;
+        this._columns.forEach(column =&gt; column.entityMetadata = this);
+        this.relations.forEach(relation =&gt; relation.entityMetadata = this);
+        this.foreignKeys.forEach(foreignKey =&gt; foreignKey.entityMetadata = this);
+        this.indices.forEach(index =&gt; <span class="cstat-no" title="statement not covered" >index.entityMetadata = this)</span>;
+        this.embeddeds.forEach(embedded =&gt; <span class="cstat-no" title="statement not covered" >embedded.entityMetadata = this)</span>;
+    }
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+    /**
+     * Entity's name. Equal to entity target class's name if target is set to table, or equals to table name if its set.
+     */
+    get name<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        if (!this.table)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error("No table target set to the entity metadata.");</span>
+<span class="cstat-no" title="statement not covered" >        if (typeof this.table.target === "string")</span>
+<span class="cstat-no" title="statement not covered" >            return this.table.target;</span>
+<span class="cstat-no" title="statement not covered" >        if (this.target)</span>
+<span class="cstat-no" title="statement not covered" >            return this.target.name;</span>
+<span class="cstat-no" title="statement not covered" >        return this.table.name;</span>
+    }
+    /**
+     * All columns of the entity, including columns that are coming from the embeddeds of this entity.
+     */
+    get columns() {
+        let allColumns = [].concat(this._columns);
+        this.embeddeds.forEach(embedded =&gt; {
+<span class="cstat-no" title="statement not covered" >            allColumns = allColumns.concat(embedded.columns);</span>
+        });
+        return allColumns;
+    }
+    /**
+     * Target class to which this entity metadata is bind.
+     */
+    get target() {
+        return this.table.target;
+    }
+    /**
+     * Checks if entity has a primary column. All user's entities must have a primary column.
+     * Special entity metadatas like for junction tables and closure junction tables don't have a primary column.
+     */
+    get hasPrimaryColumn() {
+        return !!this._columns.find(column =&gt; column.isPrimary);
+    }
+    /**
+     * Gets the primary column.
+     */
+    get primaryColumn() {
+        const primaryKey = this._columns.find(column =&gt; column.isPrimary);
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!primaryKey)
+<span class="cstat-no" title="statement not covered" >            throw new Error(`Primary key is not set for the ${this.name} entity.`);</span>
+        return primaryKey;
+    }
+    /**
+     * Checks if entity has a create date column.
+     */
+    get hasCreateDateColumn() {
+        return !!this._columns.find(column =&gt; column.mode === "createDate");
+    }
+    /**
+     * Gets entity column which contains a create date value.
+     */
+    get createDateColumn<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        const column = this._columns.find(column =&gt; <span class="cstat-no" title="statement not covered" >column.mode === "createDate")</span>;</span>
+<span class="cstat-no" title="statement not covered" >        if (!column)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error(`CreateDateColumn was not found in entity ${this.name}`);</span>
+<span class="cstat-no" title="statement not covered" >        return column;</span>
+    }
+    /**
+     * Checks if entity has an update date column.
+     */
+    get hasUpdateDateColumn() {
+        return !!this._columns.find(column =&gt; column.mode === "updateDate");
+    }
+    /**
+     * Gets entity column which contains an update date value.
+     */
+    get updateDateColumn<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        const column = this._columns.find(column =&gt; <span class="cstat-no" title="statement not covered" >column.mode === "updateDate")</span>;</span>
+<span class="cstat-no" title="statement not covered" >        if (!column)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error(`UpdateDateColumn was not found in entity ${this.name}`);</span>
+<span class="cstat-no" title="statement not covered" >        return column;</span>
+    }
+    /**
+     * Checks if entity has a version column.
+     */
+    get hasVersionColumn() {
+        return !!this._columns.find(column =&gt; column.mode === "version");
+    }
+    /**
+     * Gets entity column which contains an entity version.
+     */
+    get versionColumn<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        const column = this._columns.find(column =&gt; <span class="cstat-no" title="statement not covered" >column.mode === "version")</span>;</span>
+<span class="cstat-no" title="statement not covered" >        if (!column)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error(`VersionColumn was not found in entity ${this.name}`);</span>
+<span class="cstat-no" title="statement not covered" >        return column;</span>
+    }
+    /**
+     * Checks if entity has a tree level column.
+     */
+    get hasTreeLevelColumn() {
+        return !!this._columns.find(column =&gt; column.mode === "treeLevel");
+    }
+    get treeLevelColumn<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        const column = this._columns.find(column =&gt; <span class="cstat-no" title="statement not covered" >column.mode === "treeLevel")</span>;</span>
+<span class="cstat-no" title="statement not covered" >        if (!column)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error(`TreeLevelColumn was not found in entity ${this.name}`);</span>
+<span class="cstat-no" title="statement not covered" >        return column;</span>
+    }
+    /**
+     * Gets only one-to-one relations of the entity.
+     */
+    get oneToOneRelations() {
+        return this.relations.filter(relation =&gt; relation.relationType === RelationTypes_1.RelationTypes.ONE_TO_ONE);
+    }
+    /**
+     * Gets only owner one-to-one relations of the entity.
+     */
+    get ownerOneToOneRelations() {
+        return this.relations.filter(relation =&gt; relation.relationType === RelationTypes_1.RelationTypes.ONE_TO_ONE &amp;&amp; relation.isOwning);
+    }
+    /**
+     * Gets only one-to-many relations of the entity.
+     */
+    get oneToManyRelations<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        return this.relations.filter(relation =&gt; <span class="cstat-no" title="statement not covered" >relation.relationType === RelationTypes_1.RelationTypes.ONE_TO_MANY)</span>;</span>
+    }
+    /**
+     * Gets only many-to-one relations of the entity.
+     */
+    get manyToOneRelations() {
+        return this.relations.filter(relation =&gt; relation.relationType === RelationTypes_1.RelationTypes.MANY_TO_ONE);
+    }
+    /**
+     * Gets only many-to-many relations of the entity.
+     */
+    get manyToManyRelations() {
+        return this.relations.filter(relation =&gt; relation.relationType === RelationTypes_1.RelationTypes.MANY_TO_MANY);
+    }
+    /**
+     * Gets only owner many-to-many relations of the entity.
+     */
+    get ownerManyToManyRelations() {
+        return this.relations.filter(relation =&gt; relation.relationType === RelationTypes_1.RelationTypes.MANY_TO_MANY &amp;&amp; relation.isOwning);
+    }
+    /**
+     * Gets only owner one-to-one and many-to-one relations.
+     */
+    get relationsWithJoinColumns() {
+        return this.ownerOneToOneRelations.concat(this.manyToOneRelations);
+    }
+    /**
+     * Checks if there is a tree parent relation. Used only in tree-tables.
+     */
+    get hasTreeParentRelation<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        return !!this.relations.find(relation =&gt; <span class="cstat-no" title="statement not covered" >relation.isTreeParent)</span>;</span>
+    }
+    /**
+     * Tree parent relation. Used only in tree-tables.
+     */
+    get treeParentRelation<span class="fstat-no" title="function not covered" >() {</span>
+<span class="cstat-no" title="statement not covered" >        const relation = this.relations.find(relation =&gt; <span class="cstat-no" title="statement not covered" >relation.isTreeParent)</span>;</span>
+<span class="cstat-no" title="statement not covered" >        if (!relation)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error(`TreeParent relation was not found in entity ${this.name}`);</span>
+<span class="cstat-no" title="statement not covered" >        return relation;</span>
+    }
+    /**
+     * Checks if there is a tree children relation. Used only in tree-tables.
+     */
+    get hasTreeChildrenRelation() {
+        return !!this.relations.find(relation =&gt; relation.isTreeChildren);
+    }
+    /**
+     * Tree children relation. Used only in tree-tables.
+     */
+    get treeChildrenRelation() {
+        const relation = this.relations.find(relation =&gt; relation.isTreeChildren);
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!relation)
+<span class="cstat-no" title="statement not covered" >            throw new Error(`TreeParent relation was not found in entity ${this.name}`);</span>
+        return relation;
+    }
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+    /**
+     * Creates a new entity.
+     */
+    create() {
+        return new this.table.target();
+    }
+    /**
+     * Creates an object - map of columns and relations of the entity.
+     */
+    createPropertiesMap() {
+        const entity = {};
+        this._columns.forEach(column =&gt; entity[column.propertyName] = column.propertyName);
+        this.relations.forEach(relation =&gt; entity[relation.propertyName] = relation.propertyName);
+        return entity;
+    }
+    /**
+     * Computes property name of the entity using given PropertyTypeInFunction.
+     */
+    computePropertyName(nameOrFn) {
+        return typeof nameOrFn === "string" ? <span class="branch-0 cbranch-no" title="branch not covered" >nameOrFn </span>: nameOrFn(this.createPropertiesMap());
+    }
+    /**
+     * Returns entity id of the given entity.
+     */
+    getEntityId(entity) {
+        return entity ? entity[this.primaryColumn.propertyName] : undefined;
+    }
+    /**
+     * Checks if column with the given property name exist.
+     */
+    hasColumnWithPropertyName<span class="fstat-no" title="function not covered" >(propertyName) {</span>
+<span class="cstat-no" title="statement not covered" >        return !!this._columns.find(column =&gt; <span class="cstat-no" title="statement not covered" >column.propertyName === propertyName)</span>;</span>
+    }
+    /**
+     * Checks if column with the given database name exist.
+     */
+    hasColumnWithDbName<span class="fstat-no" title="function not covered" >(name) {</span>
+<span class="cstat-no" title="statement not covered" >        return !!this._columns.find(column =&gt; <span class="cstat-no" title="statement not covered" >column.name === name)</span>;</span>
+    }
+    /**
+     * Checks if relation with the given property name exist.
+     */
+    hasRelationWithPropertyName(propertyName) {
+        return !!this.relations.find(relation =&gt; relation.propertyName === propertyName);
+    }
+    /**
+     * Finds relation with the given property name.
+     */
+    findRelationWithPropertyName(propertyName) {
+        const relation = this.relations.find(relation =&gt; relation.propertyName === propertyName);
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!relation)
+<span class="cstat-no" title="statement not covered" >            throw new Error(`Relation with property name ${propertyName} in ${this.name} entity was not found.`);</span>
+        return relation;
+    }
+    /**
+     * Checks if relation with the given name exist.
+     */
+    hasRelationWithDbName(dbName) {
+        return !!this.relationsWithJoinColumns.find(relation =&gt; relation.name === dbName);
+    }
+    /**
+     * Finds relation with the given name.
+     */
+    findRelationWithDbName<span class="fstat-no" title="function not covered" >(name) {</span>
+<span class="cstat-no" title="statement not covered" >        const relation = this.relationsWithJoinColumns.find(relation =&gt; <span class="cstat-no" title="statement not covered" >relation.name === name)</span>;</span>
+<span class="cstat-no" title="statement not covered" >        if (!relation)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error(`Relation with name ${name} in ${this.name} entity was not found.`);</span>
+<span class="cstat-no" title="statement not covered" >        return relation;</span>
+    }
+    addColumn(column) {
+        this._columns.push(column);
+        column.entityMetadata = this;
+    }
+}
+exports.EntityMetadata = EntityMetadata;
+//# sourceMappingURL=EntityMetadata.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

@@ -7,12 +7,11 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ConstructorFunction} from "../common/ConstructorFunction";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
-import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
+import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
 import {getMetadataArgsStorage, getFromContainer} from "../index";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-// import {NamingStrategyMetadata} from "../metadata/NamingStrategyMetadata";
 import {NoConnectionForRepositoryError} from "./error/NoConnectionForRepositoryError";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
@@ -36,20 +35,6 @@ import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingS
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
  */
 export class Connection {
-
-    // -------------------------------------------------------------------------
-    // Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * All connection's repositories.
-     */
-    private repositories: Repository<any>[] = [];
-
-    /**
-     * All connection's reactive repositories.
-     */
-    private reactiveRepositories: ReactiveRepository<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Readonly properties
@@ -100,11 +85,6 @@ export class Connection {
     private readonly entityMetadatas = new EntityMetadataCollection();
 
     /**
-     * All naming strategy metadatas that are registered for this connection.
-     */
-    // private readonly namingStrategyMetadatas: NamingStrategyMetadata[] = [];
-
-    /**
      * Registered entity classes to be used for this connection.
      */
     private readonly entityClasses: Function[] = [];
@@ -133,6 +113,16 @@ export class Connection {
      * Indicates if connection has been done or not.
      */
     private _isConnected = false;
+
+    /**
+     * All connection's repositories.
+     */
+    private repositories: Repository<any>[] = [];
+
+    /**
+     * All connection's reactive repositories.
+     */
+    private reactiveRepositories: ReactiveRepository<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -224,7 +214,7 @@ export class Connection {
      * Imports entity schemas from the given paths (directories) for the current connection.
      */
     async importEntitySchemaFromDirectories(paths: string[]): Promise<this> {
-        this.importEntitySchemas(importClassesFromDirectories(paths) as any[]); // todo: check it.
+        this.importEntitySchemas(importJsonsFromDirectories(paths));
         return this;
     }
 

@@ -224,7 +224,8 @@ describe("Connection", () => {
         });
 
         it("should import first connection's entity schemas only", async () => {
-            firstConnection.importEntitySchemas([ require("./schema/user.json") ]);
+            let schemaFile = require("path").normalize(__dirname + "/../../../../../test/functional/connection/schema/user.json");
+            firstConnection.importEntitySchemas([ require(schemaFile) ]);
             await firstConnection.connect();
             firstConnection.getRepository("User").should.be.instanceOf(Repository);
             firstConnection.getRepository("User").target.should.be.equal("User");
@@ -233,7 +234,8 @@ describe("Connection", () => {
         });
 
         it("should import second connection's entity schemas only", async () => {
-            secondConnection.importEntitySchemas([ require("./schema/photo.json") ]);
+            let schemaFile = require("path").normalize(__dirname + "/../../../../../test/functional/connection/schema/photo.json");
+            secondConnection.importEntitySchemas([ require(schemaFile) ]);
             await secondConnection.connect();
             secondConnection.getRepository("Photo").should.be.instanceOf(Repository);
             secondConnection.getRepository("Photo").target.should.be.equal("Photo");
@@ -241,6 +243,37 @@ describe("Connection", () => {
             secondConnection.close();
         });
 
+    });
+
+    describe("import entities / entity schemas / subscribers / naming strategies from directories", function() {
+
+        let connection: Connection;
+        beforeEach(async () => {
+            connection = await getConnectionManager().create({
+                driver: "mysql",
+                connection: createTestingConnectionOptions("mysql")
+            });
+        });
+        afterEach(() => connection.isConnected ? connection.close() : {});
+
+        it("should import first connection's entities only", async () => {
+            // const baseDir = __dirname;
+            let clsBaseDir = __dirname; // require("path").normalize(__dirname + "/../../../../../test/functional/connection");
+            let jsonBaseDir = require("path").normalize(__dirname + "/../../../../../test/functional/connection");
+            connection.importEntitiesFromDirectories([clsBaseDir + "/entity"]);
+            connection.importEntitySchemaFromDirectories([jsonBaseDir + "/schema"]);
+            connection.importNamingStrategiesFromDirectories([clsBaseDir + "/naming-strategy"]);
+            connection.importSubscribersFromDirectories([clsBaseDir + "/subscriber"]);
+            await connection.connect();
+            connection.getRepository(Post).should.be.instanceOf(Repository);
+            connection.getRepository(Post).target.should.be.equal(Post);
+            connection.getRepository(Category).should.be.instanceOf(Repository);
+            connection.getRepository(Category).target.should.be.equal(Category);
+            connection.getRepository("User").should.be.instanceOf(Repository);
+            connection.getRepository("User").target.should.be.equal("User");
+            connection.getRepository("Photo").should.be.instanceOf(Repository);
+            connection.getRepository("Photo").target.should.be.equal("Photo");
+        });
     });
 
     describe("using naming strategy", function() {

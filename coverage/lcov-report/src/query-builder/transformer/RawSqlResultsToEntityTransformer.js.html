@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/query-builder/transformer/RawSqlResultsToEntityTransformer.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../../index.html">all files</a> / <a href="index.html">src/query-builder/transformer/</a> RawSqlResultsToEntityTransformer.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">70.91% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>39/55</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">57.14% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>24/42</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>4/4</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">72.22% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>39/54</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line medium'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">141×</span>
+<span class="cline-any cline-yes">141×</span>
+<span class="cline-any cline-yes">141×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">141×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">256×</span>
+<span class="cline-any cline-yes">256×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">256×</span>
+<span class="cline-any cline-yes">270×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">270×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">256×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-yes">907×</span>
+<span class="cline-any cline-yes">907×</span>
+<span class="cline-any cline-yes">517×</span>
+<span class="cline-any cline-yes">517×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">517×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">517×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-yes">560×</span>
+<span class="cline-any cline-yes">560×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">115×</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">259×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const OrmUtils_1 = require("../../util/OrmUtils");
+/**
+ * Transforms raw sql results returned from the database into entity object.
+ * Entity is constructed based on its entity metadata.
+ *
+ * @internal
+ */
+class RawSqlResultsToEntityTransformer {
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+    constructor(driver, aliasMap, joinMappings) {
+        this.driver = driver;
+        this.aliasMap = aliasMap;
+        this.joinMappings = joinMappings;
+    }
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+    transform(rawSqlResults) {
+        return this.groupAndTransform(rawSqlResults, this.aliasMap.mainAlias);
+    }
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+    /**
+     * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
+     * we need to group our result and we must have some unique id (primary key in our case)
+     */
+    groupAndTransform(rawSqlResults, alias) {
+        const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!metadata)
+<span class="cstat-no" title="statement not covered" >            throw new Error("Cannot get entity metadata for the given alias " + alias.name);</span>
+        const groupedResults = OrmUtils_1.OrmUtils.groupBy(rawSqlResults, result =&gt; {
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (!metadata)
+<span class="cstat-no" title="statement not covered" >                return;</span>
+            return alias.getPrimaryKeyValue(result, metadata.primaryColumn);
+        });
+        return groupedResults
+            .map(group =&gt; {
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (!metadata)
+<span class="cstat-no" title="statement not covered" >                return;</span>
+            return this.transformIntoSingleResult(group.items, alias, metadata);
+        })
+            .filter(res =&gt; !!res);
+    }
+    /**
+     * Transforms set of data results into single entity.
+     */
+    transformIntoSingleResult(rawSqlResults, alias, metadata) {
+        const entity = metadata.create();
+        let hasData = false;
+        this.joinMappings
+            .filter(joinMapping =&gt; <span class="cstat-no" title="statement not covered" >joinMapping.parentName === alias.name &amp;&amp; !joinMapping.alias.parentAliasName &amp;&amp; joinMapping.alias.target)</span>
+            .map(joinMapping =&gt; {
+<span class="cstat-no" title="statement not covered" >            const relatedEntities = this.groupAndTransform(rawSqlResults, joinMapping.alias);</span>
+<span class="cstat-no" title="statement not covered" >            const isResultArray = joinMapping.isMany;</span>
+<span class="cstat-no" title="statement not covered" >            const result = !isResultArray ? relatedEntities[0] : relatedEntities;</span>
+<span class="cstat-no" title="statement not covered" >            if (result &amp;&amp; (!isResultArray || result.length &gt; 0)) {</span>
+<span class="cstat-no" title="statement not covered" >                entity[joinMapping.propertyName] = result;</span>
+<span class="cstat-no" title="statement not covered" >                hasData = true;</span>
+            }
+        });
+        // get value from columns selections and put them into object
+        metadata.columns.forEach(column =&gt; {
+            const valueInObject = alias.getColumnValue(rawSqlResults[0], column.name); // we use zero index since its grouped data
+            if (valueInObject &amp;&amp; column.propertyName &amp;&amp; !column.isVirtual) {
+                const value = this.driver.prepareHydratedValue(valueInObject, column);
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (column.isInEmbedded) {
+<span class="cstat-no" title="statement not covered" >                    if (!entity[column.embeddedProperty])</span>
+<span class="cstat-no" title="statement not covered" >                        entity[column.embeddedProperty] = column.embeddedMetadata.create();</span>
+<span class="cstat-no" title="statement not covered" >                    entity[column.embeddedProperty][column.propertyName] = value;</span>
+                }
+                else {
+                    entity[column.propertyName] = value;
+                }
+                hasData = true;
+            }
+        });
+        // if relation is loaded then go into it recursively and transform its values too
+        metadata.relations.forEach(relation =&gt; {
+            const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.propertyName);
+            if (relationAlias) {
+                const joinMapping = this.joinMappings.find(joinMapping =&gt; <span class="cstat-no" title="statement not covered" >joinMapping.alias === relationAlias)</span>;
+                const relatedEntities = this.groupAndTransform(rawSqlResults, relationAlias);
+                const isResultArray = relation.isManyToMany || relation.isOneToMany;
+                const result = !isResultArray ? relatedEntities[0] : relatedEntities;
+                if (result &amp;&amp; (!isResultArray || result.length &gt; 0)) {
+                    let propertyName = relation.propertyName;
+                    <span class="missing-if-branch" title="if path not taken" >I</span>if (joinMapping) {
+<span class="cstat-no" title="statement not covered" >                        propertyName = joinMapping.propertyName;</span>
+                    }
+                    <span class="missing-if-branch" title="if path not taken" >I</span>if (relation.isLazy) {
+<span class="cstat-no" title="statement not covered" >                        entity["__" + propertyName + "__"] = result;</span>
+                    }
+                    else {
+                        entity[propertyName] = result;
+                    }
+                    hasData = true;
+                }
+            }
+        });
+        return hasData ? entity : null;
+    }
+}
+exports.RawSqlResultsToEntityTransformer = RawSqlResultsToEntityTransformer;
+//# sourceMappingURL=RawSqlResultsToEntityTransformer.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../../sorter.js"></script>
+</body>
+</html>

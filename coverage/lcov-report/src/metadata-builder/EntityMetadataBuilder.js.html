@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/metadata-builder/EntityMetadataBuilder.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">src/metadata-builder/</a> EntityMetadataBuilder.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">75.61% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>93/123</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">51.72% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>30/58</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>3/3</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">76.72% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>89/116</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line medium'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">126×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">29×</span>
+<span class="cline-any cline-yes">29×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">29×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">197×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">94×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">47×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">57×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";
+const EntityMetadata_1 = require("../metadata/EntityMetadata");
+const ColumnMetadata_1 = require("../metadata/ColumnMetadata");
+const ForeignKeyMetadata_1 = require("../metadata/ForeignKeyMetadata");
+const EntityMetadataValidator_1 = require("./EntityMetadataValidator");
+const IndexMetadata_1 = require("../metadata/IndexMetadata");
+const JoinColumnMetadata_1 = require("../metadata/JoinColumnMetadata");
+const TableMetadata_1 = require("../metadata/TableMetadata");
+const index_1 = require("../index");
+const RelationMetadata_1 = require("../metadata/RelationMetadata");
+const JoinTableMetadata_1 = require("../metadata/JoinTableMetadata");
+const JunctionEntityMetadataBuilder_1 = require("./JunctionEntityMetadataBuilder");
+const ClosureJunctionEntityMetadataBuilder_1 = require("./ClosureJunctionEntityMetadataBuilder");
+const EmbeddedMetadata_1 = require("../metadata/EmbeddedMetadata");
+const MetadataArgsStorage_1 = require("../metadata-args/MetadataArgsStorage");
+/**
+ * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
+ *
+ * @internal
+ */
+class EntityMetadataBuilder {
+    // todo: type in function validation, inverse side function validation
+    // todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
+    // todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
+    // todo: check if multiple tree parent metadatas in validator
+    // todo: tree decorators can be used only on closure table (validation)
+    // todo: throw error if parent tree metadata was not specified in a closure table
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+    buildFromSchemas(namingStrategy, schemas) {
+        const metadataArgsStorage = new MetadataArgsStorage_1.MetadataArgsStorage();
+        schemas.forEach(schema =&gt; {
+            // add table metadata args from the schema
+            const tableSchema = schema.table || <span class="branch-1 cbranch-no" title="branch not covered" >{};</span>
+            const table = {
+                target: schema.target || schema.name,
+                name: tableSchema.name,
+                type: tableSchema.type || "regular",
+                // targetId: schema.name,
+                orderBy: tableSchema.orderBy,
+                primaryKeys: tableSchema.primaryKeys
+            };
+            metadataArgsStorage.tables.add(table);
+            // add columns metadata args from the schema
+            Object.keys(schema.columns).forEach(columnName =&gt; {
+                const columnSchema = schema.columns[columnName];
+                let mode = "regular";
+                if (columnSchema.primary)
+                    mode = "primary";
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (columnSchema.createDate)
+<span class="cstat-no" title="statement not covered" >                    mode = "createDate";</span>
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (columnSchema.updateDate)
+<span class="cstat-no" title="statement not covered" >                    mode = "updateDate";</span>
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (columnSchema.version)
+<span class="cstat-no" title="statement not covered" >                    mode = "version";</span>
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (columnSchema.treeChildrenCount)
+<span class="cstat-no" title="statement not covered" >                    mode = "treeChildrenCount";</span>
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (columnSchema.treeLevel)
+<span class="cstat-no" title="statement not covered" >                    mode = "treeLevel";</span>
+                const column = {
+                    target: schema.target || schema.name,
+                    mode: mode,
+                    propertyName: columnName,
+                    // todo: what to do with it?: propertyType: 
+                    options: {
+                        type: columnSchema.type,
+                        name: columnSchema.name,
+                        length: columnSchema.length,
+                        generated: columnSchema.generated,
+                        unique: columnSchema.unique,
+                        nullable: columnSchema.nullable,
+                        columnDefinition: columnSchema.columnDefinition,
+                        comment: columnSchema.comment,
+                        oldColumnName: columnSchema.oldColumnName,
+                        precision: columnSchema.precision,
+                        scale: columnSchema.scale,
+                        collation: columnSchema.collation
+                    }
+                };
+                metadataArgsStorage.columns.add(column);
+            });
+            // add relation metadata args from the schema
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (schema.relations) {
+<span class="cstat-no" title="statement not covered" >                Object.keys(schema.relations).forEach(relationName =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                    const relationSchema = schema.relations[relationName];</span>
+<span class="cstat-no" title="statement not covered" >                    const relation = {</span>
+                        target: schema.target || schema.name,
+                        propertyName: relationName,
+                        // todo: what to do with it?: propertyType:
+                        relationType: relationSchema.type,
+                        type: relationSchema.target,
+                        inverseSideProperty: relationSchema.inverseSide,
+                        isTreeParent: relationSchema.isTreeParent,
+                        isTreeChildren: relationSchema.isTreeChildren,
+                        options: {
+                            cascadeAll: relationSchema.cascadeAll,
+                            cascadeInsert: relationSchema.cascadeInsert,
+                            cascadeUpdate: relationSchema.cascadeUpdate,
+                            cascadeRemove: relationSchema.cascadeRemove,
+                            oldColumnName: relationSchema.oldColumnName,
+                            nullable: relationSchema.nullable,
+                            onDelete: relationSchema.onDelete
+                        }
+                    };
+<span class="cstat-no" title="statement not covered" >                    metadataArgsStorage.relations.add(relation);</span>
+                    // add join column
+<span class="cstat-no" title="statement not covered" >                    if (relationSchema.joinColumn) {</span>
+<span class="cstat-no" title="statement not covered" >                        if (typeof relationSchema.joinColumn === "boolean") {</span>
+<span class="cstat-no" title="statement not covered" >                            const joinColumn = {</span>
+                                target: schema.target || schema.name,
+                                propertyName: relationName
+                            };
+<span class="cstat-no" title="statement not covered" >                            metadataArgsStorage.joinColumns.push(joinColumn);</span>
+                        }
+                        else {
+<span class="cstat-no" title="statement not covered" >                            const joinColumn = {</span>
+                                target: schema.target || schema.name,
+                                propertyName: relationName,
+                                name: relationSchema.joinColumn.name,
+                                referencedColumnName: relationSchema.joinColumn.referencedColumnName
+                            };
+<span class="cstat-no" title="statement not covered" >                            metadataArgsStorage.joinColumns.push(joinColumn);</span>
+                        }
+                    }
+                    // add join table
+<span class="cstat-no" title="statement not covered" >                    if (relationSchema.joinTable) {</span>
+<span class="cstat-no" title="statement not covered" >                        if (typeof relationSchema.joinTable === "boolean") {</span>
+<span class="cstat-no" title="statement not covered" >                            const joinTable = {</span>
+                                target: schema.target || schema.name,
+                                propertyName: relationName
+                            };
+<span class="cstat-no" title="statement not covered" >                            metadataArgsStorage.joinTables.push(joinTable);</span>
+                        }
+                        else {
+<span class="cstat-no" title="statement not covered" >                            const joinTable = {</span>
+                                target: schema.target || schema.name,
+                                propertyName: relationName,
+                                name: relationSchema.joinTable.name,
+                                joinColumn: relationSchema.joinTable.joinColumn,
+                                inverseJoinColumn: relationSchema.joinTable.inverseJoinColumn
+                            };
+<span class="cstat-no" title="statement not covered" >                            metadataArgsStorage.joinTables.push(joinTable);</span>
+                        }
+                    }
+                });
+            }
+        });
+        return this.build(metadataArgsStorage, namingStrategy);
+    }
+    /**
+     * Builds a complete metadata aggregations for the given entity classes.
+     */
+    buildFromMetadataArgsStorage(namingStrategy, entityClasses) {
+        return this.build(index_1.getMetadataArgsStorage(), namingStrategy, entityClasses);
+    }
+    build(metadataArgsStorage, namingStrategy, entityClasses) {
+        const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
+        const entityMetadatas = metadataArgsStorage.getMergedTableMetadatas(entityClasses).map(mergedArgs =&gt; {
+            // find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
+            const embeddeds = [];
+            mergedArgs.embeddeds.forEach(embedded =&gt; {
+<span class="cstat-no" title="statement not covered" >                const embeddableTable = embeddableMergedArgs.find(mergedArgs =&gt; <span class="cstat-no" title="statement not covered" >mergedArgs.table.target === embedded.type())</span>;</span>
+<span class="cstat-no" title="statement not covered" >                if (embeddableTable) {</span>
+<span class="cstat-no" title="statement not covered" >                    const table = new TableMetadata_1.TableMetadata(embeddableTable.table);</span>
+<span class="cstat-no" title="statement not covered" >                    const columns = embeddableTable.columns.map(args =&gt; <span class="cstat-no" title="statement not covered" >new ColumnMetadata_1.ColumnMetadata(args))</span>;</span>
+<span class="cstat-no" title="statement not covered" >                    embeddeds.push(new EmbeddedMetadata_1.EmbeddedMetadata(embedded.type(), embedded.propertyName, table, columns));</span>
+                }
+            });
+            // create metadatas from args
+            const table = new TableMetadata_1.TableMetadata(mergedArgs.table);
+            const columns = mergedArgs.columns.map(args =&gt; new ColumnMetadata_1.ColumnMetadata(args));
+            const relations = mergedArgs.relations.map(args =&gt; new RelationMetadata_1.RelationMetadata(args));
+            const indices = mergedArgs.indices.map(args =&gt; <span class="cstat-no" title="statement not covered" >new IndexMetadata_1.IndexMetadata(args))</span>;
+            // create a new entity metadata
+            const entityMetadata = new EntityMetadata_1.EntityMetadata({
+                namingStrategy: namingStrategy,
+                tableMetadata: table,
+                columnMetadatas: columns,
+                relationMetadatas: relations,
+                indexMetadatas: indices,
+                embeddedMetadatas: embeddeds
+            });
+            // create entity's relations join tables
+            entityMetadata.manyToManyRelations.forEach(relation =&gt; {
+                const joinTableMetadata = mergedArgs.joinTables.findByProperty(relation.propertyName);
+                if (joinTableMetadata) {
+                    const joinTable = new JoinTableMetadata_1.JoinTableMetadata(joinTableMetadata);
+                    relation.joinTable = joinTable;
+                    joinTable.relation = relation;
+                }
+            });
+            // create entity's relations join columns
+            entityMetadata.oneToOneRelations
+                .concat(entityMetadata.manyToOneRelations)
+                .forEach(relation =&gt; {
+                // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
+                // throw all of them which don't have JoinColumn decorators and create it for them
+                let joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
+                if (!joinColumnMetadata &amp;&amp; relation.isManyToOne) {
+                    joinColumnMetadata = {
+                        target: relation.target,
+                        propertyName: relation.propertyName
+                    };
+                }
+                if (joinColumnMetadata) {
+                    const joinColumn = new JoinColumnMetadata_1.JoinColumnMetadata(joinColumnMetadata);
+                    relation.joinColumn = joinColumn;
+                    joinColumn.relation = relation;
+                }
+            });
+            return entityMetadata;
+        });
+        // after all metadatas created we set inverse side (related) entity metadatas for all relation metadatas
+        entityMetadatas.forEach(entityMetadata =&gt; {
+            entityMetadata.relations.forEach(relation =&gt; {
+                const inverseEntityMetadata = entityMetadatas.find(m =&gt; m.target === relation.type);
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (!inverseEntityMetadata)
+<span class="cstat-no" title="statement not covered" >                    throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyName + " was not found.");</span>
+                relation.inverseEntityMetadata = inverseEntityMetadata;
+            });
+        });
+        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
+        index_1.getFromContainer(EntityMetadataValidator_1.EntityMetadataValidator).validateMany(entityMetadatas);
+        // generate columns and foreign keys for tables with relations
+        entityMetadatas.forEach(metadata =&gt; {
+            metadata.relationsWithJoinColumns.forEach(relation =&gt; {
+                // find relational column and if it does not exist - add it
+                const inverseSideColumn = relation.joinColumn.referencedColumn;
+                let relationalColumn = metadata.columns.find(column =&gt; column.name === relation.name);
+                if (!relationalColumn) {
+                    relationalColumn = new ColumnMetadata_1.ColumnMetadata({
+                        target: metadata.target,
+                        propertyName: relation.name,
+                        propertyType: inverseSideColumn.propertyType,
+                        mode: "virtual",
+                        options: {
+                            type: inverseSideColumn.type,
+                            oldColumnName: relation.oldColumnName,
+                            nullable: relation.isNullable
+                        }
+                    });
+                    metadata.addColumn(relationalColumn);
+                }
+                // create and add foreign key
+                const foreignKey = new ForeignKeyMetadata_1.ForeignKeyMetadata([relationalColumn], relation.inverseEntityMetadata.table, [inverseSideColumn], relation.onDelete);
+                foreignKey.entityMetadata = metadata;
+                metadata.foreignKeys.push(foreignKey);
+            });
+        });
+        // generate junction tables for all closure tables
+        entityMetadatas.forEach(metadata =&gt; {
+            if (!metadata.table.isClosure)
+                return;
+            const closureJunctionEntityMetadata = index_1.getFromContainer(ClosureJunctionEntityMetadataBuilder_1.ClosureJunctionEntityMetadataBuilder).build({
+                namingStrategy: namingStrategy,
+                table: metadata.table,
+                primaryColumn: metadata.primaryColumn,
+                hasTreeLevelColumn: metadata.hasTreeLevelColumn
+            });
+            metadata.closureJunctionTable = closureJunctionEntityMetadata;
+            entityMetadatas.push(closureJunctionEntityMetadata);
+        });
+        // generate junction tables for all many-to-many tables
+        entityMetadatas.forEach(metadata =&gt; {
+            metadata.ownerManyToManyRelations.forEach(relation =&gt; {
+                const junctionEntityMetadata = index_1.getFromContainer(JunctionEntityMetadataBuilder_1.JunctionEntityMetadataBuilder).build({
+                    namingStrategy: namingStrategy,
+                    firstTable: metadata.table,
+                    secondTable: relation.inverseEntityMetadata.table,
+                    joinTable: relation.joinTable
+                });
+                relation.junctionEntityMetadata = junctionEntityMetadata;
+                if (relation.hasInverseSide)
+                    relation.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
+                entityMetadatas.push(junctionEntityMetadata);
+            });
+        });
+        return entityMetadatas;
+    }
+}
+exports.EntityMetadataBuilder = EntityMetadataBuilder;
+//# sourceMappingURL=EntityMetadataBuilder.js.map</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Jun 07 2016 11:24:24 GMT+0500 (TJT)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

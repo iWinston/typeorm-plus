@@ -23,12 +23,32 @@ export class DirectoryExportedClassesLoader {
         }, [] as string[]);
 
         const requireAll = require("require-all");
-        const filter = /(.*)\.js$/;
+        const filter = /(.*)\.(js)$/;
+        // const filter = /(.*)\.(js|ts)$/;
         const dirs = allDirectories
             .filter(directory => fs.existsSync(directory))
             .map(directory => requireAll({ dirname: directory, filter: filter, recursive: true }));
 
         return this.loadFileClasses(dirs, []);
+    }
+
+    importJsonsFromDirectories(directories: string[]): any[] {
+
+        const allDirectories = directories.reduce((allDirs, dir) => {
+            return allDirs.concat(require("glob").sync(path.normalize(dir)));
+        }, [] as string[]);
+
+        const requireAll = require("require-all");
+        const filter = /(.*)\.json$/;
+        const loaded: { [fileName: string]: any }[] = allDirectories
+            .filter(directory => fs.existsSync(directory))
+            .map(directory => requireAll({ dirname: directory, filter: filter, recursive: true }));
+
+        const flattened: any[] = [];
+        loaded.forEach(file => Object.keys(file).forEach(key => {
+            flattened.push(file[key]);
+        }));
+        return flattened;
     }
 
     // -------------------------------------------------------------------------
@@ -54,4 +74,9 @@ export class DirectoryExportedClassesLoader {
 export function importClassesFromDirectories(directories: string[]): Function[] {
     const loader = new DirectoryExportedClassesLoader();
     return loader.importClassesFromDirectories(directories);
+}
+
+export function importJsonsFromDirectories(directories: string[]): any[] {
+    const loader = new DirectoryExportedClassesLoader();
+    return loader.importJsonsFromDirectories(directories);
 }
