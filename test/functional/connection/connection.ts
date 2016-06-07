@@ -30,6 +30,9 @@ import {RepositoryNotTreeError} from "../../../src/connection/error/RepositoryNo
 import {EntityManager} from "../../../src/entity-manager/EntityManager";
 import {ReactiveEntityManager} from "../../../src/entity-manager/ReactiveEntityManager";
 import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/error/CannotGetEntityManagerNotConnectedError";
+import {Blog} from "./modules/blog/entity/Blog";
+import {Question} from "./modules/question/entity/Question";
+import {Video} from "./modules/video/entity/Video";
 
 chai.should();
 chai.use(require("sinon-chai"));
@@ -286,7 +289,7 @@ describe("Connection", () => {
         });
         afterEach(() => connection.isConnected ? connection.close() : {});
 
-        it("should import first connection's entities only", async () => {
+        it("should successfully load entities / entity schemas / subscribers / naming strategies from directories", async () => {
             connection.importEntitiesFromDirectories([__dirname + "/entity"]);
             connection.importEntitySchemaFromDirectories([resourceDir + "/schema"]);
             connection.importNamingStrategiesFromDirectories([__dirname + "/naming-strategy"]);
@@ -300,6 +303,26 @@ describe("Connection", () => {
             connection.getRepository("User").target.should.be.equal("User");
             connection.getRepository("Photo").should.be.instanceOf(Repository);
             connection.getRepository("Photo").target.should.be.equal("Photo");
+        });
+
+        it("should successfully load entities / entity schemas / subscribers / naming strategies from glob-patterned directories", async () => {
+            connection.importEntitiesFromDirectories([__dirname + "/modules/**/entity"]);
+            connection.importEntitySchemaFromDirectories([resourceDir + "/modules/**/schema"]);
+            connection.importNamingStrategiesFromDirectories([__dirname + "/modules/**/naming-strategy"]);
+            connection.importSubscribersFromDirectories([__dirname + "/modules/**/subscriber"]);
+            await connection.connect();
+            connection.getRepository(Blog).should.be.instanceOf(Repository);
+            connection.getRepository(Blog).target.should.be.equal(Blog);
+            connection.getRepository(Question).should.be.instanceOf(Repository);
+            connection.getRepository(Question).target.should.be.equal(Question);
+            connection.getRepository(Video).should.be.instanceOf(Repository);
+            connection.getRepository(Video).target.should.be.equal(Video);
+            connection.getRepository("BlogCategory").should.be.instanceOf(Repository);
+            connection.getRepository("BlogCategory").target.should.be.equal("BlogCategory");
+            connection.getRepository("QuestionCategory").should.be.instanceOf(Repository);
+            connection.getRepository("QuestionCategory").target.should.be.equal("QuestionCategory");
+            connection.getRepository("VideoCategory").should.be.instanceOf(Repository);
+            connection.getRepository("VideoCategory").target.should.be.equal("VideoCategory");
         });
     });
 

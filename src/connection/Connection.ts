@@ -35,7 +35,8 @@ import {BroadcasterFactory} from "../subscriber/BroadcasterFactory";
 import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityManagerNotConnectedError";
 
 /**
- * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
+ * A single connection instance to the database. 
+ * Each connection has its own entity manager, repositories, subscribers and metadatas.
  */
 export class Connection {
 
