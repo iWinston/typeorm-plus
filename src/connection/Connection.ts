@@ -30,6 +30,9 @@ import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
 import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingStrategyNotConnectedError";
+import {Broadcaster} from "../subscriber/Broadcaster";
+import {BroadcasterFactory} from "../subscriber/BroadcasterFactory";
+import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityManagerNotConnectedError";
 
 /**
  * A single connection instance to the database. Each connection has its own repositories, subscribers and metadatas.
@@ -41,38 +44,43 @@ export class Connection {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets EntityManager of this connection.
-     */
-    readonly entityManager: EntityManager;
-
-    /**
-     * Gets ReactiveEntityManager of this connection.
-     */
-    readonly reactiveEntityManager: ReactiveEntityManager;
-
-    /**
      * The name of the connection.
      */
-    readonly name: string;
+    public readonly name: string;
 
     /**
      * Database driver used by this connection.
      */
-    readonly driver: Driver;
-
-    /**
-     * All entity listener metadatas that are registered for this connection.
-     */
-    readonly entityListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * All subscribers that are registered for this connection.
-     */
-    readonly entitySubscribers: EntitySubscriberInterface<any>[] = [];
+    public readonly driver: Driver;
 
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Gets EntityManager of this connection.
+     */
+    private readonly _entityManager: EntityManager;
+
+    /**
+     * Gets ReactiveEntityManager of this connection.
+     */
+    private readonly _reactiveEntityManager: ReactiveEntityManager;
+
+    /**
+     * All entity listener metadatas that are registered for this connection.
+     */
+    private readonly entityListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * All subscribers that are registered for this connection.
+     */
+    private readonly entitySubscribers: EntitySubscriberInterface<any>[] = [];
+
+    /**
+     * Used to broadcast connection events.
+     */
+    private readonly broadcaster: Broadcaster;
 
     /**
      * Connection options.
@@ -105,24 +113,24 @@ export class Connection {
     private readonly namingStrategyClasses: Function[] = [];
 
     /**
-     * Naming strategy to be used in this connection.
-     */
-    private usedNamingStrategy: Function|string;
-    
-    /**
-     * Indicates if connection has been done or not.
-     */
-    private _isConnected = false;
-
-    /**
      * All connection's repositories.
      */
-    private repositories: Repository<any>[] = [];
+    private readonly repositories: Repository<any>[] = [];
 
     /**
      * All connection's reactive repositories.
      */
-    private reactiveRepositories: ReactiveRepository<any>[] = [];
+    private readonly reactiveRepositories: ReactiveRepository<any>[] = [];
+
+    /**
+     * Naming strategy to be used in this connection.
+     */
+    private usedNamingStrategy: Function|string;
+
+    /**
+     * Indicates if connection has been done or not.
+     */
+    private _isConnected = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -133,8 +141,9 @@ export class Connection {
         this.driver = driver;
         this.driver.connectionOptions = options;
         this.options = options;
-        this.entityManager = getFromContainer(EntityManagerFactory).createEntityManager(this);
-        this.reactiveEntityManager = getFromContainer(EntityManagerFactory).createReactiveEntityManager(this);
+        this._entityManager = getFromContainer(EntityManagerFactory).createEntityManager(this);
+        this._reactiveEntityManager = getFromContainer(EntityManagerFactory).createReactiveEntityManager(this);
+        this.broadcaster = getFromContainer(BroadcasterFactory).createBroadcaster(this.entityMetadatas, this.entitySubscribers, this.entityListeners);
     }
 
     // -------------------------------------------------------------------------
@@ -146,6 +155,27 @@ export class Connection {
      */
     get isConnected() {
         return this._isConnected;
+    }
+
+    /**
+     * Entity manager allows to work with any entity of your connection.
+     */
+    get entityManager() {
+        if (!this.isConnected)
+            throw new CannotGetEntityManagerNotConnectedError(this.name);
+        
+        return this._entityManager;
+    }
+
+    /**
+     * Entity manager allows to work with any entity of your connection.
+     * This version of entity manager is reactive - works with Observables instead of promises.
+     */
+    get reactiveEntityManager() {
+        if (!this.isConnected)
+            throw new CannotGetEntityManagerNotConnectedError(this.name);
+        
+        return this._reactiveEntityManager;
     }
 
     // -------------------------------------------------------------------------
@@ -315,6 +345,7 @@ export class Connection {
      * Gets repository for the given entity name.
      */
     getRepository<Entity>(entityClass: string): Repository<Entity>;
+    
     /**
      * Gets repository for the given entity name.
      */
@@ -339,27 +370,35 @@ export class Connection {
     }
 
     /**
-     * Gets repository for the given entity class.
+     * Gets tree repository for the given entity class.
      */
     getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): TreeRepository<Entity>;
-    // getTreeRepository<Entity>(entityClass: Function): TreeRepository<Entity>;
 
     /**
-     * Gets repository for the given entity name.
+     * Gets tree repository for the given entity name.
      */
-    getTreeRepository<Entity>(entityClass: string): TreeRepository<Entity>;
+    getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
-     * Gets repository for the given entity class or name.
+     * Gets tree repository for the given entity name.
+     */
+    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity>;
+
+    /**
+     * Gets tree repository for the given entity class or name.
      */
     getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): TreeRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
+        if (!this.entityMetadatas.hasTarget(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
         const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
         const repository = this.repositories.find(repository => Repository.ownsMetadata(repository, metadata));
         if (!repository)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
         if (!metadata.table.isClosure)
             throw new RepositoryNotTreeError(entityClassOrName);
 
@@ -369,14 +408,32 @@ export class Connection {
     /**
      * Gets reactive repository for the given entity class.
      */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity> {
+    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveRepository<Entity>;
+
+    /**
+     * Gets reactive repository for the given entity name.
+     */
+    getReactiveRepository<Entity>(entityName: string): ReactiveRepository<Entity>;
+
+    /**
+     * Gets reactive repository for the given entity name.
+     */
+    getReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity>;
+
+    /**
+     * Gets reactive repository for the given entity class.
+     */
+    getReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        if (!this.entityMetadatas.hasTarget(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
+        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
         const repository = this.reactiveRepositories.find(repository => ReactiveRepository.ownsMetadata(repository, metadata));
         if (!repository)
-            throw new ReactiveRepositoryNotFoundError(this.name, entityClass);
+            throw new ReactiveRepositoryNotFoundError(this.name, entityClassOrName);
 
         return repository;
     }
@@ -384,16 +441,35 @@ export class Connection {
     /**
      * Gets reactive tree repository for the given entity class.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity> {
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveTreeRepository<Entity>;
+
+    /**
+     * Gets reactive tree repository for the given entity name.
+     */
+    getReactiveTreeRepository<Entity>(entityName: string): ReactiveTreeRepository<Entity>;
+
+    /**
+     * Gets reactive tree repository for the given entity name.
+     */
+    getReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity>;
+
+    /**
+     * Gets reactive tree repository for the given entity class.
+     */
+    getReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
-        const metadata = this.entityMetadatas.findByTarget(entityClass);
+        if (!this.entityMetadatas.hasTarget(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
+        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
         const repository = this.reactiveRepositories.find(repository => ReactiveRepository.ownsMetadata(repository, metadata));
         if (!repository)
-            throw new RepositoryNotFoundError(this.name, entityClass);
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
         if (!metadata.table.isClosure)
-            throw new RepositoryNotTreeError(entityClass);
+            throw new RepositoryNotTreeError(entityClassOrName);
 
         return <ReactiveTreeRepository<Entity>> repository;
     }
@@ -452,44 +528,47 @@ export class Connection {
      */
     private createNamingStrategy(): NamingStrategyInterface {
         
-        if (this.namingStrategyClasses && this.namingStrategyClasses.length && this.usedNamingStrategy) {
-            const metadatas = getMetadataArgsStorage()
-                .namingStrategies
-                .filterByTargets(this.namingStrategyClasses);
-
-            if (typeof this.usedNamingStrategy === "string") {
-                const namingMetadata = metadatas.find(strategy => strategy.name === this.usedNamingStrategy);
-                if (!namingMetadata)
-                    throw new NamingStrategyNotFoundError(this.usedNamingStrategy, this.name);
-                return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
-
-            } else {
-                const namingMetadata = metadatas.find(strategy => strategy.target === this.usedNamingStrategy);
-                if (!namingMetadata)
-                    throw new NamingStrategyNotFoundError(this.usedNamingStrategy, this.name);
-                return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
-            }
-        }
+        // if naming strategies are not loaded, or used naming strategy is not set then use default naming strategy
+        if (!this.namingStrategyClasses || !this.namingStrategyClasses.length || !this.usedNamingStrategy)
+            return getFromContainer(DefaultNamingStrategy);
+            
+        // try to find used naming strategy in the list of loaded naming strategies
+        const namingMetadata = getMetadataArgsStorage()
+            .namingStrategies
+            .filterByTargets(this.namingStrategyClasses)
+            .find(strategy => {
+                if (typeof this.usedNamingStrategy === "string") {
+                    return strategy.name === this.usedNamingStrategy;
+                } else {
+                    return strategy.target === this.usedNamingStrategy;
+                }
+            });
         
-        return getFromContainer(DefaultNamingStrategy);
+        // throw an error if not found
+        if (!namingMetadata)
+            throw new NamingStrategyNotFoundError(this.usedNamingStrategy, this.name);
+
+        // initialize a naming strategy instance
+        return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
     }
 
     /**
      * Creates repository and reactive repository for the given entity metadata.
      */
-    private createRepository(entityLayout: EntityMetadata) {
+    private createRepository(metadata: EntityMetadata): void {
         const repositoryFactory = getFromContainer(RepositoryFactory);
-        if (entityLayout.table.isClosure) {
-            const repository = repositoryFactory.createTreeRepository(this, this.entityMetadatas, entityLayout);
+        if (metadata.table.isClosure) {
+            const repository = repositoryFactory.createTreeRepository(this, this.broadcaster, this.entityMetadatas, metadata);
             const reactiveRepository = repositoryFactory.createReactiveTreeRepository(repository);
             this.repositories.push(repository);
             this.reactiveRepositories.push(reactiveRepository);
+
         } else {
-            const repository = repositoryFactory.createRepository(this, this.entityMetadatas, entityLayout);
+            const repository = repositoryFactory.createRepository(this, this.broadcaster, this.entityMetadatas, metadata);
             const reactiveRepository = repositoryFactory.createReactiveRepository(repository);
             this.repositories.push(repository);
             this.reactiveRepositories.push(reactiveRepository);
         }
     }
-
+    
 }

@@ -5,6 +5,7 @@ import {Connection} from "../connection/Connection";
 import {Repository} from "./Repository";
 import {ReactiveRepository} from "./ReactiveRepository";
 import {ReactiveTreeRepository} from "./ReactiveTreeRepository";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  */
@@ -15,15 +16,17 @@ export class RepositoryFactory {
     // -------------------------------------------------------------------------
 
     createRepository(connection: Connection,
-                       allMetadatas: EntityMetadataCollection,
-                       metadata: EntityMetadata) {
-        return new Repository<any>(connection, allMetadatas, metadata);
+                     broadcaster: Broadcaster,
+                     allMetadatas: EntityMetadataCollection,
+                     metadata: EntityMetadata) {
+        return new Repository<any>(connection, broadcaster, allMetadatas, metadata);
     }
 
     createTreeRepository(connection: Connection,
+                         broadcaster: Broadcaster,
                          allMetadatas: EntityMetadataCollection,
                          metadata: EntityMetadata) {
-        return new TreeRepository<any>(connection, allMetadatas, metadata);
+        return new TreeRepository<any>(connection, broadcaster, allMetadatas, metadata);
     }
 
     createReactiveRepository(repository: Repository<any>) {

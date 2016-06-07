@@ -3,7 +3,12 @@ import * as chai from "chai";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {setupTestingConnections, closeConnections, reloadDatabases, createTestingConnectionOptions} from "../../utils/utils";
+import {
+    setupTestingConnections,
+    closeConnections,
+    reloadDatabases,
+    createTestingConnectionOptions
+} from "../../utils/utils";
 import {Connection} from "../../../src/connection/Connection";
 import {CannotConnectAlreadyConnectedError} from "../../../src/connection/error/CannotConnectAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "../../../src/connection/error/CannotCloseNotConnectedError";
@@ -21,12 +26,17 @@ import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStra
 import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
 import {CannotUseNamingStrategyNotConnectedError} from "../../../src/connection/error/CannotUseNamingStrategyNotConnectedError";
 import {NamingStrategyNotFoundError} from "../../../src/connection/error/NamingStrategyNotFoundError";
+import {RepositoryNotTreeError} from "../../../src/connection/error/RepositoryNotTreeError";
+import {EntityManager} from "../../../src/entity-manager/EntityManager";
+import {ReactiveEntityManager} from "../../../src/entity-manager/ReactiveEntityManager";
+import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/error/CannotGetEntityManagerNotConnectedError";
 
 chai.should();
 chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
 describe("Connection", () => {
+    const resourceDir = __dirname + "/../../../../../test/functional/connection/";
 
     describe("before connection is established", function() {
 
@@ -48,6 +58,11 @@ describe("Connection", () => {
 
         it("connection.isConnected should be false", () => {
             connection.isConnected.should.be.false;
+        });
+
+        it("entity manager and reactive entity manager should not be accessible", () => {
+            expect(() => connection.entityManager).to.throw(CannotGetEntityManagerNotConnectedError);
+            expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
         });
 
         it("import entities, entity schemas, subscribers and naming strategies should work", () => {
@@ -92,6 +107,11 @@ describe("Connection", () => {
 
         it("connection.isConnected should be true", () => connections.forEach(connection => {
             connection.isConnected.should.be.true;
+        }));
+
+        it("entity manager and reactive entity manager should be accessible", () => connections.forEach(connection => {
+            expect(connection.entityManager).to.be.instanceOf(EntityManager);
+            expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
         }));
 
         it("import entities, entity schemas, subscribers and naming strategies should not be possible once connection is done", () => connections.forEach(connection => {
@@ -148,6 +168,18 @@ describe("Connection", () => {
         it("should be able to get tree entity reactive repository", () => connections.forEach(connection => {
             connection.getReactiveTreeRepository(Category).should.be.instanceOf(ReactiveTreeRepository);
             connection.getReactiveTreeRepository(Category).target.should.be.eql(Category);
+        }));
+
+        it("should not be able to get tree entity repository of the non-tree entities", () => connections.forEach(connection => {
+            expect(() => connection.getTreeRepository(Post)).to.throw(RepositoryNotTreeError);
+            expect(() => connection.getReactiveTreeRepository(Post)).to.throw(RepositoryNotTreeError);
+        }));
+
+        it("should not be able to get repositories that are not registered", () => connections.forEach(connection => {
+            expect(() => connection.getRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
+            expect(() => connection.getTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
+            expect(() => connection.getReactiveRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
+            expect(() => connection.getReactiveTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
         }));
 
     });
@@ -224,8 +256,7 @@ describe("Connection", () => {
         });
 
         it("should import first connection's entity schemas only", async () => {
-            let schemaFile = require("path").normalize(__dirname + "/../../../../../test/functional/connection/schema/user.json");
-            firstConnection.importEntitySchemas([ require(schemaFile) ]);
+            firstConnection.importEntitySchemas([ require(resourceDir + "schema/user.json") ]);
             await firstConnection.connect();
             firstConnection.getRepository("User").should.be.instanceOf(Repository);
             firstConnection.getRepository("User").target.should.be.equal("User");
@@ -234,8 +265,7 @@ describe("Connection", () => {
         });
 
         it("should import second connection's entity schemas only", async () => {
-            let schemaFile = require("path").normalize(__dirname + "/../../../../../test/functional/connection/schema/photo.json");
-            secondConnection.importEntitySchemas([ require(schemaFile) ]);
+            secondConnection.importEntitySchemas([ require(resourceDir + "schema/photo.json") ]);
             await secondConnection.connect();
             secondConnection.getRepository("Photo").should.be.instanceOf(Repository);
             secondConnection.getRepository("Photo").target.should.be.equal("Photo");
@@ -257,13 +287,10 @@ describe("Connection", () => {
         afterEach(() => connection.isConnected ? connection.close() : {});
 
         it("should import first connection's entities only", async () => {
-            // const baseDir = __dirname;
-            let clsBaseDir = __dirname; // require("path").normalize(__dirname + "/../../../../../test/functional/connection");
-            let jsonBaseDir = require("path").normalize(__dirname + "/../../../../../test/functional/connection");
-            connection.importEntitiesFromDirectories([clsBaseDir + "/entity"]);
-            connection.importEntitySchemaFromDirectories([jsonBaseDir + "/schema"]);
-            connection.importNamingStrategiesFromDirectories([clsBaseDir + "/naming-strategy"]);
-            connection.importSubscribersFromDirectories([clsBaseDir + "/subscriber"]);
+            connection.importEntitiesFromDirectories([__dirname + "/entity"]);
+            connection.importEntitySchemaFromDirectories([resourceDir + "/schema"]);
+            connection.importNamingStrategiesFromDirectories([__dirname + "/naming-strategy"]);
+            connection.importSubscribersFromDirectories([__dirname + "/subscriber"]);
             await connection.connect();
             connection.getRepository(Post).should.be.instanceOf(Repository);
             connection.getRepository(Post).target.should.be.equal(Post);

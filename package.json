@@ -39,6 +39,7 @@
     "pg": "^4.5.5",
     "sinon": "^1.17.4",
     "sinon-chai": "^2.8.0",
+    "ts-node": "^0.8.0",
     "tslint": "next",
     "tslint-stylish": "^2.1.0-beta",
     "typescript": "next",
