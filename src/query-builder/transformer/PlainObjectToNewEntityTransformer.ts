@@ -9,18 +9,11 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 export class PlainObjectToNewEntityTransformer {
 
     // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-    
-    constructor() {
-    }
-
-    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
-    transform(object: any, metadata: EntityMetadata): any {
-        return this.groupAndTransform(object, metadata);
+    transform(newEntity: any, object: any, metadata: EntityMetadata): any {
+        return this.groupAndTransform(newEntity, object, metadata);
     }
 
     // -------------------------------------------------------------------------
@@ -31,9 +24,7 @@ export class PlainObjectToNewEntityTransformer {
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
      */
-    private groupAndTransform(object: any, metadata: EntityMetadata) {
-        const entity = metadata.create();
-
+    private groupAndTransform(entity: any, object: any, metadata: EntityMetadata) {
         // copy regular column properties from the given object
         metadata.columns
             .filter(column => object.hasOwnProperty(column.propertyName))
@@ -50,14 +41,14 @@ export class PlainObjectToNewEntityTransformer {
                 if (relation.isManyToMany || relation.isOneToMany) {
                     if (object[relation.propertyName] instanceof Array) {
                         entity[relation.propertyName] = object[relation.propertyName].map((subObject: any) => {
-                            return this.groupAndTransform(subObject, relationMetadata);
+                            return this.groupAndTransform(relationMetadata.create(), subObject, relationMetadata);
                         });
                     } else {
                         entity[relation.propertyName] = object[relation.propertyName];
                     }
                 } else {
                     if (object[relation.propertyName]) {
-                        entity[relation.propertyName] = this.groupAndTransform(object[relation.propertyName], relationMetadata);
+                        entity[relation.propertyName] = this.groupAndTransform(relationMetadata.create(), object[relation.propertyName], relationMetadata);
                     } else {
                         entity[relation.propertyName] = object[relation.propertyName];
                     }

@@ -6,6 +6,7 @@ import {Repository} from "../repository/Repository";
 import {ConstructorFunction} from "../common/ConstructorFunction";
 import {ReactiveRepository} from "../repository/ReactiveRepository";
 import {ReactiveTreeRepository} from "../repository/ReactiveTreeRepository";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
@@ -91,8 +92,8 @@ export class ReactiveEntityManager {
     /**
      * Merges two entities into one new entity.
      */
-    merge<Entity>(entity1: Entity, entity2: Entity): Entity {
-        return <Entity> this.getReactiveRepository(<any> entity1).merge(entity1, entity2);
+    merge<Entity>(entityClass: ConstructorFunction<Entity>|Function, ...objects: ObjectLiteral[]): Entity {
+        return <Entity> this.getRepository(entityClass).merge(...objects);
     }
 
     /**

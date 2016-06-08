@@ -30,7 +30,7 @@ export class Gulpfile {
      */
     @Task()
     compile() {
-        return gulp.src("*.js", { read: false })
+        return gulp.src("package.json", { read: false })
             .pipe(shell(["tsc"]));
     }
 

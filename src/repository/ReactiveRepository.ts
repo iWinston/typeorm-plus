@@ -3,6 +3,7 @@ import {FindOptions} from "./FindOptions";
 import {Repository} from "./Repository";
 import * as Rx from "rxjs/Rx";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -72,8 +73,8 @@ export class ReactiveRepository<Entity> {
     /**
      * Merges two entities into one new entity.
      */
-    merge(entity1: Entity, entity2: Entity): Entity {
-        return this.repository.merge(entity1, entity2);
+    merge(...objects: ObjectLiteral[]): Entity {
+        return this.repository.merge(...objects);
     }
 
     /**

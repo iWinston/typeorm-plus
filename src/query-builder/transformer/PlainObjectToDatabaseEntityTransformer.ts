@@ -1,5 +1,6 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryBuilder} from "../QueryBuilder";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  * @internal
@@ -15,34 +16,38 @@ interface LoadMap {
  *
  * @internal
  */
-export class PlainObjectToDatabaseEntityTransformer<Entity> {
+export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
-    transform(object: any, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity> {
+    async transform(plainObject: ObjectLiteral, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity> {
         
-        // if object does not have id then nothing to load really
-        if (!metadata.hasPrimaryColumn || !object[metadata.primaryColumn.name])
+        // if plain object does not have id then nothing to load really
+        if (!metadata.hasPrimaryColumn || !plainObject[metadata.primaryColumn.name])
             return Promise.reject<Entity>("Given object does not have a primary column, cannot transform it to database entity.");
         
         const alias = queryBuilder.alias;
-        const needToLoad = this.buildLoadMap(object, metadata, true);
+        const needToLoad = this.buildLoadMap(plainObject, metadata, true);
 
         this.join(queryBuilder, needToLoad, alias);
 
         queryBuilder
             .where(alias + "." + metadata.primaryColumn.name + "=:id")
-            .setParameter("id", object[metadata.primaryColumn.name]);
+            .setParameter("id", plainObject[metadata.primaryColumn.name]);
 
-        return queryBuilder
-            .getSingleResult();
+        const entity = await queryBuilder.getSingleResult();
+        // this.mergeEntityWithPlainObject(metadata, entity, plainObject);
+        return entity;
     }
 
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
+    
+    private mergeEntityWithPlainObject(metadata: EntityMetadata, entity: Entity, object: ObjectLiteral) {
+    }
 
     private join(qb: QueryBuilder<Entity>, needToLoad: LoadMap[], parentAlias: string) {
         needToLoad.forEach(i => {

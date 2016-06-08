@@ -10,6 +10,7 @@ import {FindOptions, FindOptionsUtils} from "./FindOptions";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {Driver} from "../driver/Driver";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -78,17 +79,18 @@ export class Repository<Entity> {
      * from this object into a new entity (copies only properties that should be in a new entity).
      */
     create(plainObject?: Object): Entity {
+        const newEntity: Entity = this.addLazyProperties(this.metadata.create(), this.metadata.target);
         if (plainObject)
-            return this.addLazyProperties(this.plainObjectToEntityTransformer.transform(plainObject, this.metadata), this.metadata.target);
+            this.plainObjectToEntityTransformer.transform(newEntity, plainObject, this.metadata);
 
-        return <Entity> this.addLazyProperties(this.metadata.create(), this.metadata.target);
+        return newEntity
     }
 
     /**
      * Creates entities from a given array of plain javascript objects.
      */
-    createMany(copyFromObjects: Object[]): Entity[] {
-        return copyFromObjects.map(object => this.create(object));
+    createMany(plainObjects: Object[]): Entity[] {
+        return plainObjects.map(object => this.create(object));
     }
 
     /**
@@ -103,10 +105,49 @@ export class Repository<Entity> {
     }
 
     /**
-     * Merges two entities into one new entity.
+     * Merges multiple entity-like structures into one new entity.
      */
-    merge(entity1: Entity, entity2: Entity): Entity {
-        return Object.assign(this.metadata.create(), entity1, entity2);
+    merge(...objects: ObjectLiteral[]): Entity {
+        const newEntity = this.create();
+        objects.forEach(entity => this.plainObjectToEntityTransformer.transform(newEntity, entity, this.metadata))
+        return newEntity;
+
+        /*const comparator = new Comporator(metadata, entity, object, ComparationMode.NON_EMPTY);
+         comparator.columns.forEach(column => {
+         entity[column.propertyName] = object[column.propertyName];
+         });
+         comparator.singleValueRelations.forEach(relation => {
+         entity[relation.propertyName] = this.mergeEntityWithPlainObject(relation.inverseEntityMetadata, entity[relation.propertyName], object[relation.propertyName]);
+         });
+         comparator.multiValueRelations.forEach(relation => {
+         entity[relation.propertyName] = (object[relation.propertyName] as ObjectLiteral[]).map(subObject => {
+         return this.mergeEntityWithPlainObject(relation.inverseEntityMetadata, entity[relation.propertyName], subObject);
+         });
+         });
+         // comparator.applyToRelationItems(() => {});
+         */
+
+        /*metadata.extractNonEmptyColumns(object).forEach(column => {
+            entity[column.propertyName] = object[column.propertyName];
+        });
+
+        metadata.extractExistSingleValueRelations(object).forEach(relation => {
+            if (entity[relation.propertyName] instanceof Object) {
+                entity[relation.propertyName] = this.mergeEntityWithPlainObject(relation.inverseEntityMetadata, entity[relation.propertyName], object[relation.propertyName]);
+            } else {
+                entity[relation.propertyName] = object[relation.propertyName]; // todo: do we really need to do it? - probably yes for null and undefined values, but what about others
+            }
+        });
+
+        metadata.extractExistMultiValueRelations(object).forEach(relation => {
+            entity[relation.propertyName] = (object[relation.propertyName] as ObjectLiteral[]).map(subObject => {
+                if (entity[relation.propertyName] instanceof Object) {
+                    return this.mergeEntityWithPlainObject(relation.inverseEntityMetadata, entity[relation.propertyName], subObject);
+                } else {
+                    entity[relation.propertyName] = object[relation.propertyName]; // todo: do we really need to do it? - probably yes for null and undefined values, but what about others
+                }
+            });
+        });*/
     }
 
     /**

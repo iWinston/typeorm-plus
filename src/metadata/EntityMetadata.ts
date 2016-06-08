@@ -7,6 +7,7 @@ import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadataArgs} from "../metadata-args/EntityMetadataArgs";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Contains all entity metadata.
@@ -223,6 +224,24 @@ export class EntityMetadata {
     }
 
     /**
+     * Gets single (values of which does not contain arrays) relations.
+     */
+    get singleValueRelations(): RelationMetadata[] {
+        return this.relations.filter(relation => {
+            return relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.ONE_TO_MANY;
+        });
+    }
+
+    /**
+     * Gets single (values of which does not contain arrays) relations.
+     */
+    get multiValueRelations(): RelationMetadata[] {
+        return this.relations.filter(relation => {
+            return relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.ONE_TO_MANY;
+        });
+    }
+
+    /**
      * Gets only one-to-one relations of the entity.
      */
     get oneToOneRelations(): RelationMetadata[] {
@@ -401,6 +420,38 @@ export class EntityMetadata {
     addColumn(column: ColumnMetadata) {
         this._columns.push(column);
         column.entityMetadata = this;
+    }
+
+    extractNonEmptyColumns(object: ObjectLiteral): ColumnMetadata[] {
+        return this.columns.filter(column => !!object[column.propertyName]);
+    }
+
+    extractNonEmptySingleValueRelations(object: ObjectLiteral): RelationMetadata[] {
+        return this.relations.filter(relation => {
+            return (relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.MANY_TO_ONE)
+                && !!object[relation.propertyName];
+        });
+    }
+
+    extractNonEmptyMultiValueRelations(object: ObjectLiteral): RelationMetadata[] {
+        return this.relations.filter(relation => {
+            return (relation.relationType === RelationTypes.MANY_TO_MANY || relation.relationType === RelationTypes.ONE_TO_MANY)
+                && !!object[relation.propertyName];
+        });
+    }
+
+    extractExistSingleValueRelations(object: ObjectLiteral): RelationMetadata[] {
+        return this.relations.filter(relation => {
+            return (relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.MANY_TO_ONE)
+                && object.hasOwnProperty(relation.propertyName);
+        });
+    }
+
+    extractExistMultiValueRelations(object: ObjectLiteral): RelationMetadata[] {
+        return this.relations.filter(relation => {
+            return (relation.relationType === RelationTypes.MANY_TO_MANY || relation.relationType === RelationTypes.ONE_TO_MANY)
+                && object.hasOwnProperty(relation.propertyName);
+        });
     }
     
 }

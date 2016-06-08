@@ -6,7 +6,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 export class Alias {
     isMain: boolean;
     name: string;
-    target: Function;
+    target: Function|string;
     parentPropertyName: string;
     parentAliasName: string;
 

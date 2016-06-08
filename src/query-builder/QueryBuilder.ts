@@ -144,7 +144,15 @@ export class QueryBuilder<Entity> {
     from(entity: Function, alias: string): this;
     from(entity: Function|string, alias: string): this;
     from(entityOrTableName: Function|string, alias: string): this {
-        if (entityOrTableName instanceof Function) {
+
+        const aliasObj = new Alias(alias);
+        aliasObj.target = entityOrTableName;
+        this.aliasMap.addMainAlias(aliasObj);
+        this.fromEntity = { alias: aliasObj };
+        
+        return this;
+        
+       /* if (entityOrTableName instanceof Function) {
             const aliasObj = new Alias(alias);
             aliasObj.target = <Function> entityOrTableName;
             this.aliasMap.addMainAlias(aliasObj);
@@ -153,7 +161,7 @@ export class QueryBuilder<Entity> {
             this.fromTableName = <string> entityOrTableName;
             this.fromTableAlias = alias;
         }
-        return this;
+        return this;*/
     }
 
     innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
