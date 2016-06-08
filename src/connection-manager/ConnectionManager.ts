@@ -64,6 +64,19 @@ export class ConnectionManager {
     }
 
     /**
+     * Creates a new connection and pushes a connection to the array.
+     */
+    createConnection(name: string, driver: Driver, options: ConnectionOptions) {
+        const existConnection = this.connections.find(connection => connection.name === name);
+        if (existConnection)
+            this.connections.splice(this.connections.indexOf(existConnection), 1);
+
+        const connection = new Connection(name, driver, options);
+        this.connections.push(connection);
+        return connection;
+    }
+
+    /**
      * Gets registered connection with the given name. If connection name is not given then it will get a default
      * connection.
      */
@@ -90,19 +103,6 @@ export class ConnectionManager {
             default:
                 throw new MissingDriverError(driverName);
         }
-    }
-
-    /**
-     * Creates a new connection and pushes a connection to the array.
-     */
-    createConnection(name: string, driver: Driver, options: ConnectionOptions) {
-        const existConnection = this.connections.find(connection => connection.name === name);
-        if (existConnection)
-            this.connections.splice(this.connections.indexOf(existConnection), 1);
-        
-        const connection = new Connection(name, driver, options);
-        this.connections.push(connection);
-        return connection;
     }
 
 }

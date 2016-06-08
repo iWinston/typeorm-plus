@@ -8,7 +8,7 @@ import {
     closeConnections,
     reloadDatabases,
     createTestingConnectionOptions
-} from "../../utils/utils";
+} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {CannotConnectAlreadyConnectedError} from "../../../src/connection/error/CannotConnectAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "../../../src/connection/error/CannotCloseNotConnectedError";

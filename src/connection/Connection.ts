@@ -41,7 +41,7 @@ import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityMa
 export class Connection {
 
     // -------------------------------------------------------------------------
-    // Readonly properties
+    // Public Readonly properties
     // -------------------------------------------------------------------------
 
     /**

@@ -34,6 +34,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     
     const mysqlParameters: CreateConnectionOptions = {
         driver: "mysql",
+        connectionName: "mysqlPrimaryConnection",
         connection: createTestingConnectionOptions("mysql"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -41,6 +42,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     
     const mysqlSecondaryParameters: CreateConnectionOptions = {
         driver: "mysql",
+        connectionName: "mysqlSecondaryConnection",
         connection: createTestingConnectionOptions("mysqlSecondary"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -48,6 +50,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
 
     const postgresParameters: CreateConnectionOptions = {
         driver: "postgres",
+        connectionName: "postgresPrimaryConnection",
         connection: createTestingConnectionOptions("postgres"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -55,6 +58,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
 
     const postgresSecondaryParameters: CreateConnectionOptions = {
         driver: "postgres",
+        connectionName: "postgresSecondaryConnection",
         connection: createTestingConnectionOptions("postgresSecondary"),
         entities: options && options.entities ? options.entities : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
