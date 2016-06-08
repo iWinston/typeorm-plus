@@ -2,9 +2,11 @@ import {CreateConnectionOptions} from "../../src/connection-manager/CreateConnec
 import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
+import {EntitySchema} from "../../src/metadata/entity-schema/EntitySchema";
 
 export interface TestingConnectionOptions {
     entities?: Function[];
+    entitySchemas?: EntitySchema[];
     entityDirectories?: string[];
     secondaryConnections?: boolean;
 }
@@ -37,6 +39,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         connectionName: "mysqlPrimaryConnection",
         connection: createTestingConnectionOptions("mysql"),
         entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
     
@@ -45,6 +48,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         connectionName: "mysqlSecondaryConnection",
         connection: createTestingConnectionOptions("mysqlSecondary"),
         entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
@@ -53,6 +57,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         connectionName: "postgresPrimaryConnection",
         connection: createTestingConnectionOptions("postgres"),
         entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
@@ -61,6 +66,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         connectionName: "postgresSecondaryConnection",
         connection: createTestingConnectionOptions("postgresSecondary"),
         entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 

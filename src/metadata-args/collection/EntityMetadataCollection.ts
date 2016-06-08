@@ -11,11 +11,11 @@ export class EntityMetadataCollection extends Array<EntityMetadata> {
     // -------------------------------------------------------------------------
 
     hasTarget(target: Function|string) {
-        return !!this.find(metadata => metadata.target === target);
+        return !!this.find(metadata => metadata.target === target || (typeof target === "string" && metadata.targetName === target));
     }
     
     findByTarget(target: Function|string) {
-        const metadata = this.find(metadata => metadata.target === target);
+        const metadata = this.find(metadata => metadata.target === target || (typeof target === "string" && metadata.targetName === target));
         if (!metadata)
             throw new EntityMetadataNotFound(target);
         

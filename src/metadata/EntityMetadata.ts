@@ -97,11 +97,8 @@ export class EntityMetadata {
         if (!this.table)
             throw new Error("No table target set to the entity metadata.");
         
-        if (typeof this.table.target === "string")
-            return this.table.target;
-        
-        if (this.target)
-            return (<any> this.target).name;
+        if (typeof this.targetName)
+            return this.targetName;
         
         return this.table.name;
     }
@@ -122,6 +119,19 @@ export class EntityMetadata {
      */
     get target(): Function|string {
         return this.table.target;
+    }
+
+    /**
+     * Gets the name of the target.
+     */
+    get targetName(): string {
+        if (typeof this.target === "string")
+            return this.target;
+
+        if (this.target instanceof Function)
+            return (<any> this.target).name;
+        
+        return "";
     }
 
     /**
@@ -305,7 +315,13 @@ export class EntityMetadata {
      * Creates a new entity.
      */
     create(): any {
-        return new (<any> this.table.target)();
+
+        // if target is set to a function (e.g. class) that can be created then create it
+        if (this.table.target instanceof Function)
+            return new (<any> this.table.target)();
+
+        // otherwise simply return a new empty object
+        return {};
     }
 
     /**

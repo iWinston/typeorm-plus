@@ -45,7 +45,7 @@ export class PlainObjectToNewEntityTransformer {
             .forEach(relation => {
                 const relationMetadata = relation.inverseEntityMetadata;
                 if (!relationMetadata)
-                    throw new Error("Relation metadata for the relation " + (<any> metadata.target).name + "#" + relation.propertyName + " is missing");
+                    throw new Error("Relation metadata for the relation " + metadata.name + "#" + relation.propertyName + " is missing");
                 
                 if (relation.isManyToMany || relation.isOneToMany) {
                     if (object[relation.propertyName] instanceof Array) {

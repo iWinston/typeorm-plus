@@ -9,8 +9,7 @@ export class CascadesNotAllowedError extends Error {
 
     constructor(type: "insert"|"update"|"remove", metadata: EntityMetadata, relation: RelationMetadata) {
         super();
-        const cls = (<any> metadata.target).name;
-        this.message = `Cascades (${type}) are not allowed for the given relation ${cls}#${relation.name}`;
+        this.message = `Cascades (${type}) are not allowed for the given relation ${metadata.name}#${relation.name}`;
     }
 
 }

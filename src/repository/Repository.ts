@@ -57,11 +57,11 @@ export class Repository<Entity> {
      * Checks if entity has an id.
      */
     hasId(entity: Entity): boolean {
-        return entity &&
+        return !!(entity &&
             entity.hasOwnProperty(this.metadata.primaryColumn.propertyName) &&
             (<any> entity)[this.metadata.primaryColumn.propertyName] !== null &&
             (<any> entity)[this.metadata.primaryColumn.propertyName] !== undefined &&
-            (<any> entity)[this.metadata.primaryColumn.propertyName] !== "";
+            (<any> entity)[this.metadata.primaryColumn.propertyName] !== "");
     }
 
     /**
@@ -74,14 +74,14 @@ export class Repository<Entity> {
     }
 
     /**
-     * Creates a new entity. If fromRawEntity is given then it creates a new entity and copies all entity properties
+     * Creates a new entity. If plainObject is given then it creates a new entity and copies all entity properties
      * from this object into a new entity (copies only properties that should be in a new entity).
      */
-    create(fromRawEntity?: Object): Entity {
-        if (fromRawEntity)
-            return this.addLazyProperties(this.plainObjectToEntityTransformer.transform(fromRawEntity, this.metadata));
+    create(plainObject?: Object): Entity {
+        if (plainObject)
+            return this.addLazyProperties(this.plainObjectToEntityTransformer.transform(plainObject, this.metadata), this.metadata.target);
 
-        return <Entity> this.addLazyProperties(this.metadata.create());
+        return <Entity> this.addLazyProperties(this.metadata.create(), this.metadata.target);
     }
 
     /**
@@ -639,8 +639,8 @@ export class Repository<Entity> {
     }
 
     // todo: duplication
-    private addLazyProperties(entity: any) {
-        const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+    private addLazyProperties(entity: any, target: Function|string) {
+        const metadata = this.entityMetadatas.findByTarget(target);
         metadata.relations
             .filter(relation => relation.isLazy)
             .forEach(relation => {

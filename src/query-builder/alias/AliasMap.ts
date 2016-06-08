@@ -1,5 +1,6 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Alias} from "./Alias";
+import {EntityMetadataCollection} from "../../metadata-args/collection/EntityMetadataCollection";
 
 /**
  * @internal
@@ -16,7 +17,7 @@ export class AliasMap {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private entityMetadatas: EntityMetadata[]) {
+    constructor(private entityMetadatas: EntityMetadataCollection) {
     }
 
     // -------------------------------------------------------------------------
@@ -59,7 +60,7 @@ export class AliasMap {
 
     getEntityMetadataByAlias(alias: Alias): EntityMetadata|undefined {
         if (alias.target) {
-            return this.findMetadata(alias.target);
+            return this.entityMetadatas.findByTarget(alias.target);
 
         } else if (alias.parentAliasName && alias.parentPropertyName) {
 
@@ -84,13 +85,5 @@ export class AliasMap {
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
-
-    private findMetadata(target: Function) {
-        const metadata = this.entityMetadatas.find(metadata => metadata.target === target);
-        if (!metadata)
-            throw new Error("Metadata for " + (<any>target).name + " was not found.");
-
-        return metadata;
-    }
     
 }
