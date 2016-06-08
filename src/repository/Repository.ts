@@ -438,6 +438,10 @@ export class Repository<Entity> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
+        // check if given relation entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
+        if (!relatedEntityIds || !relatedEntityIds.length)
+            return Promise.resolve();
+
         const qb = this.createQueryBuilder("junctionEntity")
             .delete(relation.junctionEntityMetadata.table.name);
 
@@ -471,11 +475,15 @@ export class Repository<Entity> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
+        // check if given entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
+        if (!entityIds || !entityIds.length)
+            return Promise.resolve();
+
         const qb = this.createQueryBuilder("junctionEntity")
             .delete(relation.junctionEntityMetadata.table.name);
 
-        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
-        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
+        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
+        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
 
         entityIds.forEach((entityId, index) => {
             qb.orWhere(`(${firstColumnName}=:relatedEntityId AND ${secondColumnName}=:entity_${index})`)
@@ -511,8 +519,8 @@ export class Repository<Entity> {
     addAndRemoveFromInverseRelation(relation: ((t: Entity) => string|any), relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void>;
     addAndRemoveFromInverseRelation(relation: string|((t: Entity) => string|any), relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void> {
         return Promise.all([
-            this.addToRelation(relation as any, relatedEntityId, addEntityIds),
-            this.removeFromRelation(relation as any, relatedEntityId, removeEntityIds)
+            this.addToInverseRelation(relation as any, relatedEntityId, addEntityIds),
+            this.removeFromInverseRelation(relation as any, relatedEntityId, removeEntityIds)
         ]).then(() => {});
     }
 
