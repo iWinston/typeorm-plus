@@ -2,7 +2,7 @@ import {TargetMetadataArgsCollection} from "./collection/TargetMetadataArgsColle
 import {PropertyMetadataArgsCollection} from "./collection/PropertyMetadataArgsCollection";
 import {RelationMetadataArgs} from "./RelationMetadataArgs";
 import {ColumnMetadataArgs} from "./ColumnMetadataArgs";
-import {RelationsCountMetadataArgs} from "./RelationsCountMetadataArgs";
+import {RelationCountMetadataArgs} from "./RelationCountMetadataArgs";
 import {IndexMetadataArgs} from "./IndexMetadataArgs";
 import {EntityListenerMetadataArgs} from "./EntityListenerMetadataArgs";
 import {TableMetadataArgs} from "./TableMetadataArgs";
@@ -11,6 +11,7 @@ import {JoinTableMetadataArgs} from "./JoinTableMetadataArgs";
 import {JoinColumnMetadataArgs} from "./JoinColumnMetadataArgs";
 import {EmbeddedMetadataArgs} from "./EmbeddedMetadataArgs";
 import {EntitySubscriberMetadataArgs} from "./EntitySubscriberMetadataArgs";
+import {RelationIdMetadataArgs} from "./RelationIdMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -36,7 +37,8 @@ export class MetadataArgsStorage {
     readonly joinColumns = new PropertyMetadataArgsCollection<JoinColumnMetadataArgs>();
     readonly joinTables = new PropertyMetadataArgsCollection<JoinTableMetadataArgs>();
     readonly entityListeners = new PropertyMetadataArgsCollection<EntityListenerMetadataArgs>();
-    readonly relationCounts = new PropertyMetadataArgsCollection<RelationsCountMetadataArgs>();
+    readonly relationCounts = new PropertyMetadataArgsCollection<RelationCountMetadataArgs>();
+    readonly relationIds = new PropertyMetadataArgsCollection<RelationIdMetadataArgs>();
     readonly embeddeds = new PropertyMetadataArgsCollection<EmbeddedMetadataArgs>();
 
     // -------------------------------------------------------------------------
@@ -83,6 +85,7 @@ export class MetadataArgsStorage {
         const joinTables = this.joinTables.filterByTarget(tableMetadata.target);
         const entityListeners = this.entityListeners.filterByTarget(tableMetadata.target);
         const relationCounts = this.relationCounts.filterByTarget(tableMetadata.target);
+        const relationIds = this.relationIds.filterByTarget(tableMetadata.target);
         const embeddeds = this.embeddeds.filterByTarget(tableMetadata.target);
 
         allTableMetadatas
@@ -118,6 +121,10 @@ export class MetadataArgsStorage {
                     .filterRepeatedMetadatas(relationCounts)
                     .forEach(metadata => relationCounts.push(metadata));
 
+                metadatasFromAbstract.relationIds
+                    .filterRepeatedMetadatas(relationIds)
+                    .forEach(metadata => relationIds.push(metadata));
+
                 metadatasFromAbstract.embeddeds
                     .filterRepeatedMetadatas(embeddeds)
                     .forEach(metadata => embeddeds.push(metadata));
@@ -132,6 +139,7 @@ export class MetadataArgsStorage {
             joinTables: joinTables,
             entityListeners: entityListeners,
             relationCounts: relationCounts,
+            relationIds: relationIds,
             embeddeds: embeddeds
         };
     }

@@ -1,15 +1,15 @@
 /**
- * Arguments for RelationsCountMetadata class.
+ * Arguments for RelationIdMetadataArgs class.
  */
-export interface RelationsCountMetadataArgs {
+export interface RelationIdMetadataArgs {
 
     /**
-     * Class to which this column is applied.
+     * Class to which this decorator is applied.
      */
     readonly target: Function;
 
     /**
-     * Class's property name to which this column is applied.
+     * Class's property name to which this decorator is applied.
      */
     readonly propertyName: string;
 

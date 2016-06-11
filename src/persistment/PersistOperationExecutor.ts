@@ -402,16 +402,19 @@ export class PersistOperationExecutor {
         const values = columns.map(column => this.driver.preparePersistentValue(column.getEntityValue(entity), column));
         
         const relationColumns = metadata.relations
-            .filter(relation => relation.isOwning && !!relation.inverseEntityMetadata)
+            .filter(relation => !relation.isManyToMany && relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .filter(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName])
             .map(relation => relation.name);
 
         const relationValues = metadata.relations
-            .filter(relation => relation.isOwning && !!relation.inverseEntityMetadata)
+            .filter(relation => !relation.isManyToMany && relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .filter(relation => entity[relation.propertyName].hasOwnProperty(relation.inverseEntityMetadata.primaryColumn.propertyName))
-            .map(relation => entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName]);
+            .map(relation => {
+                if (entity[relation.propertyName]) // in the case if relation has null, which can be saved
+                    return entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName];
+
+                return entity[relation.propertyName];
+            });
 
         const allColumns = columnNames.concat(relationColumns);
         const allValues = values.concat(relationValues);

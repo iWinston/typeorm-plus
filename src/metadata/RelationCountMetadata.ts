@@ -1,10 +1,10 @@
 import {PropertyMetadata} from "./PropertyMetadata";
-import {RelationsCountMetadataArgs} from "../metadata-args/RelationsCountMetadataArgs";
+import {RelationCountMetadataArgs} from "../metadata-args/RelationCountMetadataArgs";
 
 /**
  * Contains all information about entity's relation count.
  */
-export class RelationsCountMetadata extends PropertyMetadata {
+export class RelationCountMetadata extends PropertyMetadata {
 
     // ---------------------------------------------------------------------
     // Readonly Properties
@@ -19,7 +19,7 @@ export class RelationsCountMetadata extends PropertyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: RelationsCountMetadataArgs) {
+    constructor(args: RelationCountMetadataArgs) {
         super(args.target, args.propertyName);
         this.relation = args.relation;
     }

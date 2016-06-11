@@ -27,6 +27,7 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
         database: parameters.connections[type].database,
         autoSchemaCreate: true,
         logging: {
+            logOnlyFailedQueries: true,
             logFailedQueryError: true
         }
     };

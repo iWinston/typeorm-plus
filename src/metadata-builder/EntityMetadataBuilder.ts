@@ -238,6 +238,35 @@ export class EntityMetadataBuilder {
                     }
                 });
 
+            // save relation id-s data
+            entityMetadata.relations.forEach(relation => {
+                const relationIdMetadata = mergedArgs.relationIds.find(relationId => {
+                    if (relationId.relation instanceof Function)
+                        return relation.propertyName === relationId.relation(entityMetadata.createPropertiesMap());
+
+                    return relation.propertyName === relationId.relation;
+                });
+                if (relationIdMetadata) {
+                    if (relation.isOneToOneNotOwner || relation.isOneToMany)
+                        throw new Error(`RelationId cannot be used for the one-to-one without join column or one-to-many relations.`);
+
+                    relation.idField = relationIdMetadata.propertyName;
+                }
+            });
+            
+            // save relation counter-s data
+            entityMetadata.relations.forEach(relation => {
+                const relationCountMetadata = mergedArgs.relationCounts.find(relationCount => {
+                    if (relationCount.relation instanceof Function)
+                        return relation.propertyName === relationCount.relation(entityMetadata.createPropertiesMap());
+
+                    return relation.propertyName === relationCount.relation;
+                });
+                
+                if (relationCountMetadata)
+                    relation.countField = relationCountMetadata.propertyName;
+            });
+
             return entityMetadata;
         });
 

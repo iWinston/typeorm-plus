@@ -51,6 +51,19 @@ export class RelationMetadata extends PropertyMetadata {
      * Join column metadata.
      */
     joinColumn: JoinColumnMetadata;
+
+    /**
+     * The name of the field that will contain id or ids of this relation. This is used in the case if user
+     * wants to save relation without having to load related object, or in the cases if user wants to have id
+     * of the object it relates with, but don't want to load that object because of it. Also its used in the
+     * cases when user wants to add / remove / load in the many-to-many junction tables.
+     */
+    idField: string|undefined;
+
+    /**
+     * The name of the field that will contain count of the rows of the relation.
+     */
+    countField: string|undefined;
     
     // ---------------------------------------------------------------------
     // Readonly Properties
@@ -125,7 +138,7 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: RelationMetadataArgs) {
-        super(args.target, args.propertyName);
+        super(undefined, args.propertyName);
         this.relationType = args.relationType;
         
         if (args.inverseSideProperty)
@@ -157,6 +170,10 @@ export class RelationMetadata extends PropertyMetadata {
     // Accessors
     // ---------------------------------------------------------------------
 
+    get target() {
+        return this.entityMetadata.target;
+    }
+    
     /**
      * Gets the name of column in the database. 
      * Cannot be used with many-to-many relations since they don't have a column in the database.

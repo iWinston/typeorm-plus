@@ -7,7 +7,6 @@ import {Tag} from "./Tag";
 import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {RelationId} from "../../../../../src/decorator/relations/RelationId";
 import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
-import {RelationCount} from "../../../../../src/decorator/relations/RelationCount";
 
 @Table()
 export class Post {
@@ -20,14 +19,17 @@ export class Post {
     
     @ManyToOne(type => Tag)
     tag: Tag;
+    
+    @RelationId((post: Post) => post.tag)
+    tagId: number;
 
     @ManyToMany(type => Category)
     @JoinTable()
     categories: Category[];
     
-    @RelationCount((post: Post) => post.categories)
-    categoriesCount: number;
-    
-    secondCategoriesCount: number;
+    @RelationId((post: Post) => post.categories)
+    categoryIds: number[];
+
+    allCategoryIds: number[];
 
 }

@@ -3,7 +3,7 @@ import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn"
 import {Column} from "../../../../../src/decorator/columns/Column";
 
 @Table()
-export class Category {
+export class Tag {
 
     @PrimaryColumn("int", { generated: true })
     id: number;

@@ -83,7 +83,7 @@ export class Repository<Entity> {
         if (plainObject)
             this.plainObjectToEntityTransformer.transform(newEntity, plainObject, this.metadata);
 
-        return newEntity
+        return newEntity;
     }
 
     /**
@@ -109,7 +109,7 @@ export class Repository<Entity> {
      */
     merge(...objects: ObjectLiteral[]): Entity {
         const newEntity = this.create();
-        objects.forEach(entity => this.plainObjectToEntityTransformer.transform(newEntity, entity, this.metadata))
+        objects.forEach(entity => this.plainObjectToEntityTransformer.transform(newEntity, entity, this.metadata));
         return newEntity;
 
         /*const comparator = new Comporator(metadata, entity, object, ComparationMode.NON_EMPTY);

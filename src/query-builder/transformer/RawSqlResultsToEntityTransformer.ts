@@ -3,7 +3,7 @@ import {Alias} from "../alias/Alias";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {Driver} from "../../driver/Driver";
-import {JoinMapping} from "../QueryBuilder";
+import {JoinMapping, RelationCountMeta} from "../QueryBuilder";
 
 /**
  * Transforms raw sql results returned from the database into entity object. 
@@ -19,7 +19,8 @@ export class RawSqlResultsToEntityTransformer {
     
     constructor(private driver: Driver,
                 private aliasMap: AliasMap,
-                private joinMappings: JoinMapping[]) {
+                private joinMappings: JoinMapping[],
+                private relationCountMetas: RelationCountMeta[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -99,7 +100,7 @@ export class RawSqlResultsToEntityTransformer {
         metadata.relations.forEach(relation => {
             const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.propertyName);
             if (relationAlias) {
-                const joinMapping = this.joinMappings.find(joinMapping => joinMapping.alias === relationAlias);
+                const joinMapping = this.joinMappings.find(joinMapping => joinMapping.type === "join" && joinMapping.alias === relationAlias);
                 const relatedEntities = this.groupAndTransform(rawSqlResults, relationAlias);
                 const isResultArray = relation.isManyToMany || relation.isOneToMany;
                 const result = !isResultArray ? relatedEntities[0] : relatedEntities;
@@ -118,6 +119,44 @@ export class RawSqlResultsToEntityTransformer {
                     hasData = true;
                 }
             }
+
+            // if relation has id field then relation id/ids to that field.
+            if (relation.isManyToMany) {
+                if (relationAlias) {
+                    const ids: any[] = [];
+                    const joinMapping = this.joinMappings.find(joinMapping => joinMapping.type === "relationId" && joinMapping.alias === relationAlias);
+
+                    if (relation.idField || joinMapping) {
+                        const propertyName = joinMapping ? joinMapping.propertyName : relation.idField as string;
+                        const junctionMetadata = relation.junctionEntityMetadata;
+                        const columnName = relation.isOwning ? junctionMetadata.columns[1].name : junctionMetadata.columns[0].name;
+
+                        rawSqlResults.forEach(results => {
+                            if (relationAlias) {
+                                const resultsKey = relationAlias.name + "_" + columnName;
+                                if (results[resultsKey])
+                                    ids.push(results[resultsKey]);
+                            }
+                        });
+
+                        if (ids && ids.length)
+                            entity[propertyName] = ids;
+                    }
+                }
+            } else if (relation.idField) {
+                entity[relation.idField] = alias.getColumnValue(rawSqlResults[0], relation.name);
+            }
+            
+            // if relation counter
+            this.relationCountMetas.forEach(joinMeta => {
+                if (joinMeta.alias === relationAlias) {
+                    // console.log("relation count was found for relation: ", relation);
+                    // joinMeta.entity = entity;
+                    joinMeta.entities.push({ entity: entity, metadata: metadata });
+                    // console.log(joinMeta);
+                    // console.log("---------------------");
+                }
+            });
         });
 
         return hasData ? entity : null;

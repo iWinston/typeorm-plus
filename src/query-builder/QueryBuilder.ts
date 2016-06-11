@@ -4,6 +4,7 @@ import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEnt
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * @internal
@@ -12,16 +13,37 @@ export interface Join {
     alias: Alias;
     type: "LEFT"|"INNER";
     conditionType: "ON"|"WITH";
-    condition: string;
+    condition?: string;
     tableName: string;
-    mapToProperty: string|undefined;
+    mapToProperty?: string;
     isMappingMany: boolean;
+}
+
+export interface JoinRelationId {
+
+    alias: Alias;
+    type: "LEFT"|"INNER";
+    conditionType: "ON"|"WITH";
+    condition?: string;
+    mapToProperty?: string;
+}
+
+export interface RelationCountMeta {
+
+    alias: Alias;
+    // property: string;
+    conditionType: "ON"|"WITH";
+    condition?: string;
+    mapToProperty?: string;
+    entities: { entity: any, metadata: EntityMetadata }[];
+    // entity?: any;
 }
 
 /**
  * @internal
  */
 export interface JoinMapping {
+    type: "join"|"relationId";
     alias: Alias;
     parentName: string;
     propertyName: string;
@@ -35,13 +57,15 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     private aliasMap: AliasMap;
-    private type: "select"|"update"|"delete";
+    private type: "select"|"update"|"delete" = "select";
     private selects: string[] = [];
     private fromEntity: { alias: Alias };
     private fromTableName: string;
     private fromTableAlias: string;
     private updateQuerySet: Object;
     private joins: Join[] = [];
+    private joinRelationIds: JoinRelationId[] = [];
+    private relationCountMetas: RelationCountMeta[] = [];
     private groupBys: string[] = [];
     private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
     private havings: { type: "simple"|"and"|"or", condition: string }[] = [];
@@ -162,6 +186,66 @@ export class QueryBuilder<Entity> {
             this.fromTableAlias = alias;
         }
         return this;*/
+    }
+
+    countRelationAndMap(mapProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+
+        const [parentAliasName, parentPropertyName] = property.split(".");
+        const alias = parentAliasName + "_" + parentPropertyName + "_relation_count";
+        const aliasObj = new Alias(alias);
+        this.aliasMap.addAlias(aliasObj);
+        aliasObj.parentAliasName = parentAliasName;
+        aliasObj.parentPropertyName = parentPropertyName;
+
+        const relationCountMeta: RelationCountMeta = {
+            mapToProperty: mapProperty,
+            conditionType: conditionType,
+            condition: condition,
+            alias: aliasObj,
+            entities: []
+        };
+        this.relationCountMetas.push(relationCountMeta);
+        if (parameters)
+            this.addParameters(parameters);
+        return this;
+    }
+
+    countRelation(property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+
+        const [parentAliasName, parentPropertyName] = property.split(".");
+        const alias = parentAliasName + "_" + parentPropertyName + "_relation_count";
+
+        const aliasObj = new Alias(alias);
+        this.aliasMap.addAlias(aliasObj);
+        aliasObj.parentAliasName = parentAliasName;
+        aliasObj.parentPropertyName = parentPropertyName;
+
+        const relationCountMeta: RelationCountMeta = {
+            conditionType: conditionType,
+            condition: condition,
+            alias: aliasObj,
+            entities: []
+        };
+        this.relationCountMetas.push(relationCountMeta);
+        if (parameters)
+            this.addParameters(parameters);
+        return this;
+    }
+
+    leftJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+        return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
+    }
+
+    innerJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+        return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
+    }
+    
+    innerJoinRelationId(property: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this {
+        return this.joinRelationId("INNER", undefined, property, conditionType, condition, parameters);
+    }
+
+    leftJoinRelationId(property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: { [key: string]: any }): this {
+        return this.joinRelationId("LEFT", undefined, property, conditionType, condition, parameters);
     }
 
     innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
@@ -313,6 +397,7 @@ export class QueryBuilder<Entity> {
     getSql(): string {
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
+        sql += this.createJoinRelationIdsExpression();
         sql += this.createWhereExpression();
         sql += this.createGroupByExpression();
         sql += this.createHavingExpression();
@@ -342,7 +427,7 @@ export class QueryBuilder<Entity> {
         });
     }
 
-    getResultsAndScalarResults(): Promise<{ entities: Entity[], scalarResults: any[] }> {
+    async getResultsAndScalarResults(): Promise<{ entities: Entity[], scalarResults: any[] }> {
         if (!this.aliasMap.hasMainAlias)
             throw new Error(`Alias is not set. Looks like nothing is selected. Use select*, delete, update method to set an alias.`);
         
@@ -383,11 +468,20 @@ export class QueryBuilder<Entity> {
                 });
 
         } else {
+
             return this.driver
                 .query<any[]>(this.getSql())
                 .then(results => {
                     scalarResults = results;
                     return this.rawResultsToEntities(results);
+                })
+                .then(results => {
+
+                    return this.loadRelationCounts(results)
+                        .then(counts => {
+                            // console.log("counts: ", counts);
+                            return results;
+                        });
                 })
                 .then(results => this.addLazyProperties(results))
                 .then(results => {
@@ -403,6 +497,120 @@ export class QueryBuilder<Entity> {
                 });
         }
     }
+
+    /*private extractIdMap(alias: Alias, results: Entity[]): { alias: Alias, ids: any[] }[] {
+
+        // console.log("results ids:", results.map(result => result[]));
+        const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
+        if (!metadata)
+            throw new Error("Cannot get entity metadata for the given alias " + this.aliasMap.mainAlias.name);
+
+        /!*
+        results.forEach(result => {
+        });
+
+        metadata.relations.forEach(relation => {
+            this.aliasMap.
+        });
+        *!/
+    }*/
+
+    private loadRelationCounts(results: Entity[]): Promise<{}> {
+
+        const promises = this.relationCountMetas.map(relationCountMeta => {
+            const parentAlias = relationCountMeta.alias.parentAliasName;
+            const foundAlias = this.aliasMap.findAliasByName(parentAlias);
+            if (!foundAlias)
+                throw new Error(`Alias "${parentAlias}" was not found`);
+
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
+            if (!parentMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + foundAlias.name);
+
+            const relation = parentMetadata.findRelationWithPropertyName(relationCountMeta.alias.parentPropertyName);
+
+            const queryBuilder: QueryBuilder<any> = new (this.constructor as any)(this.driver, this.entityMetadatas, this.broadcaster);
+            let condition = "";
+
+            const metadata = this.aliasMap.getEntityMetadataByAlias(relationCountMeta.alias);
+            if (!metadata)
+                throw new Error("Cannot get entity metadata for the given alias " + relationCountMeta.alias.name);
+
+            let joinTableName: string = metadata.table.name;
+
+            const junctionMetadata = relation.junctionEntityMetadata;
+            const appendedCondition = relationCountMeta.condition ? " AND " + this.replacePropertyNames(relationCountMeta.condition) : "";
+
+            /*if (relation.isManyToMany) {
+                const junctionTable = junctionMetadata.table.name;
+                const junctionAlias = relationCountMeta.alias.parentAliasName + "_" + relationCountMeta.alias.name;
+                const joinAlias = relationCountMeta.alias.name;
+                const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
+                const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
+                const inverseJoinColumnName = joinTable.inverseReferencedColumn.name; // not sure if this is correct
+
+                let condition1 = "", condition2 = "";
+                if (relation.isOwning) {
+                    condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn;
+                    condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
+                } else {
+                    condition1 = junctionAlias + "." + junctionMetadata.columns[1].name + "=" + parentAlias + "." + joinTableColumn;
+                    condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[0].name;
+                }
+
+                condition = " LEFT JOIN " + junctionTable + " " + junctionAlias + " " + relationCountMeta.conditionType + " " + condition1 +
+                    " LEFT JOIN " + joinTableName + " " + joinAlias + " " + relationCountMeta.conditionType + " " + condition2 + appendedCondition;
+
+            } else if (relation.isManyToOne || (relation.isOneToOne && relation.isOwning)) {
+                const joinTableColumn = relation.joinColumn.referencedColumn.name;
+                const condition2 = relationCountMeta.alias.name + "." + joinTableColumn + "=" + parentAlias + "." + relation.name;
+                condition = " LEFT JOIN " + joinTableName + " " + relationCountMeta.alias.name + " " + relationCountMeta.conditionType + " " + condition2 + appendedCondition;
+
+            } else {
+                throw new Error(`Relation count can be applied only `); // this should be done on entity build
+            }*/
+
+            // if (relationCountMeta.condition)
+            //     condition += relationCountMeta.condition;
+            // relationCountMeta.alias.target;
+            
+            const ids = relationCountMeta.entities.map(entityWithMetadata => entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName]);
+            if (!ids || !ids.length)
+                throw new Error(`No ids found to load relation counters`);
+
+            return queryBuilder
+                .select(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} as id`)
+                .addSelect(`COUNT(${relation.propertyName + "." + relation.inverseEntityMetadata.primaryColumn.propertyName}) as cnt`)
+                .from(parentMetadata.target, parentMetadata.name)
+                .leftJoin(parentMetadata.name + "." + relation.propertyName, relation.propertyName, relationCountMeta.conditionType, relationCountMeta.condition)
+                .setParameters(this.parameters)
+                .where(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} IN (:relationCountIds)`, { relationCountIds: ids })
+                .groupBy(parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName)
+                .getScalarResults()
+                .then((results: { id: any, cnt: number }[]) => {
+                    // console.log(relationCountMeta.entities);
+                    relationCountMeta.entities.forEach(entityWithMetadata => {
+                        const entityId = entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName];
+                        const entityResult = results.find(result => result.id === entityId);
+                        if (entityResult) {
+
+                            if (relationCountMeta.mapToProperty) {
+                                const [parentName, propertyName] = (relationCountMeta.mapToProperty as string).split(".");
+                                // todo: right now mapping is working only on the currently countRelation class, but 
+                                // different properties are working. make different classes to work too
+                                entityWithMetadata.entity[propertyName] = entityResult.cnt;
+
+                            } else if (relation.countField) {
+                                entityWithMetadata.entity[relation.countField] = entityResult.cnt;
+                            }
+                        }
+                    });
+                });
+        });
+
+        return Promise.all(promises);
+    }
+
 
     getSingleResult(): Promise<Entity> {
         return this.getResults().then(entities => entities[0]);
@@ -454,7 +662,7 @@ export class QueryBuilder<Entity> {
 
         this.joins.forEach(join => {
             const property = join.tableName || join.alias.target || (join.alias.parentAliasName + "." + join.alias.parentPropertyName);
-            qb.join(join.type, property, join.alias.name, join.conditionType, join.condition, undefined, join.mapToProperty, join.isMappingMany);
+            qb.join(join.type, property, join.alias.name, join.conditionType, join.condition || "", undefined, join.mapToProperty, join.isMappingMany);
         });
 
         this.groupBys.forEach(groupBy => qb.addGroupBy(groupBy));
@@ -509,7 +717,7 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     protected rawResultsToEntities(results: any[]) {
-        const transformer = new RawSqlResultsToEntityTransformer(this.driver, this.aliasMap, this.extractJoinMappings());
+        const transformer = new RawSqlResultsToEntityTransformer(this.driver, this.aliasMap, this.extractJoinMappings(), this.relationCountMetas);
         return transformer.transform(results);
     }
 
@@ -593,6 +801,27 @@ export class QueryBuilder<Entity> {
                 }
             });
         
+        // add selects from relation id joins
+        this.joinRelationIds.forEach(join => {
+            // const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
+
+            const parentAlias = join.alias.parentAliasName;
+            const foundAlias = this.aliasMap.findAliasByName(parentAlias);
+            if (!foundAlias)
+                throw new Error(`Alias "${parentAlias}" was not found`);
+
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
+            if (!parentMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + foundAlias.name);
+            const relation = parentMetadata.findRelationWithPropertyName(join.alias.parentPropertyName);
+            const junctionMetadata = relation.junctionEntityMetadata;
+            // const junctionTable = junctionMetadata.table.name;
+
+            junctionMetadata.columns.forEach(column => {
+                allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.name);
+            });
+        });
+        
         // add all other selects
         this.selects.filter(select => {
             return select !== alias && !this.joins.find(join => join.alias.name === select);
@@ -653,6 +882,40 @@ export class QueryBuilder<Entity> {
         });
         return statement;
 
+    }
+
+    protected createJoinRelationIdsExpression() {
+        return this.joinRelationIds.map(join => {
+            const parentAlias = join.alias.parentAliasName;
+            const foundAlias = this.aliasMap.findAliasByName(parentAlias);
+            if (!foundAlias)
+                throw new Error(`Alias "${parentAlias}" was not found`);
+            
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
+            if (!parentMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + foundAlias.name);
+
+            const relation = parentMetadata.findRelationWithPropertyName(join.alias.parentPropertyName);
+            const junctionMetadata = relation.junctionEntityMetadata;
+            const junctionTable = junctionMetadata.table.name;
+            const junctionAlias = join.alias.name;
+            const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
+            const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
+
+            let condition1 = "";
+            if (relation.isOwning) {
+                condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn;
+                // condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
+            } else {
+                condition1 = junctionAlias + "." + junctionMetadata.columns[1].name + "=" + parentAlias + "." + joinTableColumn;
+                // condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[0].name;
+            }
+
+            return " " + join.type + " JOIN " + junctionTable + " " + junctionAlias + " " + join.conditionType + " " + condition1;
+                // " " + joinType + " JOIN " + joinTableName + " " + joinAlias + " " + join.conditionType + " " + condition2 + appendedCondition;
+            // console.log(join);
+            // return " " + join.type + " JOIN " + joinTableName + " " + join.alias.name + " " + (join.condition ? (join.conditionType + " " + join.condition) : "");
+        });
     }
 
     protected createJoinExpression() {
@@ -763,17 +1026,34 @@ export class QueryBuilder<Entity> {
     }
 
     private extractJoinMappings(): JoinMapping[] {
-        return this.joins
+        const mappings: JoinMapping[] = [];
+        this.joins
             .filter(join => !!join.mapToProperty)
-            .map(join => {
+            .forEach(join => {
                 const [parentName, propertyName] = (join.mapToProperty as string).split(".");
-                return {
+                mappings.push({
+                    type: "join",
                     alias: join.alias,
                     parentName: parentName,
                     propertyName: propertyName,
                     isMany: join.isMappingMany
-                } as JoinMapping;
+                } as JoinMapping);
             });
+        
+        this.joinRelationIds
+            .filter(join => !!join.mapToProperty)
+            .forEach(join => {
+                const [parentName, propertyName] = (join.mapToProperty as string).split(".");
+                mappings.push({
+                    type: "relationId",
+                    alias: join.alias,
+                    parentName: parentName,
+                    propertyName: propertyName,
+                    isMany: false
+                });
+        });
+        
+        return mappings;
     }
 
     protected join(joinType: "INNER"|"LEFT", property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
@@ -799,6 +1079,32 @@ export class QueryBuilder<Entity> {
         const join: Join = { type: joinType, alias: aliasObj, tableName: tableName, conditionType: conditionType, condition: condition, mapToProperty: mapToProperty, isMappingMany: isMappingMany };
         this.joins.push(join);
         if (parameters) this.addParameters(parameters);
+        return this;
+    }
+
+    protected joinRelationId(joinType: "LEFT"|"INNER", mapToProperty: string|undefined, property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: { [key: string]: any }): this {
+
+        if (!this.isPropertyAlias(property))
+            throw new Error("Only entity relations are allowed in the leftJoinRelationId operation"); // todo: also check if that relation really has entityId
+
+        const [parentAliasName, parentPropertyName] = property.split(".");
+        const alias = parentAliasName + "_" + parentPropertyName + "_relation_id";
+
+        const aliasObj = new Alias(alias);
+        this.aliasMap.addAlias(aliasObj);
+        aliasObj.parentAliasName = parentAliasName;
+        aliasObj.parentPropertyName = parentPropertyName;
+
+        this.joinRelationIds.push({
+            type: joinType,
+            mapToProperty: mapToProperty,
+            alias: aliasObj,
+            conditionType: conditionType,
+            condition: condition
+        });
+        if (parameters)
+            this.addParameters(parameters);
+
         return this;
     }
 

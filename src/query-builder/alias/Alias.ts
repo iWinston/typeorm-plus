@@ -14,6 +14,10 @@ export class Alias {
         this.name = name;
     }
     
+    get selection() {
+        return this.parentAliasName + "." + this.parentPropertyName;
+    }
+    
     getPrimaryKeyValue(result: any, primaryColumn: ColumnMetadata): any {
         return result[this.name + "_" + primaryColumn.name];
     }
