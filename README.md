@@ -11,24 +11,28 @@
 ## What is TypeORM?
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
-Typescript that can help you to:
+Typescript that can be used with Typescript or Javascript (ES5, ES6, ES7).
+Its goal to always support latest Javascript features and provide features
+that help you to develop any kind of applications that use database - from
+small applications with a few tables to large scale enterprise applications.
+TypeORM helps you to:
 
-* automatically create your table schemas based on your models 
-(javascript class, decorated with special decorators)
-* ability to transparently insert / update / delete to the database 
+* automatically create in the database table schemas based on your models
+* ability to transparently insert / update / delete to the database
 your objects
-* map your selections from tables to javascript objects, map table columns 
+* map your selections from tables to javascript objects and map table columns
 to javascript object's properties
-* create one-to-one, many-to-one, one-to-many, many-to-many relations
-between tables
+* create one-to-one, many-to-one, one-to-many, many-to-many relations between tables
 * and much more ...
 
-TypeORM uses Data Mapper pattern, unlike all other javascript ORMs that 
-currently exist, which means you can write loosely coupled, scalable, 
-maintainable enterprise applications with less problems.
+TypeORM uses Data Mapper pattern, unlike all other javascript ORMs that
+currently exist, which means you can write loosely coupled, scalable,
+maintainable applications with less problems.
 
-The benefit of using ORM for the programmer is the ability to focus on 
-the business logic and worry about persistence only as a secondary problem. 
+The benefit of using ORM for the programmer is the ability to focus on
+the business logic and worry about persistence only as a secondary problem.
+
+TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/) and [Doctrine](http://www.doctrine-project.org/).
 
 ## Installation
 
@@ -36,24 +40,35 @@ the business logic and worry about persistence only as a secondary problem.
 
     `npm install typeorm --save`
 
-2. Use [typings](https://github.com/typings/typings) to install all 
-required definition dependencies.
+2. Install required shims:
 
-    `typings install`
+    `npm install es6-shim reflect-metadata --save`
 
-3. ES6 features are used, so you may want to install 
-[es6-shim](https://github.com/paulmillr/es6-shim) too:
+And add these lines into some global place in your code, before you starting to use orm:
 
-    `npm install es6-shim --save`
+```typescript
+require("es6-shim");
+require("reflect-metadata");
+```
 
-    Also you'll need to do `require("es6-shim");` in your app.
+`es6-shim` is optional for newer versions of node which supports all es6 features.
+`reflect-metadata` you definitely need because no platform support this feature yet.
 
-4. Install database driver:
-    
-    Right now only `mysql` database is supported, so to install it you
-need to do:
-    
-    `npm install mysql --save`
+3. Install database driver:
+
+    3.1. Mysql
+
+        If you want to use ORM with mysql then install its driver:
+
+        `npm install mysql --save`
+
+    3.2. Postgres
+
+        `npm install pg --save`
+
+
+    Right now only `mysql` and `postgres` databases are supported. Feel free to contribute and add support of new drivers.
+
 
 ## Example
 

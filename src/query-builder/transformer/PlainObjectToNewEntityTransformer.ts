@@ -41,14 +41,22 @@ export class PlainObjectToNewEntityTransformer {
                 if (relation.isManyToMany || relation.isOneToMany) {
                     if (object[relation.propertyName] instanceof Array) {
                         entity[relation.propertyName] = object[relation.propertyName].map((subObject: any) => {
-                            return this.groupAndTransform(relationMetadata.create(), subObject, relationMetadata);
+                            let subEntity = relationMetadata.create();
+                            if (entity[relation.propertyName] instanceof Array) {
+                                // todo: support custom initial fields here
+                                subEntity = entity[relation.propertyName].find((subEntity: any) => {
+                                    return subEntity[relation.referencedColumnName] === subObject[relation.referencedColumnName];
+                                });
+                            }
+                            return this.groupAndTransform(subEntity, subObject, relationMetadata);
                         });
                     } else {
                         entity[relation.propertyName] = object[relation.propertyName];
                     }
                 } else {
                     if (object[relation.propertyName]) {
-                        entity[relation.propertyName] = this.groupAndTransform(relationMetadata.create(), object[relation.propertyName], relationMetadata);
+                        const subEntity = entity[relation.propertyName] || relationMetadata.create();
+                        entity[relation.propertyName] = this.groupAndTransform(subEntity, object[relation.propertyName], relationMetadata);
                     } else {
                         entity[relation.propertyName] = object[relation.propertyName];
                     }

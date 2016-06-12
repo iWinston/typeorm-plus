@@ -25,7 +25,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
     async transform(plainObject: ObjectLiteral, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity> {
         
         // if plain object does not have id then nothing to load really
-        if (!metadata.hasPrimaryColumn || !plainObject[metadata.primaryColumn.name])
+        if (!metadata.hasPrimaryColumn || !plainObject.hasOwnProperty(metadata.primaryColumn.name))
             return Promise.reject<Entity>("Given object does not have a primary column, cannot transform it to database entity.");
         
         const alias = queryBuilder.alias;
@@ -38,7 +38,6 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
             .setParameter("id", plainObject[metadata.primaryColumn.name]);
 
         const entity = await queryBuilder.getSingleResult();
-        // this.mergeEntityWithPlainObject(metadata, entity, plainObject);
         return entity;
     }
 
@@ -46,8 +45,6 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
     // Private Methods
     // -------------------------------------------------------------------------
     
-    private mergeEntityWithPlainObject(metadata: EntityMetadata, entity: Entity, object: ObjectLiteral) {
-    }
 
     private join(qb: QueryBuilder<Entity>, needToLoad: LoadMap[], parentAlias: string) {
         needToLoad.forEach(i => {

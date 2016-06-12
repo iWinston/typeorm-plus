@@ -282,7 +282,7 @@ export class EntityManager {
             .then(() => runInTransaction())
             .then(result => {
                 runInTransactionResult = result;
-                return this.connection.driver.endTransaction();
+                return this.connection.driver.commitTransaction();
             })
             .then(() => runInTransactionResult);
     }

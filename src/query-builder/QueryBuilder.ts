@@ -723,7 +723,8 @@ export class QueryBuilder<Entity> {
 
     protected addLazyProperties(entities: any[]) {
         entities.forEach(entity => {
-            const metadata = this.entityMetadatas.findByTarget(entity.constructor);
+            if (entity.constructor.name === "Object") return; // tempraroy , must be removed after fixing entity.constructor
+            const metadata = this.entityMetadatas.findByTarget(entity.constructor); // todo: fix it
             metadata.relations
                 .filter(relation => relation.isLazy)
                 .forEach(relation => {

@@ -91,7 +91,8 @@ describe("insertion", function() {
             return postRepository.findOneById(savedPost.id).should.eventually.eql({
                 id: savedPost.id,
                 text: "Hello post",
-                title: "this is post title"
+                title: "this is post title",
+                likesCount: 0
             });
         });
 

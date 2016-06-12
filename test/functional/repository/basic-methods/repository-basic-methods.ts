@@ -20,8 +20,8 @@ chai.should();
 chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
-describe("Repository", () => {
-    const resourceDir = __dirname + "/../../../../../../test/functional/repository/basic-functionality/";
+describe("Repository > basic methods", () => {
+    const resourceDir = __dirname + "/../../../../../../test/functional/repository/basic-methods/";
 
     const userSchema = require(resourceDir + "schema/user.json");
     
@@ -205,7 +205,7 @@ describe("Repository", () => {
 
     describe("initialize", function() {
 
-        it("should initialize full object from the given object with only id", () => Promise.all(connections.map(async connection => {
+        it("should initialize entity from the given object with only id", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
             const categoryRepository = connection.getRepository(Category);
 
@@ -230,11 +230,7 @@ describe("Repository", () => {
             initializedBlog.text.should.be.equal("Blog about good people");
         })));
 
-    });
-
-    describe("initialize and merge", function() {
-
-        it("if we initialize entity from the plain object and merge initialized object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () => Promise.all(connections.map(async connection => {
+        it("should initialize entity and all relations given in the object", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
             const categoryRepository = connection.getRepository(Category);
 
@@ -249,15 +245,206 @@ describe("Repository", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.persist(blog);
+            
+            // and initialize it
+            const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
+            const initializedBlog = await blogRepository.initialize(plainBlogWithId);
+            initializedBlog.should.be.instanceOf(Blog);
+            initializedBlog.id.should.be.equal(1);
+            initializedBlog.title.should.be.equal("About people");
+            initializedBlog.text.should.be.equal("Blog about good people");
+            initializedBlog.categories[0].id.should.be.equal(1);
+            initializedBlog.categories[0].name.should.be.equal("people");
+        })));
+
+    });
+
+    describe("merge", function() {
+
+        it("should merge multiple entities", () => Promise.all(connections.map(async connection => {
+            const blogRepository = connection.getRepository(Blog);
+
+            // first entity
+            const blog1 = new Blog();
+            blog1.title = "First Blog";
+
+            // second entity
+            const blog2 = new Blog();
+            blog2.text = "text is from second blog";
+
+            // third entity
+            const category = new Category();
+            category.name = "category from third blog";
+            const blog3 = new Blog();
+            blog3.categories = [category];
+
+            const mergedBlog = blogRepository.merge(blog1, blog2, blog3);
+
+            mergedBlog.should.be.instanceOf(Blog);
+            mergedBlog.should.not.be.equal(blog1);
+            mergedBlog.should.not.be.equal(blog2);
+            mergedBlog.should.not.be.equal(blog3);
+            mergedBlog.title.should.be.equal("First Blog");
+            mergedBlog.text.should.be.equal("text is from second blog");
+            mergedBlog.categories[0].name.should.be.equal("category from third blog");
+        })));
+
+        it("should merge both entities and plain objects", () => Promise.all(connections.map(async connection => {
+            const blogRepository = connection.getRepository(Blog);
+
+            // first entity
+            const blog1 = { title: "First Blog" };
+
+            // second entity
+            const blog2 = { text: "text is from second blog" };
+
+            // third entity
+            const blog3 = new Blog();
+            blog3.categories = [{ name: "category from third blog" } as Category];
+
+            const mergedBlog = blogRepository.merge(blog1, blog2, blog3);
+
+            mergedBlog.should.be.instanceOf(Blog);
+            mergedBlog.should.not.be.equal(blog1);
+            mergedBlog.should.not.be.equal(blog2);
+            mergedBlog.should.not.be.equal(blog3);
+            mergedBlog.title.should.be.equal("First Blog");
+            mergedBlog.text.should.be.equal("text is from second blog");
+            mergedBlog.categories[0].name.should.be.equal("category from third blog");
+        })));
+
+    });
+
+    describe("using initialize and merge together", function() {
+
+        it("if we initialize entity from the plain object and merge initialized object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () => Promise.all(connections.map(async connection => {
+            const blogRepository = connection.getRepository(Blog);
+            const categoryRepository = connection.getRepository(Category);
+
+            // save first category
+            const firstCategory = new Category();
+            firstCategory.name = "people";
+            await categoryRepository.persist(firstCategory);
+
+            // save second category
+            const secondCategory = new Category();
+            secondCategory.name = "animals";
+            await categoryRepository.persist(secondCategory);
+
+            // save the blog
+            const blog = new Blog();
+            blog.title = "About people";
+            blog.text = "Blog about good people";
+            blog.categories = [firstCategory, secondCategory];
+            await blogRepository.persist(blog);
 
             // and initialize it
-            const plainBlogWithId = { id: 1, title: "changed title about people" };
+            const plainBlogWithId = { id: 1, title: "changed title about people", categories: [ { id: 1 }, { id: 2, name: "insects" } ] };
             const initializedBlog = await blogRepository.initialize(plainBlogWithId);
             const mergedBlog = blogRepository.merge(initializedBlog, plainBlogWithId);
+
             mergedBlog.should.be.instanceOf(Blog);
             mergedBlog.id.should.be.equal(1);
             mergedBlog.title.should.be.equal("changed title about people");
             mergedBlog.text.should.be.equal("Blog about good people");
+            mergedBlog.categories[0].id.should.be.equal(1);
+            mergedBlog.categories[0].name.should.be.equal("people");
+            mergedBlog.categories[1].id.should.be.equal(2);
+            mergedBlog.categories[1].name.should.be.equal("insects");
+        })));
+
+    });
+
+    describe("query", function() {
+
+        it("should execute the query natively and it should return the result", () => Promise.all(connections.map(async connection => {
+            const repository = connection.getRepository(Blog);
+            const promises: Promise<Blog>[] = [];
+            for (let i = 0; i < 100; i++) {
+                const blog = new Blog();
+                blog.title = "hello blog";
+                blog.text = "hello blog #" + i;
+                blog.viewCount = i * 100;
+                promises.push(repository.persist(blog));
+            }
+            await Promise.all(promises);
+            // such simple query should work on all platforms, isn't it? If no - make requests specifically to platforms
+            const result = await repository.query("SELECT MAX(blog.viewCount) as max from blog blog");
+            result[0].should.not.be.empty;
+            result[0].max.should.not.be.empty;
+        })));
+
+    });
+
+    describe("transaction", function() {
+
+        it("executed queries must success", () => Promise.all(connections.map(async connection => {
+            const repository = connection.getRepository(Blog);
+            let blogs = await repository.find();
+            blogs.should.be.eql([]);
+
+            const blog = new Blog();
+            blog.title = "hello blog title";
+            blog.text = "hello blog text";
+            await repository.persist(blog);
+            blogs.should.be.eql([]);
+
+            blogs = await repository.find();
+            blogs.length.should.be.equal(1);
+
+            await repository.transaction(async () => {
+                const promises: Promise<Blog>[] = [];
+                for (let i = 0; i < 100; i++) {
+                    const blog = new Blog();
+                    blog.title = "hello blog";
+                    blog.text = "hello blog #" + i;
+                    blog.viewCount = i * 100;
+                    promises.push(repository.persist(blog));
+                }
+                await Promise.all(promises);
+
+                blogs = await repository.find();
+                blogs.length.should.be.equal(101);
+            });
+
+            blogs = await repository.find();
+            blogs.length.should.be.equal(101);
+        })));
+
+        it("executed queries must rollback in the case if error in transaction", () => Promise.all(connections.map(async connection => {
+            const repository = connection.getRepository(Blog);
+            let blogs = await repository.find();
+            blogs.should.be.eql([]);
+
+            const blog = new Blog();
+            blog.title = "hello blog title";
+            blog.text = "hello blog text";
+            await repository.persist(blog);
+            blogs.should.be.eql([]);
+
+            blogs = await repository.find();
+            blogs.length.should.be.equal(1);
+
+            await repository.transaction(async () => {
+                const promises: Promise<Blog>[] = [];
+                for (let i = 0; i < 100; i++) {
+                    const blog = new Blog();
+                    blog.title = "hello blog";
+                    blog.text = "hello blog #" + i;
+                    blog.viewCount = i * 100;
+                    promises.push(repository.persist(blog));
+                }
+                await Promise.all(promises);
+
+                blogs = await repository.find();
+                blogs.length.should.be.equal(101);
+
+                // now send the query that will crash all for us
+                throw new Error("this error will cancel all persist operations");
+            });
+
+            blogs = await repository.find();
+            blogs.length.should.be.equal(1);
         })));
 
     });

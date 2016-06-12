@@ -37,7 +37,12 @@ export class PersistOperationExecutor {
         
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(persistOperation))
-            .then(() => this.driver.beginTransaction())
+            .then(() => {
+                if (!this.driver.isTransactionActive())
+                    return this.driver.beginTransaction();
+
+                return Promise.resolve();
+            })
             .then(() => this.executeInsertOperations(persistOperation))
             .then(() => this.executeInsertClosureTableOperations(persistOperation))
             .then(() => this.executeUpdateTreeLevelOperations(persistOperation))
@@ -48,11 +53,28 @@ export class PersistOperationExecutor {
             .then(() => this.executeUpdateInverseRelationsOperations(persistOperation))
             .then(() => this.executeUpdateOperations(persistOperation))
             .then(() => this.executeRemoveOperations(persistOperation))
-            .then(() => this.driver.endTransaction())
+            .then(() => {
+                if (!this.driver.isTransactionActive())
+                    return this.driver.commitTransaction();
+
+                return Promise.resolve();
+            })
             .then(() => this.updateIdsOfInsertedEntities(persistOperation))
             .then(() => this.updateIdsOfRemovedEntities(persistOperation))
             .then(() => this.updateSpecialColumnsInEntities(persistOperation))
-            .then(() => this.broadcastAfterEvents(persistOperation));
+            .then(() => this.broadcastAfterEvents(persistOperation))
+            .catch(error => {
+                if (!this.driver.isTransactionActive()) {
+                    return this.driver.rollbackTransaction()
+                        .then(() => {
+                            throw error;
+                        })
+                        .catch(() => {
+                            throw error;
+                        });
+                }
+                throw error;
+            });
     }
 
     // -------------------------------------------------------------------------

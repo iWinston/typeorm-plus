@@ -105,11 +105,11 @@ export class Repository<Entity> {
     }
 
     /**
-     * Merges multiple entity-like structures into one new entity.
+     * Merges multiple entities (or entity-like objects) into one new entity.
      */
     merge(...objects: ObjectLiteral[]): Entity {
         const newEntity = this.create();
-        objects.forEach(entity => this.plainObjectToEntityTransformer.transform(newEntity, entity, this.metadata));
+        objects.forEach(object => this.plainObjectToEntityTransformer.transform(newEntity, object, this.metadata));
         return newEntity;
 
         /*const comparator = new Comporator(metadata, entity, object, ComparationMode.NON_EMPTY);
@@ -154,101 +154,84 @@ export class Repository<Entity> {
      * Persists (saves) a given entity in the database. If entity does not exist in the database then it inserts it, 
      * else if entity already exist in the database then it updates it.
      */
-    persist(entity: Entity): Promise<Entity> {
-        let loadedDbEntity: any, allPersistedEntities: EntityWithId[];
-        return Promise.resolve() // resolve is required because need to wait until lazy relations loaded
-            .then(() => {
-                return this.extractObjectsById(entity, this.metadata);
-            })
-            .then(allPersisted => {
-                allPersistedEntities = allPersisted;
-                if (!this.hasId(entity))
-                    return Promise.resolve<Entity|null>(null);
+    async persist(entity: Entity): Promise<Entity> {
+        await Promise.resolve(); // resolve is required because need to wait until lazy relations loaded
+        const allPersistedEntities = await this.extractObjectsById(entity, this.metadata);
+        let loadedDbEntity: Entity|null = null;
+        if (this.hasId(entity))
+            loadedDbEntity = await this.initialize(entity);
 
-                return this.initialize(entity);
-            })
-            .then(dbEntity => {
-                loadedDbEntity = dbEntity;
-                return dbEntity ? this.extractObjectsById(dbEntity, this.metadata) : [];
-            }).then(entityWithIds => {
-                return this.findNotLoadedIds(entityWithIds, allPersistedEntities);
-            }) // need to find db entities that were not loaded by initialize method
-            .then(allDbEntities => {
-                const persistedEntity: EntityWithId = {
-                    id: this.metadata.getEntityId(entity),
-                    entityTarget: this.metadata.target,
-                    entity: entity
-                };
-                const dbEntity: EntityWithId = {
-                    id: this.metadata.getEntityId(loadedDbEntity),
-                    entityTarget: this.metadata.target,
-                    entity: loadedDbEntity
-                };
-                return this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
-            })
-            .then(persistOperation => {
-                return this.persistOperationExecutor.executePersistOperation(persistOperation);
-            })
-            .then(() => entity);
+        let entityWithIds: EntityWithId[] = [];
+        if (loadedDbEntity)
+            entityWithIds = await this.extractObjectsById(loadedDbEntity, this.metadata);
+
+        // need to find db entities that were not loaded by initialize method
+        const allDbEntities = await this.findNotLoadedIds(entityWithIds, allPersistedEntities);
+        const persistedEntity: EntityWithId = {
+            id: this.metadata.getEntityId(entity),
+            entityTarget: this.metadata.target,
+            entity: entity
+        };
+        const dbEntity: EntityWithId = {
+            id: this.metadata.getEntityId(loadedDbEntity),
+            entityTarget: this.metadata.target,
+            entity: loadedDbEntity
+        };
+        const persistOperation = await this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
+        await this.persistOperationExecutor.executePersistOperation(persistOperation);
+        return entity;
     }
 
     /**
      * Removes a given entity from the database.
      */
-    remove(entity: Entity): Promise<Entity> {
-        let dbEntity: Entity;
-        return this
-            .initialize(entity)
-            .then(dbEnt => {
-                dbEntity = dbEnt;
-                (<any> entity)[this.metadata.primaryColumn.name] = undefined;
-                return Promise.all<any>([
-                    this.extractObjectsById(dbEntity, this.metadata),
-                    this.extractObjectsById(entity, this.metadata)
-                ]);
-            })
-            // .then(([dbEntities, allPersistedEntities]: [EntityWithId[], EntityWithId[]]) => {
-            .then(results => {
-                const entityWithId: EntityWithId = {
-                    id: this.metadata.getEntityId(entity),
-                    entityTarget: this.metadata.target,
-                    entity: entity
-                };
-                const dbEntityWithId: EntityWithId = {
-                    id: this.metadata.getEntityId(dbEntity),
-                    entityTarget: this.metadata.target,
-                    entity: dbEntity
-                };
-                
-                const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, results[0], results[1]);
-                return this.persistOperationExecutor.executePersistOperation(persistOperation);
-            }).then(() => entity);
+    async remove(entity: Entity): Promise<Entity> {
+        const dbEntity = await this.initialize(entity);
+        (<any> entity)[this.metadata.primaryColumn.name] = undefined;
+        const [dbEntities, allPersistedEntities]: [EntityWithId[], EntityWithId[]] = await Promise.all([
+            this.extractObjectsById(dbEntity, this.metadata),
+            this.extractObjectsById(entity, this.metadata)
+        ]);
+        const entityWithId: EntityWithId = {
+            id: this.metadata.getEntityId(entity),
+            entityTarget: this.metadata.target,
+            entity: entity
+        };
+        const dbEntityWithId: EntityWithId = {
+            id: this.metadata.getEntityId(dbEntity),
+            entityTarget: this.metadata.target,
+            entity: dbEntity
+        };
+        
+        const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
+        await this.persistOperationExecutor.executePersistOperation(persistOperation);
+        return entity;
     }
 
     /**
      * Finds all entities.
      */
-    find(): Promise<Entity[]>;
+    async find(): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find(conditions: Object): Promise<Entity[]>;
+    async find(conditions: Object): Promise<Entity[]>;
 
     /**
      * Finds entities with .
      */
-    find(options: FindOptions): Promise<Entity[]>;
+    async find(options: FindOptions): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find(conditions: Object, options: FindOptions): Promise<Entity[]>;
+    async find(conditions: Object, options: FindOptions): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
+    async find(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
             .getResults();
     }
@@ -256,27 +239,27 @@ export class Repository<Entity> {
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(): Promise<[ Entity[], number ]>;
+    async findAndCount(): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(conditions: Object): Promise<[ Entity[], number ]>;
+    async findAndCount(conditions: Object): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(options: FindOptions): Promise<[ Entity[], number ]>;
+    async findAndCount(options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
+    async findAndCount(conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
+    async findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
         const qb = this.createFindQueryBuilder(conditionsOrFindOptions, options);
         return qb.getResultsAndCount();
     }
@@ -284,27 +267,27 @@ export class Repository<Entity> {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(): Promise<Entity>;
+    async findOne(): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(conditions: Object): Promise<Entity>;
+    async findOne(conditions: Object): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(options: FindOptions): Promise<Entity>;
+    async findOne(options: FindOptions): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(conditions: Object, options: FindOptions): Promise<Entity>;
+    async findOne(conditions: Object, options: FindOptions): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
+    async findOne(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
             .getSingleResult();
     }
@@ -312,7 +295,7 @@ export class Repository<Entity> {
     /**
      * Finds entity with given id.
      */
-    findOneById(id: any, options?: FindOptions): Promise<Entity> {
+    async findOneById(id: any, options?: FindOptions): Promise<Entity> {
         return this.createFindQueryBuilder({ [this.metadata.primaryColumn.name]: id }, options)
             .getSingleResult();
     }
@@ -320,22 +303,23 @@ export class Repository<Entity> {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    query(query: string): Promise<any> {
+    async query(query: string): Promise<any> {
         return this.driver.query(query);
     }
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      */
-    transaction(runInTransaction: () => Promise<any>): Promise<any> {
+    async transaction(runInTransaction: () => Promise<any>): Promise<any> {
         let runInTransactionResult: any;
         return this.driver
             .beginTransaction()
             .then(() => runInTransaction())
             .then(result => {
                 runInTransactionResult = result;
-                return this.driver.endTransaction();
+                return this.driver.commitTransaction();
             })
+            .catch(() => this.driver.rollbackTransaction())
             .then(() => runInTransactionResult);
     }
 

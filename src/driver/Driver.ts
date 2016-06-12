@@ -73,9 +73,19 @@ export interface Driver {
     beginTransaction(): Promise<void>;
     
     /**
+     * Commits transaction.
+     */
+    commitTransaction(): Promise<void>;
+    
+    /**
      * Ends transaction.
      */
-    endTransaction(): Promise<void>;
+    rollbackTransaction(): Promise<void>;
+    
+    /**
+     * Checks if transaction has been already started.
+     */
+    isTransactionActive(): boolean;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.

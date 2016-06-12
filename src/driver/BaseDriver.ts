@@ -15,6 +15,12 @@ export abstract class BaseDriver {
     abstract connectionOptions: ConnectionOptions;
 
     // -------------------------------------------------------------------------
+    // Private Properties
+    // -------------------------------------------------------------------------
+
+    private transactionActive: boolean = false;
+    
+    // -------------------------------------------------------------------------
     // Abstract Protected Methods
     // -------------------------------------------------------------------------
 
@@ -86,17 +92,34 @@ export abstract class BaseDriver {
     }
 
     /**
-     * Starts postgres transaction.
+     * Starts transaction.
      */
-    beginTransaction(): Promise<void> {
-        return this.query("START TRANSACTION").then(() => {});
+    async beginTransaction(): Promise<void> {
+        this.transactionActive = true;
+        await this.query("START TRANSACTION");
     }
 
     /**
-     * Ends postgres transaction.
+     * Commits transaction.
      */
-    endTransaction(): Promise<void> {
-        return this.query("COMMIT").then(() => {});
+    async commitTransaction(): Promise<void> {
+        this.transactionActive = false;
+        await this.query("COMMIT");
+    }
+
+    /**
+     * Rollbacks transaction.
+     */
+    async rollbackTransaction(): Promise<void> {
+        this.transactionActive = false;
+        await this.query("ROLLBACK");
+    }
+
+    /**
+     * Checks if transaction is active.
+     */
+    isTransactionActive() {
+        return this.transactionActive;
     }
 
     /**

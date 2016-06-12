@@ -21,4 +21,7 @@ export class Blog {
     @JoinTable()
     categories: Category[];
 
+    @Column()
+    viewCount: number = 0;
+
 }
