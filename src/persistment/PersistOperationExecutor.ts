@@ -54,7 +54,7 @@ export class PersistOperationExecutor {
             .then(() => this.executeUpdateOperations(persistOperation))
             .then(() => this.executeRemoveOperations(persistOperation))
             .then(() => {
-                if (!this.driver.isTransactionActive())
+                if (this.driver.isTransactionActive())
                     return this.driver.commitTransaction();
 
                 return Promise.resolve();
