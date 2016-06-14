@@ -262,9 +262,12 @@ export class SchemaCreator {
             return false;
         });
         if (dependForeignKeys && dependForeignKeys.length) {
-            await Promise.all(dependForeignKeys.map(fk => {
-                console.log("dropping fk...");
-                return this.schemaBuilder.dropForeignKeyQuery(fk.tableName, fk.name);
+            
+            await Promise.all(dependForeignKeys.map(async fk => {
+                const tableForeignKeys = await this.schemaBuilder.getTableForeignQuery(fk.tableName);
+                if (!!tableForeignKeys.find(tableForeignKey => tableForeignKey === fk.name)) {
+                    return this.schemaBuilder.dropForeignKeyQuery(fk.tableName, fk.name);
+                }
             }));
         }
     }

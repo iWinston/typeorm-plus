@@ -441,7 +441,7 @@ describe("repository > basic methods", () => {
 
                 // now send the query that will crash all for us
                 throw new Error("this error will cancel all persist operations");
-            });
+            }).should.be.rejected;
 
             blogs = await repository.find();
             blogs.length.should.be.equal(1);

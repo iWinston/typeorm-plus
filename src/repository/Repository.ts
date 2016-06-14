@@ -318,7 +318,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      */
-    async transaction(runInTransaction: () => Promise<any>): Promise<any> {
+    async transaction(runInTransaction: () => any|Promise<any>): Promise<any> {
         let runInTransactionResult: any;
         return this.driver
             .beginTransaction()
@@ -327,7 +327,15 @@ export class Repository<Entity extends ObjectLiteral> {
                 runInTransactionResult = result;
                 return this.driver.commitTransaction();
             })
-            .catch(() => this.driver.rollbackTransaction())
+            .catch(err => {
+                return this.driver.rollbackTransaction()
+                    .then(() => {
+                        throw err;
+                    })
+                    .catch(() => {
+                        throw err;
+                    });
+            })
             .then(() => runInTransactionResult);
     }
 

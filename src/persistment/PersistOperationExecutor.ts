@@ -34,12 +34,15 @@ export class PersistOperationExecutor {
      * Executes given persist operation.
      */
     executePersistOperation(persistOperation: PersistOperation) {
+        let isTransactionStartedByItself = false;
         
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(persistOperation))
             .then(() => {
-                if (!this.driver.isTransactionActive())
+                if (!this.driver.isTransactionActive()) {
+                    isTransactionStartedByItself = true;
                     return this.driver.beginTransaction();
+                }
 
                 return Promise.resolve();
             })
@@ -54,7 +57,7 @@ export class PersistOperationExecutor {
             .then(() => this.executeUpdateOperations(persistOperation))
             .then(() => this.executeRemoveOperations(persistOperation))
             .then(() => {
-                if (this.driver.isTransactionActive())
+                if (isTransactionStartedByItself === true)
                     return this.driver.commitTransaction();
 
                 return Promise.resolve();
@@ -64,7 +67,7 @@ export class PersistOperationExecutor {
             .then(() => this.updateSpecialColumnsInEntities(persistOperation))
             .then(() => this.broadcastAfterEvents(persistOperation))
             .catch(error => {
-                if (!this.driver.isTransactionActive()) {
+                if (isTransactionStartedByItself === true) {
                     return this.driver.rollbackTransaction()
                         .then(() => {
                             throw error;

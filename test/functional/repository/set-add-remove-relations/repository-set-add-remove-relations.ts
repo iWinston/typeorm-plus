@@ -28,6 +28,7 @@ describe("repository > set/add/remove relation methods", function() {
             database: "test",
             autoSchemaCreate: true,
             logging: {
+                // logQueries: true, // uncomment for debugging
                 logFailedQueryError: true
             }
         },
