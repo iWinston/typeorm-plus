@@ -333,7 +333,7 @@ export class EntityMetadataBuilder {
             if (!metadata.table.isClosure)
                 return;
             
-            const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(lazyRelationsWrapper,{
+            const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(lazyRelationsWrapper, {
                 namingStrategy: namingStrategy,
                 table: metadata.table,
                 primaryColumn: metadata.primaryColumn,

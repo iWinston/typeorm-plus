@@ -16,7 +16,7 @@ chai.should();
 chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
-describe.only("lazy-relations", () => {
+describe("lazy-relations", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/lazy-relations/";
     const userSchema = require(resourceDir + "schema/user.json");
     const profileSchema = require(resourceDir + "schema/profile.json");

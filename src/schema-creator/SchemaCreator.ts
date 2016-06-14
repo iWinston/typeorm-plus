@@ -99,7 +99,7 @@ export class SchemaCreator {
         return this.schemaBuilder.getTableForeignQuery(table.name).then(dbKeys => {
             const dropKeysQueries = dbKeys
                 .filter(dbKey => !foreignKeys.find(foreignKey => foreignKey.name === dbKey))
-                .map(dbKey => this.schemaBuilder.dropForeignKeyQuery(dbKey, dbKey));
+                .map(dbKey => this.schemaBuilder.dropForeignKeyQuery(table.name, dbKey));
 
             return Promise.all(dropKeysQueries);
         });
@@ -263,6 +263,7 @@ export class SchemaCreator {
         });
         if (dependForeignKeys && dependForeignKeys.length) {
             await Promise.all(dependForeignKeys.map(fk => {
+                console.log("dropping fk...");
                 return this.schemaBuilder.dropForeignKeyQuery(fk.tableName, fk.name);
             }));
         }
