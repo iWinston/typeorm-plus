@@ -62,7 +62,7 @@ export class LazyRelationsWrapper {
                         // .where(`${relation.propertyName}.${relation.referencedColumnName}=:${relation.propertyName}Id`)
                         .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
 
-                    console.log(qb.getSql());
+                    // console.log(qb.getSql());
 
                     return qb.getSingleResult().then(result => {
                         this[index] = result;

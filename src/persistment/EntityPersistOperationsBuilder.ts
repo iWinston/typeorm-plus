@@ -406,10 +406,6 @@ export class EntityPersistOperationBuilder {
             const value = this.getEntityRelationValue(relation, newEntity);
             if (value === null || value === undefined)
                 return operations;
-            
-            // console.log("relation: ", relation);
-            // console.log("newEntity: ", newEntity);
-            // console.log("value: ", value);
 
             const dbValue = dbEntity ? this.getEntityRelationValue(relation, dbEntity.entity) : null;
 

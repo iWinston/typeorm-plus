@@ -72,6 +72,13 @@ export class ForeignKeyMetadata {
     }
 
     /**
+     * Gets the table name to which this foreign key is referenced.
+     */
+    get referencedTableName() {
+        return this.referencedTable.name;
+    }
+
+    /**
      * Gets foreign key name.
      */
     get name() {
