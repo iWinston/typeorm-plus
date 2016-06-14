@@ -6,6 +6,7 @@
   "columns": {
     "id": {
       "type": "int",
+      "generated": true,
       "primary": true
     },
     "firstName": {
@@ -15,6 +16,15 @@
     "secondName": {
       "type": "string",
       "nullable": false
+    }
+  },
+  "relations": {
+    "profile": {
+      "target": "Profile",
+      "inverseSide": "user",
+      "type": "one-to-one",
+      "joinColumn": true,
+      "isLazy": true
     }
   }
 }

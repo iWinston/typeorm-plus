@@ -24,6 +24,11 @@ export interface RelationMetadataArgs {
     readonly propertyName: string;
 
     /**
+     * Indicates if this relation will be lazily loaded.
+     */
+    readonly isLazy: boolean;
+
+    /**
      * Original (reflected) class's property type.
      * 
      * todo: this can be empty for relations from entity schemas.

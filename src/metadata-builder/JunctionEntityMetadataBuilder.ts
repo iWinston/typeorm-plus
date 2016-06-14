@@ -5,6 +5,7 @@ import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
+import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 
 /**
  * Helps to create EntityMetadatas for junction tables.
@@ -25,7 +26,7 @@ export interface JunctionEntityMetadataBuilderArgs {
  */
 export class JunctionEntityMetadataBuilder {
     
-    build(args: JunctionEntityMetadataBuilderArgs) {
+    build(lazyRelationsWrapper: LazyRelationsWrapper, args: JunctionEntityMetadataBuilderArgs) {
 
         const column1 = args.joinTable.referencedColumn;
         const column2 = args.joinTable.inverseReferencedColumn;
@@ -54,7 +55,7 @@ export class JunctionEntityMetadataBuilder {
             }
         });
         
-        return new EntityMetadata({
+        return new EntityMetadata(lazyRelationsWrapper, {
             namingStrategy: args.namingStrategy,
             tableMetadata: tableMetadata,
             columnMetadatas: [

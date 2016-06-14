@@ -33,6 +33,7 @@ import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingS
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {BroadcasterFactory} from "../subscriber/BroadcasterFactory";
 import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityManagerNotConnectedError";
+import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 
 /**
  * A single connection instance to the database. 
@@ -67,6 +68,11 @@ export class Connection {
      * Gets ReactiveEntityManager of this connection.
      */
     private readonly _reactiveEntityManager: ReactiveEntityManager;
+
+    /**
+     * Used to initialize lazy relations.
+     */
+    private readonly lazyRelationsWrapper: LazyRelationsWrapper;
 
     /**
      * All entity listener metadatas that are registered for this connection.
@@ -145,6 +151,7 @@ export class Connection {
         this._entityManager = getFromContainer(EntityManagerFactory).createEntityManager(this);
         this._reactiveEntityManager = getFromContainer(EntityManagerFactory).createReactiveEntityManager(this);
         this.broadcaster = getFromContainer(BroadcasterFactory).createBroadcaster(this.entityMetadatas, this.entitySubscribers, this.entityListeners);
+        this.lazyRelationsWrapper = new LazyRelationsWrapper(this.driver, this.entityMetadatas, this.broadcaster);
     }
 
     // -------------------------------------------------------------------------
@@ -506,7 +513,7 @@ export class Connection {
         // build entity metadatas from metadata args storage (collected from decorators)
         if (this.entityClasses && this.entityClasses.length) {
             getFromContainer(EntityMetadataBuilder)
-                .buildFromMetadataArgsStorage(namingStrategy, this.entityClasses)
+                .buildFromMetadataArgsStorage(this.lazyRelationsWrapper, namingStrategy, this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.createRepository(metadata);
@@ -516,7 +523,7 @@ export class Connection {
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
             getFromContainer(EntityMetadataBuilder)
-                .buildFromSchemas(namingStrategy, this.entitySchemas)
+                .buildFromSchemas(this.lazyRelationsWrapper, namingStrategy, this.entitySchemas)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.createRepository(metadata);

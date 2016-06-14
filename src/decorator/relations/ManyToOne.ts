@@ -39,12 +39,14 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ConstructorFunction<T
         if (!options) options = {} as RelationOptions;
 
         const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
+        const isLazy = reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise";
 
         const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
             relationType: RelationTypes.MANY_TO_ONE,
+            isLazy: isLazy,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options

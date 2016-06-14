@@ -20,7 +20,7 @@ chai.should();
 chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
-describe("Repository > basic methods", () => {
+describe("repository > basic methods", () => {
     const resourceDir = __dirname + "/../../../../../../test/functional/repository/basic-methods/";
 
     const userSchema = require(resourceDir + "schema/user.json");

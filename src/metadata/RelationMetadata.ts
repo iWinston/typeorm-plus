@@ -85,6 +85,11 @@ export class RelationMetadata extends PropertyMetadata {
     readonly relationType: RelationType;
 
     /**
+     * Indicates if this relation will be lazily loaded.
+     */
+    readonly isLazy: boolean;
+
+    /**
      * If set to true then it means that related object can be allowed to be inserted to the db.
      */
     readonly isCascadeInsert: boolean;
@@ -145,6 +150,8 @@ export class RelationMetadata extends PropertyMetadata {
             this._inverseSideProperty = args.inverseSideProperty;
         if (args.propertyType)
             this.propertyType = args.propertyType;
+        if (args.isLazy)
+            this.isLazy = args.isLazy;
         if (args.options.cascadeInsert || args.options.cascadeAll)
             this.isCascadeInsert = true;
         if (args.options.cascadeUpdate || args.options.cascadeAll)
@@ -176,27 +183,41 @@ export class RelationMetadata extends PropertyMetadata {
     
     /**
      * Gets the name of column in the database. 
-     * Cannot be used with many-to-many relations since they don't have a column in the database.
-     * Also only owning sides of the relations have this property.
+     * //Cannot be used with many-to-many relations since they don't have a column in the database.
+     * //Also only owning sides of the relations have this property.
      */
     get name(): string {
-        if (!this.isOwning || this.isManyToMany)
-            throw new Error(`Relation name cannot be retrieved for many-to-many relations or not owning relations.`);
-        
-        return this.joinColumn.name;
+        // if (!this.isOwning || this.isManyToMany)
+
+        if (this.isOwning) {
+            if (this.joinTable) {
+                return this.joinTable.joinColumnName;
+            } else if (this.joinColumn) {
+                return this.joinColumn.name;
+            }
+            
+        } else if (this.hasInverseSide) { 
+            if (this.inverseRelation.joinTable) {
+                return this.inverseRelation.joinTable.inverseJoinColumnName;
+            } else if (this.inverseRelation.joinColumn && this.inverseRelation.joinColumn.referencedColumn) {
+                return this.inverseRelation.joinColumn.referencedColumn.name;
+            }
+        }
+
+        throw new Error(`Relation name cannot be retrieved.`);
     }
 
     /**
      * Gets the name of column to which this relation is referenced. 
-     * Cannot be used with many-to-many relations since all referenced are in the junction table.
-     * Also only owning sides of the relations have this property.
+     * //Cannot be used with many-to-many relations since all referenced are in the junction table.
+     * //Also only owning sides of the relations have this property.
      */
     get referencedColumnName(): string {
-        if (!this.isOwning)
-            throw new Error(`Only owning side of the relations can have information about referenced column names.`);
+        // if (!this.isOwning)
+        //     throw new Error(`Only owning side of the relations can have information about referenced column names.`);
         
         // for many-to-one and owner one-to-one relations we get referenced column from join column
-        if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
+        /*if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
             return this.joinColumn.referencedColumn.name;
         
         // for many-to-many relation we give referenced column depend of owner side
@@ -205,6 +226,22 @@ export class RelationMetadata extends PropertyMetadata {
                 return this.joinTable.referencedColumn.name;
             } else {
                 return this.joinTable.inverseReferencedColumn.name;
+            }
+        }*/
+
+        if (this.isOwning) {
+            if (this.joinTable) {
+                return this.joinTable.referencedColumn.name;
+                
+            } else if (this.joinColumn) {
+                return this.joinColumn.referencedColumn.name;
+            }
+
+        } else if (this.hasInverseSide) {
+            if (this.inverseRelation.joinTable) {
+                return this.inverseRelation.joinTable.inverseReferencedColumn.name;
+            } else if (this.inverseRelation.joinColumn) {
+                return this.inverseRelation.joinColumn.name;
             }
         }
         
@@ -215,16 +252,16 @@ export class RelationMetadata extends PropertyMetadata {
     /**
      * Gets the property's type to which this relation is applied.
      */
-    get type(): Function|string {
+    get type(): Function|string { // todo: when this can be a string?
         return this._type instanceof Function ? this._type() : this._type;
     }
 
     /**
      * Checks if this relation is lazy-load style relation.
-     */
+     
     get isLazy(): boolean {
         return this.propertyType && this.propertyType.name && this.propertyType.name.toLowerCase() === "promise";
-    }
+    }*/
 
     /**
      * Indicates if this side is an owner of this relation.

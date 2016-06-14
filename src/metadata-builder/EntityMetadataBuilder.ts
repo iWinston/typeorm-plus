@@ -20,6 +20,7 @@ import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
+import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -39,7 +40,7 @@ export class EntityMetadataBuilder {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    buildFromSchemas(namingStrategy: NamingStrategyInterface, schemas: EntitySchema[]): EntityMetadata[] {
+    buildFromSchemas(lazyRelationsWrapper: LazyRelationsWrapper, namingStrategy: NamingStrategyInterface, schemas: EntitySchema[]): EntityMetadata[] {
         const metadataArgsStorage = new MetadataArgsStorage();
 
         schemas.forEach(schema => {
@@ -104,8 +105,8 @@ export class EntityMetadataBuilder {
                     const relation: RelationMetadataArgs = {
                         target: schema.target || schema.name,
                         propertyName: relationName,
-                        // todo: what to do with it?: propertyType:
                         relationType: relationSchema.type,
+                        isLazy: relationSchema.isLazy || false,
                         type: relationSchema.target,
                         inverseSideProperty: relationSchema.inverseSide,
                         isTreeParent: relationSchema.isTreeParent,
@@ -165,17 +166,17 @@ export class EntityMetadataBuilder {
             }
         });
         
-        return this.build(metadataArgsStorage, namingStrategy);
+        return this.build(lazyRelationsWrapper, metadataArgsStorage, namingStrategy);
     }
 
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    buildFromMetadataArgsStorage(namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
-        return this.build(getMetadataArgsStorage(), namingStrategy, entityClasses);
+    buildFromMetadataArgsStorage(lazyRelationsWrapper: LazyRelationsWrapper, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
+        return this.build(lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy, entityClasses);
     }
     
-    private build(metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
+    private build(lazyRelationsWrapper: LazyRelationsWrapper, metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
         const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas = metadataArgsStorage.getMergedTableMetadatas(entityClasses).map(mergedArgs => {
 
@@ -197,7 +198,7 @@ export class EntityMetadataBuilder {
             const indices = mergedArgs.indices.map(args => new IndexMetadata(args));
 
             // create a new entity metadata
-            const entityMetadata = new EntityMetadata({
+            const entityMetadata = new EntityMetadata(lazyRelationsWrapper, {
                 namingStrategy: namingStrategy,
                 tableMetadata: table,
                 columnMetadatas: columns,
@@ -266,6 +267,15 @@ export class EntityMetadataBuilder {
                 if (relationCountMetadata)
                     relation.countField = relationCountMetadata.propertyName;
             });
+            
+            // add lazy initializer for entity relations
+            if (entityMetadata.target instanceof Function) {
+                entityMetadata.relations
+                    .filter(relation => relation.isLazy)
+                    .forEach(relation => {
+                        lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                    });
+            }
 
             return entityMetadata;
         });
@@ -323,7 +333,7 @@ export class EntityMetadataBuilder {
             if (!metadata.table.isClosure)
                 return;
             
-            const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build({
+            const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(lazyRelationsWrapper,{
                 namingStrategy: namingStrategy,
                 table: metadata.table,
                 primaryColumn: metadata.primaryColumn,
@@ -336,7 +346,7 @@ export class EntityMetadataBuilder {
         // generate junction tables for all many-to-many tables
         entityMetadatas.forEach(metadata => {
             metadata.ownerManyToManyRelations.forEach(relation => {
-                const junctionEntityMetadata = getFromContainer(JunctionEntityMetadataBuilder).build({
+                const junctionEntityMetadata = getFromContainer(JunctionEntityMetadataBuilder).build(lazyRelationsWrapper, {
                     namingStrategy: namingStrategy,
                     firstTable: metadata.table,
                     secondTable: relation.inverseEntityMetadata.table,

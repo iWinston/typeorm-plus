@@ -17,7 +17,7 @@ chai.should();
 chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
-describe("Repository > find methods", () => {
+describe("repository > find methods", () => {
     const resourceDir = __dirname + "/../../../../../../test/functional/repository/find-methods/";
     const userSchema = require(resourceDir + "schema/user.json");
     

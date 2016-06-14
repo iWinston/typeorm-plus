@@ -173,6 +173,11 @@ export interface EntitySchema {
             inverseSide?: string;
 
             /**
+             * Indicates if this relation will be lazily loaded.
+             */
+            isLazy?: boolean;
+
+            /**
              * Join table options of this column. If set to true then it simply means that it has a join table.
              */
             joinTable?: boolean|{

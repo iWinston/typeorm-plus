@@ -8,6 +8,7 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {EntityMetadataArgs} from "../metadata-args/EntityMetadataArgs";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 
 /**
  * Contains all entity metadata.
@@ -70,7 +71,8 @@ export class EntityMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(args: EntityMetadataArgs) {
+    constructor(private lazyRelationsWrapper: LazyRelationsWrapper, 
+                args: EntityMetadataArgs) {
         this.namingStrategy = args.namingStrategy;
         this.table = args.tableMetadata;
         this._columns = args.columnMetadatas || [];
@@ -98,10 +100,7 @@ export class EntityMetadata {
         if (!this.table)
             throw new Error("No table target set to the entity metadata.");
         
-        if (typeof this.targetName)
-            return this.targetName;
-        
-        return this.table.name;
+        return this.targetName ? this.targetName : this.table.name;
     }
 
     /**
@@ -340,7 +339,11 @@ export class EntityMetadata {
             return new (<any> this.table.target)();
 
         // otherwise simply return a new empty object
-        return {};
+        const newObject = {};
+        this.relations
+            .filter(relation => relation.isLazy)
+            .forEach(relation => this.lazyRelationsWrapper.wrap(newObject, relation));
+        return newObject;
     }
 
     /**

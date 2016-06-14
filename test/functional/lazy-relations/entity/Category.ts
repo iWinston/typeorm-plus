@@ -1,6 +1,8 @@
-import {Table} from "../../../../../src/decorator/tables/Table";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import {Table} from "../../../../src/decorator/tables/Table";
+import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
+import {Column} from "../../../../src/decorator/columns/Column";
+import {Post} from "./Post";
+import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
 
 @Table()
 export class Category {
@@ -10,5 +12,8 @@ export class Category {
 
     @Column()
     name: string;
+
+    @ManyToMany(type => Post, post => post.twoSideCategories)
+    twoSidePosts: Promise<Post[]>;
 
 }

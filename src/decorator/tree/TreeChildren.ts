@@ -11,6 +11,7 @@ export function TreeChildren(options?: RelationOptions): Function {
         if (!options) options = {} as RelationOptions;
 
         const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
+        const isLazy = reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise";
         
         // add one-to-many relation for this 
         const args: RelationMetadataArgs = {
@@ -18,6 +19,7 @@ export function TreeChildren(options?: RelationOptions): Function {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
+            isLazy: isLazy,
             relationType: RelationTypes.ONE_TO_MANY,
             type: () => object.constructor,
             options: options

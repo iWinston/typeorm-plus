@@ -6,6 +6,7 @@ import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
+import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 
 /**
  * Helps to create EntityMetadatas for junction tables.
@@ -26,7 +27,7 @@ export interface ClosureJunctionEntityMetadataBuilderArgs {
  */
 export class ClosureJunctionEntityMetadataBuilder {
     
-    build(args: ClosureJunctionEntityMetadataBuilderArgs) {
+    build(lazyRelationsWrapper: LazyRelationsWrapper, args: ClosureJunctionEntityMetadataBuilderArgs) {
 
         const columns = [
             new ColumnMetadata(<ColumnMetadataArgs> {
@@ -65,7 +66,7 @@ export class ClosureJunctionEntityMetadataBuilder {
             type: "closureJunction"
         });
 
-        return new EntityMetadata({
+        return new EntityMetadata(lazyRelationsWrapper, {
             namingStrategy: args.namingStrategy,
             tableMetadata: closureJunctionTableMetadata,
             columnMetadatas: columns,
