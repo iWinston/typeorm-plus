@@ -118,7 +118,7 @@ export class ColumnMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: ColumnMetadataArgs) {
-        super(args.target, args.propertyName);
+        super(undefined, args.propertyName);
 
         if (args.mode)
             this.mode = args.mode;
@@ -169,6 +169,10 @@ export class ColumnMetadata extends PropertyMetadata {
             return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
         
         throw new Error(`Column${this._name ? this._name + " " : ""} is not attached to any entity or embedded.`);
+    }
+
+    get target() {
+        return this.entityMetadata.target;
     }
 
     /**
@@ -232,11 +236,14 @@ export class ColumnMetadata extends PropertyMetadata {
             return false;
         
         if (this.isInEmbedded) {
-            return entity.hasOwnProperty(this.embeddedProperty) && 
-                entity[this.embeddedProperty].hasOwnProperty(this.propertyName);
+            return  entity[this.embeddedProperty] !== undefined && 
+                    entity[this.embeddedProperty] !== null && 
+                    entity[this.embeddedProperty][this.propertyName] !== undefined && 
+                    entity[this.embeddedProperty][this.propertyName] !== null;
             
         } else {
-            return entity.hasOwnProperty(this.propertyName);
+            return  entity[this.propertyName] !== undefined &&
+                    entity[this.propertyName] !== null;
         }
     }
 

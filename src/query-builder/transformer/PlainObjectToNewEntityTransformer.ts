@@ -1,4 +1,5 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  * Transforms plain old javascript object
@@ -12,8 +13,9 @@ export class PlainObjectToNewEntityTransformer {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    transform(newEntity: any, object: any, metadata: EntityMetadata): any {
-        return this.groupAndTransform(newEntity, object, metadata);
+    transform<T>(newEntity: T, object: ObjectLiteral, metadata: EntityMetadata): T {
+        this.groupAndTransform(newEntity, object, metadata);
+        return newEntity;
     }
 
     // -------------------------------------------------------------------------
@@ -24,7 +26,7 @@ export class PlainObjectToNewEntityTransformer {
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
      */
-    private groupAndTransform(entity: any, object: any, metadata: EntityMetadata) {
+    private groupAndTransform(entity: any, object: ObjectLiteral, metadata: EntityMetadata): void {
         // copy regular column properties from the given object
         metadata.columns
             .filter(column => object.hasOwnProperty(column.propertyName))
@@ -42,28 +44,33 @@ export class PlainObjectToNewEntityTransformer {
                     if (object[relation.propertyName] instanceof Array) {
                         entity[relation.propertyName] = object[relation.propertyName].map((subObject: any) => {
                             let subEntity = relationMetadata.create();
+                            // todo: support custom initial fields here
                             if (entity[relation.propertyName] instanceof Array) {
-                                // todo: support custom initial fields here
-                                subEntity = entity[relation.propertyName].find((subEntity: any) => {
+                                const existRelation = entity[relation.propertyName].find((subEntity: any) => {
                                     return subEntity[relation.referencedColumnName] === subObject[relation.referencedColumnName];
                                 });
+                                this.groupAndTransform(subEntity, existRelation, relationMetadata);
                             }
-                            return this.groupAndTransform(subEntity, subObject, relationMetadata);
+                            
+                            this.groupAndTransform(subEntity, subObject, relationMetadata);
+                            return subEntity;
                         });
                     } else {
                         entity[relation.propertyName] = object[relation.propertyName];
                     }
                 } else {
                     if (object[relation.propertyName]) {
-                        const subEntity = entity[relation.propertyName] || relationMetadata.create();
-                        entity[relation.propertyName] = this.groupAndTransform(subEntity, object[relation.propertyName], relationMetadata);
+                        const subEntity = relationMetadata.create();
+                        if (entity[relation.propertyName])
+                            this.groupAndTransform(subEntity, entity[relation.propertyName], relationMetadata);
+                        
+                        this.groupAndTransform(subEntity, object[relation.propertyName], relationMetadata);
+                        entity[relation.propertyName] = subEntity;
                     } else {
                         entity[relation.propertyName] = object[relation.propertyName];
                     }
                 }
             });
-
-        return entity;
     }
 
 }
