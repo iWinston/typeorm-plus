@@ -49,7 +49,8 @@ export class PlainObjectToNewEntityTransformer {
                                 const existRelation = entity[relation.propertyName].find((subEntity: any) => {
                                     return subEntity[relation.referencedColumnName] === subObject[relation.referencedColumnName];
                                 });
-                                this.groupAndTransform(subEntity, existRelation, relationMetadata);
+                                if (existRelation)
+                                    this.groupAndTransform(subEntity, existRelation, relationMetadata);
                             }
                             
                             this.groupAndTransform(subEntity, subObject, relationMetadata);
