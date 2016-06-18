@@ -62,7 +62,7 @@ require("reflect-metadata");
 
         `npm install mysql --save`
 
-    3.2. Postgres
+    3.2. Postgres (still in development, don't use it yet)
 
         `npm install pg --save`
 
@@ -242,7 +242,7 @@ which supposed to be contain our Photo's additional meta-information:
 ```typescript
 import {Table} from "typeorm/tables";
 import {PrimaryColumn, Column} from "typeorm/columns";
-import {OneToOne} from "typeorm/relations";
+import {OneToOne, JoinColumn} from "typeorm/relations";
 
 @Table("photo_metadata")
 export class PhotoMetadata {
@@ -266,6 +266,7 @@ export class PhotoMetadata {
     orientation: string;
     
     @OneToOne(type => Photo, photo => photo.metadata) // note: we will create metadata property in the Photo class below
+    @JoinColumn()
     photo: Photo;
 }
 ```
@@ -290,25 +291,25 @@ of the `Photo` class is where we store `PhotoMetadata` in the `Photo` class.
 photo simply pass a string to @OneToOne decorator, like "metadata". But
 we used this function-typed approach to make your refactorings easier.
 
+We also put `@JoinColumn` decorator, that indicates that this side of the relationship
+will be owning relationship. Using this decorator is required on owner side of the relationship.
+
 Now lets add inverse side of our relation to the `Photo` class:
 
 ```typescript
 export class Photo {
     /// ... other columns
     
-    @OneToOneInverse(type => PhotoMetadata, metadata => metadata.photo)
+    @OneToOne(type => PhotoMetadata, metadata => metadata.photo)
     metadata: PhotoMetadata;
 }
 ```
 
-`@OneToOneInverse` decorator has same parameters as `@OneToOne` - first 
-parameter specifies the class with which the relation is made, second 
-parameter specifies inverse side of this relation. In any relation there 
-are always two sides and only one of them can be owner side. Owner side
+In any relation there are always two sides and only one of them can be owner side. Owner side
 is called "owner", because it "owns" relation id. In our example 
-`PhotoMetadata` owns relation because it uses `@OneToOne` decorator, thus
-it will contain photo id. `Photo` entity does not own relation, thus
-does not have metadata id.
+`PhotoMetadata` owns relation because it has a `@JoinColumn` decorator, thus
+it will contain photo id. `Photo` entity does not have `@JoinColumn`, thus
+does not have metadata id, and it means that its inverse side of the relationship.
 
 After you run application ORM will create a photo_metadata table:
 
@@ -377,13 +378,13 @@ createConnection(options).then(connection => {
 
 We can setup cascade options in our relations, in the cases when we want
 our related object to be persisted whenever other object is saved. Let's
-change our photo's `@OneToOneInverse` decorator a bit:
+change our photo's `@OneToOne` decorator a bit:
 
 ```typescript
 export class Photo {
     /// ... other columns
     
-    @OneToOneInverse(type => PhotoMetadata, metadata => metadata.photo, {
+    @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
@@ -553,7 +554,7 @@ be in many albums, and multiple can have many photos. Lets create an
 ```typescript
 import {Table} from "typeorm/tables";
 import {PrimaryColumn, Column} from "typeorm/columns";
-import {ManyToMany} from "typeorm/relations";
+import {ManyToMany, JoinTable} from "typeorm/relations";
 
 @Table("album")
 export class Album {
@@ -569,9 +570,12 @@ export class Album {
         cascadeUpdate: true, // allow to update a photo on album save
         cascadeRemove: true  // allow to remove a photo on album remove
     })
+    @JoinTable()
     photos: Photo[] = []; // we initialize array for convinience here
 }
 ```
+
+`@JoinTable` is required to specify that this is owner side of the relationship.
 
 Now lets add inverse side of our relation to the `Photo` class:
 
@@ -579,7 +583,7 @@ Now lets add inverse side of our relation to the `Photo` class:
 export class Photo {
     /// ... other columns
     
-    @ManyToManyInverse(type => Album, album => album.photos, {
+    @ManyToMany(type => Album, album => album.photos, {
        cascadeInsert: true, // allow to insert a new album on photo save
        cascadeUpdate: true, // allow to update an album on photo save
        cascadeRemove: true  // allow to remove an album on photo remove
@@ -736,7 +740,7 @@ metadata.photo       = photo; // this way we connect them
 let photo = new Photo();
 photo.name = "Me and Bears";
 photo.description = "I am near polar bears";
-photo.filename = "photo-with-bears.jpg"
+photo.filename = "photo-with-bears.jpg";
 photo.author = author;
 photo.metadata = metadata;
 
