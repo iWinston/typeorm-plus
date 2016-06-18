@@ -3,6 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -140,7 +141,7 @@ export class Broadcaster {
     }
 
     broadcastLoadEvents(target: Function|string, entity: any): Promise<void> {
-        if (entity instanceof Promise)
+        if (entity instanceof Promise) // todo: why need this?
             return Promise.resolve();
         
         const metadata = this.entityMetadatas.findByTarget(target);
@@ -150,10 +151,10 @@ export class Broadcaster {
             .relations
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
             .map(relation => {
-                const value = entity[relation.propertyName];
+                const value = this.getEntityRelationValue(relation, entity);
                 if (value instanceof Array) {
                     promises = promises.concat(this.broadcastLoadEventsForAll(relation.inverseEntityMetadata.target, value));
-                } else {
+                } else if (value) {
                     promises.push(this.broadcastLoadEvents(relation.inverseEntityMetadata.target, value));
                 }
             });
@@ -182,6 +183,10 @@ export class Broadcaster {
     // Private Methods
     // -------------------------------------------------------------------------
 
+    private getEntityRelationValue(relation: RelationMetadata, entity: any) {
+        return relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
+    }
+    
     private isAllowedSubscribers(subscriber: EntitySubscriberInterface<any>, cls: Function) {
         return  !subscriber.listenTo ||
                 !subscriber.listenTo() ||

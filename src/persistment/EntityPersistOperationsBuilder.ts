@@ -570,7 +570,7 @@ export class EntityPersistOperationBuilder {
     }
     
     private getEntityRelationValue(relation: RelationMetadata, entity: any) {
-        return (entity[relation.propertyName] instanceof Promise && relation.isLazy) ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
+        return relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
     }
 
 }

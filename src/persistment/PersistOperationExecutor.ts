@@ -10,6 +10,7 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {Driver} from "../driver/Driver";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -383,7 +384,8 @@ export class PersistOperationExecutor {
         });
         
         updateOperation.relations.forEach(relation => {
-            values[relation.name] = entity[relation.propertyName] ? entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName] : null;
+            const value = this.getEntityRelationValue(relation, entity);
+            values[relation.name] = value !== null && value !== undefined ? value[relation.inverseEntityMetadata.primaryColumn.propertyName] : null;
         });
 
         // if number of updated columns = 0 no need to update updated date and version columns
@@ -435,10 +437,11 @@ export class PersistOperationExecutor {
             .filter(relation => !relation.isManyToMany && relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
             .map(relation => {
-                if (entity[relation.propertyName]) // in the case if relation has null, which can be saved
-                    return entity[relation.propertyName][relation.inverseEntityMetadata.primaryColumn.propertyName];
+                const value = this.getEntityRelationValue(relation, entity);
+                if (value !== null && value !== undefined) // in the case if relation has null, which can be saved
+                    return value[relation.inverseEntityMetadata.primaryColumn.propertyName];
 
-                return entity[relation.propertyName];
+                return value;
             });
 
         const allColumns = columnNames.concat(relationColumns);
@@ -471,7 +474,8 @@ export class PersistOperationExecutor {
             allColumns.push(metadata.treeChildrenCountColumn.name);
             allValues.push(0);
         }*/
-        
+
+        // console.log("inserting: ", this.zipObject(allColumns, allValues));
         return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));
     }
 
@@ -564,6 +568,10 @@ export class PersistOperationExecutor {
             (<any> object)[column] = values[index];
             return object;
         }, {});
+    }
+
+    private getEntityRelationValue(relation: RelationMetadata, entity: any) {
+        return relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
     }
 
 }

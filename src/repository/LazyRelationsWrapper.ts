@@ -15,15 +15,20 @@ export class LazyRelationsWrapper {
     wrap(object: Object, relation: RelationMetadata) {
         const lazyRelationsWrapper = this;
         const index = "__" + relation.propertyName + "__";
+        const loadIndex = "__load_" + relation.propertyName + "__";
+        const resolveIndex = "__has_" + relation.propertyName + "__";
+        
         Object.defineProperty(object, relation.propertyName, {
             get: function() {
-                if (this[index])
+                if (this[resolveIndex] === true)
                     return Promise.resolve(this[index]);
+                if (this[loadIndex])
+                    return this[loadIndex];
 
                 const qb = new QueryBuilder(lazyRelationsWrapper.driver, lazyRelationsWrapper.entityMetadatas, lazyRelationsWrapper.broadcaster);
                 if (relation.isManyToMany || relation.isOneToMany) {
 
-                    if (relation.hasInverseSide) {
+                    if (relation.hasInverseSide) { // if we don't have inverse side then we can't select and join by relation from inverse side
                         qb.select(relation.propertyName)
                             .from(relation.inverseRelation.target, relation.propertyName)
                             .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName);
@@ -35,49 +40,53 @@ export class LazyRelationsWrapper {
                             .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
                     }
 
-                    //
-                    // const inverseSide = relation.hasInverseSide ?  as Function : relation.type as Function;
-                    // const join = relation.hasInverseSide ? `${relation.propertyName}.${relation.inverseRelation.name}` : relation.target as string;
-                    // const inverseSide = relation.hasInverseSide ? relation.inverseRelation.target : relation.type;
-                    // find object metadata and try to load
-
-                    // console.log(qb.getSql());
-
-                    return qb.getResults().then(results => {
+                    this[loadIndex] = qb.getResults().then(results => {
                         this[index] = results;
+                        this[resolveIndex] = true;
+                        delete this[loadIndex];
                         return this[index];
+                    }).catch(err => {
+                        throw err;
                     });
+                    return this[loadIndex];
 
                 } else {
 
-                    const inverseSide = relation.hasInverseSide ? relation.inverseRelation.target as Function : relation.type as Function;
-                    const join = relation.hasInverseSide ? `${relation.propertyName}.${relation.inverseRelation.name}` : relation.target as string;
-                    // const inverseSide = relation.hasInverseSide ? relation.inverseRelation.target : relation.type;
+                    if (relation.hasInverseSide) {
+                        qb.select(relation.propertyName)
+                            .from(relation.inverseRelation.target, relation.propertyName)
+                            .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName);
 
-                    // find object metadata and try to load
-                    qb.select(relation.propertyName)
-                        .from(inverseSide, relation.propertyName)
-                        .innerJoin(join, relation.entityMetadata.targetName, "ON",
-                            `${relation.entityMetadata.targetName}.${relation.name}=:${relation.propertyName}Id`)
-                        // .where(`${relation.propertyName}.${relation.referencedColumnName}=:${relation.propertyName}Id`)
-                        .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
-
+                    } else {
+                        // (ow) post.category<=>category.post
+                        // loaded: category from post
+                        qb.select(relation.propertyName) // category
+                            .from(relation.type, relation.propertyName) // Category, category
+                            .innerJoin(relation.target as Function, relation.entityMetadata.name, "ON",
+                                `${relation.entityMetadata.name}.${relation.propertyName}=:${relation.propertyName}Id`) // Post, post, post.category = categoryId
+                            .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
+                    }
                     // console.log(qb.getSql());
-
-                    return qb.getSingleResult().then(result => {
+                    this[loadIndex] = qb.getSingleResult().then(result => {
                         this[index] = result;
+                        this[resolveIndex] = true;
+                        delete this[loadIndex];
                         return this[index];
+                    }).catch(err => {
+                        throw err;
                     });
+                    return this[loadIndex];
                 }
             },
             set: function(promise: Promise<any>) {
                 if (promise instanceof Promise) {
                     promise.then(result => {
                         this[index] = result;
+                        this[resolveIndex] = true;
                     });
-                    Promise.resolve();
                 } else {
                     this[index] = promise;
+                    this[resolveIndex] = true;
                 }
             }
         });

@@ -11,12 +11,13 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {QueryBuilder} from "../../../src/query-builder/QueryBuilder";
 import {Category} from "./entity/Category";
+import {FindOptions} from "../../../src/repository/FindOptions";
 
 chai.should();
 chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
-describe("lazy-relations", () => {
+describe.only("lazy-relations", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/lazy-relations/";
     const userSchema = require(resourceDir + "schema/user.json");
     const profileSchema = require(resourceDir + "schema/profile.json");
@@ -110,37 +111,26 @@ describe("lazy-relations", () => {
         const userRepository = connection.getRepository("User");
         const profileRepository = connection.getRepository("Profile");
 
-        const profile: any = {
-            country: "Japan"
-        };
+        const profile: any = profileRepository.create();
+        profile.country = "Japan";
         await profileRepository.persist(profile);
-
-        const user: any = {
-            firstName: "Umed",
-            secondName: "San",
-            profile: Promise.resolve(profile)
-        };
-        await userRepository.persist(user);
-
-        user.profile.should.eventually.be.eql(profile);
-
-        /*const post = await userRepository.findOneById(1);
-        post.title.should.be.equal("Hello post");
-        post.text.should.be.equal("This is post about post");
-
-        post.twoSideCategories.should.be.instanceOf(Promise);
-
-        const categories = await post.twoSideCategories;
-        categories.length.should.be.equal(3);
-        categories.should.contain({ id: 3, name: "kids" });
-        categories.should.contain({ id: 1, name: "people" });
-        categories.should.contain({ id: 2, name: "animals" });
-
-        const category = await categoryRepository.findOneById(1);
-        category.name.should.be.equal("people");
         
-        const twoSidePosts = await category.twoSidePosts;
-        twoSidePosts.should.contain({ id: 1, title: "Hello post", text: "This is post about post", viewCount: 0 });*/
+        const newUser: any = userRepository.create();
+        newUser.firstName = "Umed";
+        newUser.secondName = "San";
+        newUser.profile = Promise.resolve(profile);
+        await userRepository.persist(newUser);
+
+        newUser.profile.should.eventually.be.eql(profile);
+
+        // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
+        const loadedUser: any = await userRepository.findOneById(1);
+        loadedUser.firstName.should.be.equal("Umed");
+        loadedUser.secondName.should.be.equal("San");
+        loadedUser.profile.should.be.instanceOf(Promise);
+
+        const lazyLoadedProfile = await loadedUser.profile;
+        lazyLoadedProfile.country.should.be.equal("Japan");
     })));
 
 });
