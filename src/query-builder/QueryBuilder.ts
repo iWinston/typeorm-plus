@@ -892,7 +892,7 @@ export class QueryBuilder<Entity> {
             
             const parentAlias = join.alias.parentAliasName;
             if (!parentAlias) {
-                return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + join.conditionType + " " + join.condition;
+                return " " + joinType + " JOIN " + joinTableName + " " + join.alias.name + " " + (join.condition ? ( join.conditionType + " " + join.condition ) : "");
             }
             
             const foundAlias = this.aliasMap.findAliasByName(parentAlias);

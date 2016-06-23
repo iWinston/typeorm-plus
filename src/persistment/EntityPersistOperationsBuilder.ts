@@ -33,7 +33,6 @@ import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
  * if relation has "insert" it can insert a new entity
  * if relation has "update" it can only update related entity
  * if relation has "remove" it can only remove related entity
- * @internal
  */
 export class EntityPersistOperationBuilder {
 

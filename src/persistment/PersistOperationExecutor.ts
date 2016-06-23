@@ -14,7 +14,6 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Executes PersistOperation in the given connection.
- * @internal
  */
 export class PersistOperationExecutor {
 

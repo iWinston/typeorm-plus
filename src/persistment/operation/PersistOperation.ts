@@ -7,7 +7,6 @@ import {UpdateByRelationOperation} from "./UpdateByRelationOperation";
 import {UpdateByInverseSideOperation} from "./UpdateByInverseSideOperation";
 
 /**
- * @internal
  */
 export interface EntityWithId {
     id: any;
@@ -16,7 +15,6 @@ export interface EntityWithId {
 }
 
 /**
- * @internal
  */
 export class PersistOperation {
     

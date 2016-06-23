@@ -13,8 +13,6 @@ interface LoadMap {
 /**
  * Transforms plain old javascript object
  * Entity is constructed based on its entity metadata.
- *
- * @internal
  */
 export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral> {
 

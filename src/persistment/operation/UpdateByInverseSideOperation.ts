@@ -1,7 +1,6 @@
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
- * @internal
  */
 export class UpdateByInverseSideOperation {
     constructor(public entityTarget: Function|string, // todo: probably must be entity metadata here?

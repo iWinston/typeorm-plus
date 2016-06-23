@@ -1,7 +1,6 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
- * @internal
  */
 export class JunctionInsertOperation {
     constructor(public metadata: EntityMetadata,

@@ -1,7 +1,6 @@
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 
 /**
- * @internal
  */
 export class Alias {
     isMain: boolean;

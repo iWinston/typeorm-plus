@@ -2,7 +2,6 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
- * @internal
  */
 export class RemoveOperation {
     constructor(public target: Function|string, // todo: probably should be metadata here

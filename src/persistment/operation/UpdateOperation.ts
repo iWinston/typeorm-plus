@@ -2,7 +2,6 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
- * @internal
  */
 export class UpdateOperation {
     constructor(public target: Function|string,
