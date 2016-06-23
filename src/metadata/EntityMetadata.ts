@@ -107,7 +107,7 @@ export class EntityMetadata {
      * All columns of the entity, including columns that are coming from the embeddeds of this entity.
      */
     get columns() {
-        let allColumns: ColumnMetadata[] = [].concat(this._columns);
+        let allColumns: ColumnMetadata[] = ([] as ColumnMetadata[]).concat(this._columns);
         this.embeddeds.forEach(embedded => {
             allColumns = allColumns.concat(embedded.columns);
         });
