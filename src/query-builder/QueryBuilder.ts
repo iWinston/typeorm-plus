@@ -169,23 +169,16 @@ export class QueryBuilder<Entity> {
     from(entity: Function|string, alias: string): this;
     from(entityOrTableName: Function|string, alias: string): this {
 
-        const aliasObj = new Alias(alias);
-        aliasObj.target = entityOrTableName;
-        this.aliasMap.addMainAlias(aliasObj);
-        this.fromEntity = { alias: aliasObj };
-        
-        return this;
-        
-       /* if (entityOrTableName instanceof Function) {
+        if (entityOrTableName instanceof Function || this.isValueSimpleString(entityOrTableName)) {
             const aliasObj = new Alias(alias);
-            aliasObj.target = <Function> entityOrTableName;
+            aliasObj.target = entityOrTableName;
             this.aliasMap.addMainAlias(aliasObj);
             this.fromEntity = { alias: aliasObj };
-        } else {
+        } else { // this is required to perform selection from subquery results
             this.fromTableName = <string> entityOrTableName;
             this.fromTableAlias = alias;
         }
-        return this;*/
+        return this;
     }
 
     countRelationAndMap(mapProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
@@ -785,7 +778,7 @@ export class QueryBuilder<Entity> {
         // add all other selects
         this.selects.filter(select => {
             return select !== alias && !this.joins.find(join => join.alias.name === select);
-        }).forEach(select => allSelects.push(select));
+        }).forEach(select => allSelects.push(this.replacePropertyNames(select)));
         
         // if still selection is empty, then simply set it to all (*)
         if (allSelects.length === 0)
@@ -834,10 +827,10 @@ export class QueryBuilder<Entity> {
             const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
             if (!metadata) return;
             metadata.columns.forEach(column => {
-                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName, "g"), alias.name + "." + column.name);
+                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName + "([ =]|.{0}$)", "gm"), alias.name + "." + column.name + "$1");
             });
             metadata.relationsWithJoinColumns.forEach(relation => {
-                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName, "g"), alias.name + "." + relation.name);
+                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName + "([ =]|.{0}$)", "gm"), alias.name + "." + relation.name + "$1");
             });
         });
         return statement;
@@ -1066,6 +1059,10 @@ export class QueryBuilder<Entity> {
             this.addParameters(parameters);
 
         return this;
+    }
+
+    private isValueSimpleString(str: any) {
+        return /^[A-Za-z0-9_-]+$/.test(str);
     }
 
     private isPropertyAlias(str: any): str is string {

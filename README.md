@@ -40,21 +40,23 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
     `npm install typeorm --save`
 
-2. Install required shims:
+2. You need to install `reflect-metadata` shim:
 
-    `npm install es6-shim reflect-metadata --save`
+    `npm install reflect-metadata --save`
 
-And add these lines into some global place in your code, before you starting to use orm:
+    and use it somewhere in the global place of your app:
 
-```typescript
-require("es6-shim");
-require("reflect-metadata");
-```
+    * `require("reflect-metadata")` in your app's entry point (for example `app.ts`)
 
-`es6-shim` is optional for newer versions of node which supports all es6 features.
-`reflect-metadata` you definitely need because no platform support this feature yet.
+3. ES6 features are used, so you may want to install [es6-shim](https://github.com/paulmillr/es6-shim) if you are using older version of node.js:
 
-3. Install database driver:
+    `npm install es6-shim --save`
+
+    and use it somewhere in the global place of your app, before the code where you start to use orm:
+
+    * `require("es6-shim")` in your app's entry point (for example `app.ts`)
+
+4. Install database driver:
 
     3.1. Mysql
 
@@ -66,9 +68,7 @@ require("reflect-metadata");
 
         `npm install pg --save`
 
-
     Right now only `mysql` and `postgres` databases are supported. Feel free to contribute and add support of new drivers.
-
 
 ## Example
 
