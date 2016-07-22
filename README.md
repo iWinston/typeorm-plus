@@ -1,5 +1,7 @@
 # TypeORM
 
+[![Join the chat at https://gitter.im/pleerock/typeorm](https://badges.gitter.im/pleerock/typeorm.svg)](https://gitter.im/pleerock/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 > Note: docs are not always up to date because orm is in active development.
 > Samples are more up to date, try to find your questions there.
 > Otherwise create a github issue.
