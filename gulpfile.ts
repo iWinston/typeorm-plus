@@ -57,7 +57,7 @@ export class Gulpfile {
      */
     @MergedTask()
     packageCompile() {
-        const tsProject = ts.createProject("tsconfig.json");
+        const tsProject = ts.createProject("tsconfig.json", { typescript: require("typescript") });
         const tsResult = gulp.src(["./src/**/*.ts", "./typings/**/*.ts"])
             .pipe(sourcemaps.init())
             .pipe(ts(tsProject));
