@@ -31,7 +31,7 @@ describe("many-to-many", function() {
                 logFailedQueryError: true
             }
         },
-        entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity"]
+        entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"]
     };
 
     // connect to db

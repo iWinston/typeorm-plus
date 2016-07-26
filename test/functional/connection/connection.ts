@@ -290,10 +290,10 @@ describe("Connection", () => {
         afterEach(() => connection.isConnected ? connection.close() : {});
 
         it("should successfully load entities / entity schemas / subscribers / naming strategies from directories", async () => {
-            connection.importEntitiesFromDirectories([__dirname + "/entity"]);
-            connection.importEntitySchemaFromDirectories([resourceDir + "/schema"]);
-            connection.importNamingStrategiesFromDirectories([__dirname + "/naming-strategy"]);
-            connection.importSubscribersFromDirectories([__dirname + "/subscriber"]);
+            connection.importEntitiesFromDirectories([__dirname + "/entity/*"]);
+            connection.importEntitySchemaFromDirectories([resourceDir + "/schema/*"]);
+            connection.importNamingStrategiesFromDirectories([__dirname + "/naming-strategy/*"]);
+            connection.importSubscribersFromDirectories([__dirname + "/subscriber/*"]);
             await connection.connect();
             connection.getRepository(Post).should.be.instanceOf(Repository);
             connection.getRepository(Post).target.should.be.equal(Post);
@@ -306,10 +306,10 @@ describe("Connection", () => {
         });
 
         it("should successfully load entities / entity schemas / subscribers / naming strategies from glob-patterned directories", async () => {
-            connection.importEntitiesFromDirectories([__dirname + "/modules/**/entity"]);
-            connection.importEntitySchemaFromDirectories([resourceDir + "/modules/**/schema"]);
-            connection.importNamingStrategiesFromDirectories([__dirname + "/modules/**/naming-strategy"]);
-            connection.importSubscribersFromDirectories([__dirname + "/modules/**/subscriber"]);
+            connection.importEntitiesFromDirectories([__dirname + "/modules/**/entity/*"]);
+            connection.importEntitySchemaFromDirectories([resourceDir + "/modules/**/schema/*"]);
+            connection.importNamingStrategiesFromDirectories([__dirname + "/modules/**/naming-strategy/*"]);
+            connection.importSubscribersFromDirectories([__dirname + "/modules/**/subscriber/*"]);
             await connection.connect();
             connection.getRepository(Blog).should.be.instanceOf(Repository);
             connection.getRepository(Blog).target.should.be.equal(Blog);

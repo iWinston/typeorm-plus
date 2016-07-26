@@ -14,8 +14,8 @@ const options: CreateConnectionOptions = {
         database: "test",
         autoSchemaCreate: true
     },
-    entityDirectories: [__dirname + "/entity"],
-    subscriberDirectories: [__dirname + "/subscriber"]
+    entityDirectories: [__dirname + "/entity/*"],
+    subscriberDirectories: [__dirname + "/subscriber/*"]
 };
 
 createConnection(options).then(connection => {

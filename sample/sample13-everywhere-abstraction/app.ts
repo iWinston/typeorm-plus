@@ -19,7 +19,7 @@ const options: CreateConnectionOptions = {
             logFailedQueryError: true
         }
     },
-    entityDirectories: [__dirname + "/entity"]
+    entityDirectories: [__dirname + "/entity/*"]
 };
 
 createConnection(options).then(connection => {
