@@ -3,7 +3,7 @@ import * as path from "path";
 /**
  * Loads all exported classes from the given directory.
  */
-export function importClassesFromDirectories(directories: string[], format: string = ".js"): Function[] {
+export function importClassesFromDirectories(directories: string[], formats = [".js", ".ts"]): Function[] {
 
     function loadFileClasses(exported: any, allLoaded: Function[]) {
         if (exported instanceof Function) {
@@ -24,7 +24,7 @@ export function importClassesFromDirectories(directories: string[], format: stri
     }, [] as string[]);
 
     const dirs = allFiles
-        .filter(file => path.extname(file) === format)
+        .filter(file => formats.indexOf(path.extname(file)) !== -1)
         .map(file => require(file));
 
     return loadFileClasses(dirs, []);
