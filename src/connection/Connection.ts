@@ -55,6 +55,11 @@ export class Connection {
      */
     public readonly driver: Driver;
 
+    /**
+     * All entity metadatas that are registered for this connection.
+     */
+    public readonly entityMetadatas = new EntityMetadataCollection();
+
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
@@ -93,11 +98,6 @@ export class Connection {
      * Connection options.
      */
     private readonly options: ConnectionOptions;
-
-    /**
-     * All entity metadatas that are registered for this connection.
-     */
-    private readonly entityMetadatas = new EntityMetadataCollection();
 
     /**
      * Registered entity classes to be used for this connection.
