@@ -24,7 +24,10 @@ export function importClassesFromDirectories(directories: string[], formats = ["
     }, [] as string[]);
 
     const dirs = allFiles
-        .filter(file => formats.indexOf(path.extname(file)) !== -1)
+        .filter(file => {
+            const dtsExtension = file.substring(file.length - 5, file.length);
+            return formats.indexOf(path.extname(file)) !== -1 && dtsExtension !== ".d.ts";
+        })
         .map(file => require(file));
 
     return loadFileClasses(dirs, []);
