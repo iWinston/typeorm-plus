@@ -1,15 +1,10 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
 import {createConnection} from "../../../../src/index";
-
-chai.should();
-chai.use(require("sinon-chai"));
-chai.use(require("chai-as-promised"));
 
 describe("repository > removeById and removeByIds methods", function() {
 

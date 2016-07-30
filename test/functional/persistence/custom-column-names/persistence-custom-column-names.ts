@@ -1,18 +1,11 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
-import {createConnection} from "../../../../src/index";
 import {CategoryMetadata} from "./entity/CategoryMetadata";
 import {setupConnection} from "../../../utils/test-utils";
-
-chai.should();
-chai.use(require("sinon-chai"));
-chai.use(require("chai-as-promised"));
 
 describe("persistence > custom-column-names", function() {
 

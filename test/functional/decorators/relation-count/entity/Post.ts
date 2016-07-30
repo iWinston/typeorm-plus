@@ -5,7 +5,6 @@ import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn"
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Tag} from "./Tag";
 import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
-import {RelationId} from "../../../../../src/decorator/relations/RelationId";
 import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
 import {RelationCount} from "../../../../../src/decorator/relations/RelationCount";
 

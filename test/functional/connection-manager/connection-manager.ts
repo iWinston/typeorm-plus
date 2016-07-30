@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {createTestingConnectionOptions} from "../../utils/test-utils";
 import {CreateConnectionOptions} from "../../../src/connection-manager/CreateConnectionOptions";
@@ -7,10 +6,6 @@ import {ConnectionManager} from "../../../src/connection-manager/ConnectionManag
 import {MysqlDriver} from "../../../src/driver/MysqlDriver";
 import {PostgresDriver} from "../../../src/driver/PostgresDriver";
 import {ConnectionNotFoundError} from "../../../src/connection-manager/error/ConnectionNotFoundError";
-
-chai.should();
-chai.use(require("sinon-chai"));
-chai.use(require("chai-as-promised"));
 
 describe("ConnectionManager", () => {
 

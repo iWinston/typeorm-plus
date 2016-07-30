@@ -3,15 +3,11 @@ import * as chai from "chai";
 import {expect} from "chai";
 import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
-import {QueryBuilder} from "../../../../src/query-builder/QueryBuilder";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Tag} from "./entity/Tag";
-import {FindOptions} from "../../../../src/repository/FindOptions";
 
 const should = chai.should();
-chai.use(require("sinon-chai"));
-chai.use(require("chai-as-promised"));
 
 describe("QueryBuilder > relation-id", () => {
     

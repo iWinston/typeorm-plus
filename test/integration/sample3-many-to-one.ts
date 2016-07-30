@@ -1,10 +1,8 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
 import {createConnection, CreateConnectionOptions} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
-import {SchemaCreator} from "../../src/schema-creator/SchemaCreator";
 import {PostDetails} from "../../sample/sample3-many-to-one/entity/PostDetails";
 import {Post} from "../../sample/sample3-many-to-one/entity/Post";
 import {PostCategory} from "../../sample/sample3-many-to-one/entity/PostCategory";
@@ -13,7 +11,6 @@ import {PostMetadata} from "../../sample/sample3-many-to-one/entity/PostMetadata
 import {PostImage} from "../../sample/sample3-many-to-one/entity/PostImage";
 import {PostInformation} from "../../sample/sample3-many-to-one/entity/PostInformation";
 
-chai.should();
 describe("many-to-one", function() {
 
     // -------------------------------------------------------------------------

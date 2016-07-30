@@ -1,15 +1,10 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {FindOptions} from "../../../../src/repository/FindOptions";
 import {closeConnections, reloadDatabases, setupTestingConnections} from "../../../utils/test-utils";
-
-chai.should();
-chai.use(require("sinon-chai"));
-chai.use(require("chai-as-promised"));
 
 describe("persistence > one-to-many", function() {
 

@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -33,10 +32,6 @@ import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/e
 import {Blog} from "./modules/blog/entity/Blog";
 import {Question} from "./modules/question/entity/Question";
 import {Video} from "./modules/video/entity/Video";
-
-chai.should();
-chai.use(require("sinon-chai"));
-chai.use(require("chai-as-promised"));
 
 describe("Connection", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/connection/";

@@ -1,12 +1,5 @@
 import "reflect-metadata";
-import * as chai from "chai";
-import {expect} from "chai";
-import {
-    setupTestingConnections,
-    closeConnections,
-    reloadDatabases,
-    createTestingConnectionOptions
-} from "../../../utils/test-utils";
+import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {QueryBuilder} from "../../../../src/query-builder/QueryBuilder";
@@ -15,10 +8,6 @@ import questionSchema from "./model-schema/QuestionSchema";
 import {Question} from "./model/Question";
 import {Blog} from "./entity/Blog";
 import {Category} from "./entity/Category";
-
-chai.should();
-chai.use(require("sinon-chai"));
-chai.use(require("chai-as-promised"));
 
 describe("repository > basic methods", () => {
     const resourceDir = __dirname + "/../../../../../../test/functional/repository/basic-methods/";

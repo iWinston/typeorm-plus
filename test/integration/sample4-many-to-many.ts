@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
 import {CreateConnectionOptions, createConnection} from "../../src/index";
@@ -10,7 +9,6 @@ import {PostCategory} from "../../sample/sample4-many-to-many/entity/PostCategor
 import {PostMetadata} from "../../sample/sample4-many-to-many/entity/PostMetadata";
 import {PostImage} from "../../sample/sample4-many-to-many/entity/PostImage";
 
-chai.should();
 describe("many-to-many", function() {
 
     // -------------------------------------------------------------------------
