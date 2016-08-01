@@ -400,13 +400,26 @@ export class QueryBuilder<Entity> {
         sql  = this.replaceParameters(sql);
         return sql;
     }
+
+    getParameters() {
+        let sql = this.createSelectExpression();
+        sql += this.createJoinExpression();
+        sql += this.createJoinRelationIdsExpression();
+        sql += this.createWhereExpression();
+        sql += this.createGroupByExpression();
+        sql += this.createHavingExpression();
+        sql += this.createOrderByExpression();
+        sql += this.createLimitExpression();
+        sql += this.createOffsetExpression();
+        return this.driver.buildParameters(sql, this.parameters);
+    }
     
     execute(): Promise<any> {
-        return this.driver.query(this.getSql());
+        return this.driver.query(this.getSql(), this.getParameters());
     }
     
     getScalarResults<T>(): Promise<T[]> {
-        return this.driver.query<T[]>(this.getSql());
+        return this.driver.query<T[]>(this.getSql(), this.getParameters());
     }
 
     getSingleScalarResult<T>(): Promise<T> {
@@ -431,7 +444,7 @@ export class QueryBuilder<Entity> {
             let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAliasName}_${metadata.primaryColumn.name}) as ids`;
             if (this.orderBys && this.orderBys.length > 0)
                 idsQuery += ", " + this.orderBys.map(orderBy => orderBy.sort.replace(".", "_")).join(", ");
-            idsQuery += ` FROM (${this.getSql()}) distinctAlias`;
+            idsQuery += ` FROM (${this.getSql()}) distinctAlias`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
             if (this.orderBys && this.orderBys.length > 0)
                 idsQuery += " ORDER BY " + this.orderBys.map(order => "distinctAlias." + order.sort.replace(".", "_") + " " + order.order).join(", ");
             if (this.maxResults)
@@ -439,16 +452,15 @@ export class QueryBuilder<Entity> {
             if (this.firstResult)
                 idsQuery += " OFFSET " + this.firstResult;
             return this.driver
-                .query<any[]>(idsQuery)
+                .query<any[]>(idsQuery, this.getParameters())
                 .then((results: any[]) => {
                     scalarResults = results;
                     const ids = results.map(result => result["ids"]).join(", ");
                     if (ids.length === 0)
                         return Promise.resolve([]);
                     const queryWithIds = this.clone()
-                        .andWhere(mainAliasName + "." + metadata.primaryColumn.name + " IN (" + ids + ")")
-                        .getSql();
-                    return this.driver.query<any[]>(queryWithIds);
+                        .andWhere(mainAliasName + "." + metadata.primaryColumn.name + " IN (" + ids + ")");
+                    return this.driver.query<any[]>(queryWithIds.getSql(), queryWithIds.getParameters());
                 })
                 .then(results => this.rawResultsToEntities(results))
                 .then(results => this.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results))
@@ -462,7 +474,7 @@ export class QueryBuilder<Entity> {
         } else {
 
             return this.driver
-                .query<any[]>(this.getSql())
+                .query<any[]>(this.getSql(), this.getParameters())
                 .then(results => {
                     scalarResults = results;
                     return this.rawResultsToEntities(results);
@@ -611,10 +623,9 @@ export class QueryBuilder<Entity> {
         const mainAlias = this.aliasMap.mainAlias.name;
         const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
         const countQuery = this.clone({ skipOrderBys: true })
-            .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`)
-            .getSql();
+            .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`);
         return this.driver
-            .query<any[]>(countQuery)
+            .query<any[]>(countQuery.getSql(), countQuery.getParameters())
             .then(results => {
                 if (!results || !results[0] || !results[0]["cnt"])
                     return 0;
@@ -971,11 +982,7 @@ export class QueryBuilder<Entity> {
     }
 
     protected replaceParameters(sql: string) {
-        Object.keys(this.parameters).forEach(key => {
-            const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
-            sql = sql.replace(new RegExp(":" + key, "g"), value); // todo: make replace only in value statements, otherwise problems
-        });
-        return sql;
+        return this.driver.replaceParameters(sql, this.parameters);
     }
 
     private extractJoinMappings(): JoinMapping[] {

@@ -72,9 +72,18 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
-    const allParameters: CreateConnectionOptions[] = [mysqlParameters, /*, postgresParameters*/];
-    if (options && options.secondaryConnections)
-        allParameters.push(mysqlSecondaryParameters/*, postgresSecondaryParameters*/);
+    const mysql = true;
+    const postgres = true;
+
+    const allParameters: CreateConnectionOptions[] = [];
+    if (mysql)
+        allParameters.push(mysqlParameters);
+    if (postgres)
+        allParameters.push(postgresParameters);
+    if (mysql && options && options.secondaryConnections)
+        allParameters.push(mysqlSecondaryParameters);
+    if (postgres && options && options.secondaryConnections)
+        allParameters.push(postgresSecondaryParameters);
     
     return Promise.all(allParameters.map(parameters => createConnection(parameters)));
 }

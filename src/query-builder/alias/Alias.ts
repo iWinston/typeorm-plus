@@ -17,12 +17,4 @@ export class Alias {
         return this.parentAliasName + "." + this.parentPropertyName;
     }
     
-    getPrimaryKeyValue(result: any, primaryColumn: ColumnMetadata): any {
-        return result[this.name + "_" + primaryColumn.name];
-    }
-    
-    getColumnValue(result: any, columnName: string) {
-        return result[this.name + "_" + columnName];
-    }
-    
 }

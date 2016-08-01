@@ -475,7 +475,12 @@ export class PersistOperationExecutor {
         }*/
 
         // console.log("inserting: ", this.zipObject(allColumns, allValues));
-        return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues));
+        let idColumnName: string|undefined;
+        if (metadata.hasPrimaryColumn && metadata.primaryColumn.isGenerated) {
+            idColumnName = metadata.primaryColumn.name;
+        }
+
+        return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues), idColumnName);
     }
 
     private insertIntoClosureTable(operation: InsertOperation, updateMap: { [key: string]: any }) {

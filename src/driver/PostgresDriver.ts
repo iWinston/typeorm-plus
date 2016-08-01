@@ -18,7 +18,9 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Connection used in this driver.
      */
     connectionOptions: ConnectionOptions;
-    
+
+    readonly isResultsLowercase = true;
+
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
@@ -130,22 +132,25 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Escapes given value.
      */
     escape(value: any): any {
-        return this.postgresConnection.escape(value);
+        return value; // TODO: this.postgresConnection.escape(value);
     }
 
     /**
      * Executes a given SQL query.
      */
-    query<T>(query: string): Promise<T> {
+    query<T>(query: string, parameters?: any[]): Promise<T> {
         this.checkIfConnectionSet();
-        
+
+        // console.log("query: ", query);
+        // console.log("parameters: ", parameters);
         this.logQuery(query);
-        return new Promise<T>((ok, fail) => this.postgresConnection.query(query, (err: any, result: any) => {
+        return new Promise<T>((ok, fail) => this.postgresConnection.query(query, parameters, (err: any, result: any) => {
             if (err) {
                 this.logFailedQuery(query);
                 this.logQueryError(err);
                 fail(err);
             } else {
+                console.log("query result: ", result.rows);
                 ok(result.rows);
             }
         }));
@@ -157,16 +162,58 @@ export class PostgresDriver extends BaseDriver implements Driver {
     clearDatabase(): Promise<void> {
         this.checkIfConnectionSet(); // todo:
         
-        const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
+        // const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
         const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS q FROM ` +
                                 `information_schema.tables WHERE table_schema = '${this.db}';`;
-        const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+        // const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
-        return this.query(disableForeignKeysCheckQuery)
-            .then(() => this.query<any[]>(dropTablesQuery))
+        return this.query<any[]>(dropTablesQuery)
             .then(results => Promise.all(results.map(q => this.query(q["q"]))))
-            .then(() => this.query(enableForeignKeysCheckQuery))
+            // .then(() => this.query(enableForeignKeysCheckQuery))
             .then(() => {});
+    }
+
+    buildParameters(sql: string, parameters: { [key: string]: any }) {
+        const builtParameters: any[] = [];
+        Object.keys(parameters).forEach((key, index) => {
+            // const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
+            sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {
+                builtParameters.push(parameters[key]);
+                return "";
+            }); // todo: make replace only in value statements, otherwise problems
+        });
+        return builtParameters;
+    }
+
+    replaceParameters(sql: string, parameters: { [key: string]: any }) {
+        Object.keys(parameters).forEach((key, index) => {
+            // const value = parameters[key] !== null && parameters[key] !== undefined ? this.driver.escape(parameters[key]) : "NULL";
+            sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {
+                return "$" + (index + 1);
+            }); // todo: make replace only in value statements, otherwise problems
+        });
+        return sql;
+    }
+
+    /**
+     * Insert a new row into given table.
+     */
+    insert(tableName: string, keyValues: { [key: string]: any }, idColumnName?: string): Promise<any> {
+        this.checkIfConnectionSet();
+
+        const columns = Object.keys(keyValues).join(",");
+        const values  = Object.keys(keyValues).map((key, index) => "$" + (index + 1)).join(","); // todo: escape here
+        const params  = Object.keys(keyValues).map(key => keyValues[key]);
+        let query   = `INSERT INTO ${tableName}(${columns}) VALUES (${values})`;
+        if (idColumnName) {
+            query += " RETURNING " + idColumnName;
+        }
+        return this.query<any>(query, params).then(result => {
+            if (idColumnName)
+                return result[0][idColumnName];
+
+            return undefined;
+        });
     }
 
     // -------------------------------------------------------------------------

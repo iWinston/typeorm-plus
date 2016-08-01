@@ -97,17 +97,36 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     getTableIndicesQuery(tableName: string): Promise<{ key: string, sequence: number, column: string }[]> {
-        const sql = `SHOW INDEX FROM ${tableName}`;
+        const sql = `select
+    t.relname as table_name,
+    i.relname as index_name,
+    a.attname as column_name
+from
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a
+where
+    t.oid = ix.indrelid
+    and i.oid = ix.indexrelid
+    and a.attrelid = t.oid
+    and a.attnum = ANY(ix.indkey)
+    and t.relkind = 'r'
+    and t.relname = '${tableName}'
+order by
+    t.relname,
+    i.relname;
+`;
         return this.query<any[]>(sql).then(results => {
             // exclude foreign keys
             return this.getTableForeignQuery(tableName).then(foreignKeys => {
 
                 return results
-                    .filter(result => result.Key_name !== "PRIMARY" && foreignKeys.indexOf(result.Key_name) === -1)
+                    .filter(result => result.index_name !== "PRIMARY" && foreignKeys.indexOf(result.index_name) === -1)
                     .map(result => ({
-                        key: result.Key_name,
+                        key: result.index_name,
                         sequence: result.Seq_in_index,
-                        column: result.Column_name
+                        column: result.column_name
                     }));
             });
         });
@@ -120,7 +139,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     dropIndex(tableName: string, indexName: string): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} DROP INDEX \`${indexName}\``;
+        const sql = `ALTER TABLE ${tableName} DROP CONSTRAINT ${indexName}`;
         return this.query(sql).then(() => {});
     }
 
@@ -160,13 +179,15 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        let c = column.name + " " + this.normalizeType(column);
+        let c = column.name;
+        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            c += " SERIAL";
+        if (!column.isGenerated)
+            c += " " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
-        // if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-        //     c += " AUTO_INCREMENT";
         // TODO: implement auto increment
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";

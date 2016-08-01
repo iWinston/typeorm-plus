@@ -26,6 +26,11 @@ export interface Driver {
      * Database name to which this connection is made.
      */
     readonly db: string;
+
+    /**
+     * Indicates if returned results are in lowercase.
+     */
+    readonly isResultsLowercase: boolean;
     
     /**
      * Creates a schema builder which can be used to build database/table schemas.
@@ -45,12 +50,22 @@ export interface Driver {
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query<T>(query: string): Promise<T>;
+    query<T>(query: string, parameters?: any[]): Promise<T>;
 
     /**
      * Removes all tables from the currently connected database.
      */
     clearDatabase(): Promise<void>;
+
+    /**
+     * Replaces parameters in the given sql with special character.
+     */
+    buildParameters(sql: string, parameters: { [key: string]: any }): string[];
+
+    /**
+     * Replaces parameters in the given sql with special character.
+     */
+    replaceParameters(sql: string, parameters: { [key: string]: any }): string;
 
     /**
      * Updates rows that match given simple conditions in the given table.
@@ -60,7 +75,7 @@ export interface Driver {
     /**
      * Inserts a new row into given table.
      */
-    insert(tableName: string, valuesMap: Object): Promise<any>;
+    insert(tableName: string, valuesMap: Object, idColumnName?: string): Promise<any>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.

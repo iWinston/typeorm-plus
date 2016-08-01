@@ -33,7 +33,7 @@ export abstract class BaseDriver {
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    abstract query<T>(query: string): Promise<T>;
+    abstract query<T>(query: string, parameters?: any[]): Promise<T>;
 
     /**
      * Escapes given value.
@@ -71,7 +71,7 @@ export abstract class BaseDriver {
     /**
      * Insert a new row into given table.
      */
-    insert(tableName: string, keyValues: Object): Promise<any> {
+    insert(tableName: string, keyValues: Object, idColumnName?: string): Promise<any> {
         this.checkIfConnectionSet();
 
         const columns = Object.keys(keyValues).join(",");
