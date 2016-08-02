@@ -151,7 +151,6 @@ export class MysqlDriver extends BaseDriver implements Driver {
                 fail(err);
             } else {
                 ok(result);
-                console.log("result:", result);
             }
         }));
     }

@@ -18,6 +18,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}'` +
             ` AND TABLE_NAME = '${tableName}'`;
         return this.query<any[]>(sql).then(results => {
+            // console.log("changed columns: ", results);
 
             return columns.filter(column => {
                 const dbData = results.find(result => result.column_name === column.name);
@@ -63,7 +64,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     addForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void> {
-        let sql = `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+        let sql = `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT ${foreignKey.name} ` +
             `FOREIGN KEY (${foreignKey.columnNames.join(", ")}) ` +
             `REFERENCES ${foreignKey.referencedTable.name}(${foreignKey.referencedColumnNames.join(",")})`;
         if (foreignKey.onDelete)
@@ -85,9 +86,11 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     getTableForeignQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.driver.db}' `
-            + `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE='FOREIGN KEY'`;
-        return this.query<any[]>(sql).then(results => results.map(result => result.CONSTRAINT_NAME));
+        const sql = `SELECT tc.constraint_name FROM information_schema.table_constraints AS tc ` +
+        `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.driver.db}' AND tc.table_name='${tableName}';`;
+        // const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.driver.db}' `
+        //     + `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE='FOREIGN KEY'`;
+        return this.query<any[]>(sql).then(results => results.map(result => result.constraint_name));
     }
 
     getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
@@ -100,7 +103,8 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
         const sql = `select
     t.relname as table_name,
     i.relname as index_name,
-    a.attname as column_name
+    a.attname as column_name,
+    ix.indisprimary as is_primary
 from
     pg_class t,
     pg_class i,
@@ -122,7 +126,7 @@ order by
             return this.getTableForeignQuery(tableName).then(foreignKeys => {
 
                 return results
-                    .filter(result => result.index_name !== "PRIMARY" && foreignKeys.indexOf(result.index_name) === -1)
+                    .filter(result => result.is_primary !== true && foreignKeys.indexOf(result.index_name) === -1)
                     .map(result => ({
                         key: result.index_name,
                         sequence: result.Seq_in_index,
@@ -138,9 +142,13 @@ order by
         return this.query<any[]>(sql).then(results => results && results.length ? results[0].CONSTRAINT_NAME : undefined);
     }
 
-    dropIndex(tableName: string, indexName: string): Promise<void> {
+    async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
+        if (isGenerated) {
+            await this.query(`ALTER SEQUENCE foo_id_seq OWNED BY NONE`);
+        }
+
         const sql = `ALTER TABLE ${tableName} DROP CONSTRAINT ${indexName}`;
-        return this.query(sql).then(() => {});
+        await this.query(sql);
     }
 
     createIndex(tableName: string, index: IndexMetadata): Promise<void> {

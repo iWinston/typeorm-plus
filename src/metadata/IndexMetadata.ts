@@ -72,7 +72,7 @@ export class IndexMetadata extends TargetMetadata {
 
         // if columns is a function that returns array of field names then execute it and get columns names from it 
         const propertiesMap = this.entityMetadata.createPropertiesMap();
-        return this._columns(propertiesMap).map((i: any) => String(i));
+        return this._columns(propertiesMap).map((i: any) => String(i).toLowerCase());
     }
     
 }

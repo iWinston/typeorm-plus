@@ -73,7 +73,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
 
     const mysql = true;
-    const postgres = true;
+    const postgres = false;
 
     const allParameters: CreateConnectionOptions[] = [];
     if (mysql)

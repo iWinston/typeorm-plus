@@ -10,26 +10,17 @@ import {PostAuthor} from "../../sample/sample2-one-to-one/entity/PostAuthor";
 import {PostMetadata} from "../../sample/sample2-one-to-one/entity/PostMetadata";
 import {PostImage} from "../../sample/sample2-one-to-one/entity/PostImage";
 import {PostInformation} from "../../sample/sample2-one-to-one/entity/PostInformation";
+import {createTestingConnectionOptions} from "../utils/test-utils";
 
-describe("one-to-one", function() {
+describe.only("one-to-one", function() {
 
     // -------------------------------------------------------------------------
     // Configuration
     // -------------------------------------------------------------------------
 
     const options: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
-            host: "192.168.99.100",
-            port: 3306,
-            username: "root",
-            password: "admin",
-            database: "test",
-            autoSchemaCreate: true,
-            logging: {
-                logFailedQueryError: true
-            }
-        },
+        driver: "postgres",
+        connection: createTestingConnectionOptions("postgres"),
         entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
 

@@ -4,7 +4,7 @@ import {Connection} from "../../src/connection/Connection";
 import {Post} from "../../sample/sample1-simple-entity/entity/Post";
 import {closeConnections, reloadDatabases, setupTestingConnections} from "../utils/test-utils";
 
-describe.only("insertion", function() {
+describe("insertion", function() {
 
     // -------------------------------------------------------------------------
     // Setup

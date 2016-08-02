@@ -57,7 +57,7 @@ export abstract class BaseDriver {
         return this.query(query).then(() => {});
     }
 
-    private escapeObjectMap(objectMap: { [key: string]: any }): string[] {
+    protected escapeObjectMap(objectMap: { [key: string]: any }): string[] {
         return Object.keys(objectMap).map(key => {
             const value = (<any> objectMap)[key];
             if (value === null || value === undefined) {

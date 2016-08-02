@@ -4,6 +4,7 @@ import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
 import {BaseDriver} from "./BaseDriver";
 import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {PostgresSchemaBuilder} from "../schema-builder/PostgresSchemaBuilder";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * This driver organizes work with postgres database.
@@ -150,7 +151,6 @@ export class PostgresDriver extends BaseDriver implements Driver {
                 this.logQueryError(err);
                 fail(err);
             } else {
-                console.log("query result: ", result.rows);
                 ok(result.rows);
             }
         }));
@@ -160,16 +160,11 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Clears all tables in the currently connected database.
      */
     clearDatabase(): Promise<void> {
-        this.checkIfConnectionSet(); // todo:
+        this.checkIfConnectionSet();
         
-        // const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS q FROM ` +
-                                `information_schema.tables WHERE table_schema = '${this.db}';`;
-        // const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
-
+        const dropTablesQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as q FROM pg_tables WHERE schemaname = 'public';`;
         return this.query<any[]>(dropTablesQuery)
             .then(results => Promise.all(results.map(q => this.query(q["q"]))))
-            // .then(() => this.query(enableForeignKeysCheckQuery))
             .then(() => {});
     }
 
@@ -216,9 +211,35 @@ export class PostgresDriver extends BaseDriver implements Driver {
         });
     }
 
+    /**
+     * Updates rows that match given conditions in the given table.
+     */
+    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+        this.checkIfConnectionSet();
+
+        const updateValues = this.parametrizeObjectMap(valuesMap).join(",");
+        const conditionString = this.parametrizeObjectMap(conditions, Object.keys(valuesMap).length).join(" AND ");
+        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
+        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
+        const query = `UPDATE ${tableName} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        // console.log("executing update: ", query);
+        await this.query(query, updateParams.concat(conditionParams));
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    protected parametrizeObjectMap(objectMap: ObjectLiteral, startIndex: number = 0): string[] {
+        return Object.keys(objectMap).map((key, index) => {
+            const value = (objectMap as any)[key];
+            // if (value === null || value === undefined) { // todo: I think we dont really need this
+            //     return key + "=NULL";
+            // } else {
+                return key + "=$" + (startIndex + index + 1);
+            // }
+        });
+    }
 
     protected checkIfConnectionSet() {
         if (!this.postgresConnection)
