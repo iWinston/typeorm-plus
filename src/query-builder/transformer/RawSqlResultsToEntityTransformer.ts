@@ -48,7 +48,7 @@ export class RawSqlResultsToEntityTransformer {
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => {
             if (!metadata) return;
             const columnName = this.driver.isResultsLowercase ? metadata.primaryColumn.name.toLowerCase() : metadata.primaryColumn.name;
-            return alias.name + "_" + columnName;
+            return result[alias.name + "_" + columnName];
         });
         return groupedResults
             .map(group => {

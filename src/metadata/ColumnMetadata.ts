@@ -249,6 +249,10 @@ export class ColumnMetadata extends PropertyMetadata {
 
     getEntityValue(entity: any) {
         if (this.isInEmbedded) {
+            if (entity[this.embeddedProperty] === undefined ||
+                entity[this.embeddedProperty] === null)
+                return undefined;
+
             return entity[this.embeddedProperty][this.propertyName];
         } else {
             return entity[this.propertyName];
