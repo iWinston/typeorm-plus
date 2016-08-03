@@ -10,6 +10,7 @@ import {PostAuthor} from "../../sample/sample3-many-to-one/entity/PostAuthor";
 import {PostMetadata} from "../../sample/sample3-many-to-one/entity/PostMetadata";
 import {PostImage} from "../../sample/sample3-many-to-one/entity/PostImage";
 import {PostInformation} from "../../sample/sample3-many-to-one/entity/PostInformation";
+import {createTestingConnectionOptions} from "../utils/test-utils";
 
 describe("many-to-one", function() {
 
@@ -18,15 +19,8 @@ describe("many-to-one", function() {
     // -------------------------------------------------------------------------
 
     const options: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
-            host: "192.168.99.100",
-            port: 3306,
-            username: "root",
-            password: "admin",
-            database: "test",
-            autoSchemaCreate: true
-        },
+        driver: "postgres",
+        connection: createTestingConnectionOptions("postgres"),
         entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
 

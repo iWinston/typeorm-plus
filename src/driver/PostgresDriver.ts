@@ -226,6 +226,20 @@ export class PostgresDriver extends BaseDriver implements Driver {
         await this.query(query, updateParams.concat(conditionParams));
     }
 
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+        this.checkIfConnectionSet();
+
+        const conditionString = this.parametrizeObjectMap(conditions).join(" AND ");
+        const params = Object.keys(conditions).map(key => conditions[key]);
+
+        const query = `DELETE FROM ${tableName} WHERE ${conditionString}`;
+        await this.query(query, params);
+    }
+
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

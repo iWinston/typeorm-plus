@@ -12,7 +12,7 @@ import {PostImage} from "../../sample/sample2-one-to-one/entity/PostImage";
 import {PostInformation} from "../../sample/sample2-one-to-one/entity/PostInformation";
 import {createTestingConnectionOptions} from "../utils/test-utils";
 
-describe.only("one-to-one", function() {
+describe("one-to-one", function() {
 
     // -------------------------------------------------------------------------
     // Configuration
