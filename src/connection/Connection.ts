@@ -347,22 +347,17 @@ export class Connection {
     /**
      * Gets repository for the given entity class.
      */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): Repository<Entity>;
+    getRepository<Entity>(entityClass: ConstructorFunction<Entity>): Repository<Entity>;
 
     /**
      * Gets repository for the given entity name.
      */
     getRepository<Entity>(entityClass: string): Repository<Entity>;
-    
-    /**
-     * Gets repository for the given entity name.
-     */
-    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity>;
 
     /**
      * Gets repository for the given entity class or name.
      */
-    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity> {
+    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): Repository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -380,7 +375,7 @@ export class Connection {
     /**
      * Gets tree repository for the given entity class.
      */
-    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): TreeRepository<Entity>;
+    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity name.
@@ -388,14 +383,9 @@ export class Connection {
     getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
-     * Gets tree repository for the given entity name.
-     */
-    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): Repository<Entity>;
-
-    /**
      * Gets tree repository for the given entity class or name.
      */
-    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): TreeRepository<Entity> {
+    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): TreeRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -416,22 +406,17 @@ export class Connection {
     /**
      * Gets reactive repository for the given entity class.
      */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveRepository<Entity>;
+    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>): ReactiveRepository<Entity>;
 
     /**
      * Gets reactive repository for the given entity name.
      */
-    getReactiveRepository<Entity>(entityName: string): ReactiveRepository<Entity>;
-
-    /**
-     * Gets reactive repository for the given entity name.
-     */
-    getReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity>;
+    getReactiveRepository<Entity>(targetEntity: string): ReactiveRepository<Entity>;
 
     /**
      * Gets reactive repository for the given entity class.
      */
-    getReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity> {
+    getReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): ReactiveRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -449,7 +434,7 @@ export class Connection {
     /**
      * Gets reactive tree repository for the given entity class.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function): ReactiveTreeRepository<Entity>;
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): ReactiveTreeRepository<Entity>;
 
     /**
      * Gets reactive tree repository for the given entity name.
@@ -457,14 +442,9 @@ export class Connection {
     getReactiveTreeRepository<Entity>(entityName: string): ReactiveTreeRepository<Entity>;
 
     /**
-     * Gets reactive tree repository for the given entity name.
-     */
-    getReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity>;
-
-    /**
      * Gets reactive tree repository for the given entity class.
      */
-    getReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity> {
+    getReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): ReactiveTreeRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 

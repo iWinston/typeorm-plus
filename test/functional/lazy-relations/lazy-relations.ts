@@ -25,7 +25,7 @@ describe("lazy-relations", () => {
         const savedCategory3 = new Category();
         savedCategory3.name = "animals";
 
-        await categoryRepository.persistMany(savedCategory1, savedCategory2, savedCategory3);
+        await categoryRepository.persist([savedCategory1, savedCategory2, savedCategory3]);
 
         const savedPost = new Post();
         savedPost.title = "Hello post";
@@ -62,7 +62,7 @@ describe("lazy-relations", () => {
         const savedCategory3 = new Category();
         savedCategory3.name = "animals";
 
-        await categoryRepository.persistMany(savedCategory1, savedCategory2, savedCategory3);
+        await categoryRepository.persist([savedCategory1, savedCategory2, savedCategory3]);
 
         const savedPost = new Post();
         savedPost.title = "Hello post";

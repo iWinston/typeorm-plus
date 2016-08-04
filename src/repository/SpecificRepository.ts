@@ -1,6 +1,5 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
@@ -11,11 +10,12 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {Driver} from "../driver/Driver";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {Repository} from "./Repository";
 
 /**
- * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
+ * Repository for more specific operations.
  */
-export class Repository<Entity extends ObjectLiteral> {
+export class SpecificRepository<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
     // Private Properties
@@ -34,7 +34,8 @@ export class Repository<Entity extends ObjectLiteral> {
     constructor(protected connection: Connection,
                 protected broadcaster: Broadcaster,
                 protected entityMetadatas: EntityMetadataCollection,
-                protected metadata: EntityMetadata) {
+                protected metadata: EntityMetadata,
+                protected repository: Repository<Entity>) {
         this.driver = connection.driver;
         this.persistOperationExecutor = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);
         this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(entityMetadatas);
@@ -45,302 +46,6 @@ export class Repository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Returns object that is managed by this repository.
-     * If this repository manages entity from schema, then it returns a name of that schema instead.
-     */
-    get target(): Function|string {
-        return this.metadata.target;
-    }
-
-    /**
-     * Checks if entity has an id.
-     */
-    hasId(entity: Entity): boolean {
-        const columnName = this.metadata.primaryColumn.propertyName;
-        return !!entity &&
-            entity.hasOwnProperty(columnName) &&
-            entity[columnName] !== null &&
-            entity[columnName] !== undefined &&
-            entity[columnName] !== "";
-    }
-
-    /**
-     * Creates a new query builder that can be used to build a sql query.
-     */
-    createQueryBuilder(alias: string): QueryBuilder<Entity> {
-        return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
-            .select(alias)
-            .from(this.metadata.target, alias);
-    }
-
-    /**
-     * Creates a new entity instance.
-     */
-    create(): Entity;
-
-    /**
-     * Creates a new entities and copies all entity properties from given objects into their new entities.
-     * Note that it copies only properties that present in entity schema.
-     */
-    create(plainObjects: Object[]): Entity[];
-
-    /**
-     * Creates a new entity instance and copies all entity properties from this object into a new entity.
-     * Note that it copies only properties that present in entity schema.
-     */
-    create(plainObject: Object): Entity;
-
-    /**
-     * Creates a new entity instance or instances.
-     * Can copy properties from the given object into new entities.
-     */
-    create(plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
-        if (plainObjectOrObjects instanceof Array) {
-            return plainObjectOrObjects.map(object => this.create(object as Object));
-        }
-
-        const newEntity: Entity = this.metadata.create();
-        if (plainObjectOrObjects)
-            this.plainObjectToEntityTransformer.transform(newEntity, plainObjectOrObjects, this.metadata);
-
-        return newEntity;
-    }
-
-    /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
-     * it loads it (and everything related to it), replaces all values with the new ones from the given object
-     * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
-     * replaced from the new object.
-     */
-    preload(object: Object): Promise<Entity> {
-        const queryBuilder = this.createQueryBuilder(this.metadata.table.name);
-        return this.plainObjectToDatabaseEntityTransformer.transform(object, this.metadata, queryBuilder);
-    }
-
-    /**
-     * Merges multiple entities (or entity-like objects) into one new entity.
-     */
-    merge(...objects: ObjectLiteral[]): Entity {
-        const newEntity = this.create();
-        objects.forEach(object => this.plainObjectToEntityTransformer.transform(newEntity, object, this.metadata));
-        return newEntity;
-    }
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
-    async persist(entities: Entity[]): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) a given entity in the database.
-     * If entity does not exist in the database then inserts, otherwise updates.
-     */
-    async persist(entity: Entity): Promise<Entity>;
-
-    /**
-     * Persists one or many given entities.
-     */
-    async persist(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
-
-        // if multiple entities given then go throw all of them and save them
-        if (entityOrEntities instanceof Array)
-            return Promise.all(entityOrEntities.map(entity => this.persist(entity)));
-
-        // resolve is required because need to wait until lazy relations loaded
-        await Promise.resolve();
-
-        const allPersistedEntities = await this.extractObjectsById(entityOrEntities, this.metadata);
-        let loadedDbEntity: Entity|null = null;
-        if (this.hasId(entityOrEntities))
-            loadedDbEntity = await this.preload(entityOrEntities);
-
-        let entityWithIds: EntityWithId[] = [];
-        if (loadedDbEntity)
-            entityWithIds = await this.extractObjectsById(loadedDbEntity, this.metadata);
-
-        // need to find db entities that were not loaded by initialize method
-        const allDbEntities = await this.findNotLoadedIds(entityWithIds, allPersistedEntities);
-        const persistedEntity: EntityWithId = {
-            id: this.metadata.getEntityId(entityOrEntities),
-            entityTarget: this.metadata.target,
-            entity: entityOrEntities
-        };
-        const dbEntity: EntityWithId = {
-            id: this.metadata.getEntityId(loadedDbEntity),
-            entityTarget: this.metadata.target,
-            entity: loadedDbEntity
-        };
-        const persistOperation = await this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
-        await this.persistOperationExecutor.executePersistOperation(persistOperation);
-        return entityOrEntities;
-    }
-
-    /**
-     * Removes a given entities from the database.
-     */
-    async remove(entities: Entity[]): Promise<Entity[]>;
-
-    /**
-     * Removes a given entity from the database.
-     */
-    async remove(entity: Entity): Promise<Entity>;
-
-    /**
-     * Removes one or many given entities.
-     */
-    async remove(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
-
-        // if multiple entities given then go throw all of them and save them
-        if (entityOrEntities instanceof Array)
-            return Promise.all(entityOrEntities.map(entity => this.remove(entity)));
-
-        const dbEntity = await this.preload(entityOrEntities);
-        (<any> entityOrEntities)[this.metadata.primaryColumn.name] = undefined;
-        const [dbEntities, allPersistedEntities] = await Promise.all([
-            this.extractObjectsById(dbEntity, this.metadata),
-            this.extractObjectsById(entityOrEntities, this.metadata)
-        ]);
-        const entityWithId: EntityWithId = {
-            id: this.metadata.getEntityId(entityOrEntities),
-            entityTarget: this.metadata.target,
-            entity: entityOrEntities
-        };
-        const dbEntityWithId: EntityWithId = {
-            id: this.metadata.getEntityId(dbEntity),
-            entityTarget: this.metadata.target,
-            entity: dbEntity
-        };
-        
-        const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
-        await this.persistOperationExecutor.executePersistOperation(persistOperation);
-        return entityOrEntities;
-    }
-
-    /**
-     * Finds all entities.
-     */
-    async find(): Promise<Entity[]>;
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    async find(conditions: Object): Promise<Entity[]>;
-
-    /**
-     * Finds entities with given find options.
-     */
-    async find(options: FindOptions): Promise<Entity[]>;
-
-    /**
-     * Finds entities that match given conditions and find options.
-     */
-    async find(conditions: Object, options: FindOptions): Promise<Entity[]>;
-
-    /**
-     * Finds entities that match given conditions and/or find options.
-     */
-    async find(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
-        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
-            .getResults();
-    }
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    async findAndCount(): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    async findAndCount(conditions: Object): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    async findAndCount(options: FindOptions): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    async findAndCount(conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    async findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
-        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
-            .getResultsAndCount();
-    }
-
-    /**
-     * Finds first entity that matches given conditions.
-     */
-    async findOne(): Promise<Entity>;
-
-    /**
-     * Finds first entity that matches given conditions.
-     */
-    async findOne(conditions: Object): Promise<Entity>;
-
-    /**
-     * Finds first entity that matches given find options.
-     */
-    async findOne(options: FindOptions): Promise<Entity>;
-
-    /**
-     * Finds first entity that matches given conditions and find options.
-     */
-    async findOne(conditions: Object, options: FindOptions): Promise<Entity>;
-
-    /**
-     * Finds first entity that matches given conditions and/or find options.
-     */
-    async findOne(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
-        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
-            .getSingleResult();
-    }
-
-    /**
-     * Finds entity with given id.
-     */
-    async findOneById(id: any, options?: FindOptions): Promise<Entity> {
-        return this.createFindQueryBuilder({ [this.metadata.primaryColumn.name]: id }, options)
-            .getSingleResult();
-    }
-
-    /**
-     * Executes a raw SQL query and returns a raw database results.
-     */
-    async query(query: string): Promise<any> {
-        return this.driver.query(query);
-    }
-
-    /**
-     * Wraps given function execution (and all operations made there) in a transaction.
-     */
-    async transaction(runInTransaction: () => Promise<any>|any): Promise<any> {
-        let runInTransactionResult: any;
-        return this.driver
-            .beginTransaction()
-            .then(() => runInTransaction())
-            .then(result => {
-                runInTransactionResult = result;
-                return this.driver.commitTransaction();
-            })
-            .catch(err => {
-                return this.driver.rollbackTransaction()
-                    .then(() => {
-                        throw err;
-                    })
-                    .catch(() => {
-                        throw err;
-                    });
-            })
-            .then(() => runInTransactionResult);
-    }
 
     /**
      * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
@@ -486,7 +191,7 @@ export class Repository<Entity extends ObjectLiteral> {
         if (!relatedEntityIds || !relatedEntityIds.length)
             return Promise.resolve();
 
-        const qb = this.createQueryBuilder("junctionEntity")
+        const qb = this.repository.createQueryBuilder("junctionEntity")
             .delete(relation.junctionEntityMetadata.table.name);
 
         const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
@@ -523,7 +228,7 @@ export class Repository<Entity extends ObjectLiteral> {
         if (!entityIds || !entityIds.length)
             return Promise.resolve();
 
-        const qb = this.createQueryBuilder("junctionEntity")
+        const qb = this.repository.createQueryBuilder("junctionEntity")
             .delete(relation.junctionEntityMetadata.table.name);
 
         const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
@@ -571,7 +276,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async removeById(id: any) {
         const alias = this.metadata.table.name;
-        await this.createQueryBuilder(alias)
+        await this.repository.createQueryBuilder(alias)
             .delete()
             .where(alias + "." + this.metadata.primaryColumn.propertyName + "=:id", { id: id })
             .execute();
@@ -583,7 +288,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async removeByIds(ids: any[]) {
         const alias = this.metadata.table.name;
-        await this.createQueryBuilder(alias)
+        await this.repository.createQueryBuilder(alias)
             .delete()
             .where(alias + "." + this.metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids })
             .execute();
@@ -598,7 +303,7 @@ export class Repository<Entity extends ObjectLiteral> {
         const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
 
         const alias = findOptions ? findOptions.alias : this.metadata.table.name;
-        const qb = this.createQueryBuilder(alias);
+        const qb = this.repository.createQueryBuilder(alias);
         if (findOptions) {
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
         }
@@ -683,9 +388,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks if given repository owns given metadata.
-     */
+
     static ownsMetadata(repository: Repository<any>, metadata: EntityMetadata) {
         return repository.metadata === metadata;
-    }
+    }*/
 
 }

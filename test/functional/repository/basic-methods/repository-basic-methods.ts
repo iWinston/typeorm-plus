@@ -180,7 +180,7 @@ describe("repository > basic methods", () => {
         it("should create entities and copy to them all properties of the given plain object if its given", () => connections.forEach(connection => {
             const postRepository = connection.getRepository(Post);
             const plainPosts = [{ id: 2, title: "Hello post" }, { id: 3, title: "Bye post" }];
-            const posts = postRepository.createMany(plainPosts);
+            const posts = postRepository.create(plainPosts);
             posts.length.should.be.equal(2);
             posts[0].should.be.instanceOf(Post);
             (posts[0].id as number).should.be.equal(2);
@@ -192,9 +192,9 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("initialize", function() {
+    describe("preload", function() {
 
-        it("should initialize entity from the given object with only id", () => Promise.all(connections.map(async connection => {
+        it("should preload entity from the given object with only id", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
             const categoryRepository = connection.getRepository(Category);
 
@@ -210,16 +210,16 @@ describe("repository > basic methods", () => {
             blog.categories = [category];
             await blogRepository.persist(blog);
             
-            // and initialize it
+            // and preload it
             const plainBlogWithId = { id: 1 };
-            const initializedBlog = await blogRepository.initialize(plainBlogWithId);
-            initializedBlog.should.be.instanceOf(Blog);
-            initializedBlog.id.should.be.equal(1);
-            initializedBlog.title.should.be.equal("About people");
-            initializedBlog.text.should.be.equal("Blog about good people");
+            const preloadedBlog = await blogRepository.preload(plainBlogWithId);
+            preloadedBlog.should.be.instanceOf(Blog);
+            preloadedBlog.id.should.be.equal(1);
+            preloadedBlog.title.should.be.equal("About people");
+            preloadedBlog.text.should.be.equal("Blog about good people");
         })));
 
-        it("should initialize entity and all relations given in the object", () => Promise.all(connections.map(async connection => {
+        it("should preload entity and all relations given in the object", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
             const categoryRepository = connection.getRepository(Category);
 
@@ -235,15 +235,15 @@ describe("repository > basic methods", () => {
             blog.categories = [category];
             await blogRepository.persist(blog);
             
-            // and initialize it
+            // and preload it
             const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
-            const initializedBlog = await blogRepository.initialize(plainBlogWithId);
-            initializedBlog.should.be.instanceOf(Blog);
-            initializedBlog.id.should.be.equal(1);
-            initializedBlog.title.should.be.equal("About people");
-            initializedBlog.text.should.be.equal("Blog about good people");
-            initializedBlog.categories[0].id.should.be.equal(1);
-            initializedBlog.categories[0].name.should.be.equal("people");
+            const preloadedBlog = await blogRepository.preload(plainBlogWithId);
+            preloadedBlog.should.be.instanceOf(Blog);
+            preloadedBlog.id.should.be.equal(1);
+            preloadedBlog.title.should.be.equal("About people");
+            preloadedBlog.text.should.be.equal("Blog about good people");
+            preloadedBlog.categories[0].id.should.be.equal(1);
+            preloadedBlog.categories[0].name.should.be.equal("people");
         })));
 
     });
@@ -304,9 +304,9 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("using initialize and merge together", function() {
+    describe("using preload and merge together", function() {
 
-        it("if we initialize entity from the plain object and merge initialized object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () => Promise.all(connections.map(async connection => {
+        it("if we preload entity from the plain object and merge preloaded object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
             const categoryRepository = connection.getRepository(Category);
 
@@ -327,10 +327,10 @@ describe("repository > basic methods", () => {
             blog.categories = [firstCategory, secondCategory];
             await blogRepository.persist(blog);
 
-            // and initialize it
+            // and preload it
             const plainBlogWithId = { id: 1, title: "changed title about people", categories: [ { id: 1 }, { id: 2, name: "insects" } ] };
-            const initializedBlog = await blogRepository.initialize(plainBlogWithId);
-            const mergedBlog = blogRepository.merge(initializedBlog, plainBlogWithId);
+            const preloadedBlog = await blogRepository.preload(plainBlogWithId);
+            const mergedBlog = blogRepository.merge(preloadedBlog, plainBlogWithId);
 
             mergedBlog.should.be.instanceOf(Blog);
             mergedBlog.id.should.be.equal(1);

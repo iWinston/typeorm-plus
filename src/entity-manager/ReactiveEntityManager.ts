@@ -4,97 +4,26 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOptions} from "../repository/FindOptions";
 import {Repository} from "../repository/Repository";
 import {ConstructorFunction} from "../common/ConstructorFunction";
-import {ReactiveRepository} from "../repository/ReactiveRepository";
-import {ReactiveTreeRepository} from "../repository/ReactiveTreeRepository";
-import {ObjectLiteral} from "../common/ObjectLiteral";
+import {BaseEntityManager} from "./BaseEntityManager";
+import {TreeRepository} from "../repository/TreeRepository";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
  * entity type are you passing. This version of ReactiveEntityManager works with reactive streams and observables.
  */
-export class ReactiveEntityManager {
+export class ReactiveEntityManager extends BaseEntityManager {
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(connection: Connection) {
+        super(connection);
     }
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Gets repository of the given entity.
-     */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): Repository<Entity> {
-        return this.connection.getRepository(entityClass);
-    }
-
-    /**
-     * Gets reactive repository of the given entity.
-     */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveRepository<Entity> {
-        return this.connection.getReactiveRepository(entityClass);
-    }
-
-    /**
-     * Gets reactive tree repository of the given entity.
-     */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|Function|string): ReactiveTreeRepository<Entity> {
-        return this.connection.getReactiveTreeRepository(entityClass);
-    }
-    
-    /**
-     * Checks if entity has an id.
-     */
-    hasId(entity: Function): boolean;
-    hasId(target: Function|string, entity: Function): boolean;
-    hasId(targetOrEntity: Function|string, maybeEntity?: Function): boolean {
-        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? <Function> maybeEntity : <Function> targetOrEntity;
-        return this.getReactiveRepository(target).hasId(entity);
-    }
-
-    /**
-     * Creates a new query builder that can be used to build an sql query.
-     */
-    createQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string): QueryBuilder<Entity> {
-        return this.getReactiveRepository(entityClass).createQueryBuilder(alias);
-    }
-
-    /**
-     * Creates a new entity. If fromRawEntity is given then it creates a new entity and copies all entity properties
-     * from this object into a new entity (copies only properties that should be in a new entity).
-     */
-    create<Entity>(entityClass: ConstructorFunction<Entity>|Function, fromRawEntity?: Object): Entity {
-        return this.getReactiveRepository(entityClass).create(fromRawEntity);
-    }
-
-    /**
-     * Creates a entities from the given array of plain javascript objects.
-     */
-    createMany<Entity>(entityClass: ConstructorFunction<Entity>|Function, copyFromObjects: any[]): Entity[] {
-        return this.getReactiveRepository(entityClass).createMany(copyFromObjects);
-    }
-
-    /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
-     * it loads it (and everything related to it), replaces all values with the new ones from the given object
-     * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
-     * replaced from the new object.
-     */
-    initialize<Entity>(entityClass: ConstructorFunction<Entity>|Function, object: Object): Rx.Observable<Entity> {
-        return this.getReactiveRepository(entityClass).initialize(object);
-    }
-
-    /**
-     * Merges two entities into one new entity.
-     */
-    merge<Entity>(entityClass: ConstructorFunction<Entity>|Function, ...objects: ObjectLiteral[]): Entity {
-        return <Entity> this.getRepository(entityClass).merge(...objects);
-    }
 
     /**
      * Persists (saves) a given entity in the database.
@@ -123,27 +52,27 @@ export class ReactiveEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity[]> {
+    find<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity[]> {
         if (conditionsOrFindOptions && options) {
             return this.getReactiveRepository(entityClass).find(conditionsOrFindOptions, options);
             
@@ -158,27 +87,27 @@ export class ReactiveEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<[Entity[], number]> {
+    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<[Entity[], number]> {
         if (conditionsOrFindOptions && options) {
             return this.getReactiveRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
 
@@ -193,27 +122,27 @@ export class ReactiveEntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, options: FindOptions): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditions: Object, options: FindOptions): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>|Function, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity> {
+    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity> {
         if (conditionsOrFindOptions && options) {
             return this.getReactiveRepository(entityClass).findOne(conditionsOrFindOptions, options);
 
@@ -228,7 +157,7 @@ export class ReactiveEntityManager {
     /**
      * Finds entity with given id.
      */
-    findOneById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any, options?: FindOptions): Rx.Observable<Entity> {
+    findOneById<Entity>(entityClass: ConstructorFunction<Entity>, id: any, options?: FindOptions): Rx.Observable<Entity> {
         return this.getReactiveRepository(entityClass).findOneById(id, options);
     }
 
@@ -259,9 +188,9 @@ export class ReactiveEntityManager {
      * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    setRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string, entityId: any, relatedEntityId: any): Rx.Observable<void>;
-    setRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityId: any): Rx.Observable<void>;
-    setRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Rx.Observable<void> {
+    setRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: string, entityId: any, relatedEntityId: any): Rx.Observable<void>;
+    setRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityId: any): Rx.Observable<void>;
+    setRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).setRelation(relationName as any, entityId, relatedEntityId);
     }
 
@@ -270,9 +199,9 @@ export class ReactiveEntityManager {
      * Should be used when you want quickly and efficiently add a relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string, entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
-    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
-    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void> {
+    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: string, entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    addToRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).addToRelation(relationName as any, entityId, relatedEntityIds);
     }
 
@@ -281,9 +210,9 @@ export class ReactiveEntityManager {
      * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string, entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
-    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
-    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void> {
+    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: string, entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void>;
+    removeFromRelation<Entity>(entityClass: ConstructorFunction<Entity>, relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).removeFromRelation(relationName as any, entityId, relatedEntityIds);
     }
 
@@ -292,9 +221,9 @@ export class ReactiveEntityManager {
      * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void>;
-    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void>;
-    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>|Function, relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void> {
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>, relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void>;
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>, relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void>;
+    addAndRemoveFromRelation<Entity>(entityClass: ConstructorFunction<Entity>, relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).addAndRemoveFromRelation(relation as any, entityId, addRelatedEntityIds, removeRelatedEntityIds);
     }
 
@@ -302,7 +231,7 @@ export class ReactiveEntityManager {
      * Removes entity with the given id.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeById<Entity>(entityClass: ConstructorFunction<Entity>|Function, id: any): Rx.Observable<void> {
+    removeById<Entity>(entityClass: ConstructorFunction<Entity>, id: any): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).removeById(id);
     }
 
@@ -310,7 +239,7 @@ export class ReactiveEntityManager {
      * Removes all entities with the given ids.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    removeByIds<Entity>(entityClass: ConstructorFunction<Entity>|Function, ids: any[]): Rx.Observable<void> {
+    removeByIds<Entity>(entityClass: ConstructorFunction<Entity>, ids: any[]): Rx.Observable<void> {
         return this.getReactiveRepository(entityClass).removeByIds(ids);
     }
     
@@ -318,7 +247,7 @@ export class ReactiveEntityManager {
      * Roots are entities that have no ancestors. Finds them all.
      * Used on the tree-type (e.g. closure table) entities.
      */
-    findRoots<Entity>(entityClass: ConstructorFunction<Entity>|Function): Rx.Observable<Entity[]> {
+    findRoots<Entity>(entityClass: ConstructorFunction<Entity>): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findRoots();
     }
 
@@ -326,7 +255,7 @@ export class ReactiveEntityManager {
      * Creates a query builder used to get descendants of the entities in a tree.
      * Used on the tree-type (e.g. closure table) entities.
      */
-    createDescendantsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
+    createDescendantsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
         return this.getReactiveTreeRepository(entityClass).createDescendantsQueryBuilder(alias, closureTableAlias, entity);
     }
 
@@ -334,7 +263,7 @@ export class ReactiveEntityManager {
      * Gets all children (descendants) of the given entity. Returns them all in a flat array.
      * Used on the tree-type (e.g. closure table) entities.
      */
-    findDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity[]> {
+    findDescendants<Entity>(entityClass: ConstructorFunction<Entity>, entity: Entity): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findDescendants(entity);
     }
 
@@ -342,7 +271,7 @@ export class ReactiveEntityManager {
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
      * Used on the tree-type (e.g. closure table) entities.
      */
-    findDescendantsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity> {
+    findDescendantsTree<Entity>(entityClass: ConstructorFunction<Entity>, entity: Entity): Rx.Observable<Entity> {
         return this.getReactiveTreeRepository(entityClass).findDescendantsTree(entity);
     }
 
@@ -350,7 +279,7 @@ export class ReactiveEntityManager {
      * Gets number of descendants of the entity.
      * Used on the tree-type (e.g. closure table) entities.
      */
-    countDescendants<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<number> {
+    countDescendants<Entity>(entityClass: ConstructorFunction<Entity>, entity: Entity): Rx.Observable<number> {
         return this.getReactiveTreeRepository(entityClass).countDescendants(entity);
     }
 
@@ -358,7 +287,7 @@ export class ReactiveEntityManager {
      * Creates a query builder used to get ancestors of the entities in the tree.
      * Used on the tree-type (e.g. closure table) entities.
      */
-    createAncestorsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>|Function, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
+    createAncestorsQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>, alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
         return this.getReactiveTreeRepository(entityClass).createAncestorsQueryBuilder(alias, closureTableAlias, entity);
     }
 
@@ -366,7 +295,7 @@ export class ReactiveEntityManager {
      * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
      *  Used on the tree-type (e.g. closure table) entities.
      */
-    findAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity[]> {
+    findAncestors<Entity>(entityClass: ConstructorFunction<Entity>, entity: Entity): Rx.Observable<Entity[]> {
         return this.getReactiveTreeRepository(entityClass).findAncestors(entity);
     }
 
@@ -374,7 +303,7 @@ export class ReactiveEntityManager {
      * Gets all parents (ancestors) of the given entity. \Returns them in a tree - nested into each other.
      *  Used on the tree-type (e.g. closure table) entities.
      */
-    findAncestorsTree<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<Entity> {
+    findAncestorsTree<Entity>(entityClass: ConstructorFunction<Entity>, entity: Entity): Rx.Observable<Entity> {
         return this.getReactiveTreeRepository(entityClass).findAncestorsTree(entity);
     }
 
@@ -382,7 +311,7 @@ export class ReactiveEntityManager {
      * Gets number of ancestors of the entity. 
      * Used on the tree-type (e.g. closure table) entities.
      */
-    countAncestors<Entity>(entityClass: ConstructorFunction<Entity>|Function, entity: Entity): Rx.Observable<number> {
+    countAncestors<Entity>(entityClass: ConstructorFunction<Entity>, entity: Entity): Rx.Observable<number> {
         return this.getReactiveTreeRepository(entityClass).countAncestors(entity);
     }
 

@@ -8,6 +8,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
  * This version of Repository is using rxjs library and Observables instead of promises.
+ * @experimental
  */
 export class ReactiveRepository<Entity> {
     
@@ -46,18 +47,34 @@ export class ReactiveRepository<Entity> {
     }
 
     /**
-     * Creates a new entity. If fromRawEntity is given then it creates a new entity and copies all entity properties
-     * from this object into a new entity (copies only properties that should be in a new entity).
+     * Creates a new entity instance.
      */
-    create(fromRawEntity?: Object): Entity {
-        return this.repository.create(fromRawEntity);
-    }
+    create(): Entity;
 
     /**
-     * Creates entities from a given array of plain javascript objects.
+     * Creates a new entities and copies all entity properties from given objects into their new entities.
+     * Note that it copies only properties that present in entity schema.
      */
-    createMany(copyFromObjects: Object[]): Entity[] {
-        return this.repository.createMany(copyFromObjects);
+    create(plainObjects: Object[]): Entity[];
+
+    /**
+     * Creates a new entity instance and copies all entity properties from this object into a new entity.
+     * Note that it copies only properties that present in entity schema.
+     */
+    create(plainObject: Object): Entity;
+
+    /**
+     * Creates a new entity instance or instances.
+     * Can copy properties from the given object into new entities.
+     */
+    create(plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
+        if (plainObjectOrObjects instanceof Array) {
+            return this.repository.create(plainObjectOrObjects);
+        } else if (plainObjectOrObjects) {
+            return this.repository.create(plainObjectOrObjects);
+        } else {
+            return this.repository.create();
+        }
     }
 
     /**
@@ -66,8 +83,8 @@ export class ReactiveRepository<Entity> {
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
      */
-    initialize(object: Object): Rx.Observable<Entity> {
-        return Rx.Observable.fromPromise(this.repository.initialize(object));
+    preload(object: Object): Rx.Observable<Entity> {
+        return Rx.Observable.fromPromise(this.repository.preload(object));
     }
 
     /**
