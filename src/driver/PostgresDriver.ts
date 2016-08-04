@@ -168,7 +168,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
             .then(() => {});
     }
 
-    buildParameters(sql: string, parameters: { [key: string]: any }) {
+    buildParameters(sql: string, parameters: ObjectLiteral) {
         const builtParameters: any[] = [];
         Object.keys(parameters).forEach((key, index) => {
             // const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
@@ -180,7 +180,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
         return builtParameters;
     }
 
-    replaceParameters(sql: string, parameters: { [key: string]: any }) {
+    replaceParameters(sql: string, parameters: ObjectLiteral) {
         Object.keys(parameters).forEach((key, index) => {
             // const value = parameters[key] !== null && parameters[key] !== undefined ? this.driver.escape(parameters[key]) : "NULL";
             sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {
@@ -193,7 +193,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
     /**
      * Insert a new row into given table.
      */
-    insert(tableName: string, keyValues: { [key: string]: any }, idColumnName?: string): Promise<any> {
+    insert(tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
         this.checkIfConnectionSet();
 
         const columns = Object.keys(keyValues).join(",");

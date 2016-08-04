@@ -11,6 +11,7 @@ import {Driver} from "../driver/Driver";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -306,9 +307,9 @@ export class PersistOperationExecutor {
         });
     }
 
-    private findUpdateOperationForEntity(operations: UpdateByRelationOperation[], insertOperations: InsertOperation[], target: any): { [key: string]: any } {
+    private findUpdateOperationForEntity(operations: UpdateByRelationOperation[], insertOperations: InsertOperation[], target: any): ObjectLiteral {
 
-        let updateMap: { [key: string]: any } = {};
+        let updateMap: ObjectLiteral = {};
         operations
             .forEach(operation => { // duplication with updateByRelation method
                 const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
@@ -376,7 +377,7 @@ export class PersistOperationExecutor {
     private update(updateOperation: UpdateOperation) {
         const entity = updateOperation.entity;
         const metadata = this.entityMetadatas.findByTarget(updateOperation.target);
-        const values: { [key: string]: any } = {};
+        const values: ObjectLiteral = {};
         
         updateOperation.columns.forEach(column => {
             values[column.name] = this.driver.preparePersistentValue(column.getEntityValue(entity), column);
@@ -483,7 +484,7 @@ export class PersistOperationExecutor {
         return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues), idColumnName);
     }
 
-    private insertIntoClosureTable(operation: InsertOperation, updateMap: { [key: string]: any }) {
+    private insertIntoClosureTable(operation: InsertOperation, updateMap: ObjectLiteral) {
         const entity = operation.entity;
         const metadata = this.entityMetadatas.findByTarget(operation.target);
         const parentEntity = entity[metadata.treeParentRelation.propertyName];

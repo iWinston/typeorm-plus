@@ -1,6 +1,7 @@
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Driver communicates with specific database.
@@ -60,12 +61,12 @@ export interface Driver {
     /**
      * Replaces parameters in the given sql with special character.
      */
-    buildParameters(sql: string, parameters: { [key: string]: any }): string[];
+    buildParameters(sql: string, parameters: ObjectLiteral): string[];
 
     /**
      * Replaces parameters in the given sql with special character.
      */
-    replaceParameters(sql: string, parameters: { [key: string]: any }): string;
+    replaceParameters(sql: string, parameters: ObjectLiteral): string;
 
     /**
      * Updates rows that match given simple conditions in the given table.

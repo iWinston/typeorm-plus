@@ -2,6 +2,7 @@ import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import * as moment from "moment";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Provides base functionality for all driver implementations.
@@ -57,7 +58,7 @@ export abstract class BaseDriver {
         return this.query(query).then(() => {});
     }
 
-    protected escapeObjectMap(objectMap: { [key: string]: any }): string[] {
+    protected escapeObjectMap(objectMap: ObjectLiteral): string[] {
         return Object.keys(objectMap).map(key => {
             const value = (<any> objectMap)[key];
             if (value === null || value === undefined) {

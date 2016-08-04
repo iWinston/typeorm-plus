@@ -196,7 +196,7 @@ export class Repository<Entity extends ObjectLiteral> {
     async remove(entity: Entity): Promise<Entity> {
         const dbEntity = await this.initialize(entity);
         (<any> entity)[this.metadata.primaryColumn.name] = undefined;
-        const [dbEntities, allPersistedEntities]: [EntityWithId[], EntityWithId[]] = await Promise.all([
+        const [dbEntities, allPersistedEntities] = await Promise.all([
             this.extractObjectsById(dbEntity, this.metadata),
             this.extractObjectsById(entity, this.metadata)
         ]);

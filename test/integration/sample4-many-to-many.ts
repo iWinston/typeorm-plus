@@ -8,6 +8,7 @@ import {Post} from "../../sample/sample4-many-to-many/entity/Post";
 import {PostCategory} from "../../sample/sample4-many-to-many/entity/PostCategory";
 import {PostMetadata} from "../../sample/sample4-many-to-many/entity/PostMetadata";
 import {PostImage} from "../../sample/sample4-many-to-many/entity/PostImage";
+import {createTestingConnectionOptions} from "../utils/test-utils";
 
 describe("many-to-many", function() {
 
@@ -16,19 +17,8 @@ describe("many-to-many", function() {
     // -------------------------------------------------------------------------
 
     const options: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
-            host: "192.168.99.100",
-            port: 3306,
-            username: "root",
-            password: "admin",
-            database: "test",
-            autoSchemaCreate: true,
-            logging: {
-                logOnlyFailedQueries: true,
-                logFailedQueryError: true
-            }
-        },
+        driver: "postgres",
+        connection: createTestingConnectionOptions("postgres"),
         entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"]
     };
 
