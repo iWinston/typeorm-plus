@@ -2,7 +2,7 @@
  
  */
 
-import {ConnectionOptions} from "./connection/ConnectionOptions";
+import {ConnectionOptions} from "./driver/ConnectionOptions";
 import {ConnectionManager} from "./connection-manager/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
@@ -93,7 +93,7 @@ export function getConnectionManager() {
  * Allows to quickly create a connection based on the given options. Uses ConnectionManager.
  */
 export function createConnection(options: CreateConnectionOptions) {
-    return getConnectionManager().create(options).connect();
+    return getConnectionManager().createAndConnect(options);
 }
 
 // -------------------------------------------------------------------------
@@ -101,7 +101,7 @@ export function createConnection(options: CreateConnectionOptions) {
 // -------------------------------------------------------------------------
 
 export {Connection} from "./connection/Connection";
-export {ConnectionOptions} from "./connection/ConnectionOptions";
+export {ConnectionOptions} from "./driver/ConnectionOptions";
 export {ConnectionManager} from "./connection-manager/ConnectionManager";
 export {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 export {Driver} from "./driver/Driver";

@@ -1,6 +1,6 @@
 import {Connection} from "../connection/Connection";
 import {FindOptions} from "../repository/FindOptions";
-import {ConstructorFunction} from "../common/ConstructorFunction";
+import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
 
 /**
@@ -47,27 +47,27 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
+    find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
         if (conditionsOrFindOptions && options) {
             return this.obtainRepository(entityClass).find(conditionsOrFindOptions, options);
             
@@ -82,27 +82,27 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
         if (conditionsOrFindOptions && options) {
             return this.obtainRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
 
@@ -117,27 +117,27 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
         if (conditionsOrFindOptions && options) {
             return this.obtainRepository(entityClass).findOne(conditionsOrFindOptions, options);
 
@@ -152,7 +152,7 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds entity with given id.
      */
-    findOneById<Entity>(entityClass: ConstructorFunction<Entity>, id: any, options?: FindOptions): Promise<Entity> {
+    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, options?: FindOptions): Promise<Entity> {
         return this.obtainRepository(entityClass).findOneById(id, options);
     }
 

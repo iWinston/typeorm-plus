@@ -1,7 +1,7 @@
 import {Connection} from "../connection/Connection";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {Repository} from "../repository/Repository";
-import {ConstructorFunction} from "../common/ConstructorFunction";
+import {ObjectType} from "../common/ObjectType";
 import {ReactiveRepository} from "../repository/ReactiveRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {ObjectLiteral} from "../common/ObjectLiteral";
@@ -26,7 +26,7 @@ export abstract class BaseEntityManager {
     /**
      * Gets repository for the given entity class.
      */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>): Repository<Entity>;
+    getRepository<Entity>(entityClass: ObjectType<Entity>): Repository<Entity>;
 
     /**
      * Gets repository for the given entity name.
@@ -36,14 +36,14 @@ export abstract class BaseEntityManager {
     /**
      * Gets repository for the given entity class or name.
      */
-    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): Repository<Entity> {
+    getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
         return this.obtainRepository(entityClassOrName);
     }
 
     /**
      * Gets tree repository for the given entity class.
      */
-    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): TreeRepository<Entity>;
+    getTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity name.
@@ -53,14 +53,14 @@ export abstract class BaseEntityManager {
     /**
      * Gets tree repository for the given entity class or name.
      */
-    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): TreeRepository<Entity> {
+    getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
         return this.obtainTreeRepository(entityClassOrName);
     }
 
     /**
      * Gets reactive repository for the given entity class.
      */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>): ReactiveRepository<Entity>;
+    getReactiveRepository<Entity>(entityClass: ObjectType<Entity>): ReactiveRepository<Entity>;
 
     /**
      * Gets reactive repository for the given entity name.
@@ -70,14 +70,14 @@ export abstract class BaseEntityManager {
     /**
      * Gets reactive repository of the given entity.
      */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>|string): ReactiveRepository<Entity> {
+    getReactiveRepository<Entity>(entityClass: ObjectType<Entity>|string): ReactiveRepository<Entity> {
         return this.obtainReactiveRepository(entityClass);
     }
 
     /**
      * Gets reactive tree repository for the given entity class.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): TreeReactiveRepository<Entity>;
+    getReactiveTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository for the given entity name.
@@ -87,7 +87,7 @@ export abstract class BaseEntityManager {
     /**
      * Gets reactive tree repository of the given entity.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|string): TreeReactiveRepository<Entity> {
+    getReactiveTreeRepository<Entity>(entityClass: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
         return this.obtainReactiveTreeRepository(entityClass);
     }
 
@@ -115,32 +115,32 @@ export abstract class BaseEntityManager {
     /**
      * Creates a new query builder that can be used to build an sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ConstructorFunction<Entity>, alias: string): QueryBuilder<Entity> {
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>, alias: string): QueryBuilder<Entity> {
         return this.obtainRepository(entityClass).createQueryBuilder(alias);
     }
 
     /**
      * Creates a new entity instance.
      */
-    create<Entity>(entityClass: ConstructorFunction<Entity>): Entity;
+    create<Entity>(entityClass: ObjectType<Entity>): Entity;
 
     /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(entityClass: ConstructorFunction<Entity>, plainObject: Object): Entity;
+    create<Entity>(entityClass: ObjectType<Entity>, plainObject: Object): Entity;
 
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(entityClass: ConstructorFunction<Entity>, plainObjects: Object[]): Entity[];
+    create<Entity>(entityClass: ObjectType<Entity>, plainObjects: Object[]): Entity[];
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create<Entity>(entityClass: ConstructorFunction<Entity>, plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
+    create<Entity>(entityClass: ObjectType<Entity>, plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
         if (plainObjectOrObjects instanceof Array) {
             return this.obtainRepository(entityClass).create(plainObjectOrObjects);
         } else if (plainObjectOrObjects) {
@@ -156,14 +156,14 @@ export abstract class BaseEntityManager {
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
      */
-    preload<Entity>(entityClass: ConstructorFunction<Entity>, object: Object): Promise<Entity> {
+    preload<Entity>(entityClass: ObjectType<Entity>, object: Object): Promise<Entity> {
         return this.obtainRepository(entityClass).preload(object);
     }
 
     /**
      * Merges two entities into one new entity.
      */
-    merge<Entity>(entityClass: ConstructorFunction<Entity>, ...objects: ObjectLiteral[]): Entity {
+    merge<Entity>(entityClass: ObjectType<Entity>, ...objects: ObjectLiteral[]): Entity {
         return <Entity> this.obtainRepository(entityClass).merge(...objects);
     }
 
@@ -176,7 +176,7 @@ export abstract class BaseEntityManager {
      * code, and obtainRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
-    protected obtainRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): Repository<Entity> {
+    protected obtainRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
         if (typeof entityClassOrName === "string") {
             return this.connection.getRepository<Entity>(entityClassOrName);
         } else {
@@ -189,7 +189,7 @@ export abstract class BaseEntityManager {
      * code, and obtainTreeRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
-    protected obtainTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): TreeRepository<Entity> {
+    protected obtainTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
         if (typeof entityClassOrName === "string") {
             return this.connection.getTreeRepository<Entity>(entityClassOrName);
         } else {
@@ -202,7 +202,7 @@ export abstract class BaseEntityManager {
      * code, and obtainReactiveRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
-    protected obtainReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): ReactiveRepository<Entity> {
+    protected obtainReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
         if (typeof entityClassOrName === "string") {
             return this.connection.getReactiveRepository<Entity>(entityClassOrName);
         } else {
@@ -215,7 +215,7 @@ export abstract class BaseEntityManager {
      * code, and obtainReactiveTreeRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
-    protected obtainReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): TreeReactiveRepository<Entity> {
+    protected obtainReactiveTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
         if (typeof entityClassOrName === "string") {
             return this.connection.getReactiveTreeRepository<Entity>(entityClassOrName);
         } else {

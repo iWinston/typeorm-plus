@@ -16,11 +16,11 @@ const options: CreateConnectionOptions = {
         username: "root",
         password: "admin",
         database: "test",
-        autoSchemaCreate: true,
         logging: {
             logQueries: true
         }
     },
+    autoSchemaCreate: true,
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };
 

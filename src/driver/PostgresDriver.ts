@@ -2,7 +2,7 @@ import {Driver} from "./Driver";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
 import {BaseDriver} from "./BaseDriver";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptions} from "./ConnectionOptions";
 import {PostgresSchemaBuilder} from "../schema-builder/PostgresSchemaBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 

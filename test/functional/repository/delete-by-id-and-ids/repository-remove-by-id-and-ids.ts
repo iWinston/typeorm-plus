@@ -21,11 +21,11 @@ describe("repository > removeById and removeByIds methods", function() {
             username: "root",
             password: "admin",
             database: "test",
-            autoSchemaCreate: true,
             logging: {
                 logFailedQueryError: true
             }
         },
+        autoSchemaCreate: true,
         entities: [Post]
     };
     // connect to db

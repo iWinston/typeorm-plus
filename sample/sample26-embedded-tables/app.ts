@@ -12,12 +12,12 @@ const options: CreateConnectionOptions = {
         username: "root",
         password: "admin",
         database: "test",
-        autoSchemaCreate: true,
         logging: {
             logOnlyFailedQueries: true,
             logFailedQueryError: true
         }
     },
+    autoSchemaCreate: true,
     entities: [Post, Question, Counters]
 };
 

@@ -2,7 +2,7 @@ import {Connection} from "../connection/Connection";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 import {MysqlDriver} from "../driver/MysqlDriver";
 import {CreateConnectionOptions} from "./CreateConnectionOptions";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptions} from "../driver/ConnectionOptions";
 import {Driver} from "../driver/Driver";
 import {MissingDriverError} from "./error/MissingDriverError";
 import {PostgresDriver} from "../driver/PostgresDriver";
@@ -59,6 +59,26 @@ export class ConnectionManager {
         
         if (options.usedNamingStrategy && options.usedNamingStrategy instanceof Function)
             connection.useNamingStrategy(options.usedNamingStrategy);
+
+        return connection;
+    }
+
+    /**
+     * Creates a new connection based on the given connection options and registers a new connection in the manager.
+     */
+    async createAndConnect(options: CreateConnectionOptions): Promise<Connection> {
+        const connection = this.create(options);
+
+        // connect to the database
+        await connection.connect();
+
+        // if option is set - drop schema once connection is done
+        if (options.dropSchemaOnConnection)
+            await connection.dropDatabase();
+
+        // if option is set - automatically synchronize a schema
+        if (options.autoSchemaCreate)
+            await connection.syncSchema();
 
         return connection;
     }

@@ -10,9 +10,9 @@ const options: CreateConnectionOptions = {
         port: 3306,
         username: "root",
         password: "admin",
-        database: "test",
-        autoSchemaCreate: true
+        database: "test"
     },
+    autoSchemaCreate: true,
     usedNamingStrategy: "custom_strategy",
     entities: [Post],
     namingStrategies: [CustomNamingStrategy]

@@ -22,11 +22,11 @@ describe("persistence > many-to-many", function() {
             username: "root",
             password: "admin",
             database: "test",
-            autoSchemaCreate: true,
             logging: {
                 logFailedQueryError: true
             }
         },
+        autoSchemaCreate: true,
         entities: [Post, Category, User]
     };
     // connect to db

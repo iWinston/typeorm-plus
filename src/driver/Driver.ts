@@ -1,6 +1,6 @@
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptions} from "./ConnectionOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**

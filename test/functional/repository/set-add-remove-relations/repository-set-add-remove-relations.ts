@@ -22,12 +22,12 @@ describe("repository > set/add/remove relation methods", function() {
             username: "root",
             password: "admin",
             database: "test",
-            autoSchemaCreate: true,
             logging: {
                 // logQueries: true, // uncomment for debugging
                 logFailedQueryError: true
             }
         },
+        autoSchemaCreate: true,
         entities: [Post, Category]
     };
     // connect to db

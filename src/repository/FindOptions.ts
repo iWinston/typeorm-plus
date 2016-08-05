@@ -1,5 +1,5 @@
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptions} from "../driver/ConnectionOptions";
 
 /**
  * Options to be passed to find methods.

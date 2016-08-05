@@ -10,11 +10,11 @@ const options: CreateConnectionOptions = {
         username: "root",
         password: "admin",
         database: "test",
-        autoSchemaCreate: true,
         logging: {
             logOnlyFailedQueries: true
         }
     },
+    autoSchemaCreate: true,
     entities: [EverythingEntity]
 };
 

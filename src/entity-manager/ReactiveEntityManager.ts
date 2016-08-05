@@ -1,7 +1,7 @@
 import * as Rx from "rxjs/Rx";
 import {Connection} from "../connection/Connection";
 import {FindOptions} from "../repository/FindOptions";
-import {ConstructorFunction} from "../common/ConstructorFunction";
+import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
 
 /**
@@ -49,27 +49,27 @@ export class ReactiveEntityManager extends BaseEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Rx.Observable<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Rx.Observable<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity[]> {
+    find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity[]> {
         if (conditionsOrFindOptions && options) {
             return this.getReactiveRepository(entityClass).find(conditionsOrFindOptions, options);
             
@@ -84,27 +84,27 @@ export class ReactiveEntityManager extends BaseEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Rx.Observable<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    findAndCount<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<[Entity[], number]> {
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<[Entity[], number]> {
         if (conditionsOrFindOptions && options) {
             return this.getReactiveRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
 
@@ -119,27 +119,27 @@ export class ReactiveEntityManager extends BaseEntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, options: FindOptions): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditions: Object, options: FindOptions): Rx.Observable<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Rx.Observable<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ConstructorFunction<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity> {
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity> {
         if (conditionsOrFindOptions && options) {
             return this.getReactiveRepository(entityClass).findOne(conditionsOrFindOptions, options);
 
@@ -154,7 +154,7 @@ export class ReactiveEntityManager extends BaseEntityManager {
     /**
      * Finds entity with given id.
      */
-    findOneById<Entity>(entityClass: ConstructorFunction<Entity>, id: any, options?: FindOptions): Rx.Observable<Entity> {
+    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, options?: FindOptions): Rx.Observable<Entity> {
         return this.getReactiveRepository(entityClass).findOneById(id, options);
     }
 

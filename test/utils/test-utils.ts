@@ -1,7 +1,7 @@
 import {CreateConnectionOptions} from "../../src/connection-manager/CreateConnectionOptions";
 import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
-import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
+import {ConnectionOptions} from "../../src/driver/ConnectionOptions";
 import {EntitySchema} from "../../src/metadata/entity-schema/EntitySchema";
 
 export interface TestingConnectionOptions {
@@ -25,7 +25,6 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
         username: parameters.connections[type].username,
         password: parameters.connections[type].password,
         database: parameters.connections[type].database,
-        autoSchemaCreate: true,
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -40,6 +39,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         driver: "mysql",
         connectionName: "mysqlPrimaryConnection",
         connection: createTestingConnectionOptions("mysql"),
+        autoSchemaCreate: true,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -100,9 +100,9 @@ export function setupConnection(callback: (connection: Connection) => any, entit
             port: 3306,
             username: "root",
             password: "admin",
-            database: "test",
-            autoSchemaCreate: true
+            database: "test"
         },
+        autoSchemaCreate: true,
         entities: entities
     };
 

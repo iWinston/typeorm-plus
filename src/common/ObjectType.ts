@@ -1,6 +1,6 @@
 /**
  * Used to get a type of the creating Function.
  */
-export interface ConstructorFunction<T> {
+export interface ObjectType<T> {
     new (): T;
 }

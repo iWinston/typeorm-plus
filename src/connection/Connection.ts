@@ -1,9 +1,8 @@
 import {Driver} from "../driver/Driver";
-import {ConnectionOptions} from "./ConnectionOptions";
 import {Repository} from "../repository/Repository";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
-import {ConstructorFunction} from "../common/ConstructorFunction";
+import {ObjectType} from "../common/ObjectType";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
@@ -81,6 +80,11 @@ export class Connection {
     private readonly _reactiveEntityManager: ReactiveEntityManager;
 
     /**
+     * Stores all registered metadatas with their repositories.
+     */
+    private readonly repositoryForMetadatas: RepositoryForMetadata[] = [];
+
+    /**
      * Entity listeners that are registered for this connection.
      */
     private readonly entityListeners: EntityListenerMetadata[] = [];
@@ -120,11 +124,6 @@ export class Connection {
      */
     private _isConnected = false;
 
-    /**
-     * Stores all registered metadatas with their repositories.
-     */
-    private readonly repositoryForMetadatas: RepositoryForMetadata[] = [];
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -149,7 +148,7 @@ export class Connection {
     }
 
     /**
-     * Entity manager allows to work with any entity of this connection.
+     * Gets entity manager that allows to perform repository operations with any entity of this connection.
      */
     get entityManager() {
         if (!this.isConnected)
@@ -159,7 +158,7 @@ export class Connection {
     }
 
     /**
-     * Entity manager allows to work with any entity of your connection.
+     * Gets entity manager that allows to perform repository operations with any entity of this connection.
      * This version of entity manager is reactive - works with Observables instead of Promises.
      */
     get reactiveEntityManager() {
@@ -188,20 +187,14 @@ export class Connection {
 
         // set connected status for the current connection
         this._isConnected = true;
-
-        // drop the schema if special option is set
-        if (this.driver.connectionOptions.dropSchemaOnConnection)
-            await this.driver.clearDatabase();
-
-        // second build schema
-        if (this.driver.connectionOptions.autoSchemaCreate === true)
-            await this.syncSchema();
         
         return this;
     }
 
     /**
-     * Closes this connection.
+     * Closes connection with the database.
+     * Once connection is closed, you cannot use repositories and perform any operations except
+     * opening connection again.
      */
     async close(): Promise<void> {
         if (!this.isConnected)
@@ -212,14 +205,21 @@ export class Connection {
     }
 
     /**
+     * Drops the database and all its data.
+     */
+    async dropDatabase(): Promise<void> {
+        return this.driver.clearDatabase();
+    }
+
+    /**
      * Creates database schema for all entities registered in this connection.
      */
     async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
         if (!this.isConnected)
             throw new CannotSyncNotConnectedError(this.name);
-        
+
         if (dropBeforeSync)
-            await this.driver.clearDatabase();
+            await this.dropDatabase();
 
         const schemaBuilder = this.driver.createSchemaBuilder();
         const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
@@ -228,7 +228,7 @@ export class Connection {
     }
 
     /**
-     * Imports entities from the given paths (directories) for the current connection.
+     * Imports entities from the given paths (directories) and registers them in the current connection.
      */
     async importEntitiesFromDirectories(paths: string[]): Promise<this> {
         this.importEntities(importClassesFromDirectories(paths));
@@ -236,7 +236,7 @@ export class Connection {
     }
 
     /**
-     * Imports entity schemas from the given paths (directories) for the current connection.
+     * Imports entity schemas from the given paths (directories) and registers them in the current connection.
      */
     async importEntitySchemaFromDirectories(paths: string[]): Promise<this> {
         this.importEntitySchemas(importJsonsFromDirectories(paths));
@@ -244,7 +244,7 @@ export class Connection {
     }
 
     /**
-     * Imports subscribers from the given paths (directories) for the current connection.
+     * Imports subscribers from the given paths (directories) and registers them in the current connection.
      */
     async importSubscribersFromDirectories(paths: string[]): Promise<this> {
         this.importSubscribers(importClassesFromDirectories(paths));
@@ -252,7 +252,7 @@ export class Connection {
     }
 
     /**
-     * Imports naming strategies from the given paths (directories) for the current connection.
+     * Imports naming strategies from the given paths (directories) and registers them in the current connection.
      */
     async importNamingStrategiesFromDirectories(paths: string[]): Promise<this> {
         this.importEntities(importClassesFromDirectories(paths));
@@ -260,7 +260,7 @@ export class Connection {
     }
 
     /**
-     * Imports entities for the current connection.
+     * Imports entities and registers them in the current connection.
      */
     async importEntities(entities: Function[]): Promise<this> {
         if (this.isConnected)
@@ -271,7 +271,7 @@ export class Connection {
     }
 
     /**
-     * Imports schemas for the current connection.
+     * Imports schemas and registers them in the current connection.
      */
     async importEntitySchemas(schemas: EntitySchema[]): Promise<this> {
         if (this.isConnected)
@@ -282,7 +282,7 @@ export class Connection {
     }
 
     /**
-     * Imports entities for the given connection. If connection name is not given then default connection is used.
+     * Imports subscribers and registers them in the current connection.
      */
     async importSubscribers(subscriberClasses: Function[]): Promise<this> {
         if (this.isConnected)
@@ -293,7 +293,7 @@ export class Connection {
     }
 
     /**
-     * Imports entities for the current connection.
+     * Imports naming strategies and registers them in the current connection.
      */
     async importNamingStrategies(strategies: Function[]): Promise<this> {
         if (this.isConnected)
@@ -304,17 +304,20 @@ export class Connection {
     }
 
     /**
-     * Sets given naming strategy to be used. Naming strategy must be set to be used before connection is established.
+     * Sets given naming strategy to be used.
+     * Naming strategy must be set to be used before connection is established.
      */
     useNamingStrategy(name: string): this;
 
     /**
-     * Sets given naming strategy to be used. Naming strategy must be set to be used before connection is established.
+     * Sets given naming strategy to be used.
+     * Naming strategy must be set to be used before connection is established.
      */
     useNamingStrategy(strategy: Function): this;
 
     /**
-     * Sets given naming strategy to be used. Naming strategy must be set to be used before connection is established.
+     * Sets given naming strategy to be used.
+     * Naming strategy must be set to be used before connection is established.
      */
     useNamingStrategy(strategyClassOrName: string|Function): this {
         if (this.isConnected)
@@ -325,7 +328,17 @@ export class Connection {
     }
 
     /**
-     * Gets the entity metadata of the given entity target.
+     * Gets the entity metadata of the given entity class.
+     */
+    getMetadata(entity: Function): EntityMetadata;
+
+    /**
+     * Gets the entity metadata of the given entity name.
+     */
+    getMetadata(entity: string): EntityMetadata;
+
+    /**
+     Gets entity metadata for the given entity class or schema name.
      */
     getMetadata(entity: Function|string): EntityMetadata {
         return this.entityMetadatas.findByTarget(entity);
@@ -334,7 +347,7 @@ export class Connection {
     /**
      * Gets repository for the given entity class.
      */
-    getRepository<Entity>(entityClass: ConstructorFunction<Entity>): Repository<Entity>;
+    getRepository<Entity>(entityClass: ObjectType<Entity>): Repository<Entity>;
 
     /**
      * Gets repository for the given entity name.
@@ -344,7 +357,7 @@ export class Connection {
     /**
      * Gets repository for the given entity class or name.
      */
-    getRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): Repository<Entity> {
+    getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -361,18 +374,24 @@ export class Connection {
 
     /**
      * Gets tree repository for the given entity class.
+     * Only tree-type entities can have a TreeRepository,
+     * like ones decorated with @ClosureTable decorator.
      */
-    getTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): TreeRepository<Entity>;
+    getTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeRepository<Entity>;
 
     /**
-     * Gets tree repository for the given entity name.
+     * Gets tree repository for the given entity class.
+     * Only tree-type entities can have a TreeRepository,
+     * like ones decorated with @ClosureTable decorator.
      */
     getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class or name.
+     * Only tree-type entities can have a TreeRepository,
+     * like ones decorated with @ClosureTable decorator.
      */
-    getTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): TreeRepository<Entity> {
+    getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -392,18 +411,21 @@ export class Connection {
 
     /**
      * Gets specific repository for the given entity class.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
      */
-    getSpecificRepository<Entity>(entityClass: ConstructorFunction<Entity>): SpecificRepository<Entity>;
+    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
 
     /**
      * Gets specific repository for the given entity name.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
      */
     getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
 
     /**
      * Gets specific repository for the given entity class or name.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
      */
-    getSpecificRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): SpecificRepository<Entity> {
+    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -419,47 +441,25 @@ export class Connection {
     }
 
     /**
-     * Gets specific repository for the given entity class.
-     */
-    getSpecificReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>): SpecificReactiveRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity name.
-     */
-    getSpecificReactiveRepository<Entity>(entityName: string): SpecificReactiveRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity class or name.
-     */
-    getSpecificReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): SpecificReactiveRepository<Entity> {
-        if (!this.isConnected)
-            throw new NoConnectionForRepositoryError(this.name);
-
-        if (!this.entityMetadatas.hasTarget(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryAggregate)
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        return repositoryAggregate.specificReactiveRepository;
-    }
-
-    /**
      * Gets reactive repository for the given entity class.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
      */
-    getReactiveRepository<Entity>(entityClass: ConstructorFunction<Entity>): ReactiveRepository<Entity>;
+    getReactiveRepository<Entity>(entityClass: ObjectType<Entity>): ReactiveRepository<Entity>;
 
     /**
      * Gets reactive repository for the given entity name.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getReactiveRepository<Entity>(entityName: string): ReactiveRepository<Entity>;
 
     /**
-     * Gets reactive repository for the given entity class.
+     * Gets reactive repository for the given entity class or name.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
      */
-    getReactiveRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): ReactiveRepository<Entity> {
+    getReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -476,18 +476,30 @@ export class Connection {
 
     /**
      * Gets reactive tree repository for the given entity class.
+     * Only tree-type entities can have a TreeRepository,
+     * like ones decorated with @ClosureTable decorator.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): TreeReactiveRepository<Entity>;
+    getReactiveTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository for the given entity name.
+     * Only tree-type entities can have a TreeRepository,
+     * like ones decorated with @ClosureTable decorator.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getReactiveTreeRepository<Entity>(entityName: string): TreeReactiveRepository<Entity>;
 
     /**
-     * Gets reactive tree repository for the given entity class.
+     * Gets reactive tree repository for the given entity class or name.
+     * Only tree-type entities can have a TreeRepository,
+     * like ones decorated with @ClosureTable decorator.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
      */
-    getReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): TreeReactiveRepository<Entity> {
+    getReactiveTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -503,6 +515,43 @@ export class Connection {
             throw new RepositoryNotTreeError(entityClassOrName);
 
         return repositoryAggregate.reactiveRepository as TreeReactiveRepository<Entity>;
+    }
+
+    /**
+     * Gets specific repository for the given entity class.
+     * SpecificReactiveRepository is a special repository that contains specific and non standard repository methods.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
+     */
+    getSpecificReactiveRepository<Entity>(entityClass: ObjectType<Entity>): SpecificReactiveRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity name.
+     * SpecificReactiveRepository is a special repository that contains specific and non standard repository methods.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
+     */
+    getSpecificReactiveRepository<Entity>(entityName: string): SpecificReactiveRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity class or name.
+     * SpecificReactiveRepository is a special repository that contains specific and non standard repository methods.
+     * Reactive repositories has same functionality as regular repositories,
+     * the only difference is that reactive repository methods return Observable instead of Promise.
+     */
+    getSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
+        if (!this.isConnected)
+            throw new NoConnectionForRepositoryError(this.name);
+
+        if (!this.entityMetadatas.hasTarget(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
+        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
+        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
+        if (!repositoryAggregate)
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
+        return repositoryAggregate.specificReactiveRepository;
     }
 
     // -------------------------------------------------------------------------

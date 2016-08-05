@@ -1,4 +1,4 @@
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptions} from "./ConnectionOptions";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import * as moment from "moment";

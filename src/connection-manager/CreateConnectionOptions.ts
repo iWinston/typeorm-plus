@@ -1,4 +1,4 @@
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptions} from "../driver/ConnectionOptions";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 
 /**
@@ -25,6 +25,18 @@ export interface CreateConnectionOptions {
      * Name of the naming strategy or target class of the naming strategy to be used on this connection.
      */
     usedNamingStrategy?: string|Function;
+
+    /**
+     * Drops the schema each time connection is being established.
+     * Be careful with this option and don't use this in production - otherwise you'll loose all your production data.
+     * This option is useful during debug and development.
+     */
+    dropSchemaOnConnection?: boolean;
+
+    /**
+     * Indicates if database schema should be auto created every time application launch.
+     */
+    autoSchemaCreate?: boolean;
 
     /**
      * Entities to be loaded for the new connection.

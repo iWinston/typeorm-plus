@@ -305,7 +305,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
-                const metadata = this.connection.getMetadata(entityWithId.entityTarget);
+                const metadata = this.connection.getMetadata(entityWithId.entityTarget as any);  // todo: fix type
                 const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
                 return repository.findOneById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;

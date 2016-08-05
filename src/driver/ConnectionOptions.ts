@@ -1,5 +1,5 @@
 /**
- * Connection options passed to the connection.
+ * Connection options passed to the driver.
  */
 export interface ConnectionOptions {
 
@@ -32,18 +32,6 @@ export interface ConnectionOptions {
      * Database name to connect to.
      */
     database?: string;
-
-    /**
-     * Drops the schema each time connection is being established.
-     * Be careful with this option and don't use this in production - otherwise you'll loose all your production data.
-     * This option is useful during debug and development.
-     */
-    dropSchemaOnConnection?: boolean;
-
-    /**
-     * Indicates if database schema should be auto created every time application launch.
-     */
-    autoSchemaCreate?: boolean;
 
     /**
      * Logging options.
