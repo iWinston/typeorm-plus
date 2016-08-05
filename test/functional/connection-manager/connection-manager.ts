@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {createTestingConnectionOptions} from "../../utils/test-utils";
-import {CreateConnectionOptions} from "../../../src/connection-manager/CreateConnectionOptions";
-import {ConnectionManager} from "../../../src/connection-manager/ConnectionManager";
+import {CreateConnectionOptions} from "../../../src/connection/CreateConnectionOptions";
+import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/MysqlDriver";
 import {PostgresDriver} from "../../../src/driver/PostgresDriver";
-import {ConnectionNotFoundError} from "../../../src/connection-manager/error/ConnectionNotFoundError";
+import {ConnectionNotFoundError} from "../../../src/connection/error/ConnectionNotFoundError";
 
 describe("ConnectionManager", () => {
 

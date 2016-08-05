@@ -1,4 +1,4 @@
-import {Connection} from "../connection/Connection";
+import {Connection} from "./Connection";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 import {MysqlDriver} from "../driver/MysqlDriver";
 import {CreateConnectionOptions} from "./CreateConnectionOptions";

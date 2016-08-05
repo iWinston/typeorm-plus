@@ -17,7 +17,7 @@ import {TreeRepository} from "../../../src/repository/TreeRepository";
 import {ReactiveRepository} from "../../../src/repository/ReactiveRepository";
 import {TreeReactiveRepository} from "../../../src/repository/TreeReactiveRepository";
 import {getConnectionManager} from "../../../src/index";
-import {CreateConnectionOptions} from "../../../src/connection-manager/CreateConnectionOptions";
+import {CreateConnectionOptions} from "../../../src/connection/CreateConnectionOptions";
 import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
 import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
 import {RepositoryNotFoundError} from "../../../src/connection/error/RepositoryNotFoundError";

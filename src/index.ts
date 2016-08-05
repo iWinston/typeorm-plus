@@ -3,11 +3,11 @@
  */
 
 import {ConnectionOptions} from "./driver/ConnectionOptions";
-import {ConnectionManager} from "./connection-manager/ConnectionManager";
+import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
-import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
+import {CreateConnectionOptions} from "./connection/CreateConnectionOptions";
 
 // -------------------------------------------------------------------------
 // Global Container
@@ -102,8 +102,8 @@ export function createConnection(options: CreateConnectionOptions) {
 
 export {Connection} from "./connection/Connection";
 export {ConnectionOptions} from "./driver/ConnectionOptions";
-export {ConnectionManager} from "./connection-manager/ConnectionManager";
-export {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
+export {ConnectionManager} from "./connection/ConnectionManager";
+export {CreateConnectionOptions} from "./connection/CreateConnectionOptions";
 export {Driver} from "./driver/Driver";
 export {MysqlDriver} from "./driver/MysqlDriver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";

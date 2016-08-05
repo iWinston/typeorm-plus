@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
+import {CreateConnectionOptions} from "../../../../src/connection/CreateConnectionOptions";
 import {createConnection} from "../../../../src/index";
 import {User} from "./entity/User";
 

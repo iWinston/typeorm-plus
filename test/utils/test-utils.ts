@@ -1,4 +1,4 @@
-import {CreateConnectionOptions} from "../../src/connection-manager/CreateConnectionOptions";
+import {CreateConnectionOptions} from "../../src/connection/CreateConnectionOptions";
 import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 import {ConnectionOptions} from "../../src/driver/ConnectionOptions";

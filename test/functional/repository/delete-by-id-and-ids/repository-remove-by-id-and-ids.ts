@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
-import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
+import {CreateConnectionOptions} from "../../../../src/connection/CreateConnectionOptions";
 import {createConnection} from "../../../../src/index";
 import {SpecificRepository} from "../../../../src/repository/SpecificRepository";
 
