@@ -1,5 +1,5 @@
 /**
- * Used to mark simple objects with any string keys.
+ * Interface of the simple literal object with any string keys.
  */
 export interface ObjectLiteral {
     [key: string]: any;

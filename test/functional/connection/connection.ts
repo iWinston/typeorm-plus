@@ -17,7 +17,7 @@ import {TreeRepository} from "../../../src/repository/TreeRepository";
 import {ReactiveRepository} from "../../../src/repository/ReactiveRepository";
 import {TreeReactiveRepository} from "../../../src/repository/TreeReactiveRepository";
 import {getConnectionManager} from "../../../src/index";
-import {CreateConnectionOptions} from "../../../src/connection/CreateConnectionOptions";
+import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
 import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
 import {RepositoryNotFoundError} from "../../../src/connection/error/RepositoryNotFoundError";
@@ -40,9 +40,9 @@ describe("Connection", () => {
 
         let connection: Connection;
         before(async () => {
-            const options: CreateConnectionOptions = {
+            const options: ConnectionOptions = {
                 driver: "mysql",
-                connection: createTestingConnectionOptions("mysql"),
+                driverOptions: createTestingConnectionOptions("mysql"),
                 entities: []
             };
             connection = await getConnectionManager().create(options);
@@ -227,11 +227,11 @@ describe("Connection", () => {
         beforeEach(async () => {
             firstConnection = await getConnectionManager().create({
                 driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driverOptions: createTestingConnectionOptions("mysql")
             });
             secondConnection = await getConnectionManager().create({
                 driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driverOptions: createTestingConnectionOptions("mysql")
             });
         });
 
@@ -279,7 +279,7 @@ describe("Connection", () => {
         beforeEach(async () => {
             connection = await getConnectionManager().create({
                 driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driverOptions: createTestingConnectionOptions("mysql")
             });
         });
         afterEach(() => connection.isConnected ? connection.close() : {});
@@ -327,7 +327,7 @@ describe("Connection", () => {
         beforeEach(async () => {
             connection = await getConnectionManager().create({
                 driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driverOptions: createTestingConnectionOptions("mysql")
             });
         });
         afterEach(() => connection.isConnected ? connection.close() : {});

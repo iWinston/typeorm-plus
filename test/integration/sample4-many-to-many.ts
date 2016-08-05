@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {CreateConnectionOptions, createConnection} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {PostDetails} from "../../sample/sample4-many-to-many/entity/PostDetails";
 import {Post} from "../../sample/sample4-many-to-many/entity/Post";
@@ -16,9 +16,9 @@ describe("many-to-many", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const options: CreateConnectionOptions = {
+    const options: ConnectionOptions = {
         driver: "postgres",
-        connection: createTestingConnectionOptions("postgres"),
+        driverOptions: createTestingConnectionOptions("postgres"),
         entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"]
     };
 

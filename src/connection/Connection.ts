@@ -37,7 +37,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * A single connection instance to the database. 
- * Each connection has its own entity manager, repositories, subscribers and metadatas.
+ * Each connection has its own entity manager, repositories, broadcaster and entity metadatas.
  */
 export class Connection {
 
@@ -46,7 +46,7 @@ export class Connection {
     // -------------------------------------------------------------------------
 
     /**
-     * The name of the connection.
+     * Connection name.
      */
     public readonly name: string;
 

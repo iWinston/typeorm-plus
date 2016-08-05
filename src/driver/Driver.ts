@@ -1,6 +1,6 @@
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {ConnectionOptions} from "./ConnectionOptions";
+import {DriverOptions} from "./DriverOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
@@ -21,7 +21,7 @@ export interface Driver {
     /**
      * Connection options used in this driver.
      */
-    connectionOptions: ConnectionOptions;
+    connectionOptions: DriverOptions;
     
     /**
      * Database name to which this connection is made.

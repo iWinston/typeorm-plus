@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createConnection, CreateConnectionOptions} from "../../src/index";
+import {createConnection, ConnectionOptions} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {PostDetails} from "../../sample/sample3-many-to-one/entity/PostDetails";
 import {Post} from "../../sample/sample3-many-to-one/entity/Post";
@@ -18,9 +18,9 @@ describe("many-to-one", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const options: CreateConnectionOptions = {
+    const options: ConnectionOptions = {
         driver: "postgres",
-        connection: createTestingConnectionOptions("postgres"),
+        driverOptions: createTestingConnectionOptions("postgres"),
         entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
 

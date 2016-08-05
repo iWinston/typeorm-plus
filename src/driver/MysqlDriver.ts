@@ -6,7 +6,7 @@ import {BaseDriver} from "./BaseDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import * as moment from "moment";
-import {ConnectionOptions} from "./ConnectionOptions";
+import {DriverOptions} from "./DriverOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
@@ -70,7 +70,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(public connectionOptions: ConnectionOptions, mysql?: any) {
+    constructor(public connectionOptions: DriverOptions, mysql?: any) {
         super();
 
         // if driver dependency is not given explicitly, then try to load it via "require"

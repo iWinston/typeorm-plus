@@ -2,7 +2,7 @@ import {Driver} from "./Driver";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
 import {BaseDriver} from "./BaseDriver";
-import {ConnectionOptions} from "./ConnectionOptions";
+import {DriverOptions} from "./DriverOptions";
 import {PostgresSchemaBuilder} from "../schema-builder/PostgresSchemaBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
@@ -67,7 +67,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(public connectionOptions: ConnectionOptions, postgres?: any) {
+    constructor(public connectionOptions: DriverOptions, postgres?: any) {
         super();
 
         // if driver dependency is not given explicitly, then try to load it via "require"

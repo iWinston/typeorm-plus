@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import {createConnection, CreateConnectionOptions} from "../../src/index";
+import {createConnection, ConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 
 // NOTE: this example is not working yet, only concepts of how this feature must work described here
 
-const options: CreateConnectionOptions = {
+const options: ConnectionOptions = {
     driver: "mysql",
-    connection: {
+    driverOptions: {
         host: "192.168.99.100",
         port: 3306,
         username: "root",

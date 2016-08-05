@@ -1,7 +1,7 @@
 /**
- * Connection options passed to the driver.
+ * Driver connection options.
  */
-export interface ConnectionOptions {
+export interface DriverOptions {
 
     /**
      * Url to where perform connection.
@@ -34,7 +34,7 @@ export interface ConnectionOptions {
     database?: string;
 
     /**
-     * Logging options.
+     * Driver logging options.
      */
     logging?: {
 

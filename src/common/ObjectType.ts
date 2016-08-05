@@ -1,5 +1,5 @@
 /**
- * Used to get a type of the creating Function.
+ * Represents some Type of the Object.
  */
 export interface ObjectType<T> {
     new (): T;

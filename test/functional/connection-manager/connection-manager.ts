@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {createTestingConnectionOptions} from "../../utils/test-utils";
-import {CreateConnectionOptions} from "../../../src/connection/CreateConnectionOptions";
+import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/MysqlDriver";
 import {PostgresDriver} from "../../../src/driver/PostgresDriver";
@@ -12,9 +12,9 @@ describe("ConnectionManager", () => {
     describe("create", function() {
 
         it("should create a mysql connection when mysql driver is specified", () => {
-            const options: CreateConnectionOptions = {
+            const options: ConnectionOptions = {
                 driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driverOptions: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
@@ -22,10 +22,10 @@ describe("ConnectionManager", () => {
         });
 
         it("should create a postgres connection when mysql driver is specified", () => {
-            const options: CreateConnectionOptions = {
+            const options: ConnectionOptions = {
                 driver: "postgres",
                 connectionName: "myPostgresConnection",
-                connection: createTestingConnectionOptions("postgres")
+                driverOptions: createTestingConnectionOptions("postgres")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
@@ -57,10 +57,10 @@ describe("ConnectionManager", () => {
     describe("get", function() {
 
         it("should give connection with a requested name", () => {
-            const options: CreateConnectionOptions = {
+            const options: ConnectionOptions = {
                 driver: "mysql",
                 connectionName: "myMysqlConnection",
-                connection: createTestingConnectionOptions("mysql")
+                driverOptions: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
@@ -69,10 +69,10 @@ describe("ConnectionManager", () => {
         });
 
         it("should throw an error if connection with the given name was not found", () => {
-            const options: CreateConnectionOptions = {
+            const options: ConnectionOptions = {
                 driver: "mysql",
                 connectionName: "myMysqlConnection",
-                connection: createTestingConnectionOptions("mysql")
+                driverOptions: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);

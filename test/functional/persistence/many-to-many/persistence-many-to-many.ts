@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {CreateConnectionOptions} from "../../../../src/connection/CreateConnectionOptions";
+import {ConnectionOptions} from "../../../../src/connection/ConnectionOptions";
 import {createConnection} from "../../../../src/index";
 import {User} from "./entity/User";
 
@@ -14,9 +14,9 @@ describe("persistence > many-to-many", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const parameters: CreateConnectionOptions = {
+    const parameters: ConnectionOptions = {
         driver: "mysql",
-        connection: {
+        driverOptions: {
             host: "192.168.99.100",
             port: 3306,
             username: "root",

@@ -1,4 +1,4 @@
-import {ConnectionOptions} from "./ConnectionOptions";
+import {DriverOptions} from "./DriverOptions";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import * as moment from "moment";
@@ -13,7 +13,7 @@ export abstract class BaseDriver {
     // Properties
     // -------------------------------------------------------------------------
 
-    abstract connectionOptions: ConnectionOptions;
+    abstract connectionOptions: DriverOptions;
 
     // -------------------------------------------------------------------------
     // Private Properties

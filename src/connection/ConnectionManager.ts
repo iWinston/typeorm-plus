@@ -1,11 +1,12 @@
 import {Connection} from "./Connection";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 import {MysqlDriver} from "../driver/MysqlDriver";
-import {CreateConnectionOptions} from "./CreateConnectionOptions";
-import {ConnectionOptions} from "../driver/ConnectionOptions";
+import {ConnectionOptions} from "./ConnectionOptions";
+import {DriverOptions} from "../driver/DriverOptions";
 import {Driver} from "../driver/Driver";
 import {MissingDriverError} from "./error/MissingDriverError";
 import {PostgresDriver} from "../driver/PostgresDriver";
+import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -17,6 +18,9 @@ export class ConnectionManager {
     // Properties
     // -------------------------------------------------------------------------
 
+    /**
+     * List of connections registered in this connection manager.
+     */
     private connections: Connection[] = [];
     
     // -------------------------------------------------------------------------
@@ -24,10 +28,10 @@ export class ConnectionManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a new connection based on the given connection options and registers a new connection in the manager.
+     * Creates a new connection based on the given connection options and registers this connection in the manager.
      */
-    create(options: CreateConnectionOptions): Connection {
-        const driver = this.createDriver(options.driver, options.connection);
+    create(options: ConnectionOptions): Connection {
+        const driver = this.createDriver(options.driver, options.driverOptions);
         const connection = this.createConnection(options.connectionName || "default", driver);
 
         if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
@@ -66,7 +70,7 @@ export class ConnectionManager {
     /**
      * Creates a new connection based on the given connection options and registers a new connection in the manager.
      */
-    async createAndConnect(options: CreateConnectionOptions): Promise<Connection> {
+    async createAndConnect(options: ConnectionOptions): Promise<Connection> {
         const connection = this.create(options);
 
         // connect to the database
@@ -84,12 +88,16 @@ export class ConnectionManager {
     }
 
     /**
-     * Creates a new connection and pushes a connection to the array.
+     * Creates a new connection and registers it in the connection manager.
      */
     createConnection(name: string, driver: Driver) {
         const existConnection = this.connections.find(connection => connection.name === name);
-        if (existConnection)
+        if (existConnection) {
+            if (existConnection.isConnected)
+                throw new AlreadyHasActiveConnectionError(name);
+
             this.connections.splice(this.connections.indexOf(existConnection), 1);
+        }
 
         const connection = new Connection(name, driver);
         this.connections.push(connection);
@@ -97,12 +105,10 @@ export class ConnectionManager {
     }
 
     /**
-     * Gets registered connection with the given name. If connection name is not given then it will get a default
-     * connection.
+     * Gets registered connection with the given name.
+     * If connection name is not given then it will get a default connection.
      */
     get(name: string = "default"): Connection {
-        if (!name) name = "default";
-        
         const connection = this.connections.find(connection => connection.name === name);
         if (!connection)
             throw new ConnectionNotFoundError(name);
@@ -114,14 +120,17 @@ export class ConnectionManager {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private createDriver(driverName: string, options: ConnectionOptions): Driver {
-        switch (driverName) {
+    /**
+     * Creates a new driver based on the given driver type and options.
+     */
+    private createDriver(driverType: "mysql"|"postgres", options: DriverOptions): Driver {
+        switch (driverType) {
             case "mysql":
                 return new MysqlDriver(options);
             case "postgres":
                 return new PostgresDriver(options);
             default:
-                throw new MissingDriverError(driverName);
+                throw new MissingDriverError(driverType);
         }
     }
 

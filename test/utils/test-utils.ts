@@ -1,7 +1,7 @@
-import {CreateConnectionOptions} from "../../src/connection/CreateConnectionOptions";
+import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
-import {ConnectionOptions} from "../../src/driver/ConnectionOptions";
+import {DriverOptions} from "../../src/driver/DriverOptions";
 import {EntitySchema} from "../../src/metadata/entity-schema/EntitySchema";
 
 export interface TestingConnectionOptions {
@@ -15,7 +15,7 @@ export function closeConnections(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.close()));
 }
 
-export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"postgres"|"postgresSecondary"): ConnectionOptions {
+export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"postgres"|"postgresSecondary"): DriverOptions {
     const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
     // const parameters = require(__dirname + "/../../config/parameters.json");
 
@@ -35,38 +35,38 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
 
 export async function setupTestingConnections(options?: TestingConnectionOptions): Promise<Connection[]> {
     
-    const mysqlParameters: CreateConnectionOptions = {
+    const mysqlParameters: ConnectionOptions = {
         driver: "mysql",
         connectionName: "mysqlPrimaryConnection",
-        connection: createTestingConnectionOptions("mysql"),
+        driverOptions: createTestingConnectionOptions("mysql"),
         autoSchemaCreate: true,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
     
-    const mysqlSecondaryParameters: CreateConnectionOptions = {
+    const mysqlSecondaryParameters: ConnectionOptions = {
         driver: "mysql",
         connectionName: "mysqlSecondaryConnection",
-        connection: createTestingConnectionOptions("mysqlSecondary"),
+        driverOptions: createTestingConnectionOptions("mysqlSecondary"),
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
-    const postgresParameters: CreateConnectionOptions = {
+    const postgresParameters: ConnectionOptions = {
         driver: "postgres",
         connectionName: "postgresPrimaryConnection",
-        connection: createTestingConnectionOptions("postgres"),
+        driverOptions: createTestingConnectionOptions("postgres"),
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
-    const postgresSecondaryParameters: CreateConnectionOptions = {
+    const postgresSecondaryParameters: ConnectionOptions = {
         driver: "postgres",
         connectionName: "postgresSecondaryConnection",
-        connection: createTestingConnectionOptions("postgresSecondary"),
+        driverOptions: createTestingConnectionOptions("postgresSecondary"),
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -75,7 +75,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mysql = true;
     const postgres = false;
 
-    const allParameters: CreateConnectionOptions[] = [];
+    const allParameters: ConnectionOptions[] = [];
     if (mysql)
         allParameters.push(mysqlParameters);
     if (postgres)
@@ -93,9 +93,9 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
  */
 export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
 
-    const parameters: CreateConnectionOptions = {
+    const parameters: ConnectionOptions = {
         driver: "mysql",
-        connection: {
+        driverOptions: {
             host: "192.168.99.100",
             port: 3306,
             username: "root",

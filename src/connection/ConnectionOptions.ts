@@ -1,10 +1,10 @@
-import {ConnectionOptions} from "../driver/ConnectionOptions";
+import {DriverOptions} from "../driver/DriverOptions";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 
 /**
- * All options to help to create a new connection.
+ * New connection options.
  */
-export interface CreateConnectionOptions {
+export interface ConnectionOptions {
 
     /**
      * Driver type. Mysql and postgres are the only drivers supported at this moment.
@@ -14,7 +14,7 @@ export interface CreateConnectionOptions {
     /**
      * Database connection options.
      */
-    connection: ConnectionOptions;
+    driverOptions: DriverOptions;
 
     /**
      * Connection name. By default its called "default". Different connections must have different names.
