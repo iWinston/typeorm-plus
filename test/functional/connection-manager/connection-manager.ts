@@ -35,7 +35,8 @@ describe("ConnectionManager", () => {
 
     });
 
-    describe("createConnection", function() {
+    // todo: I think we simply don't need this function
+    /*describe("createConnection", function() {
 
         it("should create a connection with the given connection name and driver", () => {
             const connectionManager = new ConnectionManager();
@@ -52,7 +53,7 @@ describe("ConnectionManager", () => {
             connectionManager.get("newConnection").should.be.equal(againConnection);
         });
 
-    });
+    });*/
 
     describe("get", function() {
 

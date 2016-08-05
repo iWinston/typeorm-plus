@@ -28,6 +28,26 @@ export class ConnectionManager {
     // -------------------------------------------------------------------------
 
     /**
+     * Creates a new connection based on the given connection options and registers a new connection in the manager.
+     */
+    async createAndConnect(options: ConnectionOptions): Promise<Connection> {
+        const connection = this.create(options);
+
+        // connect to the database
+        await connection.connect();
+
+        // if option is set - drop schema once connection is done
+        if (options.dropSchemaOnConnection)
+            await connection.dropDatabase();
+
+        // if option is set - automatically synchronize a schema
+        if (options.autoSchemaCreate)
+            await connection.syncSchema();
+
+        return connection;
+    }
+
+    /**
      * Creates a new connection based on the given connection options and registers this connection in the manager.
      */
     create(options: ConnectionOptions): Connection {
@@ -68,43 +88,6 @@ export class ConnectionManager {
     }
 
     /**
-     * Creates a new connection based on the given connection options and registers a new connection in the manager.
-     */
-    async createAndConnect(options: ConnectionOptions): Promise<Connection> {
-        const connection = this.create(options);
-
-        // connect to the database
-        await connection.connect();
-
-        // if option is set - drop schema once connection is done
-        if (options.dropSchemaOnConnection)
-            await connection.dropDatabase();
-
-        // if option is set - automatically synchronize a schema
-        if (options.autoSchemaCreate)
-            await connection.syncSchema();
-
-        return connection;
-    }
-
-    /**
-     * Creates a new connection and registers it in the connection manager.
-     */
-    createConnection(name: string, driver: Driver) {
-        const existConnection = this.connections.find(connection => connection.name === name);
-        if (existConnection) {
-            if (existConnection.isConnected)
-                throw new AlreadyHasActiveConnectionError(name);
-
-            this.connections.splice(this.connections.indexOf(existConnection), 1);
-        }
-
-        const connection = new Connection(name, driver);
-        this.connections.push(connection);
-        return connection;
-    }
-
-    /**
      * Gets registered connection with the given name.
      * If connection name is not given then it will get a default connection.
      */
@@ -132,6 +115,23 @@ export class ConnectionManager {
             default:
                 throw new MissingDriverError(driverType);
         }
+    }
+
+    /**
+     * Creates a new connection and registers it in the connection manager.
+     */
+    private createConnection(name: string, driver: Driver) {
+        const existConnection = this.connections.find(connection => connection.name === name);
+        if (existConnection) {
+            if (existConnection.isConnected)
+                throw new AlreadyHasActiveConnectionError(name);
+
+            this.connections.splice(this.connections.indexOf(existConnection), 1);
+        }
+
+        const connection = new Connection(name, driver);
+        this.connections.push(connection);
+        return connection;
     }
 
 }
