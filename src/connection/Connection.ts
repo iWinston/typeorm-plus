@@ -358,18 +358,8 @@ export class Connection {
      * Gets repository for the given entity class or name.
      */
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        if (!this.isConnected)
-            throw new NoConnectionForRepositoryError(this.name);
-
-        if (!this.entityMetadatas.hasTarget(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryAggregate)
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        return repositoryAggregate.repository;
+        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
+        return repositoryForMetadata.repository;
     }
 
     /**
@@ -392,21 +382,8 @@ export class Connection {
      * like ones decorated with @ClosureTable decorator.
      */
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
-        if (!this.isConnected)
-            throw new NoConnectionForRepositoryError(this.name);
-
-        if (!this.entityMetadatas.hasTarget(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryAggregate)
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        if (!metadata.table.isClosure)
-            throw new RepositoryNotTreeError(entityClassOrName);
-
-        return repositoryAggregate.repository as TreeRepository<Entity>;
+        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName, { checkIfTreeTable: true });
+        return repositoryForMetadata.repository as TreeRepository<Entity>;
     }
 
     /**
@@ -426,18 +403,8 @@ export class Connection {
      * SpecificRepository is a special repository that contains specific and non standard repository methods.
      */
     getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
-        if (!this.isConnected)
-            throw new NoConnectionForRepositoryError(this.name);
-
-        if (!this.entityMetadatas.hasTarget(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryAggregate)
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        return repositoryAggregate.specificRepository;
+        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
+        return repositoryForMetadata.specificRepository;
     }
 
     /**
@@ -460,18 +427,8 @@ export class Connection {
      * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
-        if (!this.isConnected)
-            throw new NoConnectionForRepositoryError(this.name);
-
-        if (!this.entityMetadatas.hasTarget(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryAggregate)
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        return repositoryAggregate.reactiveRepository;
+        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
+        return repositoryForMetadata.reactiveRepository;
     }
 
     /**
@@ -500,21 +457,8 @@ export class Connection {
      * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getReactiveTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
-        if (!this.isConnected)
-            throw new NoConnectionForRepositoryError(this.name);
-
-        if (!this.entityMetadatas.hasTarget(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryAggregate)
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        if (!metadata.table.isClosure)
-            throw new RepositoryNotTreeError(entityClassOrName);
-
-        return repositoryAggregate.reactiveRepository as TreeReactiveRepository<Entity>;
+        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName, { checkIfTreeTable: true });
+        return repositoryForMetadata.reactiveRepository as TreeReactiveRepository<Entity>;
     }
 
     /**
@@ -540,6 +484,19 @@ export class Connection {
      * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
+        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
+        return repositoryForMetadata.specificReactiveRepository;
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Finds repository with metadata of the given entity class or name.
+     */
+    private findRepositoryForMetadata(entityClassOrName: ObjectType<any>|string,
+                                      options?: { checkIfTreeTable: boolean }): RepositoryForMetadata {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -547,16 +504,15 @@ export class Connection {
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
         const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryAggregate = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryAggregate)
+        const repositoryForMetadata = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
+        if (!repositoryForMetadata)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
-        return repositoryAggregate.specificReactiveRepository;
-    }
+        if (options && options.checkIfTreeTable && !metadata.table.isClosure)
+            throw new RepositoryNotTreeError(entityClassOrName);
 
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
+        return repositoryForMetadata;
+    }
 
     /**
      * Builds all registered metadatas.
