@@ -5,7 +5,7 @@ import {ConstructorFunction} from "../common/ConstructorFunction";
 import {ReactiveRepository} from "../repository/ReactiveRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {ReactiveTreeRepository} from "../repository/ReactiveTreeRepository";
+import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 
 /**
  * Common functions shared between different manager types.
@@ -77,17 +77,17 @@ export abstract class BaseEntityManager {
     /**
      * Gets reactive tree repository for the given entity class.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): ReactiveTreeRepository<Entity>;
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository for the given entity name.
      */
-    getReactiveTreeRepository<Entity>(entityName: string): ReactiveTreeRepository<Entity>;
+    getReactiveTreeRepository<Entity>(entityName: string): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository of the given entity.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|string): ReactiveTreeRepository<Entity> {
+    getReactiveTreeRepository<Entity>(entityClass: ConstructorFunction<Entity>|string): TreeReactiveRepository<Entity> {
         return this.obtainReactiveTreeRepository(entityClass);
     }
 
@@ -215,7 +215,7 @@ export abstract class BaseEntityManager {
      * code, and obtainReactiveTreeRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
-    protected obtainReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): ReactiveTreeRepository<Entity> {
+    protected obtainReactiveTreeRepository<Entity>(entityClassOrName: ConstructorFunction<Entity>|string): TreeReactiveRepository<Entity> {
         if (typeof entityClassOrName === "string") {
             return this.connection.getReactiveTreeRepository<Entity>(entityClassOrName);
         } else {

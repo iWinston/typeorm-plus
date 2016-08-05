@@ -1,14 +1,7 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
-import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
-import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
-import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-import {Broadcaster} from "../subscriber/Broadcaster";
-import {Driver} from "../driver/Driver";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
 
@@ -18,29 +11,12 @@ import {Repository} from "./Repository";
 export class SpecificRepository<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
-    // Private Properties
-    // -------------------------------------------------------------------------
-
-    protected driver: Driver;
-    protected persistOperationExecutor: PersistOperationExecutor;
-    protected entityPersistOperationBuilder: EntityPersistOperationBuilder;
-    protected plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
-    protected plainObjectToDatabaseEntityTransformer: PlainObjectToDatabaseEntityTransformer<Entity>;
-    
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-                protected broadcaster: Broadcaster,
-                protected entityMetadatas: EntityMetadataCollection,
                 protected metadata: EntityMetadata,
                 protected repository: Repository<Entity>) {
-        this.driver = connection.driver;
-        this.persistOperationExecutor = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);
-        this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(entityMetadatas);
-        this.plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
-        this.plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
     }
 
     // -------------------------------------------------------------------------
@@ -75,7 +51,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             values[relation.inverseRelation.name] = relatedEntityId;
             conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = entityId;
         }
-        return this.driver.update(table, values, conditions).then(() => {});
+        return this.connection.driver.update(table, values, conditions).then(() => {});
     }
 
     /**
@@ -106,7 +82,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             values[relation.name] = relatedEntityId;
             conditions[relation.joinColumn.referencedColumn.name] = entityId;
         }
-        return this.driver.update(table, values, conditions).then(() => {});
+        return this.connection.driver.update(table, values, conditions).then(() => {});
     }
 
     /**
@@ -135,7 +111,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
 
-            return this.driver.insert(relation.junctionEntityMetadata.table.name, values);
+            return this.connection.driver.insert(relation.junctionEntityMetadata.table.name, values);
         });
         return Promise.all(insertPromises).then(() => {});
     }
@@ -166,7 +142,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
 
-            return this.driver.insert(relation.junctionEntityMetadata.table.name, values);
+            return this.connection.driver.insert(relation.junctionEntityMetadata.table.name, values);
         });
         return Promise.all(insertPromises).then(() => {});
     }
@@ -329,7 +305,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
-                const metadata = this.entityMetadatas.findByTarget(entityWithId.entityTarget);
+                const metadata = this.connection.getMetadata(entityWithId.entityTarget);
                 const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
                 return repository.findOneById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;
@@ -357,18 +333,18 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             const value = relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
             if (!value)
                 return undefined;
-            
+
             if (value instanceof Array) {
                 const subPromises = value.map((subEntity: any) => {
                     return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
                 });
                 return Promise.all(subPromises);
-                
+
             } else {
                 return this.extractObjectsById(value, relMetadata, entityWithIds);
             }
         });
-        
+
         return Promise.all<any>(promises.filter(result => !!result)).then(() => {
             if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
                 entityWithIds.push({
@@ -388,9 +364,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
     /**
      * Checks if given repository owns given metadata.
-
-    static ownsMetadata(repository: Repository<any>, metadata: EntityMetadata) {
-        return repository.metadata === metadata;
-    }*/
+     */
+    static ownsMetadata(specificRepository: SpecificRepository<any>, metadata: EntityMetadata) {
+        return Repository.ownsMetadata(specificRepository.repository, metadata);
+    }
 
 }

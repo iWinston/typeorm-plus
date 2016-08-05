@@ -15,7 +15,7 @@ import {CannotImportAlreadyConnectedError} from "../../../src/connection/error/C
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
 import {ReactiveRepository} from "../../../src/repository/ReactiveRepository";
-import {ReactiveTreeRepository} from "../../../src/repository/ReactiveTreeRepository";
+import {TreeReactiveRepository} from "../../../src/repository/TreeReactiveRepository";
 import {getConnectionManager} from "../../../src/index";
 import {CreateConnectionOptions} from "../../../src/connection-manager/CreateConnectionOptions";
 import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
@@ -159,12 +159,12 @@ describe("Connection", () => {
 
         it("should be able to get simple entity reactive repository", () => connections.forEach(connection => {
             connection.getReactiveRepository(Post).should.be.instanceOf(ReactiveRepository);
-            connection.getReactiveRepository(Post).should.not.be.instanceOf(ReactiveTreeRepository);
+            connection.getReactiveRepository(Post).should.not.be.instanceOf(TreeReactiveRepository);
             connection.getReactiveRepository(Post).target.should.be.eql(Post);
         }));
 
         it("should be able to get tree entity reactive repository", () => connections.forEach(connection => {
-            connection.getReactiveTreeRepository(Category).should.be.instanceOf(ReactiveTreeRepository);
+            connection.getReactiveTreeRepository(Category).should.be.instanceOf(TreeReactiveRepository);
             connection.getReactiveTreeRepository(Category).target.should.be.eql(Category);
         }));
 

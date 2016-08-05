@@ -5,6 +5,7 @@ import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
 import {createConnection} from "../../../../src/index";
+import {SpecificRepository} from "../../../../src/repository/SpecificRepository";
 
 describe("repository > removeById and removeByIds methods", function() {
 
@@ -48,9 +49,10 @@ describe("repository > removeById and removeByIds methods", function() {
             .catch(e => console.log("Error during schema re-creation: ", e));
     }
 
-    let postRepository: Repository<Post>;
+    let postRepository: Repository<Post>, specificPostRepository: SpecificRepository<Post>;
     before(function() {
         postRepository = connection.getRepository(Post);
+        specificPostRepository = connection.getSpecificRepository(Post);
     });
 
     // -------------------------------------------------------------------------
@@ -83,7 +85,7 @@ describe("repository > removeById and removeByIds methods", function() {
 
         // remove one
         before(function() {
-            return postRepository.removeById(1);
+            return specificPostRepository.removeById(1);
         });
 
         // load to check
@@ -127,7 +129,7 @@ describe("repository > removeById and removeByIds methods", function() {
 
         // remove one
         before(function() {
-            return postRepository.removeByIds([2, 3]);
+            return specificPostRepository.removeByIds([2, 3]);
         });
 
         // load to check

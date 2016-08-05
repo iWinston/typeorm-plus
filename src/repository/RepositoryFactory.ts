@@ -4,8 +4,10 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {Connection} from "../connection/Connection";
 import {Repository} from "./Repository";
 import {ReactiveRepository} from "./ReactiveRepository";
-import {ReactiveTreeRepository} from "./ReactiveTreeRepository";
+import {TreeReactiveRepository} from "./TreeReactiveRepository";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {SpecificRepository} from "./SpecificRepository";
+import {SpecificReactiveRepository} from "./ReactiveSpecificRepository";
 
 /**
  */
@@ -34,7 +36,15 @@ export class RepositoryFactory {
     }
 
     createReactiveTreeRepository(repository: TreeRepository<any>) {
-        return new ReactiveTreeRepository(repository);
+        return new TreeReactiveRepository(repository);
+    }
+
+    createSpecificRepository(connection: Connection, metadata: EntityMetadata, repository: Repository<any>) {
+        return new SpecificRepository(connection, metadata, repository);
+    }
+
+    createSpecificReactiveRepository(repository: SpecificRepository<any>) {
+        return new SpecificReactiveRepository(repository);
     }
     
 }
