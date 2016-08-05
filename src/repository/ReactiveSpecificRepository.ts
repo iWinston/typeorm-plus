@@ -79,15 +79,4 @@ export class SpecificReactiveRepository<Entity extends ObjectLiteral> {
         return Rx.Observable.fromPromise(this.repository.removeByIds(ids));
     }
 
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Checks if given repository owns given metadata.
-     */
-    static ownsMetadata(repository: SpecificReactiveRepository<any>, metadata: EntityMetadata) {
-        return SpecificRepository.ownsMetadata(repository.repository, metadata);
-    }
-
 }

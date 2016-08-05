@@ -21,7 +21,6 @@ export class Repository<Entity extends ObjectLiteral> {
     // Private Properties
     // -------------------------------------------------------------------------
 
-    protected driver: Driver;
     protected persistOperationExecutor: PersistOperationExecutor;
     protected entityPersistOperationBuilder: EntityPersistOperationBuilder;
     protected plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
@@ -32,12 +31,9 @@ export class Repository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-                protected broadcaster: Broadcaster,
-                protected entityMetadatas: EntityMetadataCollection,
                 protected metadata: EntityMetadata) {
-        this.driver = connection.driver;
-        this.persistOperationExecutor = new PersistOperationExecutor(connection.driver, entityMetadatas, this.broadcaster);
-        this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(entityMetadatas);
+        this.persistOperationExecutor = new PersistOperationExecutor(connection.driver, connection.entityMetadatas, this.connection.broadcaster); // todo: better to pass connection?
+        this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(connection.entityMetadatas);
         this.plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
         this.plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
     }
@@ -70,7 +66,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder(alias: string): QueryBuilder<Entity> {
-        return new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster)
+        return new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster) // todo: better to pass connection?
             .select(alias)
             .from(this.metadata.target, alias);
     }
@@ -315,7 +311,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes a raw SQL query and returns a raw database results.
      */
     async query(query: string): Promise<any> {
-        return this.driver.query(query);
+        return this.connection.driver.query(query);
     }
 
     /**
@@ -323,15 +319,15 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async transaction(runInTransaction: () => Promise<any>|any): Promise<any> {
         let runInTransactionResult: any;
-        return this.driver
+        return this.connection.driver
             .beginTransaction()
             .then(() => runInTransaction())
             .then(result => {
                 runInTransactionResult = result;
-                return this.driver.commitTransaction();
+                return this.connection.driver.commitTransaction();
             })
             .catch(err => {
-                return this.driver.rollbackTransaction()
+                return this.connection.driver.rollbackTransaction()
                     .then(() => {
                         throw err;
                     })
@@ -377,7 +373,7 @@ export class Repository<Entity extends ObjectLiteral> {
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
-                const metadata = this.entityMetadatas.findByTarget(entityWithId.entityTarget);
+                const metadata = this.connection.entityMetadatas.findByTarget(entityWithId.entityTarget);
                 const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
                 return repository.findOneById(entityWithId.id).then(loadedEntity => {
                     if (!loadedEntity) return undefined;
@@ -428,17 +424,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
             return entityWithIds;
         });
-    }
-
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Checks if given repository owns given metadata.
-     */
-    static ownsMetadata(repository: Repository<any>, metadata: EntityMetadata) {
-        return repository.metadata === metadata;
     }
 
 }

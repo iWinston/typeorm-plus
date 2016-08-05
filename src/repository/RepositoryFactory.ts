@@ -17,18 +17,12 @@ export class RepositoryFactory {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    createRepository(connection: Connection,
-                     broadcaster: Broadcaster,
-                     allMetadatas: EntityMetadataCollection,
-                     metadata: EntityMetadata) {
-        return new Repository<any>(connection, broadcaster, allMetadatas, metadata);
+    createRepository(connection: Connection, metadata: EntityMetadata) {
+        return new Repository<any>(connection, metadata);
     }
 
-    createTreeRepository(connection: Connection,
-                         broadcaster: Broadcaster,
-                         allMetadatas: EntityMetadataCollection,
-                         metadata: EntityMetadata) {
-        return new TreeRepository<any>(connection, broadcaster, allMetadatas, metadata);
+    createTreeRepository(connection: Connection, metadata: EntityMetadata) {
+        return new TreeRepository<any>(connection, metadata);
     }
 
     createReactiveRepository(repository: Repository<any>) {

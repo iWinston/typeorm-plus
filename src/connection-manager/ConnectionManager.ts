@@ -27,8 +27,8 @@ export class ConnectionManager {
      * Creates a new connection based on the given connection options and registers a new connection in the manager.
      */
     create(options: CreateConnectionOptions): Connection {
-        const driver = this.createDriver(options.driver);
-        const connection = this.createConnection(options.connectionName || "default", driver, options.connection);
+        const driver = this.createDriver(options.driver, options.connection);
+        const connection = this.createConnection(options.connectionName || "default", driver);
 
         if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
             connection.importEntitySchemaFromDirectories(options.entitySchemaDirectories);
@@ -66,12 +66,12 @@ export class ConnectionManager {
     /**
      * Creates a new connection and pushes a connection to the array.
      */
-    createConnection(name: string, driver: Driver, options: ConnectionOptions) {
+    createConnection(name: string, driver: Driver) {
         const existConnection = this.connections.find(connection => connection.name === name);
         if (existConnection)
             this.connections.splice(this.connections.indexOf(existConnection), 1);
 
-        const connection = new Connection(name, driver, options);
+        const connection = new Connection(name, driver);
         this.connections.push(connection);
         return connection;
     }
@@ -94,12 +94,12 @@ export class ConnectionManager {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private createDriver(driverName: string): Driver {
+    private createDriver(driverName: string, options: ConnectionOptions): Driver {
         switch (driverName) {
             case "mysql":
-                return new MysqlDriver();
+                return new MysqlDriver(options);
             case "postgres":
-                return new PostgresDriver();
+                return new PostgresDriver(options);
             default:
                 throw new MissingDriverError(driverName);
         }

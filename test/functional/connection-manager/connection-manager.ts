@@ -39,16 +39,16 @@ describe("ConnectionManager", () => {
 
         it("should create a connection with the given connection name and driver", () => {
             const connectionManager = new ConnectionManager();
-            const connection = connectionManager.createConnection("newConnection", new MysqlDriver(), createTestingConnectionOptions("mysql"));
+            const connection = connectionManager.createConnection("newConnection", new MysqlDriver(createTestingConnectionOptions("mysql")));
             connection.name.should.be.equal("newConnection");
             connection.driver.should.be.instanceOf(MysqlDriver);
         });
 
         it("should replace old connection with the given name if it exist", () => {
             const connectionManager = new ConnectionManager();
-            const connection = connectionManager.createConnection("newConnection", new MysqlDriver(), createTestingConnectionOptions("mysql"));
+            const connection = connectionManager.createConnection("newConnection", new MysqlDriver(createTestingConnectionOptions("mysql")));
             connectionManager.get("newConnection").should.be.equal(connection);
-            const againConnection = connectionManager.createConnection("newConnection", new MysqlDriver(), createTestingConnectionOptions("mysql"));
+            const againConnection = connectionManager.createConnection("newConnection", new MysqlDriver(createTestingConnectionOptions("mysql")));
             connectionManager.get("newConnection").should.be.equal(againConnection);
         });
 

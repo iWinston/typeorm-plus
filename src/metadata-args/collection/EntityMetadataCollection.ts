@@ -14,7 +14,7 @@ export class EntityMetadataCollection extends Array<EntityMetadata> {
         return !!this.find(metadata => metadata.target === target || (typeof target === "string" && metadata.targetName === target));
     }
     
-    findByTarget(target: Function|string) {
+    findByTarget(target: Function|string): EntityMetadata {
         const metadata = this.find(metadata => metadata.target === target || (typeof target === "string" && metadata.targetName === target));
         if (!metadata)
             throw new EntityMetadataNotFound(target);

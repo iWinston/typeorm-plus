@@ -236,12 +236,4 @@ export class ReactiveRepository<Entity> {
         return Rx.Observable.fromPromise(this.repository.transaction(runInTransaction));
     }
 
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    static ownsMetadata(reactiveRepository: ReactiveRepository<any>, metadata: EntityMetadata) {
-        return Repository.ownsMetadata(reactiveRepository.repository, metadata);
-    }
-
 }

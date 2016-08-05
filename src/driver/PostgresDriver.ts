@@ -15,11 +15,6 @@ export class PostgresDriver extends BaseDriver implements Driver {
     // Public Properties
     // -------------------------------------------------------------------------
 
-    /**
-     * Connection used in this driver.
-     */
-    connectionOptions: ConnectionOptions;
-
     readonly isResultsLowercase = true;
 
     // -------------------------------------------------------------------------
@@ -35,7 +30,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Connection to postgres database.
      */
     private postgresConnection: any;
-    
+
     // -------------------------------------------------------------------------
     // Getter Methods
     // -------------------------------------------------------------------------
@@ -72,7 +67,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(postgres?: any) {
+    constructor(public connectionOptions: ConnectionOptions, postgres?: any) {
         super();
 
         // if driver dependency is not given explicitly, then try to load it via "require"

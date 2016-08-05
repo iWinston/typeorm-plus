@@ -358,15 +358,4 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         });
     }
 
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Checks if given repository owns given metadata.
-     */
-    static ownsMetadata(specificRepository: SpecificRepository<any>, metadata: EntityMetadata) {
-        return Repository.ownsMetadata(specificRepository.repository, metadata);
-    }
-
 }

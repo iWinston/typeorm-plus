@@ -18,11 +18,6 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // Public Properties
     // -------------------------------------------------------------------------
 
-    /**
-     * Connection used in this driver.
-     */
-    connectionOptions: ConnectionOptions;
-
     readonly isResultsLowercase = false;
     
     // -------------------------------------------------------------------------
@@ -38,7 +33,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Connection to mysql database.
      */
     private mysqlConnection: any;
-    
+
     // -------------------------------------------------------------------------
     // Getter Methods
     // -------------------------------------------------------------------------
@@ -75,7 +70,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(mysql?: any) {
+    constructor(public connectionOptions: ConnectionOptions, mysql?: any) {
         super();
 
         // if driver dependency is not given explicitly, then try to load it via "require"
