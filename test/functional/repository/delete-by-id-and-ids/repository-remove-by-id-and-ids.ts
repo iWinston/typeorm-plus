@@ -14,8 +14,8 @@ describe("repository > removeById and removeByIds methods", function() {
     // -------------------------------------------------------------------------
 
     const parameters: ConnectionOptions = {
-        driver: "mysql",
-        driverOptions: {
+        driver: {
+            type: "mysql",
             host: "192.168.99.100",
             port: 3306,
             username: "root",
@@ -40,7 +40,7 @@ describe("repository > removeById and removeByIds methods", function() {
     });
 
     after(function() {
-        connection.close();
+        return connection.close();
     });
 
     // clean up database before each test

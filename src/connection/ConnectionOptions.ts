@@ -7,22 +7,18 @@ import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 export interface ConnectionOptions {
 
     /**
-     * Driver type. Mysql and postgres are the only drivers supported at this moment.
-     */
-    driver: "mysql"|"postgres";
-
-    /**
      * Database connection options.
      */
-    driverOptions: DriverOptions;
+    driver: DriverOptions;
 
     /**
-     * Connection name. By default its called "default". Different connections must have different names.
+     * Connection name. If connection name is not given then it will be called "default".
+     * Different connections must have different names.
      */
     connectionName?: string;
 
     /**
-     * Name of the naming strategy or target class of the naming strategy to be used on this connection.
+     * Name of the naming strategy or target class of the naming strategy to be used for this connection.
      */
     usedNamingStrategy?: string|Function;
 
@@ -34,47 +30,52 @@ export interface ConnectionOptions {
     dropSchemaOnConnection?: boolean;
 
     /**
-     * Indicates if database schema should be auto created every time application launch.
+     * Indicates if database schema should be auto created on every application launch.
      */
     autoSchemaCreate?: boolean;
 
     /**
-     * Entities to be loaded for the new connection.
+     * Entities to be loaded for the this connection.
      */
     entities?: Function[];
 
     /**
-     * Subscribers to be loaded for the new connection.
+     * Subscribers to be loaded for the this connection.
      */
     subscribers?: Function[];
 
     /**
-     * Naming strategies to be loaded.
+     * Naming strategies to be loaded for the this connection.
      */
     namingStrategies?: Function[];
 
     /**
-     * Entity schemas to be loaded for the new connection.
+     * Entity schemas to be loaded for the this connection.
      */
     entitySchemas?: EntitySchema[];
 
     /**
-     * List of directories from where entities will be loaded.
+     * List of files with entities from where they will be loaded.
+     * Glob patterns are supported.
      */
     entityDirectories?: string[];
 
     /**
-     * List of directories from where subscribers will be loaded.
+     * List of files with subscribers from where they will be loaded.
+     * Glob patterns are supported.
      */
     subscriberDirectories?: string[];
 
     /**
-     * List of directories from where naming strategies will be loaded.
+     * List of files with naming strategies from where they will be loaded.
+     * Glob patterns are supported.
      */
     namingStrategyDirectories?: string[];
 
     /**
-     * List of directories from where entity schemas will be loaded.
+     * List of files with entity schemas from where they will be loaded.
+     * Glob patterns are supported.
      */
     entitySchemaDirectories?: string[];
+
 }

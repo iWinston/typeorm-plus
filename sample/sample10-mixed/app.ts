@@ -7,8 +7,8 @@ import {Cover} from "./entity/Cover";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: "mysql",
-    driverOptions: {
+    driver: {
+        type: "mysql",
         host: "192.168.99.100",
         port: 3306,
         username: "root",

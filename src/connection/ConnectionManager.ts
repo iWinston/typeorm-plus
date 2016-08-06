@@ -51,7 +51,7 @@ export class ConnectionManager {
      * Creates a new connection based on the given connection options and registers this connection in the manager.
      */
     create(options: ConnectionOptions): Connection {
-        const driver = this.createDriver(options.driver, options.driverOptions);
+        const driver = this.createDriver(options.driver);
         const connection = this.createConnection(options.connectionName || "default", driver);
 
         if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
@@ -106,14 +106,14 @@ export class ConnectionManager {
     /**
      * Creates a new driver based on the given driver type and options.
      */
-    private createDriver(driverType: "mysql"|"postgres", options: DriverOptions): Driver {
-        switch (driverType) {
+    private createDriver(options: DriverOptions): Driver {
+        switch (options.type) {
             case "mysql":
                 return new MysqlDriver(options);
             case "postgres":
                 return new PostgresDriver(options);
             default:
-                throw new MissingDriverError(driverType);
+                throw new MissingDriverError(options.type);
         }
     }
 

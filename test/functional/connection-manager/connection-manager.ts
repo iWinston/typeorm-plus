@@ -13,8 +13,7 @@ describe("ConnectionManager", () => {
 
         it("should create a mysql connection when mysql driver is specified", () => {
             const options: ConnectionOptions = {
-                driver: "mysql",
-                driverOptions: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
@@ -23,9 +22,8 @@ describe("ConnectionManager", () => {
 
         it("should create a postgres connection when mysql driver is specified", () => {
             const options: ConnectionOptions = {
-                driver: "postgres",
                 connectionName: "myPostgresConnection",
-                driverOptions: createTestingConnectionOptions("postgres")
+                driver: createTestingConnectionOptions("postgres")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
@@ -59,9 +57,8 @@ describe("ConnectionManager", () => {
 
         it("should give connection with a requested name", () => {
             const options: ConnectionOptions = {
-                driver: "mysql",
                 connectionName: "myMysqlConnection",
-                driverOptions: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
@@ -71,9 +68,8 @@ describe("ConnectionManager", () => {
 
         it("should throw an error if connection with the given name was not found", () => {
             const options: ConnectionOptions = {
-                driver: "mysql",
                 connectionName: "myMysqlConnection",
-                driverOptions: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);

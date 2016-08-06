@@ -4,6 +4,11 @@
 export interface DriverOptions {
 
     /**
+     * Database type. Mysql and postgres are the only drivers supported at this moment.
+     */
+    type: "mysql"|"postgres";
+
+    /**
      * Url to where perform connection.
      */
     url?: string;
@@ -44,17 +49,17 @@ export interface DriverOptions {
         logger?: (message: any, level: string) => void;
 
         /**
-         * Used if you want to log every executed query.
+         * Set to true if you want to log every executed query.
          */
         logQueries?: boolean;
 
         /**
-         * Used if you want to log only failed query.
+         * Set to true if you want to log only failed query.
          */
         logOnlyFailedQueries?: boolean;
 
         /**
-         * Used if you want to log error of the failed query.
+         * Set to true if you want to log error of the failed query.
          */
         logFailedQueryError?: boolean;
         

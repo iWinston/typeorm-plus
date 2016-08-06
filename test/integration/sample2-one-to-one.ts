@@ -19,8 +19,7 @@ describe("one-to-one", function() {
     // -------------------------------------------------------------------------
 
     const options: ConnectionOptions = {
-        driver: "postgres",
-        driverOptions: createTestingConnectionOptions("postgres"),
+        driver: createTestingConnectionOptions("postgres"),
         entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
 
@@ -32,9 +31,7 @@ describe("one-to-one", function() {
             .catch(e => console.log("Error during connection to db: " + e, e.stack));
     });
 
-    after(function() {
-        connection.close();
-    });
+    after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {

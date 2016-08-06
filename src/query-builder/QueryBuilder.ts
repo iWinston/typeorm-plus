@@ -759,7 +759,7 @@ export class QueryBuilder<Entity> {
                 const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
                 if (joinMetadata) {
                     joinMetadata.columns.forEach(column => {
-                        allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
+                        allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.name);
                     });
                 } else {
                     allSelects.push(join.alias.name);

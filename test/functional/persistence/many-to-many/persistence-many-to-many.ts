@@ -15,8 +15,8 @@ describe("persistence > many-to-many", function() {
     // -------------------------------------------------------------------------
 
     const parameters: ConnectionOptions = {
-        driver: "mysql",
-        driverOptions: {
+        driver: {
+            type: "mysql",
             host: "192.168.99.100",
             port: 3306,
             username: "root",
@@ -40,9 +40,7 @@ describe("persistence > many-to-many", function() {
             });
     });
 
-    after(function() {
-        connection.close();
-    });
+    after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {

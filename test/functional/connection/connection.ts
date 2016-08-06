@@ -41,8 +41,7 @@ describe("Connection", () => {
         let connection: Connection;
         before(async () => {
             const options: ConnectionOptions = {
-                driver: "mysql",
-                driverOptions: createTestingConnectionOptions("mysql"),
+                driver: createTestingConnectionOptions("mysql"),
                 entities: []
             };
             connection = await getConnectionManager().create(options);
@@ -226,12 +225,12 @@ describe("Connection", () => {
         let firstConnection: Connection, secondConnection: Connection;
         beforeEach(async () => {
             firstConnection = await getConnectionManager().create({
-                driver: "mysql",
-                driverOptions: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql"),
+                connectionName: "firstConnection"
             });
             secondConnection = await getConnectionManager().create({
-                driver: "mysql",
-                driverOptions: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql"),
+                connectionName: "secondConnection"
             });
         });
 
@@ -241,7 +240,7 @@ describe("Connection", () => {
             firstConnection.getRepository(Post).should.be.instanceOf(Repository);
             firstConnection.getRepository(Post).target.should.be.equal(Post);
             expect(() => firstConnection.getRepository(Category)).to.throw(RepositoryNotFoundError);
-            firstConnection.close();
+            await firstConnection.close();
         });
 
         it("should import second connection's entities only", async () => {
@@ -250,7 +249,7 @@ describe("Connection", () => {
             secondConnection.getRepository(Category).should.be.instanceOf(Repository);
             secondConnection.getRepository(Category).target.should.be.equal(Category);
             expect(() => secondConnection.getRepository(Post)).to.throw(RepositoryNotFoundError);
-            secondConnection.close();
+            await secondConnection.close();
         });
 
         it("should import first connection's entity schemas only", async () => {
@@ -259,7 +258,7 @@ describe("Connection", () => {
             firstConnection.getRepository("User").should.be.instanceOf(Repository);
             firstConnection.getRepository("User").target.should.be.equal("User");
             expect(() => firstConnection.getRepository("Photo")).to.throw(RepositoryNotFoundError);
-            firstConnection.close();
+            await firstConnection.close();
         });
 
         it("should import second connection's entity schemas only", async () => {
@@ -268,7 +267,7 @@ describe("Connection", () => {
             secondConnection.getRepository("Photo").should.be.instanceOf(Repository);
             secondConnection.getRepository("Photo").target.should.be.equal("Photo");
             expect(() => secondConnection.getRepository("User")).to.throw(RepositoryNotFoundError);
-            secondConnection.close();
+            await secondConnection.close();
         });
 
     });
@@ -278,8 +277,7 @@ describe("Connection", () => {
         let connection: Connection;
         beforeEach(async () => {
             connection = await getConnectionManager().create({
-                driver: "mysql",
-                driverOptions: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql")
             });
         });
         afterEach(() => connection.isConnected ? connection.close() : {});
@@ -326,8 +324,7 @@ describe("Connection", () => {
         let connection: Connection;
         beforeEach(async () => {
             connection = await getConnectionManager().create({
-                driver: "mysql",
-                driverOptions: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql")
             });
         });
         afterEach(() => connection.isConnected ? connection.close() : {});

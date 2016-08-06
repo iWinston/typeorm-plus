@@ -17,8 +17,7 @@ describe("many-to-many", function() {
     // -------------------------------------------------------------------------
 
     const options: ConnectionOptions = {
-        driver: "postgres",
-        driverOptions: createTestingConnectionOptions("postgres"),
+        driver: createTestingConnectionOptions("postgres"),
         entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"]
     };
 
@@ -30,10 +29,7 @@ describe("many-to-many", function() {
             .catch(e => console.log("Error during connection to db: " + e, e.stack));
     });
 
-
-    after(function() {
-        connection.close();
-    });
+    after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {

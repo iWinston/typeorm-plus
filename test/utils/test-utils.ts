@@ -19,7 +19,9 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
     const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
     // const parameters = require(__dirname + "/../../config/parameters.json");
 
+    const driverType: "mysql"|"postgres" = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
     return {
+        type: driverType,
         host: parameters.connections[type].host,
         port: parameters.connections[type].port,
         username: parameters.connections[type].username,
@@ -36,9 +38,8 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
 export async function setupTestingConnections(options?: TestingConnectionOptions): Promise<Connection[]> {
     
     const mysqlParameters: ConnectionOptions = {
-        driver: "mysql",
         connectionName: "mysqlPrimaryConnection",
-        driverOptions: createTestingConnectionOptions("mysql"),
+        driver: createTestingConnectionOptions("mysql"),
         autoSchemaCreate: true,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -46,27 +47,24 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
     
     const mysqlSecondaryParameters: ConnectionOptions = {
-        driver: "mysql",
         connectionName: "mysqlSecondaryConnection",
-        driverOptions: createTestingConnectionOptions("mysqlSecondary"),
+        driver: createTestingConnectionOptions("mysqlSecondary"),
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
     const postgresParameters: ConnectionOptions = {
-        driver: "postgres",
         connectionName: "postgresPrimaryConnection",
-        driverOptions: createTestingConnectionOptions("postgres"),
+        driver: createTestingConnectionOptions("postgres"),
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
     const postgresSecondaryParameters: ConnectionOptions = {
-        driver: "postgres",
         connectionName: "postgresSecondaryConnection",
-        driverOptions: createTestingConnectionOptions("postgresSecondary"),
+        driver: createTestingConnectionOptions("postgresSecondary"),
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -94,8 +92,8 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
 export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
 
     const parameters: ConnectionOptions = {
-        driver: "mysql",
-        driverOptions: {
+        driver: {
+            type: "mysql",
             host: "192.168.99.100",
             port: 3306,
             username: "root",
