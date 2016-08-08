@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.0.2-alpha.48",
+  "version": "0.0.2-alpha.49",
   "description": "Data-mapper ORM for Typescript",
   "license": "Apache-2.0",
   "readmeFilename": "README.md",
@@ -48,9 +48,9 @@
     "sinon": "^1.17.5",
     "sinon-chai": "^2.8.0",
     "ts-node": "^1.2.2",
-    "tslint": "3.14.0",
+    "tslint": "next",
     "tslint-stylish": "^2.1.0-beta",
-    "typescript": "2.1.0-dev.20160804"
+    "typescript": "^2.1.0-dev.20160808"
   },
   "dependencies": {
     "@types/lodash": "0.0.29",
