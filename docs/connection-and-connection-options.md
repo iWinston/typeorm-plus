@@ -107,7 +107,7 @@ let connectionOptions: ConnectionOptions = {
 };
 
 // create a new connection with mysql driver
-connectionManager.createConnection(new MysqlDriver(), connectionOptions);
+connectionManager.createConnection(new MysqlDriver(connectionOptions));
 
 // import all entities from specific directory
 connectionManager.importEntitiesFromDirectories(__dirname + "/entities");

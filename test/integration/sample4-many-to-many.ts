@@ -1,13 +1,14 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {CreateConnectionOptions, createConnection} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {PostDetails} from "../../sample/sample4-many-to-many/entity/PostDetails";
 import {Post} from "../../sample/sample4-many-to-many/entity/Post";
 import {PostCategory} from "../../sample/sample4-many-to-many/entity/PostCategory";
 import {PostMetadata} from "../../sample/sample4-many-to-many/entity/PostMetadata";
 import {PostImage} from "../../sample/sample4-many-to-many/entity/PostImage";
+import {createTestingConnectionOptions} from "../utils/test-utils";
 
 describe("many-to-many", function() {
 
@@ -15,20 +16,8 @@ describe("many-to-many", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const options: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
-            host: "192.168.99.100",
-            port: 3306,
-            username: "root",
-            password: "admin",
-            database: "test",
-            autoSchemaCreate: true,
-            logging: {
-                logOnlyFailedQueries: true,
-                logFailedQueryError: true
-            }
-        },
+    const options: ConnectionOptions = {
+        driver: createTestingConnectionOptions("postgres"),
         entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"]
     };
 
@@ -40,10 +29,7 @@ describe("many-to-many", function() {
             .catch(e => console.log("Error during connection to db: " + e, e.stack));
     });
 
-
-    after(function() {
-        connection.close();
-    });
+    after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {

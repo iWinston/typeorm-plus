@@ -15,9 +15,9 @@ import {CannotImportAlreadyConnectedError} from "../../../src/connection/error/C
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
 import {ReactiveRepository} from "../../../src/repository/ReactiveRepository";
-import {ReactiveTreeRepository} from "../../../src/repository/ReactiveTreeRepository";
+import {TreeReactiveRepository} from "../../../src/repository/TreeReactiveRepository";
 import {getConnectionManager} from "../../../src/index";
-import {CreateConnectionOptions} from "../../../src/connection-manager/CreateConnectionOptions";
+import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
 import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
 import {RepositoryNotFoundError} from "../../../src/connection/error/RepositoryNotFoundError";
@@ -40,9 +40,8 @@ describe("Connection", () => {
 
         let connection: Connection;
         before(async () => {
-            const options: CreateConnectionOptions = {
-                driver: "mysql",
-                connection: createTestingConnectionOptions("mysql"),
+            const options: ConnectionOptions = {
+                driver: createTestingConnectionOptions("mysql"),
                 entities: []
             };
             connection = await getConnectionManager().create(options);
@@ -159,12 +158,12 @@ describe("Connection", () => {
 
         it("should be able to get simple entity reactive repository", () => connections.forEach(connection => {
             connection.getReactiveRepository(Post).should.be.instanceOf(ReactiveRepository);
-            connection.getReactiveRepository(Post).should.not.be.instanceOf(ReactiveTreeRepository);
+            connection.getReactiveRepository(Post).should.not.be.instanceOf(TreeReactiveRepository);
             connection.getReactiveRepository(Post).target.should.be.eql(Post);
         }));
 
         it("should be able to get tree entity reactive repository", () => connections.forEach(connection => {
-            connection.getReactiveTreeRepository(Category).should.be.instanceOf(ReactiveTreeRepository);
+            connection.getReactiveTreeRepository(Category).should.be.instanceOf(TreeReactiveRepository);
             connection.getReactiveTreeRepository(Category).target.should.be.eql(Category);
         }));
 
@@ -226,12 +225,12 @@ describe("Connection", () => {
         let firstConnection: Connection, secondConnection: Connection;
         beforeEach(async () => {
             firstConnection = await getConnectionManager().create({
-                driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql"),
+                connectionName: "firstConnection"
             });
             secondConnection = await getConnectionManager().create({
-                driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql"),
+                connectionName: "secondConnection"
             });
         });
 
@@ -241,7 +240,7 @@ describe("Connection", () => {
             firstConnection.getRepository(Post).should.be.instanceOf(Repository);
             firstConnection.getRepository(Post).target.should.be.equal(Post);
             expect(() => firstConnection.getRepository(Category)).to.throw(RepositoryNotFoundError);
-            firstConnection.close();
+            await firstConnection.close();
         });
 
         it("should import second connection's entities only", async () => {
@@ -250,7 +249,7 @@ describe("Connection", () => {
             secondConnection.getRepository(Category).should.be.instanceOf(Repository);
             secondConnection.getRepository(Category).target.should.be.equal(Category);
             expect(() => secondConnection.getRepository(Post)).to.throw(RepositoryNotFoundError);
-            secondConnection.close();
+            await secondConnection.close();
         });
 
         it("should import first connection's entity schemas only", async () => {
@@ -259,7 +258,7 @@ describe("Connection", () => {
             firstConnection.getRepository("User").should.be.instanceOf(Repository);
             firstConnection.getRepository("User").target.should.be.equal("User");
             expect(() => firstConnection.getRepository("Photo")).to.throw(RepositoryNotFoundError);
-            firstConnection.close();
+            await firstConnection.close();
         });
 
         it("should import second connection's entity schemas only", async () => {
@@ -268,7 +267,7 @@ describe("Connection", () => {
             secondConnection.getRepository("Photo").should.be.instanceOf(Repository);
             secondConnection.getRepository("Photo").target.should.be.equal("Photo");
             expect(() => secondConnection.getRepository("User")).to.throw(RepositoryNotFoundError);
-            secondConnection.close();
+            await secondConnection.close();
         });
 
     });
@@ -278,8 +277,7 @@ describe("Connection", () => {
         let connection: Connection;
         beforeEach(async () => {
             connection = await getConnectionManager().create({
-                driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql")
             });
         });
         afterEach(() => connection.isConnected ? connection.close() : {});
@@ -326,8 +324,7 @@ describe("Connection", () => {
         let connection: Connection;
         beforeEach(async () => {
             connection = await getConnectionManager().create({
-                driver: "mysql",
-                connection: createTestingConnectionOptions("mysql")
+                driver: createTestingConnectionOptions("mysql")
             });
         });
         afterEach(() => connection.isConnected ? connection.close() : {});

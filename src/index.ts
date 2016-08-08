@@ -2,12 +2,12 @@
  
  */
 
-import {ConnectionOptions} from "./connection/ConnectionOptions";
-import {ConnectionManager} from "./connection-manager/ConnectionManager";
+import {DriverOptions} from "./driver/DriverOptions";
+import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MysqlDriver} from "./driver/MysqlDriver";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
-import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
+import {ConnectionOptions} from "./connection/ConnectionOptions";
 
 // -------------------------------------------------------------------------
 // Global Container
@@ -92,8 +92,8 @@ export function getConnectionManager() {
 /**
  * Allows to quickly create a connection based on the given options. Uses ConnectionManager.
  */
-export function createConnection(options: CreateConnectionOptions) {
-    return getConnectionManager().create(options).connect();
+export function createConnection(options: ConnectionOptions) {
+    return getConnectionManager().createAndConnect(options);
 }
 
 // -------------------------------------------------------------------------
@@ -101,9 +101,9 @@ export function createConnection(options: CreateConnectionOptions) {
 // -------------------------------------------------------------------------
 
 export {Connection} from "./connection/Connection";
+export {DriverOptions} from "./driver/DriverOptions";
+export {ConnectionManager} from "./connection/ConnectionManager";
 export {ConnectionOptions} from "./connection/ConnectionOptions";
-export {ConnectionManager} from "./connection-manager/ConnectionManager";
-export {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 export {Driver} from "./driver/Driver";
 export {MysqlDriver} from "./driver/MysqlDriver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";

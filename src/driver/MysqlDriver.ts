@@ -6,7 +6,8 @@ import {BaseDriver} from "./BaseDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import * as moment from "moment";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {DriverOptions} from "./DriverOptions";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * This driver organizes work with mysql database.
@@ -16,11 +17,6 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Connection used in this driver.
-     */
-    connectionOptions: ConnectionOptions;
 
     readonly isResultsLowercase = false;
     
@@ -37,7 +33,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Connection to mysql database.
      */
     private mysqlConnection: any;
-    
+
     // -------------------------------------------------------------------------
     // Getter Methods
     // -------------------------------------------------------------------------
@@ -74,7 +70,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(mysql?: any) {
+    constructor(public connectionOptions: DriverOptions, mysql?: any) {
         super();
 
         // if driver dependency is not given explicitly, then try to load it via "require"
@@ -173,7 +169,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
             .then(() => {});
     }
 
-    buildParameters(sql: string, parameters: { [key: string]: any }) {
+    buildParameters(sql: string, parameters: ObjectLiteral) {
         const builtParameters: any[] = [];
         Object.keys(parameters).forEach((key, index) => {
             // const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
@@ -185,7 +181,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
         return builtParameters;
     }
 
-    replaceParameters(sql: string, parameters: { [key: string]: any }) {
+    replaceParameters(sql: string, parameters: ObjectLiteral) {
         Object.keys(parameters).forEach((key, index) => {
             // const value = parameters[key] !== null && parameters[key] !== undefined ? this.driver.escape(parameters[key]) : "NULL";
             sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {

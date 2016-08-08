@@ -1,21 +1,21 @@
 import "reflect-metadata";
-import {createConnection, CreateConnectionOptions} from "../../src/index";
+import {createConnection, ConnectionOptions} from "../../src/index";
 import {Category} from "./entity/Category";
 
-const options: CreateConnectionOptions = {
-    driver: "mysql",
-    connection: {
+const options: ConnectionOptions = {
+    driver: {
+        type: "mysql",
         host: "192.168.99.100",
         port: 3306,
         username: "root",
         password: "admin",
         database: "test",
-        autoSchemaCreate: true,
         logging: {
             logOnlyFailedQueries: true,
             logFailedQueryError: true
         }
     },
+    autoSchemaCreate: true,
     entities: [Category]
 };
 

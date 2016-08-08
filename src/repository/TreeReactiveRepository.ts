@@ -7,7 +7,7 @@ import * as Rx from "rxjs/Rx";
  * Tree repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
  * This version of TreeRepository is using rxjs library and Observables instead of promises.
  */
-export class ReactiveTreeRepository<Entity> extends ReactiveRepository<Entity> {
+export class TreeReactiveRepository<Entity> extends ReactiveRepository<Entity> {
 
     // -------------------------------------------------------------------------
     // Constructor

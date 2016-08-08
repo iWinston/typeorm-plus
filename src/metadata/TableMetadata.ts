@@ -38,7 +38,7 @@ export class TableMetadata extends TargetMetadata {
     /**
      * Array of properties that will be used in a composite primary key of the table.
      */
-    private readonly primaryKeys: string|((object: any) => string|any)[]|undefined;
+    private readonly primaryKeys: (string|((object: any) => string|any))[]|undefined;
 
     /**
      * A property name by which queries will perform ordering by default when fetching rows.

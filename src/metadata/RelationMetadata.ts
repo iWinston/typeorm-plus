@@ -253,7 +253,7 @@ export class RelationMetadata extends PropertyMetadata {
      * Gets the property's type to which this relation is applied.
      */
     get type(): Function|string { // todo: when this can be a string?
-        return this._type instanceof Function ? this._type() : this._type;
+        return this._type instanceof Function ? (this._type as () => any)() : this._type;
     }
 
     /**

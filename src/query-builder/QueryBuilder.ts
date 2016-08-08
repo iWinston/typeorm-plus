@@ -5,6 +5,7 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * @internal
@@ -70,7 +71,7 @@ export class QueryBuilder<Entity> {
     private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
     private havings: { type: "simple"|"and"|"or", condition: string }[] = [];
     private orderBys: { sort: string, order: "ASC"|"DESC" }[] = [];
-    private parameters: { [key: string]: any } = {};
+    private parameters: ObjectLiteral = {};
     private limit: number;
     private offset: number;
     private firstResult: number;
@@ -181,7 +182,7 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    countRelationAndMap(mapProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    countRelationAndMap(mapProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
 
         const [parentAliasName, parentPropertyName] = property.split(".");
         const alias = parentAliasName + "_" + parentPropertyName + "_relation_count";
@@ -203,7 +204,7 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    countRelation(property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    countRelation(property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
 
         const [parentAliasName, parentPropertyName] = property.split(".");
         const alias = parentAliasName + "_" + parentPropertyName + "_relation_count";
@@ -225,89 +226,89 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    leftJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    leftJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
     }
 
-    innerJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    innerJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
     }
     
-    innerJoinRelationId(property: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this {
+    innerJoinRelationId(property: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this {
         return this.joinRelationId("INNER", undefined, property, conditionType, condition, parameters);
     }
 
-    leftJoinRelationId(property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: { [key: string]: any }): this {
+    leftJoinRelationId(property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: ObjectLiteral): this {
         return this.joinRelationId("LEFT", undefined, property, conditionType, condition, parameters);
     }
 
-    innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(alias);
         return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
     }
 
-    innerJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    innerJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(alias);
         return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
     }
 
-    innerJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    innerJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(alias);
         return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
-    innerJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    innerJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    innerJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    innerJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
-    leftJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    leftJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(alias);
         return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
     }
 
-    leftJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    leftJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(alias);
         return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
     }
 
-    leftJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    leftJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(alias);
         return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
-    leftJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }): this;
-    leftJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }): this {
+    leftJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+    leftJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
         return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
-    where(where: string, parameters?: { [key: string]: any }): this {
+    where(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "simple", condition: where });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    andWhere(where: string, parameters?: { [key: string]: any }): this {
+    andWhere(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "and", condition: where });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    orWhere(where: string, parameters?: { [key: string]: any }): this {
+    orWhere(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "or", condition: where });
         if (parameters) this.addParameters(parameters);
         return this;
@@ -323,19 +324,19 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    having(having: string, parameters?: { [key: string]: any }): this {
+    having(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "simple", condition: having });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    andHaving(having: string, parameters?: { [key: string]: any }): this {
+    andHaving(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "and", condition: having });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    orHaving(having: string, parameters?: { [key: string]: any }): this {
+    orHaving(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "or", condition: having });
         if (parameters) this.addParameters(parameters);
         return this;
@@ -376,13 +377,13 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    setParameters(parameters: { [key: string]: any }): this {
+    setParameters(parameters: ObjectLiteral): this {
         this.parameters = {};
         Object.keys(parameters).forEach(key => this.parameters[key] = parameters[key]);
         return this;
     }
 
-    addParameters(parameters: { [key: string]: any }): this {
+    addParameters(parameters: ObjectLiteral): this {
         Object.keys(parameters).forEach(key => this.parameters[key] = parameters[key]);
         return this;
     }
@@ -758,7 +759,7 @@ export class QueryBuilder<Entity> {
                 const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
                 if (joinMetadata) {
                     joinMetadata.columns.forEach(column => {
-                        allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.propertyName);
+                        allSelects.push(join.alias.name + "." + column.name + " AS " + join.alias.name + "_" + column.name);
                     });
                 } else {
                     allSelects.push(join.alias.name);
@@ -1016,10 +1017,10 @@ export class QueryBuilder<Entity> {
         return mappings;
     }
 
-    protected join(joinType: "INNER"|"LEFT", property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
-    protected join(joinType: "INNER"|"LEFT", entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
-    protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH", condition: string, parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany?: boolean): this;
-    protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: { [key: string]: any }, mapToProperty?: string, isMappingMany: boolean = false): this {
+    protected join(joinType: "INNER"|"LEFT", property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany?: boolean): this;
+    protected join(joinType: "INNER"|"LEFT", entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany?: boolean): this;
+    protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH", condition: string, parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany?: boolean): this;
+    protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany: boolean = false): this {
 
         let tableName = "";
         const aliasObj = new Alias(alias);
@@ -1042,7 +1043,7 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    protected joinRelationId(joinType: "LEFT"|"INNER", mapToProperty: string|undefined, property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: { [key: string]: any }): this {
+    protected joinRelationId(joinType: "LEFT"|"INNER", mapToProperty: string|undefined, property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: ObjectLiteral): this {
 
         if (!this.isPropertyAlias(property))
             throw new Error("Only entity relations are allowed in the leftJoinRelationId operation"); // todo: also check if that relation really has entityId

@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
+import {ConnectionOptions} from "../../../../src/connection/ConnectionOptions";
 import {createConnection} from "../../../../src/index";
 import {User} from "./entity/User";
 
@@ -14,19 +14,19 @@ describe("persistence > many-to-many", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const parameters: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
+    const parameters: ConnectionOptions = {
+        driver: {
+            type: "mysql",
             host: "192.168.99.100",
             port: 3306,
             username: "root",
             password: "admin",
             database: "test",
-            autoSchemaCreate: true,
             logging: {
                 logFailedQueryError: true
             }
         },
+        autoSchemaCreate: true,
         entities: [Post, Category, User]
     };
     // connect to db
@@ -40,9 +40,7 @@ describe("persistence > many-to-many", function() {
             });
     });
 
-    after(function() {
-        connection.close();
-    });
+    after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {

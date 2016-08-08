@@ -1,68 +1,81 @@
+import {DriverOptions} from "../driver/DriverOptions";
+import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
+
 /**
- * Connection options passed to the connection.
+ * New connection options.
  */
 export interface ConnectionOptions {
 
     /**
-     * Url to where perform connection.
+     * Database connection options.
      */
-    url?: string;
+    driver: DriverOptions;
 
     /**
-     * Database host.
+     * Connection name. If connection name is not given then it will be called "default".
+     * Different connections must have different names.
      */
-    host?: string;
+    connectionName?: string;
 
     /**
-     * Database host port.
+     * Name of the naming strategy or target class of the naming strategy to be used for this connection.
      */
-    port?: number;
+    usedNamingStrategy?: string|Function;
 
     /**
-     * Database username.
+     * Drops the schema each time connection is being established.
+     * Be careful with this option and don't use this in production - otherwise you'll loose all your production data.
+     * This option is useful during debug and development.
      */
-    username?: string;
+    dropSchemaOnConnection?: boolean;
 
     /**
-     * Database password.
-     */
-    password?: string;
-
-    /**
-     * Database name to connect to.
-     */
-    database?: string;
-
-    /**
-     * Indicates if database schema should be auto created every time application launch.
+     * Indicates if database schema should be auto created on every application launch.
      */
     autoSchemaCreate?: boolean;
 
     /**
-     * Logging options.
+     * Entities to be loaded for the this connection.
      */
-    logging?: {
+    entities?: Function[];
 
-        /**
-         * Some specific logger to be used. By default it is a console.
-         */
-        logger?: (message: any, level: string) => void;
+    /**
+     * Subscribers to be loaded for the this connection.
+     */
+    subscribers?: Function[];
 
-        /**
-         * Used if you want to log every executed query.
-         */
-        logQueries?: boolean;
+    /**
+     * Naming strategies to be loaded for the this connection.
+     */
+    namingStrategies?: Function[];
 
-        /**
-         * Used if you want to log only failed query.
-         */
-        logOnlyFailedQueries?: boolean;
+    /**
+     * Entity schemas to be loaded for the this connection.
+     */
+    entitySchemas?: EntitySchema[];
 
-        /**
-         * Used if you want to log error of the failed query.
-         */
-        logFailedQueryError?: boolean;
-        
-    };
+    /**
+     * List of files with entities from where they will be loaded.
+     * Glob patterns are supported.
+     */
+    entityDirectories?: string[];
+
+    /**
+     * List of files with subscribers from where they will be loaded.
+     * Glob patterns are supported.
+     */
+    subscriberDirectories?: string[];
+
+    /**
+     * List of files with naming strategies from where they will be loaded.
+     * Glob patterns are supported.
+     */
+    namingStrategyDirectories?: string[];
+
+    /**
+     * List of files with entity schemas from where they will be loaded.
+     * Glob patterns are supported.
+     */
+    entitySchemaDirectories?: string[];
 
 }

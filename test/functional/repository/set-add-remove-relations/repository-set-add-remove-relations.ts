@@ -4,8 +4,9 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
+import {ConnectionOptions} from "../../../../src/connection/ConnectionOptions";
 import {createConnection} from "../../../../src/index";
+import {SpecificRepository} from "../../../../src/repository/SpecificRepository";
 
 describe("repository > set/add/remove relation methods", function() {
 
@@ -13,20 +14,20 @@ describe("repository > set/add/remove relation methods", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const parameters: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
+    const parameters: ConnectionOptions = {
+        driver: {
+            type: "mysql",
             host: "192.168.99.100",
             port: 3306,
             username: "root",
             password: "admin",
             database: "test",
-            autoSchemaCreate: true,
             logging: {
                 // logQueries: true, // uncomment for debugging
                 logFailedQueryError: true
             }
         },
+        autoSchemaCreate: true,
         entities: [Post, Category]
     };
     // connect to db
@@ -41,7 +42,7 @@ describe("repository > set/add/remove relation methods", function() {
     });
 
     after(function() {
-        connection.close();
+        return connection.close();
     });
 
     // clean up database before each test
@@ -50,11 +51,15 @@ describe("repository > set/add/remove relation methods", function() {
             .catch(e => console.log("Error during schema re-creation: ", e));
     }
 
-    let postRepository: Repository<Post>;
-    let categoryRepository: Repository<Category>;
+    let postRepository: Repository<Post>,
+        postSpecificRepository: SpecificRepository<Post>,
+        categoryRepository: Repository<Category>,
+        categorySpecificRepository: SpecificRepository<Category>;
     before(function() {
         postRepository = connection.getRepository(Post);
         categoryRepository = connection.getRepository(Category);
+        postSpecificRepository = connection.getSpecificRepository(Post);
+        categorySpecificRepository = connection.getSpecificRepository(Category);
     });
 
     // -------------------------------------------------------------------------
@@ -89,7 +94,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return postRepository.addToRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory2.id]);
+            return postSpecificRepository.addToRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory2.id]);
         });
 
         // load a post, want to have categories count
@@ -138,7 +143,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return categoryRepository.addToRelation(category => category.manyPosts, newCategory.id, [newPost1.id, newPost2.id]);
+            return categorySpecificRepository.addToRelation(category => category.manyPosts, newCategory.id, [newPost1.id, newPost2.id]);
         });
 
         // load a post, want to have categories count
@@ -195,7 +200,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return postRepository.removeFromRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory3.id]);
+            return postSpecificRepository.removeFromRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory3.id]);
         });
 
         // load a post, want to have categories count
@@ -252,7 +257,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return categoryRepository.removeFromRelation(post => post.manyPosts, newCategory.id, [newPost1.id, newPost3.id]);
+            return categorySpecificRepository.removeFromRelation(post => post.manyPosts, newCategory.id, [newPost1.id, newPost3.id]);
         });
 
         // load a post, want to have categories count
@@ -294,7 +299,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return postRepository.setRelation(post => post.categories, newPost.id, newCategory1.id);
+            return postSpecificRepository.setRelation(post => post.categories, newPost.id, newCategory1.id);
         });
 
         // load a post, want to have categories count
@@ -335,7 +340,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return categoryRepository.setRelation(category => category.post, newCategory.id, newPost.id);
+            return categorySpecificRepository.setRelation(category => category.post, newCategory.id, newPost.id);
         });
 
         // load a post, want to have categories count
@@ -374,7 +379,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return postRepository.setRelation(post => post.categories, newPost.id, null);
+            return postSpecificRepository.setRelation(post => post.categories, newPost.id, null);
         });
 
         // load a post, want to have categories count
@@ -413,7 +418,7 @@ describe("repository > set/add/remove relation methods", function() {
 
         // add categories to a post
         before(function() {
-            return categoryRepository.setRelation(category => category.post, newCategory.id, null);
+            return categorySpecificRepository.setRelation(category => category.post, newCategory.id, null);
         });
 
         // load a post, want to have categories count

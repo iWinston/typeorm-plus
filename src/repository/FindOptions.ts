@@ -1,5 +1,5 @@
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {DriverOptions} from "../driver/DriverOptions";
 
 /**
  * Options to be passed to find methods.
@@ -148,7 +148,7 @@ export class FindOptionsUtils {
      */
     static isFindOptions(object: any): object is FindOptions {
         const possibleOptions: FindOptions = object;
-        return  possibleOptions && possibleOptions.alias && typeof possibleOptions.alias === "string" && (
+        return  possibleOptions && !!possibleOptions.alias && typeof possibleOptions.alias === "string" && (
                     !!possibleOptions.limit ||
                     !!possibleOptions.offset ||
                     !!possibleOptions.firstResult ||

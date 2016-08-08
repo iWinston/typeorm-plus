@@ -1,18 +1,18 @@
 import "reflect-metadata";
-import {createConnection, CreateConnectionOptions} from "../../src/index";
+import {createConnection, ConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 import {CustomNamingStrategy} from "./naming-strategy/CustomNamingStrategy";
 
-const options: CreateConnectionOptions = {
-    driver: "mysql",
-    connection: {
+const options: ConnectionOptions = {
+    driver: {
+        type: "mysql",
         host: "192.168.99.100",
         port: 3306,
         username: "root",
         password: "admin",
-        database: "test",
-        autoSchemaCreate: true
+        database: "test"
     },
+    autoSchemaCreate: true,
     usedNamingStrategy: "custom_strategy",
     entities: [Post],
     namingStrategies: [CustomNamingStrategy]

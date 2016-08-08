@@ -1,7 +1,7 @@
 import {RelationOptions} from "../options/RelationOptions";
 import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {getMetadataArgsStorage} from "../../index";
-import {ConstructorFunction} from "../../common/ConstructorFunction";
+import {ObjectType} from "../../common/ObjectType";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 // todo: make decorators which use inverse side string separate
@@ -16,7 +16,7 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
  * One-to-many relation allows to create type of relation when Entity2 can have multiple instances of Entity1.
  * Entity1 have only one Entity2. Entity1 is an owner of the relationship, and storages Entity2 id on its own side.
  */
-export function OneToMany<T>(typeFunction: (type?: any) => ConstructorFunction<T>,
+export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
                              inverseSide: string|((object: T) => any),
                              options?: RelationOptions): Function;
 
@@ -24,7 +24,7 @@ export function OneToMany<T>(typeFunction: (type?: any) => ConstructorFunction<T
  * One-to-many relation allows to create type of relation when Entity2 can have multiple instances of Entity1.
  * Entity1 have only one Entity2. Entity1 is an owner of the relationship, and storages Entity2 id on its own side.
  */
-export function OneToMany<T>(typeFunction: (type?: any) => ConstructorFunction<T>,
+export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
                              inverseSideOrOptions: string|((object: T) => any)|RelationOptions,
                              options?: RelationOptions): Function {
     let inverseSideProperty: string|((object: T) => any);

@@ -3,8 +3,9 @@ import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
-import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
+import {ConnectionOptions} from "../../../../src/connection/ConnectionOptions";
 import {createConnection} from "../../../../src/index";
+import {SpecificRepository} from "../../../../src/repository/SpecificRepository";
 
 describe("repository > removeById and removeByIds methods", function() {
 
@@ -12,19 +13,19 @@ describe("repository > removeById and removeByIds methods", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const parameters: CreateConnectionOptions = {
-        driver: "mysql",
-        connection: {
+    const parameters: ConnectionOptions = {
+        driver: {
+            type: "mysql",
             host: "192.168.99.100",
             port: 3306,
             username: "root",
             password: "admin",
             database: "test",
-            autoSchemaCreate: true,
             logging: {
                 logFailedQueryError: true
             }
         },
+        autoSchemaCreate: true,
         entities: [Post]
     };
     // connect to db
@@ -39,7 +40,7 @@ describe("repository > removeById and removeByIds methods", function() {
     });
 
     after(function() {
-        connection.close();
+        return connection.close();
     });
 
     // clean up database before each test
@@ -48,9 +49,10 @@ describe("repository > removeById and removeByIds methods", function() {
             .catch(e => console.log("Error during schema re-creation: ", e));
     }
 
-    let postRepository: Repository<Post>;
+    let postRepository: Repository<Post>, specificPostRepository: SpecificRepository<Post>;
     before(function() {
         postRepository = connection.getRepository(Post);
+        specificPostRepository = connection.getSpecificRepository(Post);
     });
 
     // -------------------------------------------------------------------------
@@ -83,7 +85,7 @@ describe("repository > removeById and removeByIds methods", function() {
 
         // remove one
         before(function() {
-            return postRepository.removeById(1);
+            return specificPostRepository.removeById(1);
         });
 
         // load to check
@@ -127,7 +129,7 @@ describe("repository > removeById and removeByIds methods", function() {
 
         // remove one
         before(function() {
-            return postRepository.removeByIds([2, 3]);
+            return specificPostRepository.removeByIds([2, 3]);
         });
 
         // load to check

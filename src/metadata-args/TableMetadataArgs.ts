@@ -29,7 +29,7 @@ export interface TableMetadataArgs {
     /**
      * Specifies array of properties that will be used in a composite primary key of the table.
      */
-    readonly primaryKeys?: string|((object: any) => string|any)[];
+    readonly primaryKeys?: (string|((object: any) => string|any))[];
 
     /**
      * Specifies a property name by which queries will perform ordering by default when fetching rows.
