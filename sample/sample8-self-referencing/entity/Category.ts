@@ -1,6 +1,6 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
-import {ManyToMany} from "../../../src/relations";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
+import {ManyToMany} from "../../../src/index";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {OneToOne} from "../../../src/decorator/relations/OneToOne";

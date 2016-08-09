@@ -1,4 +1,4 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
+import {PrimaryColumn, Column} from "../../../src/index";
 import {AbstractTable} from "../../../src/decorator/tables/AbstractTable";
 import {BasePost} from "./BasePost";
 import {PostAuthor} from "./PostAuthor";

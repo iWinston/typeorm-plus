@@ -1,5 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
 import {Category} from "./Category";
 import {Author} from "./Author";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";

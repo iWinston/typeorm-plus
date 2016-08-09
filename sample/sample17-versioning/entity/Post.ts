@@ -1,5 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
 import {VersionColumn} from "../../../src/decorator/columns/VersionColumn";
 
 @Table("sample17_post")

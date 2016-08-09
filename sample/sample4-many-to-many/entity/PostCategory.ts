@@ -1,5 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
 
 @Table("sample4_post_category")
 export class PostCategory {

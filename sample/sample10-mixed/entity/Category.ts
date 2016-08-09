@@ -1,6 +1,6 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
-import {ManyToOne, ManyToMany} from "../../../src/relations";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
+import {ManyToOne, ManyToMany} from "../../../src/index";
 import {Post} from "./Post";
 import {PostDetails} from "./PostDetails";
 
