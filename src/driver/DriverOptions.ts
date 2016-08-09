@@ -65,4 +65,9 @@ export interface DriverOptions {
         
     };
 
+    /**
+     * Extra connection options to be passed to the driver.
+     */
+    extra: any;
+
 }

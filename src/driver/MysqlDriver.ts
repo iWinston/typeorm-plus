@@ -103,13 +103,14 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Performs connection to the database based on given connection options.
      */
     connect(): Promise<void> {
-        this.mysqlConnection = this.mysql.createConnection({
+        const options = Object.assign({}, {
             host: this.connectionOptions.host,
             user: this.connectionOptions.username,
             password: this.connectionOptions.password,
             database: this.connectionOptions.database,
             port: this.connectionOptions.port
-        });
+        }, this.connectionOptions.extra || {});
+        this.mysqlConnection = this.mysql.createConnection(options);
         return new Promise<void>((ok, fail) => {
             this.mysqlConnection.connect((err: any) => err ? fail(err) : ok());
         });

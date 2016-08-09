@@ -101,13 +101,14 @@ export class PostgresDriver extends BaseDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.postgresConnection = new this.postgres.Client({
+            const options = Object.assign({}, {
                 host: this.connectionOptions.host,
                 user: this.connectionOptions.username,
                 password: this.connectionOptions.password,
                 database: this.connectionOptions.database,
                 port: this.connectionOptions.port
-            });
+            }, this.connectionOptions.extra || {});
+            this.postgresConnection = new this.postgres.Client(options);
             this.postgresConnection.connect((err: any) => err ? fail(err) : ok());
         });
     }

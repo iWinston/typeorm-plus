@@ -10,7 +10,7 @@ import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../src/decorator/columns/Column";
 import {Table} from "../../../src/decorator/tables/Table";
 
-describe("ConnectionManager", () => {
+describe.only("ConnectionManager", () => {
 
     @Table()
     class Post {
@@ -130,11 +130,53 @@ describe("ConnectionManager", () => {
             loadedPost.should.be.eql({ id: 1, title: "Hello post" });
         });
 
-        it("should drop the database if dropSchemaOnConnection was set to true", async () => {
+        it("should drop the database if dropSchemaOnConnection was set to true (mysql)", async () => {
             const options: ConnectionOptions = {
                 dropSchemaOnConnection: true,
                 autoSchemaCreate: true,
                 driver: createTestingConnectionOptions("mysql"),
+                entities: [Post]
+            };
+            const connectionManager = new ConnectionManager();
+
+            // create connection, save post and close connection
+            let connection = await connectionManager.createAndConnect(options);
+            const post = new Post(1, "Hello post");
+            await connection.entityManager.persist(post);
+            await connection.close();
+
+            // recreate connection and find previously saved post
+            connection = await connectionManager.createAndConnect(options);
+            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            expect(loadedPost).to.be.undefined;
+         });
+
+        it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+            const options: ConnectionOptions = {
+                dropSchemaOnConnection: true,
+                autoSchemaCreate: true,
+                driver: createTestingConnectionOptions("postgres"),
+                entities: [Post]
+            };
+            const connectionManager = new ConnectionManager();
+
+            // create connection, save post and close connection
+            let connection = await connectionManager.createAndConnect(options);
+            const post = new Post(1, "Hello post");
+            await connection.entityManager.persist(post);
+            await connection.close();
+
+            // recreate connection and find previously saved post
+            connection = await connectionManager.createAndConnect(options);
+            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            expect(loadedPost).to.be.undefined;
+         });
+
+        it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+            const options: ConnectionOptions = {
+                dropSchemaOnConnection: true,
+                autoSchemaCreate: true,
+                driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };
             const connectionManager = new ConnectionManager();

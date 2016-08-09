@@ -1,5 +1,4 @@
 /*!
- 
  */
 
 import {DriverOptions} from "./driver/DriverOptions";
