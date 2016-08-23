@@ -6,6 +6,8 @@ import {ReactiveRepository} from "../repository/ReactiveRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
+import {SpecificRepository} from "../repository/SpecificRepository";
+import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
 
 /**
  * Common functions shared between different manager types.
@@ -75,20 +77,54 @@ export abstract class BaseEntityManager {
     }
 
     /**
+     * Gets specific repository for the given entity class.
+     */
+    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity name.
+     */
+    getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository of the given entity.
+     */
+    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>|string): SpecificRepository<Entity> {
+        return this.obtainSpecificRepository(entityClass);
+    }
+
+    /**
+     * Gets specific reactive repository for the given entity class.
+     */
+    getSpecificReactiveRepository<Entity>(entityClass: ObjectType<Entity>): SpecificReactiveRepository<Entity>;
+
+    /**
+     * Gets specific reactive repository for the given entity name.
+     */
+    getSpecificReactiveRepository<Entity>(entityName: string): SpecificReactiveRepository<Entity>;
+
+    /**
+     * Gets specific reactive repository of the given entity.
+     */
+    getSpecificReactiveRepository<Entity>(entityClass: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
+        return this.obtainSpecificReactiveRepository(entityClass);
+    }
+
+    /**
      * Gets reactive tree repository for the given entity class.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeReactiveRepository<Entity>;
+    getTreeReactiveRepository<Entity>(entityClass: ObjectType<Entity>): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository for the given entity name.
      */
-    getReactiveTreeRepository<Entity>(entityName: string): TreeReactiveRepository<Entity>;
+    getTreeReactiveRepository<Entity>(entityName: string): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository of the given entity.
      */
-    getReactiveTreeRepository<Entity>(entityClass: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
-        return this.obtainReactiveTreeRepository(entityClass);
+    getTreeReactiveRepository<Entity>(entityClass: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
+        return this.obtainTreeReactiveRepository(entityClass);
     }
 
     // todo: add methods for getSpecificRepository and getReactiveSpecificRepository
@@ -173,7 +209,7 @@ export abstract class BaseEntityManager {
 
     /**
      * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
+     * code, and obtainRepository does not accept a Function, and only ObjectType it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
     protected obtainRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
@@ -186,7 +222,7 @@ export abstract class BaseEntityManager {
 
     /**
      * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainTreeRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
+     * code, and obtainTreeRepository does not accept a Function, and only ObjectType it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
     protected obtainTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
@@ -199,7 +235,20 @@ export abstract class BaseEntityManager {
 
     /**
      * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainReactiveRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
+     * code, and obtainTreeRepository does not accept a Function, and only ObjectType it can accept - it brings
+     * us type problems. To avoid this we are using private function here.
+     */
+    protected obtainSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
+        if (typeof entityClassOrName === "string") {
+            return this.connection.getSpecificRepository<Entity>(entityClassOrName);
+        } else {
+            return this.connection.getSpecificRepository(entityClassOrName);
+        }
+    }
+
+    /**
+     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
+     * code, and obtainReactiveRepository does not accept a Function, and only ObjectType it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
     protected obtainReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
@@ -212,14 +261,27 @@ export abstract class BaseEntityManager {
 
     /**
      * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainReactiveTreeRepository does not accept a Function, and only ConstructorFunction it can accept - it brings
+     * code, and obtainReactiveTreeRepository does not accept a Function, and only ObjectType it can accept - it brings
      * us type problems. To avoid this we are using private function here.
      */
-    protected obtainReactiveTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
+    protected obtainTreeReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
         if (typeof entityClassOrName === "string") {
             return this.connection.getReactiveTreeRepository<Entity>(entityClassOrName);
         } else {
             return this.connection.getReactiveTreeRepository(entityClassOrName);
+        }
+    }
+
+    /**
+     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
+     * code, and obtainReactiveRepository does not accept a Function, and only ObjectType it can accept - it brings
+     * us type problems. To avoid this we are using private function here.
+     */
+    protected obtainSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
+        if (typeof entityClassOrName === "string") {
+            return this.connection.getSpecificReactiveRepository<Entity>(entityClassOrName);
+        } else {
+            return this.connection.getSpecificReactiveRepository(entityClassOrName);
         }
     }
 
