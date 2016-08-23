@@ -1,4 +1,4 @@
-import {Column} from "../../../src/columns";
+import {Column} from "../../../src/index";
 import {EmbeddableTable} from "../../../src/decorator/tables/EmbeddableTable";
 
 @EmbeddableTable()

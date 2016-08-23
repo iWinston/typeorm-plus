@@ -159,22 +159,28 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    query(query: string): Promise<any> {
-        return this.connection.driver.query(query);
+    async query(query: string): Promise<any> {
+        const dbConnection = await this.connection.driver.retrieveDatabaseConnection();
+        const result = await this.connection.driver.query(dbConnection, query);
+        await this.connection.driver.releaseDatabaseConnection(dbConnection);
+        return result;
     }
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      */
-    transaction(runInTransaction: () => Promise<any>): Promise<any> {
+    async transaction(runInTransaction: () => Promise<any>): Promise<any> {
+        const dbConnection = await this.connection.driver.retrieveDatabaseConnection();
+
         let runInTransactionResult: any;
         return this.connection.driver
-            .beginTransaction()
+            .beginTransaction(dbConnection)
             .then(() => runInTransaction())
             .then(result => {
                 runInTransactionResult = result;
-                return this.connection.driver.commitTransaction();
+                return this.connection.driver.commitTransaction(dbConnection);
             })
+            .then(() => this.connection.driver.releaseDatabaseConnection(dbConnection))
             .then(() => runInTransactionResult);
     }
 

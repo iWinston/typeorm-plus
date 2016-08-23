@@ -11,7 +11,7 @@ describe("insertion", function() {
     // -------------------------------------------------------------------------
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post] }).then(all => connections = all));
+    before(() => setupTestingConnections({ entities: [Post], schemaCreate: true }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 

@@ -49,6 +49,8 @@ export class ConnectionManager {
 
     /**
      * Creates a new connection based on the given connection options and registers this connection in the manager.
+     * Note that dropSchemaOnConnection and autoSchemaCreate options of a ConnectionOptions are not working there - use
+     * createAndConnect method to use them.
      */
     create(options: ConnectionOptions): Connection {
         const driver = this.createDriver(options.driver);

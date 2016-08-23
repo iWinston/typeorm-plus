@@ -1,6 +1,6 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
-import {OneToOne} from "../../../src/relations";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
+import {OneToOne} from "../../../src/index";
 import {PostAuthor} from "./PostAuthor";
 import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";

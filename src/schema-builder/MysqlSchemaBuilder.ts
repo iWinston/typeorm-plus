@@ -4,16 +4,34 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
+import {DatabaseConnection} from "../driver/DatabaseConnection";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * @internal
  */
 export class MysqlSchemaBuilder extends SchemaBuilder {
     
-    constructor(private driver: MysqlDriver) {
+    constructor(private driver: MysqlDriver,
+                private dbConnection: DatabaseConnection) {
         super();
     }
-    
+
+    /*async getColumnProperties(tableName: string, columnName: string): Promise<{ isNullable: boolean, columnType: string, autoIncrement: boolean }|undefined> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
+            ` AND TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${columnName}'`;
+
+        const result = await this.query<ObjectLiteral[]>(sql);
+        if (!result || !result[0])
+            return undefined;
+
+        return {
+            isNullable: result[0]["IS_NULLABLE"] === "YES",
+            columnType: result[0]["COLUMN_TYPE"],
+            autoIncrement: result[0]["EXTRA"].indexOf("auto_increment") !== -1
+        };
+    }*/
+
     getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
             ` AND TABLE_NAME = '${tableName}'`;
@@ -135,7 +153,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     changeColumnQuery(tableName: string, columnName: string, newColumn: ColumnMetadata, skipPrimary: boolean = false): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} CHANGE ${columnName} ${this.buildCreateColumnSql(newColumn, skipPrimary)}`;
+        const sql = `ALTER TABLE ${tableName} CHANGE ${columnName} ${this.buildCreateColumnSql(newColumn, skipPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
         return this.query(sql).then(() => {});
     }
 
@@ -150,7 +168,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     // -------------------------------------------------------------------------
     
     private query<T>(sql: string) {
-        return this.driver.query<T>(sql);
+        return this.driver.query<T>(this.dbConnection, sql);
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {

@@ -16,7 +16,7 @@ describe("QueryBuilder > relation-id", () => {
     // todo: also make sure all new qb features to work with FindOptions
     
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category, Tag] }).then(all => connections = all));
+    before(() => setupTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
@@ -66,7 +66,8 @@ describe("QueryBuilder > relation-id", () => {
             expect(loadedPost.tagId).to.not.be.empty;
             expect(loadedPost.tagId).to.be.equal(1);
             expect(loadedPost.categoryIds).to.not.be.empty;
-            expect(loadedPost.categoryIds).to.be.eql([1, 2]);
+            expect(loadedPost.categoryIds).to.contain(1);
+            expect(loadedPost.categoryIds).to.contain(2);
 
             let loadedEmptyPost = await postRepository
                 .createQueryBuilder("post")
@@ -91,7 +92,8 @@ describe("QueryBuilder > relation-id", () => {
                 .where("post.id = :id", { id: post.id })
                 .getSingleResult();
 
-            loadedPost.allCategoryIds.should.be.eql([1, 2]);
+            loadedPost.allCategoryIds.should.contain(1);
+            loadedPost.allCategoryIds.should.contain(2);
         })));
 
     });

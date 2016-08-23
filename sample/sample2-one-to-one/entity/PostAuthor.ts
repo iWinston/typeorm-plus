@@ -1,7 +1,7 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
 import {Post} from "./Post";
-import {OneToOne} from "../../../src/relations";
+import {OneToOne} from "../../../src/index";
 
 @Table("sample2_post_author")
 export class PostAuthor {

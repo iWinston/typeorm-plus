@@ -1,7 +1,7 @@
-import {PrimaryColumn, Column} from "../../../src/columns";
-import {Table} from "../../../src/tables";
+import {PrimaryColumn, Column} from "../../../src/index";
+import {Table} from "../../../src/index";
 import {Post} from "./Post";
-import {ManyToMany} from "../../../src/relations";
+import {ManyToMany} from "../../../src/index";
 
 @Table("sample4_post_metadata")
 export class PostMetadata {

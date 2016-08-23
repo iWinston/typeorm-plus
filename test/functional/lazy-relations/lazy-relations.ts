@@ -10,7 +10,7 @@ describe("lazy-relations", () => {
     const profileSchema = require(resourceDir + "schema/profile.json");
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category], entitySchemas: [userSchema, profileSchema] }).then(all => connections = all));
+    before(() => setupTestingConnections({ entities: [Post, Category], entitySchemas: [userSchema, profileSchema], schemaCreate: true }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
@@ -25,7 +25,9 @@ describe("lazy-relations", () => {
         const savedCategory3 = new Category();
         savedCategory3.name = "animals";
 
-        await categoryRepository.persist([savedCategory1, savedCategory2, savedCategory3]);
+        await categoryRepository.persist(savedCategory1);
+        await categoryRepository.persist(savedCategory2);
+        await categoryRepository.persist(savedCategory3);
 
         const savedPost = new Post();
         savedPost.title = "Hello post";
@@ -46,10 +48,11 @@ describe("lazy-relations", () => {
 
         const categories = await post.categories;
         categories.length.should.be.equal(3);
-        categories.should.contain({ id: 3, name: "kids" });
-        categories.should.contain({ id: 1, name: "people" });
-        categories.should.contain({ id: 2, name: "animals" });
+        categories.should.contain({ id: 1, name: "kids" });
+        categories.should.contain({ id: 2, name: "people" });
+        categories.should.contain({ id: 3, name: "animals" });
     })));
+
 
     it("should persist and hydrate successfully on a relation with inverse side", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
@@ -62,7 +65,9 @@ describe("lazy-relations", () => {
         const savedCategory3 = new Category();
         savedCategory3.name = "animals";
 
-        await categoryRepository.persist([savedCategory1, savedCategory2, savedCategory3]);
+        await categoryRepository.persist(savedCategory1);
+        await categoryRepository.persist(savedCategory2);
+        await categoryRepository.persist(savedCategory3);
 
         const savedPost = new Post();
         savedPost.title = "Hello post";
@@ -83,12 +88,14 @@ describe("lazy-relations", () => {
 
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);
-        categories.should.contain({ id: 3, name: "kids" });
-        categories.should.contain({ id: 1, name: "people" });
-        categories.should.contain({ id: 2, name: "animals" });
+        categories.should.be.eql([
+            { id: 1, name: "kids" },
+            { id: 2, name: "people" },
+            { id: 3, name: "animals" }
+        ]);
 
         const category = await categoryRepository.findOneById(1);
-        category.name.should.be.equal("people");
+        category.name.should.be.equal("kids");
         
         const twoSidePosts = await category.twoSidePosts;
         twoSidePosts.should.contain({ id: 1, title: "Hello post", text: "This is post about post", viewCount: 0 });

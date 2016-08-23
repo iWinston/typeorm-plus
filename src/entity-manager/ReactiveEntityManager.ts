@@ -162,22 +162,42 @@ export class ReactiveEntityManager extends BaseEntityManager {
      * Executes raw SQL query and returns raw database results.
      */
     query(query: string): Rx.Observable<any> {
-        return Rx.Observable.fromPromise(this.connection.driver.query(query));
+        const promise = this.connection.driver
+            .retrieveDatabaseConnection()
+            .then(dbConnection => {
+                return this.connection.driver.query(dbConnection, query)
+                    .then(result => {
+                        return this.connection.driver
+                            .releaseDatabaseConnection(dbConnection)
+                            .then(() => result);
+                    });
+            });
+
+        return Rx.Observable.fromPromise(promise);
     }
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      */
     transaction(runInTransaction: () => Promise<any>): Rx.Observable<any> {
-        let runInTransactionResult: any;
-        return Rx.Observable.fromPromise(this.connection.driver
-            .beginTransaction()
-            .then(() => runInTransaction())
-            .then(result => {
-                runInTransactionResult = result;
-                return this.connection.driver.commitTransaction();
-            })
-            .then(() => runInTransactionResult));
+        const promise = this.connection.driver
+            .retrieveDatabaseConnection()
+            .then(dbConnection => {
+
+                let runInTransactionResult: any;
+                return this.connection.driver
+                    .beginTransaction(dbConnection)
+                    .then(() => runInTransaction())
+                    .then(result => {
+                        runInTransactionResult = result;
+                        return this.connection.driver
+                            .commitTransaction(dbConnection)
+                            .then(() => this.connection.driver.releaseDatabaseConnection(dbConnection))
+                            .then(() => runInTransactionResult);
+                    });
+            });
+
+        return Rx.Observable.fromPromise(promise);
     }
 
 }

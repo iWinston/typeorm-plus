@@ -8,6 +8,7 @@ import {IndexMetadata} from "../metadata/IndexMetadata";
  */
 export abstract class SchemaBuilder {
 
+    // abstract getColumnProperties(tableName: string, columnName: string): Promise<{ isNullable: boolean, columnType: string, autoIncrement: boolean }|undefined>;
     abstract getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]>;
     abstract checkIfTableExist(tableName: string): Promise<boolean>;
     abstract addColumnQuery(tableName: string, column: ColumnMetadata): Promise<void>;

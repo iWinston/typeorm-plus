@@ -3,6 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import * as moment from "moment";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {DatabaseConnection} from "./DatabaseConnection";
 
 /**
  * Provides base functionality for all driver implementations.
@@ -16,12 +17,6 @@ export abstract class BaseDriver {
     abstract connectionOptions: DriverOptions;
 
     // -------------------------------------------------------------------------
-    // Private Properties
-    // -------------------------------------------------------------------------
-
-    private transactionActive: boolean = false;
-    
-    // -------------------------------------------------------------------------
     // Abstract Protected Methods
     // -------------------------------------------------------------------------
 
@@ -34,12 +29,12 @@ export abstract class BaseDriver {
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    abstract query<T>(query: string, parameters?: any[]): Promise<T>;
+    abstract query<T>(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<T>;
 
     /**
      * Escapes given value.
      */
-    abstract escape(value: any): any;
+    abstract escape(dbConnection: DatabaseConnection, value: any): any;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -48,23 +43,23 @@ export abstract class BaseDriver {
     /**
      * Updates rows that match given conditions in the given table.
      */
-    update(tableName: string, valuesMap: Object, conditions: Object): Promise<void> {
+    update(dbConnection: DatabaseConnection, tableName: string, valuesMap: Object, conditions: Object): Promise<void> {
         this.checkIfConnectionSet();
 
-        const updateValues = this.escapeObjectMap(valuesMap).join(",");
-        const conditionString = this.escapeObjectMap(conditions).join(" AND ");
+        const updateValues = this.escapeObjectMap(dbConnection, valuesMap).join(",");
+        const conditionString = this.escapeObjectMap(dbConnection, conditions).join(" AND ");
         const query = `UPDATE ${tableName} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         // console.log("executing update: ", query);
-        return this.query(query).then(() => {});
+        return this.query(dbConnection, query).then(() => {});
     }
 
-    protected escapeObjectMap(objectMap: ObjectLiteral): string[] {
+    protected escapeObjectMap(dbConnection: DatabaseConnection, objectMap: ObjectLiteral): string[] {
         return Object.keys(objectMap).map(key => {
             const value = (<any> objectMap)[key];
             if (value === null || value === undefined) {
                 return key + "=NULL";
             } else {
-                return key + "=" + this.escape(value);
+                return key + "=" + this.escape(dbConnection, value);
             }
         });
     }
@@ -72,55 +67,45 @@ export abstract class BaseDriver {
     /**
      * Insert a new row into given table.
      */
-    insert(tableName: string, keyValues: Object, idColumnName?: string): Promise<any> {
+    insert(dbConnection: DatabaseConnection, tableName: string, keyValues: Object, idColumnName?: string): Promise<any> {
         this.checkIfConnectionSet();
 
         const columns = Object.keys(keyValues).join(",");
-        const values  = Object.keys(keyValues).map(key => this.escape((<any> keyValues)[key])).join(","); // todo: escape here
+        const values  = Object.keys(keyValues).map(key => this.escape(dbConnection, (<any> keyValues)[key])).join(","); // todo: escape here
         const query   = `INSERT INTO ${tableName}(${columns}) VALUES (${values})`;
-        return this.query<any>(query).then(result => result.insertId);
+        return this.query<any>(dbConnection, query).then(result => result.insertId);
     }
 
     /**
      * Deletes from the given table by a given conditions.
      */
-    delete(tableName: string, conditions: Object): Promise<void> {
+    delete(dbConnection: DatabaseConnection, tableName: string, conditions: Object): Promise<void> {
         this.checkIfConnectionSet();
 
-        const conditionString = this.escapeObjectMap(conditions).join(" AND ");
+        const conditionString = this.escapeObjectMap(dbConnection, conditions).join(" AND ");
         const query = `DELETE FROM ${tableName} WHERE ${conditionString}`;
-        return this.query(query).then(() => {});
+        return this.query(dbConnection, query).then(() => {});
     }
 
     /**
      * Starts transaction.
      */
-    async beginTransaction(): Promise<void> {
-        this.transactionActive = true;
-        await this.query("START TRANSACTION");
+    async beginTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        await this.query(dbConnection, "START TRANSACTION");
     }
 
     /**
      * Commits transaction.
      */
-    async commitTransaction(): Promise<void> {
-        this.transactionActive = false;
-        await this.query("COMMIT");
+    async commitTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        await this.query(dbConnection, "COMMIT");
     }
 
     /**
      * Rollbacks transaction.
      */
-    async rollbackTransaction(): Promise<void> {
-        this.transactionActive = false;
-        await this.query("ROLLBACK");
-    }
-
-    /**
-     * Checks if transaction is active.
-     */
-    isTransactionActive() {
-        return this.transactionActive;
+    async rollbackTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        await this.query(dbConnection, "ROLLBACK");
     }
 
     /**
@@ -183,7 +168,7 @@ export abstract class BaseDriver {
     /**
      * Inserts rows into closure table.
      */
-    insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+    insertIntoClosureTable(dbConnection: DatabaseConnection, tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
         let sql = "";
         if (hasLevel) {
             sql = `INSERT INTO ${tableName}(ancestor, descendant, level) ` +
@@ -194,8 +179,8 @@ export abstract class BaseDriver {
                 `SELECT ancestor, ${newEntityId} FROM ${tableName} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
-        return this.query(sql).then(() => {
-            return this.query(`SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
+        return this.query(dbConnection, sql).then(() => {
+            return this.query(dbConnection, `SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
 
         }).then((results: any) => {
             return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
