@@ -15,7 +15,7 @@ export interface ConnectionOptions {
      * Connection name. If connection name is not given then it will be called "default".
      * Different connections must have different names.
      */
-    connectionName?: string;
+    name?: string;
 
     /**
      * Name of the naming strategy or target class of the naming strategy to be used for this connection.

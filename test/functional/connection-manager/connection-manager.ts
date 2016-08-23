@@ -42,7 +42,7 @@ describe("ConnectionManager", () => {
 
         it("should create a postgres connection when postgres driver is specified", () => {
             const options: ConnectionOptions = {
-                connectionName: "myPostgresConnection",
+                name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
             };
             const connectionManager = new ConnectionManager();
@@ -69,7 +69,7 @@ describe("ConnectionManager", () => {
 
         it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
             const options: ConnectionOptions = {
-                connectionName: "myPostgresConnection",
+                name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
             };
             const connectionManager = new ConnectionManager();
@@ -85,7 +85,7 @@ describe("ConnectionManager", () => {
 
         it("should give connection with a requested name", () => {
             const options: ConnectionOptions = {
-                connectionName: "myMysqlConnection",
+                name: "myMysqlConnection",
                 driver: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();
@@ -96,7 +96,7 @@ describe("ConnectionManager", () => {
 
         it("should throw an error if connection with the given name was not found", () => {
             const options: ConnectionOptions = {
-                connectionName: "myMysqlConnection",
+                name: "myMysqlConnection",
                 driver: createTestingConnectionOptions("mysql")
             };
             const connectionManager = new ConnectionManager();

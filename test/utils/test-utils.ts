@@ -40,7 +40,7 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
 export async function setupTestingConnections(options?: TestingConnectionOptions): Promise<Connection[]> {
     
     const mysqlParameters: ConnectionOptions = {
-        connectionName: "mysqlPrimaryConnection",
+        name: "mysqlPrimaryConnection",
         driver: createTestingConnectionOptions("mysql"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],
@@ -49,7 +49,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
     
     const mysqlSecondaryParameters: ConnectionOptions = {
-        connectionName: "mysqlSecondaryConnection",
+        name: "mysqlSecondaryConnection",
         driver: createTestingConnectionOptions("mysqlSecondary"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],
@@ -58,7 +58,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
 
     const postgresParameters: ConnectionOptions = {
-        connectionName: "postgresPrimaryConnection",
+        name: "postgresPrimaryConnection",
         driver: createTestingConnectionOptions("postgres"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],
@@ -67,7 +67,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
 
     const postgresSecondaryParameters: ConnectionOptions = {
-        connectionName: "postgresSecondaryConnection",
+        name: "postgresSecondaryConnection",
         driver: createTestingConnectionOptions("postgresSecondary"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],

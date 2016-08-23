@@ -224,11 +224,11 @@ describe("Connection", () => {
         beforeEach(async () => {
             firstConnection = await getConnectionManager().create({
                 driver: createTestingConnectionOptions("mysql"),
-                connectionName: "firstConnection"
+                name: "firstConnection"
             });
             secondConnection = await getConnectionManager().create({
                 driver: createTestingConnectionOptions("mysql"),
-                connectionName: "secondConnection"
+                name: "secondConnection"
             });
         });
 
