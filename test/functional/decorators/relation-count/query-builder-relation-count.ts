@@ -10,7 +10,7 @@ describe("QueryBuilder > relation-count", () => {
     // const resourceDir = __dirname + "/../../../../../../test/functional/query-builder/join-relation-ids/";
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category, Tag] }).then(all => connections = all));
+    before(() => setupTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
@@ -68,8 +68,6 @@ describe("QueryBuilder > relation-count", () => {
                 .countRelationAndMap("post.secondCategoriesCount", "post.categories", "ON", "tag IS NOT NULL")
                 .countRelationAndMap("post.secondTagsCount", "tag.posts")
                 .getResults();
-
-            // console.log(loadedPosts);
 
             loadedPosts[0].secondCategoriesCount.should.be.equal(2);
             loadedPosts[1].secondCategoriesCount.should.be.equal(0);

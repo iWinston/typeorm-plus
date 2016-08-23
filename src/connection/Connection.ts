@@ -208,23 +208,45 @@ export class Connection {
      * Drops the database and all its data.
      */
     async dropDatabase(): Promise<void> {
-        return this.driver.clearDatabase();
+        const dbConnection = await this.driver.retrieveDatabaseConnection();
+        await this.driver.clearDatabase(dbConnection);
+        await this.driver.releaseDatabaseConnection(dbConnection);
     }
 
     /**
      * Creates database schema for all entities registered in this connection.
+     *
+     * @param dropBeforeSync If set to true then it drops the database with all its tables and data
+     * @param forceSync If set to true then schema creation will not be executed in a transaction
      */
-    async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
+    async syncSchema(dropBeforeSync: boolean = false, forceSync: boolean = false): Promise<void> {
         if (!this.isConnected)
-            throw new CannotSyncNotConnectedError(this.name);
+            return Promise.reject(new CannotSyncNotConnectedError(this.name));
 
-        if (dropBeforeSync)
-            await this.dropDatabase();
+        const dbConnection = await this.driver.retrieveDatabaseConnection();
+        if (forceSync)
+            await this.driver.beginTransaction(dbConnection);
 
-        const schemaBuilder = this.driver.createSchemaBuilder();
-        const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
-        const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.entityMetadatas);
-        return schemaCreator.create();
+        try {
+            if (dropBeforeSync)
+                await this.driver.clearDatabase(dbConnection);
+
+            const schemaBuilder = this.driver.createSchemaBuilder(dbConnection);
+            const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
+            const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.entityMetadatas);
+            await schemaCreator.create();
+
+            await this.driver.releaseDatabaseConnection(dbConnection);
+
+            if (forceSync)
+                await this.driver.commitTransaction(dbConnection);
+
+        } catch (error) {
+            if (forceSync)
+                await this.driver.rollbackTransaction(dbConnection);
+
+            throw error;
+        }
     }
 
     /**
@@ -518,7 +540,12 @@ export class Connection {
      * Builds all registered metadatas.
      */
     private buildMetadatas() {
-        
+
+        this.entitySubscribers.length = 0;
+        this.entityListeners.length = 0;
+        this.repositoryForMetadatas.length = 0;
+        this.entityMetadatas.length = 0;
+
         const namingStrategy = this.createNamingStrategy();
         const lazyRelationsWrapper = new LazyRelationsWrapper(this.driver, this.entityMetadatas, this.broadcaster);
 

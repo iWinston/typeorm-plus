@@ -3,6 +3,7 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {Driver} from "../driver/Driver";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {Connection} from "../connection/Connection";
 
 export class LazyRelationsWrapper {
     

@@ -5,7 +5,6 @@ import {Category} from "./entity/Category";
 import {
     setupTestingConnections,
     closeConnections,
-    reloadDatabases,
     createTestingConnectionOptions
 } from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
@@ -99,8 +98,8 @@ describe("Connection", () => {
     describe("after connection is established successfully", function() {
 
         let connections: Connection[];
-        before(() => setupTestingConnections({ entities: [Post, Category] }).then(all => connections = all));
-        beforeEach(() => reloadDatabases(connections));
+        beforeEach(() => setupTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
+        afterEach(() => closeConnections(connections));
 
         it("connection.isConnected should be true", () => connections.forEach(connection => {
             connection.isConnected.should.be.true;
@@ -132,18 +131,17 @@ describe("Connection", () => {
             expect(() => connection.useNamingStrategy("something")).to.throw(CannotUseNamingStrategyNotConnectedError);
         }));
 
-        it("should be able to close a connection", () => connections.forEach(connection => {
-            return connection.close().should.be.fulfilled;
-        }));
+        it("should be able to close a connection", async () => Promise.all(connections.map(connection => {
+            return connection.close();
+        })));
 
     });
 
     describe("working with repositories after connection is established successfully", function() {
 
         let connections: Connection[];
-        before(() => setupTestingConnections({ entities: [Post, Category] }).then(all => connections = all));
+        before(() => setupTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
         after(() => closeConnections(connections));
-        beforeEach(() => reloadDatabases(connections));
 
         it("should be able to get simple entity repository", () => connections.forEach(connection => {
             connection.getRepository(Post).should.be.instanceOf(Repository);
@@ -184,8 +182,8 @@ describe("Connection", () => {
     describe("generate a schema when connection.syncSchema is called", function() {
 
         let connections: Connection[];
-        before(() => setupTestingConnections({ entities: [Post] }).then(all => connections = all));
-        after(() => closeConnections(connections));
+        beforeEach(() => setupTestingConnections({ entities: [Post], schemaCreate: true }).then(all => connections = all));
+        afterEach(() => closeConnections(connections));
 
         it("database should be empty after schema is synced with dropDatabase flag", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
@@ -205,7 +203,7 @@ describe("Connection", () => {
 
         // open a close connections
         let connections: Connection[] = [];
-        before(() => setupTestingConnections({ entities: [Post] }).then(all => {
+        before(() => setupTestingConnections({ entities: [Post], schemaCreate: true }).then(all => {
             connections = all;
             return Promise.all(connections.map(connection => connection.close()));
         }));

@@ -13,7 +13,7 @@ describe("persistence > one-to-many", function() {
     // -------------------------------------------------------------------------
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category] }).then(all => connections = all));
+    before(() => setupTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
     after(() => closeConnections(connections));
     beforeEach(() => reloadDatabases(connections));
 

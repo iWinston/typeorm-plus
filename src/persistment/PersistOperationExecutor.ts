@@ -12,6 +12,7 @@ import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOpera
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {DatabaseConnection} from "../driver/DatabaseConnection";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -24,7 +25,8 @@ export class PersistOperationExecutor {
     
     constructor(private driver: Driver,
                 private entityMetadatas: EntityMetadataCollection,
-                private broadcaster: Broadcaster) {
+                private broadcaster: Broadcaster,
+                private dbConnection: DatabaseConnection) {
     }
 
     // -------------------------------------------------------------------------
@@ -40,12 +42,12 @@ export class PersistOperationExecutor {
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(persistOperation))
             .then(() => {
-                if (!this.driver.isTransactionActive()) {
+                if (!this.dbConnection.isTransactionActive) {
                     isTransactionStartedByItself = true;
-                    return this.driver.beginTransaction();
+                    return this.driver.beginTransaction(this.dbConnection);
                 }
 
-                return Promise.resolve();
+                return undefined;
             })
             .then(() => this.executeInsertOperations(persistOperation))
             .then(() => this.executeInsertClosureTableOperations(persistOperation))
@@ -59,7 +61,7 @@ export class PersistOperationExecutor {
             .then(() => this.executeRemoveOperations(persistOperation))
             .then(() => {
                 if (isTransactionStartedByItself === true)
-                    return this.driver.commitTransaction();
+                    return this.driver.commitTransaction(this.dbConnection);
 
                 return Promise.resolve();
             })
@@ -69,7 +71,7 @@ export class PersistOperationExecutor {
             .then(() => this.broadcastAfterEvents(persistOperation))
             .catch(error => {
                 if (isTransactionStartedByItself === true) {
-                    return this.driver.rollbackTransaction()
+                    return this.driver.rollbackTransaction(this.dbConnection)
                         .then(() => {
                             throw error;
                         })
@@ -348,7 +350,7 @@ export class PersistOperationExecutor {
             idColumn = metadata.primaryColumn.name;
             id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
         }
-        return this.driver.update(tableName, { [relationName]: relationId }, { [idColumn]: id });
+        return this.driver.update(this.dbConnection, tableName, { [relationName]: relationId }, { [idColumn]: id });
     }
 
     private updateInverseRelation(operation: UpdateByInverseSideOperation, insertOperations: InsertOperation[]) {
@@ -371,7 +373,7 @@ export class PersistOperationExecutor {
             }
         }
         
-        return this.driver.update(tableName, { [targetRelation.name]: targetEntityId }, { [idColumn]: id });
+        return this.driver.update(this.dbConnection, tableName, { [targetRelation.name]: targetEntityId }, { [idColumn]: id });
     }
 
     private update(updateOperation: UpdateOperation) {
@@ -398,12 +400,13 @@ export class PersistOperationExecutor {
         if (metadata.hasVersionColumn)
             values[metadata.versionColumn.name] = this.driver.preparePersistentValue(entity[metadata.versionColumn.propertyName] + 1, metadata.versionColumn);
         
-        return this.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: metadata.getEntityId(entity) });
+        return this.driver.update(this.dbConnection, metadata.table.name, values, { [metadata.primaryColumn.name]: metadata.getEntityId(entity) });
     }
 
     private updateDeletedRelations(removeOperation: RemoveOperation) { // todo: check if both many-to-one deletions work too
         if (removeOperation.relation) {
             return this.driver.update(
+                this.dbConnection,
                 removeOperation.fromMetadata.table.name,
                 { [removeOperation.relation.name]: null },
                 { [removeOperation.fromMetadata.primaryColumn.name]: removeOperation.fromEntityId }
@@ -415,7 +418,7 @@ export class PersistOperationExecutor {
 
     private delete(target: Function|string, entity: any) {
         const metadata = this.entityMetadatas.findByTarget(target);
-        return this.driver.delete(metadata.table.name, { [metadata.primaryColumn.name]: entity[metadata.primaryColumn.propertyName] });
+        return this.driver.delete(this.dbConnection, metadata.table.name, { [metadata.primaryColumn.name]: entity[metadata.primaryColumn.propertyName] });
     }
 
     private insert(operation: InsertOperation) {
@@ -481,7 +484,7 @@ export class PersistOperationExecutor {
             idColumnName = metadata.primaryColumn.name;
         }
 
-        return this.driver.insert(metadata.table.name, this.zipObject(allColumns, allValues), idColumnName);
+        return this.driver.insert(this.dbConnection, metadata.table.name, this.zipObject(allColumns, allValues), idColumnName);
     }
 
     private insertIntoClosureTable(operation: InsertOperation, updateMap: ObjectLiteral) {
@@ -497,7 +500,7 @@ export class PersistOperationExecutor {
             parentEntityId = updateMap[metadata.treeParentRelation.propertyName];
         }
         
-        return this.driver.insertIntoClosureTable(metadata.closureJunctionTable.table.name, operation.entityId, parentEntityId, metadata.hasTreeLevelColumn)
+        return this.driver.insertIntoClosureTable(this.dbConnection, metadata.closureJunctionTable.table.name, operation.entityId, parentEntityId, metadata.hasTreeLevelColumn)
             /*.then(() => {
                 // we also need to update children count in parent
                 if (parentEntity && parentEntityId) {
@@ -513,7 +516,7 @@ export class PersistOperationExecutor {
 
         if (metadata.hasTreeLevelColumn && operation.treeLevel) {
             const values = { [metadata.treeLevelColumn.name]: operation.treeLevel };
-            return this.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: operation.entityId });
+            return this.driver.update(this.dbConnection, metadata.table.name, values, { [metadata.primaryColumn.name]: operation.entityId });
         }
         
         return Promise.resolve();
@@ -555,7 +558,7 @@ export class PersistOperationExecutor {
             values = [id2, id1];
         }
         
-        return this.driver.insert(junctionMetadata.table.name, this.zipObject(columns, values));
+        return this.driver.insert(this.dbConnection, junctionMetadata.table.name, this.zipObject(columns, values));
     }
 
     private removeJunctions(junctionOperation: JunctionRemoveOperation) {
@@ -565,7 +568,7 @@ export class PersistOperationExecutor {
         const columns = junctionMetadata.columns.map(column => column.name);
         const id1 = junctionOperation.entity1[metadata1.primaryColumn.propertyName];
         const id2 = junctionOperation.entity2[metadata2.primaryColumn.propertyName];
-        return this.driver.delete(junctionMetadata.table.name, { [columns[0]]: id1, [columns[1]]: id2 });
+        return this.driver.delete(this.dbConnection, junctionMetadata.table.name, { [columns[0]]: id1, [columns[1]]: id2 });
     }
 
     private zipObject(keys: any[], values: any[]): Object {

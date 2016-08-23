@@ -35,8 +35,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
             .where(alias + "." + metadata.primaryColumn.name + "=:id")
             .setParameter("id", plainObject[metadata.primaryColumn.name]);
 
-        const entity = await queryBuilder.getSingleResult();
-        return entity;
+        return await queryBuilder.getSingleResult();
     }
 
     // -------------------------------------------------------------------------

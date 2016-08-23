@@ -26,7 +26,6 @@ describe("persistence > many-to-many", function() {
                 logFailedQueryError: true
             }
         },
-        autoSchemaCreate: true,
         entities: [Post, Category, User]
     };
     // connect to db

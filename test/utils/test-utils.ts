@@ -9,10 +9,12 @@ export interface TestingConnectionOptions {
     entitySchemas?: EntitySchema[];
     entityDirectories?: string[];
     secondaryConnections?: boolean;
+    schemaCreate?: boolean;
+    reloadAndCreateSchema?: boolean;
 }
 
 export function closeConnections(connections: Connection[]) {
-    return Promise.all(connections.map(connection => connection.close()));
+    return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
 }
 
 export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"postgres"|"postgresSecondary"): DriverOptions {
@@ -40,7 +42,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mysqlParameters: ConnectionOptions = {
         connectionName: "mysqlPrimaryConnection",
         driver: createTestingConnectionOptions("mysql"),
-        autoSchemaCreate: true,
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -49,6 +51,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mysqlSecondaryParameters: ConnectionOptions = {
         connectionName: "mysqlSecondaryConnection",
         driver: createTestingConnectionOptions("mysqlSecondary"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -57,6 +60,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const postgresParameters: ConnectionOptions = {
         connectionName: "postgresPrimaryConnection",
         driver: createTestingConnectionOptions("postgres"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -65,6 +69,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const postgresSecondaryParameters: ConnectionOptions = {
         connectionName: "postgresSecondaryConnection",
         driver: createTestingConnectionOptions("postgresSecondary"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -83,7 +88,13 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     if (postgres && options && options.secondaryConnections)
         allParameters.push(postgresSecondaryParameters);
     
-    return Promise.all(allParameters.map(parameters => createConnection(parameters)));
+    return Promise.all(allParameters.map(async parameters => {
+        const connection = await createConnection(parameters);
+        if (options && options.reloadAndCreateSchema)
+            await connection.syncSchema(true);
+
+        return connection;
+    }));
 }
 
 /**
@@ -111,7 +122,10 @@ export function setupConnection(callback: (connection: Connection) => any, entit
                     callback(connection);
                 return connection;
             })
-            .catch(e => console.log("Error during connection to db: " + e));
+            .catch(e => {
+                console.log("Error during connection to db: " + e);
+                throw e;
+            });
     };
 }
 

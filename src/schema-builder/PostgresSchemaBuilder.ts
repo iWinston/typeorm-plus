@@ -4,15 +4,30 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
+import {DatabaseConnection} from "../driver/DatabaseConnection";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * @internal
  */
 export class PostgresSchemaBuilder extends SchemaBuilder {
     
-    constructor(private driver: PostgresDriver) {
+    constructor(private driver: PostgresDriver,
+                private dbConnection: DatabaseConnection) {
         super();
     }
+
+    /*async getColumnProperties(tableName: string, columnName: string): Promise<{ isNullable: boolean, columnType: string, autoIncrement: boolean }|undefined> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}'` +
+            ` AND TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${columnName}'`;
+
+        const result = await this.query<ObjectLiteral>(sql);
+        return {
+            isNullable: result["IS_NULLABLE"] === "YES",
+            columnType: result["COLUMN_TYPE"],
+            autoIncrement: result["EXTRA"].indexOf("auto_increment") !== -1
+        };
+    }*/
     
     getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}'` +
@@ -183,7 +198,7 @@ order by
     // -------------------------------------------------------------------------
     
     private query<T>(sql: string) {
-        return this.driver.query<T>(sql);
+        return this.driver.query<T>(this.dbConnection, sql);
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {

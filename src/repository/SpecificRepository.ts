@@ -4,6 +4,7 @@ import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
+import {DatabaseConnection} from "../driver/DatabaseConnection";
 
 /**
  * Repository for more specific operations.
@@ -51,7 +52,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             values[relation.inverseRelation.name] = relatedEntityId;
             conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = entityId;
         }
-        return this.connection.driver.update(table, values, conditions).then(() => {});
+
+        const dbConnection = await this.provideConnection();
+        return this.connection.driver.update(dbConnection, table, values, conditions).then(() => {});
     }
 
     /**
@@ -82,7 +85,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             values[relation.name] = relatedEntityId;
             conditions[relation.joinColumn.referencedColumn.name] = entityId;
         }
-        return this.connection.driver.update(table, values, conditions).then(() => {});
+
+        const dbConnection = await this.provideConnection();
+        return this.connection.driver.update(dbConnection, table, values, conditions).then(() => {});
     }
 
     /**
@@ -101,6 +106,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
+        const dbConnection = await this.provideConnection();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
             const values: any = { };
             if (relation.isOwning) {
@@ -111,7 +117,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
 
-            return this.connection.driver.insert(relation.junctionEntityMetadata.table.name, values);
+            return this.connection.driver.insert(dbConnection, relation.junctionEntityMetadata.table.name, values);
         });
         return Promise.all(insertPromises).then(() => {});
     }
@@ -132,6 +138,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
+        const dbConnection = await this.provideConnection();
         const insertPromises = entityIds.map(entityId => {
             const values: any = { };
             if (relation.isOwning) {
@@ -142,7 +149,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
 
-            return this.connection.driver.insert(relation.junctionEntityMetadata.table.name, values);
+            return this.connection.driver.insert(dbConnection, relation.junctionEntityMetadata.table.name, values);
         });
         return Promise.all(insertPromises).then(() => {});
     }
@@ -268,6 +275,14 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             .delete()
             .where(alias + "." + this.metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids })
             .execute();
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    protected provideConnection(): Promise<DatabaseConnection> {
+        return this.connection.driver.retrieveDatabaseConnection();
     }
 
     // -------------------------------------------------------------------------

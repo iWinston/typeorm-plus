@@ -10,7 +10,7 @@ import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../src/decorator/columns/Column";
 import {Table} from "../../../src/decorator/tables/Table";
 
-describe.only("ConnectionManager", () => {
+describe("ConnectionManager", () => {
 
     @Table()
     class Post {
