@@ -881,15 +881,22 @@ export class QueryBuilder<Entity> {
         this.aliasMap.aliases.forEach(alias => {
             const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
             if (!metadata) return;
+            metadata.embeddeds.forEach(embedded => {
+                embedded.columns.forEach(column => {
+                    const expression = alias.name + "." + embedded.propertyName + "." + column.propertyName + "([ =]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), alias.name + "." + column.name + "$1");
+                });
+            });
             metadata.columns.forEach(column => {
-                statement = statement.replace(new RegExp(alias.name + "." + column.propertyName + "([ =]|.{0}$)", "gm"), alias.name + "." + column.name + "$1");
+                const expression = alias.name + "." + column.propertyName + "([ =]|.{0}$)";
+                statement = statement.replace(new RegExp(expression, "gm"), alias.name + "." + column.name + "$1");
             });
             metadata.relationsWithJoinColumns.forEach(relation => {
-                statement = statement.replace(new RegExp(alias.name + "." + relation.propertyName + "([ =]|.{0}$)", "gm"), alias.name + "." + relation.name + "$1");
+                const expression = alias.name + "." + relation.propertyName + "([ =]|.{0}$)";
+                statement = statement.replace(new RegExp(expression, "gm"), alias.name + "." + relation.name + "$1");
             });
         });
         return statement;
-
     }
 
     protected createJoinRelationIdsExpression() {
