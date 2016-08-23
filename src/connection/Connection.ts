@@ -252,7 +252,7 @@ export class Connection {
     /**
      * Imports entities from the given paths (directories) and registers them in the current connection.
      */
-    async importEntitiesFromDirectories(paths: string[]): Promise<this> {
+    importEntitiesFromDirectories(paths: string[]): this {
         this.importEntities(importClassesFromDirectories(paths));
         return this;
     }
@@ -260,7 +260,7 @@ export class Connection {
     /**
      * Imports entity schemas from the given paths (directories) and registers them in the current connection.
      */
-    async importEntitySchemaFromDirectories(paths: string[]): Promise<this> {
+    importEntitySchemaFromDirectories(paths: string[]): this {
         this.importEntitySchemas(importJsonsFromDirectories(paths));
         return this;
     }
@@ -268,7 +268,7 @@ export class Connection {
     /**
      * Imports subscribers from the given paths (directories) and registers them in the current connection.
      */
-    async importSubscribersFromDirectories(paths: string[]): Promise<this> {
+    importSubscribersFromDirectories(paths: string[]): this {
         this.importSubscribers(importClassesFromDirectories(paths));
         return this;
     }
@@ -276,7 +276,7 @@ export class Connection {
     /**
      * Imports naming strategies from the given paths (directories) and registers them in the current connection.
      */
-    async importNamingStrategiesFromDirectories(paths: string[]): Promise<this> {
+    importNamingStrategiesFromDirectories(paths: string[]): this {
         this.importEntities(importClassesFromDirectories(paths));
         return this;
     }
@@ -284,7 +284,7 @@ export class Connection {
     /**
      * Imports entities and registers them in the current connection.
      */
-    async importEntities(entities: Function[]): Promise<this> {
+    importEntities(entities: Function[]): this {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("entities", this.name);
 
@@ -295,7 +295,7 @@ export class Connection {
     /**
      * Imports schemas and registers them in the current connection.
      */
-    async importEntitySchemas(schemas: EntitySchema[]): Promise<this> {
+    importEntitySchemas(schemas: EntitySchema[]): this {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("schemas", this.name);
 
@@ -306,7 +306,7 @@ export class Connection {
     /**
      * Imports subscribers and registers them in the current connection.
      */
-    async importSubscribers(subscriberClasses: Function[]): Promise<this> {
+    importSubscribers(subscriberClasses: Function[]): this {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("entity subscribers", this.name);
 
@@ -317,7 +317,7 @@ export class Connection {
     /**
      * Imports naming strategies and registers them in the current connection.
      */
-    async importNamingStrategies(strategies: Function[]): Promise<this> {
+    importNamingStrategies(strategies: Function[]): this {
         if (this.isConnected)
             throw new CannotImportAlreadyConnectedError("naming strategies", this.name);
 
