@@ -24,7 +24,17 @@ export class PostgresDriver extends BaseDriver implements Driver {
     /**
      * Connection to postgres database.
      */
-    private postgresConnection: DatabaseConnection|undefined;
+    private databaseConnection: DatabaseConnection|undefined;
+
+    /**
+     * Postgres pool.
+     */
+    private pool: any;
+
+    /**
+     * Pool of database connections.
+     */
+    private databaseConnectionPool: DatabaseConnection[] = [];
 
     // -------------------------------------------------------------------------
     // Getter Methods
@@ -33,15 +43,19 @@ export class PostgresDriver extends BaseDriver implements Driver {
     /**
      * Access to the native implementation of the database.
      */
-    get native(): any {
-        return this.postgres;
+    get native() {
+        return {
+            driver: this.postgres,
+            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
+            pool: this.pool
+        };
     }
 
     /**
      * Access to the native connection to the database.
      */
     get nativeConnection(): any {
-        return this.postgresConnection;
+        return this.databaseConnection;
     }
 
     /**
@@ -97,30 +111,40 @@ export class PostgresDriver extends BaseDriver implements Driver {
     }
 
     retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-
-        /*if (this.postgresPool) { // todo: rename to databaseConnectionPool
+        if (this.pool) {
             return new Promise((ok, fail) => {
-                this.postgresPool.getConnection((err: any, connection: any) => {
+                this.pool.connect((err: any, connection: any, release: Function) => {
                     if (err) {
                         fail(err);
                         return;
                     }
 
-                    ok(connection);
+                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
+                    if (!dbConnection) {
+                        dbConnection = {
+                            id: this.databaseConnectionPool.length,
+                            connection: connection,
+                            isTransactionActive: false
+                        };
+                        this.databaseConnectionPool.push(dbConnection);
+                    }
+                    dbConnection.releaseCallback = release;
+                    ok(dbConnection);
                 });
             });
-        }*/
+        }
 
-        if (this.postgresConnection) // todo: rename postgresConnection and mysqlConnection to databaseConnection
-            return Promise.resolve(this.postgresConnection);
+        if (this.databaseConnection) // todo: rename postgresConnection and mysqlConnection to databaseConnection
+            return Promise.resolve(this.databaseConnection);
 
-        throw new ConnectionIsNotSetError("mysql");
+        throw new ConnectionIsNotSetError("postgres");
     }
 
     releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
-        // if (this.mysqlPool) {
-        //     dbConnection.connection.release();
-        // }
+        if (this.pool && dbConnection.releaseCallback) {
+            dbConnection.releaseCallback();
+        }
+
         return Promise.resolve();
     }
 
@@ -135,21 +159,28 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Performs connection to the database based on given connection options.
      */
     connect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const options = Object.assign({}, {
-                host: this.connectionOptions.host,
-                user: this.connectionOptions.username,
-                password: this.connectionOptions.password,
-                database: this.connectionOptions.database,
-                port: this.connectionOptions.port
-            }, this.connectionOptions.extra || {});
-            this.postgresConnection = {
-                id: 1,
-                connection: new this.postgres.Client(options),
-                isTransactionActive: false
-            };
-            this.postgresConnection.connection.connect((err: any) => err ? fail(err) : ok());
-        });
+        const options = Object.assign({}, {
+            host: this.connectionOptions.host,
+            user: this.connectionOptions.username,
+            password: this.connectionOptions.password,
+            database: this.connectionOptions.database,
+            port: this.connectionOptions.port
+        }, this.connectionOptions.extra || {});
+
+        if (this.connectionOptions.usePool === false) {
+            return new Promise<void>((ok, fail) => {
+                this.databaseConnection = {
+                    id: 1,
+                    connection: new this.postgres.Client(options),
+                    isTransactionActive: false
+                };
+                this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
+            });
+
+        } else {
+            this.pool = new this.postgres.Pool(options);
+            return Promise.resolve();
+        }
     }
 
     /**
@@ -159,10 +190,21 @@ export class PostgresDriver extends BaseDriver implements Driver {
         this.checkIfConnectionSet();
 
         return new Promise<void>((ok, fail) => {
-            if (this.postgresConnection) {
-                this.postgresConnection.connection.end(/*(err: any) => err ? fail(err) : ok()*/); // todo: check if it can emit errors
-                this.postgresConnection = undefined;
+            if (this.databaseConnection) {
+                this.databaseConnection.connection.end(/*(err: any) => err ? fail(err) : ok()*/); // todo: check if it can emit errors
+                this.databaseConnection = undefined;
             }
+
+            if (this.databaseConnectionPool) {
+                this.databaseConnectionPool.forEach(dbConnection => {
+                    if (dbConnection && dbConnection.releaseCallback) {
+                        dbConnection.releaseCallback();
+                    }
+                });
+                this.pool = undefined;
+                this.databaseConnectionPool = [];
+            }
+
             ok();
         });
     }
@@ -184,10 +226,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
         // console.log("parameters: ", parameters);
         this.logQuery(query);
         return new Promise<T>((ok, fail) => {
-            if (!this.postgresConnection)
-                return fail(new ConnectionIsNotSetError("postgres"));
-
-            this.postgresConnection.connection.query(query, parameters, (err: any, result: any) => {
+            dbConnection.connection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.logFailedQuery(query);
                     this.logQueryError(err);
@@ -200,12 +239,45 @@ export class PostgresDriver extends BaseDriver implements Driver {
     }
 
     /**
+     * Starts transaction.
+     */
+    async beginTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (dbConnection.isTransactionActive)
+            throw new Error(`Transaction already started for the given connection, commit current transaction before starting a new one.`);
+
+        await this.query(dbConnection, "START TRANSACTION");
+        dbConnection.isTransactionActive = true;
+    }
+
+    /**
+     * Commits transaction.
+     */
+    async commitTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (!dbConnection.isTransactionActive)
+            throw new Error(`Transaction is not started yet, start transaction before committing it.`);
+
+        await this.query(dbConnection, "COMMIT");
+        dbConnection.isTransactionActive = false;
+    }
+
+    /**
+     * Rollbacks transaction.
+     */
+    async rollbackTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (!dbConnection.isTransactionActive)
+            throw new Error(`Transaction is not started yet, start transaction before rolling it back.`);
+
+        await this.query(dbConnection, "ROLLBACK");
+        dbConnection.isTransactionActive = false;
+    }
+
+    /**
      * Clears all tables in the currently connected database.
      */
     clearDatabase(dbConnection: DatabaseConnection): Promise<void> {
         this.checkIfConnectionSet();
 
-        const dropTablesQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as q FROM pg_tables WHERE schemaname = 'public';`;
+        const dropTablesQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as q FROM pg_tables WHERE schemaname = 'public'`;
         return this.query<any[]>(dbConnection, dropTablesQuery)
             .then(results => Promise.all(results.map(q => this.query(dbConnection, q["q"]))))
             .then(() => {});
@@ -316,7 +388,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
     }
 
     protected checkIfConnectionSet() {
-        if (!this.postgresConnection)
+        if (!this.databaseConnection && !this.pool)
             throw new ConnectionIsNotSetError("postgres");
     }
 

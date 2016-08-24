@@ -224,7 +224,7 @@ export class Connection {
             return Promise.reject(new CannotSyncNotConnectedError(this.name));
 
         const dbConnection = await this.driver.retrieveDatabaseConnection();
-        if (forceSync)
+        if (!forceSync)
             await this.driver.beginTransaction(dbConnection);
 
         try {
@@ -238,11 +238,11 @@ export class Connection {
 
             await this.driver.releaseDatabaseConnection(dbConnection);
 
-            if (forceSync)
+            if (!forceSync)
                 await this.driver.commitTransaction(dbConnection);
 
         } catch (error) {
-            if (forceSync)
+            if (!forceSync)
                 await this.driver.rollbackTransaction(dbConnection);
 
             throw error;

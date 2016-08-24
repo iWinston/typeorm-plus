@@ -90,7 +90,6 @@ export class LazyRelationsWrapper {
                     this[resolveIndex] = true;
                 }
             },
-            enumerable: true,
             configurable: true
         });
     }

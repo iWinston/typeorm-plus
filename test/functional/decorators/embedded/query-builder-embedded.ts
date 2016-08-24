@@ -7,9 +7,9 @@ import {Counters} from "./entity/Counters";
 describe("decorators > embedded", () => {
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Counters], schemaCreate: true }).then(all => connections = all));
+    beforeEach(() => setupTestingConnections({ entities: [Post, Counters], reloadAndCreateSchema: true }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
-    after(() => closeConnections(connections));
+    afterEach(() => closeConnections(connections));
 
     describe("basic functionality", function() {
 

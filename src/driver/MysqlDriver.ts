@@ -13,12 +13,6 @@ import {DatabaseConnection} from "./DatabaseConnection";
 export class MysqlDriver extends BaseDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    readonly isResultsLowercase = false;
-    
-    // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
 
@@ -30,13 +24,16 @@ export class MysqlDriver extends BaseDriver implements Driver {
     /**
      * Connection to mysql database.
      */
-    private mysqlConnection: DatabaseConnection|undefined;
+    private databaseConnection: DatabaseConnection|undefined;
 
     /**
-     * Connection to mysql database.
+     * Mysql pool.
      */
-    private mysqlPool: any;
+    private pool: any;
 
+    /**
+     * Pool of database connections.
+     */
     private databaseConnectionPool: DatabaseConnection[] = [];
 
     // -------------------------------------------------------------------------
@@ -58,9 +55,9 @@ export class MysqlDriver extends BaseDriver implements Driver {
     }
 
     retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.mysqlPool) {
+        if (this.pool) {
             return new Promise((ok, fail) => {
-                this.mysqlPool.getConnection((err: any, connection: any) => {
+                this.pool.getConnection((err: any, connection: any) => {
                     if (err) {
                         fail(err);
                         return;
@@ -80,14 +77,14 @@ export class MysqlDriver extends BaseDriver implements Driver {
             });
         }
 
-        if (this.mysqlConnection)
-            return Promise.resolve(this.mysqlConnection);
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
 
         throw new ConnectionIsNotSetError("mysql");
     }
 
     releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
-        if (this.mysqlPool)
+        if (this.pool)
             dbConnection.connection.release();
 
         return Promise.resolve();
@@ -99,8 +96,8 @@ export class MysqlDriver extends BaseDriver implements Driver {
     get native() {
         return {
             driver: this.mysql,
-            connection: this.mysqlConnection,
-            pool: this.mysqlPool
+            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
+            pool: this.pool
         };
     }
 
@@ -108,15 +105,15 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Access to the native connection to the database.
      */
     get nativeConnection(): any {
-        return this.mysqlConnection;
+        return this.databaseConnection;
     }
 
     /**
      * Database name to which this connection is made.
      */
     get db(): string {
-        if (this.mysqlConnection && this.mysqlConnection.connection.config.database)
-            return this.mysqlConnection.connection.config.database;
+        if (this.databaseConnection && this.databaseConnection.connection.config.database)
+            return this.databaseConnection.connection.config.database;
 
         if (this.connectionOptions.database)
             return this.connectionOptions.database;
@@ -172,16 +169,16 @@ export class MysqlDriver extends BaseDriver implements Driver {
 
         if (this.connectionOptions.usePool === false) {
             return new Promise<void>((ok, fail) => {
-                this.mysqlConnection = {
+                this.databaseConnection = {
                     id: 1,
                     connection: this.mysql.createConnection(options),
                     isTransactionActive: false
                 };
-                this.mysqlConnection.connection.connect((err: any) => err ? fail(err) : ok());
+                this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
             });
 
         } else {
-            this.mysqlPool = this.mysql.createPool(options);
+            this.pool = this.mysql.createPool(options);
             return Promise.resolve();
         }
     }
@@ -194,14 +191,14 @@ export class MysqlDriver extends BaseDriver implements Driver {
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
-            if (this.mysqlPool) {
-                this.mysqlPool.end(handler);
-                this.mysqlPool = undefined;
+            if (this.pool) {
+                this.pool.end(handler);
+                this.pool = undefined;
                 this.databaseConnectionPool = [];
             }
-            if (this.mysqlConnection) {
-                this.mysqlConnection.connection.end(handler);
-                this.mysqlConnection = undefined;
+            if (this.databaseConnection) {
+                this.databaseConnection.connection.end(handler);
+                this.databaseConnection = undefined;
             }
         });
     }
@@ -307,7 +304,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // -------------------------------------------------------------------------
 
     protected checkIfConnectionSet() {
-        if (!this.mysqlConnection && !this.mysqlPool)
+        if (!this.databaseConnection && !this.pool)
             throw new ConnectionIsNotSetError("mysql");
     }
 

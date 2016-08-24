@@ -390,7 +390,7 @@ export class Repository<Entity extends ObjectLiteral> {
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.id === entityWithId.id))
             .map(entityWithId => {
                 const metadata = this.connection.entityMetadatas.findByTarget(entityWithId.entityTarget);
-                const alias = entityWithId.entityTarget.name;
+                const alias = (entityWithId.entityTarget as any).name;
                 const qb = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, dbConnection)
                     .select(alias)
                     .from(entityWithId.entityTarget, alias)

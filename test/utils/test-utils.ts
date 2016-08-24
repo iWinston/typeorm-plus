@@ -11,6 +11,8 @@ export interface TestingConnectionOptions {
     secondaryConnections?: boolean;
     schemaCreate?: boolean;
     reloadAndCreateSchema?: boolean;
+    skipMysql?: boolean;
+    skipPostgres?: boolean;
 }
 
 export function closeConnections(connections: Connection[]) {
@@ -33,6 +35,9 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
             logFailedQueryError: true
+        },
+        extra: {
+            max: 500
         }
     };
 }
@@ -75,8 +80,8 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
     };
 
-    const mysql = true;
-    const postgres = true;
+    const mysql = !options || !options.skipMysql;
+    const postgres = !options || !options.skipPostgres;
 
     const allParameters: ConnectionOptions[] = [];
     if (mysql)
