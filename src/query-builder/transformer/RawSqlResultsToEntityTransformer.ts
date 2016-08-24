@@ -47,7 +47,7 @@ export class RawSqlResultsToEntityTransformer {
         
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => {
             if (!metadata) return;
-            const columnName = this.driver.isResultsLowercase ? metadata.primaryColumn.name.toLowerCase() : metadata.primaryColumn.name;
+            const columnName = metadata.primaryColumn.name;
             return result[alias.name + "_" + columnName];
         });
         return groupedResults
@@ -81,7 +81,7 @@ export class RawSqlResultsToEntityTransformer {
 
         // get value from columns selections and put them into object
         metadata.columns.forEach(column => {
-            const columnName = this.driver.isResultsLowercase ? column.name.toLowerCase() : column.name;
+            const columnName = column.name;
             const valueInObject = rawSqlResults[0][alias.name + "_" + columnName]; // we use zero index since its grouped data
             if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual) {
                 const value = this.driver.prepareHydratedValue(valueInObject, column);
@@ -146,7 +146,7 @@ export class RawSqlResultsToEntityTransformer {
                     }
                 }
             } else if (relation.idField) {
-                const relationName = this.driver.isResultsLowercase ? relation.name.toLowerCase() : relation.name;
+                const relationName = relation.name;
                 entity[relation.idField] = rawSqlResults[0][alias.name + "_" + relationName];
             }
             

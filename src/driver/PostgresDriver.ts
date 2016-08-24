@@ -13,12 +13,6 @@ import {DatabaseConnection} from "./DatabaseConnection";
 export class PostgresDriver extends BaseDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    readonly isResultsLowercase = true;
-
-    // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
 
@@ -89,6 +83,18 @@ export class PostgresDriver extends BaseDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    escapeColumnName(columnName: string): string {
+        return "\"" + columnName + "\"";
+    }
+
+    escapeAliasName(aliasName: string): string {
+        return "\"" + aliasName + "\"";
+    }
+
+    escapeTableName(tableName: string): string {
+        return "\"" + tableName + "\"";
+    }
 
     retrieveDatabaseConnection(): Promise<DatabaseConnection> {
 
@@ -206,23 +212,40 @@ export class PostgresDriver extends BaseDriver implements Driver {
     }
 
     buildParameters(sql: string, parameters: ObjectLiteral) {
+        if (!parameters || !Object.keys(parameters).length)
+            return [];
         const builtParameters: any[] = [];
-        Object.keys(parameters).forEach((key, index) => {
-            // const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
-            sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {
-                builtParameters.push(parameters[key]);
-                return "";
-            }); // todo: make replace only in value statements, otherwise problems
-        });
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
+        sql.replace(new RegExp(keys, "g"), (key: string) => {
+            const value = parameters[key.substr(1)];
+            if (value instanceof Array) {
+                return value.map((v: any) => {
+                    builtParameters.push(v);
+                });
+            } else {
+                builtParameters.push(value);
+            }
+            return "?";
+        }); // todo: make replace only in value statements, otherwise problems
         return builtParameters;
     }
 
     replaceParameters(sql: string, parameters: ObjectLiteral) {
-        Object.keys(parameters).forEach((key, index) => {
-            // const value = parameters[key] !== null && parameters[key] !== undefined ? this.driver.escape(parameters[key]) : "NULL";
-            sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {
-                return "$" + (index + 1);
-            }); // todo: make replace only in value statements, otherwise problems
+        if (!parameters || !Object.keys(parameters).length)
+            return sql;
+        const builtParameters: any[] = [];
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
+            const value = parameters[key.substr(1)];
+            if (value instanceof Array) {
+                return value.map((v: any) => {
+                    builtParameters.push(v);
+                    return "$" + builtParameters.length;
+                });
+            } else {
+                builtParameters.push(value);
+            }
+            return "$" + builtParameters.length;
         });
         return sql;
     }
@@ -233,10 +256,10 @@ export class PostgresDriver extends BaseDriver implements Driver {
     insert(dbConnection: DatabaseConnection, tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
         this.checkIfConnectionSet();
 
-        const columns = Object.keys(keyValues).join(",");
+        const columns = Object.keys(keyValues).join("\", \"");
         const values  = Object.keys(keyValues).map((key, index) => "$" + (index + 1)).join(","); // todo: escape here
         const params  = Object.keys(keyValues).map(key => keyValues[key]);
-        let query   = `INSERT INTO ${tableName}(${columns}) VALUES (${values})`;
+        let query   = `INSERT INTO "${tableName}"("${columns}") VALUES (${values})`;
         if (idColumnName) {
             query += " RETURNING " + idColumnName;
         }
@@ -254,11 +277,11 @@ export class PostgresDriver extends BaseDriver implements Driver {
     async update(dbConnection: DatabaseConnection, tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
         this.checkIfConnectionSet();
 
-        const updateValues = this.parametrizeObjectMap(valuesMap).join(",");
+        const updateValues = this.parametrizeObjectMap(valuesMap).join(", ");
         const conditionString = this.parametrizeObjectMap(conditions, Object.keys(valuesMap).length).join(" AND ");
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const query = `UPDATE ${tableName} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         // console.log("executing update: ", query);
         await this.query(dbConnection, query, updateParams.concat(conditionParams));
     }
@@ -272,7 +295,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
         const conditionString = this.parametrizeObjectMap(conditions).join(" AND ");
         const params = Object.keys(conditions).map(key => conditions[key]);
 
-        const query = `DELETE FROM ${tableName} WHERE ${conditionString}`;
+        const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
         await this.query(dbConnection, query, params);
     }
 
@@ -287,7 +310,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
             // if (value === null || value === undefined) { // todo: I think we dont really need this
             //     return key + "=NULL";
             // } else {
-                return key + "=$" + (startIndex + index + 1);
+                return "\"" + key + "\"=$" + (startIndex + index + 1);
             // }
         });
     }

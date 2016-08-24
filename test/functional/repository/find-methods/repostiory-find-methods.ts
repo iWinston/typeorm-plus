@@ -182,7 +182,10 @@ describe("repository > find methods", () => {
             const findOptions: FindOptions = {
                 alias: "post",
                 firstResult: 1,
-                maxResults: 2
+                maxResults: 2,
+                orderBy: [{
+                    sort: "post.id"
+                }]
             };
 
             // check find method

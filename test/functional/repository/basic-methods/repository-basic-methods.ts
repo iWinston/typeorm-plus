@@ -353,12 +353,12 @@ describe("repository > basic methods", () => {
                 const blog = new Blog();
                 blog.title = "hello blog";
                 blog.text = "hello blog #" + i;
-                blog.viewCount = i * 100;
+                blog.counter = i * 100;
                 promises.push(repository.persist(blog));
             }
             await Promise.all(promises);
             // such simple query should work on all platforms, isn't it? If no - make requests specifically to platforms
-            const result = await repository.query("SELECT MAX(blog.viewCount) as max from blog blog");
+            const result = await repository.query("SELECT MAX(blog.counter) as max from blog blog");
             result[0].should.not.be.empty;
             result[0].max.should.not.be.empty;
         })));
@@ -387,7 +387,7 @@ describe("repository > basic methods", () => {
                     const blog = new Blog();
                     blog.title = "hello blog";
                     blog.text = "hello blog #" + i;
-                    blog.viewCount = i * 100;
+                    blog.counter = i * 100;
                     promises.push(repository.persist(blog));
                 }
                 await Promise.all(promises);
@@ -420,7 +420,7 @@ describe("repository > basic methods", () => {
                     const blog = new Blog();
                     blog.title = "hello blog";
                     blog.text = "hello blog #" + i;
-                    blog.viewCount = i * 100;
+                    blog.counter = i * 100;
                     promises.push(repository.persist(blog));
                 }
                 await Promise.all(promises);

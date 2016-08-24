@@ -22,6 +22,6 @@ export class Blog {
     categories: Category[];
 
     @Column()
-    viewCount: number = 0;
+    counter: number = 0;
 
 }

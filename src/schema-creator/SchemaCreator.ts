@@ -123,10 +123,10 @@ export class SchemaCreator {
     protected async updateOldColumns(table: TableMetadata, columns: ColumnMetadata[], foreignKeys: ForeignKeyMetadata[]): Promise<void> {
         const dbColumns = await this.schemaBuilder.getTableColumns(table.name);
         const updates = columns
-            .filter(column => !!column.oldColumnName && column.name.toLowerCase() !== column.oldColumnName.toLowerCase())
+            .filter(column => !!column.oldColumnName && column.name !== column.oldColumnName)
             .filter(column => dbColumns.indexOf(column.oldColumnName) !== -1)
             .map(async column => {
-                await this.dropColumnForeignKeys(table.name, column.name.toLowerCase(), foreignKeys);
+                await this.dropColumnForeignKeys(table.name, column.name, foreignKeys);
                 return this.schemaBuilder.changeColumnQuery(table.name, column.oldColumnName, column);
             });
 
@@ -139,7 +139,7 @@ export class SchemaCreator {
     protected async dropRemovedColumns(table: TableMetadata, columns: ColumnMetadata[], foreignKeys: ForeignKeyMetadata[]) {
         const dbColumns = await this.schemaBuilder.getTableColumns(table.name);
         const dropColumnQueries = dbColumns
-            .filter(dbColumn => !columns.find(column => column.name.toLowerCase() === dbColumn.toLowerCase()))
+            .filter(dbColumn => !columns.find(column => column.name === dbColumn))
             .map(async dbColumn => {
                 await this.dropColumnForeignKeys(table.name, dbColumn, foreignKeys);
                 return this.schemaBuilder.dropColumnQuery(table.name, dbColumn);
@@ -153,9 +153,8 @@ export class SchemaCreator {
      */
     private addNewColumns(table: TableMetadata, columns: ColumnMetadata[]) {
         return this.schemaBuilder.getTableColumns(table.name).then(dbColumns => {
-            dbColumns = dbColumns.map(dbColumn => dbColumn.toLowerCase());
             const newColumnQueries = columns
-                .filter(column => dbColumns.indexOf(column.name.toLowerCase()) === -1)
+                .filter(column => dbColumns.indexOf(column.name) === -1)
                 .map(column => this.schemaBuilder.addColumnQuery(table.name, column));
 
             return Promise.all(newColumnQueries);
@@ -168,12 +167,12 @@ export class SchemaCreator {
     protected async updateExistColumns(table: TableMetadata, columns: ColumnMetadata[], foreignKeys: ForeignKeyMetadata[]) {
         const changedColumns = await this.schemaBuilder.getChangedColumns(table.name, columns);
         const updateQueries = changedColumns.map(async changedColumn => {
-            const column = columns.find(column => column.name.toLowerCase() === changedColumn.columnName.toLowerCase());
+            const column = columns.find(column => column.name === changedColumn.columnName);
             if (!column)
                 throw new Error(`Column ${changedColumn.columnName} was not found in the given columns`);
 
-            await this.dropColumnForeignKeys(table.name, column.name.toLowerCase(), foreignKeys);
-            return this.schemaBuilder.changeColumnQuery(table.name, column.name.toLowerCase(), column, changedColumn.hasPrimaryKey);
+            await this.dropColumnForeignKeys(table.name, column.name, foreignKeys);
+            return this.schemaBuilder.changeColumnQuery(table.name, column.name, column, changedColumn.hasPrimaryKey);
         });
 
         return Promise.all(updateQueries);
@@ -197,19 +196,19 @@ export class SchemaCreator {
      */
     private updateUniqueKeys(table: TableMetadata, columns: ColumnMetadata[]) {
         return this.schemaBuilder.getTableUniqueKeysQuery(table.name).then(dbKeys => {
-            dbKeys = dbKeys.map(dbKey => dbKey.toLowerCase());
+            dbKeys = dbKeys.map(dbKey => dbKey);
 
             // first find metadata columns that should be unique and update them if they are not unique in db
             const addQueries = columns
                 .filter(column => column.isUnique)
-                .filter(column => dbKeys.indexOf("uk_" + column.name.toLowerCase()) === -1)
-                .map(column => this.schemaBuilder.addUniqueKey(table.name, column.name.toLowerCase(), "uk_" + column.name.toLowerCase()));
+                .filter(column => dbKeys.indexOf("uk_" + column.name) === -1)
+                .map(column => this.schemaBuilder.addUniqueKey(table.name, column.name, "uk_" + column.name));
 
             // second find columns in db that are unique, however in metadata columns they are not unique
             const dropQueries = columns
                 .filter(column => !column.isUnique)
-                .filter(column => dbKeys.indexOf("uk_" + column.name.toLowerCase()) !== -1)
-                .map(column => this.schemaBuilder.dropIndex(table.name, "uk_" + column.name.toLowerCase()));
+                .filter(column => dbKeys.indexOf("uk_" + column.name) !== -1)
+                .map(column => this.schemaBuilder.dropIndex(table.name, "uk_" + column.name));
 
             return Promise.all([addQueries, dropQueries]);
         });

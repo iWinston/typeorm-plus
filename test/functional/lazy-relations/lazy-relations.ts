@@ -48,9 +48,9 @@ describe("lazy-relations", () => {
 
         const categories = await post.categories;
         categories.length.should.be.equal(3);
-        categories.should.contain({ id: 1, name: "kids" });
-        categories.should.contain({ id: 2, name: "people" });
-        categories.should.contain({ id: 3, name: "animals" });
+        categories.should.contain(savedCategory1);
+        categories.should.contain(savedCategory2);
+        categories.should.contain(savedCategory3);
     })));
 
 
@@ -88,17 +88,20 @@ describe("lazy-relations", () => {
 
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);
-        categories.should.be.eql([
-            { id: 1, name: "kids" },
-            { id: 2, name: "people" },
-            { id: 3, name: "animals" }
-        ]);
+        categories.should.contain(savedCategory1);
+        categories.should.contain(savedCategory2);
+        categories.should.contain(savedCategory3);
 
         const category = await categoryRepository.findOneById(1);
         category.name.should.be.equal("kids");
-        
+
         const twoSidePosts = await category.twoSidePosts;
-        twoSidePosts.should.contain({ id: 1, title: "Hello post", text: "This is post about post", viewCount: 0 });
+
+        const likePost = new Post();
+        likePost.id = 1;
+        likePost.title = "Hello post";
+        likePost.text = "This is post about post";
+        twoSidePosts.should.contain(likePost);
     })));
 
     it("should persist and hydrate successfully on a one-to-one relation with inverse side loaded from entity schema", () => Promise.all(connections.map(async connection => {

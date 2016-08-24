@@ -30,8 +30,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }*/
     
     getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}'` +
-            ` AND TABLE_NAME = '${tableName}'`;
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
         return this.query<any[]>(sql).then(results => {
             // console.log("changed columns: ", results);
 
@@ -54,7 +53,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
                     dbData.is_nullable !== isNullable; // ||
                     // hasDbColumnAutoIncrement !== column.isGenerated ||
                     // hasDbColumnPrimaryIndex !== column.isPrimary;
-                
+
             }).map(column => {
                 // const dbData = results.find(result => result.column_name === column.name);
                 // const hasDbColumnPrimaryIndex = dbData.column_key.indexOf("PRI") !== -1;
@@ -69,19 +68,19 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     addColumnQuery(tableName: string, column: ColumnMetadata): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} ADD ${this.buildCreateColumnSql(column, false)}`;
+        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column, false)}`;
         return this.query(sql).then(() => {});
     }
 
     dropColumnQuery(tableName: string, columnName: string): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} DROP ${columnName}`;
+        const sql = `ALTER TABLE "${tableName}" DROP "${columnName}"`;
         return this.query(sql).then(() => {});
     }
 
     addForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void> {
-        let sql = `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT ${foreignKey.name} ` +
-            `FOREIGN KEY (${foreignKey.columnNames.join(", ")}) ` +
-            `REFERENCES ${foreignKey.referencedTable.name}(${foreignKey.referencedColumnNames.join(",")})`;
+        let sql = `ALTER TABLE "${foreignKey.tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
+            `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
+            `REFERENCES "${foreignKey.referencedTable.name}"("${foreignKey.referencedColumnNames.join("\", \"")}")`;
         if (foreignKey.onDelete)
             sql += " ON DELETE " + foreignKey.onDelete;
         return this.query(sql).then(() => {});
@@ -96,46 +95,28 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
             foreignKeyName = tableNameOrForeignKey.name;
         }
 
-        const sql = `ALTER TABLE ${tableName} DROP FOREIGN KEY \`${foreignKeyName}\``;
+        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKeyName}"`;
         return this.query(sql).then(() => {});
     }
 
     getTableForeignQuery(tableName: string): Promise<string[]> {
         const sql = `SELECT tc.constraint_name FROM information_schema.table_constraints AS tc ` +
-        `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.driver.db}' AND tc.table_name='${tableName}';`;
+        `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.driver.db}' AND tc.table_name='${tableName}'`;
         // const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.driver.db}' `
         //     + `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE='FOREIGN KEY'`;
         return this.query<any[]>(sql).then(results => results.map(result => result.constraint_name));
     }
 
     getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.driver.db}' ` +
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG='${this.driver.db}' ` +
             `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
         return this.query<any[]>(sql).then(results => results.map(result => result.CONSTRAINT_NAME));
     }
 
     getTableIndicesQuery(tableName: string): Promise<{ key: string, sequence: number, column: string }[]> {
-        const sql = `select
-    t.relname as table_name,
-    i.relname as index_name,
-    a.attname as column_name,
-    ix.indisprimary as is_primary
-from
-    pg_class t,
-    pg_class i,
-    pg_index ix,
-    pg_attribute a
-where
-    t.oid = ix.indrelid
-    and i.oid = ix.indexrelid
-    and a.attrelid = t.oid
-    and a.attnum = ANY(ix.indkey)
-    and t.relkind = 'r'
-    and t.relname = '${tableName}'
-order by
-    t.relname,
-    i.relname;
-`;
+        const sql = `select t.relname as table_name, i.relname as index_name, a.attname as column_name, ix.indisprimary as is_primary from pg_class t, pg_class i, pg_index ix, pg_attribute a 
+where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}'
+order by t.relname, i.relname`;
         return this.query<any[]>(sql).then(results => {
             // exclude foreign keys
             return this.getTableForeignQuery(tableName).then(foreignKeys => {
@@ -159,20 +140,20 @@ order by
 
     async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
         if (isGenerated) {
-            await this.query(`ALTER SEQUENCE foo_id_seq OWNED BY NONE`);
+            await this.query(`ALTER SEQUENCE foo_id_seq OWNED BY NONE`); // todo: what is it?
         }
 
-        const sql = `ALTER TABLE ${tableName} DROP CONSTRAINT ${indexName}`;
+        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`;
         await this.query(sql);
     }
 
     createIndex(tableName: string, index: IndexMetadata): Promise<void> {
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON ${tableName}(${index.columns.join(", ")})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"("${index.columns.join("\", \"")}")`;
         return this.query(sql).then(() => {});
     }
 
     addUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${keyName} UNIQUE (${columnName})`;
+        const sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${keyName}" UNIQUE ("${columnName}")`;
         return this.query(sql).then(() => {});
     }
 
@@ -183,7 +164,7 @@ order by
     }
 
     changeColumnQuery(tableName: string, columnName: string, newColumn: ColumnMetadata, skipPrimary: boolean = false): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} CHANGE ${columnName} ${this.buildCreateColumnSql(newColumn, skipPrimary)}`;
+        const sql = `ALTER TABLE "${tableName}" CHANGE "${columnName}" ${this.buildCreateColumnSql(newColumn, skipPrimary)}`;
         return this.query(sql).then(() => {});
     }
 
@@ -202,7 +183,7 @@ order by
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        let c = column.name;
+        let c = "\"" + column.name + "\"";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " SERIAL";
         if (!column.isGenerated)

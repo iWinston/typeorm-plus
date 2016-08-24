@@ -43,6 +43,20 @@ export class MysqlDriver extends BaseDriver implements Driver {
     // Getter Methods
     // -------------------------------------------------------------------------
 
+    escapeColumnName(columnName: string): string {
+        return columnName;
+    }
+
+    escapeAliasName(aliasName: string): string {
+        return aliasName;
+        // return "\"" + aliasName + "\"";
+    }
+
+    escapeTableName(tableName: string): string {
+        return tableName;
+        // return "\"" + aliasName + "\"";
+    }
+
     retrieveDatabaseConnection(): Promise<DatabaseConnection> {
         if (this.mysqlPool) {
             return new Promise((ok, fail) => {
@@ -269,25 +283,23 @@ export class MysqlDriver extends BaseDriver implements Driver {
     }
 
     buildParameters(sql: string, parameters: ObjectLiteral) {
+        if (!parameters || !Object.keys(parameters).length)
+            return [];
         const builtParameters: any[] = [];
-        Object.keys(parameters).forEach((key, index) => {
-            // const value = this.parameters[key] !== null && this.parameters[key] !== undefined ? this.driver.escape(this.parameters[key]) : "NULL";
-            sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {
-                builtParameters.push(parameters[key]);
-                return "?";
-            }); // todo: make replace only in value statements, otherwise problems
-        });
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
+        sql.replace(new RegExp(keys, "g"), (key: string) => {
+            const value = parameters[key.substr(1)];
+            builtParameters.push(value);
+            return "?";
+        }); // todo: make replace only in value statements, otherwise problems
         return builtParameters;
     }
 
     replaceParameters(sql: string, parameters: ObjectLiteral) {
-        Object.keys(parameters).forEach((key, index) => {
-            // const value = parameters[key] !== null && parameters[key] !== undefined ? this.driver.escape(parameters[key]) : "NULL";
-            sql = sql.replace(new RegExp(":" + key, "g"), (str: string) => {
-                return "?";
-            }); // todo: make replace only in value statements, otherwise problems
-        });
-        return sql;
+        if (!parameters || !Object.keys(parameters).length)
+            return sql;
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
+        return sql.replace(new RegExp(keys, "g"), "?");
     }
 
     // -------------------------------------------------------------------------

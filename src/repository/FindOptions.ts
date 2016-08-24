@@ -104,7 +104,7 @@ export interface FindOptions {
     /**
      * Array of ORDER BY expressions.
      */
-    orderBy?: { sort: string, order: "ASC"|"DESC" }[];
+    orderBy?: { sort: string, order?: "ASC"|"DESC" }[];
 
     /**
      * Array of column to GROUP BY.

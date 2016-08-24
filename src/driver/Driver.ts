@@ -9,6 +9,12 @@ import {DatabaseConnection} from "./DatabaseConnection";
  */
 export interface Driver {
 
+    readonly keysEscapingCharacter?: string;
+
+    escapeColumnName(columnName: string): string;
+    escapeAliasName(aliasName: string): string;
+    escapeTableName(tableName: string): string;
+
     /**
      * Retrieves a new database connection.
      * If pooling is enabled then connection from the pool will be retrieved.
@@ -40,11 +46,6 @@ export interface Driver {
      * Database name to which this connection is made.
      */
     readonly db: string;
-
-    /**
-     * Indicates if returned results are in lowercase.
-     */
-    readonly isResultsLowercase: boolean;
     
     /**
      * Creates a schema builder which can be used to build database/table schemas.

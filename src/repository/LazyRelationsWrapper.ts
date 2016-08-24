@@ -89,7 +89,9 @@ export class LazyRelationsWrapper {
                     this[index] = promise;
                     this[resolveIndex] = true;
                 }
-            }
+            },
+            enumerable: true,
+            configurable: true
         });
     }
     
