@@ -6,6 +6,7 @@ import {TableMetadata} from "../metadata/TableMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {DatabaseConnection} from "../driver/DatabaseConnection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {DataTypeNotSupportedByDriverError} from "./error/DataTypeNotSupportedByDriverError";
 
 /**
  * @internal
@@ -32,7 +33,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
 
     checkIfTableExist(tableName: string): Promise<boolean> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
-        return this.query<any[]>(sql).then(results => !!(results && results.length));
+        return this.query(sql).then(results => !!(results && results.length));
     }
 
     addColumnQuery(tableName: string, column: ColumnMetadata): Promise<void> {
@@ -72,20 +73,20 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
         `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.driver.db}' AND tc.table_name='${tableName}'`;
         // const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.driver.db}' `
         //     + `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE='FOREIGN KEY'`;
-        return this.query<any[]>(sql).then(results => results.map(result => result.constraint_name));
+        return this.query(sql).then((results: any[]) => results.map(result => result.constraint_name));
     }
 
     getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG='${this.driver.db}' ` +
             `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        return this.query<any[]>(sql).then(results => results.map(result => result.CONSTRAINT_NAME));
+        return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
     }
 
     getTableIndicesQuery(tableName: string): Promise<{ key: string, sequence: number, column: string }[]> {
         const sql = `select t.relname as table_name, i.relname as index_name, a.attname as column_name, ix.indisprimary as is_primary from pg_class t, pg_class i, pg_index ix, pg_attribute a 
 where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}'
 order by t.relname, i.relname`;
-        return this.query<any[]>(sql).then(results => {
+        return this.query(sql).then((results: any[]) => {
             // exclude foreign keys
             return this.getTableForeignQuery(tableName).then(foreignKeys => {
 
@@ -103,7 +104,7 @@ order by t.relname, i.relname`;
     getPrimaryConstraintName(tableName: string): Promise<string> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.driver.db}'`
             + ` AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
-        return this.query<any[]>(sql).then(results => results && results.length ? results[0].CONSTRAINT_NAME : undefined);
+        return this.query(sql).then(results => results && results.length ? results[0].CONSTRAINT_NAME : undefined);
     }
 
     async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
@@ -127,16 +128,16 @@ order by t.relname, i.relname`;
 
     async getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
-        const results = await this.query<any[]>(sql);
+        const results: any[] = await this.query(sql);
         const promises = results.map(async dbColumn => {
             const columnType = dbColumn.data_type.toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
-            const checkPrimaryResults = await this.query<any[]>(`select t.relname as table_name, i.relname as index_name, a.attname 
+            const checkPrimaryResults = await this.query(`select t.relname as table_name, i.relname as index_name, a.attname 
 from pg_class t, pg_class i, pg_index ix, pg_attribute a 
 where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}' and a.attname = '${dbColumn["column_name"]}'
 group by t.relname, i.relname, a.attname
 order by t.relname, i.relname`);
             const isGenerated = dbColumn["column_default"] === `nextval('${tableName}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${tableName}_id_seq"'::regclass)`;
-            // const commentResults = await this.query<any[]>(`SELECT cols.column_name, (SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int) FROM pg_catalog.pg_class c WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name) as column_comment
+            // const commentResults = await this.query(`SELECT cols.column_name, (SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int) FROM pg_catalog.pg_class c WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name) as column_comment
 // FROM information_schema.columns cols WHERE cols.table_catalog = '${this.driver.db}' AND cols.table_name = '${tableName}' and cols.column_name = '${dbColumn["column_name"]}'`);
             // todo: comments has issues with case sensitive, need to find solution
 
@@ -186,16 +187,16 @@ order by t.relname, i.relname`);
         // update sequence generation
         if (oldColumn.generated !== newColumn.isGenerated) {
             if (!oldColumn.generated) {
-                await this.query<any[]>(`CREATE SEQUENCE "${tableName}_id_seq" OWNED BY ${tableName}.${oldColumn.name}`);
-                await this.query<any[]>(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableName}_id_seq"')`);
+                await this.query(`CREATE SEQUENCE "${tableName}_id_seq" OWNED BY ${tableName}.${oldColumn.name}`);
+                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableName}_id_seq"')`);
             } else {
-                await this.query<any[]>(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);
-                await this.query<any[]>(`DROP SEQUENCE "${tableName}_id_seq"`);
+                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);
+                await this.query(`DROP SEQUENCE "${tableName}_id_seq"`);
             }
         }
 
         if (oldColumn.comment !== newColumn.comment) {
-            await this.query<any[]>(`COMMENT ON COLUMN "${tableName}"."${oldColumn.name}" is '${newColumn.comment}'`);
+            await this.query(`COMMENT ON COLUMN "${tableName}"."${oldColumn.name}" is '${newColumn.comment}'`);
         }
 
     }
@@ -210,8 +211,8 @@ order by t.relname, i.relname`);
     // Private Methods
     // -------------------------------------------------------------------------
     
-    private query<T>(sql: string) {
-        return this.driver.query<T>(this.dbConnection, sql);
+    private query(sql: string) {
+        return this.driver.query(this.dbConnection, sql);
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
@@ -231,17 +232,7 @@ order by t.relname, i.relname`);
     }
 
     private normalizeType(column: ColumnMetadata) {
-
-        let realType: string = "";
-        if (typeof column.type === "string") {
-            realType = column.type.toLowerCase();
-
-            // todo: remove casting to any after upgrade to typescript 2
-        } else if (typeof column.type === "object" && (<any>column.type).name && typeof (<any>column.type).name === "string") {
-            realType = (<any>column.type).toLowerCase();
-        }
-
-        switch (realType) {
+        switch (column.normalizedDataType) {
             case "string":
                 return "character varying(" + (column.length ? column.length : 255) + ")";
             case "text":
@@ -289,12 +280,12 @@ order by t.relname, i.relname`);
                     return "timestamp without time zone";
                 }
             case "json":
-                return "text";
+                return "json";
             case "simple_array":
                 return column.length ? "character varying(" + column.length + ")" : "text";
         }
 
-        throw new Error("Specified type (" + column.type + ") is not supported by current driver.");
+        throw new DataTypeNotSupportedByDriverError(column.type, "Postgres");
     }
     
 }

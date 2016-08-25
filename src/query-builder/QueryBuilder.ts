@@ -478,7 +478,7 @@ export class QueryBuilder<Entity> {
                     const queryWithIds = this.clone({ dbConnection: dbConnection })
                         .andWhere(mainAliasName + "." + metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids });
 
-                    return this.driver.query<any[]>(dbConnection as DatabaseConnection, queryWithIds.getSql(), queryWithIds.getParameters());
+                    return this.driver.query(dbConnection as DatabaseConnection, queryWithIds.getSql(), queryWithIds.getParameters());
                 })
                 .then(results => {
                     return this.rawResultsToEntities(results);
@@ -499,7 +499,7 @@ export class QueryBuilder<Entity> {
 
         } else {
 
-            const results = await this.driver.query<any[]>(dbConnection, this.getSql(), this.getParameters())
+            const results = await this.driver.query(dbConnection, this.getSql(), this.getParameters())
                 .then(results => {
                     scalarResults = results;
                     return this.rawResultsToEntities(results);
@@ -666,7 +666,7 @@ export class QueryBuilder<Entity> {
         const countQuery = this.clone({ dbConnection: dbConnection, skipOrderBys: true })
             .select(`COUNT(DISTINCT(${this.driver.escapeAliasName(mainAlias)}.${this.driver.escapeColumnName(metadata.primaryColumn.name)})) as cnt`);
 
-        const results = await this.driver.query<any[]>(dbConnection, countQuery.getSql(), countQuery.getParameters());
+        const results = await this.driver.query(dbConnection, countQuery.getSql(), countQuery.getParameters());
         if (ownDatabaseConnection) {
             await this.driver.releaseDatabaseConnection(dbConnection);
         }

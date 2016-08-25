@@ -68,6 +68,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
         if (this.connectionOptions.database)
             return this.connectionOptions.database;
 
+        // todo: need to parse connection url and extract a db name from there
         throw new Error("Cannot get the database name. Since database name is not explicitly given in configuration " +
             "(maybe connection url is used?), database name cannot be retrieved until connection is made.");
     }
@@ -187,7 +188,8 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Closes connection with database.
      */
     disconnect(): Promise<void> {
-        this.checkIfConnectionSet();
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
 
         return new Promise<void>((ok, fail) => {
             if (this.databaseConnection) {
@@ -219,13 +221,14 @@ export class PostgresDriver extends BaseDriver implements Driver {
     /**
      * Executes a given SQL query.
      */
-    query<T>(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<T> {
-        this.checkIfConnectionSet();
+    query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
 
         // console.log("query: ", query);
         // console.log("parameters: ", parameters);
         this.logQuery(query);
-        return new Promise<T>((ok, fail) => {
+        return new Promise<any[]>((ok, fail) => {
             dbConnection.connection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.logFailedQuery(query);
@@ -275,11 +278,12 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Clears all tables in the currently connected database.
      */
     clearDatabase(dbConnection: DatabaseConnection): Promise<void> {
-        this.checkIfConnectionSet();
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
 
         const dropTablesQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as q FROM pg_tables WHERE schemaname = 'public'`;
-        return this.query<any[]>(dbConnection, dropTablesQuery)
-            .then(results => Promise.all(results.map(q => this.query(dbConnection, q["q"]))))
+        return this.query(dbConnection, dropTablesQuery)
+            .then((results: any[]) => Promise.all(results.map(q => this.query(dbConnection, q["q"]))))
             .then(() => {});
     }
 
@@ -326,7 +330,8 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Insert a new row into given table.
      */
     insert(dbConnection: DatabaseConnection, tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
-        this.checkIfConnectionSet();
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
 
         const columns = Object.keys(keyValues).join("\", \"");
         const values  = Object.keys(keyValues).map((key, index) => "$" + (index + 1)).join(","); // todo: escape here
@@ -335,7 +340,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
         if (idColumnName) {
             query += " RETURNING " + idColumnName;
         }
-        return this.query<any>(dbConnection, query, params).then(result => {
+        return this.query(dbConnection, query, params).then(result => {
             if (idColumnName)
                 return result[0][idColumnName];
 
@@ -347,10 +352,11 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Updates rows that match given conditions in the given table.
      */
     async update(dbConnection: DatabaseConnection, tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        this.checkIfConnectionSet();
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
 
-        const updateValues = this.parametrizeObjectMap(valuesMap).join(", ");
-        const conditionString = this.parametrizeObjectMap(conditions, Object.keys(valuesMap).length).join(" AND ");
+        const updateValues = this.parametrize(valuesMap).join(", ");
+        const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
@@ -362,34 +368,41 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Deletes from the given table by a given conditions.
      */
     async delete(dbConnection: DatabaseConnection, tableName: string, conditions: ObjectLiteral): Promise<void> {
-        this.checkIfConnectionSet();
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
 
-        const conditionString = this.parametrizeObjectMap(conditions).join(" AND ");
+        const conditionString = this.parametrize(conditions).join(" AND ");
         const params = Object.keys(conditions).map(key => conditions[key]);
 
         const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
         await this.query(dbConnection, query, params);
     }
 
+    /**
+     * Inserts rows into closure table.
+     */
+    async insertIntoClosureTable(dbConnection: DatabaseConnection, tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+        let sql = "";
+        if (hasLevel) {
+            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+        } else {
+            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+        }
+        await this.query(dbConnection, sql);
+        const results: ObjectLiteral[] = await this.query(dbConnection, `SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
+        return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+    }
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected parametrizeObjectMap(objectMap: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectMap).map((key, index) => {
-            const value = (objectMap as any)[key];
-            // if (value === null || value === undefined) { // todo: I think we dont really need this
-            //     return key + "=NULL";
-            // } else {
-                return "\"" + key + "\"=$" + (startIndex + index + 1);
-            // }
-        });
-    }
-
-    protected checkIfConnectionSet() {
-        if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("postgres");
+    protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
+        return Object.keys(objectLiteral).map((key, index) => this.escapeColumnName(key) + "=$" + (startIndex + index + 1));
     }
 
 }

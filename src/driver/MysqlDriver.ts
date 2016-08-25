@@ -102,22 +102,13 @@ export class MysqlDriver extends BaseDriver implements Driver {
     }
 
     /**
-     * Access to the native connection to the database.
-     */
-    get nativeConnection(): any {
-        return this.databaseConnection;
-    }
-
-    /**
      * Database name to which this connection is made.
      */
     get db(): string {
-        if (this.databaseConnection && this.databaseConnection.connection.config.database)
-            return this.databaseConnection.connection.config.database;
-
         if (this.connectionOptions.database)
             return this.connectionOptions.database;
 
+        // todo: need to parse connection url and extract a db name from there
         throw new Error("Cannot get the database name. Since database name is not explicitly given in configuration " +
             "(maybe connection url is used?), database name cannot be retrieved until connection is made.");
     }
@@ -187,7 +178,8 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Closes connection with database.
      */
     disconnect(): Promise<void> {
-        this.checkIfConnectionSet();
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
@@ -204,17 +196,12 @@ export class MysqlDriver extends BaseDriver implements Driver {
     }
 
     /**
-     * Escapes given value.
-     */
-    escape(dbConnection: DatabaseConnection, value: any): any {
-        return dbConnection.connection.escape(value);
-    }
-
-    /**
      * Executes a given SQL query.
      */
-    query<T>(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<T> {
-        this.checkIfConnectionSet();
+    query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
+
         this.logQuery(query);
         return new Promise((ok, fail) => dbConnection.connection.query(query, parameters, (err: any, result: any) => {
             if (err) {
@@ -222,7 +209,6 @@ export class MysqlDriver extends BaseDriver implements Driver {
                 this.logQueryError(err);
                 fail(err);
             } else {
-                // console.log(`OK [${dbConnection.id}]: `, query);
                 ok(result);
             }
         }));
@@ -265,18 +251,17 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Clears all tables in the currently connected database.
      */
     async clearDatabase(dbConnection: DatabaseConnection): Promise<void> {
-        this.checkIfConnectionSet();
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
 
         const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS q FROM ` +
-            `information_schema.tables WHERE table_schema = '${this.db}';`;
+        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.db}'`;
         const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
-        return this.query(dbConnection, disableForeignKeysCheckQuery)
-            .then(() => this.query<any[]>(dbConnection, dropTablesQuery))
-            .then(results => Promise.all(results.map(q => this.query(dbConnection, q["q"]))))
-            .then(() => this.query(dbConnection, enableForeignKeysCheckQuery))
-            .then(() => {});
+        await this.query(dbConnection, disableForeignKeysCheckQuery);
+        const dropQueries: ObjectLiteral[] = await this.query(dbConnection, dropTablesQuery);
+        await Promise.all(dropQueries.map(query => this.query(dbConnection, query["query"])));
+        await this.query(dbConnection, enableForeignKeysCheckQuery);
     }
 
     buildParameters(sql: string, parameters: ObjectLiteral) {
@@ -295,17 +280,84 @@ export class MysqlDriver extends BaseDriver implements Driver {
     replaceParameters(sql: string, parameters: ObjectLiteral) {
         if (!parameters || !Object.keys(parameters).length)
             return sql;
+
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
         return sql.replace(new RegExp(keys, "g"), "?");
+    }
+
+    /**
+     * Insert a new row with given values into given table.
+     */
+    async insert(dbConnection: DatabaseConnection, tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
+
+        const keys = Object.keys(keyValues);
+        const columns = keys.map(key => this.escapeColumnName(key)).join(", ");
+        const values = keys.map(key => "?").join(",");
+        const parameters = keys.map(key => keyValues[key]);
+        const sql = `INSERT INTO ${this.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
+        const result = await this.query(dbConnection, sql, parameters);
+        return result.insertId;
+    }
+
+    /**
+     * Updates rows that match given conditions in the given table.
+     */
+    async update(dbConnection: DatabaseConnection, tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
+
+        const updateValues = this.parametrize(valuesMap).join(", ");
+        const conditionString = this.parametrize(conditions).join(" AND ");
+        const sql = `UPDATE ${this.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
+        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
+        const allParameters = updateParams.concat(conditionParams);
+        await this.query(dbConnection, sql, allParameters);
+    }
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(dbConnection: DatabaseConnection, tableName: string, conditions: ObjectLiteral): Promise<void> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
+
+        const conditionString = this.parametrize(conditions).join(" AND ");
+        const sql = `DELETE FROM ${this.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const parameters = Object.keys(conditions).map(key => conditions[key]);
+        await this.query(dbConnection, sql, parameters);
+    }
+
+    /**
+     * Inserts rows into the closure table.
+     */
+    async insertIntoClosureTable(dbConnection: DatabaseConnection, tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
+
+        let sql = "";
+        if (hasLevel) {
+            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                  `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                  `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+        } else {
+            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant) ` +
+                  `SELECT ancestor, ${newEntityId} FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                  `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+        }
+        await this.query(dbConnection, sql);
+        const results: ObjectLiteral[] = await this.query(dbConnection, `SELECT MAX(level) as level FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
+        return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected checkIfConnectionSet() {
-        if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("mysql");
+    protected parametrize(objectLiteral: ObjectLiteral): string[] {
+        return Object.keys(objectLiteral).map(key => this.escapeColumnName(key) + "=?");
     }
 
 }

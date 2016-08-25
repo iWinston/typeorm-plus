@@ -33,11 +33,6 @@ export interface Driver {
     readonly native: any;
 
     /**
-     * Access to the connection of the native interface of the database.
-     */
-    readonly nativeConnection: any;
-
-    /**
      * Connection options used in this driver.
      */
     connectionOptions: DriverOptions;
@@ -65,7 +60,7 @@ export interface Driver {
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query<T>(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<T>;
+    query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any>;
 
     /**
      * Removes all tables from the currently connected database.
@@ -121,11 +116,6 @@ export interface Driver {
      * Prepares given value to a value to be hydrated, based on its column type and metadata.
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any;
-
-    /**
-     * Escapes given value.
-     */
-    escape(dbConnection: DatabaseConnection, value: any): any;
 
     /**
      * Inserts new values into closure table.
