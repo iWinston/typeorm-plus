@@ -9,7 +9,7 @@ export interface DatabaseColumnProperties {
     nullable: boolean;
     generated: boolean;
     hasPrimaryKey: boolean;
-    comment: string;
+    comment: string|undefined;
 }
 
 /**

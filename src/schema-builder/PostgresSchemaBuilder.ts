@@ -138,6 +138,7 @@ order by t.relname, i.relname`);
             const isGenerated = dbColumn["column_default"] === `nextval('${tableName}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${tableName}_id_seq"'::regclass)`;
             // const commentResults = await this.query<any[]>(`SELECT cols.column_name, (SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int) FROM pg_catalog.pg_class c WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name) as column_comment
 // FROM information_schema.columns cols WHERE cols.table_catalog = '${this.driver.db}' AND cols.table_name = '${tableName}' and cols.column_name = '${dbColumn["column_name"]}'`);
+            // todo: comments has issues with case sensitive, need to find solution
 
             return {
                 name: dbColumn["column_name"],
