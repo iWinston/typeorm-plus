@@ -664,7 +664,7 @@ export class QueryBuilder<Entity> {
         const mainAlias = this.aliasMap.mainAlias.name;
         const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
         const countQuery = this.clone({ dbConnection: dbConnection, skipOrderBys: true })
-            .select(`COUNT(DISTINCT(${mainAlias}.${metadata.primaryColumn.name})) as cnt`);
+            .select(`COUNT(DISTINCT(${this.driver.escapeAliasName(mainAlias)}.${this.driver.escapeColumnName(metadata.primaryColumn.name)})) as cnt`);
 
         const results = await this.driver.query<any[]>(dbConnection, countQuery.getSql(), countQuery.getParameters());
         if (ownDatabaseConnection) {

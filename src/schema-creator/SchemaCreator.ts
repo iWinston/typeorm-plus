@@ -124,10 +124,12 @@ export class SchemaCreator {
         const dbColumns = await this.schemaBuilder.getTableColumns(table.name);
         const updates = columns
             .filter(column => !!column.oldColumnName && column.name !== column.oldColumnName)
-            .filter(column => dbColumns.indexOf(column.oldColumnName) !== -1)
             .map(async column => {
-                await this.dropColumnForeignKeys(table.name, column.name, foreignKeys);
-                return this.schemaBuilder.changeColumnQuery(table.name, column.oldColumnName, column);
+                const dbColumn = dbColumns.find(dbColumn => dbColumn.name === column.oldColumnName);
+                if (dbColumn) {
+                    await this.dropColumnForeignKeys(table.name, column.name, foreignKeys);
+                    return this.schemaBuilder.renameColumnQuery(table.name, dbColumn, column);
+                }
             });
 
         await Promise.all(updates);
@@ -139,10 +141,10 @@ export class SchemaCreator {
     protected async dropRemovedColumns(table: TableMetadata, columns: ColumnMetadata[], foreignKeys: ForeignKeyMetadata[]) {
         const dbColumns = await this.schemaBuilder.getTableColumns(table.name);
         const dropColumnQueries = dbColumns
-            .filter(dbColumn => !columns.find(column => column.name === dbColumn))
+            .filter(dbColumn => !columns.find(column => column.name === dbColumn.name))
             .map(async dbColumn => {
-                await this.dropColumnForeignKeys(table.name, dbColumn, foreignKeys);
-                return this.schemaBuilder.dropColumnQuery(table.name, dbColumn);
+                await this.dropColumnForeignKeys(table.name, dbColumn.name, foreignKeys);
+                return this.schemaBuilder.dropColumnQuery(table.name, dbColumn.name);
             });
 
         return Promise.all(dropColumnQueries);
@@ -154,8 +156,8 @@ export class SchemaCreator {
     private addNewColumns(table: TableMetadata, columns: ColumnMetadata[]) {
         return this.schemaBuilder.getTableColumns(table.name).then(dbColumns => {
             const newColumnQueries = columns
-                .filter(column => dbColumns.indexOf(column.name) === -1)
-                .map(column => this.schemaBuilder.addColumnQuery(table.name, column));
+                .filter(column => !dbColumns.find(dbColumn => dbColumn.name === column.name))
+                .map(column =>  this.schemaBuilder.addColumnQuery(table.name, column));
 
             return Promise.all(newColumnQueries);
         });
@@ -167,12 +169,12 @@ export class SchemaCreator {
     protected async updateExistColumns(table: TableMetadata, columns: ColumnMetadata[], foreignKeys: ForeignKeyMetadata[]) {
         const changedColumns = await this.schemaBuilder.getChangedColumns(table.name, columns);
         const updateQueries = changedColumns.map(async changedColumn => {
-            const column = columns.find(column => column.name === changedColumn.columnName);
+            const column = columns.find(column => column.name === changedColumn.name);
             if (!column)
-                throw new Error(`Column ${changedColumn.columnName} was not found in the given columns`);
+                throw new Error(`Column ${changedColumn.name} was not found in the given columns`);
 
             await this.dropColumnForeignKeys(table.name, column.name, foreignKeys);
-            return this.schemaBuilder.changeColumnQuery(table.name, column.name, column, changedColumn.hasPrimaryKey);
+            return this.schemaBuilder.changeColumnQuery(table.name, changedColumn, column);
         });
 
         return Promise.all(updateQueries);

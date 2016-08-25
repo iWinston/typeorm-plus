@@ -1,4 +1,4 @@
-import {SchemaBuilder} from "./SchemaBuilder";
+import {SchemaBuilder, DatabaseColumnProperties} from "./SchemaBuilder";
 import {PostgresDriver} from "../driver/PostgresDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
@@ -29,7 +29,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
         };
     }*/
     
-    getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]> {
+    getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
         return this.query<any[]>(sql).then(results => {
             // console.log("changed columns: ", results);
@@ -55,9 +55,20 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
                     // hasDbColumnPrimaryIndex !== column.isPrimary;
 
             }).map(column => {
-                // const dbData = results.find(result => result.column_name === column.name);
+                const dbData = results.find(result => result.column_name === column.name);
                 // const hasDbColumnPrimaryIndex = dbData.column_key.indexOf("PRI") !== -1;
-                return { columnName: column.name/*, hasPrimaryKey: hasDbColumnPrimaryIndex*/ };
+
+                let columnType = dbData.data_type.toLowerCase(); // todo: can't we use column_type ??
+                if (dbData.character_maximum_length) {
+                    columnType += "(" + dbData.character_maximum_length + ")";
+                }
+
+                return {
+                    name: dbData["column_name"],
+                    type: columnType,
+                    nullable: dbData["is_nullable"] === "YES",
+                    hasPrimaryKey: false, /*, hasPrimaryKey: hasDbColumnPrimaryIndex*/
+                };
             });
         });
     }
@@ -157,14 +168,46 @@ order by t.relname, i.relname`;
         return this.query(sql).then(() => {});
     }
 
-    getTableColumns(tableName: string): Promise<string[]> {
-        const sql = `SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}'` +
-            ` AND TABLE_NAME = '${tableName}'`;
-        return this.query<any[]>(sql).then(results => results.map(result => result.column_name));
+    getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
+        return this.query<any[]>(sql).then(results => {
+            return results.map(dbColumn => {
+                let columnType = dbColumn.data_type.toLowerCase(); // todo: can't we use column_type ??
+                if (dbColumn.character_maximum_length) {
+                    columnType += "(" + dbColumn.character_maximum_length + ")";
+                }
+
+                return {
+                    name: dbColumn["column_name"],
+                    type: columnType,
+                    nullable: dbColumn["is_nullable"] === "YES",
+                    hasPrimaryKey: false, /*, hasPrimaryKey: hasDbColumnPrimaryIndex*/
+                };
+            });
+        });
     }
 
-    changeColumnQuery(tableName: string, columnName: string, newColumn: ColumnMetadata, skipPrimary: boolean = false): Promise<void> {
-        const sql = `ALTER TABLE "${tableName}" CHANGE "${columnName}" ${this.buildCreateColumnSql(newColumn, skipPrimary)}`;
+    renameColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE ${tableName} RENAME ${oldColumn.name} TO ${newColumn.name}`;
+        return this.query(sql).then(() => {});
+    }
+
+    changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+        const newType = this.normalizeType(newColumn);
+        let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
+        if (oldColumn.type !== newType) {
+            sql += ` TYPE ${newType}`;
+        }
+        if (oldColumn.nullable !== newColumn.isNullable) {
+            if (newColumn.isNullable) {
+                sql += ` DROP NOT NULL`;
+            } else {
+                sql += ` SET NOT NULL`;
+            }
+        }
+        if (oldColumn.name !== newColumn.name) {
+            sql += ` RENAME TO ` + newColumn.name;
+        }
         return this.query(sql).then(() => {});
     }
 

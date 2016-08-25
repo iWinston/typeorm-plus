@@ -1,4 +1,4 @@
-import {SchemaBuilder} from "./SchemaBuilder";
+import {SchemaBuilder, DatabaseColumnProperties} from "./SchemaBuilder";
 import {MysqlDriver} from "../driver/MysqlDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
@@ -32,7 +32,10 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         };
     }*/
 
-    getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<{columnName: string, hasPrimaryKey: boolean}[]> {
+    /**
+     * todo: reuse getColumns
+     */
+    getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
             ` AND TABLE_NAME = '${tableName}'`;
         return this.query<any[]>(sql).then(results => {
@@ -54,7 +57,12 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
             }).map(column => {
                 const dbData = results.find(result => result.COLUMN_NAME === column.name);
                 const hasDbColumnPrimaryIndex = dbData.COLUMN_KEY.indexOf("PRI") !== -1;
-                return { columnName: column.name, hasPrimaryKey: hasDbColumnPrimaryIndex };
+                return {
+                    name: column.name,
+                    type: dbData["COLUMN_TYPE"].toLowerCase(),
+                    nullable: dbData["IS_NULLABLE"] === "YES",
+                    hasPrimaryKey: hasDbColumnPrimaryIndex
+                };
             });
         });
     }
@@ -146,14 +154,28 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         return this.query(sql).then(() => {});
     }
 
-    getTableColumns(tableName: string): Promise<string[]> {
-        const sql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
-            ` AND TABLE_NAME = '${tableName}'`;
-        return this.query<any[]>(sql).then(results => results.map(result => result.COLUMN_NAME));
+    getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
+        return this.query<any[]>(sql).then(results => {
+            return results.map(dbColumn => {
+                const hasDbColumnPrimaryIndex = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
+                return {
+                    name: dbColumn["COLUMN_NAME"],
+                    type: dbColumn["COLUMN_TYPE"].toLowerCase(),
+                    nullable: dbColumn["IS_NULLABLE"] === "YES",
+                    hasPrimaryKey: hasDbColumnPrimaryIndex
+                };
+            });
+        });
     }
 
-    changeColumnQuery(tableName: string, columnName: string, newColumn: ColumnMetadata, skipPrimary: boolean = false): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} CHANGE ${columnName} ${this.buildCreateColumnSql(newColumn, skipPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+    renameColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE ${tableName} CHANGE ${oldColumn.name} ${newColumn.name} ${oldColumn.type}`;
+        return this.query(sql).then(() => {});
+    }
+
+    changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE ${tableName} CHANGE ${oldColumn.name} ${this.buildCreateColumnSql(newColumn, oldColumn.hasPrimaryKey)}`; // todo: CHANGE OR MODIFY COLUMN ????
         return this.query(sql).then(() => {});
     }
 
