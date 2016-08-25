@@ -16,60 +16,17 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
                 private dbConnection: DatabaseConnection) {
         super();
     }
-
-    /*async getColumnProperties(tableName: string, columnName: string): Promise<{ isNullable: boolean, columnType: string, autoIncrement: boolean }|undefined> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}'` +
-            ` AND TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${columnName}'`;
-
-        const result = await this.query<ObjectLiteral>(sql);
-        return {
-            isNullable: result["IS_NULLABLE"] === "YES",
-            columnType: result["COLUMN_TYPE"],
-            autoIncrement: result["EXTRA"].indexOf("auto_increment") !== -1
-        };
-    }*/
     
-    getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
-        return this.query<any[]>(sql).then(results => {
-            // console.log("changed columns: ", results);
+    async getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
+        const dbColumns = await this.getTableColumns(tableName);
+        return dbColumns.filter(dbColumn => {
+            const column = columns.find(column => column.name === dbColumn.name);
+            if (!column)
+                return false;
 
-            return columns.filter(column => {
-                const dbData = results.find(result => result.column_name === column.name);
-                if (!dbData) return false;
-
-                const newType = this.normalizeType(column);
-                const isNullable = column.isNullable === true ? "YES" : "NO";
-
-                let columnType = dbData.data_type.toLowerCase();
-                if (dbData.character_maximum_length) {
-                    columnType += "(" + dbData.character_maximum_length + ")";
-                }
-
-                // const hasDbColumnAutoIncrement = dbData.EXTRA.indexOf("auto_increment") !== -1;
-                // const hasDbColumnPrimaryIndex = dbData.column_key.indexOf("PRI") !== -1;
-                return  columnType !== newType ||
-                    // dbData.COLUMN_COMMENT !== column.comment ||
-                    dbData.is_nullable !== isNullable; // ||
-                    // hasDbColumnAutoIncrement !== column.isGenerated ||
-                    // hasDbColumnPrimaryIndex !== column.isPrimary;
-
-            }).map(column => {
-                const dbData = results.find(result => result.column_name === column.name);
-                // const hasDbColumnPrimaryIndex = dbData.column_key.indexOf("PRI") !== -1;
-
-                let columnType = dbData.data_type.toLowerCase(); // todo: can't we use column_type ??
-                if (dbData.character_maximum_length) {
-                    columnType += "(" + dbData.character_maximum_length + ")";
-                }
-
-                return {
-                    name: dbData["column_name"],
-                    type: columnType,
-                    nullable: dbData["is_nullable"] === "YES",
-                    hasPrimaryKey: false, /*, hasPrimaryKey: hasDbColumnPrimaryIndex*/
-                };
-            });
+            return  dbColumn.nullable !== column.isNullable ||
+                    dbColumn.type !== this.normalizeType(column) ||
+                    dbColumn.generated !== column.isGenerated;
         });
     }
 
@@ -151,7 +108,7 @@ order by t.relname, i.relname`;
 
     async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
         if (isGenerated) {
-            await this.query(`ALTER SEQUENCE foo_id_seq OWNED BY NONE`); // todo: what is it?
+            await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`); // todo: what is it?
         }
 
         const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`;
@@ -168,23 +125,31 @@ order by t.relname, i.relname`;
         return this.query(sql).then(() => {});
     }
 
-    getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
+    async getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
-        return this.query<any[]>(sql).then(results => {
-            return results.map(dbColumn => {
-                let columnType = dbColumn.data_type.toLowerCase(); // todo: can't we use column_type ??
-                if (dbColumn.character_maximum_length) {
-                    columnType += "(" + dbColumn.character_maximum_length + ")";
-                }
+        const results = await this.query<any[]>(sql);
+        const promises = results.map(async dbColumn => {
+            const columnType = dbColumn.data_type.toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
+            const checkPrimaryResults = await this.query<any[]>(`select t.relname as table_name, i.relname as index_name, a.attname 
+from pg_class t, pg_class i, pg_index ix, pg_attribute a 
+where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}' and a.attname = '${dbColumn["column_name"]}'
+group by t.relname, i.relname, a.attname
+order by t.relname, i.relname`);
+            const isGenerated = dbColumn["column_default"] === `nextval('${tableName}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${tableName}_id_seq"'::regclass)`;
+            // const commentResults = await this.query<any[]>(`SELECT cols.column_name, (SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int) FROM pg_catalog.pg_class c WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name) as column_comment
+// FROM information_schema.columns cols WHERE cols.table_catalog = '${this.driver.db}' AND cols.table_name = '${tableName}' and cols.column_name = '${dbColumn["column_name"]}'`);
 
-                return {
-                    name: dbColumn["column_name"],
-                    type: columnType,
-                    nullable: dbColumn["is_nullable"] === "YES",
-                    hasPrimaryKey: false, /*, hasPrimaryKey: hasDbColumnPrimaryIndex*/
-                };
-            });
+            return {
+                name: dbColumn["column_name"],
+                type: columnType,
+                nullable: dbColumn["is_nullable"] === "YES",
+                generated: isGenerated,
+                comment: undefined, // commentResults.length ? commentResults[0]["column_comment"] : undefined,
+                hasPrimaryKey: checkPrimaryResults.length > 0
+            };
         });
+
+        return Promise.all(promises);
     }
 
     renameColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
@@ -192,23 +157,46 @@ order by t.relname, i.relname`;
         return this.query(sql).then(() => {});
     }
 
-    changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+    async changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+
+        // update name, type, nullable
         const newType = this.normalizeType(newColumn);
-        let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
-        if (oldColumn.type !== newType) {
-            sql += ` TYPE ${newType}`;
+        if (oldColumn.type !== newType ||
+            oldColumn.nullable !== newColumn.isNullable ||
+            oldColumn.name !== newColumn.name) {
+
+            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
+            if (oldColumn.type !== newType) {
+                sql += ` TYPE ${newType}`;
+            }
+            if (oldColumn.nullable !== newColumn.isNullable) {
+                if (newColumn.isNullable) {
+                    sql += ` DROP NOT NULL`;
+                } else {
+                    sql += ` SET NOT NULL`;
+                }
+            }
+            if (oldColumn.name !== newColumn.name) {
+                sql += ` RENAME TO ` + newColumn.name;
+            }
+            await this.query(sql);
         }
-        if (oldColumn.nullable !== newColumn.isNullable) {
-            if (newColumn.isNullable) {
-                sql += ` DROP NOT NULL`;
+
+        // update sequence generation
+        if (oldColumn.generated !== newColumn.isGenerated) {
+            if (!oldColumn.generated) {
+                await this.query<any[]>(`CREATE SEQUENCE "${tableName}_id_seq" OWNED BY ${tableName}.${oldColumn.name}`);
+                await this.query<any[]>(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableName}_id_seq"')`);
             } else {
-                sql += ` SET NOT NULL`;
+                await this.query<any[]>(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);
+                await this.query<any[]>(`DROP SEQUENCE "${tableName}_id_seq"`);
             }
         }
-        if (oldColumn.name !== newColumn.name) {
-            sql += ` RENAME TO ` + newColumn.name;
+
+        if (oldColumn.comment !== newColumn.comment) {
+            await this.query<any[]>(`COMMENT ON COLUMN "${tableName}"."${oldColumn.name}" is '${newColumn.comment}'`);
         }
-        return this.query(sql).then(() => {});
+
     }
 
     createTableQuery(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
@@ -236,8 +224,6 @@ order by t.relname, i.relname`;
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
         // TODO: implement auto increment
-        if (column.comment)
-            c += " COMMENT '" + column.comment + "'";
         if (column.columnDefinition)
             c += " " + column.columnDefinition;
         return c;

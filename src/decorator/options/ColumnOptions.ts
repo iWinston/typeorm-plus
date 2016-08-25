@@ -73,6 +73,7 @@ export interface ColumnOptions {
     /**
      * Indicates if this date column will contain a timezone.
      * Used only for date-typed column types.
+     * Note that timezone option is not supported by all databases (only postgres for now).
      */
     readonly timezone?: boolean;
     

@@ -7,7 +7,9 @@ export interface DatabaseColumnProperties {
     name: string;
     type: string;
     nullable: boolean;
+    generated: boolean;
     hasPrimaryKey: boolean;
+    comment: string;
 }
 
 /**
