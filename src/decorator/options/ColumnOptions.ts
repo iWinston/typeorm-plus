@@ -69,5 +69,11 @@ export interface ColumnOptions {
      * Column collation. Note that not all databases support it.
      */
     readonly collation?: string; // todo: looks like this is not used
+
+    /**
+     * Indicates if this date column will contain a timezone.
+     * Used only for date-typed column types.
+     */
+    readonly timezone?: boolean;
     
 }

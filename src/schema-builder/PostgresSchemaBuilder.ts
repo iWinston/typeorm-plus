@@ -276,23 +276,31 @@ order by t.relname, i.relname`;
             case "decimal":
                 if (column.precision && column.scale) {
                     return `decimal(${column.precision},${column.scale})`;
-                    
+
                 } else if (column.scale) {
                     return `decimal(${column.scale})`;
-                    
+
                 } else if (column.precision) {
                     return `decimal(${column.precision})`;
-                    
+
                 } else {
                     return "decimal";
-                    
+
                 }
             case "date":
                 return "date";
             case "time":
-                return "time";
+                if (column.timezone) {
+                    return "time with time zone";
+                } else {
+                    return "time without time zone";
+                }
             case "datetime":
-                return "timestamp";
+                if (column.timezone) {
+                    return "timestamp with time zone";
+                } else {
+                    return "timestamp without time zone";
+                }
             case "json":
                 return "text";
             case "simple_array":

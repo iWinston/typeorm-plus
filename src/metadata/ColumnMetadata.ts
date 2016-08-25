@@ -104,6 +104,12 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     readonly collation: string;
 
+    /**
+     * Indicates if this date column will contain a timezone.
+     * Used only for date-typed column types.
+     */
+    readonly timezone: boolean;
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -149,6 +155,8 @@ export class ColumnMetadata extends PropertyMetadata {
             this.precision = args.options.precision;
         if (args.options.collation)
             this.collation = args.options.collation;
+        if (args.options.timezone)
+            this.timezone = args.options.timezone;
     }
 
     // ---------------------------------------------------------------------
