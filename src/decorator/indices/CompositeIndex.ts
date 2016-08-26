@@ -2,6 +2,8 @@ import {getMetadataArgsStorage} from "../../index";
 import {CompositeIndexOptions} from "../options/CompositeIndexOptions";
 import {IndexMetadataArgs} from "../../metadata-args/IndexMetadataArgs";
 
+// todo: maybe merge this with Index decorator?
+
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
