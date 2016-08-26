@@ -8,7 +8,22 @@ import {IndexMetadata} from "../metadata/IndexMetadata";
 
 /**
  * Creates indexes based on the given metadata.
- * 
+ *
+ *
+ * Steps how schema creation works:
+ * 1. get all tables from entity metadatas
+ * 2. get all tables with complete column and keys information from the db
+ * 3. drop all (old) foreign keys that exist in the table, but does not exist in the metadata
+ * 4. create new tables that does not exist in the db, but exist in the metadata
+ * 5. rename all columns that has "oldColumnName"
+ * 6. drop all columns exist (left old) in the table, but does not exist in the metadata
+ * 7. add columns from metadata which does not exist in the table
+ * 8. update all exist columns which metadata has changed.
+ * 9. create foreign keys which does not exist in the table yet.
+ * 10. create unique keys which are missing in db yet, and drops unique keys which exist in the db, but does not exist in the metadata anymore. (todo: need to move drop step to the up)
+ * 11. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore.
+ * 12. remove primary key from the table (if it was before and does not exist in the metadata anymore).
+ *
  * @internal
  */
 export class SchemaCreator {

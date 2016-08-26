@@ -466,8 +466,8 @@ export class QueryBuilder<Entity> {
             const [sql, parameters] = this.getSqlWithParameters();
 
             const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
-            let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAliasName}_${metadata.primaryColumn.name}) as ids`;
-            idsQuery += ` FROM (${sql}) distinctAlias`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
+            let idsQuery = `SELECT DISTINCT(${this.driver.escapeTableName("distinctAlias")}.${this.driver.escapeAliasName(mainAliasName + "_" + metadata.primaryColumn.name)}) as ids`;
+            idsQuery += ` FROM (${sql}) ${this.driver.escapeTableName("distinctAlias")}`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
             if (this.maxResults)
                 idsQuery += " LIMIT " + this.maxResults;
             if (this.firstResult)

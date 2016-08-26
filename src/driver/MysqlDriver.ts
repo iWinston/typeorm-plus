@@ -338,7 +338,7 @@ export class MysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, []];
         const escapedParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
             escapedParameters.push(parameters[key.substr(1)]);
             return "?";
