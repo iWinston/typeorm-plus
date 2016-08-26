@@ -2,24 +2,26 @@ import {Driver} from "./Driver";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {MysqlSchemaBuilder} from "../schema-builder/MysqlSchemaBuilder";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
-import {BaseDriver} from "./BaseDriver";
 import {DriverOptions} from "./DriverOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DatabaseConnection} from "./DatabaseConnection";
 import {DriverPackageNotInstalledError} from "./error/DriverPackageNotInstalledError";
 import {DriverPackageLoadError} from "./error/DriverPackageLoadError";
 import {DriverUtils} from "./DriverUtils";
+import {ColumnTypes} from "../metadata/types/ColumnTypes";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {Logger} from "../logger/Logger";
 
 /**
  * This driver organizes work with mysql database.
  */
-export class MysqlDriver extends BaseDriver implements Driver {
+export class MysqlDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
-    connectionOptions: DriverOptions;
+    readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -45,19 +47,23 @@ export class MysqlDriver extends BaseDriver implements Driver {
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
+    /**
+     * Logger.
+     */
+    protected logger: Logger;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions,
-                mysql?: any) {
-        super();
+    constructor(connectionOptions: DriverOptions, mysql?: any) {
 
-        this.connectionOptions = DriverUtils.buildDriverOptions(connectionOptions);
+        this.options = DriverUtils.buildDriverOptions(connectionOptions);
+        this.logger = new Logger(this.options.logging);
         this.mysql = mysql;
 
         // validate options to make sure everything is set
-        DriverUtils.validateDriverOptions(this.connectionOptions);
+        DriverUtils.validateDriverOptions(this.options);
 
         // if mysql package instance was not set explicitly then try to load it
         if (!mysql)
@@ -72,7 +78,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
      * Database name to which this connection is made.
      */
     get databaseName(): string {
-        return this.connectionOptions.database as string;
+        return this.options.database as string;
     }
 
     // -------------------------------------------------------------------------
@@ -163,16 +169,16 @@ export class MysqlDriver extends BaseDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            host: this.connectionOptions.host,
-            user: this.connectionOptions.username,
-            password: this.connectionOptions.password,
-            database: this.connectionOptions.database,
-            port: this.connectionOptions.port
-        }, this.connectionOptions.extra || {});
+            host: this.options.host,
+            user: this.options.username,
+            password: this.options.password,
+            database: this.options.database,
+            port: this.options.port
+        }, this.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.connectionOptions.usePool === undefined || this.connectionOptions.usePool === true) {
+        if (this.options.usePool === undefined || this.options.usePool === true) {
             this.pool = this.mysql.createPool(options);
             return Promise.resolve();
 
@@ -220,12 +226,12 @@ export class MysqlDriver extends BaseDriver implements Driver {
         if (!this.databaseConnection && !this.pool)
             throw new ConnectionIsNotSetError("mysql");
 
-        this.logQuery(query);
+        this.logger.logQuery(query);
         return new Promise((ok, fail) => {
             dbConnection.connection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.logFailedQuery(query);
-                    this.logQueryError(err);
+                    this.logger.logFailedQuery(query);
+                    this.logger.logQueryError(err);
                     return fail(err);
                 }
 
@@ -383,6 +389,20 @@ export class MysqlDriver extends BaseDriver implements Driver {
         };
     }
 
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, column: ColumnMetadata): any {
+        return ColumnTypes.preparePersistentValue(value, column.type);
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    prepareHydratedValue(value: any, column: ColumnMetadata): any {
+        return ColumnTypes.prepareHydratedValue(value, column.type);
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -395,7 +415,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
             throw new DriverPackageLoadError();
 
         try {
-            this.mysql = require("pg");
+            this.mysql = require("mysql");
         } catch (e) {
             throw new DriverPackageNotInstalledError("Mysql", "mysql");
         }

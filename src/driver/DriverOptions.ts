@@ -1,3 +1,4 @@
+import {LoggerOptions} from "../logger/LoggerOptions";
 /**
  * Driver connection options.
  */
@@ -47,29 +48,7 @@ export interface DriverOptions {
     /**
      * Driver logging options.
      */
-    logging?: {
-
-        /**
-         * Some specific logger to be used. By default it is a console.
-         */
-        logger?: (message: any, level: string) => void;
-
-        /**
-         * Set to true if you want to log every executed query.
-         */
-        logQueries?: boolean;
-
-        /**
-         * Set to true if you want to log only failed query.
-         */
-        logOnlyFailedQueries?: boolean;
-
-        /**
-         * Set to true if you want to log error of the failed query.
-         */
-        logFailedQueryError?: boolean;
-        
-    };
+    logging?: LoggerOptions;
 
     /**
      * Extra connection options to be passed to the driver.

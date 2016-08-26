@@ -1,7 +1,6 @@
 import {Driver} from "./Driver";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
-import {BaseDriver} from "./BaseDriver";
 import {DriverOptions} from "./DriverOptions";
 import {PostgresSchemaBuilder} from "../schema-builder/PostgresSchemaBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
@@ -9,6 +8,9 @@ import {DatabaseConnection} from "./DatabaseConnection";
 import {DriverPackageNotInstalledError} from "./error/DriverPackageNotInstalledError";
 import {DriverPackageLoadError} from "./error/DriverPackageLoadError";
 import {DriverUtils} from "./DriverUtils";
+import {ColumnTypes} from "../metadata/types/ColumnTypes";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {Logger} from "../logger/Logger";
 
 // todo(tests):
 // check connection with url
@@ -18,13 +20,13 @@ import {DriverUtils} from "./DriverUtils";
 /**
  * This driver organizes work with postgres database.
  */
-export class PostgresDriver extends BaseDriver implements Driver {
+export class PostgresDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
-    connectionOptions: DriverOptions;
+    readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -50,19 +52,23 @@ export class PostgresDriver extends BaseDriver implements Driver {
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
+    /**
+     * Logger.
+     */
+    protected logger: Logger;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions,
-                postgres?: any) {
-        super();
+    constructor(connectionOptions: DriverOptions, postgres?: any) {
 
-        this.connectionOptions = DriverUtils.buildDriverOptions(connectionOptions);
+        this.options = DriverUtils.buildDriverOptions(connectionOptions);
+        this.logger = new Logger(this.options.logging);
         this.postgres = postgres;
 
         // validate options to make sure everything is set
-        DriverUtils.validateDriverOptions(this.connectionOptions);
+        DriverUtils.validateDriverOptions(this.options);
 
         // if postgres package instance was not set explicitly then try to load it
         if (!postgres)
@@ -77,7 +83,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
      * Database name to which this connection is made.
      */
     get databaseName(): string {
-        return this.connectionOptions.database as string;
+        return this.options.database as string;
     }
 
     // -------------------------------------------------------------------------
@@ -169,16 +175,16 @@ export class PostgresDriver extends BaseDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            host: this.connectionOptions.host,
-            user: this.connectionOptions.username,
-            password: this.connectionOptions.password,
-            database: this.connectionOptions.database,
-            port: this.connectionOptions.port
-        }, this.connectionOptions.extra || {});
+            host: this.options.host,
+            user: this.options.username,
+            password: this.options.password,
+            database: this.options.database,
+            port: this.options.port
+        }, this.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.connectionOptions.usePool === undefined || this.connectionOptions.usePool === true) {
+        if (this.options.usePool === undefined || this.options.usePool === true) {
             this.pool = new this.postgres.Pool(options);
             return Promise.resolve();
 
@@ -215,7 +221,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
                         dbConnection.releaseCallback();
                     }
                 });
-                this.pool.end(handler);
+                // this.pool.end(handler);
                 this.pool = undefined;
                 this.databaseConnectionPool = [];
             }
@@ -240,12 +246,12 @@ export class PostgresDriver extends BaseDriver implements Driver {
 
         // console.log("query: ", query);
         // console.log("parameters: ", parameters);
-        this.logQuery(query);
+        this.logger.logQuery(query);
         return new Promise<any[]>((ok, fail) => {
             dbConnection.connection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.logFailedQuery(query);
-                    this.logQueryError(err);
+                    this.logger.logFailedQuery(query);
+                    this.logger.logQueryError(err);
                     fail(err);
                 } else {
                     ok(result.rows);
@@ -342,23 +348,22 @@ export class PostgresDriver extends BaseDriver implements Driver {
     /**
      * Insert a new row into given table.
      */
-    insert(dbConnection: DatabaseConnection, tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
+    async insert(dbConnection: DatabaseConnection, tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
         if (!this.databaseConnection && !this.pool)
             throw new ConnectionIsNotSetError("postgres");
 
-        const columns = Object.keys(keyValues).join("\", \"");
-        const values  = Object.keys(keyValues).map((key, index) => "$" + (index + 1)).join(","); // todo: escape here
-        const params  = Object.keys(keyValues).map(key => keyValues[key]);
-        let query   = `INSERT INTO "${tableName}"("${columns}") VALUES (${values})`;
-        if (idColumnName) {
-            query += " RETURNING " + idColumnName;
-        }
-        return this.query(dbConnection, query, params).then(result => {
-            if (idColumnName)
-                return result[0][idColumnName];
+        const columns = Object.keys(keyValues).map(key => this.escapeColumnName(key)).join(", ");
+        const values = Object.keys(keyValues).map((key, index) => "$" + (index + 1)).join(","); // todo: escape here
+        const parameters = Object.keys(keyValues).map(key => keyValues[key]);
+        let sql = `INSERT INTO ${this.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
+        if (idColumnName)
+            sql += " RETURNING " + this.escapeColumnName(idColumnName);
 
-            return undefined;
-        });
+        const result: ObjectLiteral[] = await this.query(dbConnection, sql, parameters);
+        if (idColumnName)
+            return result[0][idColumnName];
+
+        return result;
     }
 
     /**
@@ -372,8 +377,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        // console.log("executing update: ", query);
+        const query = `UPDATE ${this.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         await this.query(dbConnection, query, updateParams.concat(conditionParams));
     }
 
@@ -419,6 +423,20 @@ export class PostgresDriver extends BaseDriver implements Driver {
             connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, column: ColumnMetadata): any {
+        return ColumnTypes.preparePersistentValue(value, column.type);
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    prepareHydratedValue(value: any, column: ColumnMetadata): any {
+        return ColumnTypes.prepareHydratedValue(value, column.type);
     }
 
     // -------------------------------------------------------------------------

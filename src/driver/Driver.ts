@@ -12,7 +12,7 @@ export interface Driver {
     /**
      * Connection options used in this driver.
      */
-    readonly connectionOptions: DriverOptions;
+    readonly options: DriverOptions;
 
     /**
      * Database name to which this connection is made.

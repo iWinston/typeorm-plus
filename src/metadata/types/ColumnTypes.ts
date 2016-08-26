@@ -1,3 +1,4 @@
+import * as moment from "moment";
 
 /**
  * All types that column can be.
@@ -151,9 +152,58 @@ export class ColumnTypes {
         throw new Error(`Column type of ${type} cannot be determined.`);
         // return undefined;
     }
+
+    static preparePersistentValue(value: any, type: ColumnType): any {
+        switch (type) {
+            case ColumnTypes.BOOLEAN:
+                return value === true ? 1 : 0;
+            case ColumnTypes.DATE:
+                return moment(value).format("YYYY-MM-DD");
+            case ColumnTypes.TIME:
+                return moment(value).format("HH:mm:ss");
+            case ColumnTypes.DATETIME:
+                return moment(value).format("YYYY-MM-DD HH:mm:ss");
+            case ColumnTypes.JSON:
+                return JSON.stringify(value);
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as any[])
+                    .map(i => String(i))
+                    .join(",");
+        }
+
+        return value;
+    }
+
+    static prepareHydratedValue(value: any, type: ColumnType) {
+        switch (type) {
+            case ColumnTypes.BOOLEAN:
+                return value ? true : false;
+
+            case ColumnTypes.DATE:
+                if (value instanceof Date)
+                    return value;
+
+                return moment(value, "YYYY-MM-DD").toDate();
+
+            case ColumnTypes.TIME:
+                return moment(value, "HH:mm:ss").toDate();
+
+            case ColumnTypes.DATETIME:
+                if (value instanceof Date)
+                    return value;
+
+                return moment(value, "YYYY-MM-DD HH:mm:ss").toDate();
+
+            case ColumnTypes.JSON:
+                return JSON.parse(value);
+
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as string).split(",");
+        }
+    }
     
-    static typeToString(type: Function) {
-        return (<any>type).name.toLowerCase();
+    static typeToString(type: Function): string {
+        return (type as any).name.toLowerCase();
     }
 
 }
