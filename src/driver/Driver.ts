@@ -5,7 +5,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DatabaseConnection} from "./DatabaseConnection";
 
 /**
- * Driver communicates with specific database.
+ * Driver organizes TypeORM communication with specific database management system.
  */
 export interface Driver {
 
@@ -15,9 +15,85 @@ export interface Driver {
     readonly options: DriverOptions;
 
     /**
-     * Access to the native implementation of the database.
+     * Performs connection to the database.
+     * Based on pooling options, it can either create connection immediately,
+     * either create a pool and create connection when needed.
      */
-    nativeInterface(): any;
+    connect(): Promise<void>;
+
+    /**
+     * Closes connection with database.
+     */
+    disconnect(): Promise<void>;
+
+    /**
+     * Retrieves a new database connection.
+     * If pooling is enabled then connection from the pool will be retrieved.
+     * Otherwise active connection will be returned.
+     */
+    retrieveDatabaseConnection(): Promise<DatabaseConnection>;
+
+    /**
+     * Releases database connection. This is needed when using connection pooling.
+     * If connection is not from a pool, it should not be released.
+     */
+    releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void>;
+
+    /**
+     * Creates a schema builder which can be used to build database/table schemas.
+     */
+    createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder;
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    clearDatabase(dbConnection: DatabaseConnection): Promise<void>;
+
+    /**
+     * Starts transaction.
+     */
+    beginTransaction(dbConnection: DatabaseConnection): Promise<void>;
+
+    /**
+     * Commits transaction.
+     */
+    commitTransaction(dbConnection: DatabaseConnection): Promise<void>;
+
+    /**
+     * Ends transaction.
+     */
+    rollbackTransaction(dbConnection: DatabaseConnection): Promise<void>;
+
+    /**
+     * Executes a given SQL query and returns raw database results.
+     */
+    query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any>;
+
+    /**
+     * Updates rows that match given simple conditions in the given table.
+     */
+    update(dbConnection: DatabaseConnection, tableName: string, valuesMap: Object, conditions: Object): Promise<void>;
+
+    /**
+     * Inserts a new row into given table.
+     */
+    insert(dbConnection: DatabaseConnection, tableName: string, valuesMap: Object, idColumnName?: string): Promise<any>;
+
+    /**
+     * Performs a simple DELETE query by a given conditions in a given table.
+     */
+    delete(dbConnection: DatabaseConnection, tableName: string, conditions: Object): Promise<void>;
+
+    /**
+     * Inserts new values into closure table.
+     */
+    insertIntoClosureTable(dbConnection: DatabaseConnection, tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
+
+    /**
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
+     */
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]];
 
     /**
      * Escapes a column name.
@@ -35,82 +111,6 @@ export interface Driver {
     escapeTableName(tableName: string): string;
 
     /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    retrieveDatabaseConnection(): Promise<DatabaseConnection>;
-
-    /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     */
-    releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void>;
-    
-    /**
-     * Creates a schema builder which can be used to build database/table schemas.
-     */
-    createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder;
-
-    /**
-     * Performs connection to the database.
-     * Based on pooling options, it can either create connection immediately,
-     * either create a pool and create connection when needed.
-     */
-    connect(): Promise<void>;
-
-    /**
-     * Closes connection with database.
-     */
-    disconnect(): Promise<void>;
-
-    /**
-     * Executes a given SQL query and returns raw database results.
-     */
-    query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any>;
-
-    /**
-     * Removes all tables from the currently connected database.
-     */
-    clearDatabase(dbConnection: DatabaseConnection): Promise<void>;
-
-    /**
-     * Replaces parameters in the given sql with special escaping character
-     * and an array of parameter names to be passed to a query.
-     */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]];
-
-    /**
-     * Updates rows that match given simple conditions in the given table.
-     */
-    update(dbConnection: DatabaseConnection, tableName: string, valuesMap: Object, conditions: Object): Promise<void>;
-
-    /**
-     * Inserts a new row into given table.
-     */
-    insert(dbConnection: DatabaseConnection, tableName: string, valuesMap: Object, idColumnName?: string): Promise<any>;
-
-    /**
-     * Performs a simple DELETE query by a given conditions in a given table.
-     */
-    delete(dbConnection: DatabaseConnection, tableName: string, conditions: Object): Promise<void>;
-    
-    /**
-     * Starts transaction.
-     */
-    beginTransaction(dbConnection: DatabaseConnection): Promise<void>;
-    
-    /**
-     * Commits transaction.
-     */
-    commitTransaction(dbConnection: DatabaseConnection): Promise<void>;
-    
-    /**
-     * Ends transaction.
-     */
-    rollbackTransaction(dbConnection: DatabaseConnection): Promise<void>;
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, column: ColumnMetadata): any;
@@ -121,8 +121,8 @@ export interface Driver {
     prepareHydratedValue(value: any, column: ColumnMetadata): any;
 
     /**
-     * Inserts new values into closure table.
+     * Access to the native implementation of the database.
      */
-    insertIntoClosureTable(dbConnection: DatabaseConnection, tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
-    
+    nativeInterface(): any;
+
 }

@@ -11,6 +11,8 @@ import {DriverUtils} from "./DriverUtils";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {Logger} from "../logger/Logger";
+import {TransactionNotStartedError} from "./error/TransactionNotStartedError";
+import {TransactionAlreadyStartedError} from "./error/TransactionAlreadyStartedError";
 
 /**
  * This driver organizes work with mysql database.
@@ -75,80 +77,6 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Escapes a column name.
-     */
-    escapeColumnName(columnName: string): string {
-        return columnName; // "`" + columnName + "`";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string {
-        return aliasName; // "`" + aliasName + "`";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string {
-        return tableName; // "`" + tableName + "`";
-    }
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-
-        if (this.pool) {
-            return new Promise((ok, fail) => {
-                this.pool.getConnection((err: any, connection: any) => {
-                    if (err)
-                        return fail(err);
-
-                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                    if (!dbConnection) {
-                        dbConnection = {
-                            id: this.databaseConnectionPool.length,
-                            connection: connection,
-                            isTransactionActive: false
-                        };
-                        this.databaseConnectionPool.push(dbConnection);
-                    }
-                    ok(dbConnection);
-                });
-            });
-        }
-
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("mysql");
-    }
-
-    /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     */
-    releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
-        if (this.pool) {
-            dbConnection.connection.release();
-            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-        }
-
-        return Promise.resolve();
-    }
-
-    /**
-     * Creates a schema builder which can be used to build database/table schemas.
-     */
-    createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder {
-        return new MysqlSchemaBuilder(this, dbConnection);
-    }
-
-    /**
      * Performs connection to the database.
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
@@ -208,6 +136,109 @@ export class MysqlDriver implements Driver {
     }
 
     /**
+     * Retrieves a new database connection.
+     * If pooling is enabled then connection from the pool will be retrieved.
+     * Otherwise active connection will be returned.
+     */
+    retrieveDatabaseConnection(): Promise<DatabaseConnection> {
+
+        if (this.pool) {
+            return new Promise((ok, fail) => {
+                this.pool.getConnection((err: any, connection: any) => {
+                    if (err)
+                        return fail(err);
+
+                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
+                    if (!dbConnection) {
+                        dbConnection = {
+                            id: this.databaseConnectionPool.length,
+                            connection: connection,
+                            isTransactionActive: false
+                        };
+                        this.databaseConnectionPool.push(dbConnection);
+                    }
+                    ok(dbConnection);
+                });
+            });
+        }
+
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        throw new ConnectionIsNotSetError("mysql");
+    }
+
+    /**
+     * Releases database connection. This is needed when using connection pooling.
+     * If connection is not from a pool, it should not be released.
+     */
+    releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
+        if (this.pool) {
+            dbConnection.connection.release();
+            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+        }
+
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a schema builder which can be used to build database/table schemas.
+     */
+    createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder {
+        return new MysqlSchemaBuilder(this, dbConnection);
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    async clearDatabase(dbConnection: DatabaseConnection): Promise<void> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("mysql");
+
+        const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
+        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.options.database}'`;
+        const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+
+        await this.query(dbConnection, disableForeignKeysCheckQuery);
+        const dropQueries: ObjectLiteral[] = await this.query(dbConnection, dropTablesQuery);
+        await Promise.all(dropQueries.map(query => this.query(dbConnection, query["query"])));
+        await this.query(dbConnection, enableForeignKeysCheckQuery);
+    }
+
+    /**
+     * Starts transaction.
+     */
+    async beginTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (dbConnection.isTransactionActive)
+            throw new TransactionAlreadyStartedError();
+
+        await this.query(dbConnection, "START TRANSACTION");
+        dbConnection.isTransactionActive = true;
+    }
+
+    /**
+     * Commits transaction.
+     */
+    async commitTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (!dbConnection.isTransactionActive)
+            throw new TransactionNotStartedError();
+
+        await this.query(dbConnection, "COMMIT");
+        dbConnection.isTransactionActive = false;
+    }
+
+    /**
+     * Rollbacks transaction.
+     */
+    async rollbackTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (!dbConnection.isTransactionActive)
+            throw new TransactionNotStartedError();
+
+        await this.query(dbConnection, "ROLLBACK");
+        dbConnection.isTransactionActive = false;
+    }
+
+    /**
      * Executes a given SQL query.
      */
     query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any> {
@@ -226,72 +257,6 @@ export class MysqlDriver implements Driver {
                 ok(result);
             });
         });
-    }
-
-    /**
-     * Starts transaction.
-     */
-    async beginTransaction(dbConnection: DatabaseConnection): Promise<void> {
-        if (dbConnection.isTransactionActive)
-            throw new Error(`Transaction already started for the given connection, commit current transaction before starting a new one.`);
-
-        await this.query(dbConnection, "START TRANSACTION");
-        dbConnection.isTransactionActive = true;
-    }
-
-    /**
-     * Commits transaction.
-     */
-    async commitTransaction(dbConnection: DatabaseConnection): Promise<void> {
-        if (!dbConnection.isTransactionActive)
-            throw new Error(`Transaction is not started yet, start transaction before committing it.`);
-
-        await this.query(dbConnection, "COMMIT");
-        dbConnection.isTransactionActive = false;
-    }
-
-    /**
-     * Rollbacks transaction.
-     */
-    async rollbackTransaction(dbConnection: DatabaseConnection): Promise<void> {
-        if (!dbConnection.isTransactionActive)
-            throw new Error(`Transaction is not started yet, start transaction before rolling it back.`);
-
-        await this.query(dbConnection, "ROLLBACK");
-        dbConnection.isTransactionActive = false;
-    }
-
-    /**
-     * Clears all tables in the currently connected database.
-     */
-    async clearDatabase(dbConnection: DatabaseConnection): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("mysql");
-
-        const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.options.database}'`;
-        const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
-
-        await this.query(dbConnection, disableForeignKeysCheckQuery);
-        const dropQueries: ObjectLiteral[] = await this.query(dbConnection, dropTablesQuery);
-        await Promise.all(dropQueries.map(query => this.query(dbConnection, query["query"])));
-        await this.query(dbConnection, enableForeignKeysCheckQuery);
-    }
-
-    /**
-     * Replaces parameters in the given sql with special escaping character
-     * and an array of parameter names to be passed to a query.
-     */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
-        if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
-        const escapedParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            escapedParameters.push(parameters[key.substr(1)]);
-            return "?";
-        }); // todo: make replace only in value statements, otherwise problems
-        return [sql, escapedParameters];
     }
 
     /**
@@ -362,14 +327,40 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Access to the native implementation of the database.
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
      */
-    nativeInterface() {
-        return {
-            driver: this.mysql,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
-            pool: this.pool
-        };
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+        if (!parameters || !Object.keys(parameters).length)
+            return [sql, []];
+        const escapedParameters: any[] = [];
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
+            escapedParameters.push(parameters[key.substr(1)]);
+            return "?";
+        }); // todo: make replace only in value statements, otherwise problems
+        return [sql, escapedParameters];
+    }
+
+    /**
+     * Escapes a column name.
+     */
+    escapeColumnName(columnName: string): string {
+        return columnName; // "`" + columnName + "`";
+    }
+
+    /**
+     * Escapes an alias.
+     */
+    escapeAliasName(aliasName: string): string {
+        return aliasName; // "`" + aliasName + "`";
+    }
+
+    /**
+     * Escapes a table name.
+     */
+    escapeTableName(tableName: string): string {
+        return tableName; // "`" + tableName + "`";
     }
 
     /**
@@ -384,6 +375,17 @@ export class MysqlDriver implements Driver {
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any {
         return ColumnTypes.prepareHydratedValue(value, column.type);
+    }
+
+    /**
+     * Access to the native implementation of the database.
+     */
+    nativeInterface() {
+        return {
+            driver: this.mysql,
+            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
+            pool: this.pool
+        };
     }
 
     // -------------------------------------------------------------------------
@@ -404,6 +406,9 @@ export class MysqlDriver implements Driver {
         }
     }
 
+    /**
+     * Parametrizes given object of values. Used to create column=value queries.
+     */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
         return Object.keys(objectLiteral).map(key => this.escapeColumnName(key) + "=?");
     }

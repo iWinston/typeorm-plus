@@ -11,6 +11,8 @@ import {DriverUtils} from "./DriverUtils";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {Logger} from "../logger/Logger";
+import {TransactionAlreadyStartedError} from "./error/TransactionAlreadyStartedError";
+import {TransactionNotStartedError} from "./error/TransactionNotStartedError";
 
 // todo(tests):
 // check connection with url
@@ -80,82 +82,6 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Escapes a column name.
-     */
-    escapeColumnName(columnName: string): string {
-        return "\"" + columnName + "\"";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string {
-        return "\"" + aliasName + "\"";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string {
-        return "\"" + tableName + "\"";
-    }
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.pool) {
-            return new Promise((ok, fail) => {
-                this.pool.connect((err: any, connection: any, release: Function) => {
-                    if (err) {
-                        fail(err);
-                        return;
-                    }
-
-                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                    if (!dbConnection) {
-                        dbConnection = {
-                            id: this.databaseConnectionPool.length,
-                            connection: connection,
-                            isTransactionActive: false
-                        };
-                        this.databaseConnectionPool.push(dbConnection);
-                    }
-                    dbConnection.releaseCallback = release;
-                    ok(dbConnection);
-                });
-            });
-        }
-
-        if (this.databaseConnection) // todo: rename postgresConnection and mysqlConnection to databaseConnection
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("postgres");
-    }
-
-    /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     */
-    releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
-        if (this.pool && dbConnection.releaseCallback) {
-            dbConnection.releaseCallback();
-            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-        }
-
-        return Promise.resolve();
-    }
-
-    /**
-     * Creates a schema builder which can be used to build database/table schemas.
-     */
-    createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder {
-        return new PostgresSchemaBuilder(this, dbConnection);
-    }
-
-    /**
      * Performs connection to the database.
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
@@ -220,6 +146,106 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Retrieves a new database connection.
+     * If pooling is enabled then connection from the pool will be retrieved.
+     * Otherwise active connection will be returned.
+     */
+    retrieveDatabaseConnection(): Promise<DatabaseConnection> {
+        if (this.pool) {
+            return new Promise((ok, fail) => {
+                this.pool.connect((err: any, connection: any, release: Function) => {
+                    if (err) {
+                        fail(err);
+                        return;
+                    }
+
+                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
+                    if (!dbConnection) {
+                        dbConnection = {
+                            id: this.databaseConnectionPool.length,
+                            connection: connection,
+                            isTransactionActive: false
+                        };
+                        this.databaseConnectionPool.push(dbConnection);
+                    }
+                    dbConnection.releaseCallback = release;
+                    ok(dbConnection);
+                });
+            });
+        }
+
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        throw new ConnectionIsNotSetError("postgres");
+    }
+
+    /**
+     * Releases database connection. This is needed when using connection pooling.
+     * If connection is not from a pool, it should not be released.
+     */
+    releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
+        if (this.pool && dbConnection.releaseCallback) {
+            dbConnection.releaseCallback();
+            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+        }
+
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a schema builder which can be used to build database/table schemas.
+     */
+    createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder {
+        return new PostgresSchemaBuilder(this, dbConnection);
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    async clearDatabase(dbConnection: DatabaseConnection): Promise<void> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
+
+        const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
+        const dropQueries: ObjectLiteral[] = await this.query(dbConnection, selectDropsQuery);
+        await Promise.all(dropQueries.map(q => this.query(dbConnection, q["query"])));
+    }
+
+    /**
+     * Starts transaction.
+     */
+    async beginTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (dbConnection.isTransactionActive)
+            throw new TransactionAlreadyStartedError();
+
+        await this.query(dbConnection, "START TRANSACTION");
+        dbConnection.isTransactionActive = true;
+    }
+
+    /**
+     * Commits transaction.
+     */
+    async commitTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (!dbConnection.isTransactionActive)
+            throw new TransactionNotStartedError();
+
+        await this.query(dbConnection, "COMMIT");
+        dbConnection.isTransactionActive = false;
+    }
+
+    /**
+     * Rollbacks transaction.
+     */
+    async rollbackTransaction(dbConnection: DatabaseConnection): Promise<void> {
+        if (!dbConnection.isTransactionActive)
+            throw new TransactionNotStartedError();
+
+        await this.query(dbConnection, "ROLLBACK");
+        dbConnection.isTransactionActive = false;
+    }
+
+    /**
      * Executes a given SQL query.
      */
     query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any> {
@@ -243,49 +269,84 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Starts transaction.
+     * Insert a new row into given table.
      */
-    async beginTransaction(dbConnection: DatabaseConnection): Promise<void> {
-        if (dbConnection.isTransactionActive)
-            throw new Error(`Transaction already started for the given connection, commit current transaction before starting a new one.`);
-
-        await this.query(dbConnection, "START TRANSACTION");
-        dbConnection.isTransactionActive = true;
-    }
-
-    /**
-     * Commits transaction.
-     */
-    async commitTransaction(dbConnection: DatabaseConnection): Promise<void> {
-        if (!dbConnection.isTransactionActive)
-            throw new Error(`Transaction is not started yet, start transaction before committing it.`);
-
-        await this.query(dbConnection, "COMMIT");
-        dbConnection.isTransactionActive = false;
-    }
-
-    /**
-     * Rollbacks transaction.
-     */
-    async rollbackTransaction(dbConnection: DatabaseConnection): Promise<void> {
-        if (!dbConnection.isTransactionActive)
-            throw new Error(`Transaction is not started yet, start transaction before rolling it back.`);
-
-        await this.query(dbConnection, "ROLLBACK");
-        dbConnection.isTransactionActive = false;
-    }
-
-    /**
-     * Clears all tables in the currently connected database.
-     */
-    clearDatabase(dbConnection: DatabaseConnection): Promise<void> {
+    async insert(dbConnection: DatabaseConnection, tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
         if (!this.databaseConnection && !this.pool)
             throw new ConnectionIsNotSetError("postgres");
 
-        const dropTablesQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as q FROM pg_tables WHERE schemaname = 'public'`;
-        return this.query(dbConnection, dropTablesQuery)
-            .then((results: any[]) => Promise.all(results.map(q => this.query(dbConnection, q["q"]))))
-            .then(() => {});
+        const keys = Object.keys(keyValues);
+        const columns = keys.map(key => this.escapeColumnName(key)).join(", ");
+        const values = keys.map((key, index) => "$" + (index + 1)).join(",");
+        const sql = `INSERT INTO ${this.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ idColumnName ? " RETURNING " + this.escapeColumnName(idColumnName) : "" }`;
+        const parameters = keys.map(key => keyValues[key]);
+        const result: ObjectLiteral[] = await this.query(dbConnection, sql, parameters);
+        if (idColumnName)
+            return result[0][idColumnName];
+
+        return result;
+    }
+
+    /**
+     * Updates rows that match given conditions in the given table.
+     */
+    async update(dbConnection: DatabaseConnection, tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
+
+        const updateValues = this.parametrize(valuesMap).join(", ");
+        const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
+        const query = `UPDATE ${this.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
+        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
+        const allParameters = updateParams.concat(conditionParams);
+        await this.query(dbConnection, query, allParameters);
+    }
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(dbConnection: DatabaseConnection, tableName: string, conditions: ObjectLiteral): Promise<void> {
+        if (!this.databaseConnection && !this.pool)
+            throw new ConnectionIsNotSetError("postgres");
+
+        const conditionString = this.parametrize(conditions).join(" AND ");
+        const parameters = Object.keys(conditions).map(key => conditions[key]);
+        const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
+        await this.query(dbConnection, query, parameters);
+    }
+
+    /**
+     * Inserts rows into closure table.
+     */
+    async insertIntoClosureTable(dbConnection: DatabaseConnection, tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+        let sql = "";
+        if (hasLevel) {
+            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+        } else {
+            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+        }
+        await this.query(dbConnection, sql);
+        const results: ObjectLiteral[] = await this.query(dbConnection, `SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
+        return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, column: ColumnMetadata): any {
+        return ColumnTypes.preparePersistentValue(value, column.type);
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    prepareHydratedValue(value: any, column: ColumnMetadata): any {
+        return ColumnTypes.prepareHydratedValue(value, column.type);
     }
 
     /**
@@ -314,72 +375,24 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Insert a new row into given table.
+     * Escapes a column name.
      */
-    async insert(dbConnection: DatabaseConnection, tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
-        if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("postgres");
-
-        const columns = Object.keys(keyValues).map(key => this.escapeColumnName(key)).join(", ");
-        const values = Object.keys(keyValues).map((key, index) => "$" + (index + 1)).join(","); // todo: escape here
-        const parameters = Object.keys(keyValues).map(key => keyValues[key]);
-        let sql = `INSERT INTO ${this.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
-        if (idColumnName)
-            sql += " RETURNING " + this.escapeColumnName(idColumnName);
-
-        const result: ObjectLiteral[] = await this.query(dbConnection, sql, parameters);
-        if (idColumnName)
-            return result[0][idColumnName];
-
-        return result;
+    escapeColumnName(columnName: string): string {
+        return "\"" + columnName + "\"";
     }
 
     /**
-     * Updates rows that match given conditions in the given table.
+     * Escapes an alias.
      */
-    async update(dbConnection: DatabaseConnection, tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("postgres");
-
-        const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
-        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const query = `UPDATE ${this.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        await this.query(dbConnection, query, updateParams.concat(conditionParams));
+    escapeAliasName(aliasName: string): string {
+        return "\"" + aliasName + "\"";
     }
 
     /**
-     * Deletes from the given table by a given conditions.
+     * Escapes a table name.
      */
-    async delete(dbConnection: DatabaseConnection, tableName: string, conditions: ObjectLiteral): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("postgres");
-
-        const conditionString = this.parametrize(conditions).join(" AND ");
-        const params = Object.keys(conditions).map(key => conditions[key]);
-
-        const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(dbConnection, query, params);
-    }
-
-    /**
-     * Inserts rows into closure table.
-     */
-    async insertIntoClosureTable(dbConnection: DatabaseConnection, tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
-        let sql = "";
-        if (hasLevel) {
-            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
-        } else {
-            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
-        }
-        await this.query(dbConnection, sql);
-        const results: ObjectLiteral[] = await this.query(dbConnection, `SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
-        return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+    escapeTableName(tableName: string): string {
+        return "\"" + tableName + "\"";
     }
 
     /**
@@ -391,20 +404,6 @@ export class PostgresDriver implements Driver {
             connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type and metadata.
-     */
-    preparePersistentValue(value: any, column: ColumnMetadata): any {
-        return ColumnTypes.preparePersistentValue(value, column.type);
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type and metadata.
-     */
-    prepareHydratedValue(value: any, column: ColumnMetadata): any {
-        return ColumnTypes.prepareHydratedValue(value, column.type);
     }
 
     // -------------------------------------------------------------------------
@@ -425,6 +424,9 @@ export class PostgresDriver implements Driver {
         }
     }
 
+    /**
+     * Parametrizes given object of values. Used to create column=value queries.
+     */
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
         return Object.keys(objectLiteral).map((key, index) => this.escapeColumnName(key) + "=$" + (startIndex + index + 1));
     }
