@@ -412,7 +412,7 @@ export class PostgresDriver implements Driver {
                 return value.map((v: any) => {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
-                }).toString(); // TODO-CV this is a kludge (adding toString() to conform the return type)
+                }).toString();
             } else {
                 builtParameters.push(value);
             }
