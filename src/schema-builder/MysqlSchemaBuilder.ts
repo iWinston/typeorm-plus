@@ -19,7 +19,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     /*async getColumnProperties(tableName: string, columnName: string): Promise<{ isNullable: boolean, columnType: string, autoIncrement: boolean }|undefined> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.databaseName}'` +
             ` AND TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${columnName}'`;
 
         const result = await this.query<ObjectLiteral[]>(sql);
@@ -37,7 +37,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
      * todo: reuse getColumns
      */
     getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}'` +
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.databaseName}'` +
             ` AND TABLE_NAME = '${tableName}'`;
         return this.query(sql).then((results: any[]) => {
 
@@ -69,7 +69,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     checkIfTableExist(tableName: string): Promise<boolean> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.driver.databaseName}' AND TABLE_NAME = '${tableName}'`;
         return this.query(sql).then(results => !!(results && results.length));
     }
 
@@ -106,13 +106,13 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     getTableForeignQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = "${this.driver.db}" `
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = "${this.driver.databaseName}" `
             + `AND TABLE_NAME = "${tableName}" AND REFERENCED_COLUMN_NAME IS NOT NULL`;
         return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
     }
 
     getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = "${this.driver.db}" ` +
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = "${this.driver.databaseName}" ` +
             `AND TABLE_NAME = "${tableName}" AND CONSTRAINT_TYPE = 'UNIQUE'`;
         return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
     }
@@ -135,7 +135,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     getPrimaryConstraintName(tableName: string): Promise<string> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = "${this.driver.db}"`
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = "${this.driver.databaseName}"`
             + ` AND TABLE_NAME = "${tableName}" AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
         return this.query(sql).then(results => results && results.length ? results[0].CONSTRAINT_NAME : undefined);
     }
@@ -156,7 +156,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     }
 
     getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.db}' AND TABLE_NAME = '${tableName}'`;
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.driver.databaseName}' AND TABLE_NAME = '${tableName}'`;
         return this.query(sql).then((results: any[]) => {
             return results.map(dbColumn => {
                 const hasDbColumnPrimaryIndex = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;

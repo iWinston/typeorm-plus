@@ -6,6 +6,14 @@ import {DriverOptions} from "./DriverOptions";
 import {PostgresSchemaBuilder} from "../schema-builder/PostgresSchemaBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DatabaseConnection} from "./DatabaseConnection";
+import {DriverPackageNotInstalledError} from "./error/DriverPackageNotInstalledError";
+import {DriverPackageLoadError} from "./error/DriverPackageLoadError";
+import {DriverUtils} from "./DriverUtils";
+
+// todo(tests):
+// check connection with url
+// check if any of required option is not set exception to be thrown
+//
 
 /**
  * This driver organizes work with postgres database.
@@ -13,104 +21,95 @@ import {DatabaseConnection} from "./DatabaseConnection";
 export class PostgresDriver extends BaseDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Private Properties
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    connectionOptions: DriverOptions;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
      * Postgres library.
      */
-    private postgres: any;
+    protected postgres: any;
 
     /**
      * Connection to postgres database.
      */
-    private databaseConnection: DatabaseConnection|undefined;
+    protected databaseConnection: DatabaseConnection|undefined;
 
     /**
      * Postgres pool.
      */
-    private pool: any;
+    protected pool: any;
 
     /**
      * Pool of database connections.
      */
-    private databaseConnectionPool: DatabaseConnection[] = [];
-
-    // -------------------------------------------------------------------------
-    // Getter Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    get native() {
-        return {
-            driver: this.postgres,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
-            pool: this.pool
-        };
-    }
-
-    /**
-     * Access to the native connection to the database.
-     */
-    get nativeConnection(): any {
-        return this.databaseConnection;
-    }
-
-    /**
-     * Database name to which this connection is made.
-     */
-    get db(): string {
-        // if (this.postgresConnection && this.postgresConnection.config.database)
-        //     return this.postgresConnection.config.database;
-
-        if (this.connectionOptions.database)
-            return this.connectionOptions.database;
-
-        // todo: need to parse connection url and extract a db name from there
-        throw new Error("Cannot get the database name. Since database name is not explicitly given in configuration " +
-            "(maybe connection url is used?), database name cannot be retrieved until connection is made.");
-    }
+    protected databaseConnectionPool: DatabaseConnection[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(public connectionOptions: DriverOptions, postgres?: any) {
+    constructor(connectionOptions: DriverOptions,
+                postgres?: any) {
         super();
 
-        // if driver dependency is not given explicitly, then try to load it via "require"
-        if (!postgres && require) {
-            try {
-                postgres = require("pg");
-
-            } catch (e) {
-                throw new Error("Postgres package has not been found installed. Try to install it: npm install pg --save");
-            }
-        } else {
-            throw new Error("Cannot load postgres driver dependencies. Try to install all required dependencies.");
-        }
-
+        this.connectionOptions = DriverUtils.buildDriverOptions(connectionOptions);
         this.postgres = postgres;
+
+        // validate options to make sure everything is set
+        DriverUtils.validateDriverOptions(this.connectionOptions);
+
+        // if postgres package instance was not set explicitly then try to load it
+        if (!postgres)
+            this.loadDependencies();
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    /**
+     * Database name to which this connection is made.
+     */
+    get databaseName(): string {
+        return this.connectionOptions.database as string;
     }
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Escapes a column name.
+     */
     escapeColumnName(columnName: string): string {
         return "\"" + columnName + "\"";
     }
 
+    /**
+     * Escapes an alias.
+     */
     escapeAliasName(aliasName: string): string {
         return "\"" + aliasName + "\"";
     }
 
+    /**
+     * Escapes a table name.
+     */
     escapeTableName(tableName: string): string {
         return "\"" + tableName + "\"";
     }
 
+    /**
+     * Retrieves a new database connection.
+     * If pooling is enabled then connection from the pool will be retrieved.
+     * Otherwise active connection will be returned.
+     */
     retrieveDatabaseConnection(): Promise<DatabaseConnection> {
         if (this.pool) {
             return new Promise((ok, fail) => {
@@ -141,9 +140,14 @@ export class PostgresDriver extends BaseDriver implements Driver {
         throw new ConnectionIsNotSetError("postgres");
     }
 
+    /**
+     * Releases database connection. This is needed when using connection pooling.
+     * If connection is not from a pool, it should not be released.
+     */
     releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
         if (this.pool && dbConnection.releaseCallback) {
             dbConnection.releaseCallback();
+            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
         }
 
         return Promise.resolve();
@@ -157,9 +161,13 @@ export class PostgresDriver extends BaseDriver implements Driver {
     }
 
     /**
-     * Performs connection to the database based on given connection options.
+     * Performs connection to the database.
+     * Based on pooling options, it can either create connection immediately,
+     * either create a pool and create connection when needed.
      */
     connect(): Promise<void> {
+
+        // build connection options for the driver
         const options = Object.assign({}, {
             host: this.connectionOptions.host,
             user: this.connectionOptions.username,
@@ -168,7 +176,13 @@ export class PostgresDriver extends BaseDriver implements Driver {
             port: this.connectionOptions.port
         }, this.connectionOptions.extra || {});
 
-        if (this.connectionOptions.usePool === false) {
+        // pooling is enabled either when its set explicitly to true,
+        // either when its not defined at all (e.g. enabled by default)
+        if (this.connectionOptions.usePool === undefined || this.connectionOptions.usePool === true) {
+            this.pool = new this.postgres.Pool(options);
+            return Promise.resolve();
+
+        } else {
             return new Promise<void>((ok, fail) => {
                 this.databaseConnection = {
                     id: 1,
@@ -177,10 +191,6 @@ export class PostgresDriver extends BaseDriver implements Driver {
                 };
                 this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
             });
-
-        } else {
-            this.pool = new this.postgres.Pool(options);
-            return Promise.resolve();
         }
     }
 
@@ -192,8 +202,10 @@ export class PostgresDriver extends BaseDriver implements Driver {
             throw new ConnectionIsNotSetError("postgres");
 
         return new Promise<void>((ok, fail) => {
+            const handler = (err: any) => err ? fail(err) : ok();
+
             if (this.databaseConnection) {
-                this.databaseConnection.connection.end(/*(err: any) => err ? fail(err) : ok()*/); // todo: check if it can emit errors
+                this.databaseConnection.connection.end(/*handler*/); // todo: check if it can emit errors
                 this.databaseConnection = undefined;
             }
 
@@ -203,6 +215,7 @@ export class PostgresDriver extends BaseDriver implements Driver {
                         dbConnection.releaseCallback();
                     }
                 });
+                this.pool.end(handler);
                 this.pool = undefined;
                 this.databaseConnectionPool = [];
             }
@@ -397,9 +410,34 @@ export class PostgresDriver extends BaseDriver implements Driver {
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
+    /**
+     * Access to the native implementation of the database.
+     */
+    nativeInterface() {
+        return {
+            driver: this.postgres,
+            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
+            pool: this.pool
+        };
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * If driver dependency is not given explicitly, then try to load it via "require".
+     */
+    protected loadDependencies() {
+        if (!require)
+            throw new DriverPackageLoadError();
+
+        try {
+            this.postgres = require("pg");
+        } catch (e) {
+            throw new DriverPackageNotInstalledError("Postgres", "pg");
+        }
+    }
 
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
         return Object.keys(objectLiteral).map((key, index) => this.escapeColumnName(key) + "=$" + (startIndex + index + 1));

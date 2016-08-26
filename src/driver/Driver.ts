@@ -9,10 +9,34 @@ import {DatabaseConnection} from "./DatabaseConnection";
  */
 export interface Driver {
 
-    readonly keysEscapingCharacter?: string;
+    /**
+     * Connection options used in this driver.
+     */
+    readonly connectionOptions: DriverOptions;
 
+    /**
+     * Database name to which this connection is made.
+     */
+    readonly databaseName: string;
+
+    /**
+     * Access to the native implementation of the database.
+     */
+    nativeInterface(): any;
+
+    /**
+     * Escapes a column name.
+     */
     escapeColumnName(columnName: string): string;
+
+    /**
+     * Escapes an alias.
+     */
     escapeAliasName(aliasName: string): string;
+
+    /**
+     * Escapes a table name.
+     */
     escapeTableName(tableName: string): string;
 
     /**
@@ -23,24 +47,10 @@ export interface Driver {
     retrieveDatabaseConnection(): Promise<DatabaseConnection>;
 
     /**
-     * Releases database connection.
+     * Releases database connection. This is needed when using connection pooling.
+     * If connection is not from a pool, it should not be released.
      */
     releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void>;
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    readonly native: any;
-
-    /**
-     * Connection options used in this driver.
-     */
-    connectionOptions: DriverOptions;
-    
-    /**
-     * Database name to which this connection is made.
-     */
-    readonly db: string;
     
     /**
      * Creates a schema builder which can be used to build database/table schemas.
@@ -48,7 +58,9 @@ export interface Driver {
     createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder;
 
     /**
-     * Performs connection to the database based on given connection options.
+     * Performs connection to the database.
+     * Based on pooling options, it can either create connection immediately,
+     * either create a pool and create connection when needed.
      */
     connect(): Promise<void>;
 

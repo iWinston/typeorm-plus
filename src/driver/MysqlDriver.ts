@@ -6,6 +6,9 @@ import {BaseDriver} from "./BaseDriver";
 import {DriverOptions} from "./DriverOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DatabaseConnection} from "./DatabaseConnection";
+import {DriverPackageNotInstalledError} from "./error/DriverPackageNotInstalledError";
+import {DriverPackageLoadError} from "./error/DriverPackageLoadError";
+import {DriverUtils} from "./DriverUtils";
 
 /**
  * This driver organizes work with mysql database.
@@ -13,47 +16,95 @@ import {DatabaseConnection} from "./DatabaseConnection";
 export class MysqlDriver extends BaseDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Private Properties
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    connectionOptions: DriverOptions;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
      * Mysql library.
      */
-    private mysql: any;
+    protected mysql: any;
 
     /**
      * Connection to mysql database.
      */
-    private databaseConnection: DatabaseConnection|undefined;
+    protected databaseConnection: DatabaseConnection|undefined;
 
     /**
      * Mysql pool.
      */
-    private pool: any;
+    protected pool: any;
 
     /**
      * Pool of database connections.
      */
-    private databaseConnectionPool: DatabaseConnection[] = [];
+    protected databaseConnectionPool: DatabaseConnection[] = [];
 
     // -------------------------------------------------------------------------
-    // Getter Methods
+    // Constructor
     // -------------------------------------------------------------------------
 
+    constructor(connectionOptions: DriverOptions,
+                mysql?: any) {
+        super();
+
+        this.connectionOptions = DriverUtils.buildDriverOptions(connectionOptions);
+        this.mysql = mysql;
+
+        // validate options to make sure everything is set
+        DriverUtils.validateDriverOptions(this.connectionOptions);
+
+        // if mysql package instance was not set explicitly then try to load it
+        if (!mysql)
+            this.loadDependencies();
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    /**
+     * Database name to which this connection is made.
+     */
+    get databaseName(): string {
+        return this.connectionOptions.database as string;
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Escapes a column name.
+     */
     escapeColumnName(columnName: string): string {
-        return columnName;
+        return columnName; // "`" + columnName + "`";
     }
 
+    /**
+     * Escapes an alias.
+     */
     escapeAliasName(aliasName: string): string {
-        return aliasName;
-        // return "\"" + aliasName + "\"";
+        return aliasName; // "`" + aliasName + "`";
     }
 
+    /**
+     * Escapes a table name.
+     */
     escapeTableName(tableName: string): string {
-        return tableName;
-        // return "\"" + aliasName + "\"";
+        return tableName; // "`" + tableName + "`";
     }
 
+    /**
+     * Retrieves a new database connection.
+     * If pooling is enabled then connection from the pool will be retrieved.
+     * Otherwise active connection will be returned.
+     */
     retrieveDatabaseConnection(): Promise<DatabaseConnection> {
         if (this.pool) {
             return new Promise((ok, fail) => {
@@ -83,61 +134,18 @@ export class MysqlDriver extends BaseDriver implements Driver {
         throw new ConnectionIsNotSetError("mysql");
     }
 
+    /**
+     * Releases database connection. This is needed when using connection pooling.
+     * If connection is not from a pool, it should not be released.
+     */
     releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void> {
-        if (this.pool)
+        if (this.pool) {
             dbConnection.connection.release();
+            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+        }
 
         return Promise.resolve();
     }
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    get native() {
-        return {
-            driver: this.mysql,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
-            pool: this.pool
-        };
-    }
-
-    /**
-     * Database name to which this connection is made.
-     */
-    get db(): string {
-        if (this.connectionOptions.database)
-            return this.connectionOptions.database;
-
-        // todo: need to parse connection url and extract a db name from there
-        throw new Error("Cannot get the database name. Since database name is not explicitly given in configuration " +
-            "(maybe connection url is used?), database name cannot be retrieved until connection is made.");
-    }
-
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-
-    constructor(public connectionOptions: DriverOptions, mysql?: any) {
-        super();
-
-        // if driver dependency is not given explicitly, then try to load it via "require"
-        if (!mysql && require) {
-            try {
-                mysql = require("mysql");
-
-            } catch (e) {
-                throw new Error("Mysql package has not been found installed. Try to install it: npm install mysql --save");
-            }
-        } else {
-            throw new Error("Cannot load mysql driver dependencies. Try to install all required dependencies.");
-        }
-
-        this.mysql = mysql;
-    }
-
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
 
     /**
      * Creates a schema builder which can be used to build database/table schemas.
@@ -147,9 +155,13 @@ export class MysqlDriver extends BaseDriver implements Driver {
     }
 
     /**
-     * Performs connection to the database based on given connection options.
+     * Performs connection to the database.
+     * Based on pooling options, it can either create connection immediately,
+     * either create a pool and create connection when needed.
      */
     connect(): Promise<void> {
+
+        // build connection options for the driver
         const options = Object.assign({}, {
             host: this.connectionOptions.host,
             user: this.connectionOptions.username,
@@ -158,7 +170,13 @@ export class MysqlDriver extends BaseDriver implements Driver {
             port: this.connectionOptions.port
         }, this.connectionOptions.extra || {});
 
-        if (this.connectionOptions.usePool === false) {
+        // pooling is enabled either when its set explicitly to true,
+        // either when its not defined at all (e.g. enabled by default)
+        if (this.connectionOptions.usePool === undefined || this.connectionOptions.usePool === true) {
+            this.pool = this.mysql.createPool(options);
+            return Promise.resolve();
+
+        } else {
             return new Promise<void>((ok, fail) => {
                 this.databaseConnection = {
                     id: 1,
@@ -167,10 +185,6 @@ export class MysqlDriver extends BaseDriver implements Driver {
                 };
                 this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
             });
-
-        } else {
-            this.pool = this.mysql.createPool(options);
-            return Promise.resolve();
         }
     }
 
@@ -183,11 +197,15 @@ export class MysqlDriver extends BaseDriver implements Driver {
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
+
+            // if pooling is used, then disconnect from it
             if (this.pool) {
                 this.pool.end(handler);
                 this.pool = undefined;
                 this.databaseConnectionPool = [];
             }
+
+            // if single connection is opened, then close it
             if (this.databaseConnection) {
                 this.databaseConnection.connection.end(handler);
                 this.databaseConnection = undefined;
@@ -203,15 +221,17 @@ export class MysqlDriver extends BaseDriver implements Driver {
             throw new ConnectionIsNotSetError("mysql");
 
         this.logQuery(query);
-        return new Promise((ok, fail) => dbConnection.connection.query(query, parameters, (err: any, result: any) => {
-            if (err) {
-                this.logFailedQuery(query);
-                this.logQueryError(err);
-                fail(err);
-            } else {
+        return new Promise((ok, fail) => {
+            dbConnection.connection.query(query, parameters, (err: any, result: any) => {
+                if (err) {
+                    this.logFailedQuery(query);
+                    this.logQueryError(err);
+                    return fail(err);
+                }
+
                 ok(result);
-            }
-        }));
+            });
+        });
     }
 
     /**
@@ -255,7 +275,7 @@ export class MysqlDriver extends BaseDriver implements Driver {
             throw new ConnectionIsNotSetError("mysql");
 
         const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.db}'`;
+        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.databaseName}'`;
         const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
         await this.query(dbConnection, disableForeignKeysCheckQuery);
@@ -352,9 +372,34 @@ export class MysqlDriver extends BaseDriver implements Driver {
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
+    /**
+     * Access to the native implementation of the database.
+     */
+    nativeInterface() {
+        return {
+            driver: this.mysql,
+            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
+            pool: this.pool
+        };
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * If driver dependency is not given explicitly, then try to load it via "require".
+     */
+    protected loadDependencies() {
+        if (!require)
+            throw new DriverPackageLoadError();
+
+        try {
+            this.mysql = require("pg");
+        } catch (e) {
+            throw new DriverPackageNotInstalledError("Mysql", "mysql");
+        }
+    }
 
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
         return Object.keys(objectLiteral).map(key => this.escapeColumnName(key) + "=?");

@@ -62,7 +62,8 @@
     "reflect-metadata": "^0.1.3",
     "require-all": "^2.0.0",
     "rxjs": "^5.0.0-beta.8",
-    "sha1": "^1.1.1"
+    "sha1": "^1.1.1",
+    "url": "^0.11.0"
   },
   "scripts": {
     "test": "node_modules/.bin/gulp tests"
