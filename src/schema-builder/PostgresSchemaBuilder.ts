@@ -164,22 +164,31 @@ order by t.relname, i.relname`);
         // update name, type, nullable
         const newType = this.normalizeType(newColumn);
         if (oldColumn.type !== newType ||
-            oldColumn.nullable !== newColumn.isNullable ||
             oldColumn.name !== newColumn.name) {
 
             let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
             if (oldColumn.type !== newType) {
                 sql += ` TYPE ${newType}`;
             }
-            if (oldColumn.nullable !== newColumn.isNullable) {
+            /*if (oldColumn.nullable !== newColumn.isNullable) {
                 if (newColumn.isNullable) {
                     sql += ` DROP NOT NULL`;
                 } else {
                     sql += ` SET NOT NULL`;
                 }
-            }
-            if (oldColumn.name !== newColumn.name) {
+            }*/
+            if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
                 sql += ` RENAME TO ` + newColumn.name;
+            }
+            await this.query(sql);
+        }
+
+        if (oldColumn.nullable !== newColumn.isNullable) {
+            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
+            if (newColumn.isNullable) {
+                sql += ` DROP NOT NULL`;
+            } else {
+                sql += ` SET NOT NULL`;
             }
             await this.query(sql);
         }
