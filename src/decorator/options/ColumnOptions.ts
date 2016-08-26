@@ -24,7 +24,7 @@ export interface ColumnOptions {
     /**
      * Specifies if this column will use AUTO_INCREMENT or not (e.g. generated number).
      */
-    readonly generated?: boolean;
+    generated?: boolean;
 
     /**
      * Specifies if column's value must be unique or not.
