@@ -6,11 +6,11 @@ import {DriverOptionNotSetError} from "./error/DriverOptionNotSetError";
 export class DriverUtils {
 
     static validateDriverOptions(options: DriverOptions) {
-        if (options.host)
+        if (!options.host)
             throw new DriverOptionNotSetError("host");
-        if (options.username)
+        if (!options.username)
             throw new DriverOptionNotSetError("username");
-        if (options.database)
+        if (!options.database)
             throw new DriverOptionNotSetError("database");
     }
 
