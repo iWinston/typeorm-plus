@@ -13,6 +13,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {Logger} from "../logger/Logger";
 import {TransactionNotStartedError} from "./error/TransactionNotStartedError";
 import {TransactionAlreadyStartedError} from "./error/TransactionAlreadyStartedError";
+import * as moment from "moment";
 
 /**
  * This driver organizes work with mysql database.
@@ -370,14 +371,57 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, column: ColumnMetadata): any {
-        return ColumnTypes.preparePersistentValue(value, column.type);
+        switch (column.type) {
+            case ColumnTypes.BOOLEAN:
+                return value === true ? 1 : 0;
+            case ColumnTypes.DATE:
+                return moment(value).format("YYYY-MM-DD");
+            case ColumnTypes.TIME:
+                return moment(value).format("HH:mm:ss");
+            case ColumnTypes.DATETIME:
+                return moment(value).format("YYYY-MM-DD HH:mm:ss");
+            case ColumnTypes.JSON:
+                return JSON.stringify(value);
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as any[])
+                    .map(i => String(i))
+                    .join(",");
+        }
+
+        return value;
     }
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any {
-        return ColumnTypes.prepareHydratedValue(value, column.type);
+        switch (column.type) {
+            case ColumnTypes.BOOLEAN:
+                return value ? true : false;
+
+            case ColumnTypes.DATE:
+                if (value instanceof Date)
+                    return value;
+
+                return moment(value, "YYYY-MM-DD").toDate();
+
+            case ColumnTypes.TIME:
+                return moment(value, "HH:mm:ss").toDate();
+
+            case ColumnTypes.DATETIME:
+                if (value instanceof Date)
+                    return value;
+
+                return moment(value, "YYYY-MM-DD HH:mm:ss").toDate();
+
+            case ColumnTypes.JSON:
+                return JSON.parse(value);
+
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as string).split(",");
+        }
+
+        return value;
     }
 
     /**

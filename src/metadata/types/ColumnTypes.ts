@@ -1,5 +1,3 @@
-import * as moment from "moment";
-
 /**
  * All data types that column can be.
  */
@@ -153,65 +151,6 @@ export class ColumnTypes {
         // return undefined;
     }
 
-    /**
-     * todo: most probably extract out of here.
-     * todo: why its used by driver? if its extracted out of driver then it means its platform independent
-     */
-    static preparePersistentValue(value: any, type: ColumnType): any {
-        switch (type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
-            case ColumnTypes.DATE:
-                return moment(value).format("YYYY-MM-DD");
-            case ColumnTypes.TIME:
-                return moment(value).format("HH:mm:ss");
-            case ColumnTypes.DATETIME:
-                return moment(value).format("YYYY-MM-DD HH:mm:ss");
-            case ColumnTypes.JSON:
-                return JSON.stringify(value);
-            case ColumnTypes.SIMPLE_ARRAY:
-                return (value as any[])
-                    .map(i => String(i))
-                    .join(",");
-        }
-
-        return value;
-    }
-
-    /**
-     * todo: most probably extract out of here.
-     * todo: why its used by driver? if its extracted out of driver then it means its platform independent
-     */
-    static prepareHydratedValue(value: any, type: ColumnType) {
-        switch (type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
-
-            case ColumnTypes.DATE:
-                if (value instanceof Date)
-                    return value;
-
-                return moment(value, "YYYY-MM-DD").toDate();
-
-            case ColumnTypes.TIME:
-                return moment(value, "HH:mm:ss").toDate();
-
-            case ColumnTypes.DATETIME:
-                if (value instanceof Date)
-                    return value;
-
-                return moment(value, "YYYY-MM-DD HH:mm:ss").toDate();
-
-            case ColumnTypes.JSON:
-                return JSON.parse(value);
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return (value as string).split(",");
-        }
-
-        return value;
-    }
-    
     static typeToString(type: Function): string {
         return (type as any).name.toLowerCase();
     }
