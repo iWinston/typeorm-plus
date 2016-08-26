@@ -31,11 +31,6 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"p
         username: parameters.connections[type].username,
         password: parameters.connections[type].password,
         database: parameters.connections[type].database,
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
         extra: {
             max: 500
         }
@@ -51,6 +46,11 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
     };
     
     const mysqlSecondaryParameters: ConnectionOptions = {
@@ -60,6 +60,11 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
     };
 
     const postgresParameters: ConnectionOptions = {
@@ -69,6 +74,11 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
     };
 
     const postgresSecondaryParameters: ConnectionOptions = {
@@ -78,6 +88,11 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
     };
 
     const mysql = !options || !options.skipMysql;

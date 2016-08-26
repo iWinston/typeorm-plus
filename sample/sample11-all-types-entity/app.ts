@@ -9,10 +9,10 @@ const options: ConnectionOptions = {
         port: 3306,
         username: "root",
         password: "admin",
-        database: "test",
-        logging: {
-            logOnlyFailedQueries: true
-        }
+        database: "test"
+    },
+    logging: {
+        logOnlyFailedQueries: true
     },
     autoSchemaCreate: true,
     entities: [EverythingEntity]

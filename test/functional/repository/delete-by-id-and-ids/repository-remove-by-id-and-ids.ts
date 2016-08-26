@@ -20,10 +20,10 @@ describe("repository > removeById and removeByIds methods", function() {
             port: 3306,
             username: "root",
             password: "admin",
-            database: "test",
-            logging: {
-                logFailedQueryError: true
-            }
+            database: "test"
+        },
+        logging: {
+            logFailedQueryError: true
         },
         autoSchemaCreate: true,
         entities: [Post]

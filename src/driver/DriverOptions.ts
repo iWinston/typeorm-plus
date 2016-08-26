@@ -1,4 +1,3 @@
-import {LoggerOptions} from "../logger/LoggerOptions";
 /**
  * Driver connection options.
  */
@@ -44,11 +43,6 @@ export interface DriverOptions {
      * Be default it is enabled. Set to false to disable it.
      */
     readonly usePool?: boolean;
-
-    /**
-     * Driver logging options.
-     */
-    readonly logging?: LoggerOptions;
 
     /**
      * Extra connection options to be passed to the driver.

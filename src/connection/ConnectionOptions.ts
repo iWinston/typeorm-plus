@@ -1,5 +1,6 @@
 import {DriverOptions} from "../driver/DriverOptions";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
+import {LoggerOptions} from "../logger/LoggerOptions";
 
 /**
  * New connection options.
@@ -33,6 +34,11 @@ export interface ConnectionOptions {
      * Indicates if database schema should be auto created on every application launch.
      */
     readonly autoSchemaCreate?: boolean;
+
+    /**
+     * Driver logging options.
+     */
+    readonly logging?: LoggerOptions;
 
     /**
      * Entities to be loaded for the this connection.

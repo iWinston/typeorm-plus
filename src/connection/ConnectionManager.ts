@@ -7,6 +7,7 @@ import {Driver} from "../driver/Driver";
 import {MissingDriverError} from "./error/MissingDriverError";
 import {PostgresDriver} from "../driver/PostgresDriver";
 import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
+import {Logger} from "../logger/Logger";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -53,7 +54,9 @@ export class ConnectionManager {
      * createAndConnect method to use them.
      */
     create(options: ConnectionOptions): Connection {
-        const driver = this.createDriver(options.driver);
+
+        const logger = new Logger(options.logging);
+        const driver = this.createDriver(options.driver, logger);
         const connection = this.createConnection(options.name || "default", driver);
 
         if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
@@ -108,12 +111,12 @@ export class ConnectionManager {
     /**
      * Creates a new driver based on the given driver type and options.
      */
-    private createDriver(options: DriverOptions): Driver {
+    private createDriver(options: DriverOptions, logger: Logger): Driver {
         switch (options.type) {
             case "mysql":
-                return new MysqlDriver(options);
+                return new MysqlDriver(options, logger);
             case "postgres":
-                return new PostgresDriver(options);
+                return new PostgresDriver(options, logger);
             default:
                 throw new MissingDriverError(options.type);
         }

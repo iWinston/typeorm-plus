@@ -28,6 +28,9 @@ export class PostgresDriver implements Driver {
     // Public Properties
     // -------------------------------------------------------------------------
 
+    /**
+     * Driver connection options.
+     */
     readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
@@ -55,7 +58,7 @@ export class PostgresDriver implements Driver {
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
     /**
-     * Logger.
+     * Logger used go log queries and errors.
      */
     protected logger: Logger;
 
@@ -63,10 +66,10 @@ export class PostgresDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, postgres?: any) {
+    constructor(connectionOptions: DriverOptions, logger: Logger, postgres?: any) {
 
         this.options = DriverUtils.buildDriverOptions(connectionOptions);
-        this.logger = new Logger(this.options.logging);
+        this.logger = logger;
         this.postgres = postgres;
 
         // validate options to make sure everything is set
@@ -413,7 +416,7 @@ export class PostgresDriver implements Driver {
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
-    protected loadDependencies() {
+    protected loadDependencies(): void {
         if (!require)
             throw new DriverPackageLoadError();
 

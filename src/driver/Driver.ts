@@ -3,6 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {DriverOptions} from "./DriverOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DatabaseConnection} from "./DatabaseConnection";
+import {Logger} from "../logger/Logger";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.

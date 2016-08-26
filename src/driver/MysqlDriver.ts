@@ -23,6 +23,9 @@ export class MysqlDriver implements Driver {
     // Public Properties
     // -------------------------------------------------------------------------
 
+    /**
+     * Driver connection options.
+     */
     readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
@@ -50,7 +53,7 @@ export class MysqlDriver implements Driver {
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
     /**
-     * Logger.
+     * Logger used go log queries and errors.
      */
     protected logger: Logger;
 
@@ -58,10 +61,10 @@ export class MysqlDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, mysql?: any) {
+    constructor(options: DriverOptions, logger: Logger, mysql?: any) {
 
         this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = new Logger(this.options.logging);
+        this.logger = logger;
         this.mysql = mysql;
 
         // validate options to make sure everything is set
@@ -395,7 +398,7 @@ export class MysqlDriver implements Driver {
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
-    protected loadDependencies() {
+    protected loadDependencies(): void {
         if (!require)
             throw new DriverPackageLoadError();
 

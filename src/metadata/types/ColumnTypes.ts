@@ -1,13 +1,13 @@
 import * as moment from "moment";
 
 /**
- * All types that column can be.
+ * All data types that column can be.
  */
 export type ColumnType = "string"|"text"|"number"|"integer"|"int"|"smallint"|"bigint"|"float"|"double"|
                          "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"simple_array";
 
 /**
- * All types that column can be.
+ * All data types that column can be.
  */
 export class ColumnTypes {
 
@@ -153,6 +153,10 @@ export class ColumnTypes {
         // return undefined;
     }
 
+    /**
+     * todo: most probably extract out of here.
+     * todo: why its used by driver? if its extracted out of driver then it means its platform independent
+     */
     static preparePersistentValue(value: any, type: ColumnType): any {
         switch (type) {
             case ColumnTypes.BOOLEAN:
@@ -174,6 +178,10 @@ export class ColumnTypes {
         return value;
     }
 
+    /**
+     * todo: most probably extract out of here.
+     * todo: why its used by driver? if its extracted out of driver then it means its platform independent
+     */
     static prepareHydratedValue(value: any, type: ColumnType) {
         switch (type) {
             case ColumnTypes.BOOLEAN:

@@ -11,11 +11,11 @@ const options: ConnectionOptions = {
         port: 3306,
         username: "root",
         password: "admin",
-        database: "test",
-        logging: {
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        }
+        database: "test"
+    },
+    logging: {
+        logOnlyFailedQueries: true,
+        logFailedQueryError: true
     },
     autoSchemaCreate: true,
     entities: [Post, Question, Counters]

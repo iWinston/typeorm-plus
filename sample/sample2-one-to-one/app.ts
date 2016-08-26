@@ -15,10 +15,10 @@ const options: ConnectionOptions = {
         port: 3306,
         username: "root",
         password: "admin",
-        database: "test",
-        logging: {
-            logQueries: true
-        }
+        database: "test"
+    },
+    logging: {
+        logQueries: true
     },
     autoSchemaCreate: true,
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]

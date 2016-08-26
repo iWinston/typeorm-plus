@@ -21,10 +21,10 @@ describe("persistence > many-to-many", function() {
             port: 3306,
             username: "root",
             password: "admin",
-            database: "test",
-            logging: {
-                logFailedQueryError: true
-            }
+            database: "test"
+        },
+        logging: {
+            logFailedQueryError: true
         },
         entities: [Post, Category, User]
     };

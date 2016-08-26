@@ -1,11 +1,19 @@
 import {DriverOptions} from "./DriverOptions";
 import {DriverOptionNotSetError} from "./error/DriverOptionNotSetError";
+
 /**
  * Common driver utility functions.
  */
 export class DriverUtils {
 
-    static validateDriverOptions(options: DriverOptions) {
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Validates if all required options are set in the driver options.
+     */
+    static validateDriverOptions(options: DriverOptions): void {
         if (!options.host)
             throw new DriverOptionNotSetError("host");
         if (!options.username)
@@ -14,6 +22,10 @@ export class DriverUtils {
             throw new DriverOptionNotSetError("database");
     }
 
+    /**
+     * Normalizes and builds a new driver options.
+     * Extracts settings from connection url and sets to the options itself.
+     */
     static buildDriverOptions(options: DriverOptions): DriverOptions {
         if (options.url) {
             const parsedUrl = this.parseConnectionUrl(options.url);
@@ -31,6 +43,13 @@ export class DriverUtils {
         return Object.assign({}, options);
     }
 
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Extracts connection data from the connection url.
+     */
     private static parseConnectionUrl(url: string) {
         const urlParser = require("url");
         const params = urlParser.parse(url);
