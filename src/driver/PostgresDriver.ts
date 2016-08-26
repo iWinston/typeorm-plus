@@ -76,17 +76,6 @@ export class PostgresDriver implements Driver {
     }
 
     // -------------------------------------------------------------------------
-    // Accessors
-    // -------------------------------------------------------------------------
-
-    /**
-     * Database name to which this connection is made.
-     */
-    get databaseName(): string {
-        return this.options.database as string;
-    }
-
-    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -231,13 +220,6 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Escapes given value.
-     */
-    escape(dbConnection: DatabaseConnection, value: any): any {
-        return value; // TODO: this.postgresConnection.escape(value);
-    }
-
-    /**
      * Executes a given SQL query.
      */
     query(dbConnection: DatabaseConnection, query: string, parameters?: any[]): Promise<any> {
@@ -306,28 +288,14 @@ export class PostgresDriver implements Driver {
             .then(() => {});
     }
 
-    buildParameters(sql: string, parameters: ObjectLiteral) {
+    /**
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
+     */
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
         if (!parameters || !Object.keys(parameters).length)
-            return [];
-        const builtParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
-        sql.replace(new RegExp(keys, "g"), (key: string) => {
-            const value = parameters[key.substr(1)];
-            if (value instanceof Array) {
-                return value.map((v: any) => {
-                    builtParameters.push(v);
-                });
-            } else {
-                builtParameters.push(value);
-            }
-            return "?";
-        }); // todo: make replace only in value statements, otherwise problems
-        return builtParameters;
-    }
+            return [sql, []];
 
-    replaceParameters(sql: string, parameters: ObjectLiteral) {
-        if (!parameters || !Object.keys(parameters).length)
-            return sql;
         const builtParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
@@ -341,8 +309,8 @@ export class PostgresDriver implements Driver {
                 builtParameters.push(value);
             }
             return "$" + builtParameters.length;
-        });
-        return sql;
+        }); // todo: make replace only in value statements, otherwise problems
+        return [sql, builtParameters];
     }
 
     /**

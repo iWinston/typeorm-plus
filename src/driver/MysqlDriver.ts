@@ -71,17 +71,6 @@ export class MysqlDriver implements Driver {
     }
 
     // -------------------------------------------------------------------------
-    // Accessors
-    // -------------------------------------------------------------------------
-
-    /**
-     * Database name to which this connection is made.
-     */
-    get databaseName(): string {
-        return this.options.database as string;
-    }
-
-    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -280,7 +269,7 @@ export class MysqlDriver implements Driver {
             throw new ConnectionIsNotSetError("mysql");
 
         const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.databaseName}'`;
+        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.options.database}'`;
         const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
         await this.query(dbConnection, disableForeignKeysCheckQuery);
@@ -289,25 +278,20 @@ export class MysqlDriver implements Driver {
         await this.query(dbConnection, enableForeignKeysCheckQuery);
     }
 
-    buildParameters(sql: string, parameters: ObjectLiteral) {
+    /**
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
+     */
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
         if (!parameters || !Object.keys(parameters).length)
-            return [];
-        const builtParameters: any[] = [];
+            return [sql, []];
+        const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
-        sql.replace(new RegExp(keys, "g"), (key: string) => {
-            const value = parameters[key.substr(1)];
-            builtParameters.push(value);
+        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
+            escapedParameters.push(parameters[key.substr(1)]);
             return "?";
         }); // todo: make replace only in value statements, otherwise problems
-        return builtParameters;
-    }
-
-    replaceParameters(sql: string, parameters: ObjectLiteral) {
-        if (!parameters || !Object.keys(parameters).length)
-            return sql;
-
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + ")").join("|");
-        return sql.replace(new RegExp(keys, "g"), "?");
+        return [sql, escapedParameters];
     }
 
     /**

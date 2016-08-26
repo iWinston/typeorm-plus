@@ -400,11 +400,11 @@ export class QueryBuilder<Entity> {
         sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
-        sql  = this.replaceParameters(sql);
+        [sql] = this.driver.escapeQueryWithParameters(sql, this.parameters);
         return sql;
     }
 
-    getParameters() {
+    getSqlWithParameters(): [string, any[]] {
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
         sql += this.createJoinRelationIdsExpression();
@@ -414,7 +414,7 @@ export class QueryBuilder<Entity> {
         sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
-        return this.driver.buildParameters(sql, this.parameters);
+        return this.driver.escapeQueryWithParameters(sql, this.parameters);
     }
 
     async execute(): Promise<any> {
@@ -425,7 +425,8 @@ export class QueryBuilder<Entity> {
             dbConnection = await this.driver.retrieveDatabaseConnection();
         }
 
-        const result = await this.driver.query(dbConnection, this.getSql(), this.getParameters());
+        const [sql, parameters] = this.getSqlWithParameters();
+        const result = await this.driver.query(dbConnection, sql, parameters);
 
         if (ownDatabaseConnection)
             await this.driver.releaseDatabaseConnection(dbConnection);
@@ -462,14 +463,17 @@ export class QueryBuilder<Entity> {
         const mainAliasName = this.aliasMap.mainAlias.name;
         let scalarResults: any[];
         if (this.firstResult || this.maxResults) {
+            const [sql, parameters] = this.getSqlWithParameters();
+
             const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
             let idsQuery = `SELECT DISTINCT(distinctAlias.${mainAliasName}_${metadata.primaryColumn.name}) as ids`;
-            idsQuery += ` FROM (${this.getSql()}) distinctAlias`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
+            idsQuery += ` FROM (${sql}) distinctAlias`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
             if (this.maxResults)
                 idsQuery += " LIMIT " + this.maxResults;
             if (this.firstResult)
                 idsQuery += " OFFSET " + this.firstResult;
-            const results = await this.driver.query(dbConnection, idsQuery, this.getParameters())
+
+            const results = await this.driver.query(dbConnection, idsQuery, parameters)
                 .then((results: any[]) => {
                     scalarResults = results;
                     const ids = results.map(result => result["ids"]);
@@ -477,8 +481,9 @@ export class QueryBuilder<Entity> {
                         return [];
                     const queryWithIds = this.clone({ dbConnection: dbConnection })
                         .andWhere(mainAliasName + "." + metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids });
+                    const [queryWithIdsSql, queryWithIdsParameters] = queryWithIds.getSqlWithParameters();
 
-                    return this.driver.query(dbConnection as DatabaseConnection, queryWithIds.getSql(), queryWithIds.getParameters());
+                    return this.driver.query(dbConnection as DatabaseConnection, queryWithIdsSql, queryWithIdsParameters);
                 })
                 .then(results => {
                     return this.rawResultsToEntities(results);
@@ -499,7 +504,8 @@ export class QueryBuilder<Entity> {
 
         } else {
 
-            const results = await this.driver.query(dbConnection, this.getSql(), this.getParameters())
+            const [sql, parameters] = this.getSqlWithParameters();
+            const results = await this.driver.query(dbConnection, sql, parameters)
                 .then(results => {
                     scalarResults = results;
                     return this.rawResultsToEntities(results);
@@ -666,7 +672,8 @@ export class QueryBuilder<Entity> {
         const countQuery = this.clone({ dbConnection: dbConnection, skipOrderBys: true })
             .select(`COUNT(DISTINCT(${this.driver.escapeAliasName(mainAlias)}.${this.driver.escapeColumnName(metadata.primaryColumn.name)})) as cnt`);
 
-        const results = await this.driver.query(dbConnection, countQuery.getSql(), countQuery.getParameters());
+        const [countQuerySql, countQueryParameters] = countQuery.getSqlWithParameters();
+        const results = await this.driver.query(dbConnection, countQuerySql, countQueryParameters);
         if (ownDatabaseConnection) {
             await this.driver.releaseDatabaseConnection(dbConnection);
         }
@@ -1033,10 +1040,6 @@ export class QueryBuilder<Entity> {
     protected createOffsetExpression() {
         if (!this.offset) return "";
         return " OFFSET " + this.offset;
-    }
-
-    protected replaceParameters(sql: string) {
-        return this.driver.replaceParameters(sql, this.parameters);
     }
 
     private extractJoinMappings(): JoinMapping[] {

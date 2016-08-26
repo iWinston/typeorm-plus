@@ -32,7 +32,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     checkIfTableExist(tableName: string): Promise<boolean> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.driver.databaseName}' AND TABLE_NAME = '${tableName}'`;
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
         return this.query(sql).then(results => !!(results && results.length));
     }
 
@@ -70,14 +70,14 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
 
     getTableForeignQuery(tableName: string): Promise<string[]> {
         const sql = `SELECT tc.constraint_name FROM information_schema.table_constraints AS tc ` +
-        `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.driver.databaseName}' AND tc.table_name='${tableName}'`;
-        // const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.driver.databaseName}' `
+        `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.dbName}' AND tc.table_name='${tableName}'`;
+        // const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.dbName}' `
         //     + `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE='FOREIGN KEY'`;
         return this.query(sql).then((results: any[]) => results.map(result => result.constraint_name));
     }
 
     getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG='${this.driver.databaseName}' ` +
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG='${this.dbName}' ` +
             `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
         return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
     }
@@ -102,7 +102,7 @@ order by t.relname, i.relname`;
     }
 
     getPrimaryConstraintName(tableName: string): Promise<string> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.driver.databaseName}'`
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.dbName}'`
             + ` AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
         return this.query(sql).then(results => results && results.length ? results[0].CONSTRAINT_NAME : undefined);
     }
@@ -127,7 +127,7 @@ order by t.relname, i.relname`;
     }
 
     async getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.driver.databaseName}' AND TABLE_NAME = '${tableName}'`;
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
         const results: any[] = await this.query(sql);
         const promises = results.map(async dbColumn => {
             const columnType = dbColumn.data_type.toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
@@ -138,7 +138,7 @@ group by t.relname, i.relname, a.attname
 order by t.relname, i.relname`);
             const isGenerated = dbColumn["column_default"] === `nextval('${tableName}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${tableName}_id_seq"'::regclass)`;
             // const commentResults = await this.query(`SELECT cols.column_name, (SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int) FROM pg_catalog.pg_class c WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name) as column_comment
-// FROM information_schema.columns cols WHERE cols.table_catalog = '${this.driver.databaseName}' AND cols.table_name = '${tableName}' and cols.column_name = '${dbColumn["column_name"]}'`);
+// FROM information_schema.columns cols WHERE cols.table_catalog = '${this.dbName}' AND cols.table_name = '${tableName}' and cols.column_name = '${dbColumn["column_name"]}'`);
             // todo: comments has issues with case sensitive, need to find solution
 
             return {
@@ -213,6 +213,10 @@ order by t.relname, i.relname`);
     
     private query(sql: string) {
         return this.driver.query(this.dbConnection, sql);
+    }
+    
+    private get dbName(): string {
+        return this.driver.options.database as string;
     }
 
     private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {

@@ -15,11 +15,6 @@ export interface Driver {
     readonly options: DriverOptions;
 
     /**
-     * Database name to which this connection is made.
-     */
-    readonly databaseName: string;
-
-    /**
      * Access to the native implementation of the database.
      */
     nativeInterface(): any;
@@ -80,14 +75,10 @@ export interface Driver {
     clearDatabase(dbConnection: DatabaseConnection): Promise<void>;
 
     /**
-     * Replaces parameters in the given sql with special character.
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
      */
-    buildParameters(sql: string, parameters: ObjectLiteral): string[];
-
-    /**
-     * Replaces parameters in the given sql with special character.
-     */
-    replaceParameters(sql: string, parameters: ObjectLiteral): string;
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]];
 
     /**
      * Updates rows that match given simple conditions in the given table.

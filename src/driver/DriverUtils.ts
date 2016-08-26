@@ -15,16 +15,20 @@ export class DriverUtils {
     }
 
     static buildDriverOptions(options: DriverOptions): DriverOptions {
-        const newDriverOptions: DriverOptions = Object.assign({}, options);
         if (options.url) {
-            const urlOptions = this.parseConnectionUrl(options.url);
-            newDriverOptions.host = urlOptions.host;
-            newDriverOptions.username = urlOptions.username;
-            newDriverOptions.password = urlOptions.password;
-            newDriverOptions.port = urlOptions.port;
-            newDriverOptions.database = urlOptions.database;
+            const parsedUrl = this.parseConnectionUrl(options.url);
+            const urlDriverOptions: DriverOptions = {
+                type: options.type,
+                host: parsedUrl.host,
+                username: parsedUrl.username,
+                password: parsedUrl.password,
+                port: parsedUrl.port,
+                database: parsedUrl.database
+            };
+
+            return Object.assign(urlDriverOptions, options);
         }
-        return newDriverOptions;
+        return Object.assign({}, options);
     }
 
     private static parseConnectionUrl(url: string) {
