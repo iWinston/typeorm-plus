@@ -56,9 +56,9 @@ export class MysqlDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, mysql?: any) {
+    constructor(options: DriverOptions, mysql?: any) {
 
-        this.options = DriverUtils.buildDriverOptions(connectionOptions);
+        this.options = DriverUtils.buildDriverOptions(options);
         this.logger = new Logger(this.options.logging);
         this.mysql = mysql;
 
@@ -112,13 +112,12 @@ export class MysqlDriver implements Driver {
      * Otherwise active connection will be returned.
      */
     retrieveDatabaseConnection(): Promise<DatabaseConnection> {
+
         if (this.pool) {
             return new Promise((ok, fail) => {
                 this.pool.getConnection((err: any, connection: any) => {
-                    if (err) {
-                        fail(err);
-                        return;
-                    }
+                    if (err)
+                        return fail(err);
 
                     let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
                     if (!dbConnection) {

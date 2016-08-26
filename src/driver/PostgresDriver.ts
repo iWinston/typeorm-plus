@@ -221,7 +221,7 @@ export class PostgresDriver implements Driver {
                         dbConnection.releaseCallback();
                     }
                 });
-                // this.pool.end(handler);
+                this.pool.end(handler);
                 this.pool = undefined;
                 this.databaseConnectionPool = [];
             }

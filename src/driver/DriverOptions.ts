@@ -7,52 +7,52 @@ export interface DriverOptions {
     /**
      * Database type. Mysql and postgres are the only drivers supported at this moment.
      */
-    type: "mysql"|"postgres";
+    readonly type: "mysql"|"postgres";
 
     /**
      * Url to where perform connection.
      */
-    url?: string;
+    readonly url?: string;
 
     /**
      * Database host.
      */
-    host?: string;
+    readonly host?: string;
 
     /**
      * Database host port.
      */
-    port?: number;
+    readonly port?: number;
 
     /**
      * Database username.
      */
-    username?: string;
+    readonly username?: string;
 
     /**
      * Database password.
      */
-    password?: string;
+    readonly password?: string;
 
     /**
      * Database name to connect to.
      */
-    database?: string;
+    readonly database?: string;
 
     /**
      * Indicates if connection pooling should be used or not.
      * Be default it is enabled. Set to false to disable it.
      */
-    usePool?: boolean;
+    readonly usePool?: boolean;
 
     /**
      * Driver logging options.
      */
-    logging?: LoggerOptions;
+    readonly logging?: LoggerOptions;
 
     /**
      * Extra connection options to be passed to the driver.
      */
-    extra?: any;
+    readonly extra?: any;
 
 }

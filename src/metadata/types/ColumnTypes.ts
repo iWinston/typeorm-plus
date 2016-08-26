@@ -200,6 +200,8 @@ export class ColumnTypes {
             case ColumnTypes.SIMPLE_ARRAY:
                 return (value as string).split(",");
         }
+
+        return value;
     }
     
     static typeToString(type: Function): string {
