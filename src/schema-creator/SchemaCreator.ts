@@ -5,6 +5,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {IndexMetadata} from "../metadata/IndexMetadata";
+import {TableSchema} from "./TableSchema";
 
 /**
  * Creates indexes based on the given metadata.
@@ -45,6 +46,8 @@ export class SchemaCreator {
      */
     async create(): Promise<void> {
         const metadatas = this.entityMetadatas;
+        const tableSchemas = await this.loadSchemaTables(metadatas);
+        console.log(tableSchemas);
         await this.dropForeignKeysForAll(metadatas);
         await this.createTablesForAll(metadatas);
         await this.updateOldColumnsForAll(metadatas);
@@ -60,6 +63,14 @@ export class SchemaCreator {
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Loads all table schemas from the database.
+     */
+    private loadSchemaTables(metadatas: EntityMetadata[]): Promise<TableSchema[]> {
+        const tableNames = metadatas.map(metadata => metadata.table.name);
+        return this.schemaBuilder.loadSchemaTables(tableNames);
+    }
 
     private dropForeignKeysForAll(metadatas: EntityMetadata[]) {
         return Promise.all(metadatas.map(metadata => this.dropForeignKeys(metadata.table, metadata.foreignKeys)));

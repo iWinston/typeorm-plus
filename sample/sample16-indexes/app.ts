@@ -11,6 +11,9 @@ const options: ConnectionOptions = {
         password: "admin",
         database: "test"
     },
+    logging: {
+        logOnlyFailedQueries: true
+    },
     autoSchemaCreate: true,
     entities: [Post]
 };

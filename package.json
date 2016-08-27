@@ -11,10 +11,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/pleerock/typeorm.git"
+    "url": "https://github.com/typeorm/typeorm.git"
   },
   "bugs": {
-    "url": "https://github.com/pleerock/typeorm/issues"
+    "url": "https://github.com/typeorm/typeorm/issues"
   },
   "tags": [
     "orm",

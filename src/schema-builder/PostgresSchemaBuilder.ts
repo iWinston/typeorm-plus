@@ -7,6 +7,7 @@ import {IndexMetadata} from "../metadata/IndexMetadata";
 import {DatabaseConnection} from "../driver/DatabaseConnection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DataTypeNotSupportedByDriverError} from "./error/DataTypeNotSupportedByDriverError";
+import {TableSchema} from "../schema-creator/TableSchema";
 
 /**
  * @internal
@@ -17,7 +18,11 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
                 private dbConnection: DatabaseConnection) {
         super();
     }
-    
+
+    async loadSchemaTables(): Promise<TableSchema[]> {
+        return Promise.resolve([]);
+    }
+
     async getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
         const dbColumns = await this.getTableColumns(tableName);
         return dbColumns.filter(dbColumn => {

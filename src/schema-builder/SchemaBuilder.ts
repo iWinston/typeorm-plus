@@ -2,6 +2,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
+import {TableSchema} from "../schema-creator/TableSchema";
 
 export interface DatabaseColumnProperties {
     name: string;
@@ -17,6 +18,7 @@ export interface DatabaseColumnProperties {
  */
 export abstract class SchemaBuilder {
 
+    abstract loadSchemaTables(tableNames: string[]): Promise<TableSchema[]>;
     // abstract getColumnProperties(tableName: string, columnName: string): Promise<{ isNullable: boolean, columnType: string, autoIncrement: boolean }|undefined>;
     abstract getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]>;
     abstract checkIfTableExist(tableName: string): Promise<boolean>;
