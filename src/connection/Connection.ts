@@ -21,7 +21,6 @@ import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {NamingStrategyNotFoundError} from "./error/NamingStrategyNotFoundError";
 import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
-import {SchemaCreatorFactory} from "../schema-creator/SchemaCreatorFactory";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
@@ -34,7 +33,7 @@ import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
 import {RepositoryForMetadata} from "../repository/RepositoryForMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {SchemaCreator} from "../schema-creator/SchemaCreator";
+import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 
 /**
  * A single connection instance to the database. 
@@ -236,24 +235,8 @@ export class Connection {
         if (dropBeforeSync)
             await this.dropDatabase();
 
-        // temporary define schema builder there
-        // const queryRunner = await this.driver.createQueryRunner();
-        // await queryRunner.beginTransaction();
-        // try {
-            const schemaCreator = new SchemaCreator(this.driver, this.entityMetadatas);
-
-            // const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
-            // const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.driver, this.entityMetadatas);
-            await schemaCreator.create();
-
-            // await queryRunner.commitTransaction();
-            // await queryRunner.release();
-        //
-        // } catch (error) {
-        //     await queryRunner.rollbackTransaction();
-        //     await queryRunner.release();
-        //     throw error;
-        // }
+        const schemaCreator = new SchemaBuilder(this.driver, this.entityMetadatas); // todo: use factory there later
+        await schemaCreator.create();
     }
 
     /**

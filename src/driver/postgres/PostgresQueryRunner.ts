@@ -8,14 +8,14 @@ import {PostgresDriver} from "./PostgresDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {IndexMetadata} from "../../metadata/IndexMetadata";
 import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
-import {ColumnSchema} from "../../schema-creator/ColumnSchema";
+import {ColumnSchema} from "../../schema-builder/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
-import {TableSchema} from "../../schema-creator/TableSchema";
-import {IndexSchema} from "../../schema-creator/IndexSchema";
-import {ForeignKeySchema} from "../../schema-creator/ForeignKeySchema";
-import {PrimaryKeySchema} from "../../schema-creator/PrimaryKeySchema";
-import {UniqueKeySchema} from "../../schema-creator/UniqueKeySchema";
+import {TableSchema} from "../../schema-builder/TableSchema";
+import {IndexSchema} from "../../schema-builder/IndexSchema";
+import {ForeignKeySchema} from "../../schema-builder/ForeignKeySchema";
+import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
+import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
 
 export class PostgresQueryRunner implements QueryRunner {
 

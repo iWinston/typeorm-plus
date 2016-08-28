@@ -29,7 +29,7 @@ import {QueryRunner} from "../driver/QueryRunner";
  *
  * @internal
  */
-export class SchemaCreator {
+export class SchemaBuilder {
 
     private queryRunner: QueryRunner;
     
