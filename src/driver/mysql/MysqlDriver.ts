@@ -1,19 +1,11 @@
 import {Driver} from "../Driver";
-import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
-import {MysqlSchemaBuilder} from "../../schema-builder/MysqlSchemaBuilder";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {DriverUtils} from "../DriverUtils";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Logger} from "../../logger/Logger";
-import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
-import * as moment from "moment";
 import {QueryRunner} from "../QueryRunner";
 import {MysqlQueryRunner} from "./MysqlQueryRunner";
 
@@ -150,7 +142,7 @@ export class MysqlDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new MysqlQueryRunner(databaseConnection, this.logger);
+        return new MysqlQueryRunner(databaseConnection, this.options.database, this.logger);
     }
 
     /**

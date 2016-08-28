@@ -16,7 +16,8 @@ export class MysqlQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected databaseConnection: DatabaseConnection, 
+    constructor(protected databaseConnection: DatabaseConnection,
+                protected databaseName: string,
                 protected logger: Logger) {
     }
 
@@ -27,6 +28,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Releases database connection. This is needed when using connection pooling.
      * If connection is not from a pool, it should not be released.
+     * You cannot use this class's methods after its released.
      */
     release(): Promise<void> {
         if (this.databaseConnection.releaseCallback) {
@@ -42,7 +44,7 @@ export class MysqlQueryRunner implements QueryRunner {
     async clearDatabase(): Promise<void> {
 
         const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.options.database}'`;
+        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.databaseName}'`;
         const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
         await this.query(disableForeignKeysCheckQuery);

@@ -159,7 +159,7 @@ export class PostgresDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new PostgresQueryRunner(databaseConnection, this.logger);
+        return new PostgresQueryRunner(databaseConnection, this.options.database, this.logger);
     }
 
     /**

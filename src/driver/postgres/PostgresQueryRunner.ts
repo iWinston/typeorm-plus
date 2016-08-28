@@ -15,6 +15,7 @@ export class PostgresQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(protected databaseConnection: DatabaseConnection,
+                protected databaseName: string,
                 protected logger: Logger) {
     }
 
