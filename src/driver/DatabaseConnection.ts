@@ -22,6 +22,6 @@ export interface DatabaseConnection {
      * Special function that holds a connection release logic.
      * Releases connection when its called.
      */
-    releaseCallback?: Function;
+    releaseCallback?: () => Promise<void>;
 
 }

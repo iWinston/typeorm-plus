@@ -41,11 +41,6 @@ export interface Driver {
     releaseDatabaseConnection(dbConnection: DatabaseConnection): Promise<void>;
 
     /**
-     * Creates a schema builder which can be used to build database/table schemas.
-     */
-    createSchemaBuilder(dbConnection: DatabaseConnection): SchemaBuilder;
-
-    /**
      * Removes all tables from the currently connected database.
      */
     clearDatabase(dbConnection: DatabaseConnection): Promise<void>;
