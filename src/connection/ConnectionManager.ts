@@ -5,7 +5,7 @@ import {ConnectionOptions} from "./ConnectionOptions";
 import {DriverOptions} from "../driver/DriverOptions";
 import {Driver} from "../driver/Driver";
 import {MissingDriverError} from "./error/MissingDriverError";
-import {PostgresDriver} from "../driver/PostgresDriver";
+import {PostgresqlDriver} from "../driver/PostgresqlDriver";
 import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
 import {Logger} from "../logger/Logger";
 
@@ -116,7 +116,7 @@ export class ConnectionManager {
             case "mysql":
                 return new MysqlDriver(options, logger);
             case "postgres":
-                return new PostgresDriver(options, logger);
+                return new PostgresqlDriver(options, logger);
             default:
                 throw new MissingDriverError(options.type);
         }

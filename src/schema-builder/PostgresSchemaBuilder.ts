@@ -1,5 +1,5 @@
 import {SchemaBuilder, DatabaseColumnProperties} from "./SchemaBuilder";
-import {PostgresDriver} from "../driver/PostgresDriver";
+import {PostgresqlDriver} from "../driver/PostgresqlDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
@@ -15,7 +15,7 @@ import {ColumnSchema} from "../schema-creator/ColumnSchema";
  */
 export class PostgresSchemaBuilder extends SchemaBuilder {
     
-    constructor(private driver: PostgresDriver,
+    constructor(private driver: PostgresqlDriver,
                 private dbConnection: DatabaseConnection) {
         super();
     }

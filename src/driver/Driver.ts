@@ -131,11 +131,11 @@ export interface Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    createQueryRunner(): Promise<QueryRunner>;
+    // createQueryRunner(): Promise<QueryRunner>;
 
     /**
      * Creates a query runner used for schema build queries.
      */
-    createSchemaQueryRunner(): Promise<SchemaQueryRunner>;
+    // createSchemaQueryRunner(): Promise<SchemaQueryRunner>;
 
 }

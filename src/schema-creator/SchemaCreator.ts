@@ -52,8 +52,8 @@ export class SchemaCreator {
         const metadatas = this.entityMetadatas;
         const tableSchemas = await this.loadSchemaTables(metadatas);
 
-        const dbConnection = await this.driver.retrieveDatabaseConnection();
-        try {
+        // const dbConnection = await this.driver.retrieveDatabaseConnection();
+        // try {
             await this.dropOldForeignKeysForAll(metadatas, tableSchemas);
             await this.createNewTablesForAll(metadatas, tableSchemas);
             await this.dropRemovedColumnsForAll(metadatas, tableSchemas);
@@ -63,15 +63,15 @@ export class SchemaCreator {
             await this.updateUniqueKeysForAll(metadatas, tableSchemas);
             await this.createIndicesForAll(metadatas, tableSchemas);
             await this.removePrimaryKeyForAll(metadatas, tableSchemas);
-            await this.driver.commitTransaction(dbConnection);
-            await this.driver.releaseDatabaseConnection(dbConnection);
+            // await this.driver.commitTransaction(dbConnection);
+            // await this.driver.releaseDatabaseConnection(dbConnection);
 
-        } catch (error) {
-            await this.driver.rollbackTransaction(dbConnection);
-            await this.driver.releaseDatabaseConnection(dbConnection);
-
-            throw error;
-        }
+        // } catch (error) {
+        //     await this.driver.rollbackTransaction(dbConnection);
+        //     await this.driver.releaseDatabaseConnection(dbConnection);
+        //
+        //     throw error;
+        // }
     }
 
     // -------------------------------------------------------------------------
