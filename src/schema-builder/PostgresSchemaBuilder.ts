@@ -1,5 +1,5 @@
 import {SchemaBuilder} from "./SchemaBuilder";
-import {PostgresDriver} from "../driver/PostgresDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";

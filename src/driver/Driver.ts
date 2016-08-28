@@ -3,9 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {DriverOptions} from "./DriverOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DatabaseConnection} from "./DatabaseConnection";
-import {Logger} from "../logger/Logger";
 import {QueryRunner} from "./QueryRunner";
-import {SchemaQueryRunner} from "./SchemaQueryRunner";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -131,11 +129,6 @@ export interface Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    // createQueryRunner(): Promise<QueryRunner>;
-
-    /**
-     * Creates a query runner used for schema build queries.
-     */
-    // createSchemaQueryRunner(): Promise<SchemaQueryRunner>;
+    createQueryRunner(): Promise<QueryRunner>;
 
 }

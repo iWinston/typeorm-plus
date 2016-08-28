@@ -1,19 +1,21 @@
-import {Driver} from "./Driver";
-import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
-import {ConnectionIsNotSetError} from "./error/ConnectionIsNotSetError";
-import {DriverOptions} from "./DriverOptions";
-import {PostgresSchemaBuilder} from "../schema-builder/PostgresSchemaBuilder";
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {DatabaseConnection} from "./DatabaseConnection";
-import {DriverPackageNotInstalledError} from "./error/DriverPackageNotInstalledError";
-import {DriverPackageLoadError} from "./error/DriverPackageLoadError";
-import {DriverUtils} from "./DriverUtils";
-import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {Logger} from "../logger/Logger";
-import {TransactionAlreadyStartedError} from "./error/TransactionAlreadyStartedError";
-import {TransactionNotStartedError} from "./error/TransactionNotStartedError";
+import {Driver} from "../Driver";
+import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
+import {DriverOptions} from "../DriverOptions";
+import {PostgresSchemaBuilder} from "../../schema-builder/PostgresSchemaBuilder";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {DatabaseConnection} from "../DatabaseConnection";
+import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
+import {DriverUtils} from "../DriverUtils";
+import {ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {Logger} from "../../logger/Logger";
+import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
+import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import * as moment from "moment";
+import {PostgresQueryRunner} from "./PostgresQueryRunner";
+import {QueryRunner} from "../QueryRunner";
 
 // todo(tests):
 // check connection with url
@@ -146,6 +148,17 @@ export class PostgresDriver implements Driver {
             }
 
             ok();
+        });
+    }
+
+    /**
+     * Creates a query runner used for common queries.
+     */
+    createQueryRunner(): Promise<QueryRunner> {
+        return new Promise((ok, fail) => {
+            const queryRunner = new PostgresQueryRunner();
+
+            ok(queryRunner);
         });
     }
 

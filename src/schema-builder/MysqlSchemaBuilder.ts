@@ -1,5 +1,5 @@
 import {SchemaBuilder} from "./SchemaBuilder";
-import {MysqlDriver} from "../driver/MysqlDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
