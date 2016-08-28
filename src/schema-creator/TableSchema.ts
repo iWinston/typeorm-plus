@@ -5,7 +5,7 @@ import {UniqueKeySchema} from "./UniqueKeySchema";
 import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
+import {QueryRunner} from "../driver/QueryRunner";
 
 export class TableSchema {
 
@@ -54,20 +54,20 @@ export class TableSchema {
         this.primaryKey = undefined;
     }
 
-    static createFromMetadata(schemaBuilder: SchemaBuilder,
+    static createFromMetadata(queryRunner: QueryRunner,
                               tableMetadata: TableMetadata,
                               columnMetadatas: ColumnMetadata[]): TableSchema {
         const tableSchema = new TableSchema(tableMetadata.name);
-        tableSchema.columns = columnMetadatas.map(columnMetadata => ColumnSchema.create(schemaBuilder, columnMetadata));
+        tableSchema.columns = columnMetadatas.map(columnMetadata => ColumnSchema.create(queryRunner, columnMetadata));
         return tableSchema;
     }
 
-    findChangedColumns(schemaBuilder: SchemaBuilder, columnMetadatas: ColumnMetadata[]) {
+    findChangedColumns(queryRunner: QueryRunner, columnMetadatas: ColumnMetadata[]) {
         return this.columns.filter(columnSchema => {
             const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.name === columnSchema.name);
             if (!columnMetadata) return false; // we don't need new columns, we only need exist and changed
             return  columnSchema.name !== columnMetadata.name ||
-                    columnSchema.type !== schemaBuilder.normalizeType(columnMetadata) ||
+                    columnSchema.type !== queryRunner.normalizeType(columnMetadata) ||
                     columnSchema.comment !== columnMetadata.comment ||
                     columnSchema.default !== columnMetadata.default ||
                     columnSchema.isNullable !== columnMetadata.isNullable ||

@@ -1,6 +1,5 @@
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {TableSchema} from "./TableSchema";
 import {ColumnSchema} from "./ColumnSchema";
@@ -8,6 +7,7 @@ import {ForeignKeySchema} from "./ForeignKeySchema";
 import {UniqueKeySchema} from "./UniqueKeySchema";
 import {IndexSchema} from "./IndexSchema";
 import {Driver} from "../driver/Driver";
+import {QueryRunner} from "../driver/QueryRunner";
 
 /**
  * Creates indexes based on the given metadata.
@@ -31,12 +31,13 @@ import {Driver} from "../driver/Driver";
  */
 export class SchemaCreator {
 
+    private queryRunner: QueryRunner;
+    
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private schemaBuilder: SchemaBuilder,
-                private driver: Driver,
+    constructor(private driver: Driver,
                 private entityMetadatas: EntityMetadataCollection) {
     }
 
@@ -49,30 +50,30 @@ export class SchemaCreator {
      */
     async create(): Promise<void> {
         // todo: need setup connection and transaction on this level, to control parallel executions
-        const metadatas = this.entityMetadatas;
+        const metadatas = this.entityMetadatas; // todo: save to this
+        this.queryRunner = await this.driver.createQueryRunner();
         const tableSchemas = await this.loadSchemaTables(metadatas);
         // console.log(tableSchemas);
 
-        // const dbConnection = await this.driver.retrieveDatabaseConnection();
-        // try {
-        await this.dropOldForeignKeysForAll(metadatas, tableSchemas);
-        await this.createNewTablesForAll(metadatas, tableSchemas);
-        await this.dropRemovedColumnsForAll(metadatas, tableSchemas);
-        await this.addNewColumnsForAll(metadatas, tableSchemas);
-        await this.updateExistColumnsForAll(metadatas, tableSchemas);
-        await this.createForeignKeysForAll(metadatas, tableSchemas);
-        await this.updateUniqueKeysForAll(metadatas, tableSchemas);
-        await this.createIndicesForAll(metadatas, tableSchemas);
-        await this.removePrimaryKeyForAll(metadatas, tableSchemas);
-            // await this.driver.commitTransaction(dbConnection);
-            // await this.driver.releaseDatabaseConnection(dbConnection);
+        await this.queryRunner.beginTransaction();
+        try {
+            await this.dropOldForeignKeysForAll(metadatas, tableSchemas);
+            await this.createNewTablesForAll(metadatas, tableSchemas);
+            await this.dropRemovedColumnsForAll(metadatas, tableSchemas);
+            await this.addNewColumnsForAll(metadatas, tableSchemas);
+            await this.updateExistColumnsForAll(metadatas, tableSchemas);
+            await this.createForeignKeysForAll(metadatas, tableSchemas);
+            await this.updateUniqueKeysForAll(metadatas, tableSchemas);
+            await this.createIndicesForAll(metadatas, tableSchemas);
+            await this.removePrimaryKeyForAll(metadatas, tableSchemas);
+            await this.queryRunner.commitTransaction();
+            await this.queryRunner.release();
 
-        // } catch (error) {
-        //     await this.driver.rollbackTransaction(dbConnection);
-        //     await this.driver.releaseDatabaseConnection(dbConnection);
-        //
-        //     throw error;
-        // }
+        } catch (error) {
+            await this.queryRunner.rollbackTransaction();
+            await this.queryRunner.release();
+            throw error;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -84,7 +85,7 @@ export class SchemaCreator {
      */
     private loadSchemaTables(metadatas: EntityMetadata[]): Promise<TableSchema[]> {
         const tableNames = metadatas.map(metadata => metadata.table.name);
-        return this.schemaBuilder.loadSchemaTables(tableNames);
+        return this.queryRunner.loadSchemaTables(tableNames);
     }
 
     /**
@@ -99,7 +100,7 @@ export class SchemaCreator {
             dbTable.foreignKeys
                 .filter(dbForeignKey => !metadata.foreignKeys.find(foreignKey => foreignKey.name === dbForeignKey.name))
                 .forEach(dbForeignKey => {
-                    const promise = this.schemaBuilder
+                    const promise = this.queryRunner
                         .dropForeignKey(metadata.table.name, dbForeignKey.name)
                         .then(() => dbTable.removeForeignKey(dbForeignKey));
 
@@ -116,8 +117,8 @@ export class SchemaCreator {
         await Promise.all(metadatas.map(async metadata => {
             const dbTable = dbTables.find(table => table.name === metadata.table.name);
             if (!dbTable) {
-                await this.schemaBuilder.createTable(metadata.table, metadata.columns);
-                dbTables.push(TableSchema.createFromMetadata(this.schemaBuilder, metadata.table, metadata.columns));
+                await this.queryRunner.createTable(metadata.table, metadata.columns);
+                dbTables.push(TableSchema.createFromMetadata(this.queryRunner, metadata.table, metadata.columns));
             }
         }));
     }
@@ -135,7 +136,7 @@ export class SchemaCreator {
                 .filter(dbColumn => !metadata.columns.find(column => column.name === dbColumn.name))
                 .map(async dbColumn => {
                     await this.dropAllColumnRelatedForeignKeys(metadata.table.name, dbColumn.name, allForeignKeys, dbTables);
-                    await this.schemaBuilder.dropColumn(metadata.table.name, dbColumn.name);
+                    await this.queryRunner.dropColumn(metadata.table.name, dbColumn.name);
                     dbTable.removeColumn(dbColumn);
                 });
 
@@ -155,8 +156,8 @@ export class SchemaCreator {
             const newColumnQueries = metadata.columns
                 .filter(column => !dbTable.columns.find(dbColumn => dbColumn.name === column.name))
                 .map(async column => {
-                    await this.schemaBuilder.createColumn(metadata.table.name, column);
-                    dbTable.columns.push(ColumnSchema.create(this.schemaBuilder, column));
+                    await this.queryRunner.createColumn(metadata.table.name, column);
+                    dbTable.columns.push(ColumnSchema.create(this.queryRunner, column));
                 });
 
             return Promise.all(newColumnQueries);
@@ -174,14 +175,14 @@ export class SchemaCreator {
             if (!dbTable) return;
 
             const updateQueries = dbTable
-                .findChangedColumns(this.schemaBuilder, metadata.columns)
+                .findChangedColumns(this.queryRunner, metadata.columns)
                 .map(async changedColumn => {
                     const column = metadata.columns.find(column => column.name === changedColumn.name);
                     if (!column)
                         throw new Error(`Column ${changedColumn.name} was not found in the given columns`);
 
                     await this.dropAllColumnRelatedForeignKeys(metadata.table.name, column.name, allForeignKeys, dbTables);
-                    await this.schemaBuilder.changeColumn(metadata.table.name, changedColumn, column);
+                    await this.queryRunner.changeColumn(metadata.table.name, changedColumn, column);
                 });
 
             return Promise.all(updateQueries);
@@ -199,7 +200,7 @@ export class SchemaCreator {
             const dropKeysQueries = metadata.foreignKeys
                 .filter(foreignKey => !dbTable.foreignKeys.find(dbForeignKey => dbForeignKey.name === foreignKey.name))
                 .map(async foreignKey => {
-                    await this.schemaBuilder.createForeignKey(foreignKey);
+                    await this.queryRunner.createForeignKey(foreignKey);
                     dbTable.foreignKeys.push(new ForeignKeySchema(foreignKey.name));
                 });
 
@@ -222,7 +223,7 @@ export class SchemaCreator {
                 .filter(column => column.isUnique)
                 .filter(column => !dbTable.uniqueKeys.find(uniqueKey => uniqueKey.name === "uk_" + column.name))
                 .map(async column => {
-                    await this.schemaBuilder.createUniqueKey(metadata.table.name, column.name, "uk_" + column.name);
+                    await this.queryRunner.createUniqueKey(metadata.table.name, column.name, "uk_" + column.name);
                     dbTable.uniqueKeys.push(new UniqueKeySchema("uk_" + column.name));
                 });
 
@@ -231,7 +232,7 @@ export class SchemaCreator {
                 .filter(column => !column.isUnique)
                 .filter(column => !!dbTable.uniqueKeys.find(uniqueKey => uniqueKey.name === "uk_" + column.name))
                 .map(async column => {
-                    await this.schemaBuilder.dropIndex(metadata.table.name, "uk_" + column.name);
+                    await this.queryRunner.dropIndex(metadata.table.name, "uk_" + column.name);
                     dbTable.removeUniqueByName("uk_" + column.name);
                 });
 
@@ -253,7 +254,7 @@ export class SchemaCreator {
             const dropQueries = dbTable.indices
                 .filter(dbIndex => !metadata.indices.find(index => index.name === dbIndex.name))
                 .map(async dbIndex => {
-                    await this.schemaBuilder.dropIndex(metadata.table.name, dbIndex.name);
+                    await this.queryRunner.dropIndex(metadata.table.name, dbIndex.name);
                     dbTable.removeIndex(dbIndex);
                 });
 
@@ -261,7 +262,7 @@ export class SchemaCreator {
             const addQueries = metadata.indices
                 .filter(indexMetadata => !dbTable.indices.find(dbIndex => dbIndex.name === indexMetadata.name))
                 .map(async indexMetadata => {
-                    await this.schemaBuilder.createIndex(metadata.table.name, indexMetadata);
+                    await this.queryRunner.createIndex(metadata.table.name, indexMetadata);
                     dbTable.indices.push(new IndexSchema(indexMetadata.name, indexMetadata.columns));
                 });
 
@@ -278,7 +279,7 @@ export class SchemaCreator {
             .map(async metadata => {
                 const dbTable = dbTables.find(table => table.name === metadata.table.name);
                 if (dbTable && dbTable.primaryKey) {
-                    await this.schemaBuilder.dropIndex(metadata.table.name, dbTable.primaryKey.name);
+                    await this.queryRunner.dropIndex(metadata.table.name, dbTable.primaryKey.name);
                     dbTable.removePrimaryKey();
                 }
 
@@ -312,7 +313,7 @@ export class SchemaCreator {
         await Promise.all(dependForeignKeys.map(async fk => {
             const foreignKey = dbTable.foreignKeys.find(dbForeignKey => dbForeignKey.name === fk.name);
             if (foreignKey) {
-                await this.schemaBuilder.dropForeignKey(fk.tableName, fk.name);
+                await this.queryRunner.dropForeignKey(fk.tableName, fk.name);
                 dbTable.removeForeignKey(foreignKey);
             }
         }));

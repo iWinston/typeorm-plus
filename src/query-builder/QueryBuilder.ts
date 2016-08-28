@@ -484,7 +484,7 @@ export class QueryBuilder<Entity> {
                         .andWhere(mainAliasName + "." + metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids });
                     const [queryWithIdsSql, queryWithIdsParameters] = queryWithIds.getSqlWithParameters();
 
-                    return queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
+                    return (queryRunner as QueryRunner).query(queryWithIdsSql, queryWithIdsParameters);
                 })
                 .then(results => {
                     return this.rawResultsToEntities(results);

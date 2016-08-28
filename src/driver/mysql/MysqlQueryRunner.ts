@@ -4,11 +4,21 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import * as moment from "moment";
 import {Logger} from "../../logger/Logger";
 import {Driver} from "../Driver";
 import {MysqlDriver} from "./MysqlDriver";
+import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
+import {IndexMetadata} from "../../metadata/IndexMetadata";
+import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
+import {ColumnSchema} from "../../schema-creator/ColumnSchema";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {TableMetadata} from "../../metadata/TableMetadata";
+import {TableSchema} from "../../schema-creator/TableSchema";
+import {UniqueKeySchema} from "../../schema-creator/UniqueKeySchema";
+import {ForeignKeySchema} from "../../schema-creator/ForeignKeySchema";
+import {PrimaryKeySchema} from "../../schema-creator/PrimaryKeySchema";
+import {IndexSchema} from "../../schema-creator/IndexSchema";
 
 // todo: throw exception if methods are used after release
 
@@ -46,7 +56,7 @@ export class MysqlQueryRunner implements QueryRunner {
     async clearDatabase(): Promise<void> {
 
         const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.driver.options.database}'`;
+        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
         const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
         await this.query(disableForeignKeysCheckQuery);
@@ -168,6 +178,188 @@ export class MysqlQueryRunner implements QueryRunner {
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
+    async loadSchemaTables(tableNames: string[]): Promise<TableSchema[]> {
+
+        // if no tables given then no need to proceed
+        if (!tableNames)
+            return [];
+
+        // load tables, columns, indices and foreign keys
+        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.dbName}'`;
+        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'`;
+        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
+        const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
+        const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
+        const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+            this.query(tablesSql),
+            this.query(columnsSql),
+            this.query(indicesSql),
+            this.query(foreignKeysSql),
+            this.query(uniqueKeysSql),
+            this.query(primaryKeysSql),
+        ]);
+
+        // if tables were not found in the db, no need to proceed
+        if (!dbTables.length)
+            return [];
+
+        // create table schemas for loaded tables
+        return dbTables.map(dbTable => {
+            const tableSchema = new TableSchema(dbTable["TABLE_NAME"]);
+
+            // create column schemas from the loaded columns
+            tableSchema.columns = dbColumns
+                .filter(dbColumn => dbColumn["TABLE_NAME"] === tableSchema.name)
+                .map(dbColumn => {
+                    const columnSchema = new ColumnSchema();
+                    columnSchema.name = dbColumn["COLUMN_NAME"];
+                    columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase(); // todo: use normalize type?
+                    columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
+                    columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
+                    columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
+                    columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
+                    columnSchema.comment = dbColumn["COLUMN_COMMENT"];
+                    return columnSchema;
+                });
+
+            // create primary key schema
+            const primaryKey = primaryKeys.find(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name);
+            if (primaryKey)
+                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]);
+
+            // create foreign key schemas from the loaded indices
+            tableSchema.foreignKeys = dbForeignKeys
+                .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === tableSchema.name)
+                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"]));
+
+            // create unique key schemas from the loaded indices
+            tableSchema.uniqueKeys = dbUniqueKeys
+                .filter(dbUniqueKey => dbUniqueKey["TABLE_NAME"] === tableSchema.name)
+                .map(dbUniqueKey => new UniqueKeySchema(dbUniqueKey["CONSTRAINT_NAME"]));
+
+            // create index schemas from the loaded indices
+            tableSchema.indices = dbIndices
+                .filter(dbIndex => {
+                    return  dbIndex["table_name"] === tableSchema.name &&
+                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
+                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                })
+                .map(dbIndex => dbIndex["INDEX_NAME"])
+                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
+                .map(dbIndexName => {
+                    const columnNames = dbIndices
+                        .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
+                        .map(dbIndex => dbIndex["COLUMN_NAME"]);
+
+                    return new IndexSchema(dbIndexName, columnNames);
+                });
+
+            return tableSchema;
+        });
+    }
+
+    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
+        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
+        await this.query(sql);
+    }
+
+    async createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` ADD ${this.buildCreateColumnSql(column, false)}`;
+        await this.query(sql);
+    }
+
+    async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+        await this.query(sql);
+    }
+
+    async dropColumn(tableName: string, columnName: string): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` DROP \`${columnName}\``;
+        await this.query(sql);
+    }
+
+    async createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
+        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
+        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
+        let sql = `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+            `FOREIGN KEY (${columnNames}) ` +
+            `REFERENCES \`${foreignKey.referencedTable.name}\`(${referencedColumnNames})`;
+        if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
+        await this.query(sql);
+    }
+
+    async dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${foreignKeyName}\``;
+        await this.query(sql);
+    }
+
+    async dropIndex(tableName: string, indexName: string): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``;
+        await this.query(sql);
+    }
+
+    async createIndex(tableName: string, index: IndexMetadata): Promise<void> {
+        const columns = index.columns.map(column => "`" + column + "`").join(", ");
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON \`${tableName}\`(${columns})`;
+        await this.query(sql);
+    }
+
+    async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${keyName}\` UNIQUE (\`${columnName}\`)`;
+        await this.query(sql);
+    }
+
+    normalizeType(column: ColumnMetadata) {
+        switch (column.normalizedDataType) {
+            case "string":
+                return "varchar(" + (column.length ? column.length : 255) + ")";
+            case "text":
+                return "text";
+            case "boolean":
+                return "tinyint(1)";
+            case "integer":
+            case "int":
+                return "int(" + (column.length ? column.length : 11) + ")";
+            case "smallint":
+                return "smallint(" + (column.length ? column.length : 11) + ")";
+            case "bigint":
+                return "bigint(" + (column.length ? column.length : 11) + ")";
+            case "float":
+                return "float";
+            case "double":
+            case "number":
+                return "double";
+            case "decimal":
+                if (column.precision && column.scale) {
+                    return `decimal(${column.precision},${column.scale})`;
+
+                } else if (column.scale) {
+                    return `decimal(${column.scale})`;
+
+                } else if (column.precision) {
+                    return `decimal(${column.precision})`;
+
+                } else {
+                    return "decimal";
+
+                }
+            case "date":
+                return "date";
+            case "time":
+                return "time";
+            case "datetime":
+                return "datetime";
+            case "json":
+                return "text";
+            case "simple_array":
+                return column.length ? "varchar(" + column.length + ")" : "text";
+        }
+
+        throw new DataTypeNotSupportedByDriverError(column.type, "MySQL");
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -177,6 +369,25 @@ export class MysqlQueryRunner implements QueryRunner {
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
         return Object.keys(objectLiteral).map(key => this.driver.escapeColumnName(key) + "=?");
+    }
+
+    protected get dbName(): string {
+        return this.driver.options.database as string;
+    }
+
+    protected buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
+        let c = "`" + column.name + "` " + this.normalizeType(column);
+        if (column.isNullable !== true)
+            c += " NOT NULL";
+        if (column.isPrimary === true && !skipPrimary)
+            c += " PRIMARY KEY";
+        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            c += " AUTO_INCREMENT";
+        if (column.comment)
+            c += " COMMENT '" + column.comment + "'";
+        if (column.columnDefinition)
+            c += " " + column.columnDefinition;
+        return c;
     }
 
 

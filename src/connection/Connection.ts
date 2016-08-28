@@ -34,7 +34,7 @@ import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
 import {RepositoryForMetadata} from "../repository/RepositoryForMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
+import {SchemaCreator} from "../schema-creator/SchemaCreator";
 
 /**
  * A single connection instance to the database. 
@@ -237,23 +237,23 @@ export class Connection {
             await this.dropDatabase();
 
         // temporary define schema builder there
-        const queryRunner = await this.driver.createQueryRunner();
-        await queryRunner.beginTransaction();
-        try {
-            const schemaBuilder = new SchemaBuilder(); // this.driver.createSchemaBuilder();
+        // const queryRunner = await this.driver.createQueryRunner();
+        // await queryRunner.beginTransaction();
+        // try {
+            const schemaCreator = new SchemaCreator(this.driver, this.entityMetadatas);
 
-            const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
-            const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.driver, this.entityMetadatas);
+            // const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
+            // const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.driver, this.entityMetadatas);
             await schemaCreator.create();
 
-            await queryRunner.commitTransaction();
-            await queryRunner.release();
-
-        } catch (error) {
-            await queryRunner.rollbackTransaction();
-            await queryRunner.release();
-            throw error;
-        }
+            // await queryRunner.commitTransaction();
+            // await queryRunner.release();
+        //
+        // } catch (error) {
+        //     await queryRunner.rollbackTransaction();
+        //     await queryRunner.release();
+        //     throw error;
+        // }
     }
 
     /**
