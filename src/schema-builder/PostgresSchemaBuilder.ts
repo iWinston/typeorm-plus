@@ -24,85 +24,38 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
         return Promise.resolve([]);
     }
 
-    async getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
-        const dbColumns = await this.getTableColumns(tableName);
-        return dbColumns.filter(dbColumn => {
-            const column = columns.find(column => column.name === dbColumn.name);
-            if (!column)
-                return false;
-
-            return  dbColumn.nullable !== column.isNullable ||
-                    dbColumn.type !== this.normalizeType(column) ||
-                    dbColumn.generated !== column.isGenerated;
-        });
+    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
+        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
+        await this.query(sql);
     }
 
-    checkIfTableExist(tableName: string): Promise<boolean> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
-        return this.query(sql).then(results => !!(results && results.length));
-    }
-
-    createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
+    async createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column, false)}`;
-        return this.query(sql).then(() => {});
+        await this.query(sql);
     }
 
-    dropColumn(tableName: string, columnName: string): Promise<void> {
+    async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
+        return Promise.resolve();
+    }
+
+    async dropColumn(tableName: string, columnName: string): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" DROP "${columnName}"`;
-        return this.query(sql).then(() => {});
+        await this.query(sql);
     }
 
-    createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
+    async createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
         let sql = `ALTER TABLE "${foreignKey.tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
             `REFERENCES "${foreignKey.referencedTable.name}"("${foreignKey.referencedColumnNames.join("\", \"")}")`;
         if (foreignKey.onDelete)
             sql += " ON DELETE " + foreignKey.onDelete;
-        return this.query(sql).then(() => {});
+        await this.query(sql);
     }
 
-    dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
+    async dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKeyName}"`;
-        return this.query(sql).then(() => {});
-    }
-
-    getTableForeignQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT tc.constraint_name FROM information_schema.table_constraints AS tc ` +
-        `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.dbName}' AND tc.table_name='${tableName}'`;
-        // const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.dbName}' `
-        //     + `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE='FOREIGN KEY'`;
-        return this.query(sql).then((results: any[]) => results.map(result => result.constraint_name));
-    }
-
-    getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG='${this.dbName}' ` +
-            `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
-    }
-
-    getTableIndicesQuery(tableName: string): Promise<{ key: string, sequence: number, column: string }[]> {
-        const sql = `select t.relname as table_name, i.relname as index_name, a.attname as column_name, ix.indisprimary as is_primary from pg_class t, pg_class i, pg_index ix, pg_attribute a 
-where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}'
-order by t.relname, i.relname`;
-        return this.query(sql).then((results: any[]) => {
-            // exclude foreign keys
-            return this.getTableForeignQuery(tableName).then(foreignKeys => {
-
-                return results
-                    .filter(result => result.is_primary !== true && foreignKeys.indexOf(result.index_name) === -1)
-                    .map(result => ({
-                        key: result.index_name,
-                        sequence: result.Seq_in_index,
-                        column: result.column_name
-                    }));
-            });
-        });
-    }
-
-    getPrimaryConstraintName(tableName: string): Promise<string> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.dbName}'`
-            + ` AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
-        return this.query(sql).then(results => results && results.length ? results[0].CONSTRAINT_NAME : undefined);
+        await this.query(sql);
     }
 
     async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
@@ -114,108 +67,14 @@ order by t.relname, i.relname`;
         await this.query(sql);
     }
 
-    createIndex(tableName: string, index: IndexMetadata): Promise<void> {
+    async createIndex(tableName: string, index: IndexMetadata): Promise<void> {
         const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"("${index.columns.join("\", \"")}")`;
-        return this.query(sql).then(() => {});
+        await this.query(sql);
     }
 
-    createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
+    async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${keyName}" UNIQUE ("${columnName}")`;
-        return this.query(sql).then(() => {});
-    }
-
-    async getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
-        const results: any[] = await this.query(sql);
-        const promises = results.map(async dbColumn => {
-            const columnType = dbColumn.data_type.toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
-            const checkPrimaryResults = await this.query(`select t.relname as table_name, i.relname as index_name, a.attname 
-from pg_class t, pg_class i, pg_index ix, pg_attribute a 
-where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}' and a.attname = '${dbColumn["column_name"]}'
-group by t.relname, i.relname, a.attname
-order by t.relname, i.relname`);
-            const isGenerated = dbColumn["column_default"] === `nextval('${tableName}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${tableName}_id_seq"'::regclass)`;
-            // const commentResults = await this.query(`SELECT cols.column_name, (SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int) FROM pg_catalog.pg_class c WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name) as column_comment
-// FROM information_schema.columns cols WHERE cols.table_catalog = '${this.dbName}' AND cols.table_name = '${tableName}' and cols.column_name = '${dbColumn["column_name"]}'`);
-            // todo: comments has issues with case sensitive, need to find solution
-
-            return {
-                name: dbColumn["column_name"],
-                type: columnType,
-                nullable: dbColumn["is_nullable"] === "YES",
-                generated: isGenerated,
-                comment: undefined, // commentResults.length ? commentResults[0]["column_comment"] : undefined,
-                hasPrimaryKey: checkPrimaryResults.length > 0
-            };
-        });
-
-        return Promise.all(promises);
-    }
-
-    renameColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
-        const sql = `ALTER TABLE ${tableName} RENAME ${oldColumn.name} TO ${newColumn.name}`;
-        return this.query(sql).then(() => {});
-    }
-
-    async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
-        return Promise.resolve();
-    }
-
-    async changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
-
-        // update name, type, nullable
-        const newType = this.normalizeType(newColumn);
-        if (oldColumn.type !== newType ||
-            oldColumn.name !== newColumn.name) {
-
-            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
-            if (oldColumn.type !== newType) {
-                sql += ` TYPE ${newType}`;
-            }
-            /*if (oldColumn.nullable !== newColumn.isNullable) {
-                if (newColumn.isNullable) {
-                    sql += ` DROP NOT NULL`;
-                } else {
-                    sql += ` SET NOT NULL`;
-                }
-            }*/
-            if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
-                sql += ` RENAME TO ` + newColumn.name;
-            }
-            await this.query(sql);
-        }
-
-        if (oldColumn.nullable !== newColumn.isNullable) {
-            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
-            if (newColumn.isNullable) {
-                sql += ` DROP NOT NULL`;
-            } else {
-                sql += ` SET NOT NULL`;
-            }
-            await this.query(sql);
-        }
-
-        // update sequence generation
-        if (oldColumn.generated !== newColumn.isGenerated) {
-            if (!oldColumn.generated) {
-                await this.query(`CREATE SEQUENCE "${tableName}_id_seq" OWNED BY ${tableName}.${oldColumn.name}`);
-                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableName}_id_seq"')`);
-            } else {
-                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);
-                await this.query(`DROP SEQUENCE "${tableName}_id_seq"`);
-            }
-        }
-
-        if (oldColumn.comment !== newColumn.comment) {
-            await this.query(`COMMENT ON COLUMN "${tableName}"."${oldColumn.name}" is '${newColumn.comment}'`);
-        }
-
-    }
-
-    createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
-        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
-        return this.query(sql).then(() => {});
+        await this.query(sql);
     }
 
     normalizeType(column: ColumnMetadata) {
@@ -302,5 +161,152 @@ order by t.relname, i.relname`);
             c += " " + column.columnDefinition;
         return c;
     }
-    
+
+    // -------------------------------------------------------------------------
+    // Deprecated Methods
+    // -------------------------------------------------------------------------
+
+
+    async getChangedColumns(tableName: string, columns: ColumnMetadata[]): Promise<DatabaseColumnProperties[]> {
+        const dbColumns = await this.getTableColumns(tableName);
+        return dbColumns.filter(dbColumn => {
+            const column = columns.find(column => column.name === dbColumn.name);
+            if (!column)
+                return false;
+
+            return  dbColumn.nullable !== column.isNullable ||
+                dbColumn.type !== this.normalizeType(column) ||
+                dbColumn.generated !== column.isGenerated;
+        });
+    }
+
+    checkIfTableExist(tableName: string): Promise<boolean> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
+        return this.query(sql).then(results => !!(results && results.length));
+    }
+
+    getTableForeignQuery(tableName: string): Promise<string[]> {
+        const sql = `SELECT tc.constraint_name FROM information_schema.table_constraints AS tc ` +
+            `WHERE constraint_type = 'FOREIGN KEY' AND tc.table_catalog='${this.dbName}' AND tc.table_name='${tableName}'`;
+        // const sql = `SELECT * FROM INFORMATION_SCHEMA.table_constraints WHERE TABLE_CATALOG = '${this.dbName}' `
+        //     + `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE='FOREIGN KEY'`;
+        return this.query(sql).then((results: any[]) => results.map(result => result.constraint_name));
+    }
+
+    getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG='${this.dbName}' ` +
+            `AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
+        return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
+    }
+
+    getTableIndicesQuery(tableName: string): Promise<{ key: string, sequence: number, column: string }[]> {
+        const sql = `select t.relname as table_name, i.relname as index_name, a.attname as column_name, ix.indisprimary as is_primary from pg_class t, pg_class i, pg_index ix, pg_attribute a 
+where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}'
+order by t.relname, i.relname`;
+        return this.query(sql).then((results: any[]) => {
+            // exclude foreign keys
+            return this.getTableForeignQuery(tableName).then(foreignKeys => {
+
+                return results
+                    .filter(result => result.is_primary !== true && foreignKeys.indexOf(result.index_name) === -1)
+                    .map(result => ({
+                        key: result.index_name,
+                        sequence: result.Seq_in_index,
+                        column: result.column_name
+                    }));
+            });
+        });
+    }
+
+    getPrimaryConstraintName(tableName: string): Promise<string> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.dbName}'`
+            + ` AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
+        return this.query(sql).then(results => results && results.length ? results[0].CONSTRAINT_NAME : undefined);
+    }
+
+
+    async getTableColumns(tableName: string): Promise<DatabaseColumnProperties[]> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
+        const results: any[] = await this.query(sql);
+        const promises = results.map(async dbColumn => {
+            const columnType = dbColumn.data_type.toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
+            const checkPrimaryResults = await this.query(`select t.relname as table_name, i.relname as index_name, a.attname 
+from pg_class t, pg_class i, pg_index ix, pg_attribute a 
+where t.oid = ix.indrelid and i.oid = ix.indexrelid and a.attrelid = t.oid and a.attnum = ANY(ix.indkey) and t.relkind = 'r' and t.relname = '${tableName}' and a.attname = '${dbColumn["column_name"]}'
+group by t.relname, i.relname, a.attname
+order by t.relname, i.relname`);
+            const isGenerated = dbColumn["column_default"] === `nextval('${tableName}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${tableName}_id_seq"'::regclass)`;
+            // const commentResults = await this.query(`SELECT cols.column_name, (SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int) FROM pg_catalog.pg_class c WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name) as column_comment
+// FROM information_schema.columns cols WHERE cols.table_catalog = '${this.dbName}' AND cols.table_name = '${tableName}' and cols.column_name = '${dbColumn["column_name"]}'`);
+            // todo: comments has issues with case sensitive, need to find solution
+
+            return {
+                name: dbColumn["column_name"],
+                type: columnType,
+                nullable: dbColumn["is_nullable"] === "YES",
+                generated: isGenerated,
+                comment: undefined, // commentResults.length ? commentResults[0]["column_comment"] : undefined,
+                hasPrimaryKey: checkPrimaryResults.length > 0
+            };
+        });
+
+        return Promise.all(promises);
+    }
+
+    async renameColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE ${tableName} RENAME ${oldColumn.name} TO ${newColumn.name}`;
+        return this.query(sql).then(() => {});
+    }
+
+    async changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+
+        // update name, type, nullable
+        const newType = this.normalizeType(newColumn);
+        if (oldColumn.type !== newType ||
+            oldColumn.name !== newColumn.name) {
+
+            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
+            if (oldColumn.type !== newType) {
+                sql += ` TYPE ${newType}`;
+            }
+            /*if (oldColumn.nullable !== newColumn.isNullable) {
+             if (newColumn.isNullable) {
+             sql += ` DROP NOT NULL`;
+             } else {
+             sql += ` SET NOT NULL`;
+             }
+             }*/
+            if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
+                sql += ` RENAME TO ` + newColumn.name;
+            }
+            await this.query(sql);
+        }
+
+        if (oldColumn.nullable !== newColumn.isNullable) {
+            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
+            if (newColumn.isNullable) {
+                sql += ` DROP NOT NULL`;
+            } else {
+                sql += ` SET NOT NULL`;
+            }
+            await this.query(sql);
+        }
+
+        // update sequence generation
+        if (oldColumn.generated !== newColumn.isGenerated) {
+            if (!oldColumn.generated) {
+                await this.query(`CREATE SEQUENCE "${tableName}_id_seq" OWNED BY ${tableName}.${oldColumn.name}`);
+                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableName}_id_seq"')`);
+            } else {
+                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);
+                await this.query(`DROP SEQUENCE "${tableName}_id_seq"`);
+            }
+        }
+
+        if (oldColumn.comment !== newColumn.comment) {
+            await this.query(`COMMENT ON COLUMN "${tableName}"."${oldColumn.name}" is '${newColumn.comment}'`);
+        }
+
+    }
+
 }
