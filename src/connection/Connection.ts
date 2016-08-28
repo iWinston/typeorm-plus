@@ -21,7 +21,6 @@ import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {NamingStrategyNotFoundError} from "./error/NamingStrategyNotFoundError";
 import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
-import {SchemaCreatorFactory} from "../schema-creator/SchemaCreatorFactory";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
@@ -34,6 +33,7 @@ import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
 import {RepositoryForMetadata} from "../repository/RepositoryForMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 
 /**
  * A single connection instance to the database. 
@@ -208,45 +208,35 @@ export class Connection {
      * Drops the database and all its data.
      */
     async dropDatabase(): Promise<void> {
-        const dbConnection = await this.driver.retrieveDatabaseConnection();
-        await this.driver.clearDatabase(dbConnection);
-        await this.driver.releaseDatabaseConnection(dbConnection);
+        const queryRunner = await this.driver.createQueryRunner();
+        await queryRunner.beginTransaction();
+        try {
+            await queryRunner.clearDatabase();
+            await queryRunner.commitTransaction();
+            await queryRunner.release();
+
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            await queryRunner.release();
+            throw error;
+        }
     }
 
     /**
      * Creates database schema for all entities registered in this connection.
      *
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
-     * @param forceSync If set to true then schema creation will not be executed in a transaction
      */
-    async syncSchema(dropBeforeSync: boolean = false, forceSync: boolean = false): Promise<void> {
+    async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
+
         if (!this.isConnected)
             return Promise.reject(new CannotSyncNotConnectedError(this.name));
 
-        const dbConnection = await this.driver.retrieveDatabaseConnection();
-        if (!forceSync)
-            await this.driver.beginTransaction(dbConnection);
+        if (dropBeforeSync)
+            await this.dropDatabase();
 
-        try {
-            if (dropBeforeSync)
-                await this.driver.clearDatabase(dbConnection);
-
-            const schemaBuilder = this.driver.createSchemaBuilder(dbConnection);
-            const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
-            const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.entityMetadatas);
-            await schemaCreator.create();
-
-            await this.driver.releaseDatabaseConnection(dbConnection);
-
-            if (!forceSync)
-                await this.driver.commitTransaction(dbConnection);
-
-        } catch (error) {
-            if (!forceSync)
-                await this.driver.rollbackTransaction(dbConnection);
-
-            throw error;
-        }
+        const schemaCreator = new SchemaBuilder(this.driver, this.entityMetadatas); // todo: use factory there later
+        await schemaCreator.create();
     }
 
     /**

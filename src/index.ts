@@ -4,7 +4,7 @@
 import {DriverOptions} from "./driver/DriverOptions";
 import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
-import {MysqlDriver} from "./driver/MysqlDriver";
+import {MysqlDriver} from "./driver/mysql/MysqlDriver";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
 import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {getFromContainer} from "./container";
@@ -46,7 +46,7 @@ export {DriverOptions} from "./driver/DriverOptions";
 export {ConnectionManager} from "./connection/ConnectionManager";
 export {ConnectionOptions} from "./connection/ConnectionOptions";
 export {Driver} from "./driver/Driver";
-export {MysqlDriver} from "./driver/MysqlDriver";
+export {MysqlDriver} from "./driver/mysql/MysqlDriver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {Repository} from "./repository/Repository";

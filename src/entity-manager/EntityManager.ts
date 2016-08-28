@@ -160,9 +160,9 @@ export class EntityManager extends BaseEntityManager {
      * Executes raw SQL query and returns raw database results.
      */
     async query(query: string): Promise<any> {
-        const dbConnection = await this.connection.driver.retrieveDatabaseConnection();
-        const result = await this.connection.driver.query(dbConnection, query);
-        await this.connection.driver.releaseDatabaseConnection(dbConnection);
+        const queryRunner = await this.connection.driver.createQueryRunner();
+        const result = await queryRunner.query(query);
+        await queryRunner.release();
         return result;
     }
 
@@ -170,18 +170,20 @@ export class EntityManager extends BaseEntityManager {
      * Wraps given function execution (and all operations made there) in a transaction.
      */
     async transaction(runInTransaction: () => Promise<any>): Promise<any> {
-        const dbConnection = await this.connection.driver.retrieveDatabaseConnection();
+        const queryRunner = await this.connection.driver.createQueryRunner();
 
-        let runInTransactionResult: any;
-        return this.connection.driver
-            .beginTransaction(dbConnection)
-            .then(() => runInTransaction())
-            .then(result => {
-                runInTransactionResult = result;
-                return this.connection.driver.commitTransaction(dbConnection);
-            })
-            .then(() => this.connection.driver.releaseDatabaseConnection(dbConnection))
-            .then(() => runInTransactionResult);
+        try {
+            await queryRunner.beginTransaction();
+            const result = await runInTransaction();
+            await queryRunner.commitTransaction();
+            await queryRunner.release();
+            return result;
+
+        } catch (err) {
+            await queryRunner.rollbackTransaction();
+            await queryRunner.release();
+            throw err;
+        }
     }
 
 }

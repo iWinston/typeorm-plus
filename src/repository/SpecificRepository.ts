@@ -5,6 +5,7 @@ import {FindOptions, FindOptionsUtils} from "./FindOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
 import {DatabaseConnection} from "../driver/DatabaseConnection";
+import {QueryRunner} from "../driver/QueryRunner";
 
 /**
  * Repository for more specific operations.
@@ -53,8 +54,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = entityId;
         }
 
-        const dbConnection = await this.provideConnection();
-        return this.connection.driver.update(dbConnection, table, values, conditions).then(() => {});
+        const queryRunner = await this.provideQueryRunner();
+        await queryRunner.update(table, values, conditions);
+        await this.releaseProvidedQueryRunner(queryRunner);
     }
 
     /**
@@ -86,8 +88,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.joinColumn.referencedColumn.name] = entityId;
         }
 
-        const dbConnection = await this.provideConnection();
-        return this.connection.driver.update(dbConnection, table, values, conditions).then(() => {});
+        const queryRunner = await this.provideQueryRunner();
+        await queryRunner.update(table, values, conditions);
+        await this.releaseProvidedQueryRunner(queryRunner);
     }
 
     /**
@@ -106,7 +109,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
-        const dbConnection = await this.provideConnection();
+        const queryRunner = await this.provideQueryRunner();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
             const values: any = { };
             if (relation.isOwning) {
@@ -117,9 +120,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
 
-            return this.connection.driver.insert(dbConnection, relation.junctionEntityMetadata.table.name, values);
+            return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
         });
-        return Promise.all(insertPromises).then(() => {});
+        await Promise.all(insertPromises);
+        await this.releaseProvidedQueryRunner(queryRunner);
     }
 
     /**
@@ -138,7 +142,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
-        const dbConnection = await this.provideConnection();
+        const queryRunner = await this.provideQueryRunner();
         const insertPromises = entityIds.map(entityId => {
             const values: any = { };
             if (relation.isOwning) {
@@ -149,9 +153,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
             }
 
-            return this.connection.driver.insert(dbConnection, relation.junctionEntityMetadata.table.name, values);
+            return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
         });
-        return Promise.all(insertPromises).then(() => {});
+        await Promise.all(insertPromises);
+        await this.releaseProvidedQueryRunner(queryRunner);
     }
 
     /**
@@ -281,8 +286,15 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected provideConnection(): Promise<DatabaseConnection> {
-        return this.connection.driver.retrieveDatabaseConnection();
+    protected provideQueryRunner(): Promise<QueryRunner> {
+        return this.connection.driver.createQueryRunner();
+    }
+
+    /**
+     * Note: release only query runners that provided by a provideQueryRunner() method. This is important and by design!
+     */
+    protected releaseProvidedQueryRunner(queryRunner: QueryRunner): Promise<void> {
+        return queryRunner.release();
     }
 
     // -------------------------------------------------------------------------

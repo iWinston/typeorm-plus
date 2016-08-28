@@ -4,12 +4,15 @@ import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "mysql",
+        type: "postgres",
         host: "192.168.99.100",
-        port: 3306,
+        port: 5432,
         username: "root",
         password: "admin",
         database: "test"
+    },
+    logging: {
+        logOnlyFailedQueries: true
     },
     autoSchemaCreate: true,
     entities: [Post]

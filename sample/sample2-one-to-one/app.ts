@@ -10,9 +10,9 @@ import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "mysql",
+        type: "postgres",
         host: "192.168.99.100",
-        port: 3306,
+        port: 5432,
         username: "root",
         password: "admin",
         database: "test"
@@ -44,9 +44,7 @@ createConnection(options).then(connection => {
             console.log("Post has been saved. Lets try to find this post using query builder: ");
             return postRepository
                 .createQueryBuilder("post")
-                .where("post.id=:keyword")
-                .orWhere("post.title=:keyword")
-                .orWhere("post.details=:keyword")
+                .where("post.title=:keyword")
                 .setParameter("keyword", "hello")
                 .getResults();
         })

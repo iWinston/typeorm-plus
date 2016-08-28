@@ -1,11 +1,11 @@
 import {Connection} from "./Connection";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
-import {MysqlDriver} from "../driver/MysqlDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {DriverOptions} from "../driver/DriverOptions";
 import {Driver} from "../driver/Driver";
 import {MissingDriverError} from "./error/MissingDriverError";
-import {PostgresDriver} from "../driver/PostgresDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
 import {Logger} from "../logger/Logger";
 
