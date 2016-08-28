@@ -7,6 +7,7 @@ import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStarted
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {PostgresDriver} from "./PostgresDriver";
 
 export class PostgresQueryRunner implements QueryRunner {
 
@@ -15,7 +16,7 @@ export class PostgresQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(protected databaseConnection: DatabaseConnection,
-                protected databaseName: string,
+                protected driver: PostgresDriver,
                 protected logger: Logger) {
     }
 
@@ -78,6 +79,13 @@ export class PostgresQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if transaction is in progress.
+     */
+    isTransactionActive(): boolean {
+        return this.databaseConnection.isTransactionActive;
+    }
+
+    /**
      * Executes a given SQL query.
      */
     query(query: string, parameters?: any[]): Promise<any> {
@@ -102,9 +110,9 @@ export class PostgresQueryRunner implements QueryRunner {
      */
     async insert(tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = `INSERT INTO ${this.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ idColumnName ? " RETURNING " + this.escapeColumnName(idColumnName) : "" }`;
+        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ idColumnName ? " RETURNING " + this.driver.escapeColumnName(idColumnName) : "" }`;
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
         if (idColumnName)
@@ -119,7 +127,7 @@ export class PostgresQueryRunner implements QueryRunner {
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE ${this.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -142,120 +150,17 @@ export class PostgresQueryRunner implements QueryRunner {
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
         const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type and metadata.
-     */
-    preparePersistentValue(value: any, column: ColumnMetadata): any {
-        switch (column.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
-            case ColumnTypes.DATE:
-                return moment(value).format("YYYY-MM-DD");
-            case ColumnTypes.TIME:
-                return moment(value).format("HH:mm:ss");
-            case ColumnTypes.DATETIME:
-                return moment(value).format("YYYY-MM-DD HH:mm:ss");
-            case ColumnTypes.JSON:
-                return JSON.stringify(value);
-            case ColumnTypes.SIMPLE_ARRAY:
-                return (value as any[])
-                    .map(i => String(i))
-                    .join(",");
-        }
-
-        return value;
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type and metadata.
-     */
-    prepareHydratedValue(value: any, column: ColumnMetadata): any {
-        switch (column.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
-
-            case ColumnTypes.DATE:
-                if (value instanceof Date)
-                    return value;
-
-                return moment(value, "YYYY-MM-DD").toDate();
-
-            case ColumnTypes.TIME:
-                return moment(value, "HH:mm:ss").toDate();
-
-            case ColumnTypes.DATETIME:
-                if (value instanceof Date)
-                    return value;
-
-                return moment(value, "YYYY-MM-DD HH:mm:ss").toDate();
-
-            case ColumnTypes.JSON:
-                return JSON.parse(value);
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return (value as string).split(",");
-        }
-
-        return value;
-    }
-
-    /**
-     * Replaces parameters in the given sql with special escaping character
-     * and an array of parameter names to be passed to a query.
-     */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
-        if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
-
-        const builtParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string  => {
-            const value = parameters[key.substr(1)];
-            if (value instanceof Array) {
-                return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "$" + builtParameters.length;
-                }).join(", ");
-            } else {
-                builtParameters.push(value);
-            }
-            return "$" + builtParameters.length;
-        }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
-    }
-
-    /**
-     * Escapes a column name.
-     */
-    escapeColumnName(columnName: string): string {
-        return "\"" + columnName + "\"";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string {
-        return "\"" + aliasName + "\"";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string {
-        return "\"" + tableName + "\"";
     }
 
     // -------------------------------------------------------------------------
@@ -266,7 +171,7 @@ export class PostgresQueryRunner implements QueryRunner {
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => this.escapeColumnName(key) + "=$" + (startIndex + index + 1));
+        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
     }
 
 }

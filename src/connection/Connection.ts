@@ -209,16 +209,16 @@ export class Connection {
      * Drops the database and all its data.
      */
     async dropDatabase(): Promise<void> {
-        const dbConnection = await this.driver.retrieveDatabaseConnection();
-        await this.driver.beginTransaction(dbConnection);
+        const queryRunner = await this.driver.createQueryRunner();
+        await queryRunner.beginTransaction();
         try {
-            await this.driver.clearDatabase(dbConnection);
-            await this.driver.commitTransaction(dbConnection);
-            await this.driver.releaseDatabaseConnection(dbConnection);
+            await queryRunner.clearDatabase();
+            await queryRunner.commitTransaction();
+            await queryRunner.release();
 
         } catch (error) {
-            await this.driver.rollbackTransaction(dbConnection);
-            await this.driver.releaseDatabaseConnection(dbConnection);
+            await queryRunner.rollbackTransaction();
+            await queryRunner.release();
             throw error;
         }
     }
@@ -237,21 +237,21 @@ export class Connection {
             await this.dropDatabase();
 
         // temporary define schema builder there
-        const dbConnection = await this.driver.retrieveDatabaseConnection();
-        await this.driver.beginTransaction(dbConnection);
+        const queryRunner = await this.driver.createQueryRunner();
+        await queryRunner.beginTransaction();
         try {
-            const schemaBuilder = this.driver.createSchemaBuilder(dbConnection);
+            const schemaBuilder = new SchemaBuilder(); // this.driver.createSchemaBuilder();
 
             const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
             const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.driver, this.entityMetadatas);
             await schemaCreator.create();
 
-            await this.driver.commitTransaction(dbConnection);
-            await this.driver.releaseDatabaseConnection(dbConnection);
+            await queryRunner.commitTransaction();
+            await queryRunner.release();
 
         } catch (error) {
-            await this.driver.rollbackTransaction(dbConnection);
-            await this.driver.releaseDatabaseConnection(dbConnection);
+            await queryRunner.rollbackTransaction();
+            await queryRunner.release();
             throw error;
         }
     }

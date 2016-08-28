@@ -7,6 +7,7 @@ import {Driver} from "../driver/Driver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DatabaseConnection} from "../driver/DatabaseConnection";
+import {QueryRunner} from "../driver/QueryRunner";
 
 /**
  * @internal
@@ -85,7 +86,7 @@ export class QueryBuilder<Entity> {
     constructor(private driver: Driver,
                 private entityMetadatas: EntityMetadataCollection,
                 private broadcaster: Broadcaster,
-                private dbConnection?: DatabaseConnection) {
+                private queryRunner?: QueryRunner) {
         this.aliasMap = new AliasMap(entityMetadatas);
     }
 
@@ -418,18 +419,18 @@ export class QueryBuilder<Entity> {
     }
 
     async execute(): Promise<any> {
-        let ownDatabaseConnection = false;
-        let dbConnection = this.dbConnection;
-        if (!dbConnection) {
-            ownDatabaseConnection = true;
-            dbConnection = await this.driver.retrieveDatabaseConnection();
+        let ownQueryRunner = false;
+        let queryRunner = this.queryRunner;
+        if (!queryRunner) {
+            ownQueryRunner = true;
+            queryRunner = await this.driver.createQueryRunner();
         }
 
         const [sql, parameters] = this.getSqlWithParameters();
-        const result = await this.driver.query(dbConnection, sql, parameters);
+        const result = await queryRunner.query(sql, parameters);
 
-        if (ownDatabaseConnection)
-            await this.driver.releaseDatabaseConnection(dbConnection);
+        if (ownQueryRunner)
+            await queryRunner.release();
 
         return result;
     }
@@ -453,11 +454,11 @@ export class QueryBuilder<Entity> {
         if (!this.aliasMap.hasMainAlias)
             throw new Error(`Alias is not set. Looks like nothing is selected. Use select*, delete, update method to set an alias.`);
 
-        let ownDatabaseConnection = false;
-        let dbConnection = this.dbConnection;
-        if (!dbConnection) {
-            ownDatabaseConnection = true;
-            dbConnection = await this.driver.retrieveDatabaseConnection();
+        let ownQueryRunner = false;
+        let queryRunner = this.queryRunner;
+        if (!queryRunner) {
+            ownQueryRunner = true;
+            queryRunner = await this.driver.createQueryRunner();
         }
 
         const mainAliasName = this.aliasMap.mainAlias.name;
@@ -473,17 +474,17 @@ export class QueryBuilder<Entity> {
             if (this.firstResult)
                 idsQuery += " OFFSET " + this.firstResult;
 
-            const results = await this.driver.query(dbConnection, idsQuery, parameters)
+            const results = await queryRunner.query(idsQuery, parameters)
                 .then((results: any[]) => {
                     scalarResults = results;
                     const ids = results.map(result => result["ids"]);
                     if (ids.length === 0)
                         return [];
-                    const queryWithIds = this.clone({ dbConnection: dbConnection })
+                    const queryWithIds = this.clone({ queryRunner: queryRunner })
                         .andWhere(mainAliasName + "." + metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids });
                     const [queryWithIdsSql, queryWithIdsParameters] = queryWithIds.getSqlWithParameters();
 
-                    return this.driver.query(dbConnection as DatabaseConnection, queryWithIdsSql, queryWithIdsParameters);
+                    return queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
                 })
                 .then(results => {
                     return this.rawResultsToEntities(results);
@@ -496,8 +497,8 @@ export class QueryBuilder<Entity> {
                     };
                 });
 
-            if (ownDatabaseConnection) {
-                await this.driver.releaseDatabaseConnection(dbConnection);
+            if (ownQueryRunner) {
+                await queryRunner.release();
             }
 
             return results;
@@ -505,14 +506,14 @@ export class QueryBuilder<Entity> {
         } else {
 
             const [sql, parameters] = this.getSqlWithParameters();
-            const results = await this.driver.query(dbConnection, sql, parameters)
+            const results = await queryRunner.query(sql, parameters)
                 .then(results => {
                     scalarResults = results;
                     return this.rawResultsToEntities(results);
                 })
                 .then(results => {
 
-                    return this.loadRelationCounts(dbConnection as DatabaseConnection, results)
+                    return this.loadRelationCounts(queryRunner as QueryRunner, results)
                         .then(counts => {
                             // console.log("counts: ", counts);
                             return results;
@@ -530,8 +531,8 @@ export class QueryBuilder<Entity> {
                     };
                 });
 
-            if (ownDatabaseConnection) {
-                await this.driver.releaseDatabaseConnection(dbConnection);
+            if (ownQueryRunner) {
+                await queryRunner.release();
             }
 
             return results;
@@ -555,7 +556,7 @@ export class QueryBuilder<Entity> {
         *!/
     }*/
 
-    private loadRelationCounts(dbConnection: DatabaseConnection, results: Entity[]): Promise<{}> {
+    private loadRelationCounts(queryRunner: QueryRunner, results: Entity[]): Promise<{}> {
 
         const promises = this.relationCountMetas.map(relationCountMeta => {
             const parentAlias = relationCountMeta.alias.parentAliasName;
@@ -569,7 +570,7 @@ export class QueryBuilder<Entity> {
 
             const relation = parentMetadata.findRelationWithPropertyName(relationCountMeta.alias.parentPropertyName);
 
-            const queryBuilder: QueryBuilder<any> = new (this.constructor as any)(this.driver, this.entityMetadatas, this.broadcaster, dbConnection);
+            const queryBuilder: QueryBuilder<any> = new (this.constructor as any)(this.driver, this.entityMetadatas, this.broadcaster, queryRunner);
             let condition = "";
 
             const metadata = this.aliasMap.getEntityMetadataByAlias(relationCountMeta.alias);
@@ -660,22 +661,22 @@ export class QueryBuilder<Entity> {
 
     async getCount(): Promise<number> {
 
-        let ownDatabaseConnection = false;
-        let dbConnection = this.dbConnection;
-        if (!dbConnection) {
-            ownDatabaseConnection = true;
-            dbConnection = await this.driver.retrieveDatabaseConnection();
+        let ownQueryRunner = false;
+        let queryRunner = this.queryRunner;
+        if (!queryRunner) {
+            ownQueryRunner = true;
+            queryRunner = await this.driver.createQueryRunner();
         }
 
         const mainAlias = this.aliasMap.mainAlias.name;
         const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
-        const countQuery = this.clone({ dbConnection: dbConnection, skipOrderBys: true })
+        const countQuery = this.clone({ queryRunner: queryRunner, skipOrderBys: true })
             .select(`COUNT(DISTINCT(${this.driver.escapeAliasName(mainAlias)}.${this.driver.escapeColumnName(metadata.primaryColumn.name)})) as cnt`);
 
         const [countQuerySql, countQueryParameters] = countQuery.getSqlWithParameters();
-        const results = await this.driver.query(dbConnection, countQuerySql, countQueryParameters);
-        if (ownDatabaseConnection) {
-            await this.driver.releaseDatabaseConnection(dbConnection);
+        const results = await queryRunner.query(countQuerySql, countQueryParameters);
+        if (ownQueryRunner) {
+            await queryRunner.release();
         }
 
         if (!results || !results[0] || !results[0]["cnt"])
@@ -692,8 +693,8 @@ export class QueryBuilder<Entity> {
         ]);
     }
 
-    clone(options?: { dbConnection?: DatabaseConnection, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean }) {
-        const qb = new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster, options ? options.dbConnection : undefined);
+    clone(options?: { queryRunner?: QueryRunner, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean }) {
+        const qb = new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster, options ? options.queryRunner : undefined);
 
         switch (this.type) {
             case "select":

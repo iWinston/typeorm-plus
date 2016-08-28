@@ -162,42 +162,36 @@ export class ReactiveEntityManager extends BaseEntityManager {
      * Executes raw SQL query and returns raw database results.
      */
     query(query: string): Rx.Observable<any> {
-        const promise = this.connection.driver
-            .retrieveDatabaseConnection()
-            .then(dbConnection => {
-                return this.connection.driver.query(dbConnection, query)
-                    .then(result => {
-                        return this.connection.driver
-                            .releaseDatabaseConnection(dbConnection)
-                            .then(() => result);
-                    });
-            });
-
-        return Rx.Observable.fromPromise(promise);
+        const promiseFn = async () => {
+            const queryRunner = await this.connection.driver.createQueryRunner();
+            const result = await queryRunner.query(query);
+            await queryRunner.release();
+            return Promise.resolve(result) as any;
+        };
+        return Rx.Observable.fromPromise(promiseFn as any);
     }
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      */
     transaction(runInTransaction: () => Promise<any>): Rx.Observable<any> {
-        const promise = this.connection.driver
-            .retrieveDatabaseConnection()
-            .then(dbConnection => {
+        const promiseFn = async () => {
+            const queryRunner = await this.connection.driver.createQueryRunner();
 
-                let runInTransactionResult: any;
-                return this.connection.driver
-                    .beginTransaction(dbConnection)
-                    .then(() => runInTransaction())
-                    .then(result => {
-                        runInTransactionResult = result;
-                        return this.connection.driver
-                            .commitTransaction(dbConnection)
-                            .then(() => this.connection.driver.releaseDatabaseConnection(dbConnection))
-                            .then(() => runInTransactionResult);
-                    });
-            });
+            try {
+                await queryRunner.beginTransaction();
+                const result = await runInTransaction();
+                await queryRunner.commitTransaction();
+                await queryRunner.release();
+                return Promise.resolve(result);
 
-        return Rx.Observable.fromPromise(promise);
+            } catch (err) {
+                await queryRunner.rollbackTransaction();
+                await queryRunner.release();
+                throw err;
+            }
+        };
+        return Rx.Observable.fromPromise(promiseFn as any);
     }
 
 }

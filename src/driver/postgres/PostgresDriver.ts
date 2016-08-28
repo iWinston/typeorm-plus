@@ -159,7 +159,7 @@ export class PostgresDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new PostgresQueryRunner(databaseConnection, this.options.database, this.logger);
+        return new PostgresQueryRunner(databaseConnection, this, this.logger);
     }
 
     /**
@@ -171,6 +171,109 @@ export class PostgresDriver implements Driver {
             connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, column: ColumnMetadata): any {
+        switch (column.type) {
+            case ColumnTypes.BOOLEAN:
+                return value === true ? 1 : 0;
+            case ColumnTypes.DATE:
+                return moment(value).format("YYYY-MM-DD");
+            case ColumnTypes.TIME:
+                return moment(value).format("HH:mm:ss");
+            case ColumnTypes.DATETIME:
+                return moment(value).format("YYYY-MM-DD HH:mm:ss");
+            case ColumnTypes.JSON:
+                return JSON.stringify(value);
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as any[])
+                    .map(i => String(i))
+                    .join(",");
+        }
+
+        return value;
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    prepareHydratedValue(value: any, column: ColumnMetadata): any {
+        switch (column.type) {
+            case ColumnTypes.BOOLEAN:
+                return value ? true : false;
+
+            case ColumnTypes.DATE:
+                if (value instanceof Date)
+                    return value;
+
+                return moment(value, "YYYY-MM-DD").toDate();
+
+            case ColumnTypes.TIME:
+                return moment(value, "HH:mm:ss").toDate();
+
+            case ColumnTypes.DATETIME:
+                if (value instanceof Date)
+                    return value;
+
+                return moment(value, "YYYY-MM-DD HH:mm:ss").toDate();
+
+            case ColumnTypes.JSON:
+                return JSON.parse(value);
+
+            case ColumnTypes.SIMPLE_ARRAY:
+                return (value as string).split(",");
+        }
+
+        return value;
+    }
+
+    /**
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
+     */
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+        if (!parameters || !Object.keys(parameters).length)
+            return [sql, []];
+
+        const builtParameters: any[] = [];
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key: string): string  => {
+            const value = parameters[key.substr(1)];
+            if (value instanceof Array) {
+                return value.map((v: any) => {
+                    builtParameters.push(v);
+                    return "$" + builtParameters.length;
+                }).join(", ");
+            } else {
+                builtParameters.push(value);
+            }
+            return "$" + builtParameters.length;
+        }); // todo: make replace only in value statements, otherwise problems
+        return [sql, builtParameters];
+    }
+
+    /**
+     * Escapes a column name.
+     */
+    escapeColumnName(columnName: string): string {
+        return "\"" + columnName + "\"";
+    }
+
+    /**
+     * Escapes an alias.
+     */
+    escapeAliasName(aliasName: string): string {
+        return "\"" + aliasName + "\"";
+    }
+
+    /**
+     * Escapes a table name.
+     */
+    escapeTableName(tableName: string): string {
+        return "\"" + tableName + "\"";
     }
 
     // -------------------------------------------------------------------------
