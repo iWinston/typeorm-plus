@@ -1,5 +1,5 @@
 import {SchemaBuilder, DatabaseColumnProperties} from "./SchemaBuilder";
-import {PostgresqlDriver} from "../driver/PostgresqlDriver";
+import {PostgresDriver} from "../driver/PostgresDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
@@ -9,19 +9,108 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DataTypeNotSupportedByDriverError} from "./error/DataTypeNotSupportedByDriverError";
 import {TableSchema} from "../schema-creator/TableSchema";
 import {ColumnSchema} from "../schema-creator/ColumnSchema";
+import {PrimaryKeySchema} from "../schema-creator/PrimaryKeySchema";
+import {ForeignKeySchema} from "../schema-creator/ForeignKeySchema";
+import {UniqueKeySchema} from "../schema-creator/UniqueKeySchema";
+import {IndexSchema} from "../schema-creator/IndexSchema";
 
 /**
  * @internal
  */
 export class PostgresSchemaBuilder extends SchemaBuilder {
     
-    constructor(private driver: PostgresqlDriver,
+    constructor(private driver: PostgresDriver,
                 private dbConnection: DatabaseConnection) {
         super();
     }
 
-    async loadSchemaTables(): Promise<TableSchema[]> {
-        return Promise.resolve([]);
+    async loadSchemaTables(tableNames: string[]): Promise<TableSchema[]> {
+
+        // if no tables given then no need to proceed
+        if (!tableNames)
+            return [];
+
+        // load tables, columns, indices and foreign keys
+        const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
+        const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
+        const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
+        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name 
+                                FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
+                                WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
+                                AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString})
+                                ORDER BY t.relname, i.relname`;
+        const foreignKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'FOREIGN KEY'`;
+        const uniqueKeysSql  = `SELECT * FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'UNIQUE'`;
+        const primaryKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'PRIMARY KEY'`;
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+            this.query(tablesSql),
+            this.query(columnsSql),
+            this.query(indicesSql),
+            this.query(foreignKeysSql),
+            this.query(uniqueKeysSql),
+            this.query(primaryKeysSql),
+        ]);
+
+        // if tables were not found in the db, no need to proceed
+        if (!dbTables.length)
+            return [];
+
+        // create table schemas for loaded tables
+        return dbTables.map(dbTable => {
+            const tableSchema = new TableSchema(dbTable["table_name"]);
+
+            // create column schemas from the loaded columns
+            tableSchema.columns = dbColumns
+                .filter(dbColumn => dbColumn["table_name"] === tableSchema.name)
+                .map(dbColumn => {
+                    const columnType = dbColumn["data_type"].toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
+                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)`;
+
+                    const columnSchema = new ColumnSchema();
+                    columnSchema.name = dbColumn["column_name"];
+                    columnSchema.type = columnType;
+                    columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"] : undefined;
+                    columnSchema.isNullable = dbColumn["is_nullable"] === "YES";
+                    // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
+                    columnSchema.isGenerated = isGenerated;
+                    columnSchema.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    return columnSchema;
+                });
+
+            // create primary key schema
+            const primaryKey = primaryKeys.find(primaryKey => primaryKey["table_name"] === tableSchema.name);
+            if (primaryKey)
+                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["constraint_name"]);
+
+            // create foreign key schemas from the loaded indices
+            tableSchema.foreignKeys = dbForeignKeys
+                .filter(dbForeignKey => dbForeignKey["table_name"] === tableSchema.name)
+                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["constraint_name"]));
+
+            // create unique key schemas from the loaded indices
+            tableSchema.uniqueKeys = dbUniqueKeys
+                .filter(dbUniqueKey => dbUniqueKey["table_name"] === tableSchema.name)
+                .map(dbUniqueKey => new UniqueKeySchema(dbUniqueKey["constraint_name"]));
+
+            // create index schemas from the loaded indices
+            tableSchema.indices = dbIndices
+                .filter(dbIndex => {
+                    return  dbIndex["table_name"] === tableSchema.name &&
+                            (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
+                            (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                })
+                .map(dbIndex => dbIndex["index_name"])
+                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
+                .map(dbIndexName => {
+                    const columnNames = dbIndices
+                        .filter(dbIndex => dbIndex["table_name"] === tableSchema.name && dbIndex["index_name"] === dbIndexName)
+                        .map(dbIndex => dbIndex["column_name"]);
+
+                    return new IndexSchema(dbIndexName, columnNames);
+                });
+
+            return tableSchema;
+        });
     }
 
     async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
@@ -36,7 +125,52 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
     }
 
     async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
-        return Promise.resolve();
+        // update name, type, nullable
+        const newType = this.normalizeType(newColumn);
+        if (oldColumn.type !== newType ||
+            oldColumn.name !== newColumn.name) {
+
+            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
+            if (oldColumn.type !== newType) {
+                sql += ` TYPE ${newType}`;
+            }
+            /*if (oldColumn.nullable !== newColumn.isNullable) {
+             if (newColumn.isNullable) {
+             sql += ` DROP NOT NULL`;
+             } else {
+             sql += ` SET NOT NULL`;
+             }
+             }*/
+            if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
+                sql += ` RENAME TO ` + newColumn.name;
+            }
+            await this.query(sql);
+        }
+
+        if (oldColumn.isNullable !== newColumn.isNullable) {
+            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
+            if (newColumn.isNullable) {
+                sql += ` DROP NOT NULL`;
+            } else {
+                sql += ` SET NOT NULL`;
+            }
+            await this.query(sql);
+        }
+
+        // update sequence generation
+        if (oldColumn.isGenerated !== newColumn.isGenerated) {
+            if (!oldColumn.isGenerated) {
+                await this.query(`CREATE SEQUENCE "${tableName}_id_seq" OWNED BY ${tableName}.${oldColumn.name}`);
+                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableName}_id_seq"')`);
+            } else {
+                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);
+                await this.query(`DROP SEQUENCE "${tableName}_id_seq"`);
+            }
+        }
+
+        if (oldColumn.comment !== newColumn.comment) {
+            await this.query(`COMMENT ON COLUMN "${tableName}"."${oldColumn.name}" is '${newColumn.comment}'`);
+        }
     }
 
     async dropColumn(tableName: string, columnName: string): Promise<void> {
@@ -182,7 +316,9 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
 
     checkIfTableExist(tableName: string): Promise<boolean> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
-        return this.query(sql).then(results => !!(results && results.length));
+        return this.query(sql).then(results => {
+            return !!(results && results.length);
+        });
     }
 
     getTableForeignQuery(tableName: string): Promise<string[]> {

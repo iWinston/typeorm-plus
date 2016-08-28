@@ -96,7 +96,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
 
     const mysql = !options || !options.skipMysql;
-    const postgres = false; // !options || !options.skipPostgres;
+    const postgres = !options || !options.skipPostgres;
 
     const allParameters: ConnectionOptions[] = [];
     if (mysql)

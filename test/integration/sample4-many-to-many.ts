@@ -17,7 +17,7 @@ describe("many-to-many", function() {
     // -------------------------------------------------------------------------
 
     const options: ConnectionOptions = {
-        driver: createTestingConnectionOptions("mysql"),
+        driver: createTestingConnectionOptions("postgres"),
         entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"]
     };
 

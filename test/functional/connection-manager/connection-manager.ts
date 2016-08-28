@@ -4,7 +4,7 @@ import {createTestingConnectionOptions} from "../../utils/test-utils";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/MysqlDriver";
-import {PostgresqlDriver} from "../../../src/driver/PostgresqlDriver";
+import {PostgresDriver} from "../../../src/driver/PostgresDriver";
 import {ConnectionNotFoundError} from "../../../src/connection/error/ConnectionNotFoundError";
 import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../src/decorator/columns/Column";
@@ -48,7 +48,7 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.name.should.be.equal("myPostgresConnection");
-            connection.driver.should.be.instanceOf(PostgresqlDriver);
+            connection.driver.should.be.instanceOf(PostgresDriver);
             connection.isConnected.should.be.false;
         });
 
@@ -75,7 +75,7 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager();
             const connection = await connectionManager.createAndConnect(options);
             connection.name.should.be.equal("myPostgresConnection");
-            connection.driver.should.be.instanceOf(PostgresqlDriver);
+            connection.driver.should.be.instanceOf(PostgresDriver);
             connection.isConnected.should.be.true;
         });
 

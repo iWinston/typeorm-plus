@@ -23,7 +23,7 @@ import * as moment from "moment";
 /**
  * This driver organizes work with postgres database.
  */
-export class PostgresqlDriver implements Driver {
+export class PostgresDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties

@@ -87,10 +87,9 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
-                    const condition = dbIndex["TABLE_NAME"] === tableSchema.name && !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]);
-                    if (condition)
-                        console.log(dbIndex["INDEX_NAME"], "::", tableSchema.foreignKeys);
-                    return condition;
+                    return  dbIndex["table_name"] === tableSchema.name &&
+                            (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
+                            (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue

@@ -51,18 +51,19 @@ export class SchemaCreator {
         // todo: need setup connection and transaction on this level, to control parallel executions
         const metadatas = this.entityMetadatas;
         const tableSchemas = await this.loadSchemaTables(metadatas);
+        // console.log(tableSchemas);
 
         // const dbConnection = await this.driver.retrieveDatabaseConnection();
         // try {
-            await this.dropOldForeignKeysForAll(metadatas, tableSchemas);
-            await this.createNewTablesForAll(metadatas, tableSchemas);
-            await this.dropRemovedColumnsForAll(metadatas, tableSchemas);
-            await this.addNewColumnsForAll(metadatas, tableSchemas);
-            await this.updateExistColumnsForAll(metadatas, tableSchemas);
-            await this.createForeignKeysForAll(metadatas, tableSchemas);
-            await this.updateUniqueKeysForAll(metadatas, tableSchemas);
-            await this.createIndicesForAll(metadatas, tableSchemas);
-            await this.removePrimaryKeyForAll(metadatas, tableSchemas);
+        await this.dropOldForeignKeysForAll(metadatas, tableSchemas);
+        await this.createNewTablesForAll(metadatas, tableSchemas);
+        await this.dropRemovedColumnsForAll(metadatas, tableSchemas);
+        await this.addNewColumnsForAll(metadatas, tableSchemas);
+        await this.updateExistColumnsForAll(metadatas, tableSchemas);
+        await this.createForeignKeysForAll(metadatas, tableSchemas);
+        await this.updateUniqueKeysForAll(metadatas, tableSchemas);
+        await this.createIndicesForAll(metadatas, tableSchemas);
+        await this.removePrimaryKeyForAll(metadatas, tableSchemas);
             // await this.driver.commitTransaction(dbConnection);
             // await this.driver.releaseDatabaseConnection(dbConnection);
 

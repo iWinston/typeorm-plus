@@ -19,7 +19,7 @@ describe("many-to-one", function() {
     // -------------------------------------------------------------------------
 
     const options: ConnectionOptions = {
-        driver: createTestingConnectionOptions("mysql"),
+        driver: createTestingConnectionOptions("postgres"),
         entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
 
