@@ -34,6 +34,7 @@ import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
 import {RepositoryForMetadata} from "../repository/RepositoryForMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 
 /**
  * A single connection instance to the database. 
@@ -209,42 +210,48 @@ export class Connection {
      */
     async dropDatabase(): Promise<void> {
         const dbConnection = await this.driver.retrieveDatabaseConnection();
-        await this.driver.clearDatabase(dbConnection);
-        await this.driver.releaseDatabaseConnection(dbConnection);
+        await this.driver.beginTransaction(dbConnection);
+        try {
+            await this.driver.clearDatabase(dbConnection);
+            await this.driver.commitTransaction(dbConnection);
+            await this.driver.releaseDatabaseConnection(dbConnection);
+
+        } catch (error) {
+            await this.driver.rollbackTransaction(dbConnection);
+            await this.driver.releaseDatabaseConnection(dbConnection);
+            throw error;
+        }
     }
 
     /**
      * Creates database schema for all entities registered in this connection.
      *
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
-     * @param forceSync If set to true then schema creation will not be executed in a transaction
      */
-    async syncSchema(dropBeforeSync: boolean = false, forceSync: boolean = false): Promise<void> {
+    async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
+
         if (!this.isConnected)
             return Promise.reject(new CannotSyncNotConnectedError(this.name));
 
+        if (dropBeforeSync)
+            await this.dropDatabase();
+
+        // temporary define schema builder there
         const dbConnection = await this.driver.retrieveDatabaseConnection();
-        if (!forceSync)
-            await this.driver.beginTransaction(dbConnection);
-
+        await this.driver.beginTransaction(dbConnection);
         try {
-            if (dropBeforeSync)
-                await this.driver.clearDatabase(dbConnection);
-
             const schemaBuilder = this.driver.createSchemaBuilder(dbConnection);
+
             const schemaCreatorFactory = getFromContainer(SchemaCreatorFactory);
-            const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.entityMetadatas);
+            const schemaCreator = schemaCreatorFactory.create(schemaBuilder, this.driver, this.entityMetadatas);
             await schemaCreator.create();
 
+            await this.driver.commitTransaction(dbConnection);
             await this.driver.releaseDatabaseConnection(dbConnection);
 
-            if (!forceSync)
-                await this.driver.commitTransaction(dbConnection);
-
         } catch (error) {
-            if (!forceSync)
-                await this.driver.rollbackTransaction(dbConnection);
-
+            await this.driver.rollbackTransaction(dbConnection);
+            await this.driver.releaseDatabaseConnection(dbConnection);
             throw error;
         }
     }

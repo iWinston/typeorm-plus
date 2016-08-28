@@ -27,12 +27,6 @@ export interface RelationOptions {
     readonly cascadeRemove?: boolean;
 
     /**
-     * Column name used previously for this column. Used to make safe schema updates. Experimental and most probably
-     * will be removed in the future. Avoid using it.
-     */
-    readonly oldColumnName?: string;
-
-    /**
      * Indicates if relation column value can be nullable or not.
      */
     readonly nullable?: boolean;

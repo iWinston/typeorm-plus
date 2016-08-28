@@ -8,6 +8,7 @@ import {DatabaseConnection} from "../driver/DatabaseConnection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {DataTypeNotSupportedByDriverError} from "./error/DataTypeNotSupportedByDriverError";
 import {TableSchema} from "../schema-creator/TableSchema";
+import {ColumnSchema} from "../schema-creator/ColumnSchema";
 
 /**
  * @internal
@@ -41,17 +42,17 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
         return this.query(sql).then(results => !!(results && results.length));
     }
 
-    addColumnQuery(tableName: string, column: ColumnMetadata): Promise<void> {
+    createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column, false)}`;
         return this.query(sql).then(() => {});
     }
 
-    dropColumnQuery(tableName: string, columnName: string): Promise<void> {
+    dropColumn(tableName: string, columnName: string): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" DROP "${columnName}"`;
         return this.query(sql).then(() => {});
     }
 
-    addForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void> {
+    createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
         let sql = `ALTER TABLE "${foreignKey.tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
             `REFERENCES "${foreignKey.referencedTable.name}"("${foreignKey.referencedColumnNames.join("\", \"")}")`;
@@ -60,15 +61,7 @@ export class PostgresSchemaBuilder extends SchemaBuilder {
         return this.query(sql).then(() => {});
     }
 
-    dropForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void>;
-    dropForeignKeyQuery(tableName: string, foreignKeyName: string): Promise<void>;
-    dropForeignKeyQuery(tableNameOrForeignKey: string|ForeignKeyMetadata, foreignKeyName?: string): Promise<void> {
-        let tableName = <string> tableNameOrForeignKey;
-        if (tableNameOrForeignKey instanceof ForeignKeyMetadata) {
-            tableName = tableNameOrForeignKey.tableName;
-            foreignKeyName = tableNameOrForeignKey.name;
-        }
-
+    dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKeyName}"`;
         return this.query(sql).then(() => {});
     }
@@ -126,7 +119,7 @@ order by t.relname, i.relname`;
         return this.query(sql).then(() => {});
     }
 
-    addUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
+    createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
         const sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${keyName}" UNIQUE ("${columnName}")`;
         return this.query(sql).then(() => {});
     }
@@ -162,6 +155,10 @@ order by t.relname, i.relname`);
     renameColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
         const sql = `ALTER TABLE ${tableName} RENAME ${oldColumn.name} TO ${newColumn.name}`;
         return this.query(sql).then(() => {});
+    }
+
+    async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
+        return Promise.resolve();
     }
 
     async changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
@@ -215,41 +212,13 @@ order by t.relname, i.relname`);
 
     }
 
-    createTableQuery(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
+    createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
         return this.query(sql).then(() => {});
     }
 
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-    
-    private query(sql: string) {
-        return this.driver.query(this.dbConnection, sql);
-    }
-    
-    private get dbName(): string {
-        return this.driver.options.database as string;
-    }
-
-    private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " SERIAL";
-        if (!column.isGenerated)
-            c += " " + this.normalizeType(column);
-        if (column.isNullable !== true)
-            c += " NOT NULL";
-        if (column.isPrimary === true && !skipPrimary)
-            c += " PRIMARY KEY";
-        // TODO: implement auto increment
-        if (column.columnDefinition)
-            c += " " + column.columnDefinition;
-        return c;
-    }
-
-    private normalizeType(column: ColumnMetadata) {
+    normalizeType(column: ColumnMetadata) {
         switch (column.normalizedDataType) {
             case "string":
                 return "character varying(" + (column.length ? column.length : 255) + ")";
@@ -304,6 +273,34 @@ order by t.relname, i.relname`);
         }
 
         throw new DataTypeNotSupportedByDriverError(column.type, "Postgres");
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+    
+    private query(sql: string) {
+        return this.driver.query(this.dbConnection, sql);
+    }
+    
+    private get dbName(): string {
+        return this.driver.options.database as string;
+    }
+
+    private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
+        let c = "\"" + column.name + "\"";
+        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            c += " SERIAL";
+        if (!column.isGenerated)
+            c += " " + this.normalizeType(column);
+        if (column.isNullable !== true)
+            c += " NOT NULL";
+        if (column.isPrimary === true && !skipPrimary)
+            c += " PRIMARY KEY";
+        // TODO: implement auto increment
+        if (column.columnDefinition)
+            c += " " + column.columnDefinition;
+        return c;
     }
     
 }

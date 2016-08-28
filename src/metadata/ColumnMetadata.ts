@@ -82,10 +82,9 @@ export class ColumnMetadata extends PropertyMetadata {
     readonly comment = "";
 
     /**
-     * Old column name. Used to correctly alter tables when column name is changed. 
-     * Can be used to make temporary tweaks. Not recommended to use.
+     * Default database value.
      */
-    readonly oldColumnName: string;
+    readonly default: string;
 
     /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
@@ -148,8 +147,8 @@ export class ColumnMetadata extends PropertyMetadata {
             this.columnDefinition = args.options.columnDefinition;
         if (args.options.comment)
             this.comment = args.options.comment;
-        if (args.options.oldColumnName)
-            this.oldColumnName = args.options.oldColumnName;
+        if (args.options.default)
+            this.default = args.options.default;
         if (args.options.scale)
             this.scale = args.options.scale;
         if (args.options.precision)

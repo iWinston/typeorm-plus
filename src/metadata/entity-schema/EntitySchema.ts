@@ -126,10 +126,9 @@ export interface EntitySchema {
             comment?: string;
 
             /**
-             * Column name used previously for this column. Used to make safe schema updates. Experimental and most probably
-             * will be removed in the future. Avoid using it.
+             * Default database value.
              */
-            oldColumnName?: string;
+            default?: string;
 
             /**
              * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
@@ -248,10 +247,9 @@ export interface EntitySchema {
             cascadeRemove?: boolean;
 
             /**
-             * Column name used previously for this column. Used to make safe schema updates. Experimental and most probably
-             * will be removed in the future. Avoid using it.
+             * Default database value.
              */
-            oldColumnName?: string;
+            default?: any;
 
             /**
              * Indicates if relation column value can be nullable or not.

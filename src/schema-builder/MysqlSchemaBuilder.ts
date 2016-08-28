@@ -31,10 +31,9 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
             return [];
 
         // load tables, columns, indices and foreign keys
-        const tablesString   = tableNames.map(tableName => "'" + tableName + "'").join(",");
-        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME IN (${tablesString})`;
-        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME IN (${tablesString})`;
-        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME IN (${tablesString})`;
+        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.dbName}'`;
+        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'`;
+        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
         const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
         const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
         const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
@@ -62,7 +61,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
                     columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase(); // todo: use normalize type?
-                    columnSchema.default = dbColumn["COLUMN_DEFAULT"];
+                    columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
                     columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
@@ -87,7 +86,12 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
 
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
-                .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name)
+                .filter(dbIndex => {
+                    const condition = dbIndex["TABLE_NAME"] === tableSchema.name && !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]);
+                    if (condition)
+                        console.log(dbIndex["INDEX_NAME"], "::", tableSchema.foreignKeys);
+                    return condition;
+                })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
                 .map(dbIndexName => {
@@ -102,32 +106,28 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         });
     }
 
-    /*async getColumnProperties(tableName: string, columnName: string): Promise<{ isNullable: boolean, columnType: string, autoIncrement: boolean }|undefined> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'` +
-            ` AND TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${columnName}'`;
+    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
+        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
+        await this.query(sql);
+    }
 
-        const result = await this.query<ObjectLiteral[]>(sql);
-        if (!result || !result[0])
-            return undefined;
-
-        return {
-            isNullable: result[0]["IS_NULLABLE"] === "YES",
-     this.query       columnType: result[0]["COLUMN_TYPE"],
-            autoIncrement: result[0]["EXTRA"].indexOf("auto_increment") !== -1
-        };
-    }*/
-
-    async addColumnQuery(tableName: string, column: ColumnMetadata): Promise<void> {
+    async createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
         const sql = `ALTER TABLE \`${tableName}\` ADD ${this.buildCreateColumnSql(column, false)}`;
         await this.query(sql);
     }
 
-    async dropColumnQuery(tableName: string, columnName: string): Promise<void> {
+    async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+        await this.query(sql);
+    }
+
+    async dropColumn(tableName: string, columnName: string): Promise<void> {
         const sql = `ALTER TABLE \`${tableName}\` DROP \`${columnName}\``;
         await this.query(sql);
     }
 
-    async addForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void> {
+    async createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
         const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
         let sql = `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
@@ -137,15 +137,7 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         await this.query(sql);
     }
 
-    async dropForeignKeyQuery(foreignKey: ForeignKeyMetadata): Promise<void>;
-    async dropForeignKeyQuery(tableName: string, foreignKeyName: string): Promise<void>;
-    async dropForeignKeyQuery(tableNameOrForeignKey: string|ForeignKeyMetadata, foreignKeyName?: string): Promise<void> {
-        let tableName = <string> tableNameOrForeignKey;
-        if (tableNameOrForeignKey instanceof ForeignKeyMetadata) {
-            tableName = tableNameOrForeignKey.tableName;
-            foreignKeyName = tableNameOrForeignKey.name;
-        }
-
+    async dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
         const sql = `ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${foreignKeyName}\``;
         await this.query(sql);
     }
@@ -161,26 +153,102 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         await this.query(sql);
     }
 
-    async addUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
+    async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
         const sql = `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${keyName}\` UNIQUE (\`${columnName}\`)`;
         await this.query(sql);
     }
+
+    normalizeType(column: ColumnMetadata) {
+        switch (column.normalizedDataType) {
+            case "string":
+                return "varchar(" + (column.length ? column.length : 255) + ")";
+            case "text":
+                return "text";
+            case "boolean":
+                return "tinyint(1)";
+            case "integer":
+            case "int":
+                return "int(" + (column.length ? column.length : 11) + ")";
+            case "smallint":
+                return "smallint(" + (column.length ? column.length : 11) + ")";
+            case "bigint":
+                return "bigint(" + (column.length ? column.length : 11) + ")";
+            case "float":
+                return "float";
+            case "double":
+            case "number":
+                return "double";
+            case "decimal":
+                if (column.precision && column.scale) {
+                    return `decimal(${column.precision},${column.scale})`;
+
+                } else if (column.scale) {
+                    return `decimal(${column.scale})`;
+
+                } else if (column.precision) {
+                    return `decimal(${column.precision})`;
+
+                } else {
+                    return "decimal";
+
+                }
+            case "date":
+                return "date";
+            case "time":
+                return "time";
+            case "datetime":
+                return "datetime";
+            case "json":
+                return "text";
+            case "simple_array":
+                return column.length ? "varchar(" + column.length + ")" : "text";
+        }
+
+        throw new DataTypeNotSupportedByDriverError(column.type, "MySQL");
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+    
+    private query(sql: string) {
+        return this.driver.query(this.dbConnection, sql);
+    }
+
+    private get dbName(): string {
+        return this.driver.options.database as string;
+    }
+
+    private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
+        let c = "`" + column.name + "` " + this.normalizeType(column);
+        if (column.isNullable !== true)
+            c += " NOT NULL";
+        if (column.isPrimary === true && !skipPrimary)
+            c += " PRIMARY KEY";
+        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            c += " AUTO_INCREMENT";
+        if (column.comment)
+            c += " COMMENT '" + column.comment + "'";
+        if (column.columnDefinition)
+            c += " " + column.columnDefinition;
+        return c;
+    }
+
+    // -------------------------------------------------------------------------
+    // Deprecated Methods
+    // -------------------------------------------------------------------------
 
     async renameColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
         const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${oldColumn.type}`;
         await this.query(sql);
     }
 
-    async changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
-        const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.hasPrimaryKey)}`; // todo: CHANGE OR MODIFY COLUMN ????
-        await this.query(sql);
+    getTableForeignQuery(tableName: string): Promise<string[]> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = "${this.dbName}" `
+            + `AND TABLE_NAME = "${tableName}" AND REFERENCED_COLUMN_NAME IS NOT NULL`;
+        return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
     }
 
-    async createTableQuery(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
-        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
-        await this.query(sql);
-    }
 
     /**
      * todo: reuse getColumns
@@ -220,12 +288,6 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
     checkIfTableExist(tableName: string): Promise<boolean> {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
         return this.query(sql).then(results => !!(results && results.length));
-    }
-
-    getTableForeignQuery(tableName: string): Promise<string[]> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = "${this.dbName}" `
-            + `AND TABLE_NAME = "${tableName}" AND REFERENCED_COLUMN_NAME IS NOT NULL`;
-        return this.query(sql).then((results: any[]) => results.map(result => result.CONSTRAINT_NAME));
     }
 
     getTableUniqueKeysQuery(tableName: string): Promise<string[]> {
@@ -272,80 +334,12 @@ export class MysqlSchemaBuilder extends SchemaBuilder {
         });
     }
 
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-    
-    private query(sql: string) {
-        return this.driver.query(this.dbConnection, sql);
+    /**
+     * @deprecated
+     */
+    async changeColumnQuery(tableName: string, oldColumn: DatabaseColumnProperties, newColumn: ColumnMetadata): Promise<void> {
+        const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.hasPrimaryKey)}`; // todo: CHANGE OR MODIFY COLUMN ????
+        await this.query(sql);
     }
 
-    private get dbName(): string {
-        return this.driver.options.database as string;
-    }
-
-    private buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        let c = column.name + " " + this.normalizeType(column);
-        if (column.isNullable !== true)
-            c += " NOT NULL";
-        if (column.isPrimary === true && !skipPrimary)
-            c += " PRIMARY KEY";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " AUTO_INCREMENT";
-        if (column.comment)
-            c += " COMMENT '" + column.comment + "'";
-        if (column.columnDefinition)
-            c += " " + column.columnDefinition;
-        return c;
-    }
-
-    private normalizeType(column: ColumnMetadata) {
-        switch (column.normalizedDataType) {
-            case "string":
-                return "varchar(" + (column.length ? column.length : 255) + ")";
-            case "text":
-                return "text";
-            case "boolean":
-                return "tinyint(1)";
-            case "integer":
-            case "int":
-                return "int(" + (column.length ? column.length : 11) + ")";
-            case "smallint":
-                return "smallint(" + (column.length ? column.length : 11) + ")";
-            case "bigint":
-                return "bigint(" + (column.length ? column.length : 11) + ")";
-            case "float":
-                return "float";
-            case "double":
-            case "number":
-                return "double";
-            case "decimal":
-                if (column.precision && column.scale) {
-                    return `decimal(${column.precision},${column.scale})`;
-                    
-                } else if (column.scale) {
-                    return `decimal(${column.scale})`;
-                    
-                } else if (column.precision) {
-                    return `decimal(${column.precision})`;
-                    
-                } else {
-                    return "decimal";
-                    
-                }
-            case "date":
-                return "date";
-            case "time":
-                return "time";
-            case "datetime":
-                return "datetime";
-            case "json":
-                return "text";
-            case "simple_array":
-                return column.length ? "varchar(" + column.length + ")" : "text";
-        }
-
-        throw new DataTypeNotSupportedByDriverError(column.type, "MySQL");
-    }
-    
 }

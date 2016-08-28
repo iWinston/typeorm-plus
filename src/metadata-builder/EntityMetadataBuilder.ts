@@ -88,7 +88,7 @@ export class EntityMetadataBuilder {
                         nullable: columnSchema.nullable,
                         columnDefinition: columnSchema.columnDefinition,
                         comment: columnSchema.comment,
-                        oldColumnName: columnSchema.oldColumnName,
+                        default: columnSchema.default,
                         precision: columnSchema.precision,
                         scale: columnSchema.scale,
                         collation: columnSchema.collation
@@ -116,7 +116,6 @@ export class EntityMetadataBuilder {
                             cascadeInsert: relationSchema.cascadeInsert,
                             cascadeUpdate: relationSchema.cascadeUpdate,
                             cascadeRemove: relationSchema.cascadeRemove,
-                            oldColumnName: relationSchema.oldColumnName,
                             nullable: relationSchema.nullable,
                             onDelete: relationSchema.onDelete
                         }
@@ -309,7 +308,6 @@ export class EntityMetadataBuilder {
                         mode: "virtual",
                         options: <ColumnOptions> {
                             type: inverseSideColumn.type,
-                            oldColumnName: relation.oldColumnName,
                             nullable: relation.isNullable
                         }
                     });

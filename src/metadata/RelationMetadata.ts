@@ -110,11 +110,6 @@ export class RelationMetadata extends PropertyMetadata {
     readonly isNullable: boolean = true;
 
     /**
-     * Old column name.
-     */
-    readonly oldColumnName: string;
-
-    /**
      * What to do with a relation on deletion of the row containing a foreign key.
      */
     readonly onDelete: OnDeleteType;
@@ -158,8 +153,6 @@ export class RelationMetadata extends PropertyMetadata {
             this.isCascadeUpdate = true;
         if (args.options.cascadeRemove || args.options.cascadeAll)
             this.isCascadeRemove = true;
-        if (args.options.oldColumnName)
-            this.oldColumnName = args.options.oldColumnName;
         if (args.options.nullable)
             this.isNullable = args.options.nullable;
         if (args.options.onDelete)

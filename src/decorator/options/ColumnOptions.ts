@@ -48,10 +48,9 @@ export interface ColumnOptions {
     readonly comment?: string;
 
     /**
-     * Column name used previously for this column. Used to make safe schema updates. Experimental and most probably
-     * will be removed in the future. Avoid using it.
+     * Default database value.
      */
-    readonly oldColumnName?: string;
+    readonly default?: any;
 
     /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
