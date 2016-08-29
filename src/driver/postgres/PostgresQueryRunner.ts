@@ -16,8 +16,22 @@ import {IndexSchema} from "../../schema-builder/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
 import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
+import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 
+/**
+ * Runs queries on a single mysql database connection.
+ */
 export class PostgresQueryRunner implements QueryRunner {
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Indicates if connection for this query runner is released.
+     * Once its released, query runner cannot run queries anymore.
+     */
+    protected isReleased = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -38,6 +52,7 @@ export class PostgresQueryRunner implements QueryRunner {
      */
     release(): Promise<void> {
         if (this.databaseConnection.releaseCallback) {
+            this.isReleased = true;
             return this.databaseConnection.releaseCallback();
         }
 
@@ -48,6 +63,9 @@ export class PostgresQueryRunner implements QueryRunner {
      * Removes all tables from the currently connected database.
      */
     async clearDatabase(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
         const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
         await Promise.all(dropQueries.map(q => this.query(q["query"])));
@@ -57,6 +75,8 @@ export class PostgresQueryRunner implements QueryRunner {
      * Starts transaction.
      */
     async beginTransaction(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
         if (this.databaseConnection.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
@@ -68,6 +88,8 @@ export class PostgresQueryRunner implements QueryRunner {
      * Commits transaction.
      */
     async commitTransaction(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -79,6 +101,8 @@ export class PostgresQueryRunner implements QueryRunner {
      * Rollbacks transaction.
      */
     async rollbackTransaction(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -97,6 +121,9 @@ export class PostgresQueryRunner implements QueryRunner {
      * Executes a given SQL query.
      */
     query(query: string, parameters?: any[]): Promise<any> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         // console.log("query: ", query);
         // console.log("parameters: ", parameters);
         this.logger.logQuery(query);
@@ -117,6 +144,9 @@ export class PostgresQueryRunner implements QueryRunner {
      * Insert a new row into given table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
@@ -133,6 +163,9 @@ export class PostgresQueryRunner implements QueryRunner {
      * Updates rows that match given conditions in the given table.
      */
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
         const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
@@ -146,6 +179,9 @@ export class PostgresQueryRunner implements QueryRunner {
      * Deletes from the given table by a given conditions.
      */
     async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const conditionString = this.parametrize(conditions).join(" AND ");
         const parameters = Object.keys(conditions).map(key => conditions[key]);
         const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
@@ -156,6 +192,9 @@ export class PostgresQueryRunner implements QueryRunner {
      * Inserts rows into closure table.
      */
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         let sql = "";
         if (hasLevel) {
             sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
@@ -171,7 +210,13 @@ export class PostgresQueryRunner implements QueryRunner {
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
+    /**
+     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     */
     async loadSchemaTables(tableNames: string[]): Promise<TableSchema[]> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
 
         // if no tables given then no need to proceed
         if (!tableNames)
@@ -260,18 +305,36 @@ export class PostgresQueryRunner implements QueryRunner {
         });
     }
 
+    /**
+     * Creates a new table from the given table metadata and column metadatas.
+     */
     async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
         await this.query(sql);
     }
 
+    /**
+     * Creates a new column from the column metadata in the table.
+     */
     async createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column, false)}`;
         await this.query(sql);
     }
 
+    /**
+     * Changes a column in the table.
+     */
     async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         // update name, type, nullable
         const newType = this.normalizeType(newColumn);
         if (oldColumn.type !== newType ||
@@ -320,12 +383,24 @@ export class PostgresQueryRunner implements QueryRunner {
         }
     }
 
+    /**
+     * Drops the column in the table.
+     */
     async dropColumn(tableName: string, columnName: string): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE "${tableName}" DROP "${columnName}"`;
         await this.query(sql);
     }
 
+    /**
+     * Creates a new foreign.
+     */
     async createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         let sql = `ALTER TABLE "${foreignKey.tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
             `REFERENCES "${foreignKey.referencedTable.name}"("${foreignKey.referencedColumnNames.join("\", \"")}")`;
@@ -334,12 +409,35 @@ export class PostgresQueryRunner implements QueryRunner {
         await this.query(sql);
     }
 
+    /**
+     * Drops a foreign key from the table.
+     */
     async dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKeyName}"`;
         await this.query(sql);
     }
 
+    /**
+     * Creates a new index.
+     */
+    async createIndex(tableName: string, index: IndexMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"("${index.columns.join("\", \"")}")`;
+        await this.query(sql);
+    }
+
+    /**
+     * Drops an index from the table.
+     */
     async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         if (isGenerated) {
             await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`); // todo: what is it?
         }
@@ -348,16 +446,20 @@ export class PostgresQueryRunner implements QueryRunner {
         await this.query(sql);
     }
 
-    async createIndex(tableName: string, index: IndexMetadata): Promise<void> {
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"("${index.columns.join("\", \"")}")`;
-        await this.query(sql);
-    }
-
+    /**
+     * Creates a new unique key.
+     */
     async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${keyName}" UNIQUE ("${columnName}")`;
         await this.query(sql);
     }
 
+    /**
+     * Creates a database type from a given column metadata.
+     */
     normalizeType(column: ColumnMetadata) {
         switch (column.normalizedDataType) {
             case "string":
@@ -419,6 +521,9 @@ export class PostgresQueryRunner implements QueryRunner {
     // Protected Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Database name shortcut.
+     */
     protected get dbName(): string {
         return this.driver.options.database as string;
     }
@@ -430,6 +535,9 @@ export class PostgresQueryRunner implements QueryRunner {
         return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
     }
 
+    /**
+     * Builds a query for create column.
+     */
     protected buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
         let c = "\"" + column.name + "\"";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.

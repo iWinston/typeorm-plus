@@ -3,10 +3,7 @@ import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import * as moment from "moment";
 import {Logger} from "../../logger/Logger";
-import {Driver} from "../Driver";
 import {MysqlDriver} from "./MysqlDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {IndexMetadata} from "../../metadata/IndexMetadata";
@@ -19,10 +16,24 @@ import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
 import {ForeignKeySchema} from "../../schema-builder/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/IndexSchema";
+import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 
 // todo: throw exception if methods are used after release
 
+/**
+ * Runs queries on a single mysql database connection.
+ */
 export class MysqlQueryRunner implements QueryRunner {
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Indicates if connection for this query runner is released.
+     * Once its released, query runner cannot run queries anymore.
+     */
+    protected isReleased = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -44,6 +55,7 @@ export class MysqlQueryRunner implements QueryRunner {
      */
     release(): Promise<void> {
         if (this.databaseConnection.releaseCallback) {
+            this.isReleased = true;
             return this.databaseConnection.releaseCallback();
         }
 
@@ -54,6 +66,8 @@ export class MysqlQueryRunner implements QueryRunner {
      * Removes all tables from the currently connected database.
      */
     async clearDatabase(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
 
         const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
         const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
@@ -69,6 +83,9 @@ export class MysqlQueryRunner implements QueryRunner {
      * Starts transaction.
      */
     async beginTransaction(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         if (this.databaseConnection.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
@@ -80,6 +97,9 @@ export class MysqlQueryRunner implements QueryRunner {
      * Commits transaction.
      */
     async commitTransaction(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -91,6 +111,9 @@ export class MysqlQueryRunner implements QueryRunner {
      * Rollbacks transaction.
      */
     async rollbackTransaction(): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -109,6 +132,9 @@ export class MysqlQueryRunner implements QueryRunner {
      * Executes a given SQL query.
      */
     query(query: string, parameters?: any[]): Promise<any> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         this.logger.logQuery(query);
         return new Promise((ok, fail) => {
             this.databaseConnection.connection.query(query, parameters, (err: any, result: any) => {
@@ -127,6 +153,9 @@ export class MysqlQueryRunner implements QueryRunner {
      * Insert a new row with given values into given table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map(key => "?").join(",");
@@ -140,6 +169,9 @@ export class MysqlQueryRunner implements QueryRunner {
      * Updates rows that match given conditions in the given table.
      */
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
         const sql = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
@@ -153,6 +185,9 @@ export class MysqlQueryRunner implements QueryRunner {
      * Deletes from the given table by a given conditions.
      */
     async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const conditionString = this.parametrize(conditions).join(" AND ");
         const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         const parameters = Object.keys(conditions).map(key => conditions[key]);
@@ -163,22 +198,30 @@ export class MysqlQueryRunner implements QueryRunner {
      * Inserts rows into the closure table.
      */
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                    `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
         const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
+    /**
+     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     */
     async loadSchemaTables(tableNames: string[]): Promise<TableSchema[]> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
 
         // if no tables given then no need to proceed
         if (!tableNames)
@@ -259,58 +302,115 @@ export class MysqlQueryRunner implements QueryRunner {
         });
     }
 
+    /**
+     * Creates a new table from the given table metadata and column metadatas.
+     */
     async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
         await this.query(sql);
     }
 
+    /**
+     * Creates a new column from the column metadata in the table.
+     */
     async createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE \`${tableName}\` ADD ${this.buildCreateColumnSql(column, false)}`;
         await this.query(sql);
     }
 
+    /**
+     * Changes a column in the table.
+     */
     async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
         await this.query(sql);
     }
 
+    /**
+     * Drops the column in the table.
+     */
     async dropColumn(tableName: string, columnName: string): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE \`${tableName}\` DROP \`${columnName}\``;
         await this.query(sql);
     }
 
+    /**
+     * Creates a new foreign.
+     */
     async createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-        let sql = `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
-            `FOREIGN KEY (${columnNames}) ` +
-            `REFERENCES \`${foreignKey.referencedTable.name}\`(${referencedColumnNames})`;
+        let sql =   `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+                    `FOREIGN KEY (${columnNames}) ` +
+                    `REFERENCES \`${foreignKey.referencedTable.name}\`(${referencedColumnNames})`;
         if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
         await this.query(sql);
     }
 
+    /**
+     * Drops a foreign key from the table.
+     */
     async dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${foreignKeyName}\``;
         await this.query(sql);
     }
 
-    async dropIndex(tableName: string, indexName: string): Promise<void> {
-        const sql = `ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``;
-        await this.query(sql);
-    }
-
+    /**
+     * Creates a new index.
+     */
     async createIndex(tableName: string, index: IndexMetadata): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const columns = index.columns.map(column => "`" + column + "`").join(", ");
         const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON \`${tableName}\`(${columns})`;
         await this.query(sql);
     }
 
+    /**
+     * Drops an index from the table.
+     */
+    async dropIndex(tableName: string, indexName: string): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const sql = `ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``;
+        await this.query(sql);
+    }
+
+    /**
+     * Creates a new unique key.
+     */
     async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
         const sql = `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${keyName}\` UNIQUE (\`${columnName}\`)`;
         await this.query(sql);
     }
 
+    /**
+     * Creates a database type from a given column metadata.
+     */
     normalizeType(column: ColumnMetadata) {
         switch (column.normalizedDataType) {
             case "string":
@@ -365,16 +465,22 @@ export class MysqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Database name shortcut.
+     */
+    protected get dbName(): string {
+        return this.driver.options.database as string;
+    }
+
+    /**
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
         return Object.keys(objectLiteral).map(key => this.driver.escapeColumnName(key) + "=?");
     }
 
-    protected get dbName(): string {
-        return this.driver.options.database as string;
-    }
-
+    /**
+     * Builds a query for create column.
+     */
     protected buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
         let c = "`" + column.name + "` " + this.normalizeType(column);
         if (column.isNullable !== true)

@@ -6,12 +6,12 @@ export interface DatabaseConnection {
     /**
      * Id of the connection.
      */
-    id: number;
+    readonly id: number;
 
     /**
      * Native driver's connection.
      */
-    connection: any;
+    readonly connection: any;
 
     /**
      * Indicates if transaction is active for this connection.

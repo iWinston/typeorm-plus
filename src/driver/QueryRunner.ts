@@ -5,6 +5,9 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {TableSchema} from "../schema-builder/TableSchema";
 
+/**
+ * Runs queries on a single database connection.
+ */
 export interface QueryRunner {
 
     /**
@@ -64,16 +67,59 @@ export interface QueryRunner {
      */
     insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
 
+    /**
+     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     */
     loadSchemaTables(tableNames: string[]): Promise<TableSchema[]>;
+
+    /**
+     * Creates a new table from the given table metadata and column metadatas.
+     */
     createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void>;
+
+    /**
+     * Creates a new column from the column metadata in the table.
+     */
     createColumn(tableName: string, column: ColumnMetadata): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
     changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void>;
+
+    /**
+     * Drops the column in the table.
+     */
     dropColumn(tableName: string, columnName: string): Promise<void>;
+
+    /**
+     * Creates a new foreign.
+     */
     createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void>;
+
+    /**
+     * Drops a foreign key from the table.
+     */
     dropForeignKey(tableName: string, foreignKeyName: string): Promise<void>;
+
+    /**
+     * Creates a new index.
+     */
     createIndex(tableName: string, index: IndexMetadata): Promise<void>;
+
+    /**
+     * Drops an index from the table.
+     */
     dropIndex(tableName: string, indexName: string): Promise<void>;
+
+    /**
+     * Creates a new unique key.
+     */
     createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void>;
+
+    /**
+     * Creates a database type from a given column metadata.
+     */
     normalizeType(column: ColumnMetadata): any;
 
 }

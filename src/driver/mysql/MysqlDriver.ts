@@ -14,7 +14,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 
 /**
- * This driver organizes work with mysql database.
+ * Organizes communication with MySQL DBMS.
  */
 export class MysqlDriver implements Driver {
 

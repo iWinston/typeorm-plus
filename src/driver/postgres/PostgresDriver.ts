@@ -9,8 +9,6 @@ import {DriverUtils} from "../DriverUtils";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Logger} from "../../logger/Logger";
-import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
-import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import * as moment from "moment";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {QueryRunner} from "../QueryRunner";
@@ -21,7 +19,7 @@ import {QueryRunner} from "../QueryRunner";
 //
 
 /**
- * This driver organizes work with postgres database.
+ * Organizes communication with PostgreSQL DBMS.
  */
 export class PostgresDriver implements Driver {
 
