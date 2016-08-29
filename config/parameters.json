@@ -14,6 +14,20 @@
       "password": "admin",
       "database": "test2"
     },
+    "mariadb": {
+      "host": "192.168.99.100",
+      "port": 3307,
+      "username": "root",
+      "password": "admin",
+      "database": "test"
+    },
+    "mariadbSecondary": {
+      "host": "192.168.99.100",
+      "port": 3307,
+      "username": "root",
+      "password": "admin",
+      "database": "test2"
+    },
     "postgres": {
       "host": "192.168.99.100",
       "port": 5432,

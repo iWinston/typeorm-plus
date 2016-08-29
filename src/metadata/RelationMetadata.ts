@@ -5,6 +5,7 @@ import {OnDeleteType} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
+import {ColumnMetadata} from "./ColumnMetadata";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -234,12 +235,36 @@ export class RelationMetadata extends PropertyMetadata {
             if (this.inverseRelation.joinTable) {
                 return this.inverseRelation.joinTable.inverseReferencedColumn.name;
             } else if (this.inverseRelation.joinColumn) {
-                return this.inverseRelation.joinColumn.name;
+                return this.inverseRelation.joinColumn.name; // todo: didn't get this logic here
             }
         }
         
         // this should not be possible, but anyway throw error
         throw new Error(`Cannot get referenced column name of the relation ${this.entityMetadata.name}#${this.name}`);
+    }
+
+    /**
+     * Gets the column to which this relation is referenced.
+     */
+    get referencedColumn(): ColumnMetadata {
+        if (this.isOwning) {
+            if (this.joinTable) {
+                return this.joinTable.referencedColumn;
+
+            } else if (this.joinColumn) {
+                return this.joinColumn.referencedColumn;
+            }
+
+        } else if (this.hasInverseSide) {
+            if (this.inverseRelation.joinTable) {
+                return this.inverseRelation.joinTable.inverseReferencedColumn;
+            } else if (this.inverseRelation.joinColumn) {
+                return this.inverseRelation.joinColumn.referencedColumn;
+            }
+        }
+
+        // this should not be possible, but anyway throw error
+        throw new Error(`Cannot get referenced column of the relation ${this.entityMetadata.name}#${this.name}`);
     }
 
     /**

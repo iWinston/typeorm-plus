@@ -4,6 +4,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {Driver} from "../../driver/Driver";
 import {JoinMapping, RelationCountMeta} from "../QueryBuilder";
+import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 
 /**
  * Transforms raw sql results returned from the database into entity object. 
@@ -136,8 +137,9 @@ export class RawSqlResultsToEntityTransformer {
                         rawSqlResults.forEach(results => {
                             if (relationAlias) {
                                 const resultsKey = relationAlias.name + "_" + columnName;
-                                if (results[resultsKey])
-                                    ids.push(results[resultsKey]);
+                                const value = this.driver.prepareHydratedValue(results[resultsKey], relation.referencedColumn);
+                                if (value !== undefined && value !== null)
+                                    ids.push(value);
                             }
                         });
 
@@ -147,7 +149,7 @@ export class RawSqlResultsToEntityTransformer {
                 }
             } else if (relation.idField) {
                 const relationName = relation.name;
-                entity[relation.idField] = rawSqlResults[0][alias.name + "_" + relationName];
+                entity[relation.idField] = this.driver.prepareHydratedValue(rawSqlResults[0][alias.name + "_" + relationName], relation.referencedColumn);
             }
             
             // if relation counter

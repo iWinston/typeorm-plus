@@ -1,27 +1,23 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {DriverUtils} from "../DriverUtils";
-import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Logger} from "../../logger/Logger";
-import * as moment from "moment";
-import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {QueryRunner} from "../QueryRunner";
-
-// todo(tests):
-// check connection with url
-// check if any of required option is not set exception to be thrown
-//
+import {MariaDbQueryRunner} from "./MariaDbQueryRunner";
+import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
+import * as moment from "moment";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {DriverPoolingNotSupportedError} from "../error/DriverPoolingNotSupportedError";
 
 /**
- * Organizes communication with PostgreSQL DBMS.
+ * Organizes communication with MariaDB DBMS.
  */
-export class PostgresDriver implements Driver {
+export class MariaDbDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -37,17 +33,17 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Postgres library.
+     * MariaDB library.
      */
-    protected postgres: any;
+    protected mariaSql: any;
 
     /**
-     * Connection to postgres database.
+     * Connection to mariadb database.
      */
     protected databaseConnection: DatabaseConnection|undefined;
 
     /**
-     * Postgres pool.
+     * MariaDB pool.
      */
     protected pool: any;
 
@@ -65,17 +61,17 @@ export class PostgresDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, postgres?: any) {
+    constructor(options: DriverOptions, logger: Logger, mariadb?: any) {
 
-        this.options = DriverUtils.buildDriverOptions(connectionOptions);
+        this.options = DriverUtils.buildDriverOptions(options);
         this.logger = logger;
-        this.postgres = postgres;
+        this.mariaSql = mariadb;
 
         // validate options to make sure everything is set
         DriverUtils.validateDriverOptions(this.options);
 
-        // if postgres package instance was not set explicitly then try to load it
-        if (!postgres)
+        // if mariadb package instance was not set explicitly then try to load it
+        if (!mariadb)
             this.loadDependencies();
     }
 
@@ -95,21 +91,23 @@ export class PostgresDriver implements Driver {
             host: this.options.host,
             user: this.options.username,
             password: this.options.password,
-            database: this.options.database,
+            db: this.options.database,
             port: this.options.port
         }, this.options.extra || {});
 
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
-        if (this.options.usePool === undefined || this.options.usePool === true) {
-            this.pool = new this.postgres.Pool(options);
-            return Promise.resolve();
+        // pooling is not supported out of the box my mariasql driver,
+        // so we disable it by default, and if client try to enable it - we throw an error
+        if (/*this.options.usePool === undefined || */this.options.usePool === true) {
+            return Promise.reject(new DriverPoolingNotSupportedError("mariasql"));
+            // this.pool = this.mariadb.createPool(options);
+            // return Promise.resolve();
 
         } else {
             return new Promise<void>((ok, fail) => {
+                const connection = new this.mariaSql(options);
                 this.databaseConnection = {
                     id: 1,
-                    connection: new this.postgres.Client(options),
+                    connection: connection,
                     isTransactionActive: false
                 };
                 this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
@@ -118,32 +116,28 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Closes connection with database.
+     * Closes connection with the database.
      */
     disconnect(): Promise<void> {
         if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("postgres");
+            throw new ConnectionIsNotSetError("mariadb");
 
         return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
+            // const handler = (err: any) => err ? fail(err) : ok();
 
-            if (this.databaseConnection) {
-                this.databaseConnection.connection.end(/*handler*/); // todo: check if it can emit errors
-                this.databaseConnection = undefined;
-            }
-
-            if (this.databaseConnectionPool) {
-                this.databaseConnectionPool.forEach(dbConnection => {
-                    if (dbConnection && dbConnection.releaseCallback) {
-                        dbConnection.releaseCallback();
-                    }
-                });
+            // if pooling is used, then disconnect from it
+            /*if (this.pool) {
                 this.pool.end(handler);
                 this.pool = undefined;
                 this.databaseConnectionPool = [];
-            }
+            }*/ // commented since pooling is not supported yet
 
-            ok();
+            // if single connection is opened, then close it
+            if (this.databaseConnection) {
+                this.databaseConnection.connection.end();
+                this.databaseConnection = undefined;
+                ok();
+            }
         });
     }
 
@@ -152,10 +146,10 @@ export class PostgresDriver implements Driver {
      */
     async createQueryRunner(): Promise<QueryRunner> {
         if (!this.databaseConnection && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("postgres"));
+            return Promise.reject(new ConnectionIsNotSetError("mariadb"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new PostgresQueryRunner(databaseConnection, this, this.logger);
+        return new MariaDbQueryRunner(databaseConnection, this, this.logger);
     }
 
     /**
@@ -163,10 +157,47 @@ export class PostgresDriver implements Driver {
      */
     nativeInterface() {
         return {
-            driver: this.postgres,
+            driver: this.mariaSql,
             connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
+    }
+
+    /**
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
+     */
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+        if (!parameters || !Object.keys(parameters).length)
+            return [sql, []];
+        const escapedParameters: any[] = [];
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
+            escapedParameters.push(parameters[key.substr(1)]);
+            return "?";
+        }); // todo: make replace only in value statements, otherwise problems
+        return [sql, escapedParameters];
+    }
+
+    /**
+     * Escapes a column name.
+     */
+    escapeColumnName(columnName: string): string {
+        return columnName; // "`" + columnName + "`";
+    }
+
+    /**
+     * Escapes an alias.
+     */
+    escapeAliasName(aliasName: string): string {
+        return aliasName; // "`" + aliasName + "`";
+    }
+
+    /**
+     * Escapes a table name.
+     */
+    escapeTableName(tableName: string): string {
+        return tableName; // "`" + tableName + "`";
     }
 
     /**
@@ -208,6 +239,9 @@ export class PostgresDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnOrColumnType: ColumnMetadata|ColumnType): any {
         const type = columnOrColumnType instanceof ColumnMetadata ? columnOrColumnType.type : columnOrColumnType;
+        if (ColumnTypes.isNumeric(type) && value !== null && value !== undefined)
+            return parseInt(value);
+
         switch (type) {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
@@ -237,52 +271,6 @@ export class PostgresDriver implements Driver {
         return value;
     }
 
-    /**
-     * Replaces parameters in the given sql with special escaping character
-     * and an array of parameter names to be passed to a query.
-     */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
-        if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
-
-        const builtParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string  => {
-            const value = parameters[key.substr(1)];
-            if (value instanceof Array) {
-                return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "$" + builtParameters.length;
-                }).join(", ");
-            } else {
-                builtParameters.push(value);
-            }
-            return "$" + builtParameters.length;
-        }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
-    }
-
-    /**
-     * Escapes a column name.
-     */
-    escapeColumnName(columnName: string): string {
-        return "\"" + columnName + "\"";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string {
-        return "\"" + aliasName + "\"";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string {
-        return "\"" + tableName + "\"";
-    }
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -293,13 +281,12 @@ export class PostgresDriver implements Driver {
      * Otherwise active connection will be returned.
      */
     protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.pool) {
+
+        /*if (this.pool) {
             return new Promise((ok, fail) => {
-                this.pool.connect((err: any, connection: any, release: Function) => {
-                    if (err) {
-                        fail(err);
-                        return;
-                    }
+                this.pool.getConnection((err: any, connection: any) => {
+                    if (err)
+                        return fail(err);
 
                     let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
                     if (!dbConnection) {
@@ -308,24 +295,24 @@ export class PostgresDriver implements Driver {
                             connection: connection,
                             isTransactionActive: false
                         };
+                        dbConnection.releaseCallback = () => {
+                            if (this.pool && dbConnection) {
+                                connection.release();
+                                this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+                            }
+                            return Promise.resolve();
+                        };
                         this.databaseConnectionPool.push(dbConnection);
                     }
-                    dbConnection.releaseCallback = () => {
-                        if (dbConnection) {
-                            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                        }
-                        release();
-                        return Promise.resolve();
-                    };
                     ok(dbConnection);
                 });
             });
-        }
+        }*/ // commented since pooling is not supported yet
 
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
-        throw new ConnectionIsNotSetError("postgres");
+        throw new ConnectionIsNotSetError("mariadb");
     }
 
     /**
@@ -336,9 +323,9 @@ export class PostgresDriver implements Driver {
             throw new DriverPackageLoadError();
 
         try {
-            this.postgres = require("pg");
+            this.mariaSql = require("mariasql");
         } catch (e) {
-            throw new DriverPackageNotInstalledError("Postgres", "pg");
+            throw new DriverPackageNotInstalledError("MariaDB", "mariasql");
         }
     }
 

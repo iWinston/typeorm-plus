@@ -2,6 +2,7 @@ import {DriverOptions} from "./DriverOptions";
 import {QueryRunner} from "./QueryRunner";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {ColumnType} from "../metadata/types/ColumnTypes";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -62,8 +63,14 @@ export interface Driver {
     preparePersistentValue(value: any, column: ColumnMetadata): any;
 
     /**
-     * Prepares given value to a value to be hydrated, based on its column type and metadata.
+     * Prepares given value to a value to be persisted, based on its column metadata.
+     */
+    prepareHydratedValue(value: any, type: ColumnType): any;
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type.
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any;
+
 
 }

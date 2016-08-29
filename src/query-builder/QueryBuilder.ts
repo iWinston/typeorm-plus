@@ -622,7 +622,7 @@ export class QueryBuilder<Entity> {
                 throw new Error(`No ids found to load relation counters`);
 
             return queryBuilder
-                .select(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} as id`)
+                .select(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} AS id`)
                 .addSelect(`COUNT(${ this.driver.escapeAliasName(relation.propertyName) + "." + this.driver.escapeColumnName(relation.inverseEntityMetadata.primaryColumn.name) }) as cnt`)
                 .from(parentMetadata.target, parentMetadata.name)
                 .leftJoin(parentMetadata.name + "." + relation.propertyName, relation.propertyName, relationCountMeta.conditionType, relationCountMeta.condition)
@@ -634,7 +634,9 @@ export class QueryBuilder<Entity> {
                     // console.log(relationCountMeta.entities);
                     relationCountMeta.entities.forEach(entityWithMetadata => {
                         const entityId = entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName];
-                        const entityResult = results.find(result => result.id === entityId);
+                        const entityResult = results.find(result => {
+                            return entityId === this.driver.prepareHydratedValue(result.id, entityWithMetadata.metadata.primaryColumn);
+                        });
                         if (entityResult) {
 
                             if (relationCountMeta.mapToProperty) {

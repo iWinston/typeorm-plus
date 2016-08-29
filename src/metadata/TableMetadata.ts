@@ -7,6 +7,8 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
  */
 export type TableType = "regular"|"abstract"|"junction"|"closure"|"closureJunction"|"embeddable";
 
+// todo: make table engine to be specified within @Table decorator
+
 /**
  * This metadata interface contains all information about specific table.
  */

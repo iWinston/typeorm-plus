@@ -8,7 +8,7 @@ import {DriverUtils} from "../DriverUtils";
 import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../QueryRunner";
 import {MysqlQueryRunner} from "./MysqlQueryRunner";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
 import * as moment from "moment";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -114,7 +114,7 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Closes connection with database.
+     * Closes connection with the database.
      */
     disconnect(): Promise<void> {
         if (!this.databaseConnection && !this.pool)
@@ -222,10 +222,21 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * Prepares given value to a value to be persisted, based on its column metadata.
      */
-    prepareHydratedValue(value: any, column: ColumnMetadata): any {
-        switch (column.type) {
+    prepareHydratedValue(value: any, type: ColumnType): any;
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type.
+     */
+    prepareHydratedValue(value: any, column: ColumnMetadata): any;
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type or metadata.
+     */
+    prepareHydratedValue(value: any, columnOrColumnType: ColumnMetadata|ColumnType): any {
+        const type = columnOrColumnType instanceof ColumnMetadata ? columnOrColumnType.type : columnOrColumnType;
+        switch (type) {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 

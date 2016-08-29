@@ -155,4 +155,17 @@ export class ColumnTypes {
         return (type as any).name.toLowerCase();
     }
 
+    /**
+     * Checks if column type is numeric.
+     */
+    static isNumeric(type: ColumnType) {
+        return  type === ColumnTypes.NUMBER ||
+                type === ColumnTypes.INT ||
+                type === ColumnTypes.INTEGER ||
+                type === ColumnTypes.BIGINT ||
+                type === ColumnTypes.SMALLINT ||
+                type === ColumnTypes.DOUBLE ||
+                type === ColumnTypes.FLOAT;
+    }
+
 }

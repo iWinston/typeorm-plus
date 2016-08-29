@@ -18,8 +18,6 @@ import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 
-// todo: throw exception if methods are used after release
-
 /**
  * Runs queries on a single mysql database connection.
  */
@@ -152,7 +150,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumnName?: string): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -162,7 +160,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
         const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        return result.insertId;
+        return idColumn ? result.insertId : undefined;
     }
 
     /**

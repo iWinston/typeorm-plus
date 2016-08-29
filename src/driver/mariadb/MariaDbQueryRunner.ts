@@ -1,10 +1,10 @@
 import {QueryRunner} from "../QueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {Logger} from "../../logger/Logger";
 import {DatabaseConnection} from "../DatabaseConnection";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {PostgresDriver} from "./PostgresDriver";
+import {Logger} from "../../logger/Logger";
+import {MariaDbDriver} from "./MariaDbDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {IndexMetadata} from "../../metadata/IndexMetadata";
 import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
@@ -12,16 +12,17 @@ import {ColumnSchema} from "../../schema-builder/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
 import {TableSchema} from "../../schema-builder/TableSchema";
-import {IndexSchema} from "../../schema-builder/IndexSchema";
+import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
 import {ForeignKeySchema} from "../../schema-builder/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
-import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
+import {IndexSchema} from "../../schema-builder/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
+import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 
 /**
- * Runs queries on a single mysql database connection.
+ * Runs queries on a single MariaDB database connection.
  */
-export class PostgresQueryRunner implements QueryRunner {
+export class MariaDbQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -38,7 +39,7 @@ export class PostgresQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(protected databaseConnection: DatabaseConnection,
-                protected driver: PostgresDriver,
+                protected driver: MariaDbDriver,
                 protected logger: Logger) {
     }
 
@@ -49,6 +50,7 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Releases database connection. This is needed when using connection pooling.
      * If connection is not from a pool, it should not be released.
+     * You cannot use this class's methods after its released.
      */
     release(): Promise<void> {
         if (this.databaseConnection.releaseCallback) {
@@ -66,9 +68,14 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        await Promise.all(dropQueries.map(q => this.query(q["query"])));
+        const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
+        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
+        const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+
+        await this.query(disableForeignKeysCheckQuery);
+        const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
+        await Promise.all(dropQueries.map(query => this.query(query["query"])));
+        await this.query(enableForeignKeysCheckQuery);
     }
 
     /**
@@ -77,6 +84,7 @@ export class PostgresQueryRunner implements QueryRunner {
     async beginTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
+
         if (this.databaseConnection.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
@@ -90,6 +98,7 @@ export class PostgresQueryRunner implements QueryRunner {
     async commitTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
+
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -103,6 +112,7 @@ export class PostgresQueryRunner implements QueryRunner {
     async rollbackTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
+
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -124,24 +134,34 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        // console.log("query: ", query);
-        // console.log("parameters: ", parameters);
+        if (parameters) {
+            parameters = parameters.map(parameter => {
+                if (typeof parameter === "boolean") {
+                    return parameter === true ? "1" : "0";
+                }
+
+                return parameter;
+            });
+        }
+
+        // console.log(query);
+        // console.log(parameters);
         this.logger.logQuery(query);
-        return new Promise<any[]>((ok, fail) => {
+        return new Promise((ok, fail) => {
             this.databaseConnection.connection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.logger.logFailedQuery(query);
                     this.logger.logQueryError(err);
-                    fail(err);
-                } else {
-                    ok(result.rows);
+                    return fail(err);
                 }
+
+                ok(result);
             });
         });
     }
 
     /**
-     * Insert a new row into given table.
+     * Insert a new row with given values into given table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
@@ -149,14 +169,17 @@ export class PostgresQueryRunner implements QueryRunner {
 
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
-        const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ idColumn ? " RETURNING " + this.driver.escapeColumnName(idColumn.name) : "" }`;
+        const values = keys.map(key => "?").join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const result: ObjectLiteral[] = await this.query(sql, parameters);
-        if (idColumn)
-            return result[0][idColumn.name];
-
-        return result;
+        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
+        const result = await this.query(sql, parameters);
+        if (result.info && idColumn) {
+            const id = result.info.insertId;
+            if (ColumnTypes.isNumeric(idColumn.type)) {
+                return +id;
+            }
+            return id;
+        }
     }
 
     /**
@@ -167,12 +190,12 @@ export class PostgresQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
+        const conditionString = this.parametrize(conditions).join(" AND ");
+        const sql = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
+        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
-        await this.query(query, allParameters);
+        await this.query(sql, allParameters);
     }
 
     /**
@@ -183,13 +206,13 @@ export class PostgresQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const conditionString = this.parametrize(conditions).join(" AND ");
+        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         const parameters = Object.keys(conditions).map(key => conditions[key]);
-        const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(query, parameters);
+        await this.query(sql, parameters);
     }
 
     /**
-     * Inserts rows into closure table.
+     * Inserts rows into the closure table.
      */
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
         if (this.isReleased)
@@ -197,16 +220,16 @@ export class PostgresQueryRunner implements QueryRunner {
 
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                    `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -217,23 +240,17 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-
         // if no tables given then no need to proceed
         if (!tableNames)
             return [];
 
         // load tables, columns, indices and foreign keys
-        const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
-        const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
-        const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
-        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name 
-                                FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
-                                WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
-                                AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString})
-                                ORDER BY t.relname, i.relname`;
-        const foreignKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'FOREIGN KEY'`;
-        const uniqueKeysSql  = `SELECT * FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'UNIQUE'`;
-        const primaryKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'PRIMARY KEY'`;
+        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.dbName}'`;
+        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'`;
+        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
+        const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
+        const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
+        const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
         const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
@@ -249,40 +266,37 @@ export class PostgresQueryRunner implements QueryRunner {
 
         // create table schemas for loaded tables
         return dbTables.map(dbTable => {
-            const tableSchema = new TableSchema(dbTable["table_name"]);
+            const tableSchema = new TableSchema(dbTable["TABLE_NAME"]);
 
             // create column schemas from the loaded columns
             tableSchema.columns = dbColumns
-                .filter(dbColumn => dbColumn["table_name"] === tableSchema.name)
+                .filter(dbColumn => dbColumn["TABLE_NAME"] === tableSchema.name)
                 .map(dbColumn => {
-                    const columnType = dbColumn["data_type"].toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
-                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)`;
-
                     const columnSchema = new ColumnSchema();
-                    columnSchema.name = dbColumn["column_name"];
-                    columnSchema.type = columnType;
-                    columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"] : undefined;
-                    columnSchema.isNullable = dbColumn["is_nullable"] === "YES";
-                    // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
-                    columnSchema.isGenerated = isGenerated;
-                    columnSchema.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    columnSchema.name = dbColumn["COLUMN_NAME"];
+                    columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase(); // todo: use normalize type?
+                    columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
+                    columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
+                    columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
+                    columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
+                    columnSchema.comment = dbColumn["COLUMN_COMMENT"];
                     return columnSchema;
                 });
 
             // create primary key schema
-            const primaryKey = primaryKeys.find(primaryKey => primaryKey["table_name"] === tableSchema.name);
+            const primaryKey = primaryKeys.find(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name);
             if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["constraint_name"]);
+                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]);
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
-                .filter(dbForeignKey => dbForeignKey["table_name"] === tableSchema.name)
-                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["constraint_name"]));
+                .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === tableSchema.name)
+                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"]));
 
             // create unique key schemas from the loaded indices
             tableSchema.uniqueKeys = dbUniqueKeys
-                .filter(dbUniqueKey => dbUniqueKey["table_name"] === tableSchema.name)
-                .map(dbUniqueKey => new UniqueKeySchema(dbUniqueKey["constraint_name"]));
+                .filter(dbUniqueKey => dbUniqueKey["TABLE_NAME"] === tableSchema.name)
+                .map(dbUniqueKey => new UniqueKeySchema(dbUniqueKey["CONSTRAINT_NAME"]));
 
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
@@ -291,12 +305,12 @@ export class PostgresQueryRunner implements QueryRunner {
                         (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
                         (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
                 })
-                .map(dbIndex => dbIndex["index_name"])
+                .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
                 .map(dbIndexName => {
                     const columnNames = dbIndices
-                        .filter(dbIndex => dbIndex["table_name"] === tableSchema.name && dbIndex["index_name"] === dbIndexName)
-                        .map(dbIndex => dbIndex["column_name"]);
+                        .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
+                        .map(dbIndex => dbIndex["COLUMN_NAME"]);
 
                     return new IndexSchema(dbIndexName, columnNames);
                 });
@@ -313,7 +327,7 @@ export class PostgresQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
+        const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
         await this.query(sql);
     }
 
@@ -324,7 +338,7 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column, false)}`;
+        const sql = `ALTER TABLE \`${tableName}\` ADD ${this.buildCreateColumnSql(column, false)}`;
         await this.query(sql);
     }
 
@@ -335,45 +349,8 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        // update name, type, nullable
-        const newType = this.normalizeType(newColumn);
-        if (oldColumn.type !== newType ||
-            oldColumn.name !== newColumn.name) {
-
-            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
-            if (oldColumn.type !== newType) {
-                sql += ` TYPE ${newType}`;
-            }
-            if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
-                sql += ` RENAME TO ` + newColumn.name;
-            }
-            await this.query(sql);
-        }
-
-        if (oldColumn.isNullable !== newColumn.isNullable) {
-            let sql = `ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}"`;
-            if (newColumn.isNullable) {
-                sql += ` DROP NOT NULL`;
-            } else {
-                sql += ` SET NOT NULL`;
-            }
-            await this.query(sql);
-        }
-
-        // update sequence generation
-        if (oldColumn.isGenerated !== newColumn.isGenerated) {
-            if (!oldColumn.isGenerated) {
-                await this.query(`CREATE SEQUENCE "${tableName}_id_seq" OWNED BY ${tableName}.${oldColumn.name}`);
-                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableName}_id_seq"')`);
-            } else {
-                await this.query(`ALTER TABLE "${tableName}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);
-                await this.query(`DROP SEQUENCE "${tableName}_id_seq"`);
-            }
-        }
-
-        if (oldColumn.comment !== newColumn.comment) {
-            await this.query(`COMMENT ON COLUMN "${tableName}"."${oldColumn.name}" is '${newColumn.comment}'`);
-        }
+        const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+        await this.query(sql);
     }
 
     /**
@@ -383,7 +360,7 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE "${tableName}" DROP "${columnName}"`;
+        const sql = `ALTER TABLE \`${tableName}\` DROP \`${columnName}\``;
         await this.query(sql);
     }
 
@@ -394,11 +371,12 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        let sql = `ALTER TABLE "${foreignKey.tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
-            `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
-            `REFERENCES "${foreignKey.referencedTable.name}"("${foreignKey.referencedColumnNames.join("\", \"")}")`;
-        if (foreignKey.onDelete)
-            sql += " ON DELETE " + foreignKey.onDelete;
+        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
+        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
+        let sql =   `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+                    `FOREIGN KEY (${columnNames}) ` +
+                    `REFERENCES \`${foreignKey.referencedTable.name}\`(${referencedColumnNames})`;
+        if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
         await this.query(sql);
     }
 
@@ -409,7 +387,7 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKeyName}"`;
+        const sql = `ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${foreignKeyName}\``;
         await this.query(sql);
     }
 
@@ -420,22 +398,19 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"("${index.columns.join("\", \"")}")`;
+        const columns = index.columns.map(column => "`" + column + "`").join(", ");
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON \`${tableName}\`(${columns})`;
         await this.query(sql);
     }
 
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
+    async dropIndex(tableName: string, indexName: string): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (isGenerated) {
-            await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`); // todo: what is it?
-        }
-
-        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`;
+        const sql = `ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``;
         await this.query(sql);
     }
 
@@ -446,7 +421,7 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${keyName}" UNIQUE ("${columnName}")`;
+        const sql = `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${keyName}\` UNIQUE (\`${columnName}\`)`;
         await this.query(sql);
     }
 
@@ -456,23 +431,23 @@ export class PostgresQueryRunner implements QueryRunner {
     normalizeType(column: ColumnMetadata) {
         switch (column.normalizedDataType) {
             case "string":
-                return "character varying(" + (column.length ? column.length : 255) + ")";
+                return "varchar(" + (column.length ? column.length : 255) + ")";
             case "text":
                 return "text";
             case "boolean":
-                return "boolean";
+                return "tinyint(1)";
             case "integer":
             case "int":
-                return "integer";
+                return "int(" + (column.length ? column.length : 11) + ")";
             case "smallint":
-                return "smallint";
+                return "smallint(" + (column.length ? column.length : 11) + ")";
             case "bigint":
-                return "bigint";
+                return "bigint(" + (column.length ? column.length : 11) + ")";
             case "float":
-                return "real";
+                return "float";
             case "double":
             case "number":
-                return "double precision";
+                return "double";
             case "decimal":
                 if (column.precision && column.scale) {
                     return `decimal(${column.precision},${column.scale})`;
@@ -490,24 +465,16 @@ export class PostgresQueryRunner implements QueryRunner {
             case "date":
                 return "date";
             case "time":
-                if (column.timezone) {
-                    return "time with time zone";
-                } else {
-                    return "time without time zone";
-                }
+                return "time";
             case "datetime":
-                if (column.timezone) {
-                    return "timestamp with time zone";
-                } else {
-                    return "timestamp without time zone";
-                }
+                return "datetime";
             case "json":
-                return "json";
+                return "text";
             case "simple_array":
-                return column.length ? "character varying(" + column.length + ")" : "text";
+                return column.length ? "varchar(" + column.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(column.type, "Postgres");
+        throw new DataTypeNotSupportedByDriverError(column.type, "MariaDB");
     }
 
     // -------------------------------------------------------------------------
@@ -524,27 +491,27 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Parametrizes given object of values. Used to create column=value queries.
      */
-    protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
+    protected parametrize(objectLiteral: ObjectLiteral): string[] {
+        return Object.keys(objectLiteral).map(key => this.driver.escapeColumnName(key) + "=?");
     }
 
     /**
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " SERIAL";
-        if (!column.isGenerated)
-            c += " " + this.normalizeType(column);
+        let c = "`" + column.name + "` " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
-        // TODO: implement auto increment
+        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            c += " AUTO_INCREMENT";
+        if (column.comment)
+            c += " COMMENT '" + column.comment + "'";
         if (column.columnDefinition)
             c += " " + column.columnDefinition;
         return c;
     }
+
 
 }

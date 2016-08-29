@@ -8,6 +8,7 @@ import {MissingDriverError} from "./error/MissingDriverError";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
 import {Logger} from "../logger/Logger";
+import {MariaDbDriver} from "../driver/mariadb/MariaDbDriver";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -117,6 +118,8 @@ export class ConnectionManager {
                 return new MysqlDriver(options, logger);
             case "postgres":
                 return new PostgresDriver(options, logger);
+            case "mariadb":
+                return new MariaDbDriver(options, logger);
             default:
                 throw new MissingDriverError(options.type);
         }

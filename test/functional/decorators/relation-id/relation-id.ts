@@ -63,6 +63,7 @@ describe("QueryBuilder > relation-id", () => {
                 .leftJoinRelationId("post.categories")
                 .where("post.id = :id", { id: post.id })
                 .getSingleResult();
+
             expect(loadedPost.tagId).to.not.be.empty;
             expect(loadedPost.tagId).to.be.equal(1);
             expect(loadedPost.categoryIds).to.not.be.empty;

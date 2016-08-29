@@ -6,7 +6,7 @@ export interface DriverOptions {
     /**
      * Database type. Mysql and postgres are the only drivers supported at this moment.
      */
-    readonly type: "mysql"|"postgres";
+    readonly type: "mysql"|"postgres"|"mariadb";
 
     /**
      * Url to where perform connection.

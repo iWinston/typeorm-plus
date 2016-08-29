@@ -479,12 +479,8 @@ export class PersistOperationExecutor {
         }*/
 
         // console.log("inserting: ", this.zipObject(allColumns, allValues));
-        let idColumnName: string|undefined;
-        if (metadata.hasPrimaryColumn && metadata.primaryColumn.isGenerated) {
-            idColumnName = metadata.primaryColumn.name;
-        }
-
-        return this.queryRunner.insert(metadata.table.name, this.zipObject(allColumns, allValues), idColumnName);
+        let idColumn = metadata.hasPrimaryColumn && metadata.primaryColumn.isGenerated ? metadata.primaryColumn : undefined;
+        return this.queryRunner.insert(metadata.table.name, this.zipObject(allColumns, allValues), idColumn);
     }
 
     private insertIntoClosureTable(operation: InsertOperation, updateMap: ObjectLiteral) {

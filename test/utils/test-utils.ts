@@ -12,6 +12,7 @@ export interface TestingConnectionOptions {
     schemaCreate?: boolean;
     reloadAndCreateSchema?: boolean;
     skipMysql?: boolean;
+    skipMariadb?: boolean;
     skipPostgres?: boolean;
 }
 
@@ -19,11 +20,19 @@ export function closeConnections(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
 }
 
-export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"postgres"|"postgresSecondary"): DriverOptions {
+export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"mariadb"|"mariadbSecondary"|"postgres"|"postgresSecondary"): DriverOptions {
     const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
     // const parameters = require(__dirname + "/../../config/parameters.json");
 
-    const driverType: "mysql"|"postgres" = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
+    let driverType: "mysql"|"mariadb"|"postgres" = "mysql"; // = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
+    if (type === "mysql" || type === "mysqlSecondary") {
+        driverType = "mysql";
+    } else if (type === "mariadb" || type === "mariadbSecondary") {
+        driverType = "mariadb";
+    } else if (type === "postgres" || type === "postgresSecondary") {
+        driverType = "postgres";
+    }
+
     return {
         type: driverType,
         host: parameters.connections[type].host,
@@ -67,6 +76,34 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         },
     };
 
+    const mariadbParameters: ConnectionOptions = {
+        name: "mariadbPrimaryConnection",
+        driver: createTestingConnectionOptions("mariadb"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
+    };
+
+    const mariadbSecondaryParameters: ConnectionOptions = {
+        name: "mariadbSecondaryConnection",
+        driver: createTestingConnectionOptions("mariadbSecondary"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
+    };
+
     const postgresParameters: ConnectionOptions = {
         name: "postgresPrimaryConnection",
         driver: createTestingConnectionOptions("postgres"),
@@ -96,15 +133,20 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
 
     const mysql = !options || !options.skipMysql;
+    const mariadb = !options || !options.skipMariadb;
     const postgres = !options || !options.skipPostgres;
 
     const allParameters: ConnectionOptions[] = [];
     if (mysql)
         allParameters.push(mysqlParameters);
+    if (mariadb)
+        allParameters.push(mariadbParameters);
     if (postgres)
         allParameters.push(postgresParameters);
     if (mysql && options && options.secondaryConnections)
         allParameters.push(mysqlSecondaryParameters);
+    if (mariadb && options && options.secondaryConnections)
+        allParameters.push(mariadbSecondaryParameters);
     if (postgres && options && options.secondaryConnections)
         allParameters.push(postgresSecondaryParameters);
     
