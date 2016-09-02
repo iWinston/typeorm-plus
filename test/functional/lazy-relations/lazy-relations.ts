@@ -10,9 +10,9 @@ describe("lazy-relations", () => {
     const profileSchema = require(resourceDir + "schema/profile.json");
 
     let connections: Connection[];
-    beforeEach(() => setupTestingConnections({ entities: [Post, Category], entitySchemas: [userSchema, profileSchema], schemaCreate: true }).then(all => connections = all));
+    before(() => setupTestingConnections({ entities: [Post, Category], entitySchemas: [userSchema, profileSchema], schemaCreate: true }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
-    afterEach(() => closeConnections(connections));
+    after(() => closeConnections(connections));
 
     it("should persist and hydrate successfully on a relation without inverse side", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);

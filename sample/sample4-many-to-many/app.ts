@@ -6,11 +6,14 @@ import {PostDetails} from "./entity/PostDetails";
 const options: ConnectionOptions = {
     driver: {
         type: "mysql",
-        host: "192.168.99.100",
+        host: "localhost",
         port: 3306,
         username: "root",
         password: "admin",
         database: "test"
+    },
+    logging: {
+        logQueries: true
     },
     autoSchemaCreate: true,
     entityDirectories: [__dirname + "/entity/*"]

@@ -4,6 +4,9 @@ import {ColumnSchema} from "../schema-builder/ColumnSchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {TableSchema} from "../schema-builder/TableSchema";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {ForeignKeySchema} from "../schema-builder/ForeignKeySchema";
 
 /**
  * Runs queries on a single database connection.
@@ -70,37 +73,38 @@ export interface QueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    loadSchemaTables(tableNames: string[]): Promise<TableSchema[]>;
+    loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]>;
 
     /**
      * Creates a new table from the given table metadata and column metadatas.
+     * Returns array of created columns. This is required because some driver may not create all columns.
      */
-    createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void>;
+    createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<ColumnMetadata[]>;
 
     /**
-     * Creates a new column from the column metadata in the table.
+     * Creates new columns in the table.
      */
-    createColumn(tableName: string, column: ColumnMetadata): Promise<void>;
+    createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]>;
 
     /**
-     * Changes a column in the table.
+     * Changes a columns in the table.
      */
-    changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void>;
+    changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnMetadata, oldColumn: ColumnSchema }[]): Promise<void>;
 
     /**
-     * Drops the column in the table.
+     * Drops the columns in the table.
      */
-    dropColumn(tableName: string, columnName: string): Promise<void>;
+    dropColumns(dbTable: TableSchema, columns: ColumnSchema[]): Promise<void>;
 
     /**
-     * Creates a new foreign.
+     * Creates a new foreign keys.
      */
-    createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void>;
+    createForeignKeys(dbTable: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
 
     /**
-     * Drops a foreign key from the table.
+     * Drops a foreign keys from the table.
      */
-    dropForeignKey(tableName: string, foreignKeyName: string): Promise<void>;
+    dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
 
     /**
      * Creates a new index.

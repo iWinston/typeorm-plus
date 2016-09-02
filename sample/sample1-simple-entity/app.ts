@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 const options: ConnectionOptions = {
     driver: {
         type: "mysql",
-        host: "192.168.99.100",
+        host: "localhost",
         port: 3306,
         username: "root",
         password: "admin",
@@ -17,7 +17,7 @@ const options: ConnectionOptions = {
 /*const options: CreateConnectionOptions = {
     driver: "postgres",
     driverOptions: {
-        host: "192.168.99.100",
+        host: "localhost",
         port: 5432,
         username: "test",
         password: "admin",

@@ -14,23 +14,26 @@ export interface TestingConnectionOptions {
     skipMysql?: boolean;
     skipMariadb?: boolean;
     skipPostgres?: boolean;
+    skipSqlite?: boolean;
 }
 
 export function closeConnections(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
 }
 
-export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"mariadb"|"mariadbSecondary"|"postgres"|"postgresSecondary"): DriverOptions {
+export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"mariadb"|"mariadbSecondary"|"postgres"|"postgresSecondary"|"sqlite"|"sqliteSecondary"): DriverOptions {
     const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
     // const parameters = require(__dirname + "/../../config/parameters.json");
 
-    let driverType: "mysql"|"mariadb"|"postgres" = "mysql"; // = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
+    let driverType: "mysql"|"mariadb"|"postgres"|"sqlite" = "mysql"; // = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
     if (type === "mysql" || type === "mysqlSecondary") {
         driverType = "mysql";
     } else if (type === "mariadb" || type === "mariadbSecondary") {
         driverType = "mariadb";
     } else if (type === "postgres" || type === "postgresSecondary") {
         driverType = "postgres";
+    } else if (type === "sqlite" || type === "sqliteSecondary") {
+        driverType = "sqlite";
     }
 
     return {
@@ -40,6 +43,7 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"m
         username: parameters.connections[type].username,
         password: parameters.connections[type].password,
         database: parameters.connections[type].database,
+        storage: parameters.connections[type].storage,
         extra: {
             max: 500
         }
@@ -132,9 +136,38 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         },
     };
 
+    const sqliteParameters: ConnectionOptions = {
+        name: "sqlitePrimaryConnection",
+        driver: createTestingConnectionOptions("sqlite"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
+    };
+
+    const sqliteSecondaryParameters: ConnectionOptions = {
+        name: "sqliteSecondaryConnection",
+        driver: createTestingConnectionOptions("sqliteSecondary"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
+    };
+
     const mysql = !options || !options.skipMysql;
     const mariadb = !options || !options.skipMariadb;
     const postgres = !options || !options.skipPostgres;
+    const sqlite = !options || !options.skipSqlite;
 
     const allParameters: ConnectionOptions[] = [];
     if (mysql)
@@ -143,12 +176,16 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         allParameters.push(mariadbParameters);
     if (postgres)
         allParameters.push(postgresParameters);
+    if (sqlite)
+        allParameters.push(sqliteParameters);
     if (mysql && options && options.secondaryConnections)
         allParameters.push(mysqlSecondaryParameters);
     if (mariadb && options && options.secondaryConnections)
         allParameters.push(mariadbSecondaryParameters);
     if (postgres && options && options.secondaryConnections)
         allParameters.push(postgresSecondaryParameters);
+    if (sqlite && options && options.secondaryConnections)
+        allParameters.push(sqliteSecondaryParameters);
     
     return Promise.all(allParameters.map(async parameters => {
         const connection = await createConnection(parameters);
@@ -167,7 +204,7 @@ export function setupConnection(callback: (connection: Connection) => any, entit
     const parameters: ConnectionOptions = {
         driver: {
             type: "mysql",
-            host: "192.168.99.100",
+            host: "localhost",
             port: 3306,
             username: "root",
             password: "admin",

@@ -1,42 +1,48 @@
 {
   "connections": {
     "mysql": {
-      "host": "192.168.99.100",
+      "host": "localhost",
       "port": 3306,
       "username": "root",
       "password": "admin",
       "database": "test"
     },
     "mysqlSecondary": {
-      "host": "192.168.99.100",
+      "host": "localhost",
       "port": 3306,
       "username": "root",
       "password": "admin",
       "database": "test2"
     },
     "mariadb": {
-      "host": "192.168.99.100",
+      "host": "localhost",
       "port": 3307,
       "username": "root",
       "password": "admin",
       "database": "test"
     },
     "mariadbSecondary": {
-      "host": "192.168.99.100",
+      "host": "localhost",
       "port": 3307,
       "username": "root",
       "password": "admin",
       "database": "test2"
     },
+    "sqlite": {
+      "storage": "temp/sqlitedb.db"
+    },
+    "sqliteSecondary": {
+      "storage": "temp/sqlitedb-secondary.db"
+    },
     "postgres": {
-      "host": "192.168.99.100",
+      "host": "localhost",
       "port": 5432,
       "username": "root",
       "password": "admin",
       "database": "test"
     },
     "postgresSecondary": {
-      "host": "192.168.99.100",
+      "host": "localhost",
       "port": 5432,
       "username": "root",
       "password": "admin",

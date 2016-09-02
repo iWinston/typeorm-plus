@@ -17,6 +17,8 @@ import {ForeignKeySchema} from "../../schema-builder/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
+import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -217,11 +219,12 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadSchemaTables(tableNames: string[]): Promise<TableSchema[]> {
+    async loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         // if no tables given then no need to proceed
+
         if (!tableNames)
             return [];
 
@@ -272,7 +275,7 @@ export class MysqlQueryRunner implements QueryRunner {
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === tableSchema.name)
-                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"]));
+                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
 
             // create unique key schemas from the loaded indices
             tableSchema.uniqueKeys = dbUniqueKeys
@@ -303,73 +306,93 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new table from the given table metadata and column metadatas.
      */
-    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<void> {
+    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
         await this.query(sql);
+        return columns;
     }
 
     /**
      * Creates a new column from the column metadata in the table.
      */
-    async createColumn(tableName: string, column: ColumnMetadata): Promise<void> {
+    async createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE \`${tableName}\` ADD ${this.buildCreateColumnSql(column, false)}`;
-        await this.query(sql);
+        const queries = columns.map(column => {
+            const sql = `ALTER TABLE \`${tableSchema.name}\` ADD ${this.buildCreateColumnSql(column, false)}`;
+            return this.query(sql);
+        });
+        await Promise.all(queries);
+        return columns;
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumn(tableName: string, oldColumn: ColumnSchema, newColumn: ColumnMetadata): Promise<void> {
+    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnMetadata, oldColumn: ColumnSchema }[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
-        await this.query(sql);
+        const updatePromises = changedColumns.map(changedColumn => {
+            const sql = `ALTER TABLE \`${tableSchema.name}\` CHANGE \`${changedColumn.oldColumn.name}\` ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+            return this.query(sql);
+        });
+
+        await Promise.all(updatePromises);
     }
 
     /**
-     * Drops the column in the table.
+     * Drops the columns in the table.
      */
-    async dropColumn(tableName: string, columnName: string): Promise<void> {
+    async dropColumns(dbTable: TableSchema, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE \`${tableName}\` DROP \`${columnName}\``;
-        await this.query(sql);
+        const dropPromises = columns.map(column => {
+            return this.query(`ALTER TABLE \`${dbTable.name}\` DROP \`${column.name}\``);
+        });
+
+        await Promise.all(dropPromises);
     }
 
     /**
-     * Creates a new foreign.
+     * Creates a new foreign keys.
      */
-    async createForeignKey(foreignKey: ForeignKeyMetadata): Promise<void> {
+    async createForeignKeys(dbTable: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
-        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-        let sql =   `ALTER TABLE ${foreignKey.tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
-                    `FOREIGN KEY (${columnNames}) ` +
-                    `REFERENCES \`${foreignKey.referencedTable.name}\`(${referencedColumnNames})`;
-        if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
-        await this.query(sql);
+        const promises = foreignKeys.map(foreignKey => {
+            const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
+            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
+            let sql =   `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+                `FOREIGN KEY (${columnNames}) ` +
+                `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
+            if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
+            return this.query(sql);
+        });
+
+        await Promise.all(promises);
     }
 
     /**
-     * Drops a foreign key from the table.
+     * Drops a foreign keys from the table.
      */
-    async dropForeignKey(tableName: string, foreignKeyName: string): Promise<void> {
+    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${foreignKeyName}\``;
-        await this.query(sql);
+        const promises = foreignKeys.map(foreignKey => {
+            const sql = `ALTER TABLE \`${tableSchema.name}\` DROP FOREIGN KEY \`${foreignKey.name}\``;
+            return this.query(sql);
+        });
+
+        await Promise.all(promises);
     }
 
     /**

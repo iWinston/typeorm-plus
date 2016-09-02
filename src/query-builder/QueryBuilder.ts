@@ -960,7 +960,7 @@ export class QueryBuilder<Entity> {
 
             const parentAlias = join.alias.parentAliasName;
             if (!parentAlias) {
-                return " " + joinType + " JOIN " + this.driver.escapeTableName(joinTableName) + " " + this.driver.escapeAliasName(join.alias.name) + " " + (join.condition ? ( join.conditionType + " " + join.condition ) : "");
+                return " " + joinType + " JOIN " + this.driver.escapeTableName(joinTableName) + " " + this.driver.escapeAliasName(join.alias.name) + " " + (join.condition ? ( join.conditionType + " " + this.replacePropertyNames(join.condition) ) : "");
             }
 
             const foundAlias = this.aliasMap.findAliasByName(parentAlias);

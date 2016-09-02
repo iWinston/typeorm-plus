@@ -40,6 +40,12 @@ export * from "./decorator/tables/Table";
 export * from "./decorator/tables/AbstractTable";
 export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
+export * from "./decorator/options/ColumnOptions";
+export * from "./decorator/options/CompositeIndexOptions";
+export * from "./decorator/options/JoinColumnOptions";
+export * from "./decorator/options/JoinTableOptions";
+export * from "./decorator/options/RelationOptions";
+export * from "./decorator/options/TableOptions";
 
 export {Connection} from "./connection/Connection";
 export {DriverOptions} from "./driver/DriverOptions";

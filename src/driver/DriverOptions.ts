@@ -6,7 +6,7 @@ export interface DriverOptions {
     /**
      * Database type. Mysql and postgres are the only drivers supported at this moment.
      */
-    readonly type: "mysql"|"postgres"|"mariadb";
+    readonly type: "mysql"|"postgres"|"mariadb"|"sqlite";
 
     /**
      * Url to where perform connection.
@@ -37,6 +37,12 @@ export interface DriverOptions {
      * Database name to connect to.
      */
     readonly database?: string;
+
+    /**
+     * Storage type or path to the storage.
+     * Used only for SQLite.
+     */
+    readonly storage?: string;
 
     /**
      * Indicates if connection pooling should be used or not.

@@ -235,7 +235,7 @@ export class Connection {
         if (dropBeforeSync)
             await this.dropDatabase();
 
-        const schemaCreator = new SchemaBuilder(this.driver, this.entityMetadatas); // todo: use factory there later
+        const schemaCreator = new SchemaBuilder(this.driver, this.entityMetadatas, this.createNamingStrategy()); // todo: use factory there later
         await schemaCreator.create();
     }
 

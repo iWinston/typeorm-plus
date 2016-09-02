@@ -9,6 +9,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
 import {Logger} from "../logger/Logger";
 import {MariaDbDriver} from "../driver/mariadb/MariaDbDriver";
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -120,6 +121,8 @@ export class ConnectionManager {
                 return new PostgresDriver(options, logger);
             case "mariadb":
                 return new MariaDbDriver(options, logger);
+            case "sqlite":
+                return new SqliteDriver(options, logger);
             default:
                 throw new MissingDriverError(options.type);
         }
