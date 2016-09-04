@@ -10,11 +10,14 @@ export interface TestingConnectionOptions {
     entityDirectories?: string[];
     secondaryConnections?: boolean;
     schemaCreate?: boolean;
+    dropSchemaOnConnection?: boolean;
     reloadAndCreateSchema?: boolean;
     skipMysql?: boolean;
     skipMariadb?: boolean;
     skipPostgres?: boolean;
     skipSqlite?: boolean;
+    skipOracle?: boolean;
+    skipSqlServer?: boolean;
 }
 
 export function closeConnections(connections: Connection[]) {
@@ -43,12 +46,31 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"m
         username: parameters.connections[type].username,
         password: parameters.connections[type].password,
         database: parameters.connections[type].database,
-        storage: parameters.connections[type].storage,
-        extra: {
-            max: 500
-        }
+        storage: parameters.connections[type].storage
     };
 }
+
+/*export async function setupTestingConnections(options?: TestingConnectionOptions) {
+    const parameters: ConnectionOptions = {
+        driver: createTestingConnectionOptions(process.env["connection_setup_name"]),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
+        entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
+    };
+
+    const connection = await createConnection(parameters);
+    if (options && options.reloadAndCreateSchema)
+        await connection.syncSchema(true);
+
+    return [connection];
+}*/
 
 export async function setupTestingConnections(options?: TestingConnectionOptions): Promise<Connection[]> {
     
@@ -56,6 +78,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "mysqlPrimaryConnection",
         driver: createTestingConnectionOptions("mysql"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -70,6 +93,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "mysqlSecondaryConnection",
         driver: createTestingConnectionOptions("mysqlSecondary"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -84,6 +108,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "mariadbPrimaryConnection",
         driver: createTestingConnectionOptions("mariadb"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -98,6 +123,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "mariadbSecondaryConnection",
         driver: createTestingConnectionOptions("mariadbSecondary"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -112,6 +138,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "postgresPrimaryConnection",
         driver: createTestingConnectionOptions("postgres"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -126,6 +153,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "postgresSecondaryConnection",
         driver: createTestingConnectionOptions("postgresSecondary"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -140,6 +168,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "sqlitePrimaryConnection",
         driver: createTestingConnectionOptions("sqlite"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
@@ -154,6 +183,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         name: "sqliteSecondaryConnection",
         driver: createTestingConnectionOptions("sqliteSecondary"),
         autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],

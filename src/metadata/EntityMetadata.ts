@@ -343,6 +343,7 @@ export class EntityMetadata {
         this.relations
             .filter(relation => relation.isLazy)
             .forEach(relation => this.lazyRelationsWrapper.wrap(newObject, relation));
+
         return newObject;
     }
 

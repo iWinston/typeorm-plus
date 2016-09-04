@@ -11,14 +11,14 @@ describe("repository > find methods", () => {
     const userSchema = require(resourceDir + "schema/user.json");
     
     let connections: Connection[];
-    beforeEach(() => setupTestingConnections({
+    before(() => setupTestingConnections({
         entities: [Post],
         entitySchemas: [userSchema],
-        reloadAndCreateSchema: true,
-        skipPostgres: true // TODO: fix it, right now postgres is failing for some reason when pooling enabled
+        schemaCreate: true,
+        dropSchemaOnConnection: true
     }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
-    afterEach(() => closeConnections(connections));
+    after(() => closeConnections(connections));
 
     describe("find and findAndCount", function() {
 
@@ -37,7 +37,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find();
+            const loadedPosts = await postRepository.find({ alias: "post", orderBy: [{ sort: "post.id" }]});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(100);
             loadedPosts[0].id.should.be.equal(0);
@@ -46,7 +46,7 @@ describe("repository > find methods", () => {
             loadedPosts[99].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount();
+            let [loadedPosts2, count] = await postRepository.findAndCount({ alias: "post", orderBy: [{ sort: "post.id" }]});
             count.should.be.equal(100);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(100);
@@ -71,7 +71,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ categoryName: "odd" });
+            const loadedPosts = await postRepository.find({ categoryName: "odd" }, { alias: "post", orderBy: [{ sort: "post.id" }]});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(50);
             loadedPosts[0].id.should.be.equal(1);
@@ -80,7 +80,7 @@ describe("repository > find methods", () => {
             loadedPosts[49].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd" });
+            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd" }, { alias: "post", orderBy: [{ sort: "post.id" }]});
             count.should.be.equal(50);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(50);
@@ -106,7 +106,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ categoryName: "odd", isNew: true });
+            const loadedPosts = await postRepository.find({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: [{ sort: "post.id" }]});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(5);
             loadedPosts[0].id.should.be.equal(91);
@@ -115,7 +115,7 @@ describe("repository > find methods", () => {
             loadedPosts[4].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd", isNew: true });
+            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: [{ sort: "post.id" }]});
             count.should.be.equal(5);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(5);
@@ -146,7 +146,10 @@ describe("repository > find methods", () => {
                 parameters: {
                     likeTitle: "new post #%",
                     categoryName: "even"
-                }
+                },
+                orderBy: [
+                    { sort: "post.id" }
+                ]
             };
 
             // check find method
@@ -232,7 +235,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = await userRepository.findOne();
+            const loadedUser = await userRepository.findOne({ alias: "user", orderBy: [{ sort: "user.id" }]});
             loadedUser.id.should.be.equal(0);
             loadedUser.firstName.should.be.equal("name #0");
             loadedUser.secondName.should.be.equal("Doe");
@@ -253,7 +256,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = await userRepository.findOne({ firstName: "name #1" });
+            const loadedUser = await userRepository.findOne({ firstName: "name #1" }, { alias: "user", orderBy: [{ sort: "user.id" }]});
             loadedUser.id.should.be.equal(1);
             loadedUser.firstName.should.be.equal("name #1");
             loadedUser.secondName.should.be.equal("Doe");
@@ -282,7 +285,7 @@ describe("repository > find methods", () => {
                     secondName: "Doe"
                 }
             };
-            const loadedUser = await userRepository.findOne(findOptions);
+            const loadedUser = await userRepository.findOne(findOptions, { alias: "user", orderBy: [{ sort: "user.id" }]});
             loadedUser.id.should.be.equal(99);
             loadedUser.firstName.should.be.equal("name #99");
             loadedUser.secondName.should.be.equal("Doe");

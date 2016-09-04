@@ -266,7 +266,7 @@ export class EntityMetadataBuilder {
                 if (relationCountMetadata)
                     relation.countField = relationCountMetadata.propertyName;
             });
-            
+
             // add lazy initializer for entity relations
             if (entityMetadata.target instanceof Function) {
                 entityMetadata.relations

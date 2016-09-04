@@ -179,7 +179,26 @@ export class Gulpfile {
         chai.use(require("chai-as-promised"));
 
         return gulp.src(["./build/es5/test/**/*.js"])
+            // .on("end", function() {
+            //     process.env["connection_setup_name"] = "mysql";
+            //     console.log("Running tests on mysql platform...");
+            // })
+            // .pipe(mocha())
+            // .on("end", function() {
+            //     process.env["connection_setup_name"] = "mariadb";
+            //     console.log("Running tests on mariadb platform...");
+            // })
+            // .pipe(mocha())
+            .on("end", function() {
+                process.env["connection_setup_name"] = "postgres";
+                console.log("Running tests on postgres platform...");
+            })
             .pipe(mocha())
+            // .on("end", function() {
+            //     process.env["connection_setup_name"] = "sqlite";
+            //     console.log("Running tests on sqlite platform...");
+            // })
+            // .pipe(mocha())
             .pipe(istanbul.writeReports());
     }
 

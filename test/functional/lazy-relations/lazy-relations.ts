@@ -4,13 +4,27 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
+/**
+ * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
+ * So we run tests only for mysql.
+ */
 describe("lazy-relations", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/lazy-relations/";
     const userSchema = require(resourceDir + "schema/user.json");
     const profileSchema = require(resourceDir + "schema/profile.json");
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category], entitySchemas: [userSchema, profileSchema], schemaCreate: true }).then(all => connections = all));
+    before(async () => connections = await setupTestingConnections({
+        entities: [Post, Category],
+        entitySchemas: [userSchema, profileSchema],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,
+        skipPostgres: true,
+        skipMariadb: true,
+        skipSqlite: true,
+        skipOracle: true,
+        skipSqlServer: true,
+    }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 

@@ -15,7 +15,12 @@ describe("repository > basic methods", () => {
     const userSchema = require(resourceDir + "schema/user.json");
     
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Blog, Category], entitySchemas: [userSchema, questionSchema], reloadAndCreateSchema: true }).then(all => connections = all));
+    before(async () => connections = await setupTestingConnections({
+        entities: [Post, Blog, Category],
+        entitySchemas: [userSchema, questionSchema],
+        schemaCreate: true,
+        dropSchemaOnConnection: true
+    }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
@@ -349,7 +354,7 @@ describe("repository > basic methods", () => {
         it("should execute the query natively and it should return the result", () => Promise.all(connections.map(async connection => {
             const repository = connection.getRepository(Blog);
             const promises: Promise<Blog>[] = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 50; i++) {
                 const blog = new Blog();
                 blog.title = "hello blog";
                 blog.text = "hello blog #" + i;

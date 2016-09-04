@@ -371,7 +371,7 @@ export class PostgresQueryRunner implements QueryRunner {
             // update sequence generation
             if (oldColumn.isGenerated !== newColumn.isGenerated) {
                 if (!oldColumn.isGenerated) {
-                    await this.query(`CREATE SEQUENCE "${tableSchema.name}_id_seq" OWNED BY ${tableSchema.name}.${oldColumn.name}`);
+                    await this.query(`CREATE SEQUENCE "${tableSchema.name}_id_seq" OWNED BY "${tableSchema.name}"."${oldColumn.name}"`);
                     await this.query(`ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableSchema.name}_id_seq"')`);
                 } else {
                     await this.query(`ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`);

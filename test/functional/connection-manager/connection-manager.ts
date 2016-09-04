@@ -65,6 +65,7 @@ describe("ConnectionManager", () => {
             connection.name.should.be.equal("default");
             connection.driver.should.be.instanceOf(MysqlDriver);
             connection.isConnected.should.be.true;
+            await connection.close();
         });
 
         it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
@@ -77,6 +78,7 @@ describe("ConnectionManager", () => {
             connection.name.should.be.equal("myPostgresConnection");
             connection.driver.should.be.instanceOf(PostgresDriver);
             connection.isConnected.should.be.true;
+            await connection.close();
         });
 
     });
@@ -128,6 +130,7 @@ describe("ConnectionManager", () => {
             const loadedPost = await connection.entityManager.findOneById(Post, 1);
             loadedPost.should.be.instanceof(Post);
             loadedPost.should.be.eql({ id: 1, title: "Hello post" });
+            await connection.close();
         });
 
         it("should drop the database if dropSchemaOnConnection was set to true (mysql)", async () => {
@@ -149,6 +152,7 @@ describe("ConnectionManager", () => {
             connection = await connectionManager.createAndConnect(options);
             const loadedPost = await connection.entityManager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
+            await connection.close();
          });
 
         it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
@@ -170,6 +174,8 @@ describe("ConnectionManager", () => {
             connection = await connectionManager.createAndConnect(options);
             const loadedPost = await connection.entityManager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
+
+            await connection.close();
          });
 
         it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
@@ -191,6 +197,7 @@ describe("ConnectionManager", () => {
             connection = await connectionManager.createAndConnect(options);
             const loadedPost = await connection.entityManager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
+            await connection.close();
          });
 
     });
