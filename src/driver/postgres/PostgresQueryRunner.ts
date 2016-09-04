@@ -7,7 +7,6 @@ import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import {PostgresDriver} from "./PostgresDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {IndexMetadata} from "../../metadata/IndexMetadata";
-import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
 import {ColumnSchema} from "../../schema-builder/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
@@ -18,7 +17,6 @@ import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
 import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Runs queries on a single postgres database connection.

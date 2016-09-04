@@ -7,7 +7,6 @@ import {Logger} from "../../logger/Logger";
 import {MariaDbDriver} from "./MariaDbDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {IndexMetadata} from "../../metadata/IndexMetadata";
-import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
 import {ColumnSchema} from "../../schema-builder/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
@@ -19,7 +18,6 @@ import {IndexSchema} from "../../schema-builder/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Runs queries on a single MariaDB database connection.

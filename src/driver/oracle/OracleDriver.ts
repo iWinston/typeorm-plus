@@ -63,7 +63,7 @@ export class OracleDriver implements Driver {
 
     constructor(options: DriverOptions, logger: Logger, oracle?: any) {
 
-        this.options = DriverUtils.buildDriverOptions(options);
+        this.options = DriverUtils.buildDriverOptions(options, { useSid: true });
         this.logger = logger;
         this.oracle = oracle;
 

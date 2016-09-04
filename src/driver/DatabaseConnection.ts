@@ -9,7 +9,7 @@ export interface DatabaseConnection {
     readonly id: number;
 
     /**
-     * Native driver's connection.
+     * Native driver's connection object.
      */
     readonly connection: any;
 
@@ -21,6 +21,7 @@ export interface DatabaseConnection {
     /**
      * Special function that holds a connection release logic.
      * Releases connection when its called.
+     * After releasing connection cannot be used anymore.
      */
     releaseCallback?: () => Promise<void>;
 

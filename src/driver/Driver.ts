@@ -10,7 +10,7 @@ import {ColumnType} from "../metadata/types/ColumnTypes";
 export interface Driver {
 
     /**
-     * Connection options used in this driver.
+     * Driver options contains connectivity options used to connection to the database.
      */
     readonly options: DriverOptions;
 

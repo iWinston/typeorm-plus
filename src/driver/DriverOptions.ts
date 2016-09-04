@@ -1,5 +1,5 @@
 /**
- * Driver connection options.
+ * Driver options contains connectivity options used to connection to the database.
  */
 export interface DriverOptions {
 
@@ -9,7 +9,7 @@ export interface DriverOptions {
     readonly type: "mysql"|"postgres"|"mariadb"|"sqlite"|"oracle"|"mssql";
 
     /**
-     * Url to where perform connection.
+     * Connection url to where perform connection to.
      */
     readonly url?: string;
 
@@ -39,18 +39,18 @@ export interface DriverOptions {
     readonly database?: string;
 
     /**
-     * Connection SID (used for oracle databases).
+     * Connection SID (used for Oracle databases).
      */
     readonly sid?: string;
 
     /**
-     * Storage type or path to the storage (used for SQLite).
+     * Storage type or path to the storage (used for SQLite databases).
      */
     readonly storage?: string;
 
     /**
      * Indicates if connection pooling should be used or not.
-     * Be default it is enabled. Set to false to disable it.
+     * Be default it is enabled if its supported by a platform. Set to false to disable it.
      */
     readonly usePool?: boolean;
 

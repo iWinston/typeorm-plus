@@ -6,32 +6,44 @@ import {DriverOptions} from "./DriverOptions";
 export class DriverUtils {
 
     // -------------------------------------------------------------------------
-    // Public Methods
+    // Public Static Methods
     // -------------------------------------------------------------------------
 
     /**
      * Normalizes and builds a new driver options.
-     * Extracts settings from connection url and sets to the options itself.
+     * Extracts settings from connection url and sets to a new options object.
      */
-    static buildDriverOptions(options: DriverOptions): DriverOptions {
+    static buildDriverOptions(options: DriverOptions, buildOptions?: { useSid: boolean }): DriverOptions {
         if (options.url) {
             const parsedUrl = this.parseConnectionUrl(options.url);
-            const urlDriverOptions: DriverOptions = {
-                type: options.type,
-                host: parsedUrl.host,
-                username: parsedUrl.username,
-                password: parsedUrl.password,
-                port: parsedUrl.port,
-                database: parsedUrl.database
-            };
+            if (buildOptions && buildOptions.useSid) {
+                const urlDriverOptions: DriverOptions = {
+                    type: options.type,
+                    host: parsedUrl.host,
+                    username: parsedUrl.username,
+                    password: parsedUrl.password,
+                    port: parsedUrl.port,
+                    sid: parsedUrl.database
+                };
+                return Object.assign(urlDriverOptions, options);
 
-            return Object.assign(urlDriverOptions, options);
+            } else {
+                const urlDriverOptions: DriverOptions = {
+                    type: options.type,
+                    host: parsedUrl.host,
+                    username: parsedUrl.username,
+                    password: parsedUrl.password,
+                    port: parsedUrl.port,
+                    database: parsedUrl.database
+                };
+                return Object.assign(urlDriverOptions, options);
+            }
         }
         return Object.assign({}, options);
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Private Static Methods
     // -------------------------------------------------------------------------
 
     /**

@@ -5,7 +5,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
-import {DriverUtils} from "../DriverUtils";
 import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Logger} from "../../logger/Logger";
@@ -13,7 +12,6 @@ import * as moment from "moment";
 import {SqliteQueryRunner} from "./SqliteQueryRunner";
 import {QueryRunner} from "../QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
 /**
  * Organizes communication with sqlite DBMS.
