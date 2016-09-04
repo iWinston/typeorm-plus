@@ -4,12 +4,15 @@ import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "mysql",
+        type: "oracle",
         host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
+        username: "system",
+        password: "oracle",
+        sid: "XE",
+        port: 49161
+    },
+    logging: {
+        logQueries: true
     },
     autoSchemaCreate: true,
     entities: [Post]

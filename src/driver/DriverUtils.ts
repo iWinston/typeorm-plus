@@ -1,5 +1,4 @@
 import {DriverOptions} from "./DriverOptions";
-import {DriverOptionNotSetError} from "./error/DriverOptionNotSetError";
 
 /**
  * Common driver utility functions.
@@ -9,18 +8,6 @@ export class DriverUtils {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Validates if all required options are set in the driver options.
-     */
-    static validateDriverOptions(options: DriverOptions): void {
-        if (!options.host)
-            throw new DriverOptionNotSetError("host");
-        if (!options.username)
-            throw new DriverOptionNotSetError("username");
-        if (!options.database)
-            throw new DriverOptionNotSetError("database");
-    }
 
     /**
      * Normalizes and builds a new driver options.

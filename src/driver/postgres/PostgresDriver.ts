@@ -12,6 +12,7 @@ import {Logger} from "../../logger/Logger";
 import * as moment from "moment";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {QueryRunner} from "../QueryRunner";
+import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 
 // todo(tests):
 // check connection with url
@@ -72,7 +73,12 @@ export class PostgresDriver implements Driver {
         this.postgres = postgres;
 
         // validate options to make sure everything is set
-        DriverUtils.validateDriverOptions(this.options);
+        if (!this.options.host)
+            throw new DriverOptionNotSetError("host");
+        if (!this.options.username)
+            throw new DriverOptionNotSetError("username");
+        if (!this.options.database)
+            throw new DriverOptionNotSetError("database");
 
         // if postgres package instance was not set explicitly then try to load it
         if (!postgres)

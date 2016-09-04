@@ -10,6 +10,8 @@ import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectio
 import {Logger} from "../logger/Logger";
 import {MariaDbDriver} from "../driver/mariadb/MariaDbDriver";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -123,6 +125,10 @@ export class ConnectionManager {
                 return new MariaDbDriver(options, logger);
             case "sqlite":
                 return new SqliteDriver(options, logger);
+            case "oracle":
+                return new OracleDriver(options, logger);
+            case "mssql":
+                return new SqlServerDriver(options, logger);
             default:
                 throw new MissingDriverError(options.type);
         }

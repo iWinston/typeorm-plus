@@ -13,6 +13,7 @@ import * as moment from "moment";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverPoolingNotSupportedError} from "../error/DriverPoolingNotSupportedError";
+import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 
 /**
  * Organizes communication with MariaDB DBMS.
@@ -68,7 +69,12 @@ export class MariaDbDriver implements Driver {
         this.mariaSql = mariadb;
 
         // validate options to make sure everything is set
-        DriverUtils.validateDriverOptions(this.options);
+        if (!this.options.host)
+            throw new DriverOptionNotSetError("host");
+        if (!this.options.username)
+            throw new DriverOptionNotSetError("username");
+        if (!this.options.database)
+            throw new DriverOptionNotSetError("database");
 
         // if mariadb package instance was not set explicitly then try to load it
         if (!mariadb)

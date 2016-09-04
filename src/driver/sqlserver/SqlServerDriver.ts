@@ -7,7 +7,7 @@ import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {DriverUtils} from "../DriverUtils";
 import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../QueryRunner";
-import {MysqlQueryRunner} from "./MysqlQueryRunner";
+import {SqlServerQueryRunner} from "./SqlServerQueryRunner";
 import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
 import * as moment from "moment";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
@@ -15,9 +15,9 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 
 /**
- * Organizes communication with MySQL DBMS.
+ * Organizes communication with SQL Server DBMS.
  */
-export class MysqlDriver implements Driver {
+export class SqlServerDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -33,17 +33,17 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Mysql library.
+     * SQL Server library.
      */
-    protected mysql: any;
+    protected mssql: any;
 
     /**
-     * Connection to mysql database.
+     * Connection to mssql database.
      */
     protected databaseConnection: DatabaseConnection|undefined;
 
     /**
-     * Mysql pool.
+     * SQL Server pool.
      */
     protected pool: any;
 
@@ -61,11 +61,11 @@ export class MysqlDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mysql?: any) {
+    constructor(options: DriverOptions, logger: Logger, mssql?: any) {
 
         this.options = DriverUtils.buildDriverOptions(options);
         this.logger = logger;
-        this.mysql = mysql;
+        this.mssql = mssql;
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -75,8 +75,8 @@ export class MysqlDriver implements Driver {
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
-        // if mysql package instance was not set explicitly then try to load it
-        if (!mysql)
+        // if mssql package instance was not set explicitly then try to load it
+        if (!mssql)
             this.loadDependencies();
     }
 
@@ -103,12 +103,12 @@ export class MysqlDriver implements Driver {
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         if (this.options.usePool === undefined || this.options.usePool === true) {
-            this.pool = this.mysql.createPool(options);
+            this.pool = this.mssql.createPool(options);
             return Promise.resolve();
 
         } else {
             return new Promise<void>((ok, fail) => {
-                const connection = this.mysql.createConnection(options);
+                const connection = this.mssql.createConnection(options);
                 this.databaseConnection = {
                     id: 1,
                     connection: connection,
@@ -124,7 +124,7 @@ export class MysqlDriver implements Driver {
      */
     disconnect(): Promise<void> {
         if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("mysql");
+            throw new ConnectionIsNotSetError("mssql");
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
@@ -149,10 +149,10 @@ export class MysqlDriver implements Driver {
      */
     async createQueryRunner(): Promise<QueryRunner> {
         if (!this.databaseConnection && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("mysql"));
+            return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new MysqlQueryRunner(databaseConnection, this, this.logger);
+        return new SqlServerQueryRunner(databaseConnection, this, this.logger);
     }
 
     /**
@@ -160,7 +160,7 @@ export class MysqlDriver implements Driver {
      */
     nativeInterface() {
         return {
-            driver: this.mysql,
+            driver: this.mssql,
             connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
@@ -312,7 +312,7 @@ export class MysqlDriver implements Driver {
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
-        throw new ConnectionIsNotSetError("mysql");
+        throw new ConnectionIsNotSetError("mssql");
     }
 
     /**
@@ -323,9 +323,9 @@ export class MysqlDriver implements Driver {
             throw new DriverPackageLoadError();
 
         try {
-            this.mysql = require("mysql");
+            this.mssql = require("mssql");
         } catch (e) {
-            throw new DriverPackageNotInstalledError("Mysql", "mysql");
+            throw new DriverPackageNotInstalledError("SQL Server", "mssql");
         }
     }
 
