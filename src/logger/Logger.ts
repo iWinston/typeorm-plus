@@ -7,25 +7,30 @@ export class Logger {
 
     logQuery(query: string) {
         if (!this.options || !this.options.logQueries) return;
-        this.log("executing query: " + query, "log");
+        this.log("log", "executing query: " + query);
     }
 
     logQueryError(error: any) {
         if (!this.options || !this.options.logFailedQueryError) return;
-        this.log("error during executing query:", "error");
-        this.log(error, "error");
+        this.log("error", "error during executing query:");
+        this.log("error", error);
     }
 
     logFailedQuery(query: string) {
         if (this.options && (this.options.logQueries || this.options.logOnlyFailedQueries))
-            this.log("query failed: " + query, "error");
+            this.log("error", "query failed: " + query);
     }
 
-    log(message: any, level: "log"|"debug"|"info"|"error") {
+    logSchemaBuild(message: string) {
+        if (!this.options || !this.options.logSchemaCreation) return;
+        this.log("info", message);
+    }
+
+    log(level: "log"|"debug"|"info"|"error", message: any) {
         if (!this.options) return;
 
         if (this.options.logger) {
-            this.options.logger(message, level);
+            this.options.logger(level, message);
         } else {
             switch (level) {
                 case "log":

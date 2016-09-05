@@ -34,6 +34,7 @@ import {SpecificReactiveRepository} from "../repository/ReactiveSpecificReposito
 import {RepositoryForMetadata} from "../repository/RepositoryForMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
+import {Logger} from "../logger/Logger";
 
 /**
  * A single connection instance to the database. 
@@ -54,6 +55,11 @@ export class Connection {
      * Database driver used by this connection.
      */
     public readonly driver: Driver;
+
+    /**
+     * Logger used to log orm events.
+     */
+    public readonly logger: Logger;
 
     /**
      * All entity metadatas that are registered for this connection.
@@ -128,9 +134,10 @@ export class Connection {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, driver: Driver) {
+    constructor(name: string, driver: Driver, logger: Logger) {
         this.name = name;
         this.driver = driver;
+        this.logger = logger;
         this._entityManager = getFromContainer(EntityManagerFactory).createEntityManager(this);
         this._reactiveEntityManager = getFromContainer(EntityManagerFactory).createReactiveEntityManager(this);
         this.broadcaster = getFromContainer(BroadcasterFactory).createBroadcaster(this.entityMetadatas, this.entitySubscribers, this.entityListeners);
@@ -235,7 +242,7 @@ export class Connection {
         if (dropBeforeSync)
             await this.dropDatabase();
 
-        const schemaCreator = new SchemaBuilder(this.driver, this.entityMetadatas, this.createNamingStrategy()); // todo: use factory there later
+        const schemaCreator = new SchemaBuilder(this.driver, this.logger, this.entityMetadatas, this.createNamingStrategy()); // todo: use factory there later
         await schemaCreator.create();
     }
 

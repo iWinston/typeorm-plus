@@ -61,7 +61,7 @@ export class ConnectionManager {
 
         const logger = new Logger(options.logging);
         const driver = this.createDriver(options.driver, logger);
-        const connection = this.createConnection(options.name || "default", driver);
+        const connection = this.createConnection(options.name || "default", driver, logger);
 
         if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
             connection.importEntitySchemaFromDirectories(options.entitySchemaDirectories);
@@ -137,7 +137,7 @@ export class ConnectionManager {
     /**
      * Creates a new connection and registers it in the connection manager.
      */
-    private createConnection(name: string, driver: Driver) {
+    private createConnection(name: string, driver: Driver, logger: Logger) {
         const existConnection = this.connections.find(connection => connection.name === name);
         if (existConnection) {
             if (existConnection.isConnected)
@@ -146,7 +146,7 @@ export class ConnectionManager {
             this.connections.splice(this.connections.indexOf(existConnection), 1);
         }
 
-        const connection = new Connection(name, driver);
+        const connection = new Connection(name, driver, logger);
         this.connections.push(connection);
         return connection;
     }

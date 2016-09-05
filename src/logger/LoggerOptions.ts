@@ -3,7 +3,7 @@ export interface LoggerOptions {
     /**
      * Some specific logger to be used. By default it is a console.
      */
-    readonly logger?: (message: any, level: string) => void;
+    readonly logger?: (level: string, message: any) => void;
 
     /**
      * Set to true if you want to log every executed query.
@@ -19,5 +19,10 @@ export interface LoggerOptions {
      * Set to true if you want to log error of the failed query.
      */
     readonly logFailedQueryError?: boolean;
+
+    /**
+     * If set to true then schema creation logs will be logged.
+     */
+    readonly logSchemaCreation?: boolean;
 
 }
