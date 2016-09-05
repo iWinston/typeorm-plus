@@ -7,14 +7,14 @@ import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import {SqliteDriver} from "./SqliteDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {IndexMetadata} from "../../metadata/IndexMetadata";
-import {ColumnSchema} from "../../schema-builder/ColumnSchema";
+import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
-import {TableSchema} from "../../schema-builder/TableSchema";
-import {IndexSchema} from "../../schema-builder/IndexSchema";
-import {ForeignKeySchema} from "../../schema-builder/ForeignKeySchema";
-import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
-import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
+import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
+import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
+import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
+import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
+import {UniqueKeySchema} from "../../schema-builder/database-schema/UniqueKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
@@ -356,7 +356,7 @@ export class SqliteQueryRunner implements QueryRunner {
         //     return false;
 
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
-        const columnsSchemas = columns.map(column => ColumnSchema.create(this, column));
+        const columnsSchemas = columns.map(column => ColumnSchema.create(column, this.normalizeType(column)));
         const dbColumns = tableSchema.columns.concat(columnsSchemas);
         await this.recreateTable(tableSchema, dbColumns);
         return columns;
@@ -370,7 +370,7 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const newDbColumns = changedColumns.map(changedColumn => ColumnSchema.create(this, changedColumn.newColumn));
+        const newDbColumns = changedColumns.map(changedColumn => ColumnSchema.create(changedColumn.newColumn, this.normalizeType(changedColumn.newColumn)));
         const oldColumns = tableSchema.columns.filter(dbColumn => {
             return !!changedColumns.find(changedColumn => changedColumn.oldColumn.name === dbColumn.name);
         });

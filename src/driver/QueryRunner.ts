@@ -1,10 +1,10 @@
 import {IndexMetadata} from "../metadata/IndexMetadata";
-import {ColumnSchema} from "../schema-builder/ColumnSchema";
+import {ColumnSchema} from "../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
-import {TableSchema} from "../schema-builder/TableSchema";
+import {TableSchema} from "../schema-builder/database-schema/TableSchema";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {ForeignKeySchema} from "../schema-builder/ForeignKeySchema";
+import {ForeignKeySchema} from "../schema-builder/database-schema/ForeignKeySchema";
 
 /**
  * Runs queries on a single database connection.

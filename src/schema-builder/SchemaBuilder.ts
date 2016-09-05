@@ -1,48 +1,50 @@
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-import {TableSchema} from "./TableSchema";
-import {ColumnSchema} from "./ColumnSchema";
-import {ForeignKeySchema} from "./ForeignKeySchema";
-import {UniqueKeySchema} from "./UniqueKeySchema";
-import {IndexSchema} from "./IndexSchema";
+import {TableSchema} from "./database-schema/TableSchema";
+import {ColumnSchema} from "./database-schema/ColumnSchema";
+import {ForeignKeySchema} from "./database-schema/ForeignKeySchema";
+import {UniqueKeySchema} from "./database-schema/UniqueKeySchema";
+import {IndexSchema} from "./database-schema/IndexSchema";
 import {Driver} from "../driver/Driver";
 import {QueryRunner} from "../driver/QueryRunner";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {Logger} from "../logger/Logger";
 
 /**
- * Creates indexes based on the given metadata.
+ * Creates complete tables schemas in the database based on the entity metadatas.
  *
- *
- * Steps how schema creation works:
- * 1. get all tables from entity metadatas
- * 2. get all tables with complete column and keys information from the db
- * 3. drop all (old) foreign keys that exist in the table, but does not exist in the metadata
- * 4. create new tables that does not exist in the db, but exist in the metadata
- * 5. ----
- * 6. drop all columns exist (left old) in the table, but does not exist in the metadata
- * 7. add columns from metadata which does not exist in the table
- * 8. update all exist columns which metadata has changed.
- * 9. create foreign keys which does not exist in the table yet.
- * 10. create unique keys which are missing in db yet, and drops unique keys which exist in the db, but does not exist in the metadata anymore. (todo: need to move drop step to the up)
- * 11. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore.
- * 12. remove primary key from the table (if it was before and does not exist in the metadata anymore).
+ * Steps how schema is being built:
+ * 1. load list of all tables with complete column and keys information from the db
+ * 2. drop all (old) foreign keys that exist in the table, but does not exist in the metadata
+ * 3. create new tables that does not exist in the db, but exist in the metadata
+ * 4. drop all columns exist (left old) in the db table, but does not exist in the metadata
+ * 5. add columns from metadata which does not exist in the table
+ * 6. update all exist columns which metadata has changed.
+ * 7. create primary keys which does not exist in the table yet.
+ * 8. create foreign keys which does not exist in the table yet.
+ * 9. create unique keys which are missing in db yet, and drops unique keys which exist in the db, but does not exist in the metadata anymore. (todo: need to move drop step to the up)
+ * 10. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore.
+ * 11. remove primary key from the table (if it was before and does not exist in the metadata anymore).
  *
  * @internal
  */
 export class SchemaBuilder {
 
-    private queryRunner: QueryRunner;
+    // -------------------------------------------------------------------------
+    // Private Properties
+    // -------------------------------------------------------------------------
+
+    protected queryRunner: QueryRunner;
+    protected tableSchemas: TableSchema[];
     
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private driver: Driver,
-                private logger: Logger,
-                private entityMetadatas: EntityMetadataCollection,
-                private namingStrategy: NamingStrategyInterface) {
+    constructor(protected driver: Driver,
+                protected logger: Logger,
+                protected entityMetadatas: EntityMetadataCollection,
+                protected namingStrategy: NamingStrategyInterface) {
     }
 
     // -------------------------------------------------------------------------
@@ -53,31 +55,29 @@ export class SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async create(): Promise<void> {
-        // todo: need setup connection and transaction on this level, to control parallel executions
-        const metadatas = this.entityMetadatas; // todo: save to this
         this.queryRunner = await this.driver.createQueryRunner();
-        const tableSchemas = await this.loadSchemaTables(metadatas);
-        // this.logger.logSchemaBuild("loaded table schemas: ", tableSchemas);
+        this.tableSchemas = await this.loadSchemaTables();
 
         await this.queryRunner.beginTransaction();
         try {
-            await this.dropOldForeignKeysForAll(metadatas, tableSchemas);
-            await this.createNewTablesForAll(metadatas, tableSchemas);
-            await this.dropRemovedColumnsForAll(metadatas, tableSchemas);
-            await this.addNewColumnsForAll(metadatas, tableSchemas);
-            await this.updateExistColumnsForAll(metadatas, tableSchemas);
-            await this.createPrimaryKeysForAll(metadatas, tableSchemas);
-            await this.createForeignKeysForAll(metadatas, tableSchemas);
-            await this.updateUniqueKeysForAll(metadatas, tableSchemas);
-            await this.createIndicesForAll(metadatas, tableSchemas);
-            await this.removePrimaryKeyForAll(metadatas, tableSchemas);
+            await this.dropOldForeignKeys();
+            await this.createNewTables();
+            await this.dropRemovedColumns();
+            await this.addNewColumns();
+            await this.updateExistColumns();
+            await this.createPrimaryKeys();
+            await this.createForeignKeys();
+            await this.updateUniqueKeys();
+            await this.createIndices();
+            await this.removePrimaryKeys();
             await this.queryRunner.commitTransaction();
-            await this.queryRunner.release();
 
         } catch (error) {
             await this.queryRunner.rollbackTransaction();
-            await this.queryRunner.release();
             throw error;
+
+        } finally {
+            await this.queryRunner.release();
         }
     }
 
@@ -88,27 +88,30 @@ export class SchemaBuilder {
     /**
      * Loads all table schemas from the database.
      */
-    private loadSchemaTables(metadatas: EntityMetadata[]): Promise<TableSchema[]> {
-        const tableNames = metadatas.map(metadata => metadata.table.name);
+    protected loadSchemaTables(): Promise<TableSchema[]> {
+        const tableNames = this.entityMetadatas.map(metadata => metadata.table.name);
         return this.queryRunner.loadSchemaTables(tableNames, this.namingStrategy);
     }
 
     /**
      * Drops all (old) foreign keys that exist in the table, but does not exist in the metadata.
      */
-    private async dropOldForeignKeysForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]): Promise<void> {
-        await Promise.all(metadatas.map(async metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
-            if (!dbTable) return;
+    protected async dropOldForeignKeys(): Promise<void> {
+        await Promise.all(this.entityMetadatas.map(async metadata => {
 
-            const dbForeignKeysNeedToDrop = dbTable.foreignKeys.filter(dbForeignKey => {
+            const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
+            if (!tableSchema)
+                return;
+
+            const dbForeignKeysNeedToDrop = tableSchema.foreignKeys.filter(dbForeignKey => {
                 return !metadata.foreignKeys.find(foreignKey => foreignKey.name === dbForeignKey.name);
             });
-            if (dbForeignKeysNeedToDrop.length > 0) {
-                this.logger.logSchemaBuild(`dropping old foreign keys of ${dbTable.name}: ${dbForeignKeysNeedToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
-                await this.queryRunner.dropForeignKeys(dbTable, dbForeignKeysNeedToDrop);
-                dbTable.removeForeignKeys(dbForeignKeysNeedToDrop);
-            }
+            if (dbForeignKeysNeedToDrop.length === 0)
+                return;
+
+            this.logger.logSchemaBuild(`dropping old foreign keys of ${tableSchema.name}: ${dbForeignKeysNeedToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
+            await this.queryRunner.dropForeignKeys(tableSchema, dbForeignKeysNeedToDrop);
+            tableSchema.removeForeignKeys(dbForeignKeysNeedToDrop);
         }));
     }
 
@@ -116,14 +119,16 @@ export class SchemaBuilder {
      * Creates a new table if it does not exist.
      * New tables are created without keys.
      */
-    private async createNewTablesForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]): Promise<void> {
-        await Promise.all(metadatas.map(async metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
-            if (!dbTable) {
-                this.logger.logSchemaBuild(`creating a new table: ${metadata.table.name}`);
-                const createdColumns = await this.queryRunner.createTable(metadata.table, metadata.columns);
-                dbTables.push(TableSchema.createFromMetadata(this.queryRunner, metadata.table, createdColumns));
-            }
+    protected async createNewTables(): Promise<void> {
+        await Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
+            if (dbTable)
+                return;
+
+            this.logger.logSchemaBuild(`creating a new table: ${metadata.table.name}`);
+            const createdColumns = await this.queryRunner.createTable(metadata.table, metadata.columns);
+            const newColumns = createdColumns.map(columnMetadata => ColumnSchema.create(columnMetadata, this.queryRunner.normalizeType(columnMetadata)));
+            this.tableSchemas.push(new TableSchema(metadata.table.name, newColumns));
         }));
     }
 
@@ -131,24 +136,24 @@ export class SchemaBuilder {
      * Drops all columns exist (left old) in the table, but does not exist in the metadata.
      * We drop their keys too, since it should be safe.
      */
-    private dropRemovedColumnsForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]) {
-        const allForeignKeys = metadatas.reduce((all, metadata) => all.concat(metadata.foreignKeys), [] as ForeignKeyMetadata[]);
-        // return Promise.all(metadatas.map(metadata => this.dropRemovedColumns(metadata.table, metadata.columns, allKeys)));
-        return Promise.all(metadatas.map(async metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
+    protected dropRemovedColumns() {
+        const allForeignKeys = this.entityMetadatas.reduce((all, metadata) => all.concat(metadata.foreignKeys), [] as ForeignKeyMetadata[]);
+        return Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!dbTable) return;
 
             const droppedColumns = dbTable.columns.filter(dbColumn => !metadata.columns.find(column => column.name === dbColumn.name));
-            if (droppedColumns.length > 0) {
-                this.logger.logSchemaBuild(`columns dropped in ${dbTable.name}: ` + droppedColumns.map(column => column.name).join(", "));
+            if (droppedColumns.length === 0)
+                return;
 
-                const dropRelatedForeignKeysPromises = droppedColumns.map(async droppedColumn => {
-                    return this.dropAllColumnRelatedForeignKeys(metadata.table.name, droppedColumn.name, allForeignKeys, dbTables);
-                });
-                await Promise.all(dropRelatedForeignKeysPromises);
-                await this.queryRunner.dropColumns(dbTable, droppedColumns);
-                dbTable.removeColumns(droppedColumns);
-            }
+            const dropRelatedForeignKeysPromises = droppedColumns.map(async droppedColumn => {
+                return this.dropAllColumnRelatedForeignKeys(metadata.table.name, droppedColumn.name, allForeignKeys);
+            });
+            await Promise.all(dropRelatedForeignKeysPromises);
+
+            this.logger.logSchemaBuild(`columns dropped in ${dbTable.name}: ` + droppedColumns.map(column => column.name).join(", "));
+            await this.queryRunner.dropColumns(dbTable, droppedColumns);
+            dbTable.removeColumns(droppedColumns);
         }));
     }
 
@@ -156,21 +161,21 @@ export class SchemaBuilder {
      * Adds columns from metadata which does not exist in the table.
      * Columns are created without keys.
      */
-    private addNewColumnsForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]) {
-        // return Promise.all(metadatas.map(metadata => this.addNewColumns(metadata.table, metadata.columns)));
-        return Promise.all(metadatas.map(async metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
-            if (!dbTable) return;
+    protected addNewColumns() {
+        return Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
+            if (!dbTable)
+                return;
 
             const newColumns = metadata.columns.filter(column => !dbTable.columns.find(dbColumn => dbColumn.name === column.name));
-            if (newColumns.length > 0) {
-                this.logger.logSchemaBuild(`new columns added: ` + newColumns.map(column => column.name).join(", "));
-                const createdColumns = await this.queryRunner.createColumns(dbTable, newColumns);
-                createdColumns.forEach(createdColumn => {
-                    dbTable.columns.push(ColumnSchema.create(this.queryRunner, createdColumn));
-                });
-            }
+            if (newColumns.length === 0)
+                return;
 
+            this.logger.logSchemaBuild(`new columns added: ` + newColumns.map(column => column.name).join(", "));
+            const createdColumns = await this.queryRunner.createColumns(dbTable, newColumns);
+            createdColumns.forEach(createdColumn => {
+                dbTable.columns.push(ColumnSchema.create(createdColumn, this.queryRunner.normalizeType(createdColumn)));
+            });
         }));
     }
 
@@ -178,47 +183,49 @@ export class SchemaBuilder {
      * Update all exist columns which metadata has changed.
      * Still don't create keys. Also we don't touch foreign keys of the changed columns.
      */
-    private updateExistColumnsForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]) {
-        const allForeignKeys = metadatas.reduce((all, metadata) => all.concat(metadata.foreignKeys), [] as ForeignKeyMetadata[]);
-        return Promise.all(metadatas.map(async metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
-            if (!dbTable) return;
+    protected updateExistColumns() {
+        const allForeignKeys = this.entityMetadatas.reduce((all, metadata) => all.concat(metadata.foreignKeys), [] as ForeignKeyMetadata[]);
+        return Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
+            if (!dbTable)
+                return;
 
             const updateColumns = dbTable.findChangedColumns(this.queryRunner, metadata.columns);
-            if (updateColumns.length > 0) {
-                this.logger.logSchemaBuild(`columns changed in ${dbTable.name}. updating: ` + updateColumns.map(column => column.name).join(", "));
+            if (updateColumns.length === 0)
+                return;
 
-                // drop all foreign keys that point to this column
-                const dropRelatedForeignKeysPromises = updateColumns
-                    .filter(changedColumn => !!metadata.columns.find(column => column.name === changedColumn.name))
-                    .map(changedColumn => this.dropAllColumnRelatedForeignKeys(metadata.table.name, changedColumn.name, allForeignKeys, dbTables));
+            this.logger.logSchemaBuild(`columns changed in ${dbTable.name}. updating: ` + updateColumns.map(column => column.name).join(", "));
 
-                // wait until all related foreign keys are dropped
-                await Promise.all(dropRelatedForeignKeysPromises);
+            // drop all foreign keys that point to this column
+            const dropRelatedForeignKeysPromises = updateColumns
+                .filter(changedColumn => !!metadata.columns.find(column => column.name === changedColumn.name))
+                .map(changedColumn => this.dropAllColumnRelatedForeignKeys(metadata.table.name, changedColumn.name, allForeignKeys));
 
-                // generate a map of new/old columns
-                const newAndOldColumns = updateColumns.map(changedColumn => {
-                    const column = metadata.columns.find(column => column.name === changedColumn.name);
-                    if (!column)
-                        throw new Error(`Column ${changedColumn.name} was not found in the given columns`);
+            // wait until all related foreign keys are dropped
+            await Promise.all(dropRelatedForeignKeysPromises);
 
-                    return {
-                        newColumn: column,
-                        oldColumn: changedColumn
-                    };
-                });
+            // generate a map of new/old columns
+            const newAndOldColumns = updateColumns.map(changedColumn => {
+                const column = metadata.columns.find(column => column.name === changedColumn.name);
+                if (!column)
+                    throw new Error(`Column ${changedColumn.name} was not found in the given columns`);
 
-                return this.queryRunner.changeColumns(dbTable, newAndOldColumns);
-            }
+                return {
+                    newColumn: column,
+                    oldColumn: changedColumn
+                };
+            });
+
+            return this.queryRunner.changeColumns(dbTable, newAndOldColumns);
         }));
     }
 
     /**
      * Creates primary keys which does not exist in the table yet.
      */
-    private createPrimaryKeysForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]) {
-        return Promise.all(metadatas.map(async metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
+    protected createPrimaryKeys() {
+        return Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!dbTable)
                 return;
 
@@ -237,20 +244,22 @@ export class SchemaBuilder {
     /**
      * Creates foreign keys which does not exist in the table yet.
      */
-    private createForeignKeysForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]) {
-        return Promise.all(metadatas.map(async metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
-            if (!dbTable) return;
+    protected createForeignKeys() {
+        return Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
+            if (!dbTable)
+                return;
 
             const newKeys = metadata.foreignKeys.filter(foreignKey => {
                 return !dbTable.foreignKeys.find(dbForeignKey => dbForeignKey.name === foreignKey.name);
             });
-            if (newKeys.length > 0) {
-                const dbForeignKeys = newKeys.map(foreignKeyMetadata => ForeignKeySchema.createFromMetadata(foreignKeyMetadata));
-                this.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
-                await this.queryRunner.createForeignKeys(dbTable, dbForeignKeys);
-                dbTable.addForeignKeys(dbForeignKeys);
-            }
+            if (newKeys.length === 0)
+                return;
+
+            const dbForeignKeys = newKeys.map(foreignKeyMetadata => ForeignKeySchema.createFromMetadata(foreignKeyMetadata));
+            this.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
+            await this.queryRunner.createForeignKeys(dbTable, dbForeignKeys);
+            dbTable.addForeignKeys(dbForeignKeys);
         }));
     }
 
@@ -258,11 +267,12 @@ export class SchemaBuilder {
      * Creates unique keys which are missing in db yet, and drops unique keys which exist in the db,
      * but does not exist in the metadata anymore.
      */
-    private async updateUniqueKeysForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]): Promise<void> {
-        // return Promise.all(metadatas.map(metadata => this.updateUniqueKeys(metadata.table, metadata.columns)));
-        await Promise.all(metadatas.map(metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
-            if (!dbTable) return Promise.resolve();
+    protected async updateUniqueKeys(): Promise<void> {
+        // return Promise.all(this.entityMetadatas.map(metadata => this.updateUniqueKeys(metadata.table, metadata.columns)));
+        await Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
+            if (!dbTable)
+                return;
 
             // first find metadata columns that should be unique and update them if they are not unique in db
             const addQueries = metadata.columns
@@ -282,7 +292,7 @@ export class SchemaBuilder {
                     dbTable.removeUniqueByName("uk_" + column.name);
                 });
 
-            return Promise.all<any>([addQueries, dropQueries]);
+            await Promise.all([addQueries, dropQueries]);
         }));
     }
 
@@ -290,11 +300,12 @@ export class SchemaBuilder {
      * Creates indices which are missing in db yet, and drops indices which exist in the db,
      * but does not exist in the metadata anymore.
      */
-    private createIndicesForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]) {
-        // return Promise.all(metadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
-        return Promise.all(metadatas.map(metadata => {
-            const dbTable = dbTables.find(table => table.name === metadata.table.name);
-            if (!dbTable) return Promise.resolve();
+    protected createIndices() {
+        // return Promise.all(this.entityMetadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
+        return Promise.all(this.entityMetadatas.map(async metadata => {
+            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
+            if (!dbTable)
+                return;
 
             // drop all indices that exist in the table, but does not exist in the given composite indices
             const dropQueries = dbTable.indices
@@ -312,18 +323,18 @@ export class SchemaBuilder {
                     dbTable.indices.push(new IndexSchema(indexMetadata.name, indexMetadata.columns));
                 });
 
-            return Promise.all([dropQueries, addQueries]);
+            await Promise.all([dropQueries, addQueries]);
         }));
     }
 
     /**
      * Removes primary key from the table (if it was before and does not exist in the metadata anymore).
      */
-    private removePrimaryKeyForAll(metadatas: EntityMetadata[], dbTables: TableSchema[]) {
-        const queries = metadatas
+    protected removePrimaryKeys() {
+        const queries = this.entityMetadatas
             .filter(metadata => !metadata.hasPrimaryColumn)
             .map(async metadata => {
-                const dbTable = dbTables.find(table => table.name === metadata.table.name);
+                const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
                 if (dbTable && dbTable.primaryKey) {
                     await this.queryRunner.dropIndex(metadata.table.name, dbTable.primaryKey.name);
                     dbTable.removePrimaryKey();
@@ -334,10 +345,11 @@ export class SchemaBuilder {
         return Promise.all(queries);
     }
 
-    private async dropAllColumnRelatedForeignKeys(tableName: string, columnName: string, foreignKeys: ForeignKeyMetadata[], dbTables: TableSchema[]): Promise<void> {
+    protected async dropAllColumnRelatedForeignKeys(tableName: string, columnName: string, foreignKeys: ForeignKeyMetadata[]): Promise<void> {
 
-        const dbTable = dbTables.find(table => table.name === tableName);
-        if (!dbTable) return;
+        const dbTable = this.tableSchemas.find(table => table.name === tableName);
+        if (!dbTable)
+            return;
 
         // find depend foreign keys to drop them
         const dependForeignKeys = foreignKeys.filter(foreignKey => {

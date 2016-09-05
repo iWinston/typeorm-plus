@@ -7,14 +7,14 @@ import {Logger} from "../../logger/Logger";
 import {MysqlDriver} from "./MysqlDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {IndexMetadata} from "../../metadata/IndexMetadata";
-import {ColumnSchema} from "../../schema-builder/ColumnSchema";
+import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
-import {TableSchema} from "../../schema-builder/TableSchema";
-import {UniqueKeySchema} from "../../schema-builder/UniqueKeySchema";
-import {ForeignKeySchema} from "../../schema-builder/ForeignKeySchema";
-import {PrimaryKeySchema} from "../../schema-builder/PrimaryKeySchema";
-import {IndexSchema} from "../../schema-builder/IndexSchema";
+import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
+import {UniqueKeySchema} from "../../schema-builder/database-schema/UniqueKeySchema";
+import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
+import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
+import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
@@ -222,7 +222,6 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         // if no tables given then no need to proceed
-
         if (!tableNames)
             return [];
 
