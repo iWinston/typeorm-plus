@@ -279,8 +279,9 @@ export class SchemaBuilder {
                 .filter(column => column.isUnique)
                 .filter(column => !dbTable.uniqueKeys.find(uniqueKey => uniqueKey.name === "uk_" + column.name))
                 .map(async column => {
+                    const uniqueKeySchema = new UniqueKeySchema(metadata.table.name, "uk_" + column.name, [column.name]);
                     await this.queryRunner.createUniqueKey(metadata.table.name, column.name, "uk_" + column.name);
-                    dbTable.uniqueKeys.push(new UniqueKeySchema("uk_" + column.name));
+                    dbTable.uniqueKeys.push(uniqueKeySchema);
                 });
 
             // second find columns in db that are unique, however in metadata columns they are not unique
@@ -319,8 +320,9 @@ export class SchemaBuilder {
             const addQueries = metadata.indices
                 .filter(indexMetadata => !dbTable.indices.find(dbIndex => dbIndex.name === indexMetadata.name))
                 .map(async indexMetadata => {
-                    await this.queryRunner.createIndex(metadata.table.name, indexMetadata);
-                    dbTable.indices.push(new IndexSchema(indexMetadata.name, indexMetadata.columns));
+                    const indexSchema = IndexSchema.createFromMetadata(indexMetadata);
+                    await this.queryRunner.createIndex(indexSchema);
+                    dbTable.indices.push(indexSchema);
                 });
 
             await Promise.all([dropQueries, addQueries]);

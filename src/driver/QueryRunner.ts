@@ -1,10 +1,10 @@
-import {IndexMetadata} from "../metadata/IndexMetadata";
 import {ColumnSchema} from "../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {TableSchema} from "../schema-builder/database-schema/TableSchema";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ForeignKeySchema} from "../schema-builder/database-schema/ForeignKeySchema";
+import {IndexSchema} from "../schema-builder/database-schema/IndexSchema";
 
 /**
  * Runs queries on a single database connection.
@@ -107,7 +107,7 @@ export interface QueryRunner {
     /**
      * Creates a new index.
      */
-    createIndex(tableName: string, index: IndexMetadata): Promise<void>;
+    createIndex(index: IndexSchema): Promise<void>;
 
     /**
      * Drops an index from the table.

@@ -6,7 +6,6 @@ import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStarted
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import {PostgresDriver} from "./PostgresDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
-import {IndexMetadata} from "../../metadata/IndexMetadata";
 import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
@@ -282,7 +281,9 @@ export class PostgresQueryRunner implements QueryRunner {
             // create unique key schemas from the loaded indices
             tableSchema.uniqueKeys = dbUniqueKeys
                 .filter(dbUniqueKey => dbUniqueKey["table_name"] === tableSchema.name)
-                .map(dbUniqueKey => new UniqueKeySchema(dbUniqueKey["constraint_name"]));
+                .map(dbUniqueKey => {
+                    return new UniqueKeySchema(dbUniqueKey["TABLE_NAME"], dbUniqueKey["CONSTRAINT_NAME"], [/* todo */]);
+                });
 
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
@@ -298,7 +299,7 @@ export class PostgresQueryRunner implements QueryRunner {
                         .filter(dbIndex => dbIndex["table_name"] === tableSchema.name && dbIndex["index_name"] === dbIndexName)
                         .map(dbIndex => dbIndex["column_name"]);
 
-                    return new IndexSchema(dbIndexName, columnNames);
+                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
                 });
 
             return tableSchema;
@@ -437,11 +438,12 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(tableName: string, index: IndexMetadata): Promise<void> {
+    async createIndex(index: IndexSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"("${index.columns.join("\", \"")}")`;
+        const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${index.tableName}"(${columnNames})`;
         await this.query(sql);
     }
 

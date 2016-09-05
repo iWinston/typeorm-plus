@@ -4,15 +4,13 @@ import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "postgres",
-        host: "localhost",
-        port: 5432,
-        username: "root",
-        password: "admin",
-        database: "test"
+        type: "sqlite",
+        storage: "temp/sqlitedb.db"
     },
     logging: {
-        logOnlyFailedQueries: true
+        logQueries: true,
+        logOnlyFailedQueries: true,
+        logSchemaCreation: true
     },
     autoSchemaCreate: true,
     entities: [Post]

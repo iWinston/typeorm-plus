@@ -6,7 +6,6 @@ import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStarted
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import {SqliteDriver} from "./SqliteDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
-import {IndexMetadata} from "../../metadata/IndexMetadata";
 import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
@@ -14,7 +13,6 @@ import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
 import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
-import {UniqueKeySchema} from "../../schema-builder/database-schema/UniqueKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
@@ -237,7 +235,7 @@ export class SqliteQueryRunner implements QueryRunner {
             return [];
 
         // load tables, columns, indices and foreign keys
-        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM sqlite_master WHERE name != 'sqlite_sequence'`);
+        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM sqlite_master WHERE type = 'table' AND name != 'sqlite_sequence'`);
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
@@ -305,26 +303,29 @@ export class SqliteQueryRunner implements QueryRunner {
             // });
 
             // create unique key schemas from the loaded indices
-            tableSchema.uniqueKeys = dbIndices
+            tableSchema.uniqueKeys = []; /*await Promise.all(dbIndices
                 .filter(dbIndex => dbIndex["unique"] === "1")
-                .map(dbUniqueKey => new UniqueKeySchema(dbUniqueKey["constraint_name"]));
+                .map(async dbUniqueKey => {
+                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${dbUniqueKey["name"]}")`);
+                    const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
+                    return new UniqueKeySchema(dbTable["name"], dbUniqueKey["name"], indexColumns);
+                }));*/
 
             // create index schemas from the loaded indices
-            tableSchema.indices = dbIndices
+            tableSchema.indices = await Promise.all(dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["origin"] !== "pk" &&
                             (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
                             (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["name"]);
                 })
-                .map(dbIndex => dbIndex["index_name"])
+                .map(dbIndex => dbIndex["name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
-                .map(dbIndexName => {
-                    const columnNames = dbIndices
-                        .filter(dbIndex => dbIndex["table_name"] === tableSchema.name && dbIndex["index_name"] === dbIndexName)
-                        .map(dbIndex => dbIndex["column_name"]);
-
-                    return new IndexSchema(dbIndexName, columnNames);
-                });
+                .map(async dbIndexName => {
+                    const dbIndex = dbIndices.find(dbIndex => dbIndex["name"] === dbIndexName);
+                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${dbIndex!["name"]}")`);
+                    const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
+                    return new IndexSchema(dbTable["name"], dbIndex!["name"], indexColumns, dbIndex!["unique"] === "1");
+                }));
 
             return tableSchema;
         }));
@@ -347,7 +348,7 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column metadata in the table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
+    async createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> { // todo: remove column metadata returning
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -356,9 +357,10 @@ export class SqliteQueryRunner implements QueryRunner {
         //     return false;
 
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
-        const columnsSchemas = columns.map(column => ColumnSchema.create(column, this.normalizeType(column)));
-        const dbColumns = tableSchema.columns.concat(columnsSchemas);
-        await this.recreateTable(tableSchema, dbColumns);
+        const columnsSchemas = columns.map(column => ColumnSchema.create(column, this.normalizeType(column))); // todo: extract this out
+        const newTableSchema = tableSchema.clone();
+        newTableSchema.addColumns(columnsSchemas);
+        await this.recreateTable(newTableSchema);
         return columns;
     }
 
@@ -420,11 +422,12 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(tableName: string, index: IndexMetadata): Promise<void> {
+    async createIndex(index: IndexSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"("${index.columns.join("\", \"")}")`;
+        const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${index.tableName}"(${columnNames})`;
         await this.query(sql);
     }
 
@@ -435,12 +438,14 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `DROP INDEX ${indexName}"`;
+        const sql = `DROP INDEX "${indexName}"`;
         await this.query(sql);
     }
 
     /**
      * Creates a new unique key.
+     *
+     * todo: do we really need it? we can use same createIndex method?
      */
     async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
         if (this.isReleased)
@@ -575,17 +580,25 @@ export class SqliteQueryRunner implements QueryRunner {
 
         // todo: need also create uniques and indices?
 
-        // if (options && options.createIndices)
+        // recreate a table with a temporary name
         await this.query(sql1);
 
+        // migrate all data from the table into temporary table
         const sql2 = `INSERT INTO "temporary_${tableSchema.name}" SELECT ${columnNames} FROM "${tableSchema.name}"`;
         await this.query(sql2);
 
+        // drop old table
         const sql3 = `DROP TABLE "${tableSchema.name}"`;
         await this.query(sql3);
 
+        // rename temporary table
         const sql4 = `ALTER TABLE "temporary_${tableSchema.name}" RENAME TO "${tableSchema.name}"`;
         await this.query(sql4);
+
+        // also re-create indices
+        const indexPromises = tableSchema.indices.map(index => this.createIndex(index));
+        // const uniquePromises = tableSchema.uniqueKeys.map(key => this.createIndex(key));
+        await Promise.all([indexPromises/*, uniquePromises*/]);
     }
 
 }

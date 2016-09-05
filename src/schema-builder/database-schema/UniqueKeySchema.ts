@@ -8,16 +8,28 @@ export class UniqueKeySchema {
     // -------------------------------------------------------------------------
 
     /**
+     * Table name that contains this unique index.
+     */
+    tableName: string;
+
+    /**
      * Key name.
      */
     name: string;
+
+    /**
+     * Column names of this index.
+     */
+    columns: string[];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string) {
+    constructor(tableName: string, name: string, columns: string[]) {
+        this.tableName = tableName;
         this.name = name;
+        this.columns = columns;
     }
 
     // -------------------------------------------------------------------------
@@ -28,7 +40,7 @@ export class UniqueKeySchema {
      * Creates a new copy of this unique key with exactly same properties.
      */
     clone() {
-        return new UniqueKeySchema(this.name);
+        return new UniqueKeySchema(this.tableName, this.name, this.columns.map(name => name));
     }
 
 }
