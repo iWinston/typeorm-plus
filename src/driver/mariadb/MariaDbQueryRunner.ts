@@ -21,6 +21,8 @@ import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInter
 
 /**
  * Runs queries on a single MariaDB database connection.
+ *
+ * @deprecated MysqlDriver is used instead this driver, because mariadb can work without problems with mysql clients.
  */
 export class MariaDbQueryRunner implements QueryRunner {
 

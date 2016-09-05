@@ -17,6 +17,8 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 
 /**
  * Organizes communication with MariaDB DBMS.
+ *
+ * @deprecated MysqlDriver is used instead this driver, because mariadb can work without problems with mysql clients.
  */
 export class MariaDbDriver implements Driver {
 

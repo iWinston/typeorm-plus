@@ -8,7 +8,6 @@ import {MissingDriverError} from "./error/MissingDriverError";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
 import {Logger} from "../logger/Logger";
-import {MariaDbDriver} from "../driver/mariadb/MariaDbDriver";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -122,7 +121,7 @@ export class ConnectionManager {
             case "postgres":
                 return new PostgresDriver(options, logger);
             case "mariadb":
-                return new MariaDbDriver(options, logger);
+                return new MysqlDriver(options, logger);
             case "sqlite":
                 return new SqliteDriver(options, logger);
             case "oracle":
