@@ -300,7 +300,7 @@ export class SchemaBuilder {
      */
     protected removePrimaryKeys() {
         const queries = this.entityMetadatas
-            .filter(metadata => !metadata.hasPrimaryColumn)
+            .filter(metadata => !metadata.primaryColumns.length)
             .map(async metadata => {
                 const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
                 if (dbTable && dbTable.primaryKey) {

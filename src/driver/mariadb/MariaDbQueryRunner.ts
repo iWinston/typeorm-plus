@@ -163,7 +163,7 @@ export class MariaDbQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -173,9 +173,9 @@ export class MariaDbQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
         const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        if (result.info && idColumn) {
+        if (result.info && generatedColumn) {
             const id = result.info.insertId;
-            if (ColumnTypes.isNumeric(idColumn.type)) {
+            if (ColumnTypes.isNumeric(generatedColumn.type)) {
                 return +id;
             }
             return id;

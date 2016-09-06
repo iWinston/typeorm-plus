@@ -156,7 +156,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -164,10 +164,10 @@ export class OracleQueryRunner implements QueryRunner {
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map(key => ":" + key).join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ idColumn ? " RETURNING " + this.driver.escapeColumnName(idColumn.name) : "" }`;
+        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`;
         const result = await this.query(sql, parameters);
-        if (idColumn)
-            return result[0][idColumn.name];
+        if (generatedColumn)
+            return result[0][generatedColumn.name];
         return result;
     }
 

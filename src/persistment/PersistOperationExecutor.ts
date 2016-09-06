@@ -9,10 +9,8 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {Driver} from "../driver/Driver";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {DatabaseConnection} from "../driver/DatabaseConnection";
 import {QueryRunner} from "../driver/QueryRunner";
 
 /**
@@ -479,8 +477,8 @@ export class PersistOperationExecutor {
         }*/
 
         // console.log("inserting: ", this.zipObject(allColumns, allValues));
-        let idColumn = metadata.hasPrimaryColumn && metadata.primaryColumn.isGenerated ? metadata.primaryColumn : undefined;
-        return this.queryRunner.insert(metadata.table.name, this.zipObject(allColumns, allValues), idColumn);
+        let generatedColumn = metadata.columns.find(column => column.isGenerated);
+        return this.queryRunner.insert(metadata.table.name, this.zipObject(allColumns, allValues), generatedColumn);
     }
 
     private insertIntoClosureTable(operation: InsertOperation, updateMap: ObjectLiteral) {

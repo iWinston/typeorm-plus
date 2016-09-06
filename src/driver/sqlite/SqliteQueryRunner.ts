@@ -141,7 +141,7 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Insert a new row into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -162,7 +162,7 @@ export class SqliteQueryRunner implements QueryRunner {
                     _this.logger.logQueryError(err);
                     fail(err);
                 } else {
-                    if (idColumn)
+                    if (generatedColumn)
                         return ok(this["lastID"]);
 
                     ok();

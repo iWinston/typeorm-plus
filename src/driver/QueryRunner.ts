@@ -56,7 +56,7 @@ export interface QueryRunner {
     /**
      * Inserts a new row into given table.
      */
-    insert(tableName: string, valuesMap: Object, idColumn?: ColumnMetadata): Promise<any>;
+    insert(tableName: string, valuesMap: Object, generatedColumn?: ColumnMetadata): Promise<any>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.

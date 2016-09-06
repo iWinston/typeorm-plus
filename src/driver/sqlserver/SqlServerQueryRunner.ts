@@ -148,7 +148,7 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -158,7 +158,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
         const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        return idColumn ? result.insertId : undefined;
+        return generatedColumn ? result.insertId : undefined;
     }
 
     /**

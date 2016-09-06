@@ -148,7 +148,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -158,7 +158,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
         const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        return idColumn ? result.insertId : undefined;
+        return generatedColumn ? result.insertId : undefined;
     }
 
     /**
@@ -318,7 +318,11 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
+        let sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}`;
+        const primaryKeyColumns = columns.filter(column => column.isPrimary);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+        sql += `) ENGINE=InnoDB;`;
         await this.query(sql);
         return columns;
     }
@@ -507,8 +511,8 @@ export class MysqlQueryRunner implements QueryRunner {
             c += " NOT NULL";
         if (column.isUnique === true)
             c += " UNIQUE";
-        if (column.isPrimary === true && !skipPrimary)
-            c += " PRIMARY KEY";
+        // if (column.isPrimary === true && !skipPrimary)
+        //     c += " PRIMARY KEY";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)

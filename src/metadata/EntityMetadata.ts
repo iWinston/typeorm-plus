@@ -135,15 +135,9 @@ export class EntityMetadata {
     }
 
     /**
-     * Checks if entity has a primary column. All user's entities must have a primary column.
-     * Special entity metadatas like for junction tables and closure junction tables don't have a primary column.
-     */
-    get hasPrimaryColumn(): boolean {
-        return !!this._columns.find(column => column.isPrimary);
-    }
-
-    /**
      * Gets the primary column.
+     *
+     * @deprecated
      */
     get primaryColumn(): ColumnMetadata {
         const primaryKey = this._columns.find(column => column.isPrimary);
@@ -151,6 +145,13 @@ export class EntityMetadata {
             throw new Error(`Primary key is not set for the ${this.name} entity.`);
 
         return primaryKey;
+    }
+
+    /**
+     * Gets the primary columns.
+     */
+    get primaryColumns(): ColumnMetadata[] {
+        return this._columns.filter(column => column.isPrimary);
     }
 
     /**
@@ -455,6 +456,12 @@ export class EntityMetadata {
         return this.relations.filter(relation => {
             return (relation.relationType === RelationTypes.MANY_TO_MANY || relation.relationType === RelationTypes.ONE_TO_MANY)
                 && object.hasOwnProperty(relation.propertyName);
+        });
+    }
+
+    checkIfObjectContainsAllPrimaryKeys(object: ObjectLiteral) {
+        return this.primaryColumns.every(primaryColumn => {
+            return object.hasOwnProperty(primaryColumn.propertyName);
         });
     }
     
