@@ -6,7 +6,6 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {Driver} from "../driver/Driver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {DatabaseConnection} from "../driver/DatabaseConnection";
 import {QueryRunner} from "../driver/QueryRunner";
 
 /**
@@ -405,6 +404,19 @@ export class QueryBuilder<Entity> {
         return sql;
     }
 
+    getGeneratedQuery(): string {
+        let sql = this.createSelectExpression();
+        sql += this.createJoinExpression();
+        sql += this.createJoinRelationIdsExpression();
+        sql += this.createWhereExpression();
+        sql += this.createGroupByExpression();
+        sql += this.createHavingExpression();
+        sql += this.createOrderByExpression();
+        sql += this.createLimitExpression();
+        sql += this.createOffsetExpression();
+        return sql;
+    }
+
     getSqlWithParameters(): [string, any[]] {
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
@@ -416,6 +428,10 @@ export class QueryBuilder<Entity> {
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         return this.driver.escapeQueryWithParameters(sql, this.parameters);
+    }
+
+    getParameters(): ObjectLiteral {
+        return this.parameters;
     }
 
     async execute(): Promise<any> {
