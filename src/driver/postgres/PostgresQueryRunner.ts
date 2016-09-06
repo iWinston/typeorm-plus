@@ -315,7 +315,12 @@ export class PostgresQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
+        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        sql += columns
+            .filter(column => column.isUnique)
+            .map(column => `, CONSTRAINT "uk_${column.name}" UNIQUE ("${column.name}")`)
+            .join(" ");
+        sql += `)`;
         await this.query(sql);
         return columns;
     }
@@ -562,8 +567,6 @@ export class PostgresQueryRunner implements QueryRunner {
             c += " " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isUnique === true)
-            c += " UNIQUE";
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
         // TODO: implement auto increment
