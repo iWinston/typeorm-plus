@@ -1,7 +1,6 @@
 import {ColumnSchema} from "./ColumnSchema";
 import {IndexSchema} from "./IndexSchema";
 import {ForeignKeySchema} from "./ForeignKeySchema";
-import {UniqueKeySchema} from "./UniqueKeySchema";
 import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {QueryRunner} from "../../driver/QueryRunner";
@@ -36,11 +35,6 @@ export class TableSchema {
     foreignKeys: ForeignKeySchema[] = [];
 
     /**
-     * Table unique keys.
-     */
-    uniqueKeys: UniqueKeySchema[] = [];
-
-    /**
      * Table primary keys.
      */
     primaryKey: PrimaryKeySchema|undefined;
@@ -67,7 +61,6 @@ export class TableSchema {
         cloned.columns = this.columns.map(column => column.clone());
         cloned.indices = this.indices.map(index => index.clone());
         cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
-        cloned.uniqueKeys = this.uniqueKeys.map(key => key.clone());
         if (this.primaryKey)
             cloned.primaryKey = this.primaryKey.clone();
         return cloned;
@@ -129,21 +122,6 @@ export class TableSchema {
     }
 
     /**
-     * Removes unique index from this table schema by its name.
-     */
-    removeUniqueByName(name: string) {
-        const uniqueKey = this.uniqueKeys.find(uniqueKey => uniqueKey.name === name);
-        if (!uniqueKey)
-            return;
-
-        const index = this.uniqueKeys.indexOf(uniqueKey);
-        if (index === -1)
-            return;
-
-        this.uniqueKeys.splice(index, 1);
-    }
-
-    /**
      * Removes primary from this table schema.
      */
     removePrimaryKey() {
@@ -165,6 +143,7 @@ export class TableSchema {
                     columnSchema.comment !== columnMetadata.comment ||
                     columnSchema.default !== columnMetadata.default ||
                     columnSchema.isNullable !== columnMetadata.isNullable ||
+                    columnSchema.isUnique !== columnMetadata.isUnique ||
                     columnSchema.isGenerated !== columnMetadata.isGenerated;
         });
     }

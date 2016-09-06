@@ -10,7 +10,6 @@ import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
 import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
-import {UniqueKeySchema} from "../../schema-builder/database-schema/UniqueKeySchema";
 import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
@@ -294,13 +293,6 @@ export class MariaDbQueryRunner implements QueryRunner {
             tableSchema.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === tableSchema.name)
                 .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
-
-            // create unique key schemas from the loaded indices
-            tableSchema.uniqueKeys = dbUniqueKeys
-                .filter(dbUniqueKey => dbUniqueKey["TABLE_NAME"] === tableSchema.name)
-                .map(dbUniqueKey => {
-                    return new UniqueKeySchema(dbUniqueKey["TABLE_NAME"], dbUniqueKey["CONSTRAINT_NAME"], [/* todo */]);
-                });
 
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices

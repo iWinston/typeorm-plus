@@ -10,7 +10,6 @@ import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableMetadata} from "../../metadata/TableMetadata";
 import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
-import {UniqueKeySchema} from "../../schema-builder/database-schema/UniqueKeySchema";
 import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
@@ -258,6 +257,7 @@ export class MysqlQueryRunner implements QueryRunner {
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
+                    columnSchema.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
                     columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     columnSchema.comment = dbColumn["COLUMN_COMMENT"];
                     return columnSchema;
@@ -274,28 +274,37 @@ export class MysqlQueryRunner implements QueryRunner {
                 .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
 
             // create unique key schemas from the loaded indices
-            tableSchema.uniqueKeys = dbUniqueKeys
+            /*tableSchema.uniqueKeys = dbUniqueKeys
                 .filter(dbUniqueKey => dbUniqueKey["TABLE_NAME"] === tableSchema.name)
                 .map(dbUniqueKey => {
-                    return new UniqueKeySchema(dbUniqueKey["TABLE_NAME"], dbUniqueKey["CONSTRAINT_NAME"], [/* todo */]);
-                });
+                    return new UniqueKeySchema(dbUniqueKey["TABLE_NAME"], dbUniqueKey["CONSTRAINT_NAME"], [/!* todo *!/]);
+                });*/
 
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["table_name"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                    return  dbIndex["TABLE_NAME"] === tableSchema.name &&
+                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["INDEX_NAME"]);
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
                 .map(dbIndexName => {
-                    const columnNames = dbIndices
-                        .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
-                        .map(dbIndex => dbIndex["COLUMN_NAME"]);
+                    const currentDbIndices = dbIndices.filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName);
+                    const columnNames = currentDbIndices.map(dbIndex => dbIndex["COLUMN_NAME"]);
+
+                    // find a special index - unique index and
+                    if (currentDbIndices.length === 1 && currentDbIndices[0]["NON_UNIQUE"] === 0) {
+                        const column = tableSchema.columns.find(column => column.name === currentDbIndices[0]["INDEX_NAME"] && column.name === currentDbIndices[0]["COLUMN_NAME"]);
+                        if (column) {
+                            column.isUnique = true;
+                            return;
+                        }
+                    }
 
                     return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
-                });
+                })
+                .filter(index => !!index) as IndexSchema[]; // remove empty returns
 
             return tableSchema;
         });
@@ -336,8 +345,11 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const updatePromises = changedColumns.map(changedColumn => {
+        const updatePromises = changedColumns.map(async changedColumn => {
             const sql = `ALTER TABLE \`${tableSchema.name}\` CHANGE \`${changedColumn.oldColumn.name}\` ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+            if (changedColumn.newColumn.isUnique === false && changedColumn.oldColumn.isUnique === true)
+                await this.query(`ALTER TABLE \`${tableSchema.name}\` DROP INDEX \`${changedColumn.oldColumn.name}\``);
+
             return this.query(sql);
         });
 
@@ -401,7 +413,7 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON \`${index.tableName}\`(${columns})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${index.tableName}\`(${columns})`;
         await this.query(sql);
     }
 
@@ -504,6 +516,8 @@ export class MysqlQueryRunner implements QueryRunner {
         let c = "`" + column.name + "` " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
+        if (column.isUnique === true)
+            c += " UNIQUE";
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.

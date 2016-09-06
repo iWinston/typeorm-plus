@@ -13,7 +13,6 @@ import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
 import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
-import {UniqueKeySchema} from "../../schema-builder/database-schema/UniqueKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
@@ -265,6 +264,7 @@ export class PostgresQueryRunner implements QueryRunner {
                     // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
                     columnSchema.isGenerated = isGenerated;
                     columnSchema.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    columnSchema.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] === "uk_" + dbColumn["column_name"]);
                     return columnSchema;
                 });
 
@@ -279,17 +279,18 @@ export class PostgresQueryRunner implements QueryRunner {
                 .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["constraint_name"], [], [], "", "")); // todo: fix missing params
 
             // create unique key schemas from the loaded indices
-            tableSchema.uniqueKeys = dbUniqueKeys
+            /*tableSchema.uniqueKeys = dbUniqueKeys
                 .filter(dbUniqueKey => dbUniqueKey["table_name"] === tableSchema.name)
                 .map(dbUniqueKey => {
-                    return new UniqueKeySchema(dbUniqueKey["TABLE_NAME"], dbUniqueKey["CONSTRAINT_NAME"], [/* todo */]);
-                });
+                    return new UniqueKeySchema(dbUniqueKey["TABLE_NAME"], dbUniqueKey["CONSTRAINT_NAME"], [/!* todo *!/]);
+                });*/
 
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["table_name"] === tableSchema.name &&
                         (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
+                        (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"])) &&
                         (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
                 })
                 .map(dbIndex => dbIndex["index_name"])
@@ -383,6 +384,16 @@ export class PostgresQueryRunner implements QueryRunner {
             if (oldColumn.comment !== newColumn.comment) {
                 await this.query(`COMMENT ON COLUMN "${tableSchema.name}"."${oldColumn.name}" is '${newColumn.comment}'`);
             }
+
+            if (oldColumn.isUnique !== newColumn.isUnique) {
+                if (newColumn.isUnique === true) {
+                    await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
+
+                } else if (newColumn.isUnique === false) {
+                    await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${newColumn.name}"`);
+
+                }
+            }
         });
 
         await Promise.all(updatePromises);
@@ -455,7 +466,7 @@ export class PostgresQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         if (isGenerated) {
-            await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`); // todo: what is it?
+            await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`);
         }
 
         const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`;
@@ -562,6 +573,8 @@ export class PostgresQueryRunner implements QueryRunner {
             c += " " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
+        if (column.isUnique === true)
+            c += " UNIQUE";
         if (column.isPrimary === true && !skipPrimary)
             c += " PRIMARY KEY";
         // TODO: implement auto increment

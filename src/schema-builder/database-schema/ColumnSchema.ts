@@ -27,7 +27,7 @@ export class ColumnSchema {
     /**
      * Indicates if column is NULL, or is NOT NULL in the database.
      */
-    isNullable: boolean;
+    isNullable: boolean = false;
 
     /**
      * Indicates if column is auto-generated sequence.
@@ -37,7 +37,12 @@ export class ColumnSchema {
     /**
      * Indicates if column is a primary key.
      */
-    isPrimary: boolean;
+    isPrimary: boolean = false;
+
+    /**
+     * Indicates if column has unique value.
+     */
+    isUnique: boolean = false;
 
     /**
      * Column's comment.
@@ -59,6 +64,7 @@ export class ColumnSchema {
         newColumnSchema.isNullable = this.isNullable;
         newColumnSchema.isGenerated = this.isGenerated;
         newColumnSchema.isPrimary = this.isPrimary;
+        newColumnSchema.isUnique = this.isUnique;
         newColumnSchema.comment = this.comment;
         return newColumnSchema;
     }
@@ -73,12 +79,13 @@ export class ColumnSchema {
     static create(columnMetadata: ColumnMetadata, normalizedType: string): ColumnSchema {
         const columnSchema = new ColumnSchema();
         columnSchema.name = columnMetadata.name;
-        // columnSchema.default = columnMetadata.default;
+        columnSchema.default = columnMetadata.default;
         columnSchema.comment = columnMetadata.comment;
         columnSchema.isGenerated = columnMetadata.isGenerated;
         columnSchema.isNullable = columnMetadata.isNullable;
         columnSchema.type = normalizedType;
         columnSchema.isPrimary = columnMetadata.isPrimary;
+        columnSchema.isUnique = columnMetadata.isUnique;
         return columnSchema;
     }
 

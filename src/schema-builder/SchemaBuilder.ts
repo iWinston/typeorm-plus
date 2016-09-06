@@ -3,7 +3,6 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {TableSchema} from "./database-schema/TableSchema";
 import {ColumnSchema} from "./database-schema/ColumnSchema";
 import {ForeignKeySchema} from "./database-schema/ForeignKeySchema";
-import {UniqueKeySchema} from "./database-schema/UniqueKeySchema";
 import {IndexSchema} from "./database-schema/IndexSchema";
 import {Driver} from "../driver/Driver";
 import {QueryRunner} from "../driver/QueryRunner";
@@ -22,9 +21,8 @@ import {Logger} from "../logger/Logger";
  * 6. update all exist columns which metadata has changed.
  * 7. create primary keys which does not exist in the table yet.
  * 8. create foreign keys which does not exist in the table yet.
- * 9. create unique keys which are missing in db yet, and drops unique keys which exist in the db, but does not exist in the metadata anymore. (todo: need to move drop step to the up)
- * 10. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore.
- * 11. remove primary key from the table (if it was before and does not exist in the metadata anymore).
+ * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore.
+ * 10. remove primary key from the table (if it was before and does not exist in the metadata anymore).
  *
  * @internal
  */
@@ -67,17 +65,15 @@ export class SchemaBuilder {
             await this.updateExistColumns();
             await this.createPrimaryKeys();
             await this.createForeignKeys();
-            await this.updateUniqueKeys();
             await this.createIndices();
             await this.removePrimaryKeys();
             await this.queryRunner.commitTransaction();
+            await this.queryRunner.release();
 
         } catch (error) {
             await this.queryRunner.rollbackTransaction();
-            throw error;
-
-        } finally {
             await this.queryRunner.release();
+            throw error;
         }
     }
 
@@ -264,40 +260,6 @@ export class SchemaBuilder {
     }
 
     /**
-     * Creates unique keys which are missing in db yet, and drops unique keys which exist in the db,
-     * but does not exist in the metadata anymore.
-     */
-    protected async updateUniqueKeys(): Promise<void> {
-        // return Promise.all(this.entityMetadatas.map(metadata => this.updateUniqueKeys(metadata.table, metadata.columns)));
-        await Promise.all(this.entityMetadatas.map(async metadata => {
-            const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
-            if (!dbTable)
-                return;
-
-            // first find metadata columns that should be unique and update them if they are not unique in db
-            const addQueries = metadata.columns
-                .filter(column => column.isUnique)
-                .filter(column => !dbTable.uniqueKeys.find(uniqueKey => uniqueKey.name === "uk_" + column.name))
-                .map(async column => {
-                    const uniqueKeySchema = new UniqueKeySchema(metadata.table.name, "uk_" + column.name, [column.name]);
-                    await this.queryRunner.createUniqueKey(metadata.table.name, column.name, "uk_" + column.name);
-                    dbTable.uniqueKeys.push(uniqueKeySchema);
-                });
-
-            // second find columns in db that are unique, however in metadata columns they are not unique
-            const dropQueries = metadata.columns
-                .filter(column => !column.isUnique)
-                .filter(column => !!dbTable.uniqueKeys.find(uniqueKey => uniqueKey.name === "uk_" + column.name))
-                .map(async column => {
-                    await this.queryRunner.dropIndex(metadata.table.name, "uk_" + column.name);
-                    dbTable.removeUniqueByName("uk_" + column.name);
-                });
-
-            await Promise.all([addQueries, dropQueries]);
-        }));
-    }
-
-    /**
      * Creates indices which are missing in db yet, and drops indices which exist in the db,
      * but does not exist in the metadata anymore.
      */
@@ -312,6 +274,7 @@ export class SchemaBuilder {
             const dropQueries = dbTable.indices
                 .filter(dbIndex => !metadata.indices.find(index => index.name === dbIndex.name))
                 .map(async dbIndex => {
+                    this.logger.logSchemaBuild(`dropping an index: ${dbIndex.name}`);
                     await this.queryRunner.dropIndex(metadata.table.name, dbIndex.name);
                     dbTable.removeIndex(dbIndex);
                 });
@@ -321,11 +284,14 @@ export class SchemaBuilder {
                 .filter(indexMetadata => !dbTable.indices.find(dbIndex => dbIndex.name === indexMetadata.name))
                 .map(async indexMetadata => {
                     const indexSchema = IndexSchema.createFromMetadata(indexMetadata);
+                    this.logger.logSchemaBuild(`adding new index: ${indexSchema.name}`);
                     await this.queryRunner.createIndex(indexSchema);
                     dbTable.indices.push(indexSchema);
                 });
 
-            await Promise.all([dropQueries, addQueries]);
+            // this.logger.logSchemaBuild(`adding new indices: ${newKeys.map(key => key.name).join(", ")}`);
+            // this.logger.logSchemaBuild(`dropping old indices: ${newKeys.map(key => key.name).join(", ")}`);
+            await Promise.all(dropQueries.concat(addQueries));
         }));
     }
 

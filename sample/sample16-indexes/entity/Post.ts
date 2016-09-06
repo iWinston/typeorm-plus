@@ -1,5 +1,4 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
+import {PrimaryColumn, Column, Table} from "../../../src/index";
 import {Index} from "../../../src/decorator/indices/Index";
 import {CompositeIndex} from "../../../src/decorator/indices/CompositeIndex";
 
@@ -17,7 +16,7 @@ export class Post {
     @Index()
     title: string;
 
-    @Column()
+    @Column({ unique: true })
     text: string;
 
     @Column()
