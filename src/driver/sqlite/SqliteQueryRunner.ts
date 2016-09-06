@@ -447,19 +447,6 @@ export class SqliteQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new unique key.
-     *
-     * todo: do we really need it? we can use same createIndex method?
-     */
-    async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        const sql = `CREATE UNIQUE INDEX "${keyName}" ON "${tableName}"("${columnName}")`;
-        await this.query(sql);
-    }
-
-    /**
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: ColumnMetadata) {

@@ -431,17 +431,6 @@ export class MariaDbQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new unique key.
-     */
-    async createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        const sql = `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${keyName}\` UNIQUE (\`${columnName}\`)`;
-        await this.query(sql);
-    }
-
-    /**
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: ColumnMetadata) {

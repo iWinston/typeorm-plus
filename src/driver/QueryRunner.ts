@@ -115,11 +115,6 @@ export interface QueryRunner {
     dropIndex(tableName: string, indexName: string): Promise<void>;
 
     /**
-     * Creates a new unique key.
-     */
-    createUniqueKey(tableName: string, columnName: string, keyName: string): Promise<void>;
-
-    /**
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: ColumnMetadata): any;
