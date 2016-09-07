@@ -37,7 +37,7 @@ export class TableSchema {
     /**
      * Table primary keys.
      */
-    primaryKey: PrimaryKeySchema|undefined;
+    primaryKeys: PrimaryKeySchema[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -61,8 +61,7 @@ export class TableSchema {
         cloned.columns = this.columns.map(column => column.clone());
         cloned.indices = this.indices.map(index => index.clone());
         cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
-        if (this.primaryKey)
-            cloned.primaryKey = this.primaryKey.clone();
+        cloned.primaryKeys = this.primaryKeys.map(key => key.clone());
         return cloned;
     }
 
@@ -125,7 +124,7 @@ export class TableSchema {
      * Removes primary from this table schema.
      */
     removePrimaryKey() {
-        this.primaryKey = undefined;
+        this.primaryKeys = [];
     }
 
     /**

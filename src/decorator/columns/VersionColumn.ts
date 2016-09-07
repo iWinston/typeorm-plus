@@ -16,7 +16,7 @@ export function VersionColumn(options?: ColumnOptions): Function {
         if (!options) options = {} as ColumnOptions;
 
         // implicitly set a type, because this column's type cannot be anything else except date
-        options.type = ColumnTypes.INTEGER;
+        options = Object.assign({ type: ColumnTypes.INTEGER } as ColumnOptions, options);
 
         // todo: check if reflectedType is number too
 

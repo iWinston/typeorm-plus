@@ -1,5 +1,7 @@
 import {OnDeleteType} from "../../metadata/ForeignKeyMetadata";
 
+// todo: add ON_UPDATE
+
 /**
  * Describes all relation's options.
  */
@@ -35,5 +37,11 @@ export interface RelationOptions {
      * Database cascade action on delete.
      */
     readonly onDelete?: OnDeleteType;
+
+    /**
+     * Indicates if this relation will be a primary key.
+     * Can be used only for many-to-one and owner one-to-one relations.
+     */
+    readonly primary?: boolean;
 
 }

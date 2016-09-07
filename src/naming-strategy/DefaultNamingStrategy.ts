@@ -22,11 +22,12 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return propertyName;
     }
 
-    indexName(name: string|undefined, columns: string[]): string {
-        if (name)
-            return name;
+    indexName(customName: string|undefined, tableName: string, columns: string[]): string {
+        if (customName)
+            return customName;
         
-        return "ind_" + columns.join("_");
+        const key = "ind_" + tableName + "_" + columns.join("_");
+        return "ind_" + require("sha1")(key);
     }
 
     joinColumnInverseSideName(joinColumnName: string, propertyName: string): string {

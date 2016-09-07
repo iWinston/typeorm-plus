@@ -58,7 +58,7 @@ export class IndexMetadata extends TargetMetadata {
      * Gets index's name.
      */
     get name() {
-        return this.entityMetadata.namingStrategy.indexName(this._name, this.columns);
+        return this.entityMetadata.namingStrategy.indexName(this._name, this.entityMetadata.table.name, this.columns);
     }
 
     /**
@@ -67,12 +67,23 @@ export class IndexMetadata extends TargetMetadata {
     get columns(): string[] {
         
         // if columns already an array of string then simply return it
-        if (this._columns instanceof Array)
-            return this._columns;
+        let columnPropertyNames: string[] = [];
+        if (this._columns instanceof Array) {
+            columnPropertyNames = this._columns;
+        } else {
+            // if columns is a function that returns array of field names then execute it and get columns names from it
+            const propertiesMap = this.entityMetadata.createPropertiesMap();
+            columnPropertyNames = this._columns(propertiesMap).map((i: any) => String(i));
+        }
 
-        // if columns is a function that returns array of field names then execute it and get columns names from it 
-        const propertiesMap = this.entityMetadata.createPropertiesMap();
-        return this._columns(propertiesMap).map((i: any) => String(i));
+        const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyName) !== -1);
+        const missingColumnNames = columnPropertyNames.filter(columnPropertyName => !this.entityMetadata.columns.find(column => column.propertyName === columnPropertyName));
+        if (missingColumnNames.length > 0) {
+            console.log(this.entityMetadata.columns);
+            throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
+        }
+
+        return columns.map(column => column.name);
     }
     
 }

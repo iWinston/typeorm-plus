@@ -442,7 +442,6 @@ export class PersistOperationExecutor {
 
     private delete(target: Function|string, entity: any) {
         const metadata = this.entityMetadatas.findByTarget(target);
-        console.log("getEntityIdOrIds: " , metadata.getEntityIdMap(entity));
         return this.queryRunner.delete(metadata.table.name, metadata.getEntityIdMap(entity)!);
     }
 

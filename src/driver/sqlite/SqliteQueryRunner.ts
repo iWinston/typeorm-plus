@@ -18,6 +18,9 @@ import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInter
 
 /**
  * Runs queries on a single sqlite database connection.
+ *
+ * Does not support compose primary keys with autoincrement field.
+ * todo: need to throw exception for this case.
  */
 export class SqliteQueryRunner implements QueryRunner {
 
@@ -292,16 +295,16 @@ export class SqliteQueryRunner implements QueryRunner {
             });
 
             // create primary key schema
-            const primaryKey = dbIndices.find(index => index["origin"] === "pk");
-            if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["name"]);
+            tableSchema.primaryKeys = dbIndices
+                .filter(index => index["origin"] === "pk")
+                .map(index => new PrimaryKeySchema(index["name"]));
 
             // create index schemas from the loaded indices
             const indicesPromises = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["origin"] !== "pk" &&
-                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
-                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["name"]);
+                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
+                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
                 })
                 .map(dbIndex => dbIndex["name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -344,7 +347,11 @@ export class SqliteQueryRunner implements QueryRunner {
 
         // skip columns with foreign keys, we will add them later
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column)).join(", ");
-        const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
+        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        const primaryKeyColumns = columns.filter(column => column.isPrimary && !column.isGenerated);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+        sql += `)`;
         await this.query(sql);
         return columns;
     }
@@ -540,10 +547,8 @@ export class SqliteQueryRunner implements QueryRunner {
             c += " NOT NULL";
         if (column.isUnique === true)
             c += " UNIQUE";
-        if (column.isPrimary === true) // todo: don't use primary keys this way at all
-            c += " PRIMARY KEY";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " AUTOINCREMENT";
+            c += " PRIMARY KEY AUTOINCREMENT";
 
         return c;
     }
@@ -561,8 +566,8 @@ export class SqliteQueryRunner implements QueryRunner {
             const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
         });
-        if (tableSchema.primaryKey) {
-            sql1 += `, PRIMARY KEY(${tableSchema.primaryKey.name})`;
+        if (tableSchema.primaryKeys.length > 0) {
+            sql1 += `, PRIMARY KEY(${tableSchema.primaryKeys.map(key => `"${key.name}"`).join(", ")})`;
         }
         sql1 += ")";
 

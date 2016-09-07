@@ -54,7 +54,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
         
         // check if there is no type in column options then set type from first function argument, or guessed one
         if (!options.type)
-            options.type = type;
+            options = Object.assign({ type: type } as ColumnOptions, options);
 
         // if we still don't have a type then we need to give error to user that type is required
         if (!options.type)

@@ -269,9 +269,9 @@ export class PostgresQueryRunner implements QueryRunner {
                 });
 
             // create primary key schema
-            const primaryKey = primaryKeys.find(primaryKey => primaryKey["table_name"] === tableSchema.name);
-            if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["constraint_name"]);
+            tableSchema.primaryKeys = primaryKeys
+                .filter(primaryKey => primaryKey["table_name"] === tableSchema.name)
+                .map(primaryKey => new PrimaryKeySchema(primaryKey["constraint_name"]));
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
@@ -289,9 +289,9 @@ export class PostgresQueryRunner implements QueryRunner {
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["table_name"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                        (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"])) &&
-                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
+                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["index_name"])) &&
+                        (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"]));
                 })
                 .map(dbIndex => dbIndex["index_name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -320,6 +320,9 @@ export class PostgresQueryRunner implements QueryRunner {
             .filter(column => column.isUnique)
             .map(column => `, CONSTRAINT "uk_${column.name}" UNIQUE ("${column.name}")`)
             .join(" ");
+        const primaryKeyColumns = columns.filter(column => column.isPrimary && !column.isGenerated);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
         sql += `)`;
         await this.query(sql);
         return columns;
@@ -567,9 +570,8 @@ export class PostgresQueryRunner implements QueryRunner {
             c += " " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isPrimary === true && !skipPrimary)
+        if (column.isGenerated)
             c += " PRIMARY KEY";
-        // TODO: implement auto increment
         if (column.columnDefinition)
             c += " " + column.columnDefinition;
         return c;

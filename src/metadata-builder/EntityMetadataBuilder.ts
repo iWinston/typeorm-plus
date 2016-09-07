@@ -61,8 +61,6 @@ export class EntityMetadataBuilder {
             Object.keys(schema.columns).forEach(columnName => {
                 const columnSchema = schema.columns[columnName];
                 let mode: ColumnMode = "regular";
-                if (columnSchema.primary)
-                    mode = "primary";
                 if (columnSchema.createDate)
                     mode = "createDate";
                 if (columnSchema.updateDate)
@@ -83,6 +81,7 @@ export class EntityMetadataBuilder {
                         type: columnSchema.type,
                         name: columnSchema.name,
                         length: columnSchema.length,
+                        primary: columnSchema.primary,
                         generated: columnSchema.generated,
                         unique: columnSchema.unique,
                         nullable: columnSchema.nullable,
@@ -308,7 +307,8 @@ export class EntityMetadataBuilder {
                         mode: "virtual",
                         options: <ColumnOptions> {
                             type: inverseSideColumn.type,
-                            nullable: relation.isNullable
+                            nullable: relation.isNullable,
+                            primary: relation.isPrimary
                         }
                     });
                     metadata.addColumn(relationalColumn);

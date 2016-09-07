@@ -285,9 +285,9 @@ export class MariaDbQueryRunner implements QueryRunner {
                 });
 
             // create primary key schema
-            const primaryKey = primaryKeys.find(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name);
-            if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]);
+            tableSchema.primaryKeys = primaryKeys
+                .filter(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name)
+                .map(primaryKey => new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]));
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
@@ -298,8 +298,8 @@ export class MariaDbQueryRunner implements QueryRunner {
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["table_name"] === tableSchema.name &&
-                            (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                            (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                            (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
+                            (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["index_name"]));
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue

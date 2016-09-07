@@ -11,11 +11,8 @@ export function TreeLevelColumn(): Function {
 
         const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
-        // if column options are not given then create a new empty options
-        const options: ColumnOptions = {};
-
         // implicitly set a type, because this column's type cannot be anything else except number
-        options.type = ColumnTypes.INTEGER;
+        const options: ColumnOptions = { type: ColumnTypes.INTEGER };
 
         // create and register a new column metadata
         const args: ColumnMetadataArgs = {

@@ -10,7 +10,7 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
  * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
  * date column.
  */
-export type ColumnMode = "regular"|"virtual"|"primary"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel";
+export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel";
 
 /**
  * This metadata contains all information about entity's column.
@@ -54,6 +54,11 @@ export class ColumnMetadata extends PropertyMetadata {
      * Type's length in the database.
      */
     readonly length = "";
+
+    /**
+     * Indicates if this column is a primary key.
+     */
+    readonly isPrimary: boolean = false;
 
     /**
      * Indicates if this column is generated (auto increment or generated other way).
@@ -137,6 +142,8 @@ export class ColumnMetadata extends PropertyMetadata {
 
         if (args.options.length)
             this.length = args.options.length;
+        if (args.options.primary)
+            this.isPrimary = args.options.primary;
         if (args.options.generated)
             this.isGenerated = args.options.generated;
         if (args.options.unique)
@@ -176,7 +183,7 @@ export class ColumnMetadata extends PropertyMetadata {
         if (this.entityMetadata)
             return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
         
-        throw new Error(`Column${this._name ? this._name + " " : ""} is not attached to any entity or embedded.`);
+        throw new Error(`Column ${this._name ? this._name + " " : ""}is not attached to any entity or embedded.`);
     }
 
     get target() {
@@ -188,13 +195,6 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     get isInEmbedded(): boolean {
         return !!this.embeddedMetadata;
-    }
-
-    /**
-     * Indicates if this column is a primary key.
-     */
-    get isPrimary() {
-        return this.mode === "primary";
     }
 
     /**

@@ -274,9 +274,9 @@ export class OracleQueryRunner implements QueryRunner {
                 });
 
             // create primary key schema
-            const primaryKey = primaryKeys.find(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name);
-            if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]);
+            tableSchema.primaryKeys = primaryKeys
+                .filter(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name)
+                .map(primaryKey => new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]));
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
@@ -287,8 +287,8 @@ export class OracleQueryRunner implements QueryRunner {
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["table_name"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -312,7 +312,11 @@ export class OracleQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE "${table.name}" (${columnDefinitions})`;
+        let sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}`;
+        const primaryKeyColumns = columns.filter(column => column.isPrimary);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+        sql += `)`;
         await this.query(sql);
         return columns;
     }

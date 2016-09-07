@@ -66,7 +66,7 @@ export class TableMetadata extends TargetMetadata {
     /**
      * Table name in the database.
      */
-    get name() {
+    get name(): string {
 
         if (this.isClosureJunction && this._name)
             return this.entityMetadata.namingStrategy.closureJunctionTableName(this._name);

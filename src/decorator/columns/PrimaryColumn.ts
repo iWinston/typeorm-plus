@@ -44,7 +44,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
 
         // check if there is no type in column options then set type from first function argument, or guessed one
         if (!options.type)
-            options.type = type;
+            options = Object.assign({ type: type } as ColumnOptions, options);
 
         // if we still don't have a type then we need to give error to user that type is required
         if (!options.type)
@@ -54,12 +54,15 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
         if (options.nullable)
             throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
+        // implicitly set a primary to column options
+        options = Object.assign({ primary: true } as ColumnOptions, options);
+
         // create and register a new column metadata
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
             propertyType: reflectedType,
-            mode: "primary",
+            mode: "regular",
             options: options
         };
         getMetadataArgsStorage().columns.add(args);

@@ -299,18 +299,19 @@ export class SchemaBuilder {
      * Removes primary key from the table (if it was before and does not exist in the metadata anymore).
      */
     protected removePrimaryKeys() {
-        const queries = this.entityMetadatas
+        // todo: rewrite this part because it wont work anymore because of multiple primary keys
+       /* const queries = this.entityMetadatas
             .filter(metadata => !metadata.primaryColumns.length)
             .map(async metadata => {
                 const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
-                if (dbTable && dbTable.primaryKey) {
-                    await this.queryRunner.dropIndex(metadata.table.name, dbTable.primaryKey.name);
+                if (dbTable && dbTable.primaryKeys) {
+                    await this.queryRunner.dropIndex(metadata.table.name, dbTable.primaryKeys.name);
                     dbTable.removePrimaryKey();
                 }
 
                 return undefined;
-            });
-        return Promise.all(queries);
+            });*/
+        return Promise.all([]);
     }
 
     protected async dropAllColumnRelatedForeignKeys(tableName: string, columnName: string, foreignKeys: ForeignKeyMetadata[]): Promise<void> {
