@@ -19,21 +19,21 @@ const options: ConnectionOptions = {
     entities: [Post]
 };
 
-createConnection(options).then(connection => {
+createConnection(options).then(async connection => {
 
     let postRepository = connection.getRepository(Post);
 
     const post = new Post();
     post.id = 1;
     post.type = "person";
-    post.text = "this is test post";
+    post.text = "this is test post!";
 
-    postRepository.persist(post)
-        .then(savedPost => {
-            console.log("Post has been saved: ", savedPost);
-        })
-        .catch(error => {
-            console.log("error: ", error);
-        });
+    console.log("saving the post: ");
+    await postRepository.persist(post);
+    console.log("Post has been saved: ", post);
 
-}, error => console.log("Cannot connect: ", error));
+    console.log("now loading the post: ");
+    const loadedPost = await postRepository.findOneById({ id: 1, type: "person" });
+    console.log("loaded post: ", loadedPost);
+
+}, error => console.log("Error: ", error));

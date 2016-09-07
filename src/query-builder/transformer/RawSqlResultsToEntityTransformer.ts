@@ -4,7 +4,6 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {Driver} from "../../driver/Driver";
 import {JoinMapping, RelationCountMeta} from "../QueryBuilder";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 
 /**
  * Transforms raw sql results returned from the database into entity object. 
@@ -29,6 +28,7 @@ export class RawSqlResultsToEntityTransformer {
     // -------------------------------------------------------------------------
 
     transform(rawSqlResults: any[]): any[] {
+        // console.log("rawSqlResults: ", rawSqlResults);
         return this.groupAndTransform(rawSqlResults, this.aliasMap.mainAlias);
     }
 
@@ -48,9 +48,9 @@ export class RawSqlResultsToEntityTransformer {
         
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => {
             if (!metadata) return;
-            const columnName = metadata.primaryColumn.name;
-            return result[alias.name + "_" + columnName];
+            return metadata.primaryColumns.map(column => result[alias.name + "_" + column.name]).join("_"); // todo: check it
         });
+        // console.log("groupedResults: ", groupedResults);
         return groupedResults
             .map(group => {
                 if (!metadata) return;

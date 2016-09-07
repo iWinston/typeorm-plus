@@ -62,7 +62,10 @@ export class JoinColumnMetadata extends PropertyMetadata {
                 throw new Error(`Referenced column ${this.referencedColumnName} was not found in entity ${this.name}`);
         }
 
-        return this.relation.inverseEntityMetadata.primaryColumn;
+        if (this.relation.inverseEntityMetadata.primaryColumns.length > 1)
+            throw new Error(`Cannot automatically determine a referenced column of the "${this.relation.inverseEntityMetadata.name}", because it has multiple primary columns. Try to specify a referenced column explicitly.`);
+
+        return this.relation.inverseEntityMetadata.firstPrimaryColumn;
     }
     
 }

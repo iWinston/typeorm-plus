@@ -1,3 +1,4 @@
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 /**
  */
 export class InsertOperation {
@@ -6,7 +7,7 @@ export class InsertOperation {
     
     constructor(public target: Function|string, // todo: probably should be metadata here
                 public entity: any,
-                public entityId?: number,
+                public entityId?: ObjectLiteral|undefined, // entity ids it should be instead
                 public date = new Date()) {
     }
 }

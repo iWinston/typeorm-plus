@@ -27,10 +27,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      * Creates a query builder used to get descendants of the entities in a tree.
      */
     createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
-        const joinCondition = `${alias}.${this.metadata.primaryColumn.name}=${closureTableAlias}.descendant`;
+        const joinCondition = `${alias}.${this.metadata.firstPrimaryColumn.name}=${closureTableAlias}.descendant`;
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, "ON", joinCondition)
-            .where(`${closureTableAlias}.ancestor=${this.metadata.getEntityId(entity)}`);
+            .where(`${closureTableAlias}.ancestor=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 
     /**
@@ -70,10 +70,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      * Creates a query builder used to get ancestors of the entities in the tree.
      */
     createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
-        const joinCondition = `${alias}.${this.metadata.primaryColumn.name}=${closureTableAlias}.ancestor`;
+        const joinCondition = `${alias}.${this.metadata.firstPrimaryColumn.name}=${closureTableAlias}.ancestor`;
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, "ON", joinCondition)
-            .where(`${closureTableAlias}.descendant=${this.metadata.getEntityId(entity)}`);
+            .where(`${closureTableAlias}.descendant=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 
     /**
@@ -124,7 +124,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     private createRelationMaps(alias: string, scalarResults: any[]): { id: any, parentId: any }[] {
         return scalarResults.map(scalarResult => {
             return {
-                id: scalarResult[alias + "_" + this.metadata.primaryColumn.name],
+                id: scalarResult[alias + "_" + this.metadata.firstPrimaryColumn.name],
                 parentId: scalarResult[alias + "_" + this.metadata.treeParentRelation.name]
             };
         });
@@ -132,10 +132,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     
     private buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const childProperty = this.metadata.treeChildrenRelation.propertyName;
-        const parentEntityId = entity[this.metadata.primaryColumn.propertyName];
+        const parentEntityId = entity[this.metadata.firstPrimaryColumn.propertyName];
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
         const childIds = childRelationMaps.map(relationMap => relationMap.id);
-        entity[childProperty] = entities.filter(entity => childIds.indexOf(entity[this.metadata.primaryColumn.propertyName]) !== -1);
+        entity[childProperty] = entities.filter(entity => childIds.indexOf(entity[this.metadata.firstPrimaryColumn.propertyName]) !== -1);
         entity[childProperty].forEach((childEntity: any) => {
             this.buildChildrenEntityTree(childEntity, entities, relationMaps);
         });
@@ -143,13 +143,13 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     
     private buildParentEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const parentProperty = this.metadata.treeParentRelation.propertyName;
-        const entityId = entity[this.metadata.primaryColumn.propertyName];
+        const entityId = entity[this.metadata.firstPrimaryColumn.propertyName];
         const parentRelationMap = relationMaps.find(relationMap => relationMap.id === entityId);
         const parentEntity = entities.find(entity => {
             if (!parentRelationMap)
                 return false;
                 
-            return entity[this.metadata.primaryColumn.propertyName] === parentRelationMap.parentId;
+            return entity[this.metadata.firstPrimaryColumn.propertyName] === parentRelationMap.parentId;
         });
         if (parentEntity) {
             entity[parentProperty] = parentEntity;

@@ -330,11 +330,14 @@ export class EntityMetadataBuilder {
         entityMetadatas.forEach(metadata => {
             if (!metadata.table.isClosure)
                 return;
+
+            if (metadata.primaryColumns.length > 1)
+                throw new Error(`Cannot use given entity ${metadata.name} as a closure table, because it have multiple primary keys. Entities with multiple primary keys are not supported in closure tables.`);
             
             const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(lazyRelationsWrapper, {
                 namingStrategy: namingStrategy,
                 table: metadata.table,
-                primaryColumn: metadata.primaryColumn,
+                primaryColumn: metadata.firstPrimaryColumn,
                 hasTreeLevelColumn: metadata.hasTreeLevelColumn
             });
             metadata.closureJunctionTable = closureJunctionEntityMetadata;

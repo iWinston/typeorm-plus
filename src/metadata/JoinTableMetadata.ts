@@ -140,7 +140,10 @@ export class JoinTableMetadata extends PropertyMetadata {
             return referencedColumn;
         }
 
-        return this.relation.entityMetadata.primaryColumn;
+        if (this.relation.entityMetadata.primaryColumns.length > 1)
+            throw new Error(`Cannot automatically determine a referenced column of the "${this.relation.entityMetadata.name}", because it has multiple primary columns. Try to specify a referenced column explicitly.`);
+
+        return this.relation.entityMetadata.firstPrimaryColumn;
     }
 
     /**
@@ -155,7 +158,10 @@ export class JoinTableMetadata extends PropertyMetadata {
             return referencedColumn;
         }
 
-        return this.relation.inverseEntityMetadata.primaryColumn;
+        if (this.relation.inverseEntityMetadata.primaryColumns.length > 1)
+            throw new Error(`Cannot automatically determine inverse referenced column of the "${this.relation.inverseEntityMetadata.name}", because it has multiple primary columns. Try to specify a referenced column explicitly.`);
+
+        return this.relation.inverseEntityMetadata.firstPrimaryColumn;
     }
 
 }

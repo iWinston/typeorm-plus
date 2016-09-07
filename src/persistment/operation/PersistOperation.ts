@@ -5,13 +5,28 @@ import {JunctionInsertOperation} from "./JunctionInsertOperation";
 import {JunctionRemoveOperation} from "./JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./UpdateByRelationOperation";
 import {UpdateByInverseSideOperation} from "./UpdateByInverseSideOperation";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  */
-export interface EntityWithId {
-    id: any;
+export class EntityWithId { // todo: move entity with id creation into metadata?
     entityTarget: Function|string;
     entity: any;
+
+    constructor(public metadata: EntityMetadata, entity: ObjectLiteral) {
+        // todo: check id usage
+        this.entity = entity;
+        this.entityTarget = metadata.target;
+    }
+
+    get id() {
+        return this.metadata.getEntityIdMap(this.entity);
+    }
+
+    compareId(id: ObjectLiteral): boolean { // todo: store metadata in this class and use compareIds of the metadata class instead of this duplication
+        return this.metadata.compareIds(this.id, id);
+    }
 }
 
 /**

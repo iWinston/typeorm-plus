@@ -31,7 +31,7 @@ export class EntityMetadataValidator {
     validate(entityMetadata: EntityMetadata) {
 
         // check if table metadata has an id
-        if (!entityMetadata.primaryColumn)
+        if (!entityMetadata.primaryColumns.length)
             throw new MissingPrimaryColumnError(entityMetadata);
         
         entityMetadata.relations.forEach(relation => {

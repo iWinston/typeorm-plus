@@ -33,7 +33,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
 
         metadata.primaryColumns.forEach(primaryColumn => {
             queryBuilder
-                .where(alias + "." + primaryColumn.name + "=:" + primaryColumn.name)
+                .andWhere(alias + "." + primaryColumn.name + "=:" + primaryColumn.name)
                 .setParameter(primaryColumn.name, plainObject[primaryColumn.name]);
         });
 
