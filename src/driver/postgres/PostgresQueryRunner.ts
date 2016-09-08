@@ -224,14 +224,15 @@ export class PostgresQueryRunner implements QueryRunner {
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
         const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
         const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
-        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name 
-                                FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
-                                WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
-                                AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString})
-                                ORDER BY t.relname, i.relname`;
+        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name  FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
+WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
+AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString}) ORDER BY t.relname, i.relname`;
         const foreignKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'FOREIGN KEY'`;
         const uniqueKeysSql  = `SELECT * FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'UNIQUE'`;
-        const primaryKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'PRIMARY KEY'`;
+        const primaryKeysSql = `SELECT c.column_name, tc.table_name, tc.constraint_name FROM information_schema.table_constraints tc
+JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
+JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
         const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
@@ -271,7 +272,7 @@ export class PostgresQueryRunner implements QueryRunner {
             // create primary key schema
             tableSchema.primaryKeys = primaryKeys
                 .filter(primaryKey => primaryKey["table_name"] === tableSchema.name)
-                .map(primaryKey => new PrimaryKeySchema(primaryKey["constraint_name"]));
+                .map(primaryKey => new PrimaryKeySchema(primaryKey["constraint_name"], primaryKey["column_name"]));
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
@@ -422,6 +423,20 @@ export class PostgresQueryRunner implements QueryRunner {
     }
 
     /**
+     * Updates table's primary keys.
+     */
+    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => `"${primaryKey.columnName}"`);
+        await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT IF EXISTS "${dbTable.name}_pkey"`);
+        await this.query(`DROP INDEX IF EXISTS "${dbTable.name}_pkey"`);
+        if (primaryColumnNames.length > 0)
+            await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+    }
+
+    /**
      * Creates a new foreign keys.
      */
     async createForeignKeys(dbTable: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void> {
@@ -477,7 +492,7 @@ export class PostgresQueryRunner implements QueryRunner {
             await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`);
         }
 
-        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`;
+        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`; // todo: make sure DROP INDEX should not be used here
         await this.query(sql);
     }
 

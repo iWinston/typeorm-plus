@@ -276,7 +276,7 @@ export class OracleQueryRunner implements QueryRunner {
             // create primary key schema
             tableSchema.primaryKeys = primaryKeys
                 .filter(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name)
-                .map(primaryKey => new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]));
+                .map(primaryKey => new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"], primaryKey["COLUMN_NAME"]));
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
@@ -363,6 +363,19 @@ export class OracleQueryRunner implements QueryRunner {
         });
 
         await Promise.all(dropPromises);
+    }
+
+    /**
+     * Updates table's primary keys.
+     */
+    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "`" + primaryKey.columnName + "`");
+        await this.query(`ALTER TABLE ${dbTable.name} DROP PRIMARY KEY`);
+        if (primaryColumnNames.length > 0)
+            await this.query(`ALTER TABLE ${dbTable.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
 
     /**

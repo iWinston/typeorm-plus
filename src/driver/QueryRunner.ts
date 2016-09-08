@@ -95,6 +95,11 @@ export interface QueryRunner {
     dropColumns(dbTable: TableSchema, columns: ColumnSchema[]): Promise<void>;
 
     /**
+     * Updates primary keys in the table.
+     */
+    updatePrimaryKeys(dbTable: TableSchema): Promise<void>;
+
+    /**
      * Creates a new foreign keys.
      */
     createForeignKeys(dbTable: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;

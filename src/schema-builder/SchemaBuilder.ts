@@ -8,6 +8,9 @@ import {Driver} from "../driver/Driver";
 import {QueryRunner} from "../driver/QueryRunner";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {Logger} from "../logger/Logger";
+import {PrimaryKeySchema} from "./database-schema/PrimaryKeySchema";
+
+// todo: extract all compares between metadatas and schemas into SchemaWithMetadataComparator class?
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -18,11 +21,10 @@ import {Logger} from "../logger/Logger";
  * 3. create new tables that does not exist in the db, but exist in the metadata
  * 4. drop all columns exist (left old) in the db table, but does not exist in the metadata
  * 5. add columns from metadata which does not exist in the table
- * 6. update all exist columns which metadata has changed.
- * 7. create primary keys which does not exist in the table yet.
- * 8. create foreign keys which does not exist in the table yet.
- * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore.
- * 10. remove primary key from the table (if it was before and does not exist in the metadata anymore).
+ * 6. update all exist columns which metadata has changed
+ * 7. update primary keys - update old and create new primary key from changed columns
+ * 8. create foreign keys which does not exist in the table yet
+ * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore
  *
  * @internal
  */
@@ -63,10 +65,9 @@ export class SchemaBuilder {
             await this.dropRemovedColumns();
             await this.addNewColumns();
             await this.updateExistColumns();
-            await this.createPrimaryKeys();
+            await this.updatePrimaryKeys();
             await this.createForeignKeys();
             await this.createIndices();
-            await this.removePrimaryKeys();
             await this.queryRunner.commitTransaction();
             await this.queryRunner.release();
 
@@ -148,8 +149,9 @@ export class SchemaBuilder {
             await Promise.all(dropRelatedForeignKeysPromises);
 
             this.logger.logSchemaBuild(`columns dropped in ${dbTable.name}: ` + droppedColumns.map(column => column.name).join(", "));
-            await this.queryRunner.dropColumns(dbTable, droppedColumns);
             dbTable.removeColumns(droppedColumns);
+            dbTable.removePrimaryKeysOfColumns(droppedColumns);
+            await this.queryRunner.dropColumns(dbTable, droppedColumns);
         }));
     }
 
@@ -202,12 +204,15 @@ export class SchemaBuilder {
 
             // generate a map of new/old columns
             const newAndOldColumns = updateColumns.map(changedColumn => {
-                const column = metadata.columns.find(column => column.name === changedColumn.name);
-                if (!column)
+                const columnMetadata = metadata.columns.find(column => column.name === changedColumn.name);
+                if (!columnMetadata)
                     throw new Error(`Column ${changedColumn.name} was not found in the given columns`);
 
+                const newColumnSchema = ColumnSchema.create(columnMetadata, this.queryRunner.normalizeType(columnMetadata));
+                dbTable.replaceColumn(changedColumn, newColumnSchema);
+
                 return {
-                    newColumn: column,
+                    newColumn: columnMetadata,
                     oldColumn: changedColumn
                 };
             });
@@ -219,21 +224,26 @@ export class SchemaBuilder {
     /**
      * Creates primary keys which does not exist in the table yet.
      */
-    protected createPrimaryKeys() {
+    protected updatePrimaryKeys() {
         return Promise.all(this.entityMetadatas.map(async metadata => {
             const dbTable = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!dbTable)
                 return;
 
-            // const newKeys = metadata.primaryKeys.filter(primaryKey => {
-            //     return !dbTable.primaryKeys.find(dbPrimaryKey => dbPrimaryKey.name === primaryKey.name)
-            // });
-            // if (newKeys.length > 0) {
-            //     this.logger.logSchemaBuild(dbTable.foreignKeys);
-            //     this.logger.logSchemaBuild(`creating a primary keys: ${newKeys.map(key => key.name).join(", ")}`);
-            //     await this.queryRunner.createPrimaryKeys(dbTable, newKeys);
-            //     dbTable.addPrimaryKeys(newKeys);
-            // }
+            const metadataPrimaryColumns = metadata.primaryColumns.filter(column => !column.isGenerated);
+            const addedKeys = metadataPrimaryColumns.filter(primaryKey => {
+                return !dbTable.primaryKeysWithoutGenerated.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.name);
+            }).map(primaryKey => new PrimaryKeySchema("", primaryKey.name));
+
+            const droppedKeys = dbTable.primaryKeysWithoutGenerated.filter(dbPrimaryKey => {
+                return !metadataPrimaryColumns.find(metadataPrimaryKey => metadataPrimaryKey.name === dbPrimaryKey.columnName);
+            });
+            if (addedKeys.length > 0 || droppedKeys.length > 0) {
+                this.logger.logSchemaBuild(`primary keys of ${dbTable.name} has changed: dropped - ${droppedKeys.map(key => key.columnName).join(", ") || "nothing"}; added - ${addedKeys.map(key => key.columnName).join(", ") || "nothing"}`);
+                dbTable.addPrimaryKeys(addedKeys);
+                dbTable.removePrimaryKeys(droppedKeys);
+                await this.queryRunner.updatePrimaryKeys(dbTable);
+            }
         }));
     }
 

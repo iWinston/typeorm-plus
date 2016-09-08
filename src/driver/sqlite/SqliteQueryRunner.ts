@@ -295,9 +295,15 @@ export class SqliteQueryRunner implements QueryRunner {
             });
 
             // create primary key schema
-            tableSchema.primaryKeys = dbIndices
+            await Promise.all(dbIndices
                 .filter(index => index["origin"] === "pk")
-                .map(index => new PrimaryKeySchema(index["name"]));
+                .map(async index => {
+                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
+                    const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
+                    indexColumns.forEach(indexColumn => {
+                        tableSchema.primaryKeys.push(new PrimaryKeySchema(index["name"], indexColumn));
+                    });
+                }));
 
             // create index schemas from the loaded indices
             const indicesPromises = dbIndices
@@ -404,6 +410,16 @@ export class SqliteQueryRunner implements QueryRunner {
         const newTable = tableSchema.clone();
         newTable.removeColumns(columns);
         return this.recreateTable(newTable);
+    }
+
+    /**
+     * Updates table's primary keys.
+     */
+    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        return this.recreateTable(dbTable);
     }
 
     /**
@@ -566,9 +582,10 @@ export class SqliteQueryRunner implements QueryRunner {
             const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
         });
-        if (tableSchema.primaryKeys.length > 0) {
-            sql1 += `, PRIMARY KEY(${tableSchema.primaryKeys.map(key => `"${key.name}"`).join(", ")})`;
-        }
+
+        if (tableSchema.primaryKeysWithoutGenerated.length > 0)
+            sql1 += `, PRIMARY KEY(${tableSchema.primaryKeysWithoutGenerated.map(key => `"${key.columnName}"`).join(", ")})`;
+
         sql1 += ")";
 
         // todo: need also create uniques and indices?
