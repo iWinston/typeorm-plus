@@ -141,18 +141,18 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Insert a new row into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ idColumn ? " RETURNING " + this.driver.escapeColumnName(idColumn.name) : "" }`;
+        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`;
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
-        if (idColumn)
-            return result[0][idColumn.name];
+        if (generatedColumn)
+            return result[0][generatedColumn.name];
 
         return result;
     }
@@ -224,14 +224,15 @@ export class PostgresQueryRunner implements QueryRunner {
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
         const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
         const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
-        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name 
-                                FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
-                                WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
-                                AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString})
-                                ORDER BY t.relname, i.relname`;
+        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name  FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
+WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
+AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString}) ORDER BY t.relname, i.relname`;
         const foreignKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'FOREIGN KEY'`;
         const uniqueKeysSql  = `SELECT * FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'UNIQUE'`;
-        const primaryKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND constraint_type = 'PRIMARY KEY'`;
+        const primaryKeysSql = `SELECT c.column_name, tc.table_name, tc.constraint_name FROM information_schema.table_constraints tc
+JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
+JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
         const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
@@ -269,9 +270,9 @@ export class PostgresQueryRunner implements QueryRunner {
                 });
 
             // create primary key schema
-            const primaryKey = primaryKeys.find(primaryKey => primaryKey["table_name"] === tableSchema.name);
-            if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["constraint_name"]);
+            tableSchema.primaryKeys = primaryKeys
+                .filter(primaryKey => primaryKey["table_name"] === tableSchema.name)
+                .map(primaryKey => new PrimaryKeySchema(primaryKey["constraint_name"], primaryKey["column_name"]));
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
@@ -289,9 +290,9 @@ export class PostgresQueryRunner implements QueryRunner {
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["table_name"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                        (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"])) &&
-                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
+                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["index_name"])) &&
+                        (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"]));
                 })
                 .map(dbIndex => dbIndex["index_name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -320,6 +321,9 @@ export class PostgresQueryRunner implements QueryRunner {
             .filter(column => column.isUnique)
             .map(column => `, CONSTRAINT "uk_${column.name}" UNIQUE ("${column.name}")`)
             .join(" ");
+        const primaryKeyColumns = columns.filter(column => column.isPrimary && !column.isGenerated);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
         sql += `)`;
         await this.query(sql);
         return columns;
@@ -419,6 +423,20 @@ export class PostgresQueryRunner implements QueryRunner {
     }
 
     /**
+     * Updates table's primary keys.
+     */
+    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => `"${primaryKey.columnName}"`);
+        await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT IF EXISTS "${dbTable.name}_pkey"`);
+        await this.query(`DROP INDEX IF EXISTS "${dbTable.name}_pkey"`);
+        if (primaryColumnNames.length > 0)
+            await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+    }
+
+    /**
      * Creates a new foreign keys.
      */
     async createForeignKeys(dbTable: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void> {
@@ -474,7 +492,7 @@ export class PostgresQueryRunner implements QueryRunner {
             await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`);
         }
 
-        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`;
+        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`; // todo: make sure DROP INDEX should not be used here
         await this.query(sql);
     }
 
@@ -567,9 +585,8 @@ export class PostgresQueryRunner implements QueryRunner {
             c += " " + this.normalizeType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isPrimary === true && !skipPrimary)
+        if (column.isGenerated)
             c += " PRIMARY KEY";
-        // TODO: implement auto increment
         if (column.columnDefinition)
             c += " " + column.columnDefinition;
         return c;

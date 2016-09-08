@@ -37,7 +37,7 @@ export class TableSchema {
     /**
      * Table primary keys.
      */
-    primaryKey: PrimaryKeySchema|undefined;
+    primaryKeys: PrimaryKeySchema[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -47,6 +47,27 @@ export class TableSchema {
         this.name = name;
         if (columns)
             this.columns = columns;
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets only those primary keys that does not
+     */
+    get primaryKeysWithoutGenerated(): PrimaryKeySchema[] {
+        const generatedColumn = this.columns.find(column => column.isGenerated);
+        if (!generatedColumn)
+            return this.primaryKeys;
+
+        return this.primaryKeys.filter(primaryKey => {
+            return primaryKey.columnName !== generatedColumn.name;
+        });
+    }
+
+    get hasGeneratedColumn(): boolean {
+        return !!this.columns.find(column => column.isGenerated);
     }
 
     // -------------------------------------------------------------------------
@@ -61,8 +82,7 @@ export class TableSchema {
         cloned.columns = this.columns.map(column => column.clone());
         cloned.indices = this.indices.map(index => index.clone());
         cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
-        if (this.primaryKey)
-            cloned.primaryKey = this.primaryKey.clone();
+        cloned.primaryKeys = this.primaryKeys.map(key => key.clone());
         return cloned;
     }
 
@@ -125,7 +145,7 @@ export class TableSchema {
      * Removes primary from this table schema.
      */
     removePrimaryKey() {
-        this.primaryKey = undefined;
+        this.primaryKeys = [];
     }
 
     /**
@@ -144,8 +164,28 @@ export class TableSchema {
                     (!columnSchema.isGenerated && columnSchema.default !== columnMetadata.default) || // we included check for generated here, because generated columns already can have default values
                     columnSchema.isNullable !== columnMetadata.isNullable ||
                     columnSchema.isUnique !== columnMetadata.isUnique ||
+                    // columnSchema.isPrimary !== columnMetadata.isPrimary ||
                     columnSchema.isGenerated !== columnMetadata.isGenerated;
         });
     }
 
+    addPrimaryKeys(addedKeys: PrimaryKeySchema[]) {
+        addedKeys.forEach(key => this.primaryKeys.push(key));
+    }
+
+    removePrimaryKeys(droppedKeys: PrimaryKeySchema[]) {
+        droppedKeys.forEach(key => {
+            this.primaryKeys.splice(this.primaryKeys.indexOf(key), 1);
+        });
+    }
+
+    replaceColumn(oldColumn: ColumnSchema, newColumn: ColumnSchema) {
+        this.columns[this.columns.indexOf(oldColumn)] = newColumn;
+    }
+
+    removePrimaryKeysOfColumns(columns: ColumnSchema[]) {
+        this.primaryKeys = this.primaryKeys.filter(primaryKey => {
+            return !columns.find(column => column.name === primaryKey.columnName);
+        });
+    }
 }

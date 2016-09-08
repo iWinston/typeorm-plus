@@ -18,7 +18,11 @@ describe("many-to-many", function() {
 
     const options: ConnectionOptions = {
         driver: createTestingConnectionOptions("postgres"),
-        entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"]
+        entityDirectories: [__dirname + "/../../sample/sample4-many-to-many/entity/*"],
+        // logging: {
+        //     logQueries: true,
+        //     logSchemaCreation: true
+        // }
     };
 
     // connect to db

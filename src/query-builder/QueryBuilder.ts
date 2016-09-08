@@ -482,9 +482,18 @@ export class QueryBuilder<Entity> {
         if (this.firstResult || this.maxResults) {
             const [sql, parameters] = this.getSqlWithParameters();
 
+            const distinctAlias = this.driver.escapeTableName("distinctAlias");
             const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
-            let idsQuery = `SELECT DISTINCT(${this.driver.escapeTableName("distinctAlias")}.${this.driver.escapeAliasName(mainAliasName + "_" + metadata.primaryColumn.name)}) as ids`;
-            idsQuery += ` FROM (${sql}) ${this.driver.escapeTableName("distinctAlias")}`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
+            let idsQuery = `SELECT `;
+            idsQuery += metadata.primaryColumns.map((primaryColumn, index) => {
+                const propertyName = this.driver.escapeAliasName(mainAliasName + "_" + primaryColumn.name);
+                if (index === 0) {
+                    return `DISTINCT(${distinctAlias}.${propertyName}) as ids_${primaryColumn.name}`;
+                } else {
+                    return `${distinctAlias}.${propertyName}) as ids_${primaryColumn.name}`;
+                }
+            }).join(", ");
+            idsQuery += ` FROM (${sql}) ${distinctAlias}`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
             if (this.maxResults)
                 idsQuery += " LIMIT " + this.maxResults;
             if (this.firstResult)
@@ -493,13 +502,25 @@ export class QueryBuilder<Entity> {
             const results = await queryRunner.query(idsQuery, parameters)
                 .then((results: any[]) => {
                     scalarResults = results;
-                    const ids = results.map(result => result["ids"]);
-                    if (ids.length === 0)
+                    if (results.length === 0)
                         return [];
-                    const queryWithIds = this.clone({ queryRunner: queryRunner })
-                        .andWhere(mainAliasName + "." + metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids });
-                    const [queryWithIdsSql, queryWithIdsParameters] = queryWithIds.getSqlWithParameters();
 
+                    let condition = "";
+                    const parameters: ObjectLiteral = {};
+                    if (metadata.hasMultiplePrimaryKeys) {
+                        condition = results.map(result => {
+                            return metadata.primaryColumns.map(primaryColumn => {
+                                parameters["ids_" + primaryColumn.propertyName] = result["ids_" + primaryColumn.propertyName];
+                                return mainAliasName + "." + primaryColumn.propertyName + "=:ids_" + primaryColumn.propertyName;
+                            }).join(" AND ");
+                        }).join(" OR ");
+                    } else {
+                        parameters["ids"] = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
+                        condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+                    }
+                    const [queryWithIdsSql, queryWithIdsParameters] = this.clone({ queryRunner: queryRunner })
+                        .andWhere(condition, parameters)
+                        .getSqlWithParameters();
                     return (queryRunner as QueryRunner).query(queryWithIdsSql, queryWithIdsParameters);
                 })
                 .then(results => {
@@ -551,6 +572,7 @@ export class QueryBuilder<Entity> {
                 await queryRunner.release();
             }
 
+            // console.log("qb results : ", results);
             return results;
         }
     }
@@ -630,10 +652,12 @@ export class QueryBuilder<Entity> {
             // if (relationCountMeta.condition)
             //     condition += relationCountMeta.condition;
             // relationCountMeta.alias.target;
+            // todo: FIX primaryColumn usages
 
             const ids = relationCountMeta.entities
-                .map(entityWithMetadata => entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName])
-                .filter(id => id !== undefined);
+                .map(entityWithMetadata => entityWithMetadata.metadata.getEntityIdMap(entityWithMetadata.entity))
+                .filter(idMap => idMap !== undefined)
+                .map(idMap => idMap![parentMetadata.primaryColumn.propertyName]);
             if (!ids || !ids.length)
                 throw new Error(`No ids found to load relation counters`);
 
@@ -688,8 +712,19 @@ export class QueryBuilder<Entity> {
 
         const mainAlias = this.aliasMap.mainAlias.name;
         const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
+
+        const distinctAlias = this.driver.escapeAliasName(mainAlias);
+        let countSql = `COUNT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+            const propertyName = this.driver.escapeColumnName(primaryColumn.name);
+            if (index === 0) {
+                return `DISTINCT(${distinctAlias}.${propertyName})`;
+            } else {
+                return `${distinctAlias}.${propertyName})`;
+            }
+        }).join(", ") + ") as cnt";
+
         const countQuery = this.clone({ queryRunner: queryRunner, skipOrderBys: true })
-            .select(`COUNT(DISTINCT(${this.driver.escapeAliasName(mainAlias)}.${this.driver.escapeColumnName(metadata.primaryColumn.name)})) as cnt`);
+            .select(countSql);
 
         const [countQuerySql, countQueryParameters] = countQuery.getSqlWithParameters();
         const results = await queryRunner.query(countQuerySql, countQueryParameters);
@@ -711,7 +746,7 @@ export class QueryBuilder<Entity> {
         ]);
     }
 
-    clone(options?: { queryRunner?: QueryRunner, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean }) {
+    clone(options?: { queryRunner?: QueryRunner, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean }): QueryBuilder<Entity> {
         const qb = new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster, options ? options.queryRunner : undefined);
 
         switch (this.type) {

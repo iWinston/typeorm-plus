@@ -148,7 +148,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -158,7 +158,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
         const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        return idColumn ? result.insertId : undefined;
+        return generatedColumn ? result.insertId : undefined;
     }
 
     /**
@@ -229,14 +229,14 @@ export class MysqlQueryRunner implements QueryRunner {
         const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
         const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
         const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+        // const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
             this.query(uniqueKeysSql),
-            this.query(primaryKeysSql),
+            // this.query(primaryKeysSql),
         ]);
 
         // if tables were not found in the db, no need to proceed
@@ -244,8 +244,9 @@ export class MysqlQueryRunner implements QueryRunner {
             return [];
 
         // create table schemas for loaded tables
-        return dbTables.map(dbTable => {
+        return Promise.all(dbTables.map(async dbTable => {
             const tableSchema = new TableSchema(dbTable["TABLE_NAME"]);
+            const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
 
             // create column schemas from the loaded columns
             tableSchema.columns = dbColumns
@@ -263,29 +264,22 @@ export class MysqlQueryRunner implements QueryRunner {
                     return columnSchema;
                 });
 
-            // create primary key schema
-            const primaryKey = primaryKeys.find(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name);
-            if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]);
+            // create primary keys
+            tableSchema.primaryKeys = primaryKeys.map(primaryKey => {
+                return new PrimaryKeySchema(primaryKey["Key_name"], primaryKey["Column_name"]);
+            });
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === tableSchema.name)
                 .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
 
-            // create unique key schemas from the loaded indices
-            /*tableSchema.uniqueKeys = dbUniqueKeys
-                .filter(dbUniqueKey => dbUniqueKey["TABLE_NAME"] === tableSchema.name)
-                .map(dbUniqueKey => {
-                    return new UniqueKeySchema(dbUniqueKey["TABLE_NAME"], dbUniqueKey["CONSTRAINT_NAME"], [/!* todo *!/]);
-                });*/
-
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["TABLE_NAME"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["INDEX_NAME"]);
+                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -307,7 +301,7 @@ export class MysqlQueryRunner implements QueryRunner {
                 .filter(index => !!index) as IndexSchema[]; // remove empty returns
 
             return tableSchema;
-        });
+        }));
     }
 
     /**
@@ -318,7 +312,11 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
+        let sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}`;
+        const primaryKeyColumns = columns.filter(column => column.isPrimary && !column.isGenerated);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+        sql += `) ENGINE=InnoDB;`;
         await this.query(sql);
         return columns;
     }
@@ -347,6 +345,7 @@ export class MysqlQueryRunner implements QueryRunner {
 
         const updatePromises = changedColumns.map(async changedColumn => {
             const sql = `ALTER TABLE \`${tableSchema.name}\` CHANGE \`${changedColumn.oldColumn.name}\` ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+
             if (changedColumn.newColumn.isUnique === false && changedColumn.oldColumn.isUnique === true)
                 await this.query(`ALTER TABLE \`${tableSchema.name}\` DROP INDEX \`${changedColumn.oldColumn.name}\``);
 
@@ -368,6 +367,21 @@ export class MysqlQueryRunner implements QueryRunner {
         });
 
         await Promise.all(dropPromises);
+    }
+
+    /**
+     * Updates table's primary keys.
+     */
+    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        if (!dbTable.hasGeneratedColumn)
+            await this.query(`ALTER TABLE ${dbTable.name} DROP PRIMARY KEY`);
+
+        const primaryColumnNames = dbTable.primaryKeysWithoutGenerated.map(primaryKey => "`" + primaryKey.columnName + "`");
+        if (primaryColumnNames.length > 0)
+            await this.query(`ALTER TABLE ${dbTable.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
 
     /**
@@ -507,12 +521,14 @@ export class MysqlQueryRunner implements QueryRunner {
             c += " NOT NULL";
         if (column.isUnique === true)
             c += " UNIQUE";
-        if (column.isPrimary === true && !skipPrimary)
+        if (column.isGenerated && column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
+        if (column.default)
+            c += " DEFAULT " + column.default + "";
         if (column.columnDefinition)
             c += " " + column.columnDefinition;
         return c;

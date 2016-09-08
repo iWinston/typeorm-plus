@@ -61,8 +61,6 @@ export class EntityMetadataBuilder {
             Object.keys(schema.columns).forEach(columnName => {
                 const columnSchema = schema.columns[columnName];
                 let mode: ColumnMode = "regular";
-                if (columnSchema.primary)
-                    mode = "primary";
                 if (columnSchema.createDate)
                     mode = "createDate";
                 if (columnSchema.updateDate)
@@ -83,6 +81,7 @@ export class EntityMetadataBuilder {
                         type: columnSchema.type,
                         name: columnSchema.name,
                         length: columnSchema.length,
+                        primary: columnSchema.primary,
                         generated: columnSchema.generated,
                         unique: columnSchema.unique,
                         nullable: columnSchema.nullable,
@@ -308,7 +307,8 @@ export class EntityMetadataBuilder {
                         mode: "virtual",
                         options: <ColumnOptions> {
                             type: inverseSideColumn.type,
-                            nullable: relation.isNullable
+                            nullable: relation.isNullable,
+                            primary: relation.isPrimary
                         }
                     });
                     metadata.addColumn(relationalColumn);
@@ -330,11 +330,14 @@ export class EntityMetadataBuilder {
         entityMetadatas.forEach(metadata => {
             if (!metadata.table.isClosure)
                 return;
+
+            if (metadata.primaryColumns.length > 1)
+                throw new Error(`Cannot use given entity ${metadata.name} as a closure table, because it have multiple primary keys. Entities with multiple primary keys are not supported in closure tables.`);
             
             const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(lazyRelationsWrapper, {
                 namingStrategy: namingStrategy,
                 table: metadata.table,
-                primaryColumn: metadata.primaryColumn,
+                primaryColumn: metadata.firstPrimaryColumn,
                 hasTreeLevelColumn: metadata.hasTreeLevelColumn
             });
             metadata.closureJunctionTable = closureJunctionEntityMetadata;

@@ -7,11 +7,7 @@ import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperati
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
-import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-import {Broadcaster} from "../subscriber/Broadcaster";
-import {Driver} from "../driver/Driver";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {DatabaseConnection} from "../driver/DatabaseConnection";
 import {QueryRunner} from "../driver/QueryRunner";
 
 /**
@@ -53,14 +49,17 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks if entity has an id.
+     * If entity contains compose ids, then it checks them all.
      */
     hasId(entity: Entity): boolean {
-        const columnName = this.metadata.primaryColumn.propertyName;
-        return !!entity &&
-            entity.hasOwnProperty(columnName) &&
-            entity[columnName] !== null &&
-            entity[columnName] !== undefined &&
-            entity[columnName] !== "";
+        return this.metadata.primaryColumns.every(primaryColumn => {
+            const columnName = primaryColumn.propertyName;
+            return !!entity &&
+                entity.hasOwnProperty(columnName) &&
+                entity[columnName] !== null &&
+                entity[columnName] !== undefined &&
+                entity[columnName] !== "";
+        });
     }
 
     /**
@@ -162,16 +161,8 @@ export class Repository<Entity extends ObjectLiteral> {
 
         // need to find db entities that were not loaded by initialize method
         const allDbEntities = await this.findNotLoadedIds(queryRunner, entityWithIds, allPersistedEntities);
-        const persistedEntity: EntityWithId = {
-            id: this.metadata.getEntityId(entityOrEntities),
-            entityTarget: this.metadata.target,
-            entity: entityOrEntities
-        };
-        const dbEntity: EntityWithId = {
-            id: this.metadata.getEntityId(loadedDbEntity),
-            entityTarget: this.metadata.target,
-            entity: loadedDbEntity
-        };
+        const persistedEntity = new EntityWithId(this.metadata, entityOrEntities);
+        const dbEntity = new EntityWithId(this.metadata, loadedDbEntity!); // todo: find if this can be executed if loadedDbEntity is empty
         const persistOperation = this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
 
         const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
@@ -204,21 +195,15 @@ export class Repository<Entity extends ObjectLiteral> {
             .from(this.metadata.target, this.metadata.table.name);
         const dbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
 
-        (<any> entityOrEntities)[this.metadata.primaryColumn.name] = undefined;
+        this.metadata.primaryColumns.forEach(primaryColumn => {
+            (<any> entityOrEntities)[primaryColumn.name] = undefined;
+        });
         const [dbEntities, allPersistedEntities] = await Promise.all([
             this.extractObjectsById(dbEntity, this.metadata),
             this.extractObjectsById(entityOrEntities, this.metadata)
         ]);
-        const entityWithId: EntityWithId = {
-            id: this.metadata.getEntityId(entityOrEntities),
-            entityTarget: this.metadata.target,
-            entity: entityOrEntities
-        };
-        const dbEntityWithId: EntityWithId = {
-            id: this.metadata.getEntityId(dbEntity),
-            entityTarget: this.metadata.target,
-            entity: dbEntity
-        };
+        const entityWithId = new EntityWithId(this.metadata, entityOrEntities);
+        const dbEntityWithId = new EntityWithId(this.metadata, dbEntity);
 
         const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
         const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
@@ -315,7 +300,15 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entity with given id.
      */
     async findOneById(id: any, options?: FindOptions): Promise<Entity> {
-        return this.createFindQueryBuilder({ [this.metadata.primaryColumn.name]: id }, options)
+        const conditions: ObjectLiteral = {};
+        if (this.metadata.hasMultiplePrimaryKeys) {
+            this.metadata.primaryColumns.forEach(primaryColumn => {
+                conditions[primaryColumn.name] = id[primaryColumn.name];
+            });
+        } else {
+            conditions[this.metadata.firstPrimaryColumn.name] = id;
+        }
+        return this.createFindQueryBuilder(conditions, options)
             .getSingleResult();
     }
 
@@ -395,25 +388,27 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     private findNotLoadedIds(queryRunner: QueryRunner, dbEntities: EntityWithId[], persistedEntities: EntityWithId[]): Promise<EntityWithId[]> {
         const missingDbEntitiesLoad = persistedEntities
-            .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
-            .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.id === entityWithId.id))
+            .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined) // todo: not sure if this condition will work
+            .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.compareId(entityWithId.id!)))
             .map(entityWithId => {
                 const metadata = this.connection.entityMetadatas.findByTarget(entityWithId.entityTarget);
                 const alias = (entityWithId.entityTarget as any).name;
                 const qb = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner)
                     .select(alias)
-                    .from(entityWithId.entityTarget, alias)
-                    .where(alias + "." + this.metadata.primaryColumn.propertyName + "=:id", { id: entityWithId.id })
-                    .getSingleResult();
+                    .from(entityWithId.entityTarget, alias);
+
+                const parameters: ObjectLiteral = {};
+                const condition = this.metadata.primaryColumns.map(primaryColumn => {
+                    parameters[primaryColumn.propertyName] = entityWithId.id![primaryColumn.propertyName];
+                    return alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName;
+                }).join(" AND ");
+
+                const qbResult = qb.where(condition, parameters).getSingleResult();
                 // const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
-                return qb.then(loadedEntity => {
+                return qbResult.then(loadedEntity => {
                     if (!loadedEntity) return undefined;
 
-                    return <EntityWithId> {
-                        id: (<any> loadedEntity)[metadata.primaryColumn.name],
-                        entityTarget: metadata.target,
-                        entity: loadedEntity
-                    };
+                    return new EntityWithId(metadata, loadedEntity);
                 });
             });
 
@@ -446,11 +441,8 @@ export class Repository<Entity extends ObjectLiteral> {
         
         return Promise.all<any>(promises.filter(result => !!result)).then(() => {
             if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
-                entityWithIds.push({
-                    id: entity[metadata.primaryColumn.name],
-                    entityTarget: metadata.target,
-                    entity: entity
-                });
+                const entityWithId = new EntityWithId(metadata, entity);
+                entityWithIds.push(entityWithId);
             }
 
             return entityWithIds;

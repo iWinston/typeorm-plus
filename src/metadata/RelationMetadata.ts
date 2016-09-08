@@ -86,6 +86,12 @@ export class RelationMetadata extends PropertyMetadata {
     readonly relationType: RelationType;
 
     /**
+     * Indicates if this relation will be a primary key.
+     * Can be used only for many-to-one and owner one-to-one relations.
+     */
+    readonly isPrimary: boolean;
+
+    /**
      * Indicates if this relation will be lazily loaded.
      */
     readonly isLazy: boolean;
@@ -158,6 +164,8 @@ export class RelationMetadata extends PropertyMetadata {
             this.isNullable = args.options.nullable;
         if (args.options.onDelete)
             this.onDelete = args.options.onDelete;
+        if (args.options.primary)
+            this.isPrimary = args.options.primary;
         if (args.isTreeParent)
             this.isTreeParent = true;
         if (args.isTreeChildren)

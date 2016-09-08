@@ -135,15 +135,16 @@ export class EntityMetadata {
     }
 
     /**
-     * Checks if entity has a primary column. All user's entities must have a primary column.
-     * Special entity metadatas like for junction tables and closure junction tables don't have a primary column.
+     * Checks if entity's table has multiple primary columns.
      */
-    get hasPrimaryColumn(): boolean {
-        return !!this._columns.find(column => column.isPrimary);
+    get hasMultiplePrimaryKeys() {
+        return this.primaryColumns.length > 1;
     }
 
     /**
      * Gets the primary column.
+     *
+     * @deprecated
      */
     get primaryColumn(): ColumnMetadata {
         const primaryKey = this._columns.find(column => column.isPrimary);
@@ -151,6 +152,42 @@ export class EntityMetadata {
             throw new Error(`Primary key is not set for the ${this.name} entity.`);
 
         return primaryKey;
+    }
+
+    /**
+     * Checks if table has generated column.
+     */
+    get hasGeneratedColumn(): boolean {
+        return !!this._columns.find(column => column.isGenerated);
+    }
+
+    /**
+     * Gets the column with generated flag.
+     */
+    get generatedColumn(): ColumnMetadata {
+        const generatedColumn = this._columns.find(column => column.isGenerated);
+        if (!generatedColumn)
+            throw new Error(`Generated column was not found`);
+
+        return generatedColumn;
+    }
+
+    /**
+     * Gets first primary column. In the case if table contains multiple primary columns it
+     * throws error.
+     */
+    get firstPrimaryColumn(): ColumnMetadata {
+        if (this.hasMultiplePrimaryKeys)
+            throw new Error(`Entity ${this.name} has multiple primary keys. This operation is not supported on entities with multiple primary keys`);
+
+        return this.primaryColumns[0];
+    }
+
+    /**
+     * Gets the primary columns.
+     */
+    get primaryColumns(): ColumnMetadata[] {
+        return this._columns.filter(column => column.isPrimary);
     }
 
     /**
@@ -364,11 +401,16 @@ export class EntityMetadata {
         return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.createPropertiesMap());
     }
 
-    /**
-     * Returns entity id of the given entity.
-     */
-    getEntityId(entity: any) {
-        return entity ? entity[this.primaryColumn.propertyName] : undefined;
+    getEntityIdMap(entity: any): ObjectLiteral|undefined {
+        if (!entity)
+            return undefined;
+
+        const map: ObjectLiteral = {};
+        this.primaryColumns.forEach(column => map[column.propertyName] = entity[column.propertyName]);
+        const hasAllIds = this.primaryColumns.every(primaryColumn => {
+            return map[primaryColumn.propertyName] !== undefined && map[primaryColumn.propertyName] !== null;
+        });
+        return hasAllIds ? map : undefined;
     }
 
     /**
@@ -457,5 +499,26 @@ export class EntityMetadata {
                 && object.hasOwnProperty(relation.propertyName);
         });
     }
-    
+
+    checkIfObjectContainsAllPrimaryKeys(object: ObjectLiteral) {
+        return this.primaryColumns.every(primaryColumn => {
+            return object.hasOwnProperty(primaryColumn.propertyName);
+        });
+    }
+
+    compareEntities(firstEntity: any, secondEntity: any) {
+        const firstEntityIds = this.getEntityIdMap(firstEntity);
+        const secondEntityIds = this.getEntityIdMap(secondEntity);
+        return this.compareIds(firstEntityIds, secondEntityIds);
+    }
+
+    compareIds(firstIds: ObjectLiteral|undefined, secondIds: ObjectLiteral|undefined): boolean {
+        if (!firstIds || !secondIds)
+            return false;
+
+        return Object.keys(firstIds).every(key => {
+            return firstIds[key] === secondIds[key];
+        });
+    }
+
 }

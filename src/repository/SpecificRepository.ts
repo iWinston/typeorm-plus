@@ -4,7 +4,6 @@ import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
-import {DatabaseConnection} from "../driver/DatabaseConnection";
 import {QueryRunner} from "../driver/QueryRunner";
 
 /**
@@ -264,9 +263,23 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      */
     async removeById(id: any) {
         const alias = this.metadata.table.name;
+        const parameters: ObjectLiteral = {};
+        let condition = "";
+
+        if (this.metadata.hasMultiplePrimaryKeys) {
+            condition = this.metadata.primaryColumns.map(primaryColumn => {
+                parameters[primaryColumn.propertyName] = id[primaryColumn.propertyName];
+                return alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName;
+            }).join(" AND ");
+
+        } else {
+            condition = alias + "." + this.metadata.firstPrimaryColumn.propertyName + "=:id";
+            parameters["id"] = id;
+        }
+
         await this.repository.createQueryBuilder(alias)
             .delete()
-            .where(alias + "." + this.metadata.primaryColumn.propertyName + "=:id", { id: id })
+            .where(condition, parameters)
             .execute();
     }
 
@@ -276,9 +289,24 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      */
     async removeByIds(ids: any[]) {
         const alias = this.metadata.table.name;
+        const parameters: ObjectLiteral = {};
+        let condition = "";
+
+        if (this.metadata.hasMultiplePrimaryKeys) {
+            condition = ids.map((id, idIndex) => {
+                this.metadata.primaryColumns.map(primaryColumn => {
+                    parameters[primaryColumn.propertyName + "_" + idIndex] = id[primaryColumn.propertyName];
+                    return alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName + "_" + idIndex;
+                }).join(" AND ");
+            }).join(" OR ");
+        } else {
+            condition = alias + "." + this.metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+            parameters["ids"] = ids;
+        }
+
         await this.repository.createQueryBuilder(alias)
             .delete()
-            .where(alias + "." + this.metadata.primaryColumn.propertyName + " IN (:ids)", { ids: ids })
+            .where(condition, parameters)
             .execute();
     }
 
@@ -321,36 +349,6 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * When ORM loads dbEntity it uses joins to load all entity dependencies. However when dbEntity is newly persisted
-     * to the db, but uses already exist in the db relational entities, those entities cannot be loaded, and will
-     * absent in dbEntities. To fix it, we need to go throw all persistedEntities we have, find out those which have
-     * ids, check if we did not load them yet and try to load them. This algorithm will make sure that all dbEntities
-     * are loaded. Further it will help insert operations to work correctly.
-     */
-    private findNotLoadedIds(dbEntities: EntityWithId[], persistedEntities: EntityWithId[]): Promise<EntityWithId[]> {
-        const missingDbEntitiesLoad = persistedEntities
-            .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined)
-            .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.id === entityWithId.id))
-            .map(entityWithId => {
-                const metadata = this.connection.getMetadata(entityWithId.entityTarget as any);  // todo: fix type
-                const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
-                return repository.findOneById(entityWithId.id).then(loadedEntity => {
-                    if (!loadedEntity) return undefined;
-
-                    return <EntityWithId> {
-                        id: (<any> loadedEntity)[metadata.primaryColumn.name],
-                        entityTarget: metadata.target,
-                        entity: loadedEntity
-                    };
-                });
-            });
-
-        return Promise.all<EntityWithId>(missingDbEntitiesLoad).then(missingDbEntities => {
-            return dbEntities.concat(missingDbEntities.filter(dbEntity => !!dbEntity));
-        });
-    }
-
-    /**
      * Extracts unique objects from given entity and all its downside relations.
      */
     private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> {
@@ -374,11 +372,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         return Promise.all<any>(promises.filter(result => !!result)).then(() => {
             if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
-                entityWithIds.push({
-                    id: entity[metadata.primaryColumn.name],
-                    entityTarget: metadata.target,
-                    entity: entity
-                });
+                const entityWithId = new EntityWithId(metadata, entity);
+                entityWithIds.push(entityWithId);
             }
 
             return entityWithIds;

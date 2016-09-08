@@ -148,7 +148,7 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into given table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, idColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -158,7 +158,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
         const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        return idColumn ? result.insertId : undefined;
+        return generatedColumn ? result.insertId : undefined;
     }
 
     /**
@@ -264,9 +264,9 @@ export class SqlServerQueryRunner implements QueryRunner {
                 });
 
             // create primary key schema
-            const primaryKey = primaryKeys.find(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name);
-            if (primaryKey)
-                tableSchema.primaryKey = new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"]);
+            tableSchema.primaryKeys = primaryKeys
+                .filter(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name)
+                .map(primaryKey => new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"], primaryKey["COLUMN_NAME"]));
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = dbForeignKeys
@@ -277,8 +277,8 @@ export class SqlServerQueryRunner implements QueryRunner {
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["table_name"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys || !tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                        (!tableSchema.primaryKey || tableSchema.primaryKey.name !== dbIndex["index_name"]);
+                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -302,7 +302,11 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        const sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}) ENGINE=InnoDB;`;
+        let sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}`;
+        const primaryKeyColumns = columns.filter(column => column.isPrimary);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+        sql += `)`;
         await this.query(sql);
         return columns;
     }
@@ -349,6 +353,19 @@ export class SqlServerQueryRunner implements QueryRunner {
         });
 
         await Promise.all(dropPromises);
+    }
+
+    /**
+     * Updates table's primary keys.
+     */
+    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "`" + primaryKey.columnName + "`");
+        await this.query(`ALTER TABLE ${dbTable.name} DROP PRIMARY KEY`);
+        if (primaryColumnNames.length > 0)
+            await this.query(`ALTER TABLE ${dbTable.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
 
     /**

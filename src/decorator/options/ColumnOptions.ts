@@ -8,7 +8,7 @@ export interface ColumnOptions {
     /**
      * Column type. Must be one of the value from the ColumnTypes class.
      */
-    type?: ColumnType;
+    readonly type?: ColumnType;
 
     /**
      * Column name.
@@ -22,6 +22,12 @@ export interface ColumnOptions {
     readonly length?: string;
 
     /**
+     * Indicates if this column is a PRIMARY.
+     * Same can be achieved if @PrimaryColumn decorator will be used.
+     */
+    readonly primary?: boolean;
+
+    /**
      * Specifies if this column will use AUTO_INCREMENT or not (e.g. generated number).
      */
     readonly generated?: boolean;
@@ -29,7 +35,7 @@ export interface ColumnOptions {
     /**
      * Specifies if column's value must be unique or not.
      */
-    readonly unique?: boolean;   
+    readonly unique?: boolean;
 
     /**
      * Indicates if column's value can be set to NULL.

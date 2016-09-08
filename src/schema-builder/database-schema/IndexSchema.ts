@@ -1,4 +1,5 @@
 import {IndexMetadata} from "../../metadata/IndexMetadata";
+
 /**
  * Database's table index stored in this class.
  */
@@ -65,4 +66,5 @@ export class IndexSchema {
             indexMetadata.isUnique
         );
     }
+
 }

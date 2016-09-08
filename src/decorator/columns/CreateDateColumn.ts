@@ -1,7 +1,6 @@
 import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
@@ -17,7 +16,7 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
         if (!options) options = {} as ColumnOptions;
 
         // implicitly set a type, because this column's type cannot be anything else except date
-        options.type = ColumnTypes.DATETIME;
+        options = Object.assign({ type: ColumnTypes.DATETIME } as ColumnOptions, options);
 
         // create and register a new column metadata
         const args: ColumnMetadataArgs = {
