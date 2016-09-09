@@ -142,20 +142,24 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
         const queryRunner = await this.provideQueryRunner();
-        const insertPromises = entityIds.map(entityId => {
-            const values: any = { };
-            if (relation.isOwning) {
-                values[relation.junctionEntityMetadata.columns[0].name] = entityId;
-                values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
-            } else {
-                values[relation.junctionEntityMetadata.columns[1].name] = entityId;
-                values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
-            }
+        try {
+            const insertPromises = entityIds.map(entityId => {
+                const values: any = { };
+                if (relation.isOwning) {
+                    values[relation.junctionEntityMetadata.columns[0].name] = entityId;
+                    values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
+                } else {
+                    values[relation.junctionEntityMetadata.columns[1].name] = entityId;
+                    values[relation.junctionEntityMetadata.columns[0].name] = relatedEntityId;
+                }
 
-            return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
-        });
-        await Promise.all(insertPromises);
-        await this.releaseProvidedQueryRunner(queryRunner);
+                return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
+            });
+            await Promise.all(insertPromises);
+
+        } finally {
+            await this.releaseProvidedQueryRunner(queryRunner);
+        }
     }
 
     /**

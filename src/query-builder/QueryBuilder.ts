@@ -443,12 +443,13 @@ export class QueryBuilder<Entity> {
         }
 
         const [sql, parameters] = this.getSqlWithParameters();
-        const result = await queryRunner.query(sql, parameters);
+        try {
+            return queryRunner.query(sql, parameters);
 
-        if (ownQueryRunner)
-            await queryRunner.release();
-
-        return result;
+        } finally {
+            if (ownQueryRunner)
+                await queryRunner.release();
+        }
     }
 
     getScalarResults<T>(): Promise<T[]> {
@@ -499,81 +500,81 @@ export class QueryBuilder<Entity> {
             if (this.firstResult)
                 idsQuery += " OFFSET " + this.firstResult;
 
-            const results = await queryRunner.query(idsQuery, parameters)
-                .then((results: any[]) => {
-                    scalarResults = results;
-                    if (results.length === 0)
-                        return [];
+            try {
+                return await queryRunner.query(idsQuery, parameters)
+                    .then((results: any[]) => {
+                        scalarResults = results;
+                        if (results.length === 0)
+                            return [];
 
-                    let condition = "";
-                    const parameters: ObjectLiteral = {};
-                    if (metadata.hasMultiplePrimaryKeys) {
-                        condition = results.map(result => {
-                            return metadata.primaryColumns.map(primaryColumn => {
-                                parameters["ids_" + primaryColumn.propertyName] = result["ids_" + primaryColumn.propertyName];
-                                return mainAliasName + "." + primaryColumn.propertyName + "=:ids_" + primaryColumn.propertyName;
-                            }).join(" AND ");
-                        }).join(" OR ");
-                    } else {
-                        parameters["ids"] = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
-                        condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
-                    }
-                    const [queryWithIdsSql, queryWithIdsParameters] = this.clone({ queryRunner: queryRunner })
-                        .andWhere(condition, parameters)
-                        .getSqlWithParameters();
-                    return (queryRunner as QueryRunner).query(queryWithIdsSql, queryWithIdsParameters);
-                })
-                .then(results => {
-                    return this.rawResultsToEntities(results);
-                })
-                .then(results => this.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results))
-                .then(results => {
-                    return {
-                        entities: results,
-                        scalarResults: scalarResults
-                    };
-                });
+                        let condition = "";
+                        const parameters: ObjectLiteral = {};
+                        if (metadata.hasMultiplePrimaryKeys) {
+                            condition = results.map(result => {
+                                return metadata.primaryColumns.map(primaryColumn => {
+                                    parameters["ids_" + primaryColumn.propertyName] = result["ids_" + primaryColumn.propertyName];
+                                    return mainAliasName + "." + primaryColumn.propertyName + "=:ids_" + primaryColumn.propertyName;
+                                }).join(" AND ");
+                            }).join(" OR ");
+                        } else {
+                            parameters["ids"] = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
+                            condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+                        }
+                        const [queryWithIdsSql, queryWithIdsParameters] = this.clone({queryRunner: queryRunner})
+                            .andWhere(condition, parameters)
+                            .getSqlWithParameters();
+                        return (queryRunner as QueryRunner).query(queryWithIdsSql, queryWithIdsParameters);
+                    })
+                    .then(results => {
+                        return this.rawResultsToEntities(results);
+                    })
+                    .then(results => this.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results))
+                    .then(results => {
+                        return {
+                            entities: results,
+                            scalarResults: scalarResults
+                        };
+                    });
 
-            if (ownQueryRunner) {
-                await queryRunner.release();
+            } finally {
+                if (ownQueryRunner)
+                    await queryRunner.release();
             }
-
-            return results;
 
         } else {
 
             const [sql, parameters] = this.getSqlWithParameters();
-            const results = await queryRunner.query(sql, parameters)
-                .then(results => {
-                    scalarResults = results;
-                    return this.rawResultsToEntities(results);
-                })
-                .then(results => {
 
-                    return this.loadRelationCounts(queryRunner as QueryRunner, results)
-                        .then(counts => {
-                            // console.log("counts: ", counts);
-                            return results;
-                        });
-                })
-                .then(results => {
-                    return this.broadcaster
-                        .broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results)
-                        .then(() => results);
-                })
-                .then(results => {
-                    return {
-                        entities: results,
-                        scalarResults: scalarResults
-                    };
-                });
+            try {
+                return await queryRunner.query(sql, parameters)
+                    .then(results => {
+                        scalarResults = results;
+                        return this.rawResultsToEntities(results);
+                    })
+                    .then(results => {
 
-            if (ownQueryRunner) {
-                await queryRunner.release();
+                        return this.loadRelationCounts(queryRunner as QueryRunner, results)
+                            .then(counts => {
+                                // console.log("counts: ", counts);
+                                return results;
+                            });
+                    })
+                    .then(results => {
+                        return this.broadcaster
+                            .broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results)
+                            .then(() => results);
+                    })
+                    .then(results => {
+                        return {
+                            entities: results,
+                            scalarResults: scalarResults
+                        };
+                    });
+
+            } finally {
+                if (ownQueryRunner)
+                    await queryRunner.release();
             }
-
-            // console.log("qb results : ", results);
-            return results;
         }
     }
 
@@ -727,15 +728,18 @@ export class QueryBuilder<Entity> {
             .select(countSql);
 
         const [countQuerySql, countQueryParameters] = countQuery.getSqlWithParameters();
-        const results = await queryRunner.query(countQuerySql, countQueryParameters);
-        if (ownQueryRunner) {
-            await queryRunner.release();
+
+        try {
+            const results = await queryRunner.query(countQuerySql, countQueryParameters);
+            if (!results || !results[0] || !results[0]["cnt"])
+                return 0;
+
+            return parseInt(results[0]["cnt"]);
+
+        } finally {
+            if (ownQueryRunner)
+                await queryRunner.release();
         }
-
-        if (!results || !results[0] || !results[0]["cnt"])
-            return 0;
-
-        return parseInt(results[0]["cnt"]);
     }
 
     getResultsAndCount(): Promise<[Entity[], number]> {

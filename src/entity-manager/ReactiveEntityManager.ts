@@ -164,9 +164,13 @@ export class ReactiveEntityManager extends BaseEntityManager {
     query(query: string): Rx.Observable<any> {
         const promiseFn = async () => {
             const queryRunner = await this.connection.driver.createQueryRunner();
-            const result = await queryRunner.query(query);
-            await queryRunner.release();
-            return Promise.resolve(result) as any;
+            try {
+                const result = await queryRunner.query(query);
+                return Promise.resolve(result);
+
+            } finally  {
+                await queryRunner.release();
+            }
         };
         return Rx.Observable.fromPromise(promiseFn as any);
     }
@@ -182,13 +186,14 @@ export class ReactiveEntityManager extends BaseEntityManager {
                 await queryRunner.beginTransaction();
                 const result = await runInTransaction();
                 await queryRunner.commitTransaction();
-                await queryRunner.release();
                 return Promise.resolve(result);
 
             } catch (err) {
                 await queryRunner.rollbackTransaction();
-                await queryRunner.release();
                 throw err;
+
+            } finally {
+                await queryRunner.release();
             }
         };
         return Rx.Observable.fromPromise(promiseFn as any);

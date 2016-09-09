@@ -69,12 +69,13 @@ export class SchemaBuilder {
             await this.createForeignKeys();
             await this.createIndices();
             await this.queryRunner.commitTransaction();
-            await this.queryRunner.release();
 
         } catch (error) {
             await this.queryRunner.rollbackTransaction();
-            await this.queryRunner.release();
             throw error;
+
+        } finally {
+            await this.queryRunner.release();
         }
     }
 

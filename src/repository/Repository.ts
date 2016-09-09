@@ -146,29 +146,33 @@ export class Repository<Entity extends ObjectLiteral> {
             return Promise.all(entityOrEntities.map(entity => this.persist(entity)));
 
         const queryRunner = await this.provideQueryRunner();
-        const allPersistedEntities = await this.extractObjectsById(entityOrEntities, this.metadata);
-        let loadedDbEntity: Entity|null = null;
-        if (this.hasId(entityOrEntities)) {
-            const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
-                .select(this.metadata.table.name)
-                .from(this.metadata.target, this.metadata.table.name);
-            loadedDbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
+        try {
+            const allPersistedEntities = await this.extractObjectsById(entityOrEntities, this.metadata);
+            let loadedDbEntity: Entity|null = null;
+            if (this.hasId(entityOrEntities)) {
+                const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
+                    .select(this.metadata.table.name)
+                    .from(this.metadata.target, this.metadata.table.name);
+                loadedDbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
+            }
+
+            let entityWithIds: EntityWithId[] = [];
+            if (loadedDbEntity)
+                entityWithIds = await this.extractObjectsById(loadedDbEntity, this.metadata);
+
+            // need to find db entities that were not loaded by initialize method
+            const allDbEntities = await this.findNotLoadedIds(queryRunner, entityWithIds, allPersistedEntities);
+            const persistedEntity = new EntityWithId(this.metadata, entityOrEntities);
+            const dbEntity = new EntityWithId(this.metadata, loadedDbEntity!); // todo: find if this can be executed if loadedDbEntity is empty
+            const persistOperation = this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
+
+            const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
+            await persistOperationExecutor.executePersistOperation(persistOperation);
+            return entityOrEntities;
+
+        } finally {
+            await this.releaseProvidedQueryRunner(queryRunner);
         }
-
-        let entityWithIds: EntityWithId[] = [];
-        if (loadedDbEntity)
-            entityWithIds = await this.extractObjectsById(loadedDbEntity, this.metadata);
-
-        // need to find db entities that were not loaded by initialize method
-        const allDbEntities = await this.findNotLoadedIds(queryRunner, entityWithIds, allPersistedEntities);
-        const persistedEntity = new EntityWithId(this.metadata, entityOrEntities);
-        const dbEntity = new EntityWithId(this.metadata, loadedDbEntity!); // todo: find if this can be executed if loadedDbEntity is empty
-        const persistOperation = this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
-
-        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
-        await persistOperationExecutor.executePersistOperation(persistOperation);
-        await this.releaseProvidedQueryRunner(queryRunner);
-        return entityOrEntities;
     }
 
     /**
@@ -190,26 +194,28 @@ export class Repository<Entity extends ObjectLiteral> {
             return Promise.all(entityOrEntities.map(entity => this.remove(entity)));
 
         const queryRunner = await this.provideQueryRunner();
-        const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
-            .select(this.metadata.table.name)
-            .from(this.metadata.target, this.metadata.table.name);
-        const dbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
+        try {
+            const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
+                .select(this.metadata.table.name)
+                .from(this.metadata.target, this.metadata.table.name);
+            const dbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
 
-        this.metadata.primaryColumns.forEach(primaryColumn => {
-            (<any> entityOrEntities)[primaryColumn.name] = undefined;
-        });
-        const [dbEntities, allPersistedEntities] = await Promise.all([
-            this.extractObjectsById(dbEntity, this.metadata),
-            this.extractObjectsById(entityOrEntities, this.metadata)
-        ]);
-        const entityWithId = new EntityWithId(this.metadata, entityOrEntities);
-        const dbEntityWithId = new EntityWithId(this.metadata, dbEntity);
+            this.metadata.primaryColumns.forEach(primaryColumn => entityOrEntities[primaryColumn.name] = undefined);
+            const [dbEntities, allPersistedEntities] = await Promise.all([
+                this.extractObjectsById(dbEntity, this.metadata),
+                this.extractObjectsById(entityOrEntities, this.metadata)
+            ]);
+            const entityWithId = new EntityWithId(this.metadata, entityOrEntities);
+            const dbEntityWithId = new EntityWithId(this.metadata, dbEntity);
 
-        const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
-        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
-        await persistOperationExecutor.executePersistOperation(persistOperation);
-        await this.releaseProvidedQueryRunner(queryRunner);
-        return entityOrEntities;
+            const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
+            const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
+            await persistOperationExecutor.executePersistOperation(persistOperation);
+            return entityOrEntities;
+
+        } finally {
+            await this.releaseProvidedQueryRunner(queryRunner);
+        }
     }
 
     /**
@@ -317,9 +323,12 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async query(query: string): Promise<any> {
         const queryRunner = await this.provideQueryRunner();
-        const result = await queryRunner.query(query);
-        await this.releaseProvidedQueryRunner(queryRunner);
-        return result;
+        try {
+            return queryRunner.query(query);
+
+        } finally {
+            await this.releaseProvidedQueryRunner(queryRunner);
+        }
     }
 
     /**
@@ -331,13 +340,14 @@ export class Repository<Entity extends ObjectLiteral> {
             await queryRunner.beginTransaction();
             const result = await runInTransaction();
             await queryRunner.commitTransaction();
-            await this.releaseProvidedQueryRunner(queryRunner);
             return result;
 
         } catch (err) {
             await queryRunner.rollbackTransaction();
-            await this.releaseProvidedQueryRunner(queryRunner);
             throw err;
+
+        } finally {
+            await this.releaseProvidedQueryRunner(queryRunner);
         }
     }
 
@@ -350,7 +360,10 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Note: release only query runners that provided by a provideQueryRunner() method. This is important and by design!
+     * Query runner release logic extracted into separated methods intently,
+     * to make possible to create a subclass with its own release query runner logic.
+     * Note: release only query runners that provided by a provideQueryRunner() method.
+     * This is important and by design.
      */
     protected releaseProvidedQueryRunner(queryRunner: QueryRunner): Promise<void> {
         return queryRunner.release();

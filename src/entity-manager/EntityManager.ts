@@ -161,9 +161,12 @@ export class EntityManager extends BaseEntityManager {
      */
     async query(query: string): Promise<any> {
         const queryRunner = await this.connection.driver.createQueryRunner();
-        const result = await queryRunner.query(query);
-        await queryRunner.release();
-        return result;
+        try {
+            return queryRunner.query(query);
+
+        } finally  {
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -176,13 +179,14 @@ export class EntityManager extends BaseEntityManager {
             await queryRunner.beginTransaction();
             const result = await runInTransaction();
             await queryRunner.commitTransaction();
-            await queryRunner.release();
             return result;
 
         } catch (err) {
             await queryRunner.rollbackTransaction();
-            await queryRunner.release();
             throw err;
+
+        } finally {
+            await queryRunner.release();
         }
     }
 
