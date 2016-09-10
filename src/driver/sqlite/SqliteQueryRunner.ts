@@ -8,7 +8,6 @@ import {SqliteDriver} from "./SqliteDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {TableMetadata} from "../../metadata/TableMetadata";
 import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
 import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
@@ -347,57 +346,39 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Creates a new table from the given table metadata and column metadatas.
      */
-    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
+    async createTable(table: TableSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         // skip columns with foreign keys, we will add them later
-        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
-        const primaryKeyColumns = columns.filter(column => column.isPrimary && !column.isGenerated);
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
         if (primaryKeyColumns.length > 0)
             sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
         sql += `)`;
         await this.query(sql);
-        return columns;
     }
 
     /**
      * Creates a new column from the column metadata in the table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> { // todo: remove column metadata returning
+    async createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> { // todo: remove column metadata returning
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        // don't create columns if it has a foreign key
-        // if (column.foreignKeys.length > 0)
-        //     return false;
-
-        // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
-        const columnsSchemas = columns.map(column => ColumnSchema.create(column, this.normalizeType(column))); // todo: extract this out
-        const newTableSchema = tableSchema.clone();
-        newTableSchema.addColumns(columnsSchemas);
-        await this.recreateTable(newTableSchema);
-        return columns;
+        await this.recreateTable(tableSchema);
     }
 
     /**
      * Changes a column in the table.
      * Changed column looses all its keys in the db.
      */
-    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnMetadata, oldColumn: ColumnSchema }[]): Promise<void> {
+    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const newDbColumns = changedColumns.map(changedColumn => ColumnSchema.create(changedColumn.newColumn, this.normalizeType(changedColumn.newColumn)));
-        const oldColumns = tableSchema.columns.filter(dbColumn => {
-            return !!changedColumns.find(changedColumn => changedColumn.oldColumn.name === dbColumn.name);
-        });
-
-        const newTable = tableSchema.clone();
-        newTable.removeColumns(oldColumns);
-        newTable.addColumns(newDbColumns);
-        return this.recreateTable(newTable);
+        return this.recreateTable(tableSchema);
     }
 
     /**
@@ -534,13 +515,6 @@ export class SqliteQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Database name shortcut.
-     */
-    protected get dbName(): string {
-        return this.driver.options.database as string;
-    }
-
-    /**
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
@@ -550,9 +524,7 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema): string;
-    protected buildCreateColumnSql(column: ColumnMetadata): string;
-    protected buildCreateColumnSql(column: ColumnMetadata|ColumnSchema): string {
+    protected buildCreateColumnSql(column: ColumnSchema): string {
         let c = "\"" + column.name + "\"";
         if (column instanceof ColumnMetadata) {
             c += " " + this.normalizeType(column);

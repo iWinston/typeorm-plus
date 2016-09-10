@@ -75,7 +75,7 @@ export class ForeignKeySchema {
     /**
      * Creates a new foreign schema from the given foreign key metadata.
      */
-    static createFromMetadata(metadata: ForeignKeyMetadata) {
+    static create(metadata: ForeignKeyMetadata) {
         return new ForeignKeySchema(
             metadata.name,
             metadata.columnNames,

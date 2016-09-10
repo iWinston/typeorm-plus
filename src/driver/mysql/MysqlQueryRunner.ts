@@ -8,7 +8,6 @@ import {MysqlDriver} from "./MysqlDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {TableMetadata} from "../../metadata/TableMetadata";
 import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
 import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
@@ -228,15 +227,11 @@ export class MysqlQueryRunner implements QueryRunner {
         const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'`;
         const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
         const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
-        const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        // const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(indicesSql),
-            this.query(foreignKeysSql),
-            this.query(uniqueKeysSql),
-            // this.query(primaryKeysSql),
+            this.query(foreignKeysSql)
         ]);
 
         // if tables were not found in the db, no need to proceed
@@ -254,7 +249,7 @@ export class MysqlQueryRunner implements QueryRunner {
                 .map(dbColumn => {
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
-                    columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase(); // todo: use normalize type?
+                    columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase();
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
@@ -307,24 +302,24 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new table from the given table metadata and column metadatas.
      */
-    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
+    async createTable(table: TableSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         let sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}`;
-        const primaryKeyColumns = columns.filter(column => column.isPrimary && !column.isGenerated);
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
         if (primaryKeyColumns.length > 0)
             sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
-        sql += `) ENGINE=InnoDB;`;
+        sql += `) ENGINE=InnoDB;`; // todo: remove engine from here
+
         await this.query(sql);
-        return columns;
     }
 
     /**
      * Creates a new column from the column metadata in the table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
+    async createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -333,13 +328,12 @@ export class MysqlQueryRunner implements QueryRunner {
             return this.query(sql);
         });
         await Promise.all(queries);
-        return columns;
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnMetadata, oldColumn: ColumnSchema }[]): Promise<void> {
+    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -515,8 +509,8 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
-        let c = "`" + column.name + "` " + this.normalizeType(column);
+    protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
+        let c = "`" + column.name + "` " + column.type;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isUnique === true)
@@ -529,8 +523,6 @@ export class MysqlQueryRunner implements QueryRunner {
             c += " COMMENT '" + column.comment + "'";
         if (column.default)
             c += " DEFAULT " + column.default + "";
-        if (column.columnDefinition)
-            c += " " + column.columnDefinition;
         return c;
     }
 
