@@ -243,7 +243,7 @@ export class Connection {
             await this.dropDatabase();
 
         const schemaCreator = new SchemaBuilder(this.driver, this.logger, this.entityMetadatas, this.createNamingStrategy()); // todo: use factory there later
-        await schemaCreator.create();
+        await schemaCreator.build();
     }
 
     /**

@@ -58,7 +58,7 @@ export class IndexSchema {
     /**
      * Creates index from the index metadata object.
      */
-    static createFromMetadata(indexMetadata: IndexMetadata): IndexSchema {
+    static create(indexMetadata: IndexMetadata): IndexSchema {
         return new IndexSchema(
             indexMetadata.entityMetadata.table.name,
             indexMetadata.name,

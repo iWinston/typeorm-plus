@@ -94,6 +94,13 @@ export class TableSchema {
     }
 
     /**
+     * Replaces given column.
+     */
+    replaceColumn(oldColumn: ColumnSchema, newColumn: ColumnSchema) {
+        this.columns[this.columns.indexOf(oldColumn)] = newColumn;
+    }
+
+    /**
      * Removes a column schema from this table schema.
      */
     removeColumn(columnToRemove: ColumnSchema) {
@@ -107,6 +114,31 @@ export class TableSchema {
      */
     removeColumns(columns: ColumnSchema[]) {
         columns.forEach(column => this.removeColumn(column));
+    }
+
+    /**
+     * Adds all given primary keys.
+     */
+    addPrimaryKeys(addedKeys: PrimaryKeySchema[]) {
+        addedKeys.forEach(key => this.primaryKeys.push(key));
+    }
+
+    /**
+     * Removes all given primary keys.
+     */
+    removePrimaryKeys(droppedKeys: PrimaryKeySchema[]) {
+        droppedKeys.forEach(key => {
+            this.primaryKeys.splice(this.primaryKeys.indexOf(key), 1);
+        });
+    }
+
+    /**
+     * Removes primary keys of the given columns.
+     */
+    removePrimaryKeysOfColumns(columns: ColumnSchema[]) {
+        this.primaryKeys = this.primaryKeys.filter(primaryKey => {
+            return !columns.find(column => column.name === primaryKey.columnName);
+        });
     }
 
     /**
@@ -142,13 +174,6 @@ export class TableSchema {
     }
 
     /**
-     * Removes primary from this table schema.
-     */
-    removePrimaryKey() {
-        this.primaryKeys = [];
-    }
-
-    /**
      * Differentiate columns of this table schema and columns from the given column metadatas columns
      * and returns only changed.
      */
@@ -169,23 +194,4 @@ export class TableSchema {
         });
     }
 
-    addPrimaryKeys(addedKeys: PrimaryKeySchema[]) {
-        addedKeys.forEach(key => this.primaryKeys.push(key));
-    }
-
-    removePrimaryKeys(droppedKeys: PrimaryKeySchema[]) {
-        droppedKeys.forEach(key => {
-            this.primaryKeys.splice(this.primaryKeys.indexOf(key), 1);
-        });
-    }
-
-    replaceColumn(oldColumn: ColumnSchema, newColumn: ColumnSchema) {
-        this.columns[this.columns.indexOf(oldColumn)] = newColumn;
-    }
-
-    removePrimaryKeysOfColumns(columns: ColumnSchema[]) {
-        this.primaryKeys = this.primaryKeys.filter(primaryKey => {
-            return !columns.find(column => column.name === primaryKey.columnName);
-        });
-    }
 }

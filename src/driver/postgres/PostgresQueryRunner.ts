@@ -8,7 +8,6 @@ import {PostgresDriver} from "./PostgresDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {TableMetadata} from "../../metadata/TableMetadata";
 import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
 import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
@@ -311,28 +310,27 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
     /**
      * Creates a new table from the given table metadata and column metadatas.
      */
-    async createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
+    async createTable(table: TableSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const columnDefinitions = columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
-        sql += columns
+        sql += table.columns
             .filter(column => column.isUnique)
             .map(column => `, CONSTRAINT "uk_${column.name}" UNIQUE ("${column.name}")`)
             .join(" ");
-        const primaryKeyColumns = columns.filter(column => column.isPrimary && !column.isGenerated);
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
         if (primaryKeyColumns.length > 0)
             sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
         sql += `)`;
         await this.query(sql);
-        return columns;
     }
 
     /**
      * Creates a new column from the column metadata in the table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]> {
+    async createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -341,27 +339,25 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             return this.query(sql);
         });
         await Promise.all(queries);
-        return columns;
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnMetadata, oldColumn: ColumnSchema }[]): Promise<void> {
+    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const updatePromises = changedColumns.map(async changedColumn => {
             const oldColumn = changedColumn.oldColumn;
             const newColumn = changedColumn.newColumn;
-            const newType   = this.normalizeType(newColumn);
 
-            if (oldColumn.type !== newType ||
+            if (oldColumn.type !== newColumn.type ||
                 oldColumn.name !== newColumn.name) {
 
                 let sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}"`;
-                if (oldColumn.type !== newType) {
-                    sql += ` TYPE ${newType}`;
+                if (oldColumn.type !== newColumn.type) {
+                    sql += ` TYPE ${newColumn.type}`;
                 }
                 if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
                     sql += ` RENAME TO ` + newColumn.name;
@@ -577,18 +573,16 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnMetadata, skipPrimary: boolean) {
+    protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
         let c = "\"" + column.name + "\"";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " SERIAL";
         if (!column.isGenerated)
-            c += " " + this.normalizeType(column);
+            c += " " + column.type;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated)
             c += " PRIMARY KEY";
-        if (column.columnDefinition)
-            c += " " + column.columnDefinition;
         return c;
     }
 

@@ -1,6 +1,5 @@
 import {ColumnSchema} from "../schema-builder/database-schema/ColumnSchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {TableMetadata} from "../metadata/TableMetadata";
 import {TableSchema} from "../schema-builder/database-schema/TableSchema";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ForeignKeySchema} from "../schema-builder/database-schema/ForeignKeySchema";
@@ -69,6 +68,11 @@ export interface QueryRunner {
     insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
 
     /**
+     * Converts a column type of the metadata to the database column's type.
+     */
+    normalizeType(column: ColumnMetadata): any;
+
+    /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
     loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]>;
@@ -77,17 +81,17 @@ export interface QueryRunner {
      * Creates a new table from the given table metadata and column metadatas.
      * Returns array of created columns. This is required because some driver may not create all columns.
      */
-    createTable(table: TableMetadata, columns: ColumnMetadata[]): Promise<ColumnMetadata[]>;
+    createTable(table: TableSchema): Promise<void>;
 
     /**
      * Creates new columns in the table.
      */
-    createColumns(tableSchema: TableSchema, columns: ColumnMetadata[]): Promise<ColumnMetadata[]>;
+    createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
 
     /**
      * Changes a columns in the table.
      */
-    changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnMetadata, oldColumn: ColumnSchema }[]): Promise<void>;
+    changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void>;
 
     /**
      * Drops the columns in the table.
@@ -118,10 +122,5 @@ export interface QueryRunner {
      * Drops an index from the table.
      */
     dropIndex(tableName: string, indexName: string): Promise<void>;
-
-    /**
-     * Creates a database type from a given column metadata.
-     */
-    normalizeType(column: ColumnMetadata): any;
 
 }
