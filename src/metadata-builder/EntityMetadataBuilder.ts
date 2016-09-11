@@ -181,7 +181,8 @@ export class EntityMetadataBuilder {
     private build(lazyRelationsWrapper: LazyRelationsWrapper, metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
         const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas: EntityMetadata[] = [];
-        metadataArgsStorage.getMergedTableMetadatas(entityClasses).forEach(mergedArgs => {
+        const allMergedArgs = metadataArgsStorage.getMergedTableMetadatas(entityClasses);
+        allMergedArgs.forEach(mergedArgs => {
 
             const tables = [mergedArgs.table].concat(mergedArgs.children);
             tables.forEach(tableArgs => {
@@ -198,7 +199,8 @@ export class EntityMetadataBuilder {
                 });
 
                 // create metadatas from args
-                const table = new TableMetadata(mergedArgs.table);
+                const argsForTable = mergedArgs.inheritance && mergedArgs.inheritance.type === "single-table" ? mergedArgs.table : tableArgs;
+                const table = new TableMetadata(argsForTable);
                 const columns = mergedArgs.columns.map(args => {
 
                     // if column's target is a child table then this column should have all nullable columns
@@ -312,6 +314,18 @@ export class EntityMetadataBuilder {
             });
         });
 
+        // after all metadatas created we set parent entity metadata for class-table inheritance
+        entityMetadatas.forEach(entityMetadata => {
+            const mergedArgs = allMergedArgs.find(mergedArgs => {
+                return mergedArgs.table.target === entityMetadata.target;
+            });
+            if (mergedArgs && mergedArgs.parent) {
+                const parentEntityMetadata = entityMetadatas.find(entityMetadata => entityMetadata.table.target === (mergedArgs!.parent! as any).target); // todo: weird compiler error here, thats why type casing is used
+                if (parentEntityMetadata)
+                    entityMetadata.parentEntityMetadata = parentEntityMetadata;
+            }
+        });
+
         // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
         getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
 
@@ -403,6 +417,38 @@ export class EntityMetadataBuilder {
                 });
                 indexForKeyWithPrimary.entityMetadata = metadata;
                 metadata.indices.push(indexForKeyWithPrimary);
+            });
+
+        // generate virtual column with foreign key for class-table inheritance
+        entityMetadatas
+            .filter(metadata => !!metadata.parentEntityMetadata)
+            .forEach(metadata => {
+                const parentEntityMetadataPrimaryColumn = metadata.parentEntityMetadata.firstPrimaryColumn;
+                const columnName = namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.table.name, parentEntityMetadataPrimaryColumn.propertyName);
+                const parentRelationColumn = new ColumnMetadata({
+                    target: metadata.parentEntityMetadata.table.target,
+                    propertyName: columnName,
+                    propertyType: parentEntityMetadataPrimaryColumn.propertyType,
+                    mode: "virtual",
+                    options: <ColumnOptions> {
+                        type: parentEntityMetadataPrimaryColumn.type,
+                        nullable: false,
+                        primary: false
+                    }
+                });
+
+                // add column
+                metadata.addColumn(parentRelationColumn);
+
+                // add foreign key
+                const foreignKey = new ForeignKeyMetadata(
+                    [parentRelationColumn],
+                    metadata.parentEntityMetadata.table,
+                    [parentEntityMetadataPrimaryColumn],
+                    "CASCADE"
+                );
+                foreignKey.entityMetadata = metadata;
+                metadata.foreignKeys.push(foreignKey);
             });
 
         return entityMetadatas;

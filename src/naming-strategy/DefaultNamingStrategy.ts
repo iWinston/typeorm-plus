@@ -15,7 +15,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string, columnCustomName?: string): string {
-        return embeddedPropertyName + "_" + (columnCustomName ? columnCustomName : columnPropertyName);
+        return _.camelCase(embeddedPropertyName + "_" + (columnCustomName ? columnCustomName : columnPropertyName));
     }
 
     relationName(propertyName: string): string {
@@ -47,15 +47,15 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     joinTableColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string {
-        const column1 = tableName + "_" + columnName;
-        const column2 = secondTableName + "_" + secondColumnName;
-        return column1 === column2 ? column1 + "_1" : column1;
+        const column1 = _.camelCase(tableName + "_" + columnName);
+        const column2 = _.camelCase(secondTableName + "_" + secondColumnName);
+        return column1 === column2 ? column1 + "_1" : column1; // todo: do we still need _1 prefix?!
     }
 
     joinTableInverseColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string {
-        const column1 = tableName + "_" + columnName;
-        const column2 = secondTableName + "_" + secondColumnName;
-        return column1 === column2 ? column1 + "_2" : column1;
+        const column1 = _.camelCase(tableName + "_" + columnName);
+        const column2 = _.camelCase(secondTableName + "_" + secondColumnName);
+        return column1 === column2 ? column1 + "_2" : column1; // todo: do we still need _2 prefix?!
     }
 
     closureJunctionTableName(tableName: string): string {
@@ -65,6 +65,10 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string {
         const key = `${tableName}_${columnNames.join("_")}_${referencedTableName}_${referencedColumnNames.join("_")}`;
         return "fk_" + require("sha1")(key); // todo: use crypto instead?
+    }
+
+    classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string {
+        return _.camelCase(parentTableName + "_" + parentTableIdPropertyName);
     }
     
 }

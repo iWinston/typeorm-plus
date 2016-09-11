@@ -68,5 +68,10 @@ export interface NamingStrategyInterface {
      * Gets the name of the foreign key.
      */
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string;
-    
+
+    /**
+     * Gets the column name of the column with foreign key to the parent table used in the class table inheritance.
+     */
+    classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string;
+
 }

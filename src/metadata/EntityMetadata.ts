@@ -23,6 +23,11 @@ export class EntityMetadata {
      * If entity's table is a closure-typed table, then this entity will have a closure junction table metadata.
      */
     closureJunctionTable: EntityMetadata;
+
+    /**
+     * Parent's entity metadata. Used in inheritance patterns.
+     */
+    parentEntityMetadata: EntityMetadata;
     
     // -------------------------------------------------------------------------
     // Public Readonly Properties
@@ -162,7 +167,7 @@ export class EntityMetadata {
      * @deprecated
      */
     get primaryColumn(): ColumnMetadata {
-        const primaryKey = this._columns.find(column => column.isPrimary);
+        const primaryKey = this.primaryColumns[0];
         if (!primaryKey)
             throw new Error(`Primary key is not set for the ${this.name} entity.`);
 
@@ -203,6 +208,9 @@ export class EntityMetadata {
      */
     get primaryColumns(): ColumnMetadata[] {
         return this._columns.filter(column => column.isPrimary);
+        // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
+        // const parentEntityPrimaryColumns = this.parentEntityMetadata ? this.parentEntityMetadata.primaryColumns : [];
+        // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
     }
 
     /**

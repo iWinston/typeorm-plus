@@ -54,7 +54,7 @@ export class MetadataArgsStorage {
      */
     getMergedTableMetadatas(classes?: Function[]) {
         const allTableMetadataArgs = classes ? this.tables.filterByTargets(classes) : this.tables;
-        const tableMetadatas = allTableMetadataArgs.filter(table => table.type === "regular" || table.type === "closure");
+        const tableMetadatas = allTableMetadataArgs.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child");
 
         return tableMetadatas.map(tableMetadata => {
             return this.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
@@ -95,12 +95,21 @@ export class MetadataArgsStorage {
         const inheritance = (inheritances.length > 0) ? inheritances[0] : undefined;
         const discriminatorValues: DiscriminatorValueMetadataArgs[] = [];
 
+        // find parent if this table is class-table-child
+        let parent: TableMetadataArgs|undefined = undefined;
+
         // merge metadata from abstract tables
         allTableMetadatas.forEach(inheritedTable => {
-            if (table.type === "child") return;
+            if (table.type === "single-table-child") return;
             if (!table.target || !inheritedTable.target) return;
             if (!(table.target instanceof Function) || !(inheritedTable.target instanceof Function)) return;
             if (!this.isInherited(table.target, inheritedTable.target)) return;
+
+            // check if inheritedTable is a class with class table inheritance - then we don't need to merge its columns, relations, etc. things
+            if (!!this.inheritances.filterByTarget(inheritedTable.target).find(inheritance => inheritance.type === "class-table")) {
+                parent = inheritedTable;
+                return;
+            }
 
             const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, inheritedTable);
 
@@ -143,7 +152,7 @@ export class MetadataArgsStorage {
 
         if (inheritance && inheritance.type === "single-table") {
             allTableMetadatas.forEach(childTable => {
-                if (childTable.type !== "child") return;
+                if (childTable.type !== "single-table-child") return;
                 if (!childTable.target || !table.target) return;
                 if (!(childTable.target instanceof Function) || !(table.target instanceof Function)) return;
                 if (!this.isInherited(childTable.target, table.target)) return;
@@ -153,47 +162,51 @@ export class MetadataArgsStorage {
                     .filterByTarget(childTable.target)
                     .forEach(metadata => discriminatorValues.push(metadata));
 
-                const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, childTable);
+                // for single table inheritance we also merge all columns, relation, etc. into same table
+                if (inheritance.type === "single-table") { // todo: remove?
+                    const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, childTable);
 
-                metadatasFromAbstract.columns
-                    .filterRepeatedMetadatas(columns)
-                    .forEach(metadata => columns.push(metadata));
+                    metadatasFromAbstract.columns
+                        .filterRepeatedMetadatas(columns)
+                        .forEach(metadata => columns.push(metadata));
 
-                metadatasFromAbstract.relations
-                    .filterRepeatedMetadatas(relations)
-                    .forEach(metadata => relations.push(metadata));
+                    metadatasFromAbstract.relations
+                        .filterRepeatedMetadatas(relations)
+                        .forEach(metadata => relations.push(metadata));
 
-                metadatasFromAbstract.joinColumns
-                    .filterRepeatedMetadatas(joinColumns)
-                    .forEach(metadata => joinColumns.push(metadata));
+                    metadatasFromAbstract.joinColumns
+                        .filterRepeatedMetadatas(joinColumns)
+                        .forEach(metadata => joinColumns.push(metadata));
 
-                metadatasFromAbstract.joinTables
-                    .filterRepeatedMetadatas(joinTables)
-                    .forEach(metadata => joinTables.push(metadata));
+                    metadatasFromAbstract.joinTables
+                        .filterRepeatedMetadatas(joinTables)
+                        .forEach(metadata => joinTables.push(metadata));
 
-                metadatasFromAbstract.entityListeners
-                    .filterRepeatedMetadatas(entityListeners)
-                    .forEach(metadata => entityListeners.push(metadata));
+                    metadatasFromAbstract.entityListeners
+                        .filterRepeatedMetadatas(entityListeners)
+                        .forEach(metadata => entityListeners.push(metadata));
 
-                metadatasFromAbstract.relationCounts
-                    .filterRepeatedMetadatas(relationCounts)
-                    .forEach(metadata => relationCounts.push(metadata));
+                    metadatasFromAbstract.relationCounts
+                        .filterRepeatedMetadatas(relationCounts)
+                        .forEach(metadata => relationCounts.push(metadata));
 
-                metadatasFromAbstract.relationIds
-                    .filterRepeatedMetadatas(relationIds)
-                    .forEach(metadata => relationIds.push(metadata));
+                    metadatasFromAbstract.relationIds
+                        .filterRepeatedMetadatas(relationIds)
+                        .forEach(metadata => relationIds.push(metadata));
 
-                metadatasFromAbstract.embeddeds
-                    .filterRepeatedMetadatas(embeddeds)
-                    .forEach(metadata => embeddeds.push(metadata));
+                    metadatasFromAbstract.embeddeds
+                        .filterRepeatedMetadatas(embeddeds)
+                        .forEach(metadata => embeddeds.push(metadata));
 
-                metadatasFromAbstract.children
-                    .forEach(metadata => children.push(metadata));
+                    metadatasFromAbstract.children
+                        .forEach(metadata => children.push(metadata));
+                }
             });
         }
 
         return {
             table: table,
+            parent: parent,
             inheritance: inheritance,
             children: children,
             indices: indices,
