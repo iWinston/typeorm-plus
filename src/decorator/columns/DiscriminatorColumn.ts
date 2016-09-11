@@ -18,6 +18,7 @@ export function DiscriminatorColumn(discriminatorOptions: { name: string, type: 
         const args: ColumnMetadataArgs = {
             target: target,
             mode: "discriminator",
+            propertyName: discriminatorOptions.name,
             options: options
         };
         getMetadataArgsStorage().columns.add(args);

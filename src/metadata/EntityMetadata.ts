@@ -65,6 +65,12 @@ export class EntityMetadata {
     readonly embeddeds: EmbeddedMetadata[];
 
     /**
+     * If this entity metadata's table using one of the inheritance patterns,
+     * then this will contain what pattern it uses.
+     */
+    readonly inheritanceType?: "single-table"|"class-table";
+
+    /**
      * If this entity metadata is a child table of some table, it should have a discriminator value.
      * Used to store a value in a discriminator column.
      */
@@ -95,6 +101,7 @@ export class EntityMetadata {
         this.foreignKeys = args.foreignKeyMetadatas || [];
         this.embeddeds = args.embeddedMetadatas || [];
         this.discriminatorValue = args.discriminatorValue;
+        this.inheritanceType = args.inheritanceType;
 
         this.table.entityMetadata = this;
         this._columns.forEach(column => column.entityMetadata = this);

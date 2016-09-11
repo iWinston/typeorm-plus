@@ -7,7 +7,7 @@ import {ChildTable} from "../../../src/decorator/tables/ChildTable";
 @DiscriminatorValue("home-sitter") // can be omitted
 export class Homesitter extends Person {
 
-    @Column({ nullable: true })
+    @Column()
     numberOfKids: number;
 
 }

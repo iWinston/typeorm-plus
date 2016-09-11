@@ -455,7 +455,7 @@ export class EntityPersistOperationBuilder {
 
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
         return metadata.columns
-            .filter(column => !column.isVirtual && !column.isUpdateDate && !column.isVersion && !column.isCreateDate)
+            .filter(column => !column.isVirtual && !column.isDiscriminator && !column.isUpdateDate && !column.isVersion && !column.isCreateDate)
             .filter(column => column.getEntityValue(newEntity) !== column.getEntityValue(dbEntity))
             .filter(column => {
                 // filter out "relational columns" only in the case if there is a relation object in entity

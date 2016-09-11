@@ -450,7 +450,7 @@ export class PersistOperationExecutor {
         const metadata = this.entityMetadatas.findByTarget(operation.target);
         
         const columns = metadata.columns
-            .filter(column => !column.isVirtual && column.hasEntityValue(entity));
+            .filter(column => !column.isVirtual && !column.isDiscriminator && column.hasEntityValue(entity));
         
         const columnNames = columns.map(column => column.name);
         const values = columns.map(column => this.driver.preparePersistentValue(column.getEntityValue(entity), column));

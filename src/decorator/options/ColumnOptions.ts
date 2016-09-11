@@ -40,7 +40,7 @@ export interface ColumnOptions {
     /**
      * Indicates if column's value can be set to NULL.
      */
-    readonly nullable?: boolean;
+    nullable?: boolean;
 
     /**
      * Extra column definition. Should be used only in emergency situations. Note that if you'll use this property

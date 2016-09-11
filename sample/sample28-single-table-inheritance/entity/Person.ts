@@ -6,10 +6,9 @@ import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 
 // todo: some things left to do:
 // * check how it works when is join (conditions are not added in the joins right now)
-// * add key for discriminator column
 
 @Table()
-@TableInheritance("single-table") // also can be a class-table
+@TableInheritance("single-table")
 @DiscriminatorColumn({ name: "type", type: "string"})
 export abstract class Person {
 

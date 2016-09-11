@@ -84,7 +84,7 @@ export class RawSqlResultsToEntityTransformer {
         metadata.columns.forEach(column => {
             const columnName = column.name;
             const valueInObject = rawSqlResults[0][alias.name + "_" + columnName]; // we use zero index since its grouped data
-            if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual) {
+            if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual && !column.isDiscriminator) {
                 const value = this.driver.prepareHydratedValue(valueInObject, column);
                 
                 if (column.isInEmbedded) {

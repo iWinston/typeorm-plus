@@ -5,7 +5,7 @@ import {ChildTable} from "../../../src/decorator/tables/ChildTable";
 @ChildTable()
 export class Student extends Person {
 
-    @Column({ nullable: true })
+    @Column()
     faculty: string;
 
 }

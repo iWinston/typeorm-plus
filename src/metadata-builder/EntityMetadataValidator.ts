@@ -22,18 +22,35 @@ export class EntityMetadataValidator {
      * Validates all given entity metadatas.
      */
     validateMany(entityMetadatas: EntityMetadata[]) {
-        entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata));
+        entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas));
     }
 
     /**
      * Validates given entity metadata.
      */
-    validate(entityMetadata: EntityMetadata) {
+    validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[]) {
 
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length)
             throw new MissingPrimaryColumnError(entityMetadata);
-        
+
+        // validate if table is using inheritance it has a discriminator
+        // also validate if discriminator values are not empty and not repeated
+        if (entityMetadata.inheritanceType === "single-table") {
+            if (!entityMetadata.hasDiscriminatorColumn)
+                throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put @DiscriminatorColumn decorator?`);
+
+            if (["", undefined, null].indexOf(entityMetadata.discriminatorValue) !== -1)
+                throw new Error(`Entity ${entityMetadata.name} has empty discriminator value. Discriminator value should not be empty.`);
+
+            const sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(metadata => {
+                return metadata !== entityMetadata && metadata.discriminatorValue === entityMetadata.discriminatorValue;
+            });
+            if (sameDiscriminatorValueEntityMetadata)
+                throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} as equal discriminator values. Make sure their discriminator values are not equal using @DiscriminatorValue decorator.`);
+        }
+
+        // validate relations
         entityMetadata.relations.forEach(relation => {
 
             // check join tables:

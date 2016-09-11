@@ -199,7 +199,17 @@ export class EntityMetadataBuilder {
 
                 // create metadatas from args
                 const table = new TableMetadata(mergedArgs.table);
-                const columns = mergedArgs.columns.map(args => new ColumnMetadata(args));
+                const columns = mergedArgs.columns.map(args => {
+
+                    // if column's target is a child table then this column should have all nullable columns
+                    if (mergedArgs.inheritance &&
+                        mergedArgs.inheritance.type === "single-table" &&
+                        args.target !== mergedArgs.table.target &&
+                        !!mergedArgs.children.find(childTable => childTable.target === args.target)) {
+                        args.options.nullable = true;
+                    }
+                    return new ColumnMetadata(args);
+                });
                 const relations = mergedArgs.relations.map(args => new RelationMetadata(args));
                 const indices = mergedArgs.indices.map(args => new IndexMetadata(args));
                 const discriminatorValueArgs = mergedArgs.discriminatorValues.find(discriminatorValueArgs => {
@@ -214,6 +224,7 @@ export class EntityMetadataBuilder {
                     relationMetadatas: relations,
                     indexMetadatas: indices,
                     embeddedMetadatas: embeddeds,
+                    inheritanceType: mergedArgs.inheritance ? mergedArgs.inheritance.type : undefined,
                     discriminatorValue: discriminatorValueArgs ? discriminatorValueArgs.value : (tableArgs.target as any).name
                 }, lazyRelationsWrapper);
                 entityMetadatas.push(entityMetadata);
@@ -372,6 +383,27 @@ export class EntityMetadataBuilder {
                 entityMetadatas.push(junctionEntityMetadata);
             });
         });
+
+        // generate keys for tables with single-table inheritance
+        entityMetadatas
+            .filter(metadata => metadata.inheritanceType === "single-table" && metadata.hasDiscriminatorColumn)
+            .forEach(metadata => {
+                const indexForKey = new IndexMetadata({
+                    target: metadata.target,
+                    columns: [metadata.discriminatorColumn.name],
+                    unique: false
+                });
+                indexForKey.entityMetadata = metadata;
+                metadata.indices.push(indexForKey);
+
+                const indexForKeyWithPrimary = new IndexMetadata({
+                    target: metadata.target,
+                    columns: [metadata.firstPrimaryColumn.propertyName, metadata.discriminatorColumn.propertyName],
+                    unique: false
+                });
+                indexForKeyWithPrimary.entityMetadata = metadata;
+                metadata.indices.push(indexForKeyWithPrimary);
+            });
 
         return entityMetadatas;
     }
