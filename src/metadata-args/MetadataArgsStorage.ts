@@ -12,6 +12,8 @@ import {JoinColumnMetadataArgs} from "./JoinColumnMetadataArgs";
 import {EmbeddedMetadataArgs} from "./EmbeddedMetadataArgs";
 import {EntitySubscriberMetadataArgs} from "./EntitySubscriberMetadataArgs";
 import {RelationIdMetadataArgs} from "./RelationIdMetadataArgs";
+import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
+import {DiscriminatorNameMetadataArgs} from "./DiscriminatorNameMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -40,6 +42,8 @@ export class MetadataArgsStorage {
     readonly relationCounts = new PropertyMetadataArgsCollection<RelationCountMetadataArgs>();
     readonly relationIds = new PropertyMetadataArgsCollection<RelationIdMetadataArgs>();
     readonly embeddeds = new PropertyMetadataArgsCollection<EmbeddedMetadataArgs>();
+    readonly inheritances = new TargetMetadataArgsCollection<InheritanceMetadataArgs>();
+    readonly discriminatorNames = new TargetMetadataArgsCollection<DiscriminatorNameMetadataArgs>();
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -87,6 +91,8 @@ export class MetadataArgsStorage {
         const relationCounts = this.relationCounts.filterByTarget(tableMetadata.target);
         const relationIds = this.relationIds.filterByTarget(tableMetadata.target);
         const embeddeds = this.embeddeds.filterByTarget(tableMetadata.target);
+        const inheritances = this.inheritances.filterByTarget(tableMetadata.target);
+        const discriminatorNames = this.discriminatorNames.filterByTarget(tableMetadata.target);
 
         allTableMetadatas
             .filter(metadata => {
@@ -128,6 +134,7 @@ export class MetadataArgsStorage {
                 metadatasFromAbstract.embeddeds
                     .filterRepeatedMetadatas(embeddeds)
                     .forEach(metadata => embeddeds.push(metadata));
+
             });
 
         return {
@@ -140,7 +147,9 @@ export class MetadataArgsStorage {
             entityListeners: entityListeners,
             relationCounts: relationCounts,
             relationIds: relationIds,
-            embeddeds: embeddeds
+            embeddeds: embeddeds,
+            inheritances: inheritances,
+            discriminatorNames: discriminatorNames
         };
     }
     
