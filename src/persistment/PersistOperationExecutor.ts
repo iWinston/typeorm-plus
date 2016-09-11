@@ -488,6 +488,11 @@ export class PersistOperationExecutor {
             allColumns.push(metadata.versionColumn.name);
             allValues.push(this.driver.preparePersistentValue(1, metadata.versionColumn));
         }
+
+        if (metadata.hasDiscriminatorColumn) {
+            allColumns.push(metadata.discriminatorColumn.name);
+            allValues.push(this.driver.preparePersistentValue(metadata.discriminatorValue, metadata.discriminatorColumn));
+        }
         
         if (metadata.hasTreeLevelColumn && metadata.hasTreeParentRelation) {
             const parentEntity = entity[metadata.treeParentRelation.name]; // todo: are you sure here we should use name and not propertyName ?

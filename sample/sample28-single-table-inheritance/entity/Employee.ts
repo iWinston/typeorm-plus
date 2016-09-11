@@ -1,12 +1,11 @@
 import {Column} from "../../../src/decorator/columns/Column";
-import {Table} from "../../../src/decorator/tables/Table";
 import {Person} from "./Person";
+import {ChildTable} from "../../../src/decorator/tables/ChildTable";
 
-@Table()
-// @DiscriminatorValue("employee")
+@ChildTable()
 export class Employee extends Person {
 
-    @Column()
+    @Column({ nullable: true })
     salary: number;
 
 }

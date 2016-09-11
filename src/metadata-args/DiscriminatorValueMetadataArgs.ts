@@ -1,7 +1,7 @@
 /**
  * Arguments for DiscriminatorNameMetadata class.
  */
-export interface DiscriminatorNameMetadataArgs {
+export interface DiscriminatorValueMetadataArgs {
 
     /**
      * Class to which discriminator name is applied.
@@ -9,8 +9,8 @@ export interface DiscriminatorNameMetadataArgs {
     readonly target: Function|string;
 
     /**
-     * Discriminator name.
+     * Discriminator value.
      */
-    readonly name: string;
+    readonly value: any;
     
 }

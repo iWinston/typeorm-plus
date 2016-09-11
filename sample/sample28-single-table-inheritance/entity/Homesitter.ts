@@ -1,13 +1,13 @@
 import {Column} from "../../../src/decorator/columns/Column";
 import {Person} from "./Person";
-import {Table} from "../../../src/decorator/tables/Table";
-import {DiscriminatorName} from "../../../src/decorator/DiscriminatorValue";
+import {DiscriminatorValue} from "../../../src/decorator/DiscriminatorValue";
+import {ChildTable} from "../../../src/decorator/tables/ChildTable";
 
-@Table()
-@DiscriminatorName("homesitter") // can be omitted
+@ChildTable()
+@DiscriminatorValue("home-sitter") // can be omitted
 export class Homesitter extends Person {
 
-    @Column()
+    @Column({ nullable: true })
     numberOfKids: number;
 
 }

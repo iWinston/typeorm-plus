@@ -1,14 +1,12 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
  */
 export function DiscriminatorColumn(discriminatorOptions: { name: string, type: ColumnType }): Function {
-    return function (object: Object, propertyName: string) {
-
-        const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
+    return function (target: Function) {
 
         // if column options are not given then create a new empty options
         const options: ColumnOptions = {
@@ -18,9 +16,7 @@ export function DiscriminatorColumn(discriminatorOptions: { name: string, type: 
 
         // create and register a new column metadata
         const args: ColumnMetadataArgs = {
-            target: object.constructor,
-            propertyName: propertyName,
-            propertyType: reflectedType,
+            target: target,
             mode: "discriminator",
             options: options
         };

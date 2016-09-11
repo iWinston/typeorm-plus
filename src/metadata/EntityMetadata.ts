@@ -34,6 +34,12 @@ export class EntityMetadata {
     readonly namingStrategy: NamingStrategyInterface;
 
     /**
+     * Target class to which this entity metadata is bind.
+     * Note, that when using table inheritance patterns target can be different rather then table's target.
+     */
+    readonly target: Function|string;
+
+    /**
      * Entity's table metadata.
      */
     readonly table: TableMetadata;
@@ -58,6 +64,12 @@ export class EntityMetadata {
      */
     readonly embeddeds: EmbeddedMetadata[];
 
+    /**
+     * If this entity metadata is a child table of some table, it should have a discriminator value.
+     * Used to store a value in a discriminator column.
+     */
+    readonly discriminatorValue?: string;
+
     // -------------------------------------------------------------------------
     // Private properties
     // -------------------------------------------------------------------------
@@ -71,8 +83,10 @@ export class EntityMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private lazyRelationsWrapper: LazyRelationsWrapper, 
-                args: EntityMetadataArgs) {
+    constructor(target: Function|string,
+                args: EntityMetadataArgs,
+                private lazyRelationsWrapper: LazyRelationsWrapper) {
+        this.target = target;
         this.namingStrategy = args.namingStrategy;
         this.table = args.tableMetadata;
         this._columns = args.columnMetadatas || [];
@@ -80,6 +94,7 @@ export class EntityMetadata {
         this.indices = args.indexMetadatas || [];
         this.foreignKeys = args.foreignKeyMetadatas || [];
         this.embeddeds = args.embeddedMetadatas || [];
+        this.discriminatorValue = args.discriminatorValue;
 
         this.table.entityMetadata = this;
         this._columns.forEach(column => column.entityMetadata = this);
@@ -112,13 +127,6 @@ export class EntityMetadata {
             allColumns = allColumns.concat(embedded.columns);
         });
         return allColumns;
-    }
-    
-    /**
-     * Target class to which this entity metadata is bind.
-     */
-    get target(): Function|string {
-        return this.table.target;
     }
 
     /**
@@ -241,6 +249,24 @@ export class EntityMetadata {
         if (!column)
             throw new Error(`VersionColumn was not found in entity ${this.name}`);
         
+        return column;
+    }
+
+    /**
+     * Checks if entity has a discriminator column.
+     */
+    get hasDiscriminatorColumn(): boolean {
+        return !!this._columns.find(column => column.mode === "discriminator");
+    }
+
+    /**
+     * Gets the discriminator column used to store entity identificator in single-table inheritance tables.
+     */
+    get discriminatorColumn(): ColumnMetadata {
+        const column = this._columns.find(column => column.mode === "discriminator");
+        if (!column)
+            throw new Error(`DiscriminatorColumn was not found in entity ${this.name}`);
+
         return column;
     }
 
@@ -372,8 +398,8 @@ export class EntityMetadata {
     create(): any {
 
         // if target is set to a function (e.g. class) that can be created then create it
-        if (this.table.target instanceof Function)
-            return new (<any> this.table.target)();
+        if (this.target instanceof Function)
+            return new (<any> this.target)();
 
         // otherwise simply return a new empty object
         const newObject = {};

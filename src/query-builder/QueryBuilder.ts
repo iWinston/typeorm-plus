@@ -427,11 +427,18 @@ export class QueryBuilder<Entity> {
         sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
-        return this.driver.escapeQueryWithParameters(sql, this.parameters);
+        return this.driver.escapeQueryWithParameters(sql, this.getParameters());
     }
 
     getParameters(): ObjectLiteral {
-        return this.parameters;
+        const parameters: ObjectLiteral = Object.assign({}, this.parameters);
+
+        // add discriminator column parameter if it exist
+        const mainMetadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        if (mainMetadata.hasDiscriminatorColumn)
+            parameters["discriminatorColumnValue"] = mainMetadata.discriminatorValue;
+
+        return parameters;
     }
 
     async execute(): Promise<any> {
@@ -930,7 +937,7 @@ export class QueryBuilder<Entity> {
     protected createWhereExpression() {
         if (!this.wheres || !this.wheres.length) return "";
 
-        return " WHERE " + this.wheres.map((where, index) => {
+        const conditions = this.wheres.map((where, index) => {
             switch (where.type) {
                 case "and":
                     return (index > 0 ? "AND " : "") + this.replacePropertyNames(where.condition);
@@ -940,6 +947,12 @@ export class QueryBuilder<Entity> {
                     return this.replacePropertyNames(where.condition);
             }
         }).join(" ");
+
+        const mainMetadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        if (mainMetadata.hasDiscriminatorColumn)
+            return " WHERE (" + conditions + ") AND " + mainMetadata.discriminatorColumn.name + "=:discriminatorColumnValue";
+
+        return " WHERE " + conditions;
     }
 
     /**

@@ -62,7 +62,7 @@ export class JunctionEntityMetadataBuilder {
             }
         });
         
-        const entityMetadata = new EntityMetadata(lazyRelationsWrapper, {
+        const entityMetadata = new EntityMetadata(tableMetadata.target, {
             namingStrategy: args.namingStrategy,
             tableMetadata: tableMetadata,
             columnMetadatas: [
@@ -77,7 +77,7 @@ export class JunctionEntityMetadataBuilder {
                 new IndexMetadata({ columns: [args.joinTable.joinColumnName], unique: false }),
                 new IndexMetadata({ columns: [args.joinTable.inverseJoinColumnName], unique: false })
             ]
-        });
+        }, lazyRelationsWrapper);
 
         entityMetadata.columns[0].entityMetadata = entityMetadata;
         entityMetadata.columns[1].entityMetadata = entityMetadata;

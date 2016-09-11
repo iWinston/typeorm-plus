@@ -1,14 +1,14 @@
 import {getMetadataArgsStorage} from "../index";
-import {DiscriminatorNameMetadataArgs} from "../metadata-args/DiscriminatorNameMetadataArgs";
+import {DiscriminatorValueMetadataArgs} from "../metadata-args/DiscriminatorValueMetadataArgs";
 
 /**
  */
-export function DiscriminatorName(name: string): Function {
+export function DiscriminatorValue(value: any): Function {
     return function (target: Function) {
-        const args: DiscriminatorNameMetadataArgs = {
+        const args: DiscriminatorValueMetadataArgs = {
             target: target,
-            name: name
+            value: value
         };
-        getMetadataArgsStorage().discriminatorNames.add(args);
+        getMetadataArgsStorage().discriminatorValues.add(args);
     };
 }

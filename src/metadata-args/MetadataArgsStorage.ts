@@ -13,7 +13,7 @@ import {EmbeddedMetadataArgs} from "./EmbeddedMetadataArgs";
 import {EntitySubscriberMetadataArgs} from "./EntitySubscriberMetadataArgs";
 import {RelationIdMetadataArgs} from "./RelationIdMetadataArgs";
 import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
-import {DiscriminatorNameMetadataArgs} from "./DiscriminatorNameMetadataArgs";
+import {DiscriminatorValueMetadataArgs} from "./DiscriminatorValueMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -43,7 +43,7 @@ export class MetadataArgsStorage {
     readonly relationIds = new PropertyMetadataArgsCollection<RelationIdMetadataArgs>();
     readonly embeddeds = new PropertyMetadataArgsCollection<EmbeddedMetadataArgs>();
     readonly inheritances = new TargetMetadataArgsCollection<InheritanceMetadataArgs>();
-    readonly discriminatorNames = new TargetMetadataArgsCollection<DiscriminatorNameMetadataArgs>();
+    readonly discriminatorValues = new TargetMetadataArgsCollection<DiscriminatorValueMetadataArgs>();
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -80,28 +80,80 @@ export class MetadataArgsStorage {
     /**
      */
     private mergeWithAbstract(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
-                              tableMetadata: TableMetadataArgs) {
+                              table: TableMetadataArgs) {
 
-        const indices = this.indices.filterByTarget(tableMetadata.target);
-        const columns = this.columns.filterByTarget(tableMetadata.target);
-        const relations = this.relations.filterByTarget(tableMetadata.target);
-        const joinColumns = this.joinColumns.filterByTarget(tableMetadata.target);
-        const joinTables = this.joinTables.filterByTarget(tableMetadata.target);
-        const entityListeners = this.entityListeners.filterByTarget(tableMetadata.target);
-        const relationCounts = this.relationCounts.filterByTarget(tableMetadata.target);
-        const relationIds = this.relationIds.filterByTarget(tableMetadata.target);
-        const embeddeds = this.embeddeds.filterByTarget(tableMetadata.target);
-        const inheritances = this.inheritances.filterByTarget(tableMetadata.target);
-        const discriminatorNames = this.discriminatorNames.filterByTarget(tableMetadata.target);
+        const indices = this.indices.filterByTarget(table.target);
+        const columns = this.columns.filterByTarget(table.target);
+        const relations = this.relations.filterByTarget(table.target);
+        const joinColumns = this.joinColumns.filterByTarget(table.target);
+        const joinTables = this.joinTables.filterByTarget(table.target);
+        const entityListeners = this.entityListeners.filterByTarget(table.target);
+        const relationCounts = this.relationCounts.filterByTarget(table.target);
+        const relationIds = this.relationIds.filterByTarget(table.target);
+        const embeddeds = this.embeddeds.filterByTarget(table.target);
+        const inheritances = this.inheritances.filterByTarget(table.target);
+        const inheritance = (inheritances.length > 0) ? inheritances[0] : undefined;
+        const discriminatorValues: DiscriminatorValueMetadataArgs[] = [];
 
-        allTableMetadatas
-            .filter(metadata => {
-                if (!tableMetadata.target || !metadata.target) return false;
-                if (!(tableMetadata.target instanceof Function) || !(metadata.target instanceof Function)) return false;
-                return this.isInherited(tableMetadata.target, metadata.target); // todo: fix it
-            })
-            .forEach(parentMetadata => {
-                const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, parentMetadata);
+        // merge metadata from abstract tables
+        allTableMetadatas.forEach(inheritedTable => {
+            if (table.type === "child") return;
+            if (!table.target || !inheritedTable.target) return;
+            if (!(table.target instanceof Function) || !(inheritedTable.target instanceof Function)) return;
+            if (!this.isInherited(table.target, inheritedTable.target)) return;
+
+            const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, inheritedTable);
+
+            metadatasFromAbstract.columns
+                .filterRepeatedMetadatas(columns)
+                .forEach(metadata => columns.push(metadata));
+
+            metadatasFromAbstract.relations
+                .filterRepeatedMetadatas(relations)
+                .forEach(metadata => relations.push(metadata));
+
+            metadatasFromAbstract.joinColumns
+                .filterRepeatedMetadatas(joinColumns)
+                .forEach(metadata => joinColumns.push(metadata));
+
+            metadatasFromAbstract.joinTables
+                .filterRepeatedMetadatas(joinTables)
+                .forEach(metadata => joinTables.push(metadata));
+
+            metadatasFromAbstract.entityListeners
+                .filterRepeatedMetadatas(entityListeners)
+                .forEach(metadata => entityListeners.push(metadata));
+
+            metadatasFromAbstract.relationCounts
+                .filterRepeatedMetadatas(relationCounts)
+                .forEach(metadata => relationCounts.push(metadata));
+
+            metadatasFromAbstract.relationIds
+                .filterRepeatedMetadatas(relationIds)
+                .forEach(metadata => relationIds.push(metadata));
+
+            metadatasFromAbstract.embeddeds
+                .filterRepeatedMetadatas(embeddeds)
+                .forEach(metadata => embeddeds.push(metadata));
+
+        });
+
+        // merge metadata from child tables for single-table inheritance
+        const children: TableMetadataArgs[] = [];
+
+        if (inheritance && inheritance.type === "single-table") {
+            allTableMetadatas.forEach(childTable => {
+                if (childTable.type !== "child") return;
+                if (!childTable.target || !table.target) return;
+                if (!(childTable.target instanceof Function) || !(table.target instanceof Function)) return;
+                if (!this.isInherited(childTable.target, table.target)) return;
+
+                children.push(childTable);
+                this.discriminatorValues
+                    .filterByTarget(childTable.target)
+                    .forEach(metadata => discriminatorValues.push(metadata));
+
+                const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, childTable);
 
                 metadatasFromAbstract.columns
                     .filterRepeatedMetadatas(columns)
@@ -135,10 +187,15 @@ export class MetadataArgsStorage {
                     .filterRepeatedMetadatas(embeddeds)
                     .forEach(metadata => embeddeds.push(metadata));
 
+                metadatasFromAbstract.children
+                    .forEach(metadata => children.push(metadata));
             });
+        }
 
         return {
-            table: tableMetadata,
+            table: table,
+            inheritance: inheritance,
+            children: children,
             indices: indices,
             columns: columns,
             relations: relations,
@@ -148,8 +205,7 @@ export class MetadataArgsStorage {
             relationCounts: relationCounts,
             relationIds: relationIds,
             embeddeds: embeddeds,
-            inheritances: inheritances,
-            discriminatorNames: discriminatorNames
+            discriminatorValues: discriminatorValues
         };
     }
     
