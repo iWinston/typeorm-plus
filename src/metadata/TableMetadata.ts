@@ -5,7 +5,7 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 /**
  * Table type.
  */
-export type TableType = "regular"|"abstract"|"junction"|"closure"|"closureJunction"|"embeddable";
+export type TableType = "regular"|"abstract"|"junction"|"closure"|"closureJunction"|"embeddable"|"single-table-child"|"class-table-child";
 
 // todo: make table engine to be specified within @Table decorator
 
@@ -88,6 +88,20 @@ export class TableMetadata extends TargetMetadata {
      */
     get isAbstract() {
         return this.tableType === "abstract";
+    }
+
+    /**
+     * Checks if this table is a single table child.
+     */
+    get isSingleTableChild() {
+        return this.tableType === "single-table-child";
+    }
+
+    /**
+     * Checks if this table is a class table child.
+     */
+    get isClassTableChild() {
+        return this.tableType === "class-table-child";
     }
 
     /**

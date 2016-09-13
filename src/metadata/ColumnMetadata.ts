@@ -10,7 +10,7 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
  * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
  * date column.
  */
-export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel";
+export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId";
 
 /**
  * This metadata contains all information about entity's column.
@@ -129,7 +129,7 @@ export class ColumnMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: ColumnMetadataArgs) {
-        super(undefined, args.propertyName);
+        super(args.target, args.propertyName);
 
         if (args.mode)
             this.mode = args.mode;
@@ -186,10 +186,6 @@ export class ColumnMetadata extends PropertyMetadata {
         throw new Error(`Column ${this._name ? this._name + " " : ""}is not attached to any entity or embedded.`);
     }
 
-    get target() {
-        return this.entityMetadata.target;
-    }
-
     /**
      * Indicates if this column is in embedded, not directly in the table.
      */
@@ -202,6 +198,20 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     get isVirtual() {
         return this.mode === "virtual";
+    }
+
+    /**
+     * Indicates if column is a parent id. Parent id columns are not mapped to the entity.
+     */
+    get isParentId() {
+        return this.mode === "parentId";
+    }
+
+    /**
+     * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
+     */
+    get isDiscriminator() {
+        return this.mode === "discriminator";
     }
 
     /**

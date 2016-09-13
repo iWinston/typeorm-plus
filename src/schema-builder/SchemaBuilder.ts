@@ -259,7 +259,7 @@ export class SchemaBuilder {
             if (!tableSchema)
                 return;
 
-            const metadataPrimaryColumns = metadata.primaryColumns.filter(column => !column.isGenerated);
+            const metadataPrimaryColumns = metadata.columns.filter(column => column.isPrimary && !column.isGenerated);
             const addedKeys = metadataPrimaryColumns
                 .filter(primaryKey => {
                     return !tableSchema.primaryKeysWithoutGenerated.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.name);

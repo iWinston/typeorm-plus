@@ -48,15 +48,14 @@ export class RawSqlResultsToEntityTransformer {
         
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => {
             if (!metadata) return;
-            return metadata.primaryColumns.map(column => result[alias.name + "_" + column.name]).join("_"); // todo: check it
+            return metadata.primaryColumnsWithParentIdColumns.map(column => result[alias.name + "_" + column.name]).join("_"); // todo: check it
         });
         // console.log("groupedResults: ", groupedResults);
-        return groupedResults
-            .map(group => {
-                if (!metadata) return;
-                return this.transformIntoSingleResult(group.items, alias, metadata);
-            })
-            .filter(res => !!res);
+        return groupedResults.map(group => {
+            if (!metadata) return;
+            return this.transformIntoSingleResult(group.items, alias, metadata);
+        })
+        .filter(res => !!res);
     }
 
 
@@ -84,7 +83,7 @@ export class RawSqlResultsToEntityTransformer {
         metadata.columns.forEach(column => {
             const columnName = column.name;
             const valueInObject = rawSqlResults[0][alias.name + "_" + columnName]; // we use zero index since its grouped data
-            if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual) {
+            if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual && !column.isParentId && !column.isDiscriminator) {
                 const value = this.driver.prepareHydratedValue(valueInObject, column);
                 
                 if (column.isInEmbedded) {
@@ -98,6 +97,28 @@ export class RawSqlResultsToEntityTransformer {
                 hasData = true;
             }
         });
+
+        // add parent tables metadata
+        // console.log(rawSqlResults);
+        if (metadata.parentEntityMetadata) {
+            metadata.parentEntityMetadata.columns.forEach(column => {
+                const columnName = column.name;
+                const valueInObject = rawSqlResults[0]["parentIdColumn_" + metadata.parentEntityMetadata.table.name + "_" + columnName]; // we use zero index since its grouped data
+                if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual && !column.isParentId && !column.isDiscriminator) {
+                    const value = this.driver.prepareHydratedValue(valueInObject, column);
+
+                    if (column.isInEmbedded) {
+                        if (!entity[column.embeddedProperty])
+                            entity[column.embeddedProperty] = column.embeddedMetadata.create();
+
+                        entity[column.embeddedProperty][column.propertyName] = value;
+                    } else {
+                        entity[column.propertyName] = value;
+                    }
+                    hasData = true;
+                }
+            });
+        }
 
         // if relation is loaded then go into it recursively and transform its values too
         metadata.relations.forEach(relation => {

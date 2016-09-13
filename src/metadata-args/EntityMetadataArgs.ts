@@ -11,6 +11,8 @@ import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
  */
 export interface EntityMetadataArgs {
 
+    readonly inheritanceType?: "single-table"|"class-table";
+    readonly discriminatorValue?: string;
     readonly namingStrategy: NamingStrategyInterface;
     readonly tableMetadata: TableMetadata;
     readonly columnMetadatas?: ColumnMetadata[];

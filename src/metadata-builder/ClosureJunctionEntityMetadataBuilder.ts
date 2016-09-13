@@ -66,7 +66,7 @@ export class ClosureJunctionEntityMetadataBuilder {
             type: "closureJunction"
         });
 
-        return new EntityMetadata(lazyRelationsWrapper, {
+        return new EntityMetadata(args.table.target, {
             namingStrategy: args.namingStrategy,
             tableMetadata: closureJunctionTableMetadata,
             columnMetadatas: columns,
@@ -74,7 +74,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 new ForeignKeyMetadata([columns[0]], args.table, [args.primaryColumn]),
                 new ForeignKeyMetadata([columns[1]], args.table, [args.primaryColumn])
             ]
-        });
+        }, lazyRelationsWrapper);
     }
     
 }

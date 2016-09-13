@@ -173,7 +173,6 @@ export class EntityPersistOperationBuilder {
             const relMetadata = relation.inverseEntityMetadata;
             const relationIdColumnName = relMetadata.firstPrimaryColumn.propertyName; // todo: join column metadata should be used here instead of primary column
             const value = this.getEntityRelationValue(relation, newEntity);
-            const valueTarget = relation.target;
             const referencedColumnName = relation.isOwning ? relation.referencedColumnName : relation.inverseRelation.referencedColumnName;
             // const dbValue = this.getEntityRelationValue(relation, dbEntity);
 
@@ -186,7 +185,7 @@ export class EntityPersistOperationBuilder {
                         return subDbEntity[relationIdColumnName] === subEntity[relationIdColumnName];
                     });*/
                     const dbValue = dbEntities.find(dbValue => {
-                        return dbValue.entityTarget === valueTarget && dbValue.entity[referencedColumnName] === subEntity[relationIdColumnName];
+                        return dbValue.entityTarget === relation.entityMetadata.target && dbValue.entity[referencedColumnName] === subEntity[relationIdColumnName];
                     });
                     if (dbValue) {
                         const dbValueWithId = new EntityWithId(relMetadata, dbValue.entity);
@@ -197,7 +196,7 @@ export class EntityPersistOperationBuilder {
                 
             } else {
                 const dbValue = dbEntities.find(dbValue => {
-                    return dbValue.entityTarget === valueTarget && dbValue.entity[referencedColumnName] === value[relationIdColumnName];
+                    return dbValue.entityTarget === relation.entityMetadata.target && dbValue.entity[referencedColumnName] === value[relationIdColumnName];
                 });
                 if (dbValue) {
                     const dbValueWithId = new EntityWithId(relMetadata, dbValue.entity);
@@ -454,34 +453,47 @@ export class EntityPersistOperationBuilder {
     }
 
     private diffColumns(metadata: EntityMetadata, newEntity: any, dbEntity: any) {
-        return metadata.columns
-            .filter(column => !column.isVirtual && !column.isUpdateDate && !column.isVersion && !column.isCreateDate)
-            .filter(column => column.getEntityValue(newEntity) !== column.getEntityValue(dbEntity))
-            .filter(column => {
-                // filter out "relational columns" only in the case if there is a relation object in entity
-                if (!column.isInEmbedded && metadata.hasRelationWithDbName(column.propertyName)) {
-                    const relation = metadata.findRelationWithDbName(column.propertyName);
-                    if (newEntity[relation.propertyName] !== null && newEntity[relation.propertyName] !== undefined)
-                        return false;
-                }
-                return true;
-            });
+
+        // console.log("differenting columns: newEntity: ", newEntity);
+        // console.log("differenting columns: dbEntity: ", dbEntity);
+
+        return metadata.allColumns.filter(column => {
+            if (column.isVirtual ||
+                column.isParentId ||
+                column.isDiscriminator ||
+                column.isUpdateDate ||
+                column.isVersion ||
+                column.isCreateDate ||
+                column.getEntityValue(newEntity) === column.getEntityValue(dbEntity))
+                return false;
+
+            // filter out "relational columns" only in the case if there is a relation object in entity
+            if (!column.isInEmbedded && metadata.hasRelationWithDbName(column.propertyName)) {
+                const relation = metadata.findRelationWithDbName(column.propertyName);
+                if (newEntity[relation.propertyName] !== null && newEntity[relation.propertyName] !== undefined)
+                    return false;
+            }
+            return true;
+        });
     }
 
     private diffRelations(updatesByRelations: UpdateByRelationOperation[], metadata: EntityMetadata, newEntity: any, dbEntity: any) {
-        return metadata.relations
-            .filter(relation => relation.isManyToOne || (relation.isOneToOne && relation.isOwning))
-            .filter(relation => !updatesByRelations.find(operation => operation.targetEntity === newEntity && operation.updatedRelation === relation)) // try to find if there is update by relation operation - we dont need to generate update relation operation for this
-            .filter(relation => {
-                if (!newEntity[relation.propertyName] && !dbEntity[relation.propertyName])
-                    return false;
-                if (!newEntity[relation.propertyName] || !dbEntity[relation.propertyName])
-                    return true;
-                const entityTarget = relation.target;
-                
-                const relationMetadata = this.entityMetadatas.findByTarget(entityTarget);
-                return !relationMetadata.compareEntities(newEntity[relation.propertyName], dbEntity[relation.propertyName]);
-            });
+        return metadata.allRelations.filter(relation => {
+            if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
+                return false;
+
+            // try to find if there is update by relation operation - we dont need to generate update relation operation for this
+            if (updatesByRelations.find(operation => operation.targetEntity === newEntity && operation.updatedRelation === relation))
+                return false;
+
+            if (!newEntity[relation.propertyName] && !dbEntity[relation.propertyName])
+                return false;
+            if (!newEntity[relation.propertyName] || !dbEntity[relation.propertyName])
+                return true;
+
+            const relatedMetadata = this.entityMetadatas.findByTarget(relation.entityMetadata.target);
+            return !relatedMetadata.compareEntities(newEntity[relation.propertyName], dbEntity[relation.propertyName]);
+        });
     }
 
     private findEntityWithId(entityWithIds: EntityWithId[], entityTarget: Function|string, id: ObjectLiteral) {

@@ -23,6 +23,11 @@ export class EntityMetadata {
      * If entity's table is a closure-typed table, then this entity will have a closure junction table metadata.
      */
     closureJunctionTable: EntityMetadata;
+
+    /**
+     * Parent's entity metadata. Used in inheritance patterns.
+     */
+    parentEntityMetadata: EntityMetadata;
     
     // -------------------------------------------------------------------------
     // Public Readonly Properties
@@ -32,6 +37,12 @@ export class EntityMetadata {
      * Naming strategy used to generate and normalize names.
      */
     readonly namingStrategy: NamingStrategyInterface;
+
+    /**
+     * Target class to which this entity metadata is bind.
+     * Note, that when using table inheritance patterns target can be different rather then table's target.
+     */
+    readonly target: Function|string;
 
     /**
      * Entity's table metadata.
@@ -58,6 +69,18 @@ export class EntityMetadata {
      */
     readonly embeddeds: EmbeddedMetadata[];
 
+    /**
+     * If this entity metadata's table using one of the inheritance patterns,
+     * then this will contain what pattern it uses.
+     */
+    readonly inheritanceType?: "single-table"|"class-table";
+
+    /**
+     * If this entity metadata is a child table of some table, it should have a discriminator value.
+     * Used to store a value in a discriminator column.
+     */
+    readonly discriminatorValue?: string;
+
     // -------------------------------------------------------------------------
     // Private properties
     // -------------------------------------------------------------------------
@@ -71,8 +94,10 @@ export class EntityMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private lazyRelationsWrapper: LazyRelationsWrapper, 
-                args: EntityMetadataArgs) {
+    constructor(target: Function|string,
+                args: EntityMetadataArgs,
+                private lazyRelationsWrapper: LazyRelationsWrapper) {
+        this.target = target;
         this.namingStrategy = args.namingStrategy;
         this.table = args.tableMetadata;
         this._columns = args.columnMetadatas || [];
@@ -80,6 +105,8 @@ export class EntityMetadata {
         this.indices = args.indexMetadatas || [];
         this.foreignKeys = args.foreignKeyMetadatas || [];
         this.embeddeds = args.embeddedMetadatas || [];
+        this.discriminatorValue = args.discriminatorValue;
+        this.inheritanceType = args.inheritanceType;
 
         this.table.entityMetadata = this;
         this._columns.forEach(column => column.entityMetadata = this);
@@ -104,21 +131,37 @@ export class EntityMetadata {
     }
 
     /**
-     * All columns of the entity, including columns that are coming from the embeddeds of this entity.
+     * Columns of the entity, including columns that are coming from the embeddeds of this entity.
      */
-    get columns() {
+    get columns(): ColumnMetadata[] {
         let allColumns: ColumnMetadata[] = ([] as ColumnMetadata[]).concat(this._columns);
         this.embeddeds.forEach(embedded => {
             allColumns = allColumns.concat(embedded.columns);
         });
         return allColumns;
     }
-    
+
     /**
-     * Target class to which this entity metadata is bind.
+     * All columns of the entity, including columns that are coming from the embeddeds of this entity,
+     * and including columns from the parent entities.
      */
-    get target(): Function|string {
-        return this.table.target;
+    get allColumns(): ColumnMetadata[] {
+        let columns = this.columns;
+        if (this.parentEntityMetadata)
+            columns = columns.concat(this.parentEntityMetadata.columns);
+
+        return columns;
+    }
+
+    /**
+     * All relations of the entity, including relations from the parent entities.
+     */
+    get allRelations(): RelationMetadata[] {
+        let relations = this.relations;
+        if (this.parentEntityMetadata)
+            relations = relations.concat(this.parentEntityMetadata.relations);
+
+        return relations;
     }
 
     /**
@@ -147,7 +190,7 @@ export class EntityMetadata {
      * @deprecated
      */
     get primaryColumn(): ColumnMetadata {
-        const primaryKey = this._columns.find(column => column.isPrimary);
+        const primaryKey = this.primaryColumns[0];
         if (!primaryKey)
             throw new Error(`Primary key is not set for the ${this.name} entity.`);
 
@@ -158,18 +201,25 @@ export class EntityMetadata {
      * Checks if table has generated column.
      */
     get hasGeneratedColumn(): boolean {
-        return !!this._columns.find(column => column.isGenerated);
+        return !!this.generatedColumnIfExist;
     }
 
     /**
      * Gets the column with generated flag.
      */
     get generatedColumn(): ColumnMetadata {
-        const generatedColumn = this._columns.find(column => column.isGenerated);
+        const generatedColumn = this.generatedColumnIfExist;
         if (!generatedColumn)
             throw new Error(`Generated column was not found`);
 
         return generatedColumn;
+    }
+
+    /**
+     * Gets the generated column if it exists, or returns undefined if it does not.
+     */
+    get generatedColumnIfExist(): ColumnMetadata|undefined {
+        return this._columns.find(column => column.isGenerated);
     }
 
     /**
@@ -184,9 +234,48 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if entity has any primary columns.
+
+    get hasPrimaryColumns(): ColumnMetadata[] {
+
+    }*/
+
+    /**
      * Gets the primary columns.
      */
     get primaryColumns(): ColumnMetadata[] {
+        // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
+        // const parentEntityPrimaryColumns = this.hasParentIdColumn ? [this.parentIdColumn] : [];
+        // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
+        return this._columns.filter(column => column.isPrimary);
+        // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
+        // const parentEntityPrimaryColumns = this.parentEntityMetadata ? this.parentEntityMetadata.primaryColumns : [];
+        // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
+    }
+
+    get primaryColumnsWithParentIdColumns(): ColumnMetadata[] {
+        return this.primaryColumns.concat(this.parentIdColumns);
+    }
+
+    get primaryColumnsWithParentPrimaryColumns(): ColumnMetadata[] {
+        return this.primaryColumns.concat(this.parentPrimaryColumns);
+    }
+
+    /**
+     * Gets the primary columns of the parent entity metadata.
+     * If parent entity metadata does not exist then it simply returns empty array.
+     */
+    get parentPrimaryColumns(): ColumnMetadata[] {
+        if (this.parentEntityMetadata)
+            return this.parentEntityMetadata.primaryColumns;
+
+        return [];
+    }
+
+    /**
+     * Gets only primary columns owned by this entity.
+     */
+    get ownPimaryColumns(): ColumnMetadata[] {
         return this._columns.filter(column => column.isPrimary);
     }
 
@@ -245,6 +334,24 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if entity has a discriminator column.
+     */
+    get hasDiscriminatorColumn(): boolean {
+        return !!this._columns.find(column => column.mode === "discriminator");
+    }
+
+    /**
+     * Gets the discriminator column used to store entity identificator in single-table inheritance tables.
+     */
+    get discriminatorColumn(): ColumnMetadata {
+        const column = this._columns.find(column => column.mode === "discriminator");
+        if (!column)
+            throw new Error(`DiscriminatorColumn was not found in entity ${this.name}`);
+
+        return column;
+    }
+
+    /**
      * Checks if entity has a tree level column.
      */
     get hasTreeLevelColumn(): boolean {
@@ -257,6 +364,25 @@ export class EntityMetadata {
             throw new Error(`TreeLevelColumn was not found in entity ${this.name}`);
 
         return column;
+    }
+
+    /**
+     * Checks if entity has a tree level column.
+     */
+    get hasParentIdColumn(): boolean {
+        return !!this._columns.find(column => column.mode === "parentId");
+    }
+
+    get parentIdColumn(): ColumnMetadata {
+        const column = this._columns.find(column => column.mode === "parentId");
+        if (!column)
+            throw new Error(`Parent id column was not found in entity ${this.name}`);
+
+        return column;
+    }
+
+    get parentIdColumns(): ColumnMetadata[] {
+        return this._columns.filter(column => column.mode === "parentId");
     }
 
     /**
@@ -372,8 +498,8 @@ export class EntityMetadata {
     create(): any {
 
         // if target is set to a function (e.g. class) that can be created then create it
-        if (this.table.target instanceof Function)
-            return new (<any> this.table.target)();
+        if (this.target instanceof Function)
+            return new (<any> this.target)();
 
         // otherwise simply return a new empty object
         const newObject = {};
@@ -406,7 +532,16 @@ export class EntityMetadata {
             return undefined;
 
         const map: ObjectLiteral = {};
-        this.primaryColumns.forEach(column => map[column.propertyName] = entity[column.propertyName]);
+        if (this.parentEntityMetadata) {
+            this.primaryColumnsWithParentIdColumns.forEach(column => {
+                map[column.propertyName] = entity[column.propertyName];
+            });
+
+        } else {
+            this.primaryColumns.forEach(column => {
+                map[column.propertyName] = entity[column.propertyName];
+            });
+        }
         const hasAllIds = this.primaryColumns.every(primaryColumn => {
             return map[primaryColumn.propertyName] !== undefined && map[primaryColumn.propertyName] !== null;
         });

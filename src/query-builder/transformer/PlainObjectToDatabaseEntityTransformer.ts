@@ -16,6 +16,9 @@ interface LoadMap {
  */
 export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral> {
 
+    // constructor(protected namingStrategy: NamingStrategyInterface) {
+    // }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -33,9 +36,22 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
 
         metadata.primaryColumns.forEach(primaryColumn => {
             queryBuilder
-                .andWhere(alias + "." + primaryColumn.name + "=:" + primaryColumn.name)
-                .setParameter(primaryColumn.name, plainObject[primaryColumn.name]);
+                .andWhere(alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName)
+                .setParameter(primaryColumn.propertyName, plainObject[primaryColumn.propertyName]);
         });
+        if (metadata.parentEntityMetadata) {
+            metadata.parentEntityMetadata.primaryColumns.forEach(primaryColumn => {
+                const parentIdColumn = metadata.parentIdColumns.find(parentIdColumn => {
+                    return parentIdColumn.propertyName === primaryColumn.propertyName;
+                });
+                if (!parentIdColumn)
+                    throw new Error(`Prent id column for the given primary column was not found.`);
+
+                queryBuilder
+                    .andWhere(alias + "." + parentIdColumn.propertyName + "=:" + primaryColumn.propertyName)
+                    .setParameter(primaryColumn.propertyName, plainObject[primaryColumn.propertyName]);
+            });
+        }
 
         return await queryBuilder.getSingleResult();
     }
