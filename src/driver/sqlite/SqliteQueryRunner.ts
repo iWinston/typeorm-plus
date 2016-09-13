@@ -80,8 +80,8 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.databaseConnection.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        await this.query("BEGIN TRANSACTION");
         this.databaseConnection.isTransactionActive = true;
+        await this.query("BEGIN TRANSACTION");
     }
 
     /**

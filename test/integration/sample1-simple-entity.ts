@@ -11,7 +11,10 @@ describe("insertion", function() {
     // -------------------------------------------------------------------------
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post], schemaCreate: true }).then(all => connections = all));
+    before(async () => connections = await setupTestingConnections({
+        entities: [Post],
+        schemaCreate: true,
+    }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 

@@ -173,7 +173,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
-            // logQueries: true, // uncomment for debugging
+            logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
             logFailedQueryError: true
         },

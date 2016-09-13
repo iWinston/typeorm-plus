@@ -44,7 +44,7 @@ export class PersistOperationExecutor {
         return Promise.resolve()
             .then(() => this.broadcastBeforeEvents(persistOperation))
             .then(() => {
-                if (!this.queryRunner.isTransactionActive) {
+                if (!this.queryRunner.isTransactionActive()) {
                     isTransactionStartedByItself = true;
                     return this.queryRunner.beginTransaction();
                 }

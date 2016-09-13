@@ -11,12 +11,12 @@ describe("repository > find methods", () => {
     const userSchema = require(resourceDir + "schema/user.json");
     
     let connections: Connection[];
-    before(() => setupTestingConnections({
+    before(async () => connections = await setupTestingConnections({
         entities: [Post],
         entitySchemas: [userSchema],
         schemaCreate: true,
         dropSchemaOnConnection: true
-    }).then(all => connections = all));
+    }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 

@@ -20,9 +20,7 @@ export class Post {
     @Column()
     text: string;
 
-    @ManyToMany(type => Category, {
-        cascadeInsert: true
-    })
+    @ManyToMany(type => Category)
     @JoinTable()
     categories: Category[];
 

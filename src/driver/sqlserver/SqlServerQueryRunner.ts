@@ -84,8 +84,8 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.databaseConnection.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        await this.query("START TRANSACTION");
         this.databaseConnection.isTransactionActive = true;
+        await this.query("START TRANSACTION");
     }
 
     /**
