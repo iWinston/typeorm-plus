@@ -4,7 +4,7 @@ import {DiscriminatorColumn} from "../../../src/decorator/columns/DiscriminatorC
 import {Table} from "../../../src/decorator/tables/Table";
 import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 
-@Table()
+@Table("sample29_person")
 @TableInheritance("class-table")
 @DiscriminatorColumn({ name: "type", type: "string"})
 export abstract class Person {

@@ -8,6 +8,8 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../driver/QueryRunner";
 
+export type OrderCondition = { [columnName: string]: "ASC"|"DESC" };
+
 /**
  * @internal
  */
@@ -1128,8 +1130,20 @@ export class QueryBuilder<Entity> {
     }
 
     protected createOrderByExpression() {
-        if (!this.orderBys || !this.orderBys.length) return "";
-        return " ORDER BY " + this.orderBys.map(order => this.replacePropertyNames(order.sort) + " " + order.order).join(", ");
+
+        // if user specified a custom order then apply it
+        if (this.orderBys.length)
+            return " ORDER BY " + this.orderBys.map(order => this.replacePropertyNames(order.sort) + " " + order.order).join(", ");
+
+        // if table has a default order then apply it
+        const metadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        if (metadata.table.orderBy)
+            return " ORDER BY " + Object
+                .keys(metadata.table.orderBy)
+                .map(key => this.replacePropertyNames(key) + " " + metadata.table.orderBy![key])
+                .join(", ");
+
+        return "";
     }
 
     protected createLimitExpression() {

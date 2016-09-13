@@ -1,6 +1,7 @@
 import {TargetMetadata} from "./TargetMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
+import {OrderCondition} from "../query-builder/QueryBuilder";
 
 /**
  * Table type.
@@ -23,6 +24,11 @@ export class TableMetadata extends TargetMetadata {
      */
     entityMetadata: EntityMetadata;
 
+    /**
+     * A property name by which queries will perform ordering by default when fetching rows.
+     */
+    readonly _orderBy?: OrderCondition|((object: any) => OrderCondition|any);
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -37,16 +43,6 @@ export class TableMetadata extends TargetMetadata {
      */
     private readonly _name: string|undefined;
 
-    /**
-     * Array of properties that will be used in a composite primary key of the table.
-     */
-    private readonly primaryKeys: (string|((object: any) => string|any))[]|undefined;
-
-    /**
-     * A property name by which queries will perform ordering by default when fetching rows.
-     */
-    private readonly orderBy: string|((object: any) => string|any)|undefined;
-
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -55,8 +51,7 @@ export class TableMetadata extends TargetMetadata {
         super(args.target);
         this._name = args.name;
         this.tableType = args.type;
-        this.orderBy = args.orderBy;
-        this.primaryKeys = args.primaryKeys;
+        this._orderBy = args.orderBy;
     }
     
     // ---------------------------------------------------------------------
@@ -74,6 +69,13 @@ export class TableMetadata extends TargetMetadata {
         // otherwise use target's table name
         const name = this.target instanceof Function ? (this.target as any).name : this.target;
         return this.entityMetadata.namingStrategy.tableName(name, this._name);
+    }
+
+    /**
+     * Gets default table's order by conditions.
+     */
+    get orderBy(): OrderCondition|undefined {
+        return this._orderBy instanceof Function ? this._orderBy(this.entityMetadata.createPropertiesMap()) : this._orderBy;
     }
 
     /**

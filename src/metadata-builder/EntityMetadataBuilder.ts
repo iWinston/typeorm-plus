@@ -52,8 +52,7 @@ export class EntityMetadataBuilder {
                 name: tableSchema.name,
                 type: tableSchema.type || "regular",
                 // targetId: schema.name,
-                orderBy: tableSchema.orderBy,
-                primaryKeys: tableSchema.primaryKeys
+                orderBy: tableSchema.orderBy
             };
             metadataArgsStorage.tables.add(table);
             

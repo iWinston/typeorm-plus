@@ -8,7 +8,8 @@ export function EmbeddableTable(): Function {
     return function (target: Function) {
         const args: TableMetadataArgs = {
             target: target,
-            type: "embeddable"
+            type: "embeddable",
+            orderBy: undefined
         };
         getMetadataArgsStorage().tables.add(args);
     };

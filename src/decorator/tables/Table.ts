@@ -12,7 +12,6 @@ export function Table(name?: string, options?: TableOptions) {
             target: target,
             name: name,
             type: "regular",
-            primaryKeys: options && options.primaryKeys ? options.primaryKeys : undefined,
             orderBy: options && options.orderBy ? options.orderBy : undefined
         };
         getMetadataArgsStorage().tables.add(args);

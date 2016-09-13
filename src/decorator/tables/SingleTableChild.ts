@@ -9,7 +9,8 @@ export function SingleTableChild() {
         const args: TableMetadataArgs = {
             target: target,
             name: undefined,
-            type: "single-table-child"
+            type: "single-table-child",
+            orderBy: undefined
         };
         getMetadataArgsStorage().tables.add(args);
     };

@@ -686,7 +686,7 @@ export class PersistOperationExecutor {
             if (insertOperation1 && insertOperation1.entityId) {
                 id1 = insertOperation1.entityId[metadata1.firstPrimaryColumn.propertyName];
             } else {
-                throw new Error(`Insert operation for ${junctionOperation.entity1} was not found.`);
+                throw new Error(`Cannot insert object of ${junctionOperation.entity1.constructor.name} type. Looks like its not persisted yet, or cascades are not set on the relation.`);
             }
         } 
         
@@ -694,7 +694,7 @@ export class PersistOperationExecutor {
             if (insertOperation2 && insertOperation2.entityId) {
                 id2 = insertOperation2.entityId[metadata2.firstPrimaryColumn.propertyName];
             } else {
-                throw new Error(`Insert operation for ${junctionOperation.entity2} was not found.`);
+                throw new Error(`Cannot insert object of ${junctionOperation.entity2.constructor.name} type. Looks like its not persisted yet, or cascades are not set on the relation.`);
             }
         }
         
