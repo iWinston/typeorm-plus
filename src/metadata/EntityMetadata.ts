@@ -131,14 +131,37 @@ export class EntityMetadata {
     }
 
     /**
-     * All columns of the entity, including columns that are coming from the embeddeds of this entity.
+     * Columns of the entity, including columns that are coming from the embeddeds of this entity.
      */
-    get columns() {
+    get columns(): ColumnMetadata[] {
         let allColumns: ColumnMetadata[] = ([] as ColumnMetadata[]).concat(this._columns);
         this.embeddeds.forEach(embedded => {
             allColumns = allColumns.concat(embedded.columns);
         });
         return allColumns;
+    }
+
+    /**
+     * All columns of the entity, including columns that are coming from the embeddeds of this entity,
+     * and including columns from the parent entities.
+     */
+    get allColumns(): ColumnMetadata[] {
+        let columns = this.columns;
+        if (this.parentEntityMetadata)
+            columns = columns.concat(this.parentEntityMetadata.columns);
+
+        return columns;
+    }
+
+    /**
+     * All relations of the entity, including relations from the parent entities.
+     */
+    get allRelations(): RelationMetadata[] {
+        let relations = this.relations;
+        if (this.parentEntityMetadata)
+            relations = relations.concat(this.parentEntityMetadata.relations);
+
+        return relations;
     }
 
     /**
@@ -178,18 +201,25 @@ export class EntityMetadata {
      * Checks if table has generated column.
      */
     get hasGeneratedColumn(): boolean {
-        return !!this._columns.find(column => column.isGenerated);
+        return !!this.generatedColumnIfExist;
     }
 
     /**
      * Gets the column with generated flag.
      */
     get generatedColumn(): ColumnMetadata {
-        const generatedColumn = this._columns.find(column => column.isGenerated);
+        const generatedColumn = this.generatedColumnIfExist;
         if (!generatedColumn)
             throw new Error(`Generated column was not found`);
 
         return generatedColumn;
+    }
+
+    /**
+     * Gets the generated column if it exists, or returns undefined if it does not.
+     */
+    get generatedColumnIfExist(): ColumnMetadata|undefined {
+        return this._columns.find(column => column.isGenerated);
     }
 
     /**
@@ -204,13 +234,49 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if entity has any primary columns.
+
+    get hasPrimaryColumns(): ColumnMetadata[] {
+
+    }*/
+
+    /**
      * Gets the primary columns.
      */
     get primaryColumns(): ColumnMetadata[] {
+        // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
+        // const parentEntityPrimaryColumns = this.hasParentIdColumn ? [this.parentIdColumn] : [];
+        // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
         return this._columns.filter(column => column.isPrimary);
         // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
         // const parentEntityPrimaryColumns = this.parentEntityMetadata ? this.parentEntityMetadata.primaryColumns : [];
         // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
+    }
+
+    get primaryColumnsWithParentIdColumns(): ColumnMetadata[] {
+        return this.primaryColumns.concat(this.parentIdColumns);
+    }
+
+    get primaryColumnsWithParentPrimaryColumns(): ColumnMetadata[] {
+        return this.primaryColumns.concat(this.parentPrimaryColumns);
+    }
+
+    /**
+     * Gets the primary columns of the parent entity metadata.
+     * If parent entity metadata does not exist then it simply returns empty array.
+     */
+    get parentPrimaryColumns(): ColumnMetadata[] {
+        if (this.parentEntityMetadata)
+            return this.parentEntityMetadata.primaryColumns;
+
+        return [];
+    }
+
+    /**
+     * Gets only primary columns owned by this entity.
+     */
+    get ownPimaryColumns(): ColumnMetadata[] {
+        return this._columns.filter(column => column.isPrimary);
     }
 
     /**
@@ -298,6 +364,25 @@ export class EntityMetadata {
             throw new Error(`TreeLevelColumn was not found in entity ${this.name}`);
 
         return column;
+    }
+
+    /**
+     * Checks if entity has a tree level column.
+     */
+    get hasParentIdColumn(): boolean {
+        return !!this._columns.find(column => column.mode === "parentId");
+    }
+
+    get parentIdColumn(): ColumnMetadata {
+        const column = this._columns.find(column => column.mode === "parentId");
+        if (!column)
+            throw new Error(`Parent id column was not found in entity ${this.name}`);
+
+        return column;
+    }
+
+    get parentIdColumns(): ColumnMetadata[] {
+        return this._columns.filter(column => column.mode === "parentId");
     }
 
     /**
@@ -447,7 +532,16 @@ export class EntityMetadata {
             return undefined;
 
         const map: ObjectLiteral = {};
-        this.primaryColumns.forEach(column => map[column.propertyName] = entity[column.propertyName]);
+        if (this.parentEntityMetadata) {
+            this.primaryColumnsWithParentIdColumns.forEach(column => {
+                map[column.propertyName] = entity[column.propertyName];
+            });
+
+        } else {
+            this.primaryColumns.forEach(column => {
+                map[column.propertyName] = entity[column.propertyName];
+            });
+        }
         const hasAllIds = this.primaryColumns.every(primaryColumn => {
             return map[primaryColumn.propertyName] !== undefined && map[primaryColumn.propertyName] !== null;
         });

@@ -9,7 +9,7 @@ import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 @DiscriminatorColumn({ name: "type", type: "string"})
 export abstract class Person {
 
-    @PrimaryColumn("int")
+    @PrimaryColumn("int"/*, { generated: true }*/)
     id: number;
 
     @Column()

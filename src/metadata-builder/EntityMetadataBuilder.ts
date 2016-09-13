@@ -227,7 +227,7 @@ export class EntityMetadataBuilder {
                     indexMetadatas: indices,
                     embeddedMetadatas: embeddeds,
                     inheritanceType: mergedArgs.inheritance ? mergedArgs.inheritance.type : undefined,
-                    discriminatorValue: discriminatorValueArgs ? discriminatorValueArgs.value : (tableArgs.target as any).name
+                    discriminatorValue: discriminatorValueArgs ? discriminatorValueArgs.value : (tableArgs.target as any).name // todo: pass this to naming strategy to generate a name
                 }, lazyRelationsWrapper);
                 entityMetadatas.push(entityMetadata);
 
@@ -251,7 +251,7 @@ export class EntityMetadataBuilder {
                         let joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
                         if (!joinColumnMetadata && relation.isManyToOne) {
                             joinColumnMetadata = {
-                                target: relation.target,
+                                target: relation.entityMetadata.target,
                                 propertyName: relation.propertyName
                             };
                         }
@@ -423,14 +423,15 @@ export class EntityMetadataBuilder {
         entityMetadatas
             .filter(metadata => !!metadata.parentEntityMetadata)
             .forEach(metadata => {
-                const parentEntityMetadataPrimaryColumn = metadata.parentEntityMetadata.firstPrimaryColumn;
+                const parentEntityMetadataPrimaryColumn = metadata.parentEntityMetadata.firstPrimaryColumn; // todo: make sure to create columns for all its primary columns
                 const columnName = namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.table.name, parentEntityMetadataPrimaryColumn.propertyName);
                 const parentRelationColumn = new ColumnMetadata({
                     target: metadata.parentEntityMetadata.table.target,
-                    propertyName: columnName,
+                    propertyName: parentEntityMetadataPrimaryColumn.propertyName,
                     propertyType: parentEntityMetadataPrimaryColumn.propertyType,
-                    mode: "virtual",
+                    mode: "parentId",
                     options: <ColumnOptions> {
+                        name: columnName,
                         type: parentEntityMetadataPrimaryColumn.type,
                         nullable: false,
                         primary: false

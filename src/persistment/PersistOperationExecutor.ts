@@ -12,6 +12,7 @@ import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOpera
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../driver/QueryRunner";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -21,7 +22,7 @@ export class PersistOperationExecutor {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    
+
     constructor(private driver: Driver,
                 private entityMetadatas: EntityMetadataCollection,
                 private broadcaster: Broadcaster,
@@ -97,14 +98,14 @@ export class PersistOperationExecutor {
             const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);
             if (!persistedEntityWithId)
                 throw new Error(`Persisted entity was not found`);
-            
+
             return this.broadcaster.broadcastBeforeInsertEvent(persistedEntityWithId.entity);
         });
         const updateEvents = persistOperation.updates.map(updateOperation => {
             const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === updateOperation.entity);
             if (!persistedEntityWithId)
                 throw new Error(`Persisted entity was not found`);
-            
+
             return this.broadcaster.broadcastBeforeUpdateEvent(persistedEntityWithId.entity, updateOperation.columns);
         });
         const removeEvents = persistOperation.removes.map(removeOperation => {
@@ -112,7 +113,7 @@ export class PersistOperationExecutor {
             // object does not exist anymore - its removed, and there is no way to find this removed object
             return this.broadcaster.broadcastBeforeRemoveEvent(removeOperation.entity, removeOperation.entityId);
         });
-        
+
         return Promise.all(insertEvents)
             .then(() => Promise.all(updateEvents))
             .then(() => Promise.all(removeEvents)); // todo: do we really should send it in order?
@@ -122,19 +123,19 @@ export class PersistOperationExecutor {
      * Broadcast all after persistment events - afterInsert, afterUpdate and afterRemove events.
      */
     private broadcastAfterEvents(persistOperation: PersistOperation) {
-        
+
         const insertEvents = persistOperation.inserts.map(insertOperation => {
             const persistedEntity = persistOperation.allPersistedEntities.find(e => e.entity === insertOperation.entity);
             if (!persistedEntity)
                 throw new Error(`Persisted entity was not found`);
-            
+
             return this.broadcaster.broadcastAfterInsertEvent(persistedEntity.entity);
         });
         const updateEvents = persistOperation.updates.map(updateOperation => {
             const persistedEntityWithId = persistOperation.allPersistedEntities.find(e => e.entity === updateOperation.entity);
             if (!persistedEntityWithId)
                 throw new Error(`Persisted entity was not found`);
-            
+
             return this.broadcaster.broadcastAfterUpdateEvent(persistedEntityWithId.entity, updateOperation.columns);
         });
         const removeEvents = persistOperation.removes.map(removeOperation => {
@@ -142,7 +143,7 @@ export class PersistOperationExecutor {
             // object does not exist anymore - its removed, and there is no way to find this removed object
             return this.broadcaster.broadcastAfterRemoveEvent(removeOperation.entity, removeOperation.entityId);
         });
-        
+
         return Promise.all(insertEvents)
             .then(() => Promise.all(updateEvents))
             .then(() => Promise.all(removeEvents)); // todo: do we really should send it in order?
@@ -151,14 +152,9 @@ export class PersistOperationExecutor {
     /**
      * Executes insert operations.
      */
-    private executeInsertOperations(persistOperation: PersistOperation) {
-        return Promise.all(persistOperation.inserts.map(operation => {
-            return this.insert(operation).then((insertId: any) => {
-                const metadata = this.entityMetadatas.findByTarget(operation.target);
-                if (insertId && metadata.hasGeneratedColumn) {
-                    operation.entityId = { [metadata.generatedColumn.propertyName]: insertId };
-                }
-            });
+    private async executeInsertOperations(persistOperation: PersistOperation): Promise<void> {
+        await Promise.all(persistOperation.inserts.map(async operation => {
+            return this.insert(operation);
         }));
     }
 
@@ -228,8 +224,8 @@ export class PersistOperationExecutor {
     /**
      * Executes update operations.
      */
-    private executeUpdateOperations(persistOperation: PersistOperation) {
-        return Promise.all(persistOperation.updates.map(updateOperation => {
+    private async executeUpdateOperations(persistOperation: PersistOperation): Promise<void> {
+        await Promise.all(persistOperation.updates.map(updateOperation => {
             return this.update(updateOperation);
         }));
     }
@@ -264,6 +260,10 @@ export class PersistOperationExecutor {
         persistOperation.inserts.forEach(insertOperation => {
             const metadata = this.entityMetadatas.findByTarget(insertOperation.target);
             metadata.primaryColumns.forEach(primaryColumn => {
+                if (insertOperation.entityId)
+                    insertOperation.entity[primaryColumn.propertyName] = insertOperation.entityId[primaryColumn.propertyName];
+            });
+            metadata.parentPrimaryColumns.forEach(primaryColumn => {
                 if (insertOperation.entityId)
                     insertOperation.entity[primaryColumn.propertyName] = insertOperation.entityId[primaryColumn.propertyName];
             });
@@ -328,6 +328,12 @@ export class PersistOperationExecutor {
             .forEach(operation => { // duplication with updateByRelation method
                 const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.target);
                 const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
+
+                // todo: looks like first primary column should not be used there for two reasons:
+                // 1. there can be multiple primary columns, which one is mapped in the relation
+                // 2. parent primary column
+                // join column should be used instead
+
                 if (operation.updatedRelation.isOneToMany) {
                     const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null;
                     if (operation.insertOperation.entity === target)
@@ -352,7 +358,7 @@ export class PersistOperationExecutor {
 
         if (operation.updatedRelation.isOneToMany || operation.updatedRelation.isOneToOneNotOwner) {
             const metadata = this.entityMetadatas.findByTarget(operation.insertOperation.target);
-            const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null;
+            const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null; // todo: use join column instead of primary column here
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.inverseRelation.name;
             relationId = operation.targetEntity[metadata.firstPrimaryColumn.propertyName] || idInInserts; // todo: make sure idInInserts is always a map
@@ -364,7 +370,7 @@ export class PersistOperationExecutor {
 
         } else {
             const metadata = this.entityMetadatas.findByTarget(operation.entityTarget);
-            const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null;
+            const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null; // todo: use join column instead of primary column here
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.name;
             relationId = operation.insertOperation.entityId[metadata.firstPrimaryColumn.propertyName]; // todo: make sure entityId is always a map
@@ -394,35 +400,101 @@ export class PersistOperationExecutor {
                 targetEntityId = operation.fromEntity[targetRelation.joinColumn.referencedColumn.name];
             }
         }
-        
+
         return this.queryRunner.update(tableName, { [targetRelation.name]: targetEntityId }, updateMap);
     }
 
-    private update(updateOperation: UpdateOperation) {
+    private async update(updateOperation: UpdateOperation): Promise<void> {
         const entity = updateOperation.entity;
         const metadata = this.entityMetadatas.findByTarget(updateOperation.target);
-        const values: ObjectLiteral = {};
-        
+
+        // we group by table name, because metadata can have different table names
+        const valueMaps: { tableName: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
+
         updateOperation.columns.forEach(column => {
-            values[column.name] = this.driver.preparePersistentValue(column.getEntityValue(entity), column);
+            if (!column.target) return;
+            const metadata = this.entityMetadatas.findByTarget(column.target);
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
+
+            valueMap.values[column.name] = this.driver.preparePersistentValue(column.getEntityValue(entity), column);
         });
-        
+
         updateOperation.relations.forEach(relation => {
+            const metadata = this.entityMetadatas.findByTarget(relation.target);
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
+
             const value = this.getEntityRelationValue(relation, entity);
-            values[relation.name] = value !== null && value !== undefined ? value[relation.inverseEntityMetadata.firstPrimaryColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
+            valueMap.values[relation.name] = value !== null && value !== undefined ? value[relation.inverseEntityMetadata.firstPrimaryColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
         });
 
         // if number of updated columns = 0 no need to update updated date and version columns
-        if (Object.keys(values).length === 0)
-            return Promise.resolve();
+        if (Object.keys(valueMaps).length === 0)
+            return;
 
-        if (metadata.hasUpdateDateColumn)
-            values[metadata.updateDateColumn.name] = this.driver.preparePersistentValue(new Date(), metadata.updateDateColumn);
+        if (metadata.hasUpdateDateColumn) {
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
 
-        if (metadata.hasVersionColumn)
-            values[metadata.versionColumn.name] = this.driver.preparePersistentValue(entity[metadata.versionColumn.propertyName] + 1, metadata.versionColumn);
-        
-        return this.queryRunner.update(metadata.table.name, values, metadata.getEntityIdMap(entity)!);
+            valueMap.values[metadata.updateDateColumn.name] = this.driver.preparePersistentValue(new Date(), metadata.updateDateColumn);
+        }
+
+        if (metadata.hasVersionColumn) {
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
+
+            valueMap.values[metadata.versionColumn.name] = this.driver.preparePersistentValue(entity[metadata.versionColumn.propertyName] + 1, metadata.versionColumn);
+        }
+
+        if (metadata.parentEntityMetadata) {
+            if (metadata.parentEntityMetadata.hasUpdateDateColumn) {
+                let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.parentEntityMetadata.table.name);
+                if (!valueMap) {
+                    valueMap = { tableName: metadata.parentEntityMetadata.table.name, metadata: metadata.parentEntityMetadata, values: {} };
+                    valueMaps.push(valueMap);
+                }
+
+                valueMap.values[metadata.parentEntityMetadata.updateDateColumn.name] = this.driver.preparePersistentValue(new Date(), metadata.parentEntityMetadata.updateDateColumn);
+            }
+
+            if (metadata.parentEntityMetadata.hasVersionColumn) {
+                let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.parentEntityMetadata.table.name);
+                if (!valueMap) {
+                    valueMap = { tableName: metadata.parentEntityMetadata.table.name, metadata: metadata.parentEntityMetadata, values: {} };
+                    valueMaps.push(valueMap);
+                }
+
+                valueMap.values[metadata.parentEntityMetadata.versionColumn.name] = this.driver.preparePersistentValue(entity[metadata.parentEntityMetadata.versionColumn.propertyName] + 1, metadata.parentEntityMetadata.versionColumn);
+            }
+        }
+
+        await Promise.all(valueMaps.map(valueMap => {
+            const conditions: ObjectLiteral = {};
+            if (valueMap.metadata.parentEntityMetadata && valueMap.metadata.parentEntityMetadata.inheritanceType === "class-table") { // valueMap.metadata.getEntityIdMap(entity)!
+                valueMap.metadata.parentIdColumns.forEach(column => {
+                    conditions[column.propertyName] = entity[column.propertyName];
+                });
+
+            } else {
+                valueMap.metadata.primaryColumns.forEach(column => {
+                    conditions[column.propertyName] = entity[column.propertyName];
+                });
+            }
+            return this.queryRunner.update(valueMap.tableName, valueMap.values, conditions);
+        }));
     }
 
     private updateDeletedRelations(removeOperation: RemoveOperation) { // todo: check if both many-to-one deletions work too
@@ -434,27 +506,68 @@ export class PersistOperationExecutor {
                 removeOperation.fromMetadata.table.name,
                 { [removeOperation.relation.name]: null },
                 removeOperation.fromEntityId
-            );   
+            );
         }
 
         throw new Error("Remove operation relation is not set"); // todo: find out how its possible
     }
 
-    private delete(target: Function|string, entity: any) {
+    private async delete(target: Function|string, entity: any): Promise<void> {
         const metadata = this.entityMetadatas.findByTarget(target);
-        return this.queryRunner.delete(metadata.table.name, metadata.getEntityIdMap(entity)!);
+        if (metadata.parentEntityMetadata) {
+            const parentConditions: ObjectLiteral = {};
+            metadata.parentPrimaryColumns.forEach(column => {
+                parentConditions[column.name] = entity[column.propertyName];
+            });
+            await this.queryRunner.delete(metadata.parentEntityMetadata.table.name, parentConditions);
+
+            const childConditions: ObjectLiteral = {};
+            metadata.primaryColumnsWithParentIdColumns.forEach(column => {
+                childConditions[column.name] = entity[column.propertyName];
+            });
+            await this.queryRunner.delete(metadata.table.name, childConditions);
+        } else {
+            await this.queryRunner.delete(metadata.table.name, metadata.getEntityIdMap(entity)!);
+        }
     }
 
-    private insert(operation: InsertOperation) {
-        const entity = operation.entity;
+    /**
+     * Inserts an entity from the given insert operation into the database.
+     * If entity has an generated column, then after saving new generated value will be stored to the InsertOperation.
+     * If entity uses class-table-inheritance, then multiple inserts may by performed to save all entities.
+     */
+    private async insert(operation: InsertOperation): Promise<any> {
         const metadata = this.entityMetadatas.findByTarget(operation.target);
-        
+        let generatedId: any;
+        if (metadata.table.isClassTableChild) {
+            const parentValuesMap = this.collectColumnsAndValues(metadata.parentEntityMetadata, operation.entity, operation.date, undefined, metadata.discriminatorValue);
+            generatedId = await this.queryRunner.insert(metadata.parentEntityMetadata.table.name, parentValuesMap, metadata.parentEntityMetadata.generatedColumnIfExist);
+            const childValuesMap = this.collectColumnsAndValues(metadata, operation.entity, operation.date, generatedId);
+            const secondGeneratedId = await this.queryRunner.insert(metadata.table.name, childValuesMap, metadata.generatedColumnIfExist);
+            if (!generatedId && secondGeneratedId) generatedId = secondGeneratedId;
+        } else {
+            const valuesMap = this.collectColumnsAndValues(metadata, operation.entity, operation.date);
+            generatedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
+        }
+
+        // if there is a generated column and we have a generated id then store it in the insert operation for further use
+        if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.hasGeneratedColumn && generatedId) {
+            operation.entityId = { [metadata.parentEntityMetadata.generatedColumn.propertyName]: generatedId };
+
+        } else if (metadata.hasGeneratedColumn && generatedId) {
+            operation.entityId = { [metadata.generatedColumn.propertyName]: generatedId };
+        }
+
+    }
+
+    private collectColumnsAndValues(metadata: EntityMetadata, entity: any, date: Date, parentIdColumnValue?: any, discriminatorValue?: any): ObjectLiteral {
+
         const columns = metadata.columns
-            .filter(column => !column.isVirtual && !column.isDiscriminator && column.hasEntityValue(entity));
-        
+            .filter(column => !column.isVirtual && !column.isParentId && !column.isDiscriminator && column.hasEntityValue(entity));
+
         const columnNames = columns.map(column => column.name);
         const values = columns.map(column => this.driver.preparePersistentValue(column.getEntityValue(entity), column));
-        
+
         const relationColumns = metadata.relations
             .filter(relation => !relation.isManyToMany && relation.isOwning && !!relation.inverseEntityMetadata)
             .filter(relation => entity.hasOwnProperty(relation.propertyName))
@@ -476,12 +589,12 @@ export class PersistOperationExecutor {
 
         if (metadata.hasCreateDateColumn) {
             allColumns.push(metadata.createDateColumn.name);
-            allValues.push(this.driver.preparePersistentValue(operation.date, metadata.createDateColumn));
+            allValues.push(this.driver.preparePersistentValue(date, metadata.createDateColumn));
         }
 
         if (metadata.hasUpdateDateColumn) {
             allColumns.push(metadata.updateDateColumn.name);
-            allValues.push(this.driver.preparePersistentValue(operation.date, metadata.updateDateColumn));
+            allValues.push(this.driver.preparePersistentValue(date, metadata.updateDateColumn));
         }
 
         if (metadata.hasVersionColumn) {
@@ -491,25 +604,23 @@ export class PersistOperationExecutor {
 
         if (metadata.hasDiscriminatorColumn) {
             allColumns.push(metadata.discriminatorColumn.name);
-            allValues.push(this.driver.preparePersistentValue(metadata.discriminatorValue, metadata.discriminatorColumn));
+            allValues.push(this.driver.preparePersistentValue(discriminatorValue || metadata.discriminatorValue, metadata.discriminatorColumn));
         }
-        
+
         if (metadata.hasTreeLevelColumn && metadata.hasTreeParentRelation) {
-            const parentEntity = entity[metadata.treeParentRelation.name]; // todo: are you sure here we should use name and not propertyName ?
+            const parentEntity = entity[metadata.treeParentRelation.propertyName];
             const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
-            
+
             allColumns.push(metadata.treeLevelColumn.name);
             allValues.push(parentLevel + 1);
         }
-        
-        /*if (metadata.hasTreeChildrenCountColumn) {
-            allColumns.push(metadata.treeChildrenCountColumn.name);
-            allValues.push(0);
-        }*/
 
-        // console.log("inserting: ", this.zipObject(allColumns, allValues));
-        let generatedColumn = metadata.columns.find(column => column.isGenerated);
-        return this.queryRunner.insert(metadata.table.name, this.zipObject(allColumns, allValues), generatedColumn);
+        if (metadata.parentEntityMetadata && metadata.hasParentIdColumn) {
+            allColumns.push(metadata.parentIdColumn.name); // todo: should be array of primary keys
+            allValues.push(parentIdColumnValue || entity[metadata.parentEntityMetadata.firstPrimaryColumn.propertyName]); // todo: should be array of primary keys
+        }
+
+        return this.zipObject(allColumns, allValues);
     }
 
     private insertIntoClosureTable(operation: InsertOperation, updateMap: ObjectLiteral) {
@@ -529,7 +640,7 @@ export class PersistOperationExecutor {
 
         if (!operation.entityId)
             throw new Error(`operation does not have entity id`);
-
+        // todo: this code does not take in count a primary column from the parent entity metadata
         return this.queryRunner.insertIntoClosureTable(metadata.closureJunctionTable.table.name, operation.entityId[metadata.firstPrimaryColumn.propertyName], parentEntityId, metadata.hasTreeLevelColumn)
             /*.then(() => {
                 // we also need to update children count in parent
@@ -565,6 +676,8 @@ export class PersistOperationExecutor {
         const columns = junctionMetadata.columns.map(column => column.name);
         const insertOperation1 = insertOperations.find(o => o.entity === junctionOperation.entity1);
         const insertOperation2 = insertOperations.find(o => o.entity === junctionOperation.entity2);
+
+        // todo: firstPrimaryColumn should not be used there! use join column's properties instead!
 
         let id1 = junctionOperation.entity1[metadata1.firstPrimaryColumn.propertyName];
         let id2 = junctionOperation.entity2[metadata2.firstPrimaryColumn.propertyName];

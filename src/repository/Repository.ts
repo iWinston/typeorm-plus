@@ -52,14 +52,26 @@ export class Repository<Entity extends ObjectLiteral> {
      * If entity contains compose ids, then it checks them all.
      */
     hasId(entity: Entity): boolean {
-        return this.metadata.primaryColumns.every(primaryColumn => {
-            const columnName = primaryColumn.propertyName;
-            return !!entity &&
-                entity.hasOwnProperty(columnName) &&
-                entity[columnName] !== null &&
-                entity[columnName] !== undefined &&
-                entity[columnName] !== "";
-        });
+        // if (this.metadata.parentEntityMetadata) {
+        //     return this.metadata.parentEntityMetadata.parentIdColumns.every(parentIdColumn => {
+        //         const columnName = parentIdColumn.propertyName;
+        //         return !!entity &&
+        //             entity.hasOwnProperty(columnName) &&
+        //             entity[columnName] !== null &&
+        //             entity[columnName] !== undefined &&
+        //             entity[columnName] !== "";
+        //     });
+
+        // } else {
+            return this.metadata.primaryColumns.every(primaryColumn => {
+                const columnName = primaryColumn.propertyName;
+                return !!entity &&
+                    entity.hasOwnProperty(columnName) &&
+                    entity[columnName] !== null &&
+                    entity[columnName] !== undefined &&
+                    entity[columnName] !== "";
+            });
+        // }
     }
 
     /**
@@ -200,7 +212,7 @@ export class Repository<Entity extends ObjectLiteral> {
                 .from(this.metadata.target, this.metadata.table.name);
             const dbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
 
-            this.metadata.primaryColumns.forEach(primaryColumn => entityOrEntities[primaryColumn.name] = undefined);
+            this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entityOrEntities[primaryColumn.name] = undefined);
             const [dbEntities, allPersistedEntities] = await Promise.all([
                 this.extractObjectsById(dbEntity, this.metadata),
                 this.extractObjectsById(entityOrEntities, this.metadata)
@@ -311,8 +323,15 @@ export class Repository<Entity extends ObjectLiteral> {
             this.metadata.primaryColumns.forEach(primaryColumn => {
                 conditions[primaryColumn.name] = id[primaryColumn.name];
             });
+            this.metadata.parentIdColumns.forEach(primaryColumn => {
+                conditions[primaryColumn.name] = id[primaryColumn.propertyName];
+            });
         } else {
-            conditions[this.metadata.firstPrimaryColumn.name] = id;
+            if (this.metadata.primaryColumns.length > 0) {
+                conditions[this.metadata.firstPrimaryColumn.name] = id;
+            } else if (this.metadata.parentIdColumns.length > 0) {
+                conditions[this.metadata.parentIdColumns[0].name] = id;
+            }
         }
         return this.createFindQueryBuilder(conditions, options)
             .getSingleResult();
@@ -411,10 +430,19 @@ export class Repository<Entity extends ObjectLiteral> {
                     .from(entityWithId.entityTarget, alias);
 
                 const parameters: ObjectLiteral = {};
-                const condition = this.metadata.primaryColumns.map(primaryColumn => {
-                    parameters[primaryColumn.propertyName] = entityWithId.id![primaryColumn.propertyName];
-                    return alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName;
-                }).join(" AND ");
+                let condition = "";
+
+                if (this.metadata.hasParentIdColumn) {
+                    condition = this.metadata.parentIdColumns.map(parentIdColumn => {
+                        parameters[parentIdColumn.propertyName] = entityWithId.id![parentIdColumn.propertyName];
+                        return alias + "." + parentIdColumn.propertyName + "=:" + parentIdColumn.propertyName;
+                    }).join(" AND ");
+                } else {
+                    condition = this.metadata.primaryColumns.map(primaryColumn => {
+                        parameters[primaryColumn.propertyName] = entityWithId.id![primaryColumn.propertyName];
+                        return alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName;
+                    }).join(" AND ");
+                }
 
                 const qbResult = qb.where(condition, parameters).getSingleResult();
                 // const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
@@ -433,7 +461,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Extracts unique objects from given entity and all its downside relations.
      */
-    private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> {
+    private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> { // todo: why promises used there?
         const promises = metadata.relations.map(relation => {
             const relMetadata = relation.inverseEntityMetadata;
 

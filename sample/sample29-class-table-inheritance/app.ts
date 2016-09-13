@@ -35,19 +35,35 @@ createConnection(options).then(async connection => {
     employee.id = 1;
     employee.firstName = "umed";
     employee.lastName = "khudoiberdiev";
-    employee.salary = 200000;
+    employee.salary = 300000;
 
     console.log("saving the employee: ");
     await employeeRepository.persist(employee);
     console.log("employee has been saved: ", employee);
 
+    console.log("updating the employee: ");
+    employee.firstName = "zuma";
+    employee.lastName += "a";
+    await employeeRepository.persist(employee);
+    console.log("employee has been updated: ", employee);
+
     console.log("now loading the employee: ");
     const loadedEmployee = await employeeRepository.findOneById(1);
     console.log("loaded employee: ", loadedEmployee);
 
+    loadedEmployee.firstName = "dima";
+    await employeeRepository.persist(loadedEmployee);
+
+    const allEmployees = await employeeRepository.findAndCount();
+    console.log("all employees: ", allEmployees);
+
+    console.log("deleting employee: ", loadedEmployee);
+    await employeeRepository.remove(loadedEmployee);
+    console.log("employee deleted");
+
     console.log("-----------------");
 
-    let homesitterRepository = connection.getRepository(Homesitter);
+    /*let homesitterRepository = connection.getRepository(Homesitter);
     const homesitter = new Homesitter();
     homesitter.id = 2;
     homesitter.firstName = "umed";
@@ -93,6 +109,6 @@ createConnection(options).then(async connection => {
     const secondStudent = await studentRepository.findOneById(1);
     console.log("Non exist student: ", secondStudent);
     const thirdStudent = await studentRepository.findOneById(2);
-    console.log("Non exist student: ", thirdStudent);
+    console.log("Non exist student: ", thirdStudent);*/
 
 }).catch(error => console.log("Error: ", error));

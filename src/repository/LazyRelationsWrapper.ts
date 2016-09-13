@@ -3,7 +3,6 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {Driver} from "../driver/Driver";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {Connection} from "../connection/Connection";
 
 export class LazyRelationsWrapper {
     
@@ -31,7 +30,7 @@ export class LazyRelationsWrapper {
 
                     if (relation.hasInverseSide) { // if we don't have inverse side then we can't select and join by relation from inverse side
                         qb.select(relation.propertyName)
-                            .from(relation.inverseRelation.target, relation.propertyName)
+                            .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
                             .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName);
                     } else {
                         qb.select(relation.propertyName)
@@ -55,7 +54,7 @@ export class LazyRelationsWrapper {
 
                     if (relation.hasInverseSide) {
                         qb.select(relation.propertyName)
-                            .from(relation.inverseRelation.target, relation.propertyName)
+                            .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
                             .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName);
 
                     } else {
@@ -63,7 +62,7 @@ export class LazyRelationsWrapper {
                         // loaded: category from post
                         qb.select(relation.propertyName) // category
                             .from(relation.type, relation.propertyName) // Category, category
-                            .innerJoin(relation.target as Function, relation.entityMetadata.name, "ON",
+                            .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, "ON",
                                 `${relation.entityMetadata.name}.${relation.propertyName}=:${relation.propertyName}Id`) // Post, post, post.category = categoryId
                             .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
                     }

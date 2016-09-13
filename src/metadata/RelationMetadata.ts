@@ -145,7 +145,7 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: RelationMetadataArgs) {
-        super(undefined, args.propertyName);
+        super(args.target, args.propertyName);
         this.relationType = args.relationType;
         
         if (args.inverseSideProperty)
@@ -179,10 +179,6 @@ export class RelationMetadata extends PropertyMetadata {
     // Accessors
     // ---------------------------------------------------------------------
 
-    get target() {
-        return this.entityMetadata.target;
-    }
-    
     /**
      * Gets the name of column in the database. 
      * //Cannot be used with many-to-many relations since they don't have a column in the database.

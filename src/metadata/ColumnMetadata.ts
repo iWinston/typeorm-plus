@@ -10,7 +10,7 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
  * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
  * date column.
  */
-export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator";
+export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId";
 
 /**
  * This metadata contains all information about entity's column.
@@ -198,6 +198,13 @@ export class ColumnMetadata extends PropertyMetadata {
      */
     get isVirtual() {
         return this.mode === "virtual";
+    }
+
+    /**
+     * Indicates if column is a parent id. Parent id columns are not mapped to the entity.
+     */
+    get isParentId() {
+        return this.mode === "parentId";
     }
 
     /**

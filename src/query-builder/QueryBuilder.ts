@@ -77,6 +77,7 @@ export class QueryBuilder<Entity> {
     private offset: number;
     private firstResult: number;
     private maxResults: number;
+    private ignoreParentTablesJoins: boolean = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -553,6 +554,7 @@ export class QueryBuilder<Entity> {
             const [sql, parameters] = this.getSqlWithParameters();
 
             try {
+                // console.log(sql);
                 return await queryRunner.query(sql, parameters)
                     .then(results => {
                         scalarResults = results;
@@ -722,7 +724,7 @@ export class QueryBuilder<Entity> {
         const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
 
         const distinctAlias = this.driver.escapeAliasName(mainAlias);
-        let countSql = `COUNT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+        let countSql = `COUNT(` + metadata.primaryColumnsWithParentIdColumns.map((primaryColumn, index) => {
             const propertyName = this.driver.escapeColumnName(primaryColumn.name);
             if (index === 0) {
                 return `DISTINCT(${distinctAlias}.${propertyName})`;
@@ -731,7 +733,8 @@ export class QueryBuilder<Entity> {
             }
         }).join(", ") + ") as cnt";
 
-        const countQuery = this.clone({ queryRunner: queryRunner, skipOrderBys: true })
+        const countQuery = this
+            .clone({ queryRunner: queryRunner, skipOrderBys: true, ignoreParentTablesJoins: true })
             .select(countSql);
 
         const [countQuerySql, countQueryParameters] = countQuery.getSqlWithParameters();
@@ -757,8 +760,10 @@ export class QueryBuilder<Entity> {
         ]);
     }
 
-    clone(options?: { queryRunner?: QueryRunner, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean }): QueryBuilder<Entity> {
+    clone(options?: { queryRunner?: QueryRunner, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean, ignoreParentTablesJoins?: boolean }): QueryBuilder<Entity> {
         const qb = new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster, options ? options.queryRunner : undefined);
+        if (options && options.ignoreParentTablesJoins)
+            qb.ignoreParentTablesJoins = options.ignoreParentTablesJoins;
 
         switch (this.type) {
             case "select":
@@ -884,6 +889,16 @@ export class QueryBuilder<Entity> {
                 }
             });
 
+        if (!this.ignoreParentTablesJoins) {
+            const metadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
+                const alias = "parentIdColumn_" + this.driver.escapeAliasName(metadata.parentEntityMetadata.table.name);
+                metadata.parentEntityMetadata.columns.forEach(column => {
+                    allSelects.push(alias + "." + this.driver.escapeColumnName(column.name) + " AS " + alias + "_" + this.driver.escapeAliasName(column.name));
+                });
+            }
+        }
+
         // add selects from relation id joins
         this.joinRelationIds.forEach(join => {
             // const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
@@ -935,7 +950,6 @@ export class QueryBuilder<Entity> {
     }
 
     protected createWhereExpression() {
-        if (!this.wheres || !this.wheres.length) return "";
 
         const conditions = this.wheres.map((where, index) => {
             switch (where.type) {
@@ -950,8 +964,9 @@ export class QueryBuilder<Entity> {
 
         const mainMetadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
         if (mainMetadata.hasDiscriminatorColumn)
-            return " WHERE (" + conditions + ") AND " + mainMetadata.discriminatorColumn.name + "=:discriminatorColumnValue";
+            return ` WHERE ${ conditions.length ? "(" + conditions + ")" : "" } AND ${mainMetadata.discriminatorColumn.name}=:discriminatorColumnValue`;
 
+        if (!conditions.length) return "";
         return " WHERE " + conditions;
     }
 
@@ -1015,7 +1030,7 @@ export class QueryBuilder<Entity> {
     }
 
     protected createJoinExpression() {
-        return this.joins.map(join => {
+        let joins = this.joins.map(join => {
             const joinType = join.type; // === "INNER" ? "INNER" : "LEFT";
             let joinTableName: string = join.tableName;
             if (!joinTableName) {
@@ -1077,6 +1092,20 @@ export class QueryBuilder<Entity> {
                 throw new Error("Unexpected relation type"); // this should not be possible
             }
         }).join(" ");
+
+        if (!this.ignoreParentTablesJoins) {
+            const metadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
+                const alias = this.driver.escapeAliasName("parentIdColumn_" + metadata.parentEntityMetadata.table.name);
+                joins += " JOIN " + this.driver.escapeTableName(metadata.parentEntityMetadata.table.name)
+                    + " " + alias + " ON ";
+                joins += metadata.parentIdColumns.map(parentIdColumn => {
+                    return this.aliasMap.mainAlias.name + "." + parentIdColumn.name + "=" + alias + "." + parentIdColumn.propertyName;
+                });
+            }
+        }
+
+        return joins;
     }
 
     protected createGroupByExpression() {
