@@ -59,6 +59,7 @@
   "dependencies": {
     "@types/lodash": "4.14.34",
     "@types/node": "^6.0.38",
+    "app-root-path": "^2.0.1",
     "glob": "^7.0.6",
     "lodash": "^4.15.0",
     "moment": "^2.14.1",
@@ -71,5 +72,8 @@
   },
   "scripts": {
     "test": "node_modules/.bin/gulp tests"
+  },
+  "bin": {
+    "typeorm": "./cli.js"
   }
 }

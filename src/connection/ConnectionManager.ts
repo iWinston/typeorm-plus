@@ -11,6 +11,7 @@ import {Logger} from "../logger/Logger";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {OrmConfigConnectionOptions} from "./OrmConfigConnectionOptions";
 
 /**
  * Connection manager holds all connections made to the databases and providers helper management functions 
@@ -30,6 +31,45 @@ export class ConnectionManager {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Creates a new connection based on the connection options from "ormconfig.json"
+     * and registers a new connection in the manager.
+     * Optionally you can specify a path to the json configuration.
+     * If path is not given, then ormconfig.json file will be searched near node_modules directory.
+     */
+    async createAndConnectToAllFromConfig(path?: string): Promise<Connection[]> {
+        const optionsArray: OrmConfigConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
+        if (!optionsArray)
+            throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
+
+        const promises = optionsArray
+            .filter(options => !options.environment || options.environment === process.env.NODE_ENV) // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
+            .map(options => this.createAndConnect(options));
+
+        return Promise.all(promises);
+    }
+
+    /**
+     * Creates a new connection based on the connection options from "ormconfig.json"
+     * and registers a new connection in the manager.
+     * Optionally you can specify a path to the json configuration.
+     * If path is not given, then ormconfig.json file will be searched near node_modules directory.
+     */
+    async createAndConnectFromConfig(connectionName: string = "default", path?: string): Promise<Connection> {
+        const optionsArray: OrmConfigConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
+        if (!optionsArray)
+            throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
+
+        const options = optionsArray
+            .filter(options => !options.environment || options.environment === process.env.NODE_ENV) // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
+            .find(options => (options.name || "default") === connectionName);
+
+        if (!options)
+            throw new Error(`Connection "${connectionName}" ${process.env.NODE_ENV ? "for the environment " + process.env.NODE_ENV + " " : ""} was not found in the json configuration file.`);
+
+        return this.createAndConnect(options);
+    }
 
     /**
      * Creates a new connection based on the given connection options and registers a new connection in the manager.

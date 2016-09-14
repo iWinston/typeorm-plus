@@ -78,20 +78,34 @@ export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface"
 /**
  * Gets metadata args storage.
  */
-export function getMetadataArgsStorage() {
+export function getMetadataArgsStorage(): MetadataArgsStorage {
     return getFromContainer(MetadataArgsStorage);
 }
 
 /**
  * Gets a ConnectionManager which creates connections.
  */
-export function getConnectionManager() {
+export function getConnectionManager(): ConnectionManager {
     return getFromContainer(ConnectionManager);
 }
 
 /**
  * Allows to quickly create a connection based on the given options. Uses ConnectionManager.
  */
-export function createConnection(options: ConnectionOptions) {
+export function createConnection(options: ConnectionOptions): Promise<Connection> {
     return getConnectionManager().createAndConnect(options);
+}
+
+/**
+ * Allows to quickly create a connection based on the connection options in the ormconfig.json.
+ */
+export function createConnectionFromConfig(connectionName: string = "default", path?: string): Promise<Connection[]> {
+    return getConnectionManager().createAndConnectFromConfig(path);
+}
+
+/**
+ * Allows to quickly create a connections based on the connection options in the ormconfig.json.
+ */
+export function createConnectionsFromConfig(path?: string): Promise<Connection[]> {
+    return getConnectionManager().createAndConnectToAllFromConfig(path);
 }

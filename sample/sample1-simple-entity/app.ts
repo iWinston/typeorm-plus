@@ -15,14 +15,14 @@ const options: ConnectionOptions = {
         // username: "system",
         // password: "oracle",
         // sid: "xe.oracle.docker",
-        type: "mssql",
-        host: "192.168.1.10",
-        username: "sa",
-        password: "admin12345",
-        database: "test",
+        // type: "mssql",
+        // host: "192.168.1.10",
+        // username: "sa",
+        // password: "admin12345",
+        // database: "test",
         // port: 1521
-        // type: "sqlite",
-        // storage: "temp/sqlitedb.db"
+        type: "sqlite",
+        storage: "temp/sqlitedb.db"
     },
     logging: {
         logQueries: true,
