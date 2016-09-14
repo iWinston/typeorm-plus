@@ -19,7 +19,7 @@ const options: ConnectionOptions = {
         logFailedQueryError: true
     },
     autoSchemaCreate: true,
-    entityDirectories: [__dirname + "/entity/*"]
+    entities: [__dirname + "/entity/*"]
 };
 
 createConnection(options).then(connection => {

@@ -5,9 +5,8 @@ import {DriverOptions} from "../../src/driver/DriverOptions";
 import {EntitySchema} from "../../src/metadata/entity-schema/EntitySchema";
 
 export interface TestingConnectionOptions {
-    entities?: Function[];
     entitySchemas?: EntitySchema[];
-    entityDirectories?: string[];
+    entities?: string[]|Function[];
     secondaryConnections?: boolean;
     schemaCreate?: boolean;
     dropSchemaOnConnection?: boolean;
@@ -57,7 +56,7 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"m
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
+        entities: options && options.entities ? options.entities : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -81,7 +80,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -96,7 +94,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -111,7 +108,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -126,7 +122,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -141,7 +136,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -156,7 +150,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -171,7 +164,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
@@ -186,7 +178,6 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entityDirectories: options && options.entityDirectories ? options.entityDirectories : [],
         logging: {
             // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,

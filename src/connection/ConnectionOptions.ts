@@ -43,45 +43,61 @@ export interface ConnectionOptions {
     /**
      * Entities to be loaded for the this connection.
      */
-    readonly entities?: Function[];
+    readonly entities?: Function[]|string[];
 
     /**
      * Subscribers to be loaded for the this connection.
      */
-    readonly subscribers?: Function[];
+    readonly subscribers?: Function[]|string[];
 
     /**
      * Naming strategies to be loaded for the this connection.
      */
-    readonly namingStrategies?: Function[];
+    readonly namingStrategies?: Function[]|string[];
 
     /**
      * Entity schemas to be loaded for the this connection.
      */
-    readonly entitySchemas?: EntitySchema[];
+    readonly entitySchemas?: EntitySchema[]|string[];
 
     /**
      * List of files with entities from where they will be loaded.
      * Glob patterns are supported.
+     *
+     * @deprecated
      */
-    readonly entityDirectories?: string[];
+    // readonly entities?: string[];
 
     /**
      * List of files with subscribers from where they will be loaded.
      * Glob patterns are supported.
+     *
+     * @deprecated
      */
-    readonly subscriberDirectories?: string[];
+    // readonly subscribers?: string[];
 
     /**
      * List of files with naming strategies from where they will be loaded.
      * Glob patterns are supported.
+     *
+     * @deprecated
      */
-    readonly namingStrategyDirectories?: string[];
+    // readonly namingStrategyDirectories?: string[];
 
     /**
      * List of files with entity schemas from where they will be loaded.
      * Glob patterns are supported.
+     *
+     * @deprecated
      */
-    readonly entitySchemaDirectories?: string[];
+    // readonly entitySchemaDirectories?: string[];
+
+    /**
+     * Environment in which this connection will run.
+     * Environment is based on the NODE_ENV variable's value.
+     * For example, if NODE_ENV is "test" and this property is set to "test",
+     * then this connection will be created, otherwise on any other NODE_ENV value it will be skipped.
+     */
+    readonly environment?: string;
 
 }

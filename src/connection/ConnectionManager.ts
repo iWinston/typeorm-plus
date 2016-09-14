@@ -62,30 +62,46 @@ export class ConnectionManager {
         const driver = this.createDriver(options.driver, logger);
         const connection = this.createConnection(options.name || "default", driver, logger);
 
-        if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
+        if (options.entitySchemas) {
+            const [directories, classes] = this.splitStringsAndFunctions(options.entitySchemas);
+            connection
+                .importEntitySchemas(classes)
+                .importEntitySchemaFromDirectories(directories);
+        }
+
+        if (options.entities) {
+            const [directories, classes] = this.splitStringsAndFunctions(options.entities);
+            connection
+                .importEntities(classes)
+                .importEntitiesFromDirectories(directories);
+        }
+
+        if (options.subscribers) {
+            const [directories, classes] = this.splitStringsAndFunctions(options.subscribers);
+            connection
+                .importSubscribers(classes)
+                .importSubscribersFromDirectories(directories);
+        }
+
+        if (options.namingStrategies) {
+            const [directories, classes] = this.splitStringsAndFunctions(options.namingStrategies);
+            connection
+                .importNamingStrategies(classes)
+                .importNamingStrategiesFromDirectories(directories);
+        }
+
+        /*if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
             connection.importEntitySchemaFromDirectories(options.entitySchemaDirectories);
 
-        if (options.entitySchemas)
-            connection.importEntitySchemas(options.entitySchemas);
+        if (options.entities && options.entities.length > 0)
+            connection.importEntitiesFromDirectories(options.entities);
 
-        if (options.entityDirectories && options.entityDirectories.length > 0)
-            connection.importEntitiesFromDirectories(options.entityDirectories);
-
-        if (options.entities)
-            connection.importEntities(options.entities);
-
-        if (options.subscriberDirectories && options.subscriberDirectories.length > 0)
-            connection.importSubscribersFromDirectories(options.subscriberDirectories);
-
-        if (options.subscribers)
-            connection.importSubscribers(options.subscribers);
+        if (options.subscribers && options.subscribers.length > 0)
+            connection.importSubscribersFromDirectories(options.subscribers);
 
         if (options.namingStrategyDirectories && options.namingStrategyDirectories.length > 0)
-            connection.importNamingStrategiesFromDirectories(options.namingStrategyDirectories);
+            connection.importNamingStrategiesFromDirectories(options.namingStrategyDirectories);*/
 
-        if (options.namingStrategies)
-            connection.importNamingStrategies(options.namingStrategies);
-        
         if (options.usedNamingStrategy && typeof options.usedNamingStrategy === "string")
             connection.useNamingStrategy(options.usedNamingStrategy);
         
@@ -110,6 +126,16 @@ export class ConnectionManager {
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Splits given array of mixed strings and / or functions into two separate array of string and array of functions.
+     */
+    private splitStringsAndFunctions<T>(strAndClses: string[]|T[]): [string[], T[]] {
+        return [
+            (strAndClses as string[]).filter(str => typeof str === "string"),
+            (strAndClses as T[]).filter(cls => typeof cls !== "string"),
+        ];
+    }
 
     /**
      * Creates a new driver based on the given driver type and options.
