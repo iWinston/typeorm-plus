@@ -146,7 +146,7 @@ export class SchemaBuilder {
             this.logger.logSchemaBuild(`creating a new table: ${metadata.table.name}`);
 
             // create a new table schema and sync it in the database
-            const tableSchema = new TableSchema(metadata.table.name, this.metadataColumnsToColumnSchemas(metadata.columns));
+            const tableSchema = new TableSchema(metadata.table.name, this.metadataColumnsToColumnSchemas(metadata.columns), true);
             this.tableSchemas.push(tableSchema);
             await this.queryRunner.createTable(tableSchema);
         }));
@@ -255,7 +255,7 @@ export class SchemaBuilder {
      */
     protected updatePrimaryKeys() {
         return Promise.all(this.entityMetadatas.map(async metadata => {
-            const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
+            const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name && !table.justCreated);
             if (!tableSchema)
                 return;
 

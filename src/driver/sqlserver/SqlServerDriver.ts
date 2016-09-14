@@ -28,14 +28,14 @@ export class SqlServerDriver implements Driver {
      */
     readonly options: DriverOptions;
 
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
     /**
      * SQL Server library.
      */
-    protected mssql: any;
+    public mssql: any;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
 
     /**
      * Connection to mssql database.
@@ -45,7 +45,7 @@ export class SqlServerDriver implements Driver {
     /**
      * SQL Server pool.
      */
-    protected pool: any;
+    protected connection: any;
 
     /**
      * Pool of database connections.
@@ -93,7 +93,7 @@ export class SqlServerDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            host: this.options.host,
+            server: this.options.host,
             user: this.options.username,
             password: this.options.password,
             database: this.options.database,
@@ -102,53 +102,40 @@ export class SqlServerDriver implements Driver {
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.options.usePool === undefined || this.options.usePool === true) {
-            this.pool = this.mssql.createPool(options);
-            return Promise.resolve();
-
-        } else {
-            return new Promise<void>((ok, fail) => {
-                const connection = this.mssql.createConnection(options);
-                this.databaseConnection = {
-                    id: 1,
-                    connection: connection,
-                    isTransactionActive: false
-                };
-                this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
+        return new Promise<void>((ok, fail) => {
+            const connection = new this.mssql.Connection(options).connect((err: any) => {
+                if (err) return fail(err);
+                this.connection = connection;
+                if (this.options.usePool === false) {
+                    this.databaseConnection = {
+                        id: 1,
+                        connection: new this.mssql.Request(connection),
+                        isTransactionActive: false
+                    };
+                }
+                ok();
             });
-        }
+        });
     }
 
     /**
      * Closes connection with the database.
      */
-    disconnect(): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
+    async disconnect(): Promise<void> {
+        if (!this.connection)
             throw new ConnectionIsNotSetError("mssql");
 
-        return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-
-            // if pooling is used, then disconnect from it
-            if (this.pool) {
-                this.pool.end(handler);
-                this.pool = undefined;
-                this.databaseConnectionPool = [];
-            }
-
-            // if single connection is opened, then close it
-            if (this.databaseConnection) {
-                this.databaseConnection.connection.end(handler);
-                this.databaseConnection = undefined;
-            }
-        });
+        this.connection.close();
+        this.connection = undefined;
+        this.databaseConnection = undefined;
+        this.databaseConnectionPool = [];
     }
 
     /**
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection && !this.pool)
+        if (!this.connection)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
@@ -162,7 +149,7 @@ export class SqlServerDriver implements Driver {
         return {
             driver: this.mssql,
             connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
-            pool: this.pool
+            pool: this.connection
         };
     }
 
@@ -173,11 +160,13 @@ export class SqlServerDriver implements Driver {
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, []];
+        let index = 0;
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
             escapedParameters.push(parameters[key.substr(1)]);
-            return "?";
+            index++;
+            return "@" + (index - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -282,37 +271,44 @@ export class SqlServerDriver implements Driver {
      */
     protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
 
-        if (this.pool) {
-            return new Promise((ok, fail) => {
-                this.pool.getConnection((err: any, connection: any) => {
-                    if (err)
-                        return fail(err);
+        if (!this.connection)
+            throw new ConnectionIsNotSetError("mssql");
 
-                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                    if (!dbConnection) {
-                        dbConnection = {
-                            id: this.databaseConnectionPool.length,
-                            connection: connection,
-                            isTransactionActive: false
-                        };
-                        dbConnection.releaseCallback = () => {
-                            if (this.pool && dbConnection) {
-                                connection.release();
-                                this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                            }
-                            return Promise.resolve();
-                        };
-                        this.databaseConnectionPool.push(dbConnection);
-                    }
-                    ok(dbConnection);
-                });
-            });
-        }
+        return new Promise((ok, fail) => {
+            if (this.databaseConnection)
+                return ok(this.databaseConnection);
+            // let dbConnection: DatabaseConnection|undefined;
+            // const connection = this.pool.connect((err: any) => {
+            //     if (err)
+            //         return fail(err);
+            //     ok(dbConnection);
+            // });
+            //
+            // console.log(connection);
+            // console.log(this.pool);
+            // console.log(this.pool === connection);
 
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("mssql");
+            // const request = new this.mssql.Request(this.connection);
+            // console.log("request:", request);
+            // let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
+            // if (!dbConnection) {
+            let dbConnection: DatabaseConnection = {
+                id: this.databaseConnectionPool.length,
+                connection: this.connection,
+                transaction: this.connection.transaction(),
+                isTransactionActive: false
+            };
+            dbConnection.releaseCallback = () => {
+                // }
+                // if (this.connection && dbConnection) {
+                // request.release();
+                this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+                return Promise.resolve();
+            };
+            this.databaseConnectionPool.push(dbConnection);
+            ok(dbConnection);
+            // }
+        });
     }
 
     /**

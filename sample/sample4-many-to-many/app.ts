@@ -5,14 +5,14 @@ import {PostDetails} from "./entity/PostDetails";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
+        type: "mssql",
+        host: "192.168.1.10",
+        username: "sa",
+        password: "admin12345",
+        database: "test",
     },
     logging: {
+        logFailedQueryError: true,
         logQueries: true
     },
     autoSchemaCreate: true,

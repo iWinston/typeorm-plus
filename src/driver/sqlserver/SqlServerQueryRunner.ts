@@ -84,8 +84,16 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.databaseConnection.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        this.databaseConnection.isTransactionActive = true;
-        await this.query("START TRANSACTION");
+        return new Promise<void>((ok, fail) => {
+            this.databaseConnection.isTransactionActive = true;
+            this.databaseConnection.transaction.begin((err: any) => {
+                if (err) {
+                    this.databaseConnection.isTransactionActive = false;
+                    return fail(err);
+                }
+                ok();
+            });
+        });
     }
 
     /**
@@ -98,8 +106,13 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.query("COMMIT");
-        this.databaseConnection.isTransactionActive = false;
+        return new Promise<void>((ok, fail) => {
+            this.databaseConnection.transaction.commit((err: any) => {
+                if (err) return fail(err);
+                this.databaseConnection.isTransactionActive = false;
+                ok();
+            });
+        });
     }
 
     /**
@@ -112,8 +125,13 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (!this.databaseConnection.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.query("ROLLBACK");
-        this.databaseConnection.isTransactionActive = false;
+        return new Promise<void>((ok, fail) => {
+            this.databaseConnection.transaction.rollback((err: any) => {
+                if (err) return fail(err);
+                this.databaseConnection.isTransactionActive = false;
+                ok();
+            });
+        });
     }
 
     /**
@@ -132,13 +150,21 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         this.logger.logQuery(query);
         return new Promise((ok, fail) => {
-            this.databaseConnection.connection.query(query, parameters, (err: any, result: any) => {
+
+            const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
+            if (parameters && parameters.length) {
+                parameters.forEach((parameter, index) => {
+                    request.input(index, parameters![index]);
+                });
+            }
+            request.query(query, (err: any, result: any) => {
                 if (err) {
                     this.logger.logFailedQuery(query);
                     this.logger.logQueryError(err);
                     return fail(err);
                 }
 
+                // console.log("result: ", result);
                 ok(result);
             });
         });
@@ -153,11 +179,11 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
-        const values = keys.map(key => "?").join(",");
+        const values = keys.map((key, index) => "@" + index).join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
+        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        return generatedColumn ? result.insertId : undefined;
+        return generatedColumn ? result instanceof Array ? result[0][generatedColumn.name] : result[generatedColumn.name] : undefined;
     }
 
     /**
@@ -224,19 +250,21 @@ export class SqlServerQueryRunner implements QueryRunner {
             return [];
 
         // load tables, columns, indices and foreign keys
-        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.dbName}'`;
-        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'`;
-        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
-        const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
-        const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+        const tablesSql          = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.dbName}'`;
+        const columnsSql         = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.dbName}'`;
+        const constraintsSql     = `SELECT columnUsages.*, tableConstraints.CONSTRAINT_TYPE FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE columnUsages
+LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tableConstraints ON tableConstraints.CONSTRAINT_NAME = columnUsages.CONSTRAINT_NAME
+WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_CATALOG = '${this.dbName}'`;
+        const identityColumnsSql = `SELECT COLUMN_NAME, TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.dbName}' AND COLUMNPROPERTY(object_id(TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1;`;
+        // const indicesSql         = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_CATALOG = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
+        // const uniqueKeysSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
+        const [dbTables, dbColumns, dbConstraints, dbIdentityColumns, dbIndices, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-            this.query(uniqueKeysSql),
-            this.query(primaryKeysSql),
+            this.query(constraintsSql),
+            this.query(identityColumnsSql),
+            // this.query(indicesSql),
+            // this.query(uniqueKeysSql),
         ]);
 
         // if tables were not found in the db, no need to proceed
@@ -244,36 +272,55 @@ export class SqlServerQueryRunner implements QueryRunner {
             return [];
 
         // create table schemas for loaded tables
-        return dbTables.map(dbTable => {
+        return Promise.all(dbTables.map(async dbTable => {
             const tableSchema = new TableSchema(dbTable["TABLE_NAME"]);
 
             // create column schemas from the loaded columns
             tableSchema.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === tableSchema.name)
                 .map(dbColumn => {
+
+                    const isPrimary = !!dbConstraints.find(dbConstraint => {
+                        return  dbConstraint["TABLE_NAME"] === tableSchema.name &&
+                                dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] &&
+                                dbConstraint["CONSTRAINT_TYPE"] === "PRIMARY KEY";
+                    });
+                    const isGenerated = !!dbIdentityColumns.find(column => {
+                        return  column["TABLE_NAME"] === tableSchema.name &&
+                                column["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
+                    });
+
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
-                    columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase(); // todo: use normalize type?
+                    columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase() + (dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? "(" + dbColumn["CHARACTER_MAXIMUM_LENGTH"] + ")" : ""); // todo: use normalize type?
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
-                    columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
-                    columnSchema.comment = dbColumn["COLUMN_COMMENT"];
+                    columnSchema.isPrimary = isPrimary; // todo! check
+                    columnSchema.isGenerated = isGenerated; // todo! check
+                    columnSchema.comment = ""; // todo: less priority, implement this later
                     return columnSchema;
                 });
 
             // create primary key schema
-            tableSchema.primaryKeys = primaryKeys
-                .filter(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name)
-                .map(primaryKey => new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"], primaryKey["COLUMN_NAME"]));
+            tableSchema.primaryKeys = dbConstraints
+                .filter(dbConstraint => {
+                    return  dbConstraint["TABLE_NAME"] === tableSchema.name &&
+                            dbConstraint["CONSTRAINT_TYPE"] === "PRIMARY KEY";
+                })
+                .map(keyColumnUsage => {
+                    return new PrimaryKeySchema(keyColumnUsage["CONSTRAINT_NAME"], keyColumnUsage["COLUMN_NAME"]);
+                });
 
             // create foreign key schemas from the loaded indices
-            tableSchema.foreignKeys = dbForeignKeys
-                .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === tableSchema.name)
-                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
+            tableSchema.foreignKeys = dbConstraints
+                .filter(dbConstraint => {
+                    return  dbConstraint["TABLE_NAME"] === tableSchema.name &&
+                            dbConstraint["CONSTRAINT_TYPE"] === "FOREIGN KEY";
+                })
+                .map(dbConstraint => new ForeignKeySchema(dbConstraint["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
 
             // create index schemas from the loaded indices
-            tableSchema.indices = dbIndices
+             /*tableSchema.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["table_name"] === tableSchema.name &&
                         (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
@@ -286,11 +333,11 @@ export class SqlServerQueryRunner implements QueryRunner {
                         .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
                         .map(dbIndex => dbIndex["COLUMN_NAME"]);
 
-                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
-                });
+                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /!* todo: uniqueness *!/);
+                });*/
 
             return tableSchema;
-        });
+        }));
     }
 
     /**
@@ -301,10 +348,10 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        let sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}`;
+        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
         if (primaryKeyColumns.length > 0)
-            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
         sql += `)`;
         await this.query(sql);
     }
@@ -317,7 +364,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const queries = columns.map(column => {
-            const sql = `ALTER TABLE \`${tableSchema.name}\` ADD ${this.buildCreateColumnSql(column, false)}`;
+            const sql = `ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(column, false)}`;
             return this.query(sql);
         });
         await Promise.all(queries);
@@ -331,7 +378,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const updatePromises = changedColumns.map(changedColumn => {
-            const sql = `ALTER TABLE \`${tableSchema.name}\` CHANGE \`${changedColumn.oldColumn.name}\` ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+            const sql = `ALTER TABLE "${tableSchema.name}" CHANGE "${changedColumn.oldColumn.name}" ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
             return this.query(sql);
         });
 
@@ -346,7 +393,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const dropPromises = columns.map(column => {
-            return this.query(`ALTER TABLE \`${dbTable.name}\` DROP \`${column.name}\``);
+            return this.query(`ALTER TABLE "${dbTable.name}" DROP "${column.name}"`);
         });
 
         await Promise.all(dropPromises);
@@ -359,10 +406,17 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "`" + primaryKey.columnName + "`");
-        await this.query(`ALTER TABLE ${dbTable.name} DROP PRIMARY KEY`);
+        const oldPrimaryKeySql = `SELECT columnUsages.*, tableConstraints.CONSTRAINT_TYPE FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE columnUsages
+LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tableConstraints ON tableConstraints.CONSTRAINT_NAME = columnUsages.CONSTRAINT_NAME AND tableConstraints.CONSTRAINT_TYPE = 'PRIMARY KEY'
+WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_CATALOG = '${this.dbName}'`;
+        const oldPrimaryKey = await this.query(oldPrimaryKeySql);
+        if (oldPrimaryKey.length > 0)
+            await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${oldPrimaryKey[0]["CONSTRAINT_NAME"]}"`);
+
+        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => `"` + primaryKey.columnName + `"`);
         if (primaryColumnNames.length > 0)
-            await this.query(`ALTER TABLE ${dbTable.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+            await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+
     }
 
     /**
@@ -373,11 +427,11 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const promises = foreignKeys.map(foreignKey => {
-            const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
-            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-            let sql =   `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+            const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
+            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
+            let sql =   `ALTER TABLE "${dbTable.name}" ADD CONSTRAINT "${foreignKey.name}" ` +
                 `FOREIGN KEY (${columnNames}) ` +
-                `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
+                `REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
             return this.query(sql);
         });
@@ -393,7 +447,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const promises = foreignKeys.map(foreignKey => {
-            const sql = `ALTER TABLE \`${tableSchema.name}\` DROP FOREIGN KEY \`${foreignKey.name}\``;
+            const sql = `ALTER TABLE "${tableSchema.name}" DROP FOREIGN KEY "${foreignKey.name}"`;
             return this.query(sql);
         });
 
@@ -407,8 +461,8 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX \`${index.name}\` ON \`${index.tableName}\`(${columns})`;
+        const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${index.tableName}"(${columns})`;
         await this.query(sql);
     }
 
@@ -419,7 +473,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``;
+        const sql = `ALTER TABLE "${tableName}" DROP INDEX "${indexName}"`;
         await this.query(sql);
     }
 
@@ -429,37 +483,36 @@ export class SqlServerQueryRunner implements QueryRunner {
     normalizeType(column: ColumnMetadata) {
         switch (column.normalizedDataType) {
             case "string":
-                return "varchar(" + (column.length ? column.length : 255) + ")";
+                return "nvarchar(" + (column.length ? column.length : 255) + ")";
             case "text":
-                return "text";
+                return "ntext";
             case "boolean":
-                return "tinyint(1)";
+                return "bit";
             case "integer":
             case "int":
-                return "int(" + (column.length ? column.length : 11) + ")";
+                return "int";
             case "smallint":
-                return "smallint(" + (column.length ? column.length : 11) + ")";
+                return "smallint";
             case "bigint":
-                return "bigint(" + (column.length ? column.length : 11) + ")";
+                return "bigint";
             case "float":
                 return "float";
             case "double":
             case "number":
-                return "double";
+                return "real";
             case "decimal":
-                if (column.precision && column.scale) {
-                    return `decimal(${column.precision},${column.scale})`;
-
-                } else if (column.scale) {
-                    return `decimal(${column.scale})`;
-
-                } else if (column.precision) {
-                    return `decimal(${column.precision})`;
-
-                } else {
+                // if (column.precision && column.scale) {
+                //     return `decimal(${column.precision},${column.scale})`;
+                //
+                // } else if (column.scale) {
+                //     return `decimal(${column.scale})`;
+                //
+                // } else if (column.precision) {
+                //     return `decimal(${column.precision})`;
+                //
+                // } else {
                     return "decimal";
-
-                }
+                // }
             case "date":
                 return "date";
             case "time":
@@ -469,7 +522,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             case "json":
                 return "text";
             case "simple_array":
-                return column.length ? "varchar(" + column.length + ")" : "text";
+                return column.length ? "nvarchar(" + column.length + ")" : "text";
         }
 
         throw new DataTypeNotSupportedByDriverError(column.type, "MySQL");
@@ -490,20 +543,20 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map(key => this.driver.escapeColumnName(key) + "=?");
+        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=@" + index);
     }
 
     /**
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
-        let c = "`" + column.name + "` " + column.type;
+        let c = `"${column.name}" ${column.type}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isPrimary === true && !skipPrimary)
-            c += " PRIMARY KEY";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " AUTO_INCREMENT";
+            c += " IDENTITY(1,1)";
+        // if (column.isPrimary === true && !skipPrimary)
+        //     c += " PRIMARY KEY";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
         return c;

@@ -79,7 +79,6 @@ export interface QueryRunner {
 
     /**
      * Creates a new table from the given table metadata and column metadatas.
-     * Returns array of created columns. This is required because some driver may not create all columns.
      */
     createTable(table: TableSchema): Promise<void>;
 

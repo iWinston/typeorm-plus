@@ -14,6 +14,11 @@ export interface DatabaseConnection {
     readonly connection: any;
 
     /**
+     * Connection's transaction instance.
+     */
+    transaction?: any;
+
+    /**
      * Indicates if transaction is active for this connection.
      */
     isTransactionActive: boolean;

@@ -39,14 +39,24 @@ export class TableSchema {
      */
     primaryKeys: PrimaryKeySchema[] = [];
 
+    /**
+     * Indicates if table schema was just created.
+     * This is needed, for example to check if we need to skip primary keys creation
+     * for new table schemas.
+     */
+    justCreated: boolean = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columns?: ColumnSchema[]) {
+    constructor(name: string, columns?: ColumnSchema[], justCreated?: boolean) {
         this.name = name;
         if (columns)
             this.columns = columns;
+
+        if (justCreated !== undefined)
+            this.justCreated = justCreated;
     }
 
     // -------------------------------------------------------------------------

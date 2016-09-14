@@ -10,14 +10,17 @@ import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
+        type: "mssql",
+        host: "192.168.1.10",
+        username: "sa",
+        password: "admin12345",
+        database: "test",
     },
     autoSchemaCreate: true,
+    logging: {
+        logQueries: true,
+        logFailedQueryError: true
+    },
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };
 
@@ -39,4 +42,4 @@ createConnection(options).then(connection => {
         .then(post => console.log("Post has been saved"))
         .catch(error => console.log("Cannot save. Error: ", error));
 
-}, error => console.log("Cannot connect: ", error));
+}).catch(error => console.log("Error: ", error));
