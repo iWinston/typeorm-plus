@@ -38,7 +38,7 @@ export class ConnectionManager {
      * Optionally you can specify a path to the json configuration.
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
-    async createAndConnectToAllFromConfig(path?: string): Promise<Connection[]> {
+    async createFromConfigAndConnectToAll(path?: string): Promise<Connection[]> {
         const optionsArray: OrmConfigConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
@@ -56,7 +56,7 @@ export class ConnectionManager {
      * Optionally you can specify a path to the json configuration.
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
-    async createAndConnectFromConfig(connectionName: string = "default", path?: string): Promise<Connection> {
+    async createFromConfigAndConnect(connectionName: string = "default", path?: string): Promise<Connection> {
         const optionsArray: OrmConfigConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
@@ -69,6 +69,37 @@ export class ConnectionManager {
                 (environmentLessOptions.length ? ` However there are such configurations for other environments: ${environmentLessOptions.map(options => options.environment).join(", ")}.` : ""));
 
         return this.createAndConnect(options[0]);
+    }
+
+    /**
+     * Allows to quickly create a connection based on the environment variable values.
+     */
+    async createFromEnvAndConnect(): Promise<Connection> {
+        return this.createAndConnect({
+            driver: {
+                type: process.env.TYPEORM_DRIVER_TYPE,
+                url: process.env.TYPEORM_URL,
+                host: process.env.TYPEORM_HOST,
+                port: process.env.TYPEORM_PORT,
+                username: process.env.TYPEORM_USERNAME,
+                password: process.env.TYPEORM_PASSWORD,
+                database: process.env.TYPEORM_DATABASE,
+                sid: process.env.TYPEORM_SID,
+                storage: process.env.TYPEORM_STORAGE,
+                extra: process.env.TYPEORM_DRIVER_EXTRA ? JSON.parse(process.env.TYPEORM_DRIVER_EXTRA) : undefined
+            },
+            autoSchemaCreate: process.env.TYPEORM_AUTO_SCHEMA_CREATE,
+            entities: process.env.TYPEORM_ENTITIES ? process.env.TYPEORM_ENTITIES.split(",") : [],
+            subscribers: process.env.TYPEORM_SUBSCRIBERS ? process.env.TYPEORM_SUBSCRIBERS.split(",") : [],
+            entitySchemas: process.env.TYPEORM_ENTITY_SCHEMAS ? process.env.TYPEORM_ENTITY_SCHEMAS.split(",") : [],
+            namingStrategies: process.env.TYPEORM_NAMING_STRATEGIES ? process.env.TYPEORM_NAMING_STRATEGIES.split(",") : [],
+            usedNamingStrategy: process.env.TYPEORM_USED_NAMING_STRATEGY,
+            logging: {
+                logQueries: process.env.TYPEORM_LOGGING_QUERIES,
+                logFailedQueryError: process.env.TYPEORM_LOGGING_FAILED_QUERIES,
+                logOnlyFailedQueries: process.env.TYPEORM_LOGGING_ONLY_FAILED_QUERIES,
+            }
+        });
     }
 
     /**
