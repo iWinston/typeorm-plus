@@ -10,11 +10,17 @@ const options: ConnectionOptions = {
         // username: "root",
         // password: "admin",
         // database: "test"
-        type: "sqlite",
-        storage: "temp/sqlitedb.db"
+        // type: "sqlite",
+        // storage: "temp/sqlitedb.db"
+        type: "mssql",
+        host: "192.168.1.10",
+        username: "sa",
+        password: "admin12345",
+        database: "test",
     },
     logging: {
         logQueries: true,
+        logFailedQueryError: true,
         logOnlyFailedQueries: true,
         logSchemaCreation: true
     },

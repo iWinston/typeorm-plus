@@ -10,6 +10,7 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {Logger} from "../logger/Logger";
 import {PrimaryKeySchema} from "./database-schema/PrimaryKeySchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {IndexMetadata} from "../metadata/IndexMetadata";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -169,8 +170,13 @@ export class SchemaBuilder {
                 return;
 
             // drop all foreign keys that has column to be removed in its columns
-            await Promise.all(droppedColumnSchemas.map(async droppedColumnSchema => {
+            await Promise.all(droppedColumnSchemas.map(droppedColumnSchema => {
                 return this.dropColumnReferencedForeignKeys(metadata.table.name, droppedColumnSchema.name);
+            }));
+
+            // drop all indices that point to this column
+            await Promise.all(droppedColumnSchemas.map(droppedColumnSchema => {
+                return this.dropColumnReferencedIndices(metadata.table.name, droppedColumnSchema.name)
             }));
 
             this.logger.logSchemaBuild(`columns dropped in ${tableSchema.name}: ` + droppedColumnSchemas.map(column => column.name).join(", "));
@@ -233,6 +239,14 @@ export class SchemaBuilder {
 
             // wait until all related foreign keys are dropped
             await Promise.all(dropRelatedForeignKeysPromises);
+
+            // drop all indices that point to this column
+            const dropRelatedIndicesPromises = updatedColumnSchemas
+                .filter(changedColumnSchema => !!metadata.columns.find(columnMetadata => columnMetadata.name === changedColumnSchema.name))
+                .map(changedColumnSchema => this.dropColumnReferencedIndices(metadata.table.name, changedColumnSchema.name));
+
+            // wait until all related indices are dropped
+            await Promise.all(dropRelatedIndicesPromises);
 
             // generate a map of new/old columns
             const newAndOldColumnSchemas = updatedColumnSchemas.map(changedColumnSchema => {
@@ -337,7 +351,46 @@ export class SchemaBuilder {
     }
 
     /**
-     * Drops all foreign keys of the given column.
+     * Drops all indices where given column of the given table is being used.
+     */
+    protected async dropColumnReferencedIndices(tableName: string, columnName: string): Promise<void> {
+
+        const allIndexMetadatas = this.entityMetadatas.reduce(
+            (all, metadata) => all.concat(metadata.indices),
+            [] as IndexMetadata[]
+        );
+
+        const tableSchema = this.tableSchemas.find(table => table.name === tableName);
+        if (!tableSchema)
+            return;
+
+        // console.log(allIndexMetadatas);
+
+        // find depend indices to drop them
+        const dependIndices = allIndexMetadatas.filter(indexMetadata => {
+            return indexMetadata.tableName === tableName && indexMetadata.columns.indexOf(columnName) !== -1;
+        });
+        if (!dependIndices.length)
+            return;
+
+        const dependIndicesInTable = tableSchema.indices.filter(indexSchema => {
+            return !!dependIndices.find(indexMetadata => indexSchema.name === indexMetadata.name);
+        });
+        if (dependIndicesInTable.length === 0)
+            return;
+
+        this.logger.logSchemaBuild(`dropping related indices of ${tableName}#${columnName}: ${dependIndicesInTable.map(index => index.name).join(", ")}`);
+
+        const dropPromises = dependIndicesInTable.map(index => {
+            tableSchema.removeIndex(index);
+            return this.queryRunner.dropIndex(tableSchema.name, index.name);
+        });
+
+        await Promise.all(dropPromises);
+    }
+
+    /**
+     * Drops all foreign keys where given column of the given table is being used.
      */
     protected async dropColumnReferencedForeignKeys(tableName: string, columnName: string): Promise<void> {
 
@@ -372,8 +425,8 @@ export class SchemaBuilder {
         if (dependForeignKeyInTable.length === 0)
             return;
 
-        this.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
-        const foreignKeySchemas = dependForeignKeyInTable.map(foreignKeyMetadata => ForeignKeySchema.create(foreignKeyMetadata));
+        this.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
+        const foreignKeySchemas = dependForeignKeyInTable.map(foreignKeyMetadata => ForeignKeySchema.create(foreignKeyMetadata)); // todo: why created again, when exist in the tableSchema.foreignKeys ?!
         tableSchema.removeForeignKeys(foreignKeySchemas);
         await this.queryRunner.dropForeignKeys(tableSchema, foreignKeySchemas);
     }

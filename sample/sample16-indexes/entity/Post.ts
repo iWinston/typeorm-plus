@@ -13,10 +13,10 @@ export class Post {
     @Index()
     title: string;
 
-    @Column({ unique: true })
+    @Column({ unique: false })
     text: string;
 
-    @Column()
+    @Column({ nullable: true })
     @Index()
     likesCount: number;
 

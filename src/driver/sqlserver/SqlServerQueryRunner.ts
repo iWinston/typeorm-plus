@@ -252,19 +252,19 @@ export class SqlServerQueryRunner implements QueryRunner {
         // load tables, columns, indices and foreign keys
         const tablesSql          = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = '${this.dbName}'`;
         const columnsSql         = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.dbName}'`;
-        const constraintsSql     = `SELECT columnUsages.*, tableConstraints.CONSTRAINT_TYPE FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE columnUsages
-LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tableConstraints ON tableConstraints.CONSTRAINT_NAME = columnUsages.CONSTRAINT_NAME
-WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_CATALOG = '${this.dbName}'`;
+        const constraintsSql     = `SELECT columnUsages.*, tableConstraints.CONSTRAINT_TYPE FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE columnUsages ` +
+`LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tableConstraints ON tableConstraints.CONSTRAINT_NAME = columnUsages.CONSTRAINT_NAME ` +
+`WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_CATALOG = '${this.dbName}'`;
         const identityColumnsSql = `SELECT COLUMN_NAME, TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '${this.dbName}' AND COLUMNPROPERTY(object_id(TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1;`;
-        // const indicesSql         = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_CATALOG = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
-        // const uniqueKeysSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_CATALOG = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        const [dbTables, dbColumns, dbConstraints, dbIdentityColumns, dbIndices, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+        const indicesSql         = `SELECT TABLE_NAME = t.name, INDEX_NAME = ind.name, IndexId = ind.index_id, ColumnId = ic.index_column_id, COLUMN_NAME = col.name, ind.*, ic.*, col.* ` +
+`FROM sys.indexes ind INNER JOIN sys.index_columns ic ON  ind.object_id = ic.object_id and ind.index_id = ic.index_id INNER JOIN sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id ` +
+`INNER JOIN sys.tables t ON ind.object_id = t.object_id WHERE ind.is_primary_key = 0 AND ind.is_unique = 0 AND ind.is_unique_constraint = 0 AND t.is_ms_shipped = 0 ORDER BY t.name, ind.name, ind.index_id, ic.index_column_id`;
+        const [dbTables, dbColumns, dbConstraints, dbIdentityColumns, dbIndices]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(constraintsSql),
             this.query(identityColumnsSql),
-            // this.query(indicesSql),
-            // this.query(uniqueKeysSql),
+            this.query(indicesSql),
         ]);
 
         // if tables were not found in the db, no need to proceed
@@ -289,14 +289,20 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
                         return  column["TABLE_NAME"] === tableSchema.name &&
                                 column["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
                     });
+                    const isUnique = !!dbConstraints.find(dbConstraint => {
+                        return  dbConstraint["TABLE_NAME"] === tableSchema.name &&
+                                dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] &&
+                                dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE";
+                    });
 
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
                     columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase() + (dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? "(" + dbColumn["CHARACTER_MAXIMUM_LENGTH"] + ")" : ""); // todo: use normalize type?
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    columnSchema.isPrimary = isPrimary; // todo! check
-                    columnSchema.isGenerated = isGenerated; // todo! check
+                    columnSchema.isPrimary = isPrimary;
+                    columnSchema.isGenerated = isGenerated;
+                    columnSchema.isUnique = isUnique;
                     columnSchema.comment = ""; // todo: less priority, implement this later
                     return columnSchema;
                 });
@@ -320,11 +326,11 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
                 .map(dbConstraint => new ForeignKeySchema(dbConstraint["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
 
             // create index schemas from the loaded indices
-             /*tableSchema.indices = dbIndices
+            tableSchema.indices = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["table_name"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
+                    return  dbIndex["TABLE_NAME"] === tableSchema.name &&
+                            (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+                            (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -333,8 +339,8 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
                         .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
                         .map(dbIndex => dbIndex["COLUMN_NAME"]);
 
-                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /!* todo: uniqueness *!/);
-                });*/
+                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness? */);
+                });
 
             return tableSchema;
         }));
@@ -349,6 +355,10 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        sql += table.columns
+            .filter(column => column.isUnique)
+            .map(column => `, CONSTRAINT "uk_${column.name}" UNIQUE ("${column.name}")`)
+            .join(" ");
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
         if (primaryKeyColumns.length > 0)
             sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
@@ -377,9 +387,22 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const updatePromises = changedColumns.map(changedColumn => {
-            const sql = `ALTER TABLE "${tableSchema.name}" CHANGE "${changedColumn.oldColumn.name}" ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
-            return this.query(sql);
+        const updatePromises = changedColumns.map(async changedColumn => {
+            const oldColumn = changedColumn.oldColumn;
+            const newColumn = changedColumn.newColumn;
+
+            const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+            await this.query(sql);
+
+            if (newColumn.isUnique !== oldColumn.isUnique) {
+                if (newColumn.isUnique === true) {
+                    await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
+
+                } else if (newColumn.isUnique === false) {
+                    await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${newColumn.name}"`);
+
+                }
+            }
         });
 
         await Promise.all(updatePromises);
@@ -473,7 +496,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const sql = `ALTER TABLE "${tableName}" DROP INDEX "${indexName}"`;
+        const sql = `DROP INDEX "${tableName}"."${indexName}"`;
         await this.query(sql);
     }
 

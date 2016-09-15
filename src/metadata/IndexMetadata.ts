@@ -62,6 +62,13 @@ export class IndexMetadata extends TargetMetadata {
     }
 
     /**
+     * Gets the table name on which index is applied.
+     */
+    get tableName() {
+        return this.entityMetadata.table.name;
+    }
+
+    /**
      * Gets the column names which are in this index.
      */
     get columns(): string[] {
