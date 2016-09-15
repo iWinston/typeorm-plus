@@ -99,8 +99,8 @@ export function createConnection(options: ConnectionOptions): Promise<Connection
 /**
  * Allows to quickly create a connection based on the connection options in the ormconfig.json.
  */
-export function createConnectionFromConfig(connectionName: string = "default", path?: string): Promise<Connection[]> {
-    return getConnectionManager().createAndConnectFromConfig(path);
+export function createConnectionFromConfig(connectionName: string = "default", path?: string): Promise<Connection> {
+    return getConnectionManager().createAndConnectFromConfig(connectionName, path);
 }
 
 /**

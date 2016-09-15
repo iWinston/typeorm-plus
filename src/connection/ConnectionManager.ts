@@ -61,14 +61,14 @@ export class ConnectionManager {
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
 
-        const options = optionsArray
-            .filter(options => !options.environment || options.environment === process.env.NODE_ENV) // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
-            .find(options => (options.name || "default") === connectionName);
+        const environmentLessOptions = optionsArray.filter(options => (options.name || "default") === connectionName);
+        const options = environmentLessOptions.filter(options => !options.environment || options.environment === process.env.NODE_ENV); // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
 
-        if (!options)
-            throw new Error(`Connection "${connectionName}" ${process.env.NODE_ENV ? "for the environment " + process.env.NODE_ENV + " " : ""} was not found in the json configuration file.`);
+        if (!options.length)
+            throw new Error(`Connection "${connectionName}" ${process.env.NODE_ENV ? "for the environment " + process.env.NODE_ENV + " " : ""}was not found in the json configuration file.` +
+                (environmentLessOptions.length ? ` However there are such configurations for other environments: ${environmentLessOptions.map(options => options.environment).join(", ")}.` : ""));
 
-        return this.createAndConnect(options);
+        return this.createAndConnect(options[0]);
     }
 
     /**
@@ -81,11 +81,11 @@ export class ConnectionManager {
         await connection.connect();
 
         // if option is set - drop schema once connection is done
-        if (options.dropSchemaOnConnection)
+        if (options.dropSchemaOnConnection && !process.env.SKIP_SCHEMA_CREATION)
             await connection.dropDatabase();
 
         // if option is set - automatically synchronize a schema
-        if (options.autoSchemaCreate)
+        if (options.autoSchemaCreate && !process.env.SKIP_SCHEMA_CREATION)
             await connection.syncSchema();
 
         return connection;
@@ -98,7 +98,7 @@ export class ConnectionManager {
      */
     create(options: ConnectionOptions): Connection {
 
-        const logger = new Logger(options.logging);
+        const logger = new Logger(options.logging || {});
         const driver = this.createDriver(options.driver, logger);
         const connection = this.createConnection(options.name || "default", driver, logger);
 

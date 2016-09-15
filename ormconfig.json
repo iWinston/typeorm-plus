@@ -9,7 +9,6 @@
       "password": "admin",
       "database": "test"
     },
-    "autoSchemaCreate": true,
-    "environment": "PROD"
+    "autoSchemaCreate": true
   }
 ]
