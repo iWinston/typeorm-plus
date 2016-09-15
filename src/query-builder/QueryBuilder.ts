@@ -7,6 +7,7 @@ import {Driver} from "../driver/Driver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../driver/QueryRunner";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 export type OrderCondition = { [columnName: string]: "ASC"|"DESC" };
 
@@ -420,14 +421,15 @@ export class QueryBuilder<Entity> {
         return sql;
     }
 
-    getSqlWithParameters(): [string, any[]] {
+    getSqlWithParameters(options?: { skipOrderBy?: boolean }): [string, any[]] {
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
         sql += this.createJoinRelationIdsExpression();
         sql += this.createWhereExpression();
         sql += this.createGroupByExpression();
         sql += this.createHavingExpression();
-        sql += this.createOrderByExpression();
+        if (!options || !options.skipOrderBy)
+            sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         return this.driver.escapeQueryWithParameters(sql, this.getParameters());
@@ -491,7 +493,7 @@ export class QueryBuilder<Entity> {
         const mainAliasName = this.aliasMap.mainAlias.name;
         let scalarResults: any[];
         if (this.firstResult || this.maxResults) {
-            const [sql, parameters] = this.getSqlWithParameters();
+            const [sql, parameters] = this.getSqlWithParameters({ skipOrderBy: true });
 
             const distinctAlias = this.driver.escapeTableName("distinctAlias");
             const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
@@ -505,10 +507,20 @@ export class QueryBuilder<Entity> {
                 }
             }).join(", ");
             idsQuery += ` FROM (${sql}) ${distinctAlias}`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
-            if (this.maxResults)
-                idsQuery += " LIMIT " + this.maxResults;
-            if (this.firstResult)
-                idsQuery += " OFFSET " + this.firstResult;
+
+            if (this.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
+
+                if (this.firstResult)
+                    idsQuery += ` ORDER BY "ids_${metadata.firstPrimaryColumn.name}" OFFSET ${this.firstResult} ROWS`;
+                if (this.maxResults)
+                    idsQuery += " FETCH NEXT " + this.maxResults + " ROWS ONLY";
+            } else {
+
+                if (this.maxResults)
+                    idsQuery += " LIMIT " + this.maxResults;
+                if (this.firstResult)
+                    idsQuery += " OFFSET " + this.firstResult;
+            }
 
             try {
                 return await queryRunner.query(idsQuery, parameters)

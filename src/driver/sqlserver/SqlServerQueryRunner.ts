@@ -64,14 +64,46 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
-        const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+        const allTablesSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
+        const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
+        const tableNames = allTablesResults.map(result => result["TABLE_NAME"]);
+        await Promise.all(tableNames.map(async tableName => {
+            const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM sys.foreign_keys WHERE referenced_object_id = object_id('${tableName}')`;
+            const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
+            return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
+                return this.query(dropQuery);
+            }));
+        }));
+        await Promise.all(tableNames.map(tableName => {
+            const dropTableSql = `DROP TABLE "${tableName}"`;
+            return this.query(dropTableSql);
+        }));
 
-        await this.query(disableForeignKeysCheckQuery);
-        const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
-        await Promise.all(dropQueries.map(query => this.query(query["query"])));
-        await this.query(enableForeignKeysCheckQuery);
+        // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '"' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
+        // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+        // const allQueries = [`EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"`]
+        //     .concat(dropQueries.map(q => this.query(q["query"])).join("; "));
+        //
+        // return new Promise<void>((ok, fail) => {
+        //
+        //     const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
+        //     request.multiple = true;
+        //     request.query(allQueries, (err: any, result: any) => {
+        //         if (err) {
+        //             this.logger.logFailedQuery(allQueries);
+        //             this.logger.logQueryError(err);
+        //             return fail(err);
+        //         }
+        //
+        //         ok();
+        //     });
+        // });
+
+        // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '";' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
+        // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+        // await this.query(`EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"`);
+        // await Promise.all(dropQueries.map(q => this.query(q["query"])));
+        // await this.query(`EXEC sp_msforeachtable 'drop table [?]'`);
     }
 
     /**
@@ -374,7 +406,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const queries = columns.map(column => {
-            const sql = `ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(column, false)}`;
+            const sql = `ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(column)}`;
             return this.query(sql);
         });
         await Promise.all(queries);
@@ -391,7 +423,13 @@ export class SqlServerQueryRunner implements QueryRunner {
             const oldColumn = changedColumn.oldColumn;
             const newColumn = changedColumn.newColumn;
 
-            const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
+            // to update an identy column we have to drop column and recreate it again
+            if (newColumn.isGenerated !== oldColumn.isGenerated) {
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP COLUMN "${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(newColumn)}`);
+            }
+
+            const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(newColumn, true)}`; // todo: CHANGE OR MODIFY COLUMN ????
             await this.query(sql);
 
             if (newColumn.isUnique !== oldColumn.isUnique) {
@@ -403,6 +441,8 @@ export class SqlServerQueryRunner implements QueryRunner {
 
                 }
             }
+
+
         });
 
         await Promise.all(updatePromises);
@@ -416,7 +456,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const dropPromises = columns.map(column => {
-            return this.query(`ALTER TABLE "${dbTable.name}" DROP "${column.name}"`);
+            return this.query(`ALTER TABLE "${dbTable.name}" DROP COLUMN "${column.name}"`);
         });
 
         await Promise.all(dropPromises);
@@ -470,7 +510,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
             throw new QueryRunnerAlreadyReleasedError();
 
         const promises = foreignKeys.map(foreignKey => {
-            const sql = `ALTER TABLE "${tableSchema.name}" DROP FOREIGN KEY "${foreignKey.name}"`;
+            const sql = `ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "${foreignKey.name}"`;
             return this.query(sql);
         });
 
@@ -572,11 +612,11 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
+    protected buildCreateColumnSql(column: ColumnSchema, skipIdentity: boolean = false) {
         let c = `"${column.name}" ${column.type}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " IDENTITY(1,1)";
         // if (column.isPrimary === true && !skipPrimary)
         //     c += " PRIMARY KEY";

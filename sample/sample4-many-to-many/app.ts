@@ -13,7 +13,7 @@ const options: ConnectionOptions = {
     },
     logging: {
         logFailedQueryError: true,
-        logQueries: true
+        // logQueries: true
     },
     autoSchemaCreate: true,
     entities: [__dirname + "/entity/*"]

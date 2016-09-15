@@ -37,16 +37,28 @@
     "postgres": {
       "host": "localhost",
       "port": 5432,
-      "username": "root",
+      "username": "test",
       "password": "admin",
       "database": "test"
     },
     "postgresSecondary": {
       "host": "localhost",
       "port": 5432,
-      "username": "root",
+      "username": "test",
       "password": "admin",
       "database": "test2"
+    },
+    "mssql": {
+      "host": "192.168.1.10",
+      "username": "sa",
+      "password": "admin12345",
+      "database": "test"
+    },
+    "mssqlSecondary": {
+      "host": "192.168.1.10",
+      "username": "sa",
+      "password": "admin12345",
+      "database": "test"
     }
   }
 }

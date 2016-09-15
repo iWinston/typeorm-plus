@@ -18,7 +18,7 @@ const options: ConnectionOptions = {
         database: "test"
     },
     logging: {
-        logQueries: true
+        // logQueries: true
     },
     autoSchemaCreate: true,
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]

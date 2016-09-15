@@ -25,7 +25,7 @@ const options: ConnectionOptions = {
         storage: "temp/sqlitedb.db"
     },
     logging: {
-        logQueries: true,
+        // logQueries: true,
         logSchemaCreation: true
     },
     autoSchemaCreate: true,

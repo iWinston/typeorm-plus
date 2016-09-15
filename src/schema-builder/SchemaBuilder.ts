@@ -74,6 +74,7 @@ export class SchemaBuilder {
         await this.queryRunner.beginTransaction();
         try {
             await this.dropOldForeignKeys();
+            // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
             await this.createNewTables();
             await this.dropRemovedColumns();
             await this.addNewColumns();
@@ -176,7 +177,7 @@ export class SchemaBuilder {
 
             // drop all indices that point to this column
             await Promise.all(droppedColumnSchemas.map(droppedColumnSchema => {
-                return this.dropColumnReferencedIndices(metadata.table.name, droppedColumnSchema.name)
+                return this.dropColumnReferencedIndices(metadata.table.name, droppedColumnSchema.name);
             }));
 
             this.logger.logSchemaBuild(`columns dropped in ${tableSchema.name}: ` + droppedColumnSchemas.map(column => column.name).join(", "));

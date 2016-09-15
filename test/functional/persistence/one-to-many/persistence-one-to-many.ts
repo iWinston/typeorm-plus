@@ -139,6 +139,7 @@ describe("persistence > one-to-many", function() {
             await postRepository.persist(newPost);
 
             newPost.categories = [];
+            console.log("should execute query to remove a post:");
             await postRepository.persist(newPost);
 
             const findOptions: FindOptions = { alias: "post", leftJoinAndSelect: { categories: "post.categories" } };

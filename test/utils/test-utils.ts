@@ -15,6 +15,7 @@ export interface TestingConnectionOptions {
     skipMariadb?: boolean;
     skipPostgres?: boolean;
     skipSqlite?: boolean;
+    skipSqlserver?: boolean;
     skipOracle?: boolean;
     skipSqlServer?: boolean;
 }
@@ -23,11 +24,11 @@ export function closeConnections(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
 }
 
-export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"mariadb"|"mariadbSecondary"|"postgres"|"postgresSecondary"|"sqlite"|"sqliteSecondary"): DriverOptions {
+export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"mariadb"|"mariadbSecondary"|"postgres"|"postgresSecondary"|"sqlite"|"sqliteSecondary"|"mssql"|"mssqlSecondary"): DriverOptions {
     const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
     // const parameters = require(__dirname + "/../../config/parameters.json");
 
-    let driverType: "mysql"|"mariadb"|"postgres"|"sqlite" = "mysql"; // = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
+    let driverType: "mysql"|"mariadb"|"postgres"|"sqlite"|"mssql" = "mysql"; // = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
     if (type === "mysql" || type === "mysqlSecondary") {
         driverType = "mysql";
     } else if (type === "mariadb" || type === "mariadbSecondary") {
@@ -36,6 +37,8 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"m
         driverType = "postgres";
     } else if (type === "sqlite" || type === "sqliteSecondary") {
         driverType = "sqlite";
+    } else if (type === "mssql" || type === "mssqlSecondary") {
+        driverType = "mssql";
     }
 
     return {
@@ -165,7 +168,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         logging: {
-            logQueries: true, // uncomment for debugging
+            // logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
             logFailedQueryError: true
         },
@@ -185,10 +188,39 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         },
     };
 
-    const mysql = !options || !options.skipMysql;
-    const mariadb = !options || !options.skipMariadb;
-    const postgres = !options || !options.skipPostgres;
-    const sqlite = !options || !options.skipSqlite;
+    const mssqlParameters: ConnectionOptions = {
+        name: "mssqlPrimaryConnection",
+        driver: createTestingConnectionOptions("mssql"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
+        entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+        logging: {
+            logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
+    };
+
+    const mssqlSecondaryParameters: ConnectionOptions = {
+        name: "mssqlSecondaryConnection",
+        driver: createTestingConnectionOptions("mssqlSecondary"),
+        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
+        entities: options && options.entities ? options.entities : [],
+        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+        logging: {
+            // logQueries: true, // uncomment for debugging
+            logOnlyFailedQueries: true,
+            logFailedQueryError: true
+        },
+    };
+
+    const mysql = true; // !options || !options.skipMysql;
+    const mariadb = false; // !options || !options.skipMariadb;
+    const postgres = false; // !options || !options.skipPostgres;
+    const sqlite = false; // !options || !options.skipSqlite;
+    const mssql = false; // !options || !options.skipSqlserver;
 
     const allParameters: ConnectionOptions[] = [];
     if (mysql)
@@ -199,6 +231,8 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         allParameters.push(postgresParameters);
     if (sqlite)
         allParameters.push(sqliteParameters);
+    if (mssql)
+        allParameters.push(mssqlParameters);
     if (mysql && options && options.secondaryConnections)
         allParameters.push(mysqlSecondaryParameters);
     if (mariadb && options && options.secondaryConnections)
@@ -207,7 +241,9 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         allParameters.push(postgresSecondaryParameters);
     if (sqlite && options && options.secondaryConnections)
         allParameters.push(sqliteSecondaryParameters);
-    
+    if (mssql && options && options.secondaryConnections)
+        allParameters.push(mssqlSecondaryParameters);
+
     return Promise.all(allParameters.map(async parameters => {
         const connection = await createConnection(parameters);
         if (options && options.reloadAndCreateSchema)

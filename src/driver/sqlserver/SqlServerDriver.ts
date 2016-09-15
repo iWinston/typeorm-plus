@@ -160,13 +160,19 @@ export class SqlServerDriver implements Driver {
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, []];
-        let index = 0;
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            escapedParameters.push(parameters[key.substr(1)]);
-            index++;
-            return "@" + (index - 1);
+            const value = parameters[key.substr(1)];
+            if (value instanceof Array) {
+                return value.map((v: any) => {
+                    escapedParameters.push(v);
+                    return "@" + (escapedParameters.length - 1);
+                }).join(", ");
+            } else {
+                escapedParameters.push(value);
+            }
+            return "@" + (escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -182,14 +188,14 @@ export class SqlServerDriver implements Driver {
      * Escapes an alias.
      */
     escapeAliasName(aliasName: string): string {
-        return aliasName; // "`" + aliasName + "`";
+        return `"${aliasName}"`;
     }
 
     /**
      * Escapes a table name.
      */
     escapeTableName(tableName: string): string {
-        return tableName; // "`" + tableName + "`";
+        return `"${tableName}"`;
     }
 
     /**
