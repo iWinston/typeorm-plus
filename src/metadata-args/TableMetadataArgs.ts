@@ -1,35 +1,37 @@
-import {TableType} from "../metadata/TableMetadata";
-import {OrderCondition} from "../query-builder/QueryBuilder";
+import {OrderByCondition} from "../query-builder/QueryBuilder";
+import {TableType} from "../metadata/types/TableTypes";
 
 /**
- * Arguments for TableMetadata class.
+ * Arguments for TableMetadata class, helps to construct an TableMetadata object.
  */
 export interface TableMetadataArgs {
 
     /**
      * Class to which table is applied.
+     * Function target is a table defined in the class.
+     * String target is a table defined in a json schema.
+     * "__virtual__" is a table defined without class (like junction tables).
      */
-    readonly target?: Function|string;
+    readonly target: Function|string|"__virtual__";
 
     /**
-     * In the case if this table is without a target, targetId must be specified.
-     * This is used for entity schemas without classes.
-     */
-    // readonly targetId?: string;
-
-    /**
-     * Table name.
+     * Table's name. If name is not set then table's name will be generated from target's name.
      */
     readonly name?: string;
 
     /**
-     * Table type.
+     * Table type. Tables can be abstract, closure, junction, embedded, etc.
      */
     readonly type: TableType;
 
     /**
-     * Specifies a property name by which queries will perform ordering by default when fetching rows.
+     * Specifies a default order by used for queries from this table when no explicit order by is specified.
      */
-    readonly orderBy?: OrderCondition|((object: any) => OrderCondition|any);
+    readonly orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
+
+    /**
+     * Table's database engine type (like "InnoDB", "MyISAM", etc).
+     */
+    readonly engine?: string;
     
 }

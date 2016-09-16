@@ -1,9 +1,9 @@
 import {ColumnType} from "../types/ColumnTypes";
-import {TableType} from "../TableMetadata";
 import {RelationType} from "../types/RelationTypes";
 import {OnDeleteType} from "../ForeignKeyMetadata";
 import {JoinColumnOptions} from "../../decorator/options/JoinColumnOptions";
-import {OrderCondition} from "../../query-builder/QueryBuilder";
+import {OrderByCondition} from "../../query-builder/QueryBuilder";
+import {TableType} from "../types/TableTypes";
 
 export interface EntitySchema {
 
@@ -40,7 +40,7 @@ export interface EntitySchema {
         /**
          * Specifies a property name by which queries will perform ordering by default when fetching rows.
          */
-        orderBy?: OrderCondition;
+        orderBy?: OrderByCondition;
     };
 
     /**

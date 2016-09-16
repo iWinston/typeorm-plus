@@ -1,4 +1,3 @@
-import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
@@ -6,7 +5,7 @@ import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 /**
  * JoinTableMetadata contains all information about relation's join table.
  */
-export class JoinTableMetadata extends PropertyMetadata {
+export class JoinTableMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -17,6 +16,16 @@ export class JoinTableMetadata extends PropertyMetadata {
      */
     relation: RelationMetadata;
 
+    /**
+     * Target class to which metadata is applied.
+     */
+    readonly target: Function|string;
+
+    /**
+     * Target's property name to which this metadata is applied.
+     */
+    readonly propertyName: string;
+
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
@@ -24,7 +33,7 @@ export class JoinTableMetadata extends PropertyMetadata {
     /**
      * Join table name.
      */
-    private readonly _name: string;
+    private readonly _name?: string;
 
     /**
      * Join column name.
@@ -51,11 +60,10 @@ export class JoinTableMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: JoinTableMetadataArgs) {
-        super(args.target, args.propertyName);
-        
-        if (args.name)
-            this._name = args.name;
-        
+        this.target = args.target;
+        this.propertyName = args.propertyName;
+        this._name = args.name;
+
         if (args.joinColumn) {
             if (args.joinColumn.name)
                 this._joinColumnName = args.joinColumn.name;
@@ -83,8 +91,8 @@ export class JoinTableMetadata extends PropertyMetadata {
             return this._name;
         
         return this.relation.entityMetadata.namingStrategy.joinTableName(
-            this.relation.entityMetadata.table.name,
-            this.relation.inverseEntityMetadata.table.name,
+            this.relation.entityMetadata.table.nameWithoutPrefix,
+            this.relation.inverseEntityMetadata.table.nameWithoutPrefix,
             this.relation.propertyName,
             this.relation.hasInverseSide ? this.relation.inverseRelation.propertyName : "",
             this.referencedColumn.name,

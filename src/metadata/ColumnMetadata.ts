@@ -1,4 +1,3 @@
-import {PropertyMetadata} from "./PropertyMetadata";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnType} from "./types/ColumnTypes";
 import {EntityMetadata} from "./EntityMetadata";
@@ -15,7 +14,7 @@ export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"
 /**
  * This metadata contains all information about entity's column.
  */
-export class ColumnMetadata extends PropertyMetadata {
+export class ColumnMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -34,6 +33,16 @@ export class ColumnMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
     // Public Readonly Properties
     // ---------------------------------------------------------------------
+
+    /**
+     * Target class to which metadata is applied.
+     */
+    readonly target: Function|string|"__virtual__";
+
+    /**
+     * Target's property name to which this metadata is applied.
+     */
+    readonly propertyName: string;
 
     /**
      * The real reflected property type.
@@ -129,7 +138,8 @@ export class ColumnMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: ColumnMetadataArgs) {
-        super(args.target, args.propertyName);
+        this.target = args.target;
+        this.propertyName = args.propertyName;
 
         if (args.mode)
             this.mode = args.mode;

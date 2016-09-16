@@ -566,7 +566,7 @@ export class Connection {
         // build entity metadatas from metadata args storage (collected from decorators)
         if (this.entityClasses && this.entityClasses.length) {
             getFromContainer(EntityMetadataBuilder)
-                .buildFromMetadataArgsStorage(lazyRelationsWrapper, namingStrategy, this.entityClasses)
+                .buildFromMetadataArgsStorage(this.driver, lazyRelationsWrapper, namingStrategy, this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryForMetadatas.push(new RepositoryForMetadata(this, metadata));
@@ -576,7 +576,7 @@ export class Connection {
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
             getFromContainer(EntityMetadataBuilder)
-                .buildFromSchemas(lazyRelationsWrapper, namingStrategy, this.entitySchemas)
+                .buildFromSchemas(this.driver, lazyRelationsWrapper, namingStrategy, this.entitySchemas)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryForMetadatas.push(new RepositoryForMetadata(this, metadata));

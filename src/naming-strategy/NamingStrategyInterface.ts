@@ -74,4 +74,9 @@ export interface NamingStrategyInterface {
      */
     classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string;
 
+    /**
+     * Adds prefix to the table.
+     */
+    prefixTableName(prefix: string, originalTableName: string): string;
+
 }

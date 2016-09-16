@@ -1,4 +1,3 @@
-import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationTypes, RelationType} from "./types/RelationTypes";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType} from "./ForeignKeyMetadata";
@@ -22,7 +21,7 @@ export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
 /**
  * Contains all information about some entity's relation.
  */
-export class RelationMetadata extends PropertyMetadata {
+export class RelationMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -69,6 +68,16 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
+
+    /**
+     * Target class to which metadata is applied.
+     */
+    readonly target: Function|string;
+
+    /**
+     * Target's property name to which this metadata is applied.
+     */
+    readonly propertyName: string;
 
     /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
@@ -145,9 +154,10 @@ export class RelationMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: RelationMetadataArgs) {
-        super(args.target, args.propertyName);
+        this.target = args.target;
+        this.propertyName = args.propertyName;
         this.relationType = args.relationType;
-        
+
         if (args.inverseSideProperty)
             this._inverseSideProperty = args.inverseSideProperty;
         if (args.propertyType)

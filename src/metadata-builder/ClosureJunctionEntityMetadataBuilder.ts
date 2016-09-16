@@ -7,6 +7,7 @@ import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
+import {Driver} from "../driver/Driver";
 
 /**
  * Helps to create EntityMetadatas for junction tables.
@@ -27,10 +28,12 @@ export interface ClosureJunctionEntityMetadataBuilderArgs {
  */
 export class ClosureJunctionEntityMetadataBuilder {
     
-    build(lazyRelationsWrapper: LazyRelationsWrapper, args: ClosureJunctionEntityMetadataBuilderArgs) {
+    build(driver: Driver, lazyRelationsWrapper: LazyRelationsWrapper, args: ClosureJunctionEntityMetadataBuilderArgs) {
 
         const columns = [
             new ColumnMetadata(<ColumnMetadataArgs> {
+                target: "__virtual__",
+                propertyName: "__virtual__",
                 propertyType: args.primaryColumn.type,
                 mode: "virtual",
                 options: <ColumnOptions> {
@@ -40,6 +43,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                 }
             }), 
             new ColumnMetadata(<ColumnMetadataArgs> {
+                target: "__virtual__",
+                propertyName: "__virtual__",
                 propertyType: args.primaryColumn.type,
                 mode: "virtual",
                 options: <ColumnOptions> {
@@ -52,6 +57,8 @@ export class ClosureJunctionEntityMetadataBuilder {
         
         if (args.hasTreeLevelColumn) {
             columns.push(new ColumnMetadata(<ColumnMetadataArgs> {
+                target: "__virtual__",
+                propertyName: "__virtual__",
                 propertyType: ColumnTypes.INTEGER,
                 mode: "virtual",
                 options: {
@@ -62,11 +69,14 @@ export class ClosureJunctionEntityMetadataBuilder {
         }
 
         const closureJunctionTableMetadata = new TableMetadata({
+            target: "__virtual__",
             name: args.table.name,
-            type: "closureJunction"
+            type: "closure-junction"
         });
 
-        return new EntityMetadata(args.table.target, {
+        return new EntityMetadata({
+            target: "__virtual__",
+            tablesPrefix: driver.options.tablesPrefix,
             namingStrategy: args.namingStrategy,
             tableMetadata: closureJunctionTableMetadata,
             columnMetadatas: columns,

@@ -1,11 +1,10 @@
-import {TargetMetadata} from "./TargetMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 
 /**
  * Index metadata contains all information about table's index.
  */
-export class IndexMetadata extends TargetMetadata {
+export class IndexMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -24,6 +23,11 @@ export class IndexMetadata extends TargetMetadata {
      * Indicates if this index must be unique.
      */
     readonly isUnique: boolean;
+
+    /**
+     * Target class to which metadata is applied.
+     */
+    readonly target?: Function|string;
     
     // ---------------------------------------------------------------------
     // Private Properties
@@ -44,7 +48,7 @@ export class IndexMetadata extends TargetMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: IndexMetadataArgs) {
-        super(args.target);
+        this.target = args.target;
         this._columns = args.columns;
         this._name = args.name;
         this.isUnique = args.unique;

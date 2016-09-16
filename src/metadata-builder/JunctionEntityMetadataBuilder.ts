@@ -1,4 +1,3 @@
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
@@ -7,6 +6,8 @@ import {TableMetadata} from "../metadata/TableMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 import {IndexMetadata} from "../metadata/IndexMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {Driver} from "../driver/Driver";
 
 /**
  * Helps to create EntityMetadatas for junction tables.
@@ -27,17 +28,19 @@ export interface JunctionEntityMetadataBuilderArgs {
  */
 export class JunctionEntityMetadataBuilder {
     
-    build(lazyRelationsWrapper: LazyRelationsWrapper, args: JunctionEntityMetadataBuilderArgs) {
+    build(driver: Driver, lazyRelationsWrapper: LazyRelationsWrapper, args: JunctionEntityMetadataBuilderArgs) {
 
         const column1 = args.joinTable.referencedColumn;
         const column2 = args.joinTable.inverseReferencedColumn;
         
         const tableMetadata = new TableMetadata({
+            target: "",
             name: args.joinTable.name,
             type: "junction"
         });
 
         const junctionColumn1 = new ColumnMetadata({
+            target: "__virtual__",
             propertyType: column1.type,
             propertyName: args.joinTable.joinColumnName,
             mode: "virtual",
@@ -50,6 +53,7 @@ export class JunctionEntityMetadataBuilder {
             }
         });
         const junctionColumn2 = new ColumnMetadata({
+            target: "__virtual__",
             propertyType: column2.type,
             propertyName: args.joinTable.inverseJoinColumnName,
             mode: "virtual",
@@ -62,7 +66,9 @@ export class JunctionEntityMetadataBuilder {
             }
         });
         
-        const entityMetadata = new EntityMetadata(tableMetadata.target, {
+        const entityMetadata = new EntityMetadata({
+            target: "__virtual__",
+            tablesPrefix: driver.options.tablesPrefix,
             namingStrategy: args.namingStrategy,
             tableMetadata: tableMetadata,
             columnMetadatas: [

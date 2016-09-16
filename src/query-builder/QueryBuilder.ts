@@ -9,7 +9,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../driver/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
-export type OrderCondition = { [columnName: string]: "ASC"|"DESC" };
+export type OrderByCondition = { [columnName: string]: "ASC"|"DESC" };
 
 /**
  * @internal
@@ -493,7 +493,7 @@ export class QueryBuilder<Entity> {
         const mainAliasName = this.aliasMap.mainAlias.name;
         let scalarResults: any[];
         if (this.firstResult || this.maxResults) {
-            const [sql, parameters] = this.getSqlWithParameters({ skipOrderBy: true });
+            const [sql, parameters] = this.getSqlWithParameters(); // todo: fix for sql server. We cant skip order by here! // { skipOrderBy: true }
 
             const distinctAlias = this.driver.escapeTableName("distinctAlias");
             const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);

@@ -10,7 +10,7 @@ export interface RelationMetadataArgs {
     /**
      * Class to which this relation is applied.
      */
-    readonly target?: Function|string;
+    readonly target: Function|string;
 
     /**
      * In the case if this relation is without a target, targetId must be specified.

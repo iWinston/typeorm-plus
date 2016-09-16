@@ -70,5 +70,12 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string {
         return _.camelCase(parentTableName + "_" + parentTableIdPropertyName);
     }
+
+    /**
+     * Adds prefix to the table.
+     */
+    prefixTableName(prefix: string, originalTableName: string): string {
+        return prefix + originalTableName;
+    }
     
 }

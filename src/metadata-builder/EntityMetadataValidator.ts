@@ -7,6 +7,9 @@ import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
 
+/// todo: add check if there are multiple tables with the same name
+/// todo: add checks when generated column / table names are too long for the specific driver
+
 /**
  * Validates built entity metadatas.
  * 

@@ -1,5 +1,5 @@
 /**
- * Driver options contains connectivity options used to connection to the database.
+ * Connectivity options used to connect to the database, and other database-driver-specific options.
  */
 export interface DriverOptions {
 
@@ -58,5 +58,10 @@ export interface DriverOptions {
      * Extra connection options to be passed to the driver.
      */
     readonly extra?: any;
+
+    /**
+     * Prefix to use on all tables of this connection in the database.
+     */
+    readonly tablesPrefix?: string;
 
 }

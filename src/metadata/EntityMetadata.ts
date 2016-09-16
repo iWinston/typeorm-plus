@@ -81,6 +81,11 @@ export class EntityMetadata {
      */
     readonly discriminatorValue?: string;
 
+    /**
+     * Global tables prefix. Customer can set a global table prefix for all tables in the database.
+     */
+    readonly tablesPrefix?: string;
+
     // -------------------------------------------------------------------------
     // Private properties
     // -------------------------------------------------------------------------
@@ -94,10 +99,10 @@ export class EntityMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(target: Function|string,
-                args: EntityMetadataArgs,
+    constructor(args: EntityMetadataArgs,
                 private lazyRelationsWrapper: LazyRelationsWrapper) {
-        this.target = target;
+        this.target = args.target;
+        this.tablesPrefix = args.tablesPrefix;
         this.namingStrategy = args.namingStrategy;
         this.table = args.tableMetadata;
         this._columns = args.columnMetadatas || [];

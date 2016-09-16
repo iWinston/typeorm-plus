@@ -496,7 +496,7 @@ export class EntityPersistOperationBuilder {
         });
     }
 
-    private findEntityWithId(entityWithIds: EntityWithId[], entityTarget: Function|string, id: ObjectLiteral) {
+    private findEntityWithId(entityWithIds: EntityWithId[], entityTarget: Function|string|undefined, id: ObjectLiteral) {
         return entityWithIds.find(entityWithId => entityWithId.compareId(id) && entityWithId.entityTarget === entityTarget);
     }
 

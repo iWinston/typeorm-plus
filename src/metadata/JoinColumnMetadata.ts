@@ -1,4 +1,3 @@
-import {PropertyMetadata} from "./PropertyMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
@@ -6,7 +5,7 @@ import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 /**
  * JoinColumnMetadata contains all information about relation's join column.
  */
-export class JoinColumnMetadata extends PropertyMetadata {
+export class JoinColumnMetadata {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -16,6 +15,16 @@ export class JoinColumnMetadata extends PropertyMetadata {
      * Relation - owner of this join column metadata.
      */
     relation: RelationMetadata;
+
+    /**
+     * Target class to which metadata is applied.
+     */
+    readonly target: Function|string;
+
+    /**
+     * Target's property name to which this metadata is applied.
+     */
+    readonly propertyName: string;
 
     // ---------------------------------------------------------------------
     // Readonly Properties
@@ -36,7 +45,8 @@ export class JoinColumnMetadata extends PropertyMetadata {
     // ---------------------------------------------------------------------
 
     constructor(args: JoinColumnMetadataArgs) {
-        super(args.target, args.propertyName);
+        this.target = args.target;
+        this.propertyName = args.propertyName;
         this._name = args.name;
         this.referencedColumnName = args.referencedColumnName;
     }

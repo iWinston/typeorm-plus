@@ -161,18 +161,6 @@ export class ConnectionManager {
                 .importNamingStrategiesFromDirectories(directories);
         }
 
-        /*if (options.entitySchemaDirectories && options.entitySchemaDirectories.length > 0)
-            connection.importEntitySchemaFromDirectories(options.entitySchemaDirectories);
-
-        if (options.entities && options.entities.length > 0)
-            connection.importEntitiesFromDirectories(options.entities);
-
-        if (options.subscribers && options.subscribers.length > 0)
-            connection.importSubscribersFromDirectories(options.subscribers);
-
-        if (options.namingStrategyDirectories && options.namingStrategyDirectories.length > 0)
-            connection.importNamingStrategiesFromDirectories(options.namingStrategyDirectories);*/
-
         if (options.usedNamingStrategy && typeof options.usedNamingStrategy === "string")
             connection.useNamingStrategy(options.usedNamingStrategy);
         

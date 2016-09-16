@@ -3,12 +3,12 @@ import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
 
 /**
- * New connection options.
+ * Connection's options.
  */
 export interface ConnectionOptions {
 
     /**
-     * Database connection options.
+     * Database options of this connection.
      */
     readonly driver: DriverOptions;
 
@@ -25,20 +25,18 @@ export interface ConnectionOptions {
 
     /**
      * Drops the schema each time connection is being established.
-     * Be careful with this option and don't use this in production - otherwise you'll loose all your production data.
+     * Be careful with this option and don't use this in production - otherwise you'll loose all production data.
      * This option is useful during debug and development.
      */
     readonly dropSchemaOnConnection?: boolean;
 
     /**
      * Indicates if database schema should be auto created on every application launch.
+     * Be careful with this option and don't use this in production - otherwise you can loose production data.
+     * This option is useful during debug and development.
+     * Alternative to it, you can use CLI and run schema:sync command.
      */
     readonly autoSchemaCreate?: boolean;
-
-    /**
-     * Driver logging options.
-     */
-    readonly logging?: LoggerOptions;
 
     /**
      * Entities to be loaded for the this connection.
@@ -61,35 +59,8 @@ export interface ConnectionOptions {
     readonly entitySchemas?: EntitySchema[]|string[];
 
     /**
-     * List of files with entities from where they will be loaded.
-     * Glob patterns are supported.
-     *
-     * @deprecated
+     * Logging options.
      */
-    // readonly entities?: string[];
-
-    /**
-     * List of files with subscribers from where they will be loaded.
-     * Glob patterns are supported.
-     *
-     * @deprecated
-     */
-    // readonly subscribers?: string[];
-
-    /**
-     * List of files with naming strategies from where they will be loaded.
-     * Glob patterns are supported.
-     *
-     * @deprecated
-     */
-    // readonly namingStrategyDirectories?: string[];
-
-    /**
-     * List of files with entity schemas from where they will be loaded.
-     * Glob patterns are supported.
-     *
-     * @deprecated
-     */
-    // readonly entitySchemaDirectories?: string[];
+    readonly logging?: LoggerOptions;
 
 }

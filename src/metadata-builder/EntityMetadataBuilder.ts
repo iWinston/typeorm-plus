@@ -21,6 +21,7 @@ import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
+import {Driver} from "../driver/Driver";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -40,9 +41,13 @@ export class EntityMetadataBuilder {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    buildFromSchemas(lazyRelationsWrapper: LazyRelationsWrapper, namingStrategy: NamingStrategyInterface, schemas: EntitySchema[]): EntityMetadata[] {
+    buildFromSchemas(driver: Driver,
+                     lazyRelationsWrapper: LazyRelationsWrapper,
+                     namingStrategy: NamingStrategyInterface,
+                     schemas: EntitySchema[]): EntityMetadata[] {
         const metadataArgsStorage = new MetadataArgsStorage();
 
+        // extract into separate class?
         schemas.forEach(schema => {
             
             // add table metadata args from the schema
@@ -163,21 +168,28 @@ export class EntityMetadataBuilder {
             }
         });
         
-        return this.build(lazyRelationsWrapper, metadataArgsStorage, namingStrategy);
+        return this.build(driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy);
     }
 
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    buildFromMetadataArgsStorage(lazyRelationsWrapper: LazyRelationsWrapper, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
-        return this.build(lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy, entityClasses);
+    buildFromMetadataArgsStorage(driver: Driver,
+                                 lazyRelationsWrapper: LazyRelationsWrapper,
+                                 namingStrategy: NamingStrategyInterface,
+                                 entityClasses?: Function[]): EntityMetadata[] {
+        return this.build(driver, lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy, entityClasses);
     }
 
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private build(lazyRelationsWrapper: LazyRelationsWrapper, metadataArgsStorage: MetadataArgsStorage, namingStrategy: NamingStrategyInterface, entityClasses?: Function[]): EntityMetadata[] {
+    private build(driver: Driver,
+                  lazyRelationsWrapper: LazyRelationsWrapper,
+                  metadataArgsStorage: MetadataArgsStorage,
+                  namingStrategy: NamingStrategyInterface,
+                  entityClasses?: Function[]): EntityMetadata[] {
         const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas: EntityMetadata[] = [];
         const allMergedArgs = metadataArgsStorage.getMergedTableMetadatas(entityClasses);
@@ -218,7 +230,9 @@ export class EntityMetadataBuilder {
                 });
 
                 // create a new entity metadata
-                const entityMetadata = new EntityMetadata(tableArgs.target!, {
+                const entityMetadata = new EntityMetadata({
+                    target: tableArgs.target,
+                    tablesPrefix: driver.options.tablesPrefix,
                     namingStrategy: namingStrategy,
                     tableMetadata: table,
                     columnMetadatas: columns,
@@ -370,7 +384,7 @@ export class EntityMetadataBuilder {
             if (metadata.primaryColumns.length > 1)
                 throw new Error(`Cannot use given entity ${metadata.name} as a closure table, because it have multiple primary keys. Entities with multiple primary keys are not supported in closure tables.`);
             
-            const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(lazyRelationsWrapper, {
+            const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(driver, lazyRelationsWrapper, {
                 namingStrategy: namingStrategy,
                 table: metadata.table,
                 primaryColumn: metadata.firstPrimaryColumn,
@@ -383,7 +397,7 @@ export class EntityMetadataBuilder {
         // generate junction tables for all many-to-many tables
         entityMetadatas.forEach(metadata => {
             metadata.ownerManyToManyRelations.forEach(relation => {
-                const junctionEntityMetadata = getFromContainer(JunctionEntityMetadataBuilder).build(lazyRelationsWrapper, {
+                const junctionEntityMetadata = getFromContainer(JunctionEntityMetadataBuilder).build(driver, lazyRelationsWrapper, {
                     namingStrategy: namingStrategy,
                     firstTable: metadata.table,
                     secondTable: relation.inverseEntityMetadata.table,

@@ -217,9 +217,9 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     };
 
     const mysql = true; // !options || !options.skipMysql;
-    const mariadb = false; // !options || !options.skipMariadb;
-    const postgres = false; // !options || !options.skipPostgres;
-    const sqlite = false; // !options || !options.skipSqlite;
+    const mariadb = true; // !options || !options.skipMariadb;
+    const postgres = true; // !options || !options.skipPostgres;
+    const sqlite = true; // !options || !options.skipSqlite;
     const mssql = false; // !options || !options.skipSqlserver;
 
     const allParameters: ConnectionOptions[] = [];
