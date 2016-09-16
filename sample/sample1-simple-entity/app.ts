@@ -10,22 +10,23 @@ const options: ConnectionOptions = {
         // username: "root",
         // password: "admin",
         // database: "test"
-        // type: "oracle",
-        // host: "localhost",
-        // username: "system",
-        // password: "oracle",
-        // sid: "xe.oracle.docker",
+        type: "oracle",
+        host: "localhost",
+        username: "system",
+        password: "oracle",
+        port: 1521,
+        sid: "xe.oracle.docker",
         // type: "mssql",
         // host: "192.168.1.10",
         // username: "sa",
         // password: "admin12345",
         // database: "test",
         // port: 1521
-        type: "sqlite",
-        storage: "temp/sqlitedb.db"
+        // type: "sqlite",
+        // storage: "temp/sqlitedb.db"
     },
     logging: {
-        // logQueries: true,
+        logQueries: true,
         logSchemaCreation: true
     },
     autoSchemaCreate: true,

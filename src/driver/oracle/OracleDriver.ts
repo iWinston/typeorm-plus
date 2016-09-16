@@ -78,6 +78,8 @@ export class OracleDriver implements Driver {
         // if oracle package instance was not set explicitly then try to load it
         if (!oracle)
             this.loadDependencies();
+
+        this.oracle.outFormat = this.oracle.OBJECT;
     }
 
     // -------------------------------------------------------------------------
@@ -195,21 +197,21 @@ export class OracleDriver implements Driver {
      * Escapes a column name.
      */
     escapeColumnName(columnName: string): string {
-        return columnName; // "`" + columnName + "`";
+        return `"${columnName}"`; // "`" + columnName + "`";
     }
 
     /**
      * Escapes an alias.
      */
     escapeAliasName(aliasName: string): string {
-        return aliasName; // "`" + aliasName + "`";
+        return `"${aliasName}"`;
     }
 
     /**
      * Escapes a table name.
      */
     escapeTableName(tableName: string): string {
-        return tableName; // "`" + tableName + "`";
+        return `"${tableName}"`;
     }
 
     /**

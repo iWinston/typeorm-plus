@@ -139,7 +139,7 @@ export class OracleQueryRunner implements QueryRunner {
                     return fail(err);
                 }
 
-                ok(result);
+                ok(result.rows);
             };
             const executionOptions = {
                 autoCommit: this.databaseConnection.isTransactionActive ? false : true
@@ -147,7 +147,7 @@ export class OracleQueryRunner implements QueryRunner {
             if (parameters instanceof Array && parameters.length) {
                 this.databaseConnection.connection.execute(query, parameters, executionOptions, handler);
             } else {
-                this.databaseConnection.connection.execute(query, executionOptions, handler);
+                this.databaseConnection.connection.execute(query, {}, executionOptions, handler);
             }
         });
     }
@@ -161,12 +161,19 @@ export class OracleQueryRunner implements QueryRunner {
 
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
-        const values = keys.map(key => ":" + key).join(",");
+        const values = keys.map(key => ":" + key).join(", ");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`;
+        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        if (generatedColumn)
-            return result[0][generatedColumn.name];
+        if (generatedColumn) {
+            const sequenceNameResults = await this.query(`SELECT * FROM USER_TAB_COLUMNS WHERE TABLE_NAME = 'sample1_post' AND COLUMN_NAME = 'id'`);
+            console.log("sequenceNameResults: ", sequenceNameResults);
+            const sequenceName = sequenceNameResults[0]["DATA_DEFAULT"].replace("nextval", "currval");
+            console.log(sequenceName);
+            const idResults = await this.query(`SELECT ${sequenceName} ID FROM DUAL`);
+            console.log(idResults);
+            return idResults[0]["id"];
+        }
         return result;
     }
 
@@ -311,10 +318,10 @@ export class OracleQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        let sql = `CREATE TABLE \`${table.name}\` (${columnDefinitions}`;
+        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
         if (primaryKeyColumns.length > 0)
-            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
         sql += `)`;
         await this.query(sql);
     }
@@ -369,7 +376,7 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "`" + primaryKey.columnName + "`");
+        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "\"" + primaryKey.columnName + "\"");
         await this.query(`ALTER TABLE ${dbTable.name} DROP PRIMARY KEY`);
         if (primaryColumnNames.length > 0)
             await this.query(`ALTER TABLE ${dbTable.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
@@ -383,8 +390,8 @@ export class OracleQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const promises = foreignKeys.map(foreignKey => {
-            const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
-            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
+            const columnNames = foreignKey.columnNames.map(column => "\"" + column + "\"").join(", ");
+            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "\"" + column + "\"").join(",");
             let sql =   `ALTER TABLE ${dbTable.name} ADD CONSTRAINT "${foreignKey.name}" ` +
                 `FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
@@ -417,7 +424,7 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
+        const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
         const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${index.tableName}"(${columns})`;
         await this.query(sql);
     }
@@ -514,14 +521,14 @@ export class OracleQueryRunner implements QueryRunner {
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
         let c = `"${column.name}" ` + column.type;
-        if (column.isNullable !== true)
+        if (column.isNullable !== true && !column.isGenerated) // NOT NULL is not supported with GENERATED
             c += " NOT NULL";
-        if (column.isPrimary === true && !skipPrimary)
-            c += " PRIMARY KEY";
-        // if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-        //     c += " GENERATED BY DEFAULT ON NULL AS IDENTITY";
-        if (column.comment)
-            c += " COMMENT '" + column.comment + "'";
+        // if (column.isPrimary === true && !skipPrimary)
+        //     c += " PRIMARY KEY";
+        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            c += " GENERATED BY DEFAULT ON NULL AS IDENTITY";
+        // if (column.comment) // todo: less priority, fix it later
+        //     c += " COMMENT '" + column.comment + "'";
         return c;
     }
 

@@ -181,7 +181,7 @@ export class SqlServerDriver implements Driver {
      * Escapes a column name.
      */
     escapeColumnName(columnName: string): string {
-        return columnName; // "`" + columnName + "`";
+        return `"${columnName}"`;
     }
 
     /**
