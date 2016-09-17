@@ -130,7 +130,7 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        this.logger.logQuery(query);
+        this.logger.logQuery(query, parameters);
         return new Promise((ok, fail) => {
             const handler = (err: any, result: any) => {
                 if (err) {
@@ -139,16 +139,12 @@ export class OracleQueryRunner implements QueryRunner {
                     return fail(err);
                 }
 
-                ok(result.rows);
+                ok(result.rows || result.outBinds);
             };
             const executionOptions = {
                 autoCommit: this.databaseConnection.isTransactionActive ? false : true
             };
-            if (parameters instanceof Array && parameters.length) {
-                this.databaseConnection.connection.execute(query, parameters, executionOptions, handler);
-            } else {
-                this.databaseConnection.connection.execute(query, {}, executionOptions, handler);
-            }
+            this.databaseConnection.connection.execute(query, parameters || {}, executionOptions, handler);
         });
     }
 
@@ -163,18 +159,23 @@ export class OracleQueryRunner implements QueryRunner {
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map(key => ":" + key).join(", ");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
-        const result = await this.query(sql, parameters);
+        const insertSql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         if (generatedColumn) {
-            const sequenceNameResults = await this.query(`SELECT * FROM USER_TAB_COLUMNS WHERE TABLE_NAME = 'sample1_post' AND COLUMN_NAME = 'id'`);
-            console.log("sequenceNameResults: ", sequenceNameResults);
-            const sequenceName = sequenceNameResults[0]["DATA_DEFAULT"].replace("nextval", "currval");
-            console.log(sequenceName);
-            const idResults = await this.query(`SELECT ${sequenceName} ID FROM DUAL`);
-            console.log(idResults);
-            return idResults[0]["id"];
+            const sql2 = `
+declare lastId number; 
+begin ${insertSql} returning "id" into lastId;
+    dbms_output.enable;
+    dbms_output.put_line(lastId);
+    dbms_output.get_line(:ln, :st);
+end;`;
+            const saveResult = await this.query(sql2, parameters.concat([
+                { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.STRING, maxSize: 32767 },
+                { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.NUMBER }
+            ]));
+            return parseInt(saveResult[0]);
+        } else {
+            return this.query(insertSql, parameters);
         }
-        return result;
     }
 
     /**

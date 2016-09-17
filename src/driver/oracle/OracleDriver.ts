@@ -35,7 +35,7 @@ export class OracleDriver implements Driver {
     /**
      * Oracle library.
      */
-    protected oracle: any;
+    oracle: any;
 
     /**
      * Connection to oracle database.

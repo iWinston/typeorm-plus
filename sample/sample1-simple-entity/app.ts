@@ -29,7 +29,7 @@ const options: ConnectionOptions = {
         logQueries: true,
         logSchemaCreation: true
     },
-    autoSchemaCreate: true,
+    autoSchemaCreate: false,
     entities: [Post]
 };
 /*const options: CreateConnectionOptions = {
@@ -59,7 +59,7 @@ createConnection(options).then(connection => {
 
     postRepository
         .persist(post)
-        .then(post => console.log("Post has been saved"))
+        .then(post => console.log("Post has been saved: ", post))
         .catch(error => console.log("Cannot save. Error: ", error));
 
 }, error => console.log("Cannot connect: ", error));

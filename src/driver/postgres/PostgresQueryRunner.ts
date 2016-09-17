@@ -123,7 +123,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
         // console.log("query: ", query);
         // console.log("parameters: ", parameters);
-        this.logger.logQuery(query);
+        this.logger.logQuery(query, parameters);
         return new Promise<any[]>((ok, fail) => {
             this.databaseConnection.connection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
