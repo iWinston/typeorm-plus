@@ -12,7 +12,8 @@ const options: ConnectionOptions = {
     },
     autoSchemaCreate: true,
     logging: {
-        // logQueries: true,
+        logQueries: true,
+        logSchemaCreation: true,
         logFailedQueryError: true
     },
     entities: [Post, Author, Category],
@@ -34,8 +35,7 @@ createConnection(options).then(async connection => {
     post.text = "Hello how are you?";
     post.title = "hello";
     post.author = author;
-    post.categories = [];
-    post.categories.push(category2, category2);
+    post.categories = [category1, category2];
 
     let postRepository = connection.getRepository(Post);
 

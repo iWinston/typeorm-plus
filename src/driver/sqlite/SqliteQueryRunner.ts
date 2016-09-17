@@ -124,9 +124,7 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        // console.log("query: ", query);
-        // console.log("parameters: ", parameters);
-        this.logger.logQuery(query);
+        this.logger.logQuery(query, parameters);
         return new Promise<any[]>((ok, fail) => {
             this.databaseConnection.connection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
@@ -153,9 +151,7 @@ export class SqliteQueryRunner implements QueryRunner {
         const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const parameters = keys.map(key => keyValues[key]);
 
-        // console.log("query: ", sql);
-        // console.log("parameters: ", parameters);
-        this.logger.logQuery(sql);
+        this.logger.logQuery(sql, parameters);
         return new Promise<any[]>((ok, fail) => {
             const _this = this;
             this.databaseConnection.connection.run(sql, parameters, function (err: any): void {
@@ -277,11 +273,11 @@ export class SqliteQueryRunner implements QueryRunner {
             tableSchema.columns = dbColumns.map(dbColumn => {
                 const columnSchema = new ColumnSchema();
                 columnSchema.name = dbColumn["name"];
-                columnSchema.type = dbColumn["type"];
+                columnSchema.type = dbColumn["type"].toLowerCase();
                 columnSchema.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
                 columnSchema.isNullable = dbColumn["notnull"] === 0;
                 columnSchema.isPrimary = dbColumn["pk"] === 1;
-                columnSchema.comment = ""; // todo
+                columnSchema.comment = ""; // todo later
                 columnSchema.isGenerated = autoIncrementColumnName === dbColumn["name"];
                 const columnForeignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
@@ -355,7 +351,7 @@ export class SqliteQueryRunner implements QueryRunner {
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
         if (primaryKeyColumns.length > 0)
-            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `${column.name}`).join(", ")})`; // for some reason column escaping here generates a wrong schema
         sql += `)`;
         await this.query(sql);
     }
@@ -555,8 +551,9 @@ export class SqliteQueryRunner implements QueryRunner {
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
         });
 
-        if (tableSchema.primaryKeysWithoutGenerated.length > 0)
-            sql1 += `, PRIMARY KEY(${tableSchema.primaryKeysWithoutGenerated.map(key => `"${key.columnName}"`).join(", ")})`;
+        const primaryKeyColumns = tableSchema.columns.filter(column => column.isPrimary && !column.isGenerated);
+        if (primaryKeyColumns.length > 0)
+            sql1 += `, PRIMARY KEY(${primaryKeyColumns.map(column => `${column.name}`).join(", ")})`; // for some reason column escaping here generate a wrong schema
 
         sql1 += ")";
 

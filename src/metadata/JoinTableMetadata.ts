@@ -111,9 +111,9 @@ export class JoinTableMetadata {
             .entityMetadata
             .namingStrategy
             .joinTableColumnName(
-                this.relation.entityMetadata.table.name, 
+                this.relation.entityMetadata.table.nameWithoutPrefix,
                 this.referencedColumn.name,
-                this.relation.inverseEntityMetadata.table.name, 
+                this.relation.inverseEntityMetadata.table.nameWithoutPrefix,
                 this.inverseReferencedColumn.name
             );
     }
@@ -129,9 +129,9 @@ export class JoinTableMetadata {
             .entityMetadata
             .namingStrategy
             .joinTableInverseColumnName(
-                this.relation.inverseEntityMetadata.table.name,
+                this.relation.inverseEntityMetadata.table.nameWithoutPrefix,
                 this.inverseReferencedColumn.name,
-                this.relation.entityMetadata.table.name,
+                this.relation.entityMetadata.table.nameWithoutPrefix,
                 this.referencedColumn.name
             );
     }

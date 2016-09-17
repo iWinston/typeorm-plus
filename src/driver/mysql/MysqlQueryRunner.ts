@@ -366,16 +366,16 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Updates table's primary keys.
      */
-    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+    async updatePrimaryKeys(tableSchema: TableSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!dbTable.hasGeneratedColumn)
-            await this.query(`ALTER TABLE ${dbTable.name} DROP PRIMARY KEY`);
+        if (!tableSchema.hasGeneratedColumn)
+            await this.query(`ALTER TABLE ${tableSchema.name} DROP PRIMARY KEY`);
 
-        const primaryColumnNames = dbTable.primaryKeysWithoutGenerated.map(primaryKey => "`" + primaryKey.columnName + "`");
+        const primaryColumnNames = tableSchema.columns.filter(column => column.isPrimary && !column.isGenerated).map(column => "`" + column.name + "`");
         if (primaryColumnNames.length > 0)
-            await this.query(`ALTER TABLE ${dbTable.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+            await this.query(`ALTER TABLE ${tableSchema.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
 
     /**

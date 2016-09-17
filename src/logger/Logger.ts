@@ -5,10 +5,10 @@ export class Logger {
     constructor(private options: LoggerOptions) {
     }
 
-    logQuery(query: string) {
+    logQuery(query: string, parameters?: any[]) {
         if (this.options.logQueries ||
             process.env.LOGGER_CLI_SCHEMA_SYNC)
-            this.log("log", "executing query: " + query);
+            this.log("log", `executing query: ${query}${parameters && parameters.length ? "; PARAMETERS: " + JSON.stringify(parameters) : ""}`);
     }
 
     logQueryError(error: any) {
