@@ -1,9 +1,6 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
-import {ManyToMany} from "../../../src/index";
+import {PrimaryColumn, Column, Table, ManyToMany} from "../../../src/index";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
-import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 

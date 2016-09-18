@@ -1,7 +1,6 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SpecificRepository} from "./SpecificRepository";
 import * as Rx from "rxjs/Rx";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Reactive version of SpecificRepository.

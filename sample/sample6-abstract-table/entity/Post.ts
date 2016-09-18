@@ -1,5 +1,4 @@
-import {Column} from "../../../src/index";
-import {Table} from "../../../src/index";
+import {Column, Table} from "../../../src/index";
 import {BasePost} from "./BasePost";
 import {PostCategory} from "./PostCategory";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";

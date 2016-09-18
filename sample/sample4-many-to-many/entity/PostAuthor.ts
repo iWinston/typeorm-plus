@@ -1,7 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
+import {PrimaryColumn, Column, Table, ManyToMany} from "../../../src/index";
 import {Post} from "./Post";
-import {ManyToMany} from "../../../src/index";
 
 @Table("sample4_post_author")
 export class PostAuthor {

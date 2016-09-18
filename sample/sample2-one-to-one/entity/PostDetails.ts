@@ -1,6 +1,4 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
-import {OneToOne} from "../../../src/index";
+import {PrimaryColumn, Column, Table, OneToOne} from "../../../src/index";
 import {Post} from "./Post";
 
 @Table("sample2_post_details")

@@ -1,4 +1,6 @@
 /**
+ * Thrown when consumer tries to access repository before connection is established.
+ *
  * @internal
  */
 export class NoConnectionForRepositoryError extends Error {
@@ -8,6 +10,7 @@ export class NoConnectionForRepositoryError extends Error {
         super();
         this.message = `Cannot get a Repository for "${connectionName} connection, because connection with the database ` +
         `is not established yet. Call connection#connect method to establish connection.`;
+        this.stack = new Error().stack;
     }
 
 }

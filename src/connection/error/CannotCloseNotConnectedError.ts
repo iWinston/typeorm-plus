@@ -1,4 +1,6 @@
 /**
+ * Thrown when consumer tries close not opened connection.
+ *
  * @internal
  */
 export class CannotCloseNotConnectedError extends Error {
@@ -7,6 +9,7 @@ export class CannotCloseNotConnectedError extends Error {
     constructor(connectionName: string) {
         super();
         this.message = `Cannot close "${connectionName}" connection because connection is not yet established.`;
+        this.stack = new Error().stack;
     }
 
 }

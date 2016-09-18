@@ -1,6 +1,4 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
-import {ManyToOne, ManyToMany} from "../../../src/index";
+import {PrimaryColumn, Column, Table, ManyToOne, ManyToMany} from "../../../src/index";
 import {Post} from "./Post";
 import {PostDetails} from "./PostDetails";
 

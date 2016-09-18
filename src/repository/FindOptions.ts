@@ -1,5 +1,4 @@
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {DriverOptions} from "../driver/DriverOptions";
 
 /**
  * Options to be passed to find methods.

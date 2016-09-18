@@ -1,4 +1,6 @@
 /**
+ * Thrown when consumer tries to access entity manager before connection is established.
+ *
  * @internal
  */
 export class CannotGetEntityManagerNotConnectedError extends Error {
@@ -7,6 +9,7 @@ export class CannotGetEntityManagerNotConnectedError extends Error {
     constructor(connectionName: string) {
         super();
         this.message = `Cannot get entity manager for "${connectionName}" connection because connection is not yet established.`;
+        this.stack = new Error().stack;
     }
 
 }

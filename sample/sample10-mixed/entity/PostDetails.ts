@@ -1,6 +1,4 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
-import {OneToOne, OneToMany, ManyToOne} from "../../../src/index";
+import {PrimaryColumn, Column, Table, OneToOne, OneToMany, ManyToOne} from "../../../src/index";
 import {Post} from "./Post";
 import {Chapter} from "./Chapter";
 import {Category} from "./Category";

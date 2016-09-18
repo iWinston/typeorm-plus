@@ -1,7 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
+import {PrimaryColumn, Column, Table, OneToOne} from "../../../src/index";
 import {Post} from "./Post";
-import {OneToOne} from "../../../src/index";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 

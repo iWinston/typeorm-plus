@@ -1,4 +1,6 @@
 /**
+ * Thrown when repository for the given class is not found.
+ *
  * @internal
  */
 export class RepositoryNotTreeError extends Error {
@@ -8,6 +10,7 @@ export class RepositoryNotTreeError extends Error {
         super();
         const targetName = typeof entityClass === "function" && (<any> entityClass).name ? (<any> entityClass).name : entityClass;
         this.message = `Repository of the "${targetName}" class is not a TreeRepository. Try to use @ClosureTable decorator instead of @Table.`;
+        this.stack = new Error().stack;
     }
 
 }

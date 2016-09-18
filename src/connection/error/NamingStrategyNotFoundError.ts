@@ -1,4 +1,6 @@
 /**
+ * Thrown when consumer tries to use naming strategy that does not exist.
+ *
  * @internal
  */
 export class NamingStrategyNotFoundError extends Error {
@@ -9,6 +11,7 @@ export class NamingStrategyNotFoundError extends Error {
         const name = strategyName instanceof Function ? (strategyName as any).name : strategyName;
         this.message = `Naming strategy "${name}" was not found. Looks like this naming strategy does not ` +
             `exist or it was not registered in current "${connectionName}" connection?`;
+        this.stack = new Error().stack;
     }
 
 }

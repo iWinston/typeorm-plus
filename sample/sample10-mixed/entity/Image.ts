@@ -1,6 +1,4 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
-import {ManyToOne, OneToOne} from "../../../src/index";
+import {PrimaryColumn, Column, Table, ManyToOne, OneToOne} from "../../../src/index";
 import {Post} from "./Post";
 import {ImageDetails} from "./ImageDetails";
 import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";

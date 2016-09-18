@@ -1,4 +1,4 @@
-import {createConnectionFromConfig} from "../index";
+import {createConnection} from "../index";
 
 /**
  * Executes an sql query on the given connection.
@@ -20,7 +20,7 @@ export class QueryCommand {
         try {
             process.env.SKIP_SCHEMA_CREATION = true;
             const connectionName = "default" || argv.connection;
-            const connection = await createConnectionFromConfig(connectionName);
+            const connection = await createConnection(connectionName);
             const queryRunner = await connection.driver.createQueryRunner();
             const queryResult = await queryRunner.query(argv._[1]);
             console.log("Query executed. Result: ", queryResult);

@@ -1,7 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
+import {PrimaryColumn, Column, Table, ManyToOne} from "../../../src/index";
 import {PostDetails} from "./PostDetails";
-import {ManyToOne} from "../../../src/index";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
 import {PostInformation} from "./PostInformation";

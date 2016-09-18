@@ -1,4 +1,4 @@
-import {createConnectionFromConfig, createConnectionsFromConfig} from "../index";
+import {createConnections, createConnection} from "../index";
 
 /**
  * Drops all tables of the database from the given connection.
@@ -21,11 +21,11 @@ export class SchemaDropCommand {
             process.env.LOGGER_CLI_SCHEMA_SYNC = true;
             process.env.SKIP_SCHEMA_CREATION = true;
             if (argv.connection) {
-                const connection = await createConnectionFromConfig(argv.connection);
+                const connection = await createConnection(argv.connection);
                 await connection.dropDatabase();
                 await connection.close();
             } else {
-                const connections = await createConnectionsFromConfig();
+                const connections = await createConnections();
                 await Promise.all(connections.map(connection => connection.dropDatabase()));
                 await Promise.all(connections.map(connection => connection.close()));
             }

@@ -2,7 +2,6 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOptions} from "./FindOptions";
 import {Repository} from "./Repository";
 import * as Rx from "rxjs/Rx";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**

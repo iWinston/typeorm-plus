@@ -1,3 +1,6 @@
+/**
+ * Logging options.
+ */
 export interface LoggerOptions {
 
     /**

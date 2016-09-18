@@ -1,8 +1,5 @@
-import {PrimaryColumn, Column} from "../../../src/index";
-import {Table} from "../../../src/index";
-import {ManyToMany} from "../../../src/index";
+import {PrimaryColumn, Column, Table, ManyToMany} from "../../../src/index";
 import {Post} from "./Post";
-import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
 @Table("sample4_post_details")
 export class PostDetails {

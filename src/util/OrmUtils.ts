@@ -13,5 +13,21 @@ export class OrmUtils {
             return groupedArray;
         }, [] as Array<{ id: R, items: T[] }>);
     }
+
+    /**
+     * Transforms given value into boolean value.
+     */
+    static toBoolean(value: any): boolean {
+        if (typeof value === "boolean")
+            return value;
+
+        if (typeof value === "string")
+            return value === "true" || value === "1";
+
+        if (typeof value === "number")
+            return value > 0;
+
+        return false;
+    }
     
 }

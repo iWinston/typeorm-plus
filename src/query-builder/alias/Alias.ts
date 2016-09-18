@@ -1,5 +1,3 @@
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-
 /**
  */
 export class Alias {

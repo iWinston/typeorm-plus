@@ -2,11 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {
-    setupTestingConnections,
-    closeConnections,
-    createTestingConnectionOptions
-} from "../../utils/test-utils";
+import {setupTestingConnections, closeConnections, createTestingConnectionOptions} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {CannotConnectAlreadyConnectedError} from "../../../src/connection/error/CannotConnectAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "../../../src/connection/error/CannotCloseNotConnectedError";

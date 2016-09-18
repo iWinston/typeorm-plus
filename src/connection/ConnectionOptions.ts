@@ -24,21 +24,6 @@ export interface ConnectionOptions {
     readonly usedNamingStrategy?: string|Function;
 
     /**
-     * Drops the schema each time connection is being established.
-     * Be careful with this option and don't use this in production - otherwise you'll loose all production data.
-     * This option is useful during debug and development.
-     */
-    readonly dropSchemaOnConnection?: boolean;
-
-    /**
-     * Indicates if database schema should be auto created on every application launch.
-     * Be careful with this option and don't use this in production - otherwise you can loose production data.
-     * This option is useful during debug and development.
-     * Alternative to it, you can use CLI and run schema:sync command.
-     */
-    readonly autoSchemaCreate?: boolean;
-
-    /**
      * Entities to be loaded for the this connection.
      */
     readonly entities?: Function[]|string[];
@@ -62,5 +47,29 @@ export interface ConnectionOptions {
      * Logging options.
      */
     readonly logging?: LoggerOptions;
+
+    /**
+     * Drops the schema each time connection is being established.
+     * Be careful with this option and don't use this in production - otherwise you'll loose all production data.
+     * This option is useful during debug and development.
+     */
+    readonly dropSchemaOnConnection?: boolean;
+
+    /**
+     * Indicates if database schema should be auto created on every application launch.
+     * Be careful with this option and don't use this in production - otherwise you can loose production data.
+     * This option is useful during debug and development.
+     * Alternative to it, you can use CLI and run schema:sync command.
+     */
+    readonly autoSchemaCreate?: boolean;
+
+    /**
+     * Environment in which connection will run.
+     * Current environment is determined from the environment NODE_ENV variable's value.
+     * For example, if NODE_ENV is "test" and this property is set to "test",
+     * then this connection will be created. On any other NODE_ENV value it will be skipped.
+     * This option is specific to the configuration in the ormconfig.json file.
+     */
+    readonly environment?: string;
 
 }

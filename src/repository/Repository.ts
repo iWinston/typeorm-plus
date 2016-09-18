@@ -19,7 +19,6 @@ export class Repository<Entity extends ObjectLiteral> {
     // Private Properties
     // -------------------------------------------------------------------------
 
-    protected persistOperationExecutor: PersistOperationExecutor;
     protected entityPersistOperationBuilder: EntityPersistOperationBuilder;
     protected plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
     protected plainObjectToDatabaseEntityTransformer: PlainObjectToDatabaseEntityTransformer<Entity>;

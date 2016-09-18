@@ -1,4 +1,4 @@
-import {createConnectionFromConfig, createConnectionsFromConfig} from "../index";
+import {createConnections, createConnection} from "../index";
 
 /**
  * Synchronizes database schema with entities.
@@ -21,11 +21,11 @@ export class SchemaSyncCommand {
             process.env.LOGGER_CLI_SCHEMA_SYNC = true;
             process.env.SKIP_SCHEMA_CREATION = true;
             if (argv.connection) {
-                const connection = await createConnectionFromConfig(argv.connection);
+                const connection = await createConnection(argv.connection);
                 await connection.syncSchema(false);
                 await connection.close();
             } else {
-                const connections = await createConnectionsFromConfig();
+                const connections = await createConnections();
                 await Promise.all(connections.map(connection => connection.syncSchema(false)));
                 await Promise.all(connections.map(connection => connection.close()));
             }

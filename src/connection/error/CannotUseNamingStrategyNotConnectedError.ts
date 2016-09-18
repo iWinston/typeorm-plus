@@ -1,4 +1,6 @@
 /**
+ * Thrown when consumer tries to change used naming strategy after connection is established.
+ *
  * @internal
  */
 export class CannotUseNamingStrategyNotConnectedError extends Error {
@@ -7,6 +9,7 @@ export class CannotUseNamingStrategyNotConnectedError extends Error {
     constructor(connectionName: string) {
         super();
         this.message = `Cannot use a given naming strategy for "${connectionName}" connection because connection to the database already established.`;
+        this.stack = new Error().stack;
     }
 
 }
