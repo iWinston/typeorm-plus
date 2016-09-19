@@ -1,9 +1,9 @@
-import {ColumnSchema} from "../schema-builder/database-schema/ColumnSchema";
+import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {TableSchema} from "../schema-builder/database-schema/TableSchema";
+import {TableSchema} from "../schema-builder/schema/TableSchema";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {ForeignKeySchema} from "../schema-builder/database-schema/ForeignKeySchema";
-import {IndexSchema} from "../schema-builder/database-schema/IndexSchema";
+import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
+import {IndexSchema} from "../schema-builder/schema/IndexSchema";
 
 /**
  * Runs queries on a single database connection.

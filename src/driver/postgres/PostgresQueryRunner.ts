@@ -6,12 +6,12 @@ import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStarted
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
 import {PostgresDriver} from "./PostgresDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
-import {ColumnSchema} from "../../schema-builder/database-schema/ColumnSchema";
+import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {TableSchema} from "../../schema-builder/database-schema/TableSchema";
-import {IndexSchema} from "../../schema-builder/database-schema/IndexSchema";
-import {ForeignKeySchema} from "../../schema-builder/database-schema/ForeignKeySchema";
-import {PrimaryKeySchema} from "../../schema-builder/database-schema/PrimaryKeySchema";
+import {TableSchema} from "../../schema-builder/schema/TableSchema";
+import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
+import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
+import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
