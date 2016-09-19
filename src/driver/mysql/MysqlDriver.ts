@@ -57,15 +57,21 @@ export class MysqlDriver implements Driver {
      */
     protected logger: Logger;
 
+    /**
+     * Driver type's version. node-mysql and mysql2 are supported.
+     */
+    protected version: "mysql"|"mysql2" = "mysql";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mysql?: any) {
+    constructor(options: DriverOptions, logger: Logger, mysql?: any, mysqlVersion: "mysql"|"mysql2" = "mysql") {
 
         this.options = DriverUtils.buildDriverOptions(options);
         this.logger = logger;
         this.mysql = mysql;
+        this.version = mysqlVersion;
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -124,7 +130,7 @@ export class MysqlDriver implements Driver {
      */
     disconnect(): Promise<void> {
         if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("mysql");
+            throw new ConnectionIsNotSetError(this.version);
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
@@ -149,7 +155,7 @@ export class MysqlDriver implements Driver {
      */
     async createQueryRunner(): Promise<QueryRunner> {
         if (!this.databaseConnection && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("mysql"));
+            return Promise.reject(new ConnectionIsNotSetError(this.version));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
         return new MysqlQueryRunner(databaseConnection, this, this.logger);
@@ -312,7 +318,7 @@ export class MysqlDriver implements Driver {
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
-        throw new ConnectionIsNotSetError("mysql");
+        throw new ConnectionIsNotSetError(this.version);
     }
 
     /**
@@ -323,9 +329,9 @@ export class MysqlDriver implements Driver {
             throw new DriverPackageLoadError();
 
         try {
-            this.mysql = require("mysql");
+            this.mysql = require(this.version);
         } catch (e) {
-            throw new DriverPackageNotInstalledError("Mysql", "mysql");
+            throw new DriverPackageNotInstalledError("Mysql", this.version);
         }
     }
 

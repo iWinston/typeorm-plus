@@ -411,6 +411,8 @@ export class ConnectionManager {
         switch (options.type) {
             case "mysql":
                 return new MysqlDriver(options, logger);
+            case "mysql2":
+                return new MysqlDriver(options, logger, undefined, "mysql2");
             case "postgres":
                 return new PostgresDriver(options, logger);
             case "mariadb":
