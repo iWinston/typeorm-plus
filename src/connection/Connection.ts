@@ -643,7 +643,6 @@ export class Connection {
      * Creates a new entity broadcaster using in this connection.
      */
     protected createBroadcaster() {
-        // todo: better to pass connection?
         return new Broadcaster(this.entityMetadatas, this.entitySubscribers, this.entityListeners);
     }
 

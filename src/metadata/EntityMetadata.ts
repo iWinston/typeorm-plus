@@ -10,6 +10,8 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 
+// todo: IDEA. store all entity metadata in the EntityMetadata too? (this will open more features for metadata objects + no need to access connection in lot of places)
+
 /**
  * Contains all entity metadata.
  */

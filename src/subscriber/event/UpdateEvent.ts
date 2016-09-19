@@ -1,20 +1,21 @@
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 
 /**
- * This event is used on update events.
+ * UpdateEvent is an object that broadcaster sends to the entity subscriber when entity is being updated in the database.
  */
 export interface UpdateEvent<Entity> {
-
-    // todo: send old and new update values
     
     /**
-     * Updated entity.
+     * Updating entity.
      */
     entity: Entity;
 
     /**
-     * List of columns that were updated.
+     * List of updating columns.
      */
     updatedColumns: ColumnMetadata[];
+
+    // todo: send old and new update values
+    // todo: send updated relations?
 
 }

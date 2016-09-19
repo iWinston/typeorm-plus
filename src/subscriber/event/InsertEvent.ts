@@ -1,8 +1,11 @@
 /**
- * This event is used on insert events.
+ * InsertEvent is an object that broadcaster sends to the entity subscriber when entity is inserted to the database.
  */
 export interface InsertEvent<Entity> {
 
-    entity?: Entity;
+    /**
+     * Inserting event.
+     */
+    entity: Entity;
 
 }

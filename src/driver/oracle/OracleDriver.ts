@@ -307,7 +307,7 @@ export class OracleDriver implements Driver {
                             isTransactionActive: false
                         };
                         dbConnection.releaseCallback = () => {
-                            return new Promise((ok, fail) => {
+                            return new Promise<void>((ok, fail) => {
                                 connection.close((err: any) => {
                                     if (err)
                                         return fail(err);

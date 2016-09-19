@@ -62,7 +62,7 @@ export class ColumnMetadata {
     /**
      * Type's length in the database.
      */
-    readonly length = "";
+    readonly length: string = "";
 
     /**
      * Indicates if this column is a primary key.
@@ -72,28 +72,28 @@ export class ColumnMetadata {
     /**
      * Indicates if this column is generated (auto increment or generated other way).
      */
-    readonly isGenerated = false;
+    readonly isGenerated: boolean = false;
 
     /**
      * Indicates if value in the database should be unique or not.
      */
-    readonly isUnique = false;
+    readonly isUnique: boolean= false;
 
     /**
      * Indicates if column can contain nulls or not.
      */
-    readonly isNullable = false;
+    readonly isNullable: boolean = false;
 
     /**
      * Extra sql definition for the given column. 
      * Can be used to make temporary tweaks. Not recommended to use.
      */
-    readonly columnDefinition = "";
+    readonly columnDefinition: string = "";
 
     /**
      * Column comment.
      */
-    readonly comment = "";
+    readonly comment: string = "";
 
     /**
      * Default database value.

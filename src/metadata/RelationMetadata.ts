@@ -5,6 +5,7 @@ import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -289,13 +290,6 @@ export class RelationMetadata {
     }
 
     /**
-     * Checks if this relation is lazy-load style relation.
-     
-    get isLazy(): boolean {
-        return this.propertyType && this.propertyType.name && this.propertyType.name.toLowerCase() === "promise";
-    }*/
-
-    /**
      * Indicates if this side is an owner of this relation.
      */
     get isOwning() {
@@ -384,9 +378,26 @@ export class RelationMetadata {
     }
 
     // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
+
+    /**
+     * Gets given entity's relation's value.
+     * Using of this method helps to access value of the lazy loaded relation.
+     */
+    getEntityValue(entity: ObjectLiteral) {
+        return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
+    }
+
+    // ---------------------------------------------------------------------
     // Private Methods
     // ---------------------------------------------------------------------
 
+    /**
+     * Inverse side set in the relation can be either string - property name of the column on inverse side,
+     * either can be a function that accepts a map of properties with the object and returns one of them.
+     * Second approach is used to achieve type-safety.
+     */
     private computeInverseSide(inverseSide: PropertyTypeInFunction<any>): string {
         const ownerEntityPropertiesMap = this.inverseEntityMetadata.createPropertiesMap();
         if (typeof inverseSide === "function")
