@@ -485,12 +485,12 @@ export class PersistOperationExecutor {
             const conditions: ObjectLiteral = {};
             if (valueMap.metadata.parentEntityMetadata && valueMap.metadata.parentEntityMetadata.inheritanceType === "class-table") { // valueMap.metadata.getEntityIdMap(entity)!
                 valueMap.metadata.parentIdColumns.forEach(column => {
-                    conditions[column.propertyName] = entity[column.propertyName];
+                    conditions[column.name] = entity[column.propertyName];
                 });
 
             } else {
                 valueMap.metadata.primaryColumns.forEach(column => {
-                    conditions[column.propertyName] = entity[column.propertyName];
+                    conditions[column.name] = entity[column.propertyName];
                 });
             }
             return this.queryRunner.update(valueMap.tableName, valueMap.values, conditions);
