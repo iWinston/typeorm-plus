@@ -11,7 +11,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
  * @experimental
  */
 export class ReactiveRepository<Entity> {
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

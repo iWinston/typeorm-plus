@@ -7,11 +7,13 @@ import {Connection} from "../connection/Connection";
 import {getFromContainer} from "../index";
 import {RepositoryFactory} from "./RepositoryFactory";
 import {TreeRepository} from "./TreeRepository";
+import {TreeReactiveRepository} from "./TreeReactiveRepository";
+import {QueryRunnerProvider} from "./QueryRunnerProvider";
 
 /**
  * Aggregates all repositories of the specific metadata.
  */
-export class RepositoryForMetadata {
+export class RepositoryAggregator {
 
     // -------------------------------------------------------------------------
     // Public Readonly properties
@@ -23,22 +25,32 @@ export class RepositoryForMetadata {
     public readonly metadata: EntityMetadata;
 
     /**
-     * All connection's repositories.
+     * Ordinary repository.
      */
     public readonly repository: Repository<any>;
 
     /**
-     * All connection's reactive repositories.
+     * Reactive version of the repository.
      */
     public readonly reactiveRepository: ReactiveRepository<any>;
 
     /**
-     * All connection's specific repositories.
+     * Tree repository.
+     */
+    public readonly treeRepository?: TreeRepository<any>;
+
+    /**
+     * Reactive version of the tree repository.
+     */
+    public readonly treeReactiveRepository?: TreeReactiveRepository<any>;
+
+    /**
+     * Repository with specific functions.
      */
     public readonly specificRepository: SpecificRepository<any>;
 
     /**
-     * All connection's specific reactive repositories.
+     * Reactive version of the repository with specific functions.
      */
     public readonly specificReactiveRepository: SpecificReactiveRepository<any>;
 
@@ -46,20 +58,22 @@ export class RepositoryForMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, metadata: EntityMetadata) {
+    constructor(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider) {
         const repositoryFactory = getFromContainer(RepositoryFactory);
-
         this.metadata = metadata;
 
         if (metadata.table.isClosure) {
-            this.repository = repositoryFactory.createTreeRepository(connection, metadata);
-            this.reactiveRepository = repositoryFactory.createReactiveTreeRepository(this.repository as TreeRepository<any>);
+            this.treeRepository = repositoryFactory.createTreeRepository(connection, metadata, queryRunnerProvider);
+            this.repository = this.treeRepository;
+            this.treeReactiveRepository = repositoryFactory.createReactiveTreeRepository(this.repository as TreeRepository<any>);
+            this.reactiveRepository = this.treeReactiveRepository;
+
         } else {
-            this.repository = repositoryFactory.createRepository(connection, metadata);
+            this.repository = repositoryFactory.createRepository(connection, metadata, queryRunnerProvider);
             this.reactiveRepository = repositoryFactory.createReactiveRepository(this.repository);
         }
 
-        this.specificRepository = repositoryFactory.createSpecificRepository(connection, metadata, this.repository);
+        this.specificRepository = repositoryFactory.createSpecificRepository(connection, metadata, this.repository, queryRunnerProvider);
         this.specificReactiveRepository = repositoryFactory.createSpecificReactiveRepository(this.specificRepository);
     }
 

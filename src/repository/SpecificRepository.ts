@@ -5,6 +5,7 @@ import {FindOptions, FindOptionsUtils} from "./FindOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
 import {QueryRunner} from "../driver/QueryRunner";
+import {QueryRunnerProvider} from "./QueryRunnerProvider";
 
 /**
  * Repository for more specific operations.
@@ -12,12 +13,25 @@ import {QueryRunner} from "../driver/QueryRunner";
 export class SpecificRepository<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    protected queryRunnerProvider: QueryRunnerProvider;
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
                 protected metadata: EntityMetadata,
-                protected repository: Repository<Entity>) {
+                protected repository: Repository<Entity>,
+                queryRunnerProvider?: QueryRunnerProvider) {
+
+        if (queryRunnerProvider) {
+            this.queryRunnerProvider = queryRunnerProvider;
+        } else {
+            this.queryRunnerProvider = new QueryRunnerProvider(connection.driver);
+        }
     }
 
     // -------------------------------------------------------------------------

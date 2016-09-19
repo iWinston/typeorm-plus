@@ -2,6 +2,8 @@ import {Connection} from "../connection/Connection";
 import {FindOptions} from "../repository/FindOptions";
 import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
+import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyReleasedError";
+import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods, whatever
@@ -13,8 +15,8 @@ export class EntityManager extends BaseEntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
-        super(connection);
+    constructor(connection: Connection, useSingleDatabaseConnection: boolean) {
+        super(connection, useSingleDatabaseConnection);
     }
 
     // -------------------------------------------------------------------------
@@ -27,10 +29,9 @@ export class EntityManager extends BaseEntityManager {
     persist<Entity>(entity: Entity): Promise<Entity>;
     persist<Entity>(targetOrEntity: Function|string, entity: Entity): Promise<Entity>;
     persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
-        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
-        return <any> this.obtainRepository(<any> target).persist(entity);
+        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
+        return this.getRepository(target as any).persist(entity);
     }
 
     /**
@@ -39,10 +40,9 @@ export class EntityManager extends BaseEntityManager {
     remove<Entity>(entity: Entity): Promise<Entity>;
     remove<Entity>(targetOrEntity: Function|string, entity: Entity): Promise<Entity>;
     remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
-        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
-        return <any> this.obtainRepository(<any> target).remove(entity);
+        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
+        return this.getRepository(target as any).remove(entity);
     }
     /**
      * Finds entities that match given conditions.
@@ -69,13 +69,13 @@ export class EntityManager extends BaseEntityManager {
      */
     find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
         if (conditionsOrFindOptions && options) {
-            return this.obtainRepository(entityClass).find(conditionsOrFindOptions, options);
+            return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
             
         } else if (conditionsOrFindOptions) {
-            return this.obtainRepository(entityClass).find(conditionsOrFindOptions);
+            return this.getRepository(entityClass).find(conditionsOrFindOptions);
             
         } else {
-            return this.obtainRepository(entityClass).find();
+            return this.getRepository(entityClass).find();
         }
     }
 
@@ -104,13 +104,13 @@ export class EntityManager extends BaseEntityManager {
      */
     findAndCount<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
         if (conditionsOrFindOptions && options) {
-            return this.obtainRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
+            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
 
         } else if (conditionsOrFindOptions) {
-            return this.obtainRepository(entityClass).findAndCount(conditionsOrFindOptions);
+            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions);
 
         } else {
-            return this.obtainRepository(entityClass).findAndCount();
+            return this.getRepository(entityClass).findAndCount();
         }
     }
 
@@ -139,13 +139,13 @@ export class EntityManager extends BaseEntityManager {
      */
     findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
         if (conditionsOrFindOptions && options) {
-            return this.obtainRepository(entityClass).findOne(conditionsOrFindOptions, options);
+            return this.getRepository(entityClass).findOne(conditionsOrFindOptions, options);
 
         } else if (conditionsOrFindOptions) {
-            return this.obtainRepository(entityClass).findOne(conditionsOrFindOptions);
+            return this.getRepository(entityClass).findOne(conditionsOrFindOptions);
 
         } else {
-            return this.obtainRepository(entityClass).findOne();
+            return this.getRepository(entityClass).findOne();
         }
     }
 
@@ -153,19 +153,24 @@ export class EntityManager extends BaseEntityManager {
      * Finds entity with given id.
      */
     findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, options?: FindOptions): Promise<Entity> {
-        return this.obtainRepository(entityClass).findOneById(id, options);
+        return this.getRepository(entityClass).findOneById(id, options);
     }
 
     /**
      * Executes raw SQL query and returns raw database results.
      */
     async query(query: string): Promise<any> {
-        const queryRunner = await this.connection.driver.createQueryRunner();
+        if (this.useSingleDatabaseConnection && this.isReleased)
+            throw new EntityManagerAlreadyReleasedError();
+
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
+
         try {
             return queryRunner.query(query);
 
         } finally  {
-            await queryRunner.release();
+            await queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -173,7 +178,11 @@ export class EntityManager extends BaseEntityManager {
      * Wraps given function execution (and all operations made there) in a transaction.
      */
     async transaction(runInTransaction: () => Promise<any>): Promise<any> {
-        const queryRunner = await this.connection.driver.createQueryRunner();
+        if (this.useSingleDatabaseConnection && this.isReleased)
+            throw new EntityManagerAlreadyReleasedError();
+
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
 
         try {
             await queryRunner.beginTransaction();
@@ -186,7 +195,7 @@ export class EntityManager extends BaseEntityManager {
             throw err;
 
         } finally {
-            await queryRunner.release();
+            await queryRunnerProvider.release(queryRunner);
         }
     }
 

@@ -9,6 +9,7 @@ import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions, FindOptionsUtils} from "./FindOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../driver/QueryRunner";
+import {QueryRunnerProvider} from "./QueryRunnerProvider";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -22,13 +23,22 @@ export class Repository<Entity extends ObjectLiteral> {
     protected entityPersistOperationBuilder: EntityPersistOperationBuilder;
     protected plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
     protected plainObjectToDatabaseEntityTransformer: PlainObjectToDatabaseEntityTransformer<Entity>;
-    
+    protected queryRunnerProvider: QueryRunnerProvider;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-                protected metadata: EntityMetadata) {
+                protected metadata: EntityMetadata,
+                queryRunnerProvider?: QueryRunnerProvider) {
+
+        if (queryRunnerProvider) {
+            this.queryRunnerProvider = queryRunnerProvider;
+        } else {
+            this.queryRunnerProvider = new QueryRunnerProvider(connection.driver);
+        }
+
         this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(connection.entityMetadatas);
         this.plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
         this.plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
@@ -156,7 +166,7 @@ export class Repository<Entity extends ObjectLiteral> {
         if (entityOrEntities instanceof Array)
             return Promise.all(entityOrEntities.map(entity => this.persist(entity)));
 
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         try {
             const allPersistedEntities = await this.extractObjectsById(entityOrEntities, this.metadata);
             let loadedDbEntity: Entity|null = null;
@@ -182,7 +192,7 @@ export class Repository<Entity extends ObjectLiteral> {
             return entityOrEntities;
 
         } finally {
-            await this.releaseProvidedQueryRunner(queryRunner);
+            await this.queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -204,7 +214,7 @@ export class Repository<Entity extends ObjectLiteral> {
         if (entityOrEntities instanceof Array) // todo: make it in transaction, like in persist
             return Promise.all(entityOrEntities.map(entity => this.remove(entity)));
 
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         try {
             const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
                 .select(this.metadata.table.name)
@@ -225,7 +235,7 @@ export class Repository<Entity extends ObjectLiteral> {
             return entityOrEntities;
 
         } finally {
-            await this.releaseProvidedQueryRunner(queryRunner);
+            await this.queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -340,12 +350,12 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes a raw SQL query and returns a raw database results.
      */
     async query(query: string): Promise<any> {
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         try {
             return queryRunner.query(query);
 
         } finally {
-            await this.releaseProvidedQueryRunner(queryRunner);
+            await this.queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -353,7 +363,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Wraps given function execution (and all operations made there) in a transaction.
      */
     async transaction(runInTransaction: () => Promise<any>|any): Promise<any> {
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         try {
             await queryRunner.beginTransaction();
             const result = await runInTransaction();
@@ -365,7 +375,7 @@ export class Repository<Entity extends ObjectLiteral> {
             throw err;
 
         } finally {
-            await this.releaseProvidedQueryRunner(queryRunner);
+            await this.queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -373,25 +383,7 @@ export class Repository<Entity extends ObjectLiteral> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected provideQueryRunner(): Promise<QueryRunner> {
-        return this.connection.driver.createQueryRunner();
-    }
-
-    /**
-     * Query runner release logic extracted into separated methods intently,
-     * to make possible to create a subclass with its own release query runner logic.
-     * Note: release only query runners that provided by a provideQueryRunner() method.
-     * This is important and by design.
-     */
-    protected releaseProvidedQueryRunner(queryRunner: QueryRunner): Promise<void> {
-        return queryRunner.release();
-    }
-
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
-    private createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions) {
+    protected createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions) {
         const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : <FindOptions> options;
         const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
 
@@ -417,7 +409,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * ids, check if we did not load them yet and try to load them. This algorithm will make sure that all dbEntities
      * are loaded. Further it will help insert operations to work correctly.
      */
-    private findNotLoadedIds(queryRunner: QueryRunner, dbEntities: EntityWithId[], persistedEntities: EntityWithId[]): Promise<EntityWithId[]> {
+    protected findNotLoadedIds(queryRunner: QueryRunner, dbEntities: EntityWithId[], persistedEntities: EntityWithId[]): Promise<EntityWithId[]> {
         const missingDbEntitiesLoad = persistedEntities
             .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined) // todo: not sure if this condition will work
             .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.compareId(entityWithId.id!)))
@@ -460,7 +452,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Extracts unique objects from given entity and all its downside relations.
      */
-    private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> { // todo: why promises used there?
+    protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> { // todo: why promises used there?
         const promises = metadata.relations.map(relation => {
             const relMetadata = relation.inverseEntityMetadata;
 

@@ -8,17 +8,56 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
+import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";
+import {RepositoryAggregator} from "../repository/RepositoryAggregator";
+import {RepositoryNotTreeError} from "../connection/error/RepositoryNotTreeError";
+import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
+import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyReleasedError";
 
 /**
- * Common functions shared between different manager types.
+ * Common functions shared between different entity manager types.
  */
 export abstract class BaseEntityManager {
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Provides single query runner for the all repositories retrieved from this entity manager.
+     * Works only when useSingleDatabaseConnection is enabled.
+     */
+    protected queryRunnerProvider?: QueryRunnerProvider;
+
+    /**
+     * Indicates if this entity manager is released.
+     * Entity manager can be released only if useSingleDatabaseConnection is enabled.
+     * Once entity manager is released, its repositories and some other methods can't be used anymore.
+     */
+    protected isReleased: boolean;
+
+    // -------------------------------------------------------------------------
+    // Private Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Stores all registered repositories.
+     * Used when useSingleDatabaseConnection is enabled.
+     */
+    private readonly repositoryAggregators: RepositoryAggregator[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    /**
+     * @param connection Connection to be used in this entity manager
+     * @param useSingleDatabaseConnection Indicates if single database connection should be used for all queries execute
+     */
+    constructor(protected connection: Connection,
+                protected useSingleDatabaseConnection: boolean) {
+        if (useSingleDatabaseConnection === true)
+            this.queryRunnerProvider = new QueryRunnerProvider(connection.driver, true);
     }
 
     // -------------------------------------------------------------------------
@@ -27,104 +66,198 @@ export abstract class BaseEntityManager {
 
     /**
      * Gets repository for the given entity class.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getRepository<Entity>(entityClass: ObjectType<Entity>): Repository<Entity>;
 
     /**
      * Gets repository for the given entity name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getRepository<Entity>(entityName: string): Repository<Entity>;
 
     /**
      * Gets repository for the given entity class or name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        return this.obtainRepository(entityClassOrName);
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.useSingleDatabaseConnection)
+            return this.obtainRepositoryAggregator(entityClassOrName as any).repository;
+
+        return this.connection.getRepository<Entity>(entityClassOrName as any);
     }
 
     /**
      * Gets tree repository for the given entity class.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class or name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
-        return this.obtainTreeRepository(entityClassOrName);
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.useSingleDatabaseConnection) {
+            const treeRepository = this.obtainRepositoryAggregator(entityClassOrName).treeRepository;
+            if (!treeRepository)
+                throw new RepositoryNotTreeError(entityClassOrName);
+
+            return treeRepository;
+        }
+
+        return this.connection.getTreeRepository<Entity>(entityClassOrName as any);
     }
 
     /**
      * Gets reactive repository for the given entity class.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getReactiveRepository<Entity>(entityClass: ObjectType<Entity>): ReactiveRepository<Entity>;
 
     /**
      * Gets reactive repository for the given entity name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getReactiveRepository<Entity>(entityName: string): ReactiveRepository<Entity>;
 
     /**
      * Gets reactive repository of the given entity.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
-    getReactiveRepository<Entity>(entityClass: ObjectType<Entity>|string): ReactiveRepository<Entity> {
-        return this.obtainReactiveRepository(entityClass);
+    getReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.useSingleDatabaseConnection)
+            return this.obtainRepositoryAggregator(entityClassOrName as any).reactiveRepository;
+
+        return this.connection.getReactiveRepository<Entity>(entityClassOrName as any);
     }
 
     /**
      * Gets specific repository for the given entity class.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
 
     /**
      * Gets specific repository for the given entity name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
 
     /**
      * Gets specific repository of the given entity.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
-    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>|string): SpecificRepository<Entity> {
-        return this.obtainSpecificRepository(entityClass);
+    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.useSingleDatabaseConnection)
+            return this.obtainRepositoryAggregator(entityClassOrName as any).specificRepository;
+
+        return this.connection.getSpecificRepository<Entity>(entityClassOrName as any);
     }
 
     /**
      * Gets specific reactive repository for the given entity class.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getSpecificReactiveRepository<Entity>(entityClass: ObjectType<Entity>): SpecificReactiveRepository<Entity>;
 
     /**
      * Gets specific reactive repository for the given entity name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getSpecificReactiveRepository<Entity>(entityName: string): SpecificReactiveRepository<Entity>;
 
     /**
      * Gets specific reactive repository of the given entity.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
-    getSpecificReactiveRepository<Entity>(entityClass: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
-        return this.obtainSpecificReactiveRepository(entityClass);
+    getSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.useSingleDatabaseConnection)
+            return this.obtainRepositoryAggregator(entityClassOrName).specificReactiveRepository;
+
+        return this.connection.getSpecificReactiveRepository<Entity>(entityClassOrName as any);
     }
 
     /**
      * Gets reactive tree repository for the given entity class.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getTreeReactiveRepository<Entity>(entityClass: ObjectType<Entity>): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository for the given entity name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
     getTreeReactiveRepository<Entity>(entityName: string): TreeReactiveRepository<Entity>;
 
     /**
      * Gets reactive tree repository of the given entity.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
      */
-    getTreeReactiveRepository<Entity>(entityClass: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
-        return this.obtainTreeReactiveRepository(entityClass);
+    getTreeReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.useSingleDatabaseConnection) {
+            const treeRepository = this.obtainRepositoryAggregator(entityClassOrName).treeReactiveRepository;
+            if (!treeRepository)
+                throw new RepositoryNotTreeError(entityClassOrName);
+
+            return treeRepository;
+        }
+
+        return this.connection.getReactiveTreeRepository<Entity>(entityClassOrName as any);
     }
 
     // todo: add methods for getSpecificRepository and getReactiveSpecificRepository
@@ -145,14 +278,14 @@ export abstract class BaseEntityManager {
     hasId(targetOrEntity: Object|string, maybeEntity?: Object): boolean {
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
         const entity = arguments.length === 2 ? <Object> maybeEntity : <Object> targetOrEntity;
-        return this.obtainRepository(target as any).hasId(entity);
+        return this.getRepository(target as any).hasId(entity);
     }
 
     /**
      * Creates a new query builder that can be used to build an sql query.
      */
     createQueryBuilder<Entity>(entityClass: ObjectType<Entity>, alias: string): QueryBuilder<Entity> {
-        return this.obtainRepository(entityClass).createQueryBuilder(alias);
+        return this.getRepository(entityClass).createQueryBuilder(alias);
     }
 
     /**
@@ -178,11 +311,13 @@ export abstract class BaseEntityManager {
      */
     create<Entity>(entityClass: ObjectType<Entity>, plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
         if (plainObjectOrObjects instanceof Array) {
-            return this.obtainRepository(entityClass).create(plainObjectOrObjects);
+            return this.getRepository(entityClass).create(plainObjectOrObjects);
+
         } else if (plainObjectOrObjects) {
-            return this.obtainRepository(entityClass).create(plainObjectOrObjects);
+            return this.getRepository(entityClass).create(plainObjectOrObjects);
+
         } else {
-            return this.obtainRepository(entityClass).create();
+            return this.getRepository(entityClass).create();
         }
     }
 
@@ -193,96 +328,54 @@ export abstract class BaseEntityManager {
      * replaced from the new object.
      */
     preload<Entity>(entityClass: ObjectType<Entity>, object: Object): Promise<Entity> {
-        return this.obtainRepository(entityClass).preload(object);
+        return this.getRepository(entityClass).preload(object);
     }
 
     /**
      * Merges two entities into one new entity.
      */
-    merge<Entity>(entityClass: ObjectType<Entity>, ...objects: ObjectLiteral[]): Entity {
-        return <Entity> this.obtainRepository(entityClass).merge(...objects);
+    merge<Entity>(entityClass: ObjectType<Entity>, ...objects: ObjectLiteral[]): Entity { // todo: throw exception ie tntity manager is released
+        return <Entity> this.getRepository(entityClass).merge(...objects);
+    }
+
+    /**
+     * Releases all resources used by entity manager.
+     * This is used when entity manager is created with a single query runner,
+     * and this single query runner needs to be released after job with repository is done.
+     */
+    async release(): Promise<void> {
+        if (this.useSingleDatabaseConnection)
+            throw new NoNeedToReleaseEntityManagerError();
+
+        this.isReleased = true;
+
+        if (this.queryRunnerProvider)
+            return this.queryRunnerProvider.releaseReused();
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Protected Methods
     // -------------------------------------------------------------------------
 
     /**
-     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainRepository does not accept a Function, and only ObjectType it can accept - it brings
-     * us type problems. To avoid this we are using private function here.
+     * Gets, or if does not exist yet, creates and returns a repository aggregator for a particular entity target.
      */
-    protected obtainRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        if (typeof entityClassOrName === "string") {
-            return this.connection.getRepository<Entity>(entityClassOrName);
-        } else {
-            return this.connection.getRepository(entityClassOrName);
-        }
-    }
+    protected obtainRepositoryAggregator<Entity>(entityClassOrName: ObjectType<Entity>|string): RepositoryAggregator {
+        if (this.isReleased)
+            throw new EntityManagerAlreadyReleasedError();
 
-    /**
-     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainTreeRepository does not accept a Function, and only ObjectType it can accept - it brings
-     * us type problems. To avoid this we are using private function here.
-     */
-    protected obtainTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
-        if (typeof entityClassOrName === "string") {
-            return this.connection.getTreeRepository<Entity>(entityClassOrName);
-        } else {
-            return this.connection.getTreeRepository(entityClassOrName);
+        const metadata = this.connection.entityMetadatas.findByTarget(entityClassOrName);
+        let repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
+        if (!repositoryAggregator) {
+            repositoryAggregator = new RepositoryAggregator(
+                this.connection,
+                this.connection.getMetadata(entityClassOrName as any),
+                this.queryRunnerProvider
+            );
+            this.repositoryAggregators.push(repositoryAggregator);
         }
-    }
 
-    /**
-     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainTreeRepository does not accept a Function, and only ObjectType it can accept - it brings
-     * us type problems. To avoid this we are using private function here.
-     */
-    protected obtainSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
-        if (typeof entityClassOrName === "string") {
-            return this.connection.getSpecificRepository<Entity>(entityClassOrName);
-        } else {
-            return this.connection.getSpecificRepository(entityClassOrName);
-        }
-    }
-
-    /**
-     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainReactiveRepository does not accept a Function, and only ObjectType it can accept - it brings
-     * us type problems. To avoid this we are using private function here.
-     */
-    protected obtainReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
-        if (typeof entityClassOrName === "string") {
-            return this.connection.getReactiveRepository<Entity>(entityClassOrName);
-        } else {
-            return this.connection.getReactiveRepository(entityClassOrName);
-        }
-    }
-
-    /**
-     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainReactiveTreeRepository does not accept a Function, and only ObjectType it can accept - it brings
-     * us type problems. To avoid this we are using private function here.
-     */
-    protected obtainTreeReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
-        if (typeof entityClassOrName === "string") {
-            return this.connection.getReactiveTreeRepository<Entity>(entityClassOrName);
-        } else {
-            return this.connection.getReactiveTreeRepository(entityClassOrName);
-        }
-    }
-
-    /**
-     * We are using a private function to avoid type problems, because we are sending a Function everywhere in the
-     * code, and obtainReactiveRepository does not accept a Function, and only ObjectType it can accept - it brings
-     * us type problems. To avoid this we are using private function here.
-     */
-    protected obtainSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
-        if (typeof entityClassOrName === "string") {
-            return this.connection.getSpecificReactiveRepository<Entity>(entityClassOrName);
-        } else {
-            return this.connection.getSpecificReactiveRepository(entityClassOrName);
-        }
+        return repositoryAggregator;
     }
 
 }

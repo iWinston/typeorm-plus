@@ -3,6 +3,8 @@ import {Connection} from "../connection/Connection";
 import {FindOptions} from "../repository/FindOptions";
 import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
+import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";
+import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyReleasedError";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
@@ -14,8 +16,8 @@ export class ReactiveEntityManager extends BaseEntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
-        super(connection);
+    constructor(connection: Connection, useSingleDatabaseConnection: boolean) {
+        super(connection, useSingleDatabaseConnection);
     }
 
     // -------------------------------------------------------------------------
@@ -28,10 +30,9 @@ export class ReactiveEntityManager extends BaseEntityManager {
     persist<Entity>(entity: Entity): Rx.Observable<Entity>;
     persist<Entity>(targetOrEntity: Function|string, entity: Entity): Rx.Observable<Entity>;
     persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
-        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
-        return <any> this.getReactiveRepository(<any> target).persist(entity);
+        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
+        return this.getReactiveRepository<Entity>(target as any).persist(entity);
     }
 
     /**
@@ -40,10 +41,9 @@ export class ReactiveEntityManager extends BaseEntityManager {
     remove<Entity>(entity: Entity): Rx.Observable<Entity>;
     remove<Entity>(targetOrEntity: Function|string, entity: Entity): Rx.Observable<Entity>;
     remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
-        // todo: extra casting is used strange tsc error here, check later maybe typescript bug
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? <Entity> maybeEntity : <Entity> targetOrEntity;
-        return <any> this.getReactiveRepository(<any> target).remove(entity);
+        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
+        return this.getReactiveRepository<Entity>(target as any).remove(entity);
     }
 
     /**
@@ -163,13 +163,18 @@ export class ReactiveEntityManager extends BaseEntityManager {
      */
     query(query: string): Rx.Observable<any> {
         const promiseFn = async () => {
-            const queryRunner = await this.connection.driver.createQueryRunner();
+            if (this.useSingleDatabaseConnection && this.isReleased)
+                throw new EntityManagerAlreadyReleasedError();
+
+            const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+            const queryRunner = await queryRunnerProvider.provide();
+
             try {
                 const result = await queryRunner.query(query);
                 return Promise.resolve(result);
 
             } finally  {
-                await queryRunner.release();
+                await queryRunnerProvider.release(queryRunner);
             }
         };
         return Rx.Observable.fromPromise(promiseFn as any);
@@ -180,7 +185,11 @@ export class ReactiveEntityManager extends BaseEntityManager {
      */
     transaction(runInTransaction: () => Promise<any>): Rx.Observable<any> {
         const promiseFn = async () => {
-            const queryRunner = await this.connection.driver.createQueryRunner();
+            if (this.useSingleDatabaseConnection && this.isReleased)
+                throw new EntityManagerAlreadyReleasedError();
+
+            const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+            const queryRunner = await queryRunnerProvider.provide();
 
             try {
                 await queryRunner.beginTransaction();
@@ -193,7 +202,7 @@ export class ReactiveEntityManager extends BaseEntityManager {
                 throw err;
 
             } finally {
-                await queryRunner.release();
+                await queryRunnerProvider.release(queryRunner);
             }
         };
         return Rx.Observable.fromPromise(promiseFn as any);

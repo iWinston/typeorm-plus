@@ -13,11 +13,11 @@ export class EntityManagerFactory {
     // -------------------------------------------------------------------------
 
     createEntityManager(connection: Connection) {
-        return new EntityManager(connection);
+        return new EntityManager(connection, false);
     }
 
     createReactiveEntityManager(connection: Connection) {
-        return new ReactiveEntityManager(connection);
+        return new ReactiveEntityManager(connection, false);
     }
 
 }

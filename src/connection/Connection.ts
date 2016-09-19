@@ -31,7 +31,7 @@ import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityMa
 import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
-import {RepositoryForMetadata} from "../repository/RepositoryForMetadata";
+import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {Logger} from "../logger/Logger";
@@ -86,9 +86,9 @@ export class Connection {
     private readonly _reactiveEntityManager: ReactiveEntityManager;
 
     /**
-     * Stores all registered metadatas with their repositories.
+     * Stores all registered repositories.
      */
-    private readonly repositoryForMetadatas: RepositoryForMetadata[] = [];
+    private readonly repositoryAggregators: RepositoryAggregator[] = [];
 
     /**
      * Entity listeners that are registered for this connection.
@@ -377,8 +377,7 @@ export class Connection {
      * Gets repository for the given entity class or name.
      */
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
-        return repositoryForMetadata.repository;
+        return this.findRepositoryAggregator(entityClassOrName).repository;
     }
 
     /**
@@ -401,8 +400,10 @@ export class Connection {
      * like ones decorated with @ClosureTable decorator.
      */
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
-        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName, { checkIfTreeTable: true });
-        return repositoryForMetadata.repository as TreeRepository<Entity>;
+        const repository = this.findRepositoryAggregator(entityClassOrName).treeRepository;
+        if (!repository)
+            throw new RepositoryNotTreeError(entityClassOrName);
+        return repository;
     }
 
     /**
@@ -422,8 +423,7 @@ export class Connection {
      * SpecificRepository is a special repository that contains specific and non standard repository methods.
      */
     getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
-        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
-        return repositoryForMetadata.specificRepository;
+        return this.findRepositoryAggregator(entityClassOrName).specificRepository;
     }
 
     /**
@@ -446,8 +446,7 @@ export class Connection {
      * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
-        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
-        return repositoryForMetadata.reactiveRepository;
+        return this.findRepositoryAggregator(entityClassOrName).reactiveRepository;
     }
 
     /**
@@ -476,8 +475,10 @@ export class Connection {
      * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getReactiveTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
-        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName, { checkIfTreeTable: true });
-        return repositoryForMetadata.reactiveRepository as TreeReactiveRepository<Entity>;
+        const repository = this.findRepositoryAggregator(entityClassOrName).treeReactiveRepository;
+        if (!repository)
+            throw new RepositoryNotTreeError(entityClassOrName);
+        return repository;
     }
 
     /**
@@ -503,8 +504,26 @@ export class Connection {
      * the only difference is that reactive repository methods return Observable instead of Promise.
      */
     getSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
-        const repositoryForMetadata = this.findRepositoryForMetadata(entityClassOrName);
-        return repositoryForMetadata.specificReactiveRepository;
+        const repositoryAggregator = this.findRepositoryAggregator(entityClassOrName);
+        return repositoryAggregator.specificReactiveRepository;
+    }
+
+    /**
+     * Creates a new entity manager with a single opened connection to the database.
+     * This may be useful if you want to perform all db queries within one connection.
+     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     */
+    createEntityManagerWithSingleDatabaseConnection() {
+        return new EntityManager(this, true);
+    }
+
+    /**
+     * Creates a new reactive entity manager with a single opened connection to the database.
+     * This may be useful if you want to perform all db queries within one connection.
+     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     */
+    createReactiveEntityManagerWithSingleDatabaseConnection() {
+        return new ReactiveEntityManager(this, true);
     }
 
     // -------------------------------------------------------------------------
@@ -512,10 +531,9 @@ export class Connection {
     // -------------------------------------------------------------------------
 
     /**
-     * Finds repository with metadata of the given entity class or name.
+     * Finds repository aggregator of the given entity class or name.
      */
-    private findRepositoryForMetadata(entityClassOrName: ObjectType<any>|string,
-                                      options?: { checkIfTreeTable: boolean }): RepositoryForMetadata {
+    private findRepositoryAggregator(entityClassOrName: ObjectType<any>|string): RepositoryAggregator {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -523,14 +541,11 @@ export class Connection {
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
         const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
-        const repositoryForMetadata = this.repositoryForMetadatas.find(metadataRepository => metadataRepository.metadata === metadata);
-        if (!repositoryForMetadata)
+        const repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
+        if (!repositoryAggregator)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
-        if (options && options.checkIfTreeTable && !metadata.table.isClosure)
-            throw new RepositoryNotTreeError(entityClassOrName);
-
-        return repositoryForMetadata;
+        return repositoryAggregator;
     }
 
     /**
@@ -540,7 +555,7 @@ export class Connection {
 
         this.entitySubscribers.length = 0;
         this.entityListeners.length = 0;
-        this.repositoryForMetadatas.length = 0;
+        this.repositoryAggregators.length = 0;
         this.entityMetadatas.length = 0;
 
         const namingStrategy = this.createNamingStrategy();
@@ -569,7 +584,7 @@ export class Connection {
                 .buildFromMetadataArgsStorage(this.driver, lazyRelationsWrapper, namingStrategy, this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
-                    this.repositoryForMetadatas.push(new RepositoryForMetadata(this, metadata));
+                    this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
                 });
         }
 
@@ -579,7 +594,7 @@ export class Connection {
                 .buildFromSchemas(this.driver, lazyRelationsWrapper, namingStrategy, this.entitySchemas)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
-                    this.repositoryForMetadatas.push(new RepositoryForMetadata(this, metadata));
+                    this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
                 });
         }
     }
