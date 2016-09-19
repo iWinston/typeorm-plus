@@ -1,4 +1,4 @@
-import {PrimaryColumn, Column, Table} from "../../../src/index";
+import {GeneratedIdColumn, Column, Table} from "../../../src/index";
 import {Post} from "./Post";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {AfterRemove} from "../../../src/decorator/listeners/AfterRemove";
@@ -11,7 +11,7 @@ import {BeforeInsert} from "../../../src/decorator/listeners/BeforeInsert";
 @Table("sample9_post_author")
 export class PostAuthor {
 
-    @PrimaryColumn("int", { generated: true })
+    @GeneratedIdColumn()
     id: number;
 
     @Column()

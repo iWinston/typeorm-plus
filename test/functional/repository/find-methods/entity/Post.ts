@@ -1,6 +1,6 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
+import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 
 @Table()
 export class Post {

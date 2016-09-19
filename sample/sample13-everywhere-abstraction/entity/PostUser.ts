@@ -1,9 +1,9 @@
-import {PrimaryColumn, Column, Table} from "../../../src/index";
+import {GeneratedIdColumn, Column, Table} from "../../../src/index";
 
 @Table("sample13_post_user")
 export class PostUser {
 
-    @PrimaryColumn("int", { generated: true })
+    @GeneratedIdColumn()
     id: number;
 
     @Column("int")

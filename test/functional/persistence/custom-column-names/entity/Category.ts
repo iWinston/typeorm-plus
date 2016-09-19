@@ -1,5 +1,5 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
+import {GeneratedIdColumn} from "../../../../../src/decorator/columns/GeneratedIdColumn";
 import {Post} from "./Post";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
@@ -10,7 +10,7 @@ import {CategoryMetadata} from "./CategoryMetadata";
 @Table()
 export class Category {
 
-    @PrimaryColumn("int", { generated: true })
+    @GeneratedIdColumn()
     id: number;
 
     @OneToMany(type => Post, post => post.category)

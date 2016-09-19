@@ -1,8 +1,9 @@
-import {PrimaryColumn, Column} from "../../../src/index";
+import {Column} from "../../../src/index";
 import {AbstractTable} from "../../../src/decorator/tables/AbstractTable";
 import {BasePost} from "./BasePost";
 import {PostAuthor} from "./PostAuthor";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
+import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 
 @AbstractTable()
 export class BaseObject extends BasePost {

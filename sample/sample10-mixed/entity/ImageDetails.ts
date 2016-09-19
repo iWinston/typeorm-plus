@@ -1,10 +1,10 @@
-import {PrimaryColumn, Column, Table, OneToOne} from "../../../src/index";
+import {GeneratedIdColumn, Column, Table, OneToOne} from "../../../src/index";
 import {Image} from "./Image";
 
 @Table("sample10_image_details")
 export class ImageDetails {
 
-    @PrimaryColumn("int", { generated: true })
+    @GeneratedIdColumn()
     id: number;
 
     @Column()

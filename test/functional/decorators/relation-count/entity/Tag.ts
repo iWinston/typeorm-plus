@@ -1,5 +1,5 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
+import {GeneratedIdColumn} from "../../../../../src/decorator/columns/GeneratedIdColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
 import {Post} from "./Post";
@@ -8,7 +8,7 @@ import {RelationCount} from "../../../../../src/decorator/relations/RelationCoun
 @Table()
 export class Tag {
 
-    @PrimaryColumn("int", { generated: true })
+    @GeneratedIdColumn()
     id: number;
 
     @Column()

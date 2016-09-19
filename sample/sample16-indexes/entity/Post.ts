@@ -1,4 +1,4 @@
-import {PrimaryColumn, Column, Table} from "../../../src/index";
+import {GeneratedIdColumn, Column, Table} from "../../../src/index";
 import {Index} from "../../../src/decorator/Index";
 
 @Table("sample16_post")
@@ -6,7 +6,7 @@ import {Index} from "../../../src/decorator/Index";
 @Index("my_index_with_id_and_title", (post: Post) => [post.id, post.title])
 export class Post {
 
-    @PrimaryColumn("int", { generated: true })
+    @GeneratedIdColumn()
     id: number;
 
     @Column()
