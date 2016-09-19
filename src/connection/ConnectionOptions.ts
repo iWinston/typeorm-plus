@@ -24,22 +24,30 @@ export interface ConnectionOptions {
     readonly usedNamingStrategy?: string|Function;
 
     /**
-     * Entities to be loaded for the this connection.
+     * Entities to be loaded for this connection.
+     * Accepts both entity classes and directories where from entities need to be loaded.
+     * Directories supports glob patterns.
      */
     readonly entities?: Function[]|string[];
 
     /**
-     * Subscribers to be loaded for the this connection.
+     * Subscribers to be loaded for this connection.
+     * Accepts both subscriber classes and directories where from subscribers need to be loaded.
+     * Directories supports glob patterns.
      */
     readonly subscribers?: Function[]|string[];
 
     /**
-     * Naming strategies to be loaded for the this connection.
+     * Naming strategies to be loaded for this connection.
+     * Accepts both naming strategy classes and directories where from naming strategies need to be loaded.
+     * Directories supports glob patterns.
      */
     readonly namingStrategies?: Function[]|string[];
 
     /**
-     * Entity schemas to be loaded for the this connection.
+     * Entity schemas to be loaded for this connection.
+     * Accepts both entity schema classes and directories where from entity schemas need to be loaded.
+     * Directories supports glob patterns.
      */
     readonly entitySchemas?: EntitySchema[]|string[];
 

@@ -20,13 +20,11 @@ import {TreeRepository} from "../repository/TreeRepository";
 import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {NamingStrategyNotFoundError} from "./error/NamingStrategyNotFoundError";
-import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
 import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingStrategyNotConnectedError";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {BroadcasterFactory} from "../subscriber/BroadcasterFactory";
 import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityManagerNotConnectedError";
 import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
 import {SpecificRepository} from "../repository/SpecificRepository";
@@ -138,9 +136,9 @@ export class Connection {
         this.name = name;
         this.driver = driver;
         this.logger = logger;
-        this._entityManager = getFromContainer(EntityManagerFactory).createEntityManager(this);
-        this._reactiveEntityManager = getFromContainer(EntityManagerFactory).createReactiveEntityManager(this);
-        this.broadcaster = getFromContainer(BroadcasterFactory).createBroadcaster(this.entityMetadatas, this.entitySubscribers, this.entityListeners);
+        this._entityManager = this.createEntityManager();
+        this._reactiveEntityManager = this.createReactiveEntityManager();
+        this.broadcaster = this.createBroadcaster();
     }
 
     // -------------------------------------------------------------------------
@@ -155,7 +153,7 @@ export class Connection {
     }
 
     /**
-     * Gets entity manager that allows to perform repository operations with any entity of this connection.
+     * Gets entity manager that allows to perform repository operations with any entity in this connection.
      */
     get entityManager() {
         if (!this.isConnected)
@@ -165,7 +163,7 @@ export class Connection {
     }
 
     /**
-     * Gets entity manager that allows to perform repository operations with any entity of this connection.
+     * Gets entity manager that allows to perform repository operations with any entity in this connection.
      * This version of entity manager is reactive - works with Observables instead of Promises.
      */
     get reactiveEntityManager() {
@@ -242,8 +240,7 @@ export class Connection {
         if (dropBeforeSync)
             await this.dropDatabase();
 
-        const schemaCreator = new SchemaBuilder(this.driver, this.logger, this.entityMetadatas, this.createNamingStrategy()); // todo: use factory there later
-        await schemaCreator.build();
+        await this.createSchemaBuilder().build();
     }
 
     /**
@@ -527,13 +524,13 @@ export class Connection {
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Protected Methods
     // -------------------------------------------------------------------------
 
     /**
      * Finds repository aggregator of the given entity class or name.
      */
-    private findRepositoryAggregator(entityClassOrName: ObjectType<any>|string): RepositoryAggregator {
+    protected findRepositoryAggregator(entityClassOrName: ObjectType<any>|string): RepositoryAggregator {
         if (!this.isConnected)
             throw new NoConnectionForRepositoryError(this.name);
 
@@ -551,7 +548,7 @@ export class Connection {
     /**
      * Builds all registered metadatas.
      */
-    private buildMetadatas() {
+    protected buildMetadatas() {
 
         this.entitySubscribers.length = 0;
         this.entityListeners.length = 0;
@@ -559,7 +556,7 @@ export class Connection {
         this.entityMetadatas.length = 0;
 
         const namingStrategy = this.createNamingStrategy();
-        const lazyRelationsWrapper = new LazyRelationsWrapper(this.driver, this.entityMetadatas, this.broadcaster);
+        const lazyRelationsWrapper = this.createLazyRelationsWrapper();
 
         // take imported event subscribers
         if (this.subscriberClasses && this.subscriberClasses.length) {
@@ -602,7 +599,7 @@ export class Connection {
     /**
      * Creates a naming strategy to be used for this connection.
      */
-    private createNamingStrategy(): NamingStrategyInterface {
+    protected createNamingStrategy(): NamingStrategyInterface {
         
         // if naming strategies are not loaded, or used naming strategy is not set then use default naming strategy
         if (!this.namingStrategyClasses || !this.namingStrategyClasses.length || !this.usedNamingStrategy)
@@ -626,6 +623,43 @@ export class Connection {
 
         // initialize a naming strategy instance
         return getFromContainer<NamingStrategyInterface>(namingMetadata.target);
+    }
+
+    /**
+     * Creates a new default entity manager without single connection setup.
+     */
+    protected createEntityManager() {
+        return new EntityManager(this, false);
+    }
+
+    /**
+     * Creates a new default reactive entity manager without single connection setup.
+     */
+    protected createReactiveEntityManager() {
+        return new ReactiveEntityManager(this, false);
+    }
+
+    /**
+     * Creates a new entity broadcaster using in this connection.
+     */
+    protected createBroadcaster() {
+        // todo: better to pass connection?
+        return new Broadcaster(this.entityMetadatas, this.entitySubscribers, this.entityListeners);
+    }
+
+    /**
+     * Creates a schema builder used to build a database schema for the entities of the current connection.
+     */
+    protected createSchemaBuilder() {
+        return new SchemaBuilder(this.driver, this.logger, this.entityMetadatas, this.createNamingStrategy());
+    }
+
+    /**
+     * Creates a lazy relations wrapper.
+     */
+    protected createLazyRelationsWrapper() {
+        // todo: send connection instead?
+        return new LazyRelationsWrapper(this.driver, this.entityMetadatas, this.broadcaster);
     }
 
 }

@@ -28,7 +28,20 @@ export class ReactiveEntityManager extends BaseEntityManager {
      * Persists (saves) a given entity in the database.
      */
     persist<Entity>(entity: Entity): Rx.Observable<Entity>;
-    persist<Entity>(targetOrEntity: Function|string, entity: Entity): Rx.Observable<Entity>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     */
+    persist<Entity>(targetOrEntity: Function, entity: Entity): Rx.Observable<Entity>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     */
+    persist<Entity>(targetOrEntity: string, entity: Entity): Rx.Observable<Entity>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     */
     persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
         const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
@@ -39,7 +52,20 @@ export class ReactiveEntityManager extends BaseEntityManager {
      * Removes a given entity from the database.
      */
     remove<Entity>(entity: Entity): Rx.Observable<Entity>;
-    remove<Entity>(targetOrEntity: Function|string, entity: Entity): Rx.Observable<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: Function, entity: Entity): Rx.Observable<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: string, entity: Entity): Rx.Observable<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
     remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
         const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
@@ -173,7 +199,7 @@ export class ReactiveEntityManager extends BaseEntityManager {
                 const result = await queryRunner.query(query);
                 return Promise.resolve(result);
 
-            } finally  {
+            } finally {
                 await queryRunnerProvider.release(queryRunner);
             }
         };

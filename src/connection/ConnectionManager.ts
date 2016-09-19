@@ -22,13 +22,13 @@ import {CannotDetermineConnectionOptionsError} from "./error/CannotDetermineConn
 export class ConnectionManager {
 
     // -------------------------------------------------------------------------
-    // Private Properties
+    // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
      * List of connections registered in this connection manager.
      */
-    private connections: Connection[] = [];
+    protected connections: Connection[] = [];
     
     // -------------------------------------------------------------------------
     // Public Methods
@@ -240,13 +240,13 @@ export class ConnectionManager {
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Protected Methods
     // -------------------------------------------------------------------------
 
     /**
      * Checks if ormconfig.json exists.
      */
-    private hasOrmConfigurationFile(): boolean {
+    protected hasOrmConfigurationFile(): boolean {
         const path = require("app-root-path").path + "/ormconfig.json";
         if (!fs.existsSync(path))
             return false;
@@ -270,7 +270,7 @@ export class ConnectionManager {
     /**
      * Checks if there is a default connection in the ormconfig.json file.
      */
-    private hasDefaultConfigurationInConfigurationFile(): boolean {
+    protected hasDefaultConfigurationInConfigurationFile(): boolean {
         const path = require("app-root-path").path + "/ormconfig.json";
         if (!fs.existsSync(path))
             return false;
@@ -298,14 +298,14 @@ export class ConnectionManager {
     /**
      * Checks if environment variables contains connection options.
      */
-    private hasDefaultConfigurationInEnvironmentVariables(): boolean {
+    protected hasDefaultConfigurationInEnvironmentVariables(): boolean {
         return !!process.env.TYPEORM_DRIVER_TYPE;
     }
 
     /**
      * Allows to quickly create a connection based on the environment variable values.
      */
-    private async createFromEnvAndConnect(): Promise<Connection> {
+    protected async createFromEnvAndConnect(): Promise<Connection> {
         return this.createAndConnectByConnectionOptions({
             driver: {
                 type: process.env.TYPEORM_DRIVER_TYPE,
@@ -341,7 +341,7 @@ export class ConnectionManager {
      * Optionally you can specify a path to the json configuration.
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
-    private async createFromConfigAndConnectToAll(path?: string): Promise<Connection[]> {
+    protected async createFromConfigAndConnectToAll(path?: string): Promise<Connection[]> {
         const optionsArray: ConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
@@ -359,7 +359,7 @@ export class ConnectionManager {
      * Optionally you can specify a path to the json configuration.
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
-    private async createFromConfigAndConnect(connectionName: string, path?: string): Promise<Connection> {
+    protected async createFromConfigAndConnect(connectionName: string, path?: string): Promise<Connection> {
         const optionsArray: ConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
@@ -377,7 +377,7 @@ export class ConnectionManager {
     /**
      * Creates a new connection based on the given connection options and registers a new connection in the manager.
      */
-    private async createAndConnectByConnectionOptions(options: ConnectionOptions): Promise<Connection> {
+    protected async createAndConnectByConnectionOptions(options: ConnectionOptions): Promise<Connection> {
         const connection = this.create(options);
 
         // connect to the database
@@ -397,7 +397,7 @@ export class ConnectionManager {
     /**
      * Splits given array of mixed strings and / or functions into two separate array of string and array of functions.
      */
-    private splitStringsAndClasses<T>(strAndClses: string[]|T[]): [string[], T[]] {
+    protected splitStringsAndClasses<T>(strAndClses: string[]|T[]): [string[], T[]] {
         return [
             (strAndClses as string[]).filter(str => typeof str === "string"),
             (strAndClses as T[]).filter(cls => typeof cls !== "string"),
@@ -407,10 +407,10 @@ export class ConnectionManager {
     /**
      * Creates a new driver based on the given driver type and options.
      */
-    private createDriver(options: DriverOptions, logger: Logger): Driver {
+    protected createDriver(options: DriverOptions, logger: Logger): Driver {
         switch (options.type) {
             case "mysql":
-                return new MysqlDriver(options, logger);
+                return new MysqlDriver(options, logger, undefined, "mysql");
             case "mysql2":
                 return new MysqlDriver(options, logger, undefined, "mysql2");
             case "postgres":
@@ -431,7 +431,7 @@ export class ConnectionManager {
     /**
      * Creates a new connection and registers it in the connection manager.
      */
-    private createConnection(name: string, driver: Driver, logger: Logger) {
+    protected createConnection(name: string, driver: Driver, logger: Logger) {
         const existConnection = this.connections.find(connection => connection.name === name);
         if (existConnection) {
             if (existConnection.isConnected)

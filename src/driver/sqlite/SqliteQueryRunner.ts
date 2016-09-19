@@ -128,7 +128,7 @@ export class SqliteQueryRunner implements QueryRunner {
         return new Promise<any[]>((ok, fail) => {
             this.databaseConnection.connection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.logger.logFailedQuery(query);
+                    this.logger.logFailedQuery(query, parameters);
                     this.logger.logQueryError(err);
                     fail(err);
                 } else {
@@ -156,7 +156,7 @@ export class SqliteQueryRunner implements QueryRunner {
             const _this = this;
             this.databaseConnection.connection.run(sql, parameters, function (err: any): void {
                 if (err) {
-                    _this.logger.logFailedQuery(sql);
+                    _this.logger.logFailedQuery(sql, parameters);
                     _this.logger.logQueryError(err);
                     fail(err);
                 } else {

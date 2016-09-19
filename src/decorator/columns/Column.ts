@@ -1,6 +1,6 @@
 import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
-import {AutoIncrementOnlyForPrimaryError} from "../error/AutoIncrementOnlyForPrimaryError";
+import {GeneratedOnlyForPrimaryError} from "../error/GeneratedOnlyForPrimaryError";
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
@@ -62,7 +62,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
 
         // check if auto increment is not set for simple column
         if (options.generated)
-            throw new AutoIncrementOnlyForPrimaryError(object, propertyName);
+            throw new GeneratedOnlyForPrimaryError(object, propertyName);
 
         // create and register a new column metadata
         const args: ColumnMetadataArgs = {

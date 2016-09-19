@@ -6,8 +6,8 @@ import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyRel
 import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";
 
 /**
- * Entity manager supposed to work with any entity, automatically find its repository and call its methods, whatever
- * entity type are you passing.
+ * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
+ * whatever entity type are you passing.
  */
 export class EntityManager extends BaseEntityManager {
 
@@ -27,7 +27,20 @@ export class EntityManager extends BaseEntityManager {
      * Persists (saves) a given entity in the database.
      */
     persist<Entity>(entity: Entity): Promise<Entity>;
-    persist<Entity>(targetOrEntity: Function|string, entity: Entity): Promise<Entity>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     */
+    persist<Entity>(targetOrEntity: Function, entity: Entity): Promise<Entity>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     */
+    persist<Entity>(targetOrEntity: string, entity: Entity): Promise<Entity>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     */
     persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
         const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
@@ -38,7 +51,20 @@ export class EntityManager extends BaseEntityManager {
      * Removes a given entity from the database.
      */
     remove<Entity>(entity: Entity): Promise<Entity>;
-    remove<Entity>(targetOrEntity: Function|string, entity: Entity): Promise<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: Function, entity: Entity): Promise<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: string, entity: Entity): Promise<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
     remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
         const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
@@ -169,7 +195,7 @@ export class EntityManager extends BaseEntityManager {
         try {
             return queryRunner.query(query);
 
-        } finally  {
+        } finally {
             await queryRunnerProvider.release(queryRunner);
         }
     }

@@ -191,12 +191,11 @@ export class SqlServerQueryRunner implements QueryRunner {
             }
             request.query(query, (err: any, result: any) => {
                 if (err) {
-                    this.logger.logFailedQuery(query);
+                    this.logger.logFailedQuery(query, parameters);
                     this.logger.logQueryError(err);
                     return fail(err);
                 }
 
-                // console.log("result: ", result);
                 ok(result);
             });
         });
