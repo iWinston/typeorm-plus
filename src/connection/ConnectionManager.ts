@@ -35,6 +35,13 @@ export class ConnectionManager {
     // -------------------------------------------------------------------------
 
     /**
+     * Checks if connection with the given name exist in the manager.
+     */
+    has(name: string): boolean {
+        return !!this.connections.find(connection => connection.name === name);
+    }
+
+    /**
      * Gets registered connection with the given name.
      * If connection name is not given then it will get a default connection.
      * Throws exception if connection with the given name was not found.

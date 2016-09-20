@@ -6,7 +6,7 @@ import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
 import {ConnectionOptions} from "./connection/ConnectionOptions";
-import {getFromContainer} from "./container";
+import {getFromContainer, defaultContainer} from "./container";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -82,7 +82,12 @@ export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface"
  * Gets metadata args storage.
  */
 export function getMetadataArgsStorage(): MetadataArgsStorage {
-    return getFromContainer(MetadataArgsStorage);
+    // we should not get MetadataArgsStorage from the consumer's container because it brings too much problems
+    // the main problem is that if any entity (or any other) will be imported before consumer will call
+    // useContainer method with his own container implementation, that entity will be registered in the
+    // old old container (default one post probably) and consumer will his entity.
+    // calling useContainer before he imports any entity (or any other) is not always convenient.
+    return defaultContainer.get(MetadataArgsStorage);
 }
 
 /**
