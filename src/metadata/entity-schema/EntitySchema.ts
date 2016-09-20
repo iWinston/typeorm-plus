@@ -2,7 +2,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {RelationType} from "../types/RelationTypes";
 import {OnDeleteType} from "../ForeignKeyMetadata";
 import {JoinColumnOptions} from "../../decorator/options/JoinColumnOptions";
-import {OrderByCondition} from "../../query-builder/QueryBuilder";
+import {OrderByCondition} from "../../find-options/OrderByCondition";
 import {TableType} from "../types/TableTypes";
 
 export interface EntitySchema {

@@ -9,8 +9,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../driver/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
-export type OrderByCondition = { [columnName: string]: "ASC"|"DESC" };
-
 /**
  * @internal
  */

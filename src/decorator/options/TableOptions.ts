@@ -1,4 +1,4 @@
-import {OrderByCondition} from "../../query-builder/QueryBuilder";
+import {OrderByCondition} from "../../find-options/OrderByCondition";
 
 /**
  * Describes all column's options.

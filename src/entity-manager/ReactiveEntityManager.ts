@@ -1,6 +1,6 @@
 import * as Rx from "rxjs/Rx";
 import {Connection} from "../connection/Connection";
-import {FindOptions} from "../repository/FindOptions";
+import {FindOptions} from "../find-options/FindOptions";
 import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
 import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";

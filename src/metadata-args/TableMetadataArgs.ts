@@ -1,5 +1,5 @@
-import {OrderByCondition} from "../query-builder/QueryBuilder";
 import {TableType} from "../metadata/types/TableTypes";
+import {OrderByCondition} from "../find-options/OrderByCondition";
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.

@@ -1,6 +1,6 @@
 import {EntityMetadata} from "./EntityMetadata";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
-import {OrderByCondition} from "../query-builder/QueryBuilder";
+import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableType, TableTypes} from "./types/TableTypes";
 import {EntityMetadataAlreadySetError} from "./error/EntityMetadataAlreadySetError";
 import {EntityMetadataNotSetError} from "./error/EntityMetadataNotSetError";

@@ -6,7 +6,8 @@ import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transform
 import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
 import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
-import {FindOptions, FindOptionsUtils} from "./FindOptions";
+import {FindOptions} from "../find-options/FindOptions";
+import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../driver/QueryRunner";
 import {QueryRunnerProvider} from "./QueryRunnerProvider";

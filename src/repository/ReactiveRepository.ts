@@ -1,5 +1,5 @@
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {FindOptions} from "./FindOptions";
+import {FindOptions} from "../find-options/FindOptions";
 import {Repository} from "./Repository";
 import * as Rx from "rxjs/Rx";
 import {ObjectLiteral} from "../common/ObjectLiteral";

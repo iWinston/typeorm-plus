@@ -1,141 +1,6 @@
+
+import {FindOptions} from "./FindOptions";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-
-/**
- * Options to be passed to find methods.
- * 
- * Example:
- *  const options: FindOptions = {
- *     alias: "photo",
- *     limit: 100,
- *     offset: 0,
- *     firstResult: 5,
- *     maxResults: 10,
- *     where: "photo.likesCount > 0 && photo.likesCount < 10",
- *     having: "photo.viewsCount > 0 && photo.viewsCount < 1000",
- *     whereConditions: {
- *         "photo.isPublished": true,
- *         "photo.name": "Me and Bears"
- *     },
- *     havingConditions: {
- *         "photo.filename": "bears.jpg"
- *     },
- *     orderBy: [
- *         { sort: "photo.id", order: "DESC" }
- *     ],
- *     groupBy: [
- *         "photo.name"
- *     ],
- *     leftJoin: {
- *         author: "photo.author",
- *         categories: "categories",
- *         user: "categories.user",
- *         profile: "user.profile"
- *     },
- *     innerJoin: {
- *         author: "photo.author",
- *         categories: "categories",
- *         user: "categories.user",
- *         profile: "user.profile"
- *     },
- *     leftJoinAndSelect: {
- *         author: "photo.author",
- *         categories: "categories",
- *         user: "categories.user",
- *         profile: "user.profile"
- *     },
- *     innerJoinAndSelect: {
- *         author: "photo.author",
- *         categories: "categories",
- *         user: "categories.user",
- *         profile: "user.profile"
- *     }
- * };
- */
-export interface FindOptions {
-
-    /**
-     * Alias of the selected entity.
-     */
-    alias: string;
-
-    /**
-     * Selection limitation, e.g. LIMIT expression.
-     */
-    limit?: number;
-
-    /**
-     * From what position to select, e.g. OFFSET expression.
-     */
-    offset?: number;
-
-    /**
-     * First results to select (offset using pagination).
-     */
-    firstResult?: number;
-
-    /**
-     * Maximum result to select (limit using pagination).
-     */
-    maxResults?: number;
-
-    /**
-     * Regular WHERE expression.
-     */
-    where?: string;
-
-    /**
-     * Regular HAVING expression.
-     */
-    having?: string;
-
-    /**
-     * WHERE conditions. Key-value object pair, where each key is a column name and value is a column value. 
-     * "AND" is applied between all parameters.
-     */
-    whereConditions?: Object;
-
-    /**
-     * HAVING conditions. Key-value object pair, where each key is a column name and value is a column value.
-     * "AND" is applied between all parameters.
-     */
-    havingConditions?: Object;
-
-    /**
-     * Array of ORDER BY expressions.
-     */
-    orderBy?: { sort: string, order?: "ASC"|"DESC" }[];
-
-    /**
-     * Array of column to GROUP BY.
-     */
-    groupBy?: string[];
-
-    /**
-     * Array of columns to LEFT JOIN.
-     */
-    leftJoinAndSelect?: { [key: string]: string };
-    
-    /**
-     * Array of columns to INNER JOIN.
-     */
-    innerJoinAndSelect?: { [key: string]: string };
-
-    /**
-     * Array of columns to LEFT JOIN.
-     */
-    leftJoin?: { [key: string]: string };
-
-    /**
-     * Array of columns to INNER JOIN.
-     */
-    innerJoin?: { [key: string]: string };
-
-    /**
-     * Parameters used in the WHERE and HAVING expressions.
-     */
-    parameters?: Object;
-    
-}
 
 /**
  * Utilities to work with FindOptions.
@@ -201,8 +66,8 @@ export class FindOptionsUtils {
         }
         
         if (options.orderBy)
-            options.orderBy.forEach(orderBy => qb.addOrderBy(orderBy.sort, orderBy.order));
-        
+            Object.keys(options.orderBy).forEach(columnName => qb.addOrderBy(columnName, options.orderBy![columnName]));
+
         if (options.groupBy)
             options.groupBy.forEach(groupBy => qb.addGroupBy(groupBy));
         

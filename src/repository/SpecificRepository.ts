@@ -1,7 +1,8 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
-import {FindOptions, FindOptionsUtils} from "./FindOptions";
+import {FindOptions} from "../find-options/FindOptions";
+import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
 import {QueryRunner} from "../driver/QueryRunner";

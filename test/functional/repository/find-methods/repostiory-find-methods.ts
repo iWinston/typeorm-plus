@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {FindOptions} from "../../../../src/repository/FindOptions";
+import {FindOptions} from "../../../../src/find-options/FindOptions";
 import {User} from "./model/User";
 
 describe("repository > find methods", () => {
@@ -37,7 +37,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ alias: "post", orderBy: [{ sort: "post.id" }]});
+            const loadedPosts = await postRepository.find({ alias: "post", orderBy: { "post.id": "ASC" }});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(100);
             loadedPosts[0].id.should.be.equal(0);
@@ -46,7 +46,7 @@ describe("repository > find methods", () => {
             loadedPosts[99].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ alias: "post", orderBy: [{ sort: "post.id" }]});
+            let [loadedPosts2, count] = await postRepository.findAndCount({ alias: "post", orderBy: { "post.id": "ASC" }});
             count.should.be.equal(100);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(100);
@@ -71,7 +71,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ categoryName: "odd" }, { alias: "post", orderBy: [{ sort: "post.id" }]});
+            const loadedPosts = await postRepository.find({ categoryName: "odd" }, { alias: "post", orderBy: { "post.id": "ASC" }});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(50);
             loadedPosts[0].id.should.be.equal(1);
@@ -80,7 +80,7 @@ describe("repository > find methods", () => {
             loadedPosts[49].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd" }, { alias: "post", orderBy: [{ sort: "post.id" }]});
+            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd" }, { alias: "post", orderBy: { "post.id": "ASC" }});
             count.should.be.equal(50);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(50);
@@ -106,7 +106,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: [{ sort: "post.id" }]});
+            const loadedPosts = await postRepository.find({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: { "post.id": "ASC" }});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(5);
             loadedPosts[0].id.should.be.equal(91);
@@ -115,7 +115,7 @@ describe("repository > find methods", () => {
             loadedPosts[4].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: [{ sort: "post.id" }]});
+            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: { "post.id": "ASC" }});
             count.should.be.equal(5);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(5);
@@ -147,9 +147,9 @@ describe("repository > find methods", () => {
                     likeTitle: "new post #%",
                     categoryName: "even"
                 },
-                orderBy: [
-                    { sort: "post.id" }
-                ]
+                orderBy: {
+                    "post.id": "ASC"
+                }
             };
 
             // check find method
@@ -191,9 +191,9 @@ describe("repository > find methods", () => {
                 alias: "post",
                 firstResult: 1,
                 maxResults: 2,
-                orderBy: [{
-                    sort: "post.id"
-                }]
+                orderBy: {
+                    "post.id": "ASC"
+                }
             };
 
             // check find method
@@ -256,7 +256,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = await userRepository.findOne({ firstName: "name #1" }, { alias: "user", orderBy: [{ sort: "user.id" }]});
+            const loadedUser = await userRepository.findOne({ firstName: "name #1" }, { alias: "user", orderBy: { "user.id": "ASC" }});
             loadedUser.id.should.be.equal(1);
             loadedUser.firstName.should.be.equal("name #1");
             loadedUser.secondName.should.be.equal("Doe");
@@ -285,7 +285,7 @@ describe("repository > find methods", () => {
                     secondName: "Doe"
                 }
             };
-            const loadedUser = await userRepository.findOne(findOptions, { alias: "user", orderBy: [{ sort: "user.id" }]});
+            const loadedUser = await userRepository.findOne(findOptions, { alias: "user", orderBy: { "user.id": "ASC" }});
             loadedUser.id.should.be.equal(99);
             loadedUser.firstName.should.be.equal("name #99");
             loadedUser.secondName.should.be.equal("Doe");
