@@ -24,7 +24,7 @@ const options: ConnectionOptions = {
         logOnlyFailedQueries: true,
         logSchemaCreation: true
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     entities: [Post]
 };
 

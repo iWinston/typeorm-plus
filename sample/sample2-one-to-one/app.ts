@@ -20,7 +20,7 @@ const options: ConnectionOptions = {
     logging: {
         // logQueries: true
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };
 

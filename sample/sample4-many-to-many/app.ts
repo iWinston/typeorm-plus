@@ -15,7 +15,7 @@ const options: ConnectionOptions = {
         logFailedQueryError: true,
         // logQueries: true
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     entities: [__dirname + "/entity/*"]
 };
 

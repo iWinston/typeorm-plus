@@ -69,7 +69,7 @@ export interface ConnectionOptions {
      * This option is useful during debug and development.
      * Alternative to it, you can use CLI and run schema:sync command.
      */
-    readonly autoSchemaCreate?: boolean;
+    readonly autoSchemaSync?: boolean;
 
     /**
      * Environment in which connection will run.

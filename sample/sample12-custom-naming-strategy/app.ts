@@ -12,7 +12,7 @@ const options: ConnectionOptions = {
         password: "admin",
         database: "test"
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     usedNamingStrategy: "custom_strategy",
     entities: [Post],
     namingStrategies: [CustomNamingStrategy]

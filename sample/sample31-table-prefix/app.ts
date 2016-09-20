@@ -10,7 +10,7 @@ const options: ConnectionOptions = {
         storage: "temp/sqlitedb.db",
         tablesPrefix: "samples_" // pay attention on this prefix
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     logging: {
         logQueries: true,
         logSchemaCreation: true,

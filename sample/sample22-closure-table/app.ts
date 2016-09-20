@@ -15,7 +15,7 @@ const options: ConnectionOptions = {
         logOnlyFailedQueries: true,
         logFailedQueryError: true
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     entities: [Category]
 };
 

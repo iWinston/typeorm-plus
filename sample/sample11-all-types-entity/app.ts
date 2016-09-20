@@ -14,7 +14,7 @@ const options: ConnectionOptions = {
     logging: {
         logOnlyFailedQueries: true
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     entities: [EverythingEntity]
 };
 

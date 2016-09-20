@@ -27,7 +27,7 @@ describe("repository > set/add/remove relation methods", function() {
             // logQueries: true, // uncomment for debugging
             logFailedQueryError: true
         },
-        autoSchemaCreate: true,
+        autoSchemaSync: true,
         entities: [Post, Category]
     };
     // connect to db

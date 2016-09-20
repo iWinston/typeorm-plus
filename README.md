@@ -132,7 +132,7 @@ const options: CreateConnectionOptions = {
         username: "root", // mysql database username
         password: "admin", // mysql database password
         database: "test",  // mysql database name
-        autoSchemaCreate: true // if set to true, then database schema will be automatically created on each application start
+        autoSchemaSync: true // if set to true, then database schema will be automatically created on each application start
     },
     entities: [Photo] // array of classes you want to create tables for (and work with them in the current connection)
 };

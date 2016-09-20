@@ -9,7 +9,7 @@ Your database schema is managed automatically by ORM:
 
 All this must be in sync to make ORM to work correctly. To make a synchronization there are two ways:
 
-* set in [connection options](connection-and-connection-options.md#connection-options) `autoSchemaCreate: true`.
+* set in [connection options](connection-and-connection-options.md#connection-options) `autoSchemaSync: true`.
 In this case database schema will be automatically synchronized each time you run the application.
 
 * use [schema update gulp plugin](todo) and run schema synchronization process each time you need it.

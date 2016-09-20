@@ -11,7 +11,7 @@ const options: ConnectionOptions = {
         password: "admin",
         database: "test"
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     entities: [__dirname + "/entity/*"]
 };
 

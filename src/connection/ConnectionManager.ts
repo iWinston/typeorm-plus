@@ -57,7 +57,7 @@ export class ConnectionManager {
     /**
      * Creates a new connection based on the given connection options and registers it in the manager.
      * You need to manually call #connect method to establish connection.
-     * Note that dropSchemaOnConnection and autoSchemaCreate options of a ConnectionOptions will not work there - use
+     * Note that dropSchemaOnConnection and autoSchemaSync options of a ConnectionOptions will not work there - use
      * createAndConnect method to use them.
      */
     create(options: ConnectionOptions): Connection {
@@ -128,7 +128,7 @@ export class ConnectionManager {
      * - TYPEORM_STORAGE - database's storage url. Used only for sqlite databases. Should be a string.
      * - TYPEORM_USE_POOL - indicates if connection pooling should be enabled. By default its enabled. Should be boolean-like value.
      * - TYPEORM_DRIVER_EXTRA - extra options to be passed to the driver. Should be a serialized json string of options.
-     * - TYPEORM_AUTO_SCHEMA_CREATE - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
+     * - TYPEORM_AUTO_SCHEMA_SYNC - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
      * - TYPEORM_ENTITIES - list of directories containing entities to load. Should be string - directory names (can be patterns) split by a comma.
      * - TYPEORM_SUBSCRIBERS - list of directories containing subscribers to load. Should be string - directory names (can be patterns) split by a comma.
      * - TYPEORM_ENTITY_SCHEMAS - list of directories containing entity schemas to load. Should be string - directory names (can be patterns) split by a comma.
@@ -196,7 +196,7 @@ export class ConnectionManager {
      * - TYPEORM_STORAGE - database's storage url. Used only for sqlite databases. Should be a string.
      * - TYPEORM_USE_POOL - indicates if connection pooling should be enabled. By default its enabled. Should be boolean-like value.
      * - TYPEORM_DRIVER_EXTRA - extra options to be passed to the driver. Should be a serialized json string of options.
-     * - TYPEORM_AUTO_SCHEMA_CREATE - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
+     * - TYPEORM_AUTO_SCHEMA_SYNC - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
      * - TYPEORM_ENTITIES - list of directories containing entities to load. Should be string - directory names (can be patterns) split by a comma.
      * - TYPEORM_SUBSCRIBERS - list of directories containing subscribers to load. Should be string - directory names (can be patterns) split by a comma.
      * - TYPEORM_ENTITY_SCHEMAS - list of directories containing entity schemas to load. Should be string - directory names (can be patterns) split by a comma.
@@ -327,7 +327,7 @@ export class ConnectionManager {
                 usePool: process.env.TYPEORM_USE_POOL !== undefined ? OrmUtils.toBoolean(process.env.TYPEORM_USE_POOL) : undefined, // special check for defined is required here
                 extra: process.env.TYPEORM_DRIVER_EXTRA ? JSON.parse(process.env.TYPEORM_DRIVER_EXTRA) : undefined
             },
-            autoSchemaCreate: OrmUtils.toBoolean(process.env.TYPEORM_AUTO_SCHEMA_CREATE),
+            autoSchemaSync: OrmUtils.toBoolean(process.env.TYPEORM_AUTO_SCHEMA_SYNC),
             entities: process.env.TYPEORM_ENTITIES ? process.env.TYPEORM_ENTITIES.split(",") : [],
             subscribers: process.env.TYPEORM_SUBSCRIBERS ? process.env.TYPEORM_SUBSCRIBERS.split(",") : [],
             entitySchemas: process.env.TYPEORM_ENTITY_SCHEMAS ? process.env.TYPEORM_ENTITY_SCHEMAS.split(",") : [],
@@ -395,7 +395,7 @@ export class ConnectionManager {
             await connection.dropDatabase();
 
         // if option is set - automatically synchronize a schema
-        if (options.autoSchemaCreate && !process.env.SKIP_SCHEMA_CREATION)
+        if (options.autoSchemaSync && !process.env.SKIP_SCHEMA_CREATION)
             await connection.syncSchema();
 
         return connection;

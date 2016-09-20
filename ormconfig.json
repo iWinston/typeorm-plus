@@ -9,6 +9,6 @@
       "password": "admin",
       "database": "test"
     },
-    "autoSchemaCreate": true
+    "autoSchemaSync": true
   }
 ]

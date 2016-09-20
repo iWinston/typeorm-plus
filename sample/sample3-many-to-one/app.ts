@@ -16,7 +16,7 @@ const options: ConnectionOptions = {
         password: "admin12345",
         database: "test",
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     logging: {
         // logQueries: true,
         logFailedQueryError: true

@@ -13,7 +13,7 @@ const options: ConnectionOptions = {
         password: "admin",
         database: "test"
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     // entitySchemaDirectories: [__dirname + "/schemas"],
     entitySchemas: [
         require(__dirname + "/../../../../sample/sample24-schemas/schemas/post.json"),

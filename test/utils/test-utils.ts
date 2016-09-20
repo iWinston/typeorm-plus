@@ -55,7 +55,7 @@ export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"m
 /*export async function setupTestingConnections(options?: TestingConnectionOptions) {
     const parameters: ConnectionOptions = {
         driver: createTestingConnectionOptions(process.env["connection_setup_name"]),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -79,7 +79,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mysqlParameters: ConnectionOptions = {
         name: "mysqlPrimaryConnection",
         driver: createTestingConnectionOptions("mysql"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -93,7 +93,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mysqlSecondaryParameters: ConnectionOptions = {
         name: "mysqlSecondaryConnection",
         driver: createTestingConnectionOptions("mysqlSecondary"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -107,7 +107,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mariadbParameters: ConnectionOptions = {
         name: "mariadbPrimaryConnection",
         driver: createTestingConnectionOptions("mariadb"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -121,7 +121,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mariadbSecondaryParameters: ConnectionOptions = {
         name: "mariadbSecondaryConnection",
         driver: createTestingConnectionOptions("mariadbSecondary"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -135,7 +135,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const postgresParameters: ConnectionOptions = {
         name: "postgresPrimaryConnection",
         driver: createTestingConnectionOptions("postgres"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -149,7 +149,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const postgresSecondaryParameters: ConnectionOptions = {
         name: "postgresSecondaryConnection",
         driver: createTestingConnectionOptions("postgresSecondary"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -163,7 +163,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const sqliteParameters: ConnectionOptions = {
         name: "sqlitePrimaryConnection",
         driver: createTestingConnectionOptions("sqlite"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -177,7 +177,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const sqliteSecondaryParameters: ConnectionOptions = {
         name: "sqliteSecondaryConnection",
         driver: createTestingConnectionOptions("sqliteSecondary"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -191,7 +191,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mssqlParameters: ConnectionOptions = {
         name: "mssqlPrimaryConnection",
         driver: createTestingConnectionOptions("mssql"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -205,7 +205,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
     const mssqlSecondaryParameters: ConnectionOptions = {
         name: "mssqlSecondaryConnection",
         driver: createTestingConnectionOptions("mssqlSecondary"),
-        autoSchemaCreate: options && options.entities ? options.schemaCreate : false,
+        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
         dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -267,7 +267,7 @@ export function setupConnection(callback: (connection: Connection) => any, entit
             password: "admin",
             database: "test"
         },
-        autoSchemaCreate: true,
+        autoSchemaSync: true,
         entities: entities
     };
 

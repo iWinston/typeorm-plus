@@ -114,7 +114,7 @@ describe("ConnectionManager", () => {
         it("should not drop the database if dropSchemaOnConnection was not specified", async () => {
             const options: ConnectionOptions = {
                 driver: createTestingConnectionOptions("mysql"),
-                autoSchemaCreate: true,
+                autoSchemaSync: true,
                 entities: [Post]
             };
             const connectionManager = new ConnectionManager();
@@ -136,7 +136,7 @@ describe("ConnectionManager", () => {
         it("should drop the database if dropSchemaOnConnection was set to true (mysql)", async () => {
             const options: ConnectionOptions = {
                 dropSchemaOnConnection: true,
-                autoSchemaCreate: true,
+                autoSchemaSync: true,
                 driver: createTestingConnectionOptions("mysql"),
                 entities: [Post]
             };
@@ -158,7 +158,7 @@ describe("ConnectionManager", () => {
         it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchemaOnConnection: true,
-                autoSchemaCreate: true,
+                autoSchemaSync: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };
@@ -181,7 +181,7 @@ describe("ConnectionManager", () => {
         it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchemaOnConnection: true,
-                autoSchemaCreate: true,
+                autoSchemaSync: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };

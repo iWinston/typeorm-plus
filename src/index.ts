@@ -120,7 +120,7 @@ export function getConnectionManager(): ConnectionManager {
  * - TYPEORM_STORAGE - database's storage url. Used only for sqlite databases. Should be a string.
  * - TYPEORM_USE_POOL - indicates if connection pooling should be enabled. By default its enabled. Should be boolean-like value.
  * - TYPEORM_DRIVER_EXTRA - extra options to be passed to the driver. Should be a serialized json string of options.
- * - TYPEORM_AUTO_SCHEMA_CREATE - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
+ * - TYPEORM_AUTO_SCHEMA_SYNC - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
  * - TYPEORM_ENTITIES - list of directories containing entities to load. Should be string - directory names (can be patterns) split by a comma.
  * - TYPEORM_SUBSCRIBERS - list of directories containing subscribers to load. Should be string - directory names (can be patterns) split by a comma.
  * - TYPEORM_ENTITY_SCHEMAS - list of directories containing entity schemas to load. Should be string - directory names (can be patterns) split by a comma.
@@ -171,7 +171,7 @@ export function createConnection(optionsOrConnectionNameFromConfig?: ConnectionO
  * - TYPEORM_STORAGE - database's storage url. Used only for sqlite databases. Should be a string.
  * - TYPEORM_USE_POOL - indicates if connection pooling should be enabled. By default its enabled. Should be boolean-like value.
  * - TYPEORM_DRIVER_EXTRA - extra options to be passed to the driver. Should be a serialized json string of options.
- * - TYPEORM_AUTO_SCHEMA_CREATE - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
+ * - TYPEORM_AUTO_SCHEMA_SYNC - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
  * - TYPEORM_ENTITIES - list of directories containing entities to load. Should be string - directory names (can be patterns) split by a comma.
  * - TYPEORM_SUBSCRIBERS - list of directories containing subscribers to load. Should be string - directory names (can be patterns) split by a comma.
  * - TYPEORM_ENTITY_SCHEMAS - list of directories containing entity schemas to load. Should be string - directory names (can be patterns) split by a comma.

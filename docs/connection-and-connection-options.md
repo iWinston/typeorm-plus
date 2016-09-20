@@ -69,7 +69,7 @@ export interface ConnectionOptions {
     username?: string; // database username
     password?: string; // database password
     database?: string; // database name
-    autoSchemaCreate?: boolean; // set to true if you want your database schema to be auto created on each application launch
+    autoSchemaSync?: boolean; // set to true if you want your database schema to be auto created on each application launch
     logging?: {
 
         logger?: (message: any, level: string) => void; // some specific logger to be used. By default it is a console
@@ -83,7 +83,7 @@ export interface ConnectionOptions {
 ```
 
 * To perform a connection you either must specify a connection `url`, either specify `host/port/username/password/database`.
-* `autoSchemaCreate` allows you to automatically synchronize your database schema (create new tables,
+* `autoSchemaSync` allows you to automatically synchronize your database schema (create new tables,
 remove/rename old columns, create foreign keys, etc.) on each application run. Note that there can be errors in schema
 synchronization (mostly errors can be caused by unresolved foreign keys) and this will crash your application.
 This option should not be used in production, only during development and only if you are too lazy to use
@@ -103,7 +103,7 @@ let connectionOptions: ConnectionOptions = {
     username: "root",
     password: "admin",
     database: "test",
-    autoSchemaCreate: true
+    autoSchemaSync: true
 };
 
 // create a new connection with mysql driver

@@ -25,7 +25,7 @@ describe("repository > removeById and removeByIds methods", function() {
         logging: {
             logFailedQueryError: true
         },
-        autoSchemaCreate: true,
+        autoSchemaSync: true,
         entities: [Post]
     };
     // connect to db

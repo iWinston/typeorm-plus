@@ -12,7 +12,7 @@ const options: ConnectionOptions = {
         logQueries: true,
         logSchemaCreation: true
     },
-    autoSchemaCreate: true,
+    autoSchemaSync: true,
     entities: [Post, Category]
 };
 
