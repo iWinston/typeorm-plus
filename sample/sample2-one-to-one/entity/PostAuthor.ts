@@ -1,10 +1,10 @@
-import {GeneratedIdColumn, Column, Table, OneToOne} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column, Table, OneToOne} from "../../../src/index";
 import {Post} from "./Post";
 
 @Table("sample2_post_author")
 export class PostAuthor {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

@@ -1,4 +1,4 @@
-import {GeneratedIdColumn, Column, Table} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column, Table} from "../../../src/index";
 import {Post} from "./Post";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {PostUser} from "./PostUser";
@@ -6,7 +6,7 @@ import {PostUser} from "./PostUser";
 @Table("sample13_post_author")
 export class PostAuthor extends PostUser {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

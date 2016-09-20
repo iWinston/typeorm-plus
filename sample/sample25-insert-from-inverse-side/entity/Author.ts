@@ -1,11 +1,11 @@
-import {GeneratedIdColumn, Column, Table} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column, Table} from "../../../src/index";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {Post} from "./Post";
 
 @Table("sample25_author")
 export class Author {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

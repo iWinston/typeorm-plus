@@ -1,6 +1,6 @@
 import {Category} from "./Category";
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {GeneratedIdColumn} from "../../../../../src/decorator/columns/GeneratedIdColumn";
+import {GeneratedPrimaryColumn} from "../../../../../src/decorator/columns/GeneratedPrimaryColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
@@ -8,7 +8,7 @@ import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
 @Table()
 export class Post {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

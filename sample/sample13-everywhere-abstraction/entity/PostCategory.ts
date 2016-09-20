@@ -1,11 +1,11 @@
-import {GeneratedIdColumn, Column, Table} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column, Table} from "../../../src/index";
 import {Post} from "./Post";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 
 @Table("sample13_post_category")
 export class PostCategory {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

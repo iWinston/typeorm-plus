@@ -1,5 +1,5 @@
 import {ClosureTable} from "../../../../src/decorator/tables/ClosureTable";
-import {GeneratedIdColumn} from "../../../../src/decorator/columns/GeneratedIdColumn";
+import {GeneratedPrimaryColumn} from "../../../../src/decorator/columns/GeneratedPrimaryColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {TreeParent} from "../../../../src/decorator/tree/TreeParent";
 import {TreeChildren} from "../../../../src/decorator/tree/TreeChildren";
@@ -8,7 +8,7 @@ import {TreeLevelColumn} from "../../../../src/decorator/tree/TreeLevelColumn";
 @ClosureTable("CaTeGoRy")
 export class Category {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

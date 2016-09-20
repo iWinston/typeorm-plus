@@ -1,10 +1,10 @@
-import {GeneratedIdColumn, Column} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column} from "../../../src/index";
 import {AbstractTable} from "../../../src/decorator/tables/AbstractTable";
 
 @AbstractTable()
 export class BasePost {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

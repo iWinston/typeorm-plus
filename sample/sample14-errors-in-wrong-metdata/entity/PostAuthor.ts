@@ -1,4 +1,4 @@
-import {GeneratedIdColumn, Column, Table, OneToOne} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column, Table, OneToOne} from "../../../src/index";
 import {Post} from "./Post";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
@@ -6,7 +6,7 @@ import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 @Table("sample14_post_author")
 export class PostAuthor {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

@@ -1,11 +1,11 @@
-import {GeneratedIdColumn, Column, Table} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column, Table} from "../../../src/index";
 import {Counters} from "./Counters";
 import {Embedded} from "../../../src/decorator/Embedded";
 
 @Table("sample26_post")
 export class Post {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

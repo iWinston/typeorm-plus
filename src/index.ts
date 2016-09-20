@@ -16,7 +16,7 @@ export * from "./container";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";
 export * from "./decorator/columns/DiscriminatorColumn";
-export * from "./decorator/columns/GeneratedIdColumn";
+export * from "./decorator/columns/GeneratedPrimaryColumn";
 export * from "./decorator/columns/PrimaryColumn";
 export * from "./decorator/columns/UpdateDateColumn";
 export * from "./decorator/columns/VersionColumn";

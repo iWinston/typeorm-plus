@@ -1,5 +1,5 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {GeneratedIdColumn} from "../../../../../src/decorator/columns/GeneratedIdColumn";
+import {GeneratedPrimaryColumn} from "../../../../../src/decorator/columns/GeneratedPrimaryColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {Post} from "./Post";
@@ -7,7 +7,7 @@ import {Post} from "./Post";
 @Table()
 export class User {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

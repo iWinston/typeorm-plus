@@ -1,4 +1,4 @@
-import {GeneratedIdColumn, Column, Table} from "../../../src/index";
+import {GeneratedPrimaryColumn, Column, Table} from "../../../src/index";
 import {Post} from "./Post";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 import {AfterRemove} from "../../../src/decorator/listeners/AfterRemove";
@@ -11,7 +11,7 @@ import {BeforeInsert} from "../../../src/decorator/listeners/BeforeInsert";
 @Table("sample9_post_category")
 export class PostCategory {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

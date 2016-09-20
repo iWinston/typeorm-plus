@@ -1,5 +1,5 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {GeneratedIdColumn} from "../../../../../src/decorator/columns/GeneratedIdColumn";
+import {GeneratedPrimaryColumn} from "../../../../../src/decorator/columns/GeneratedPrimaryColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Counters} from "./Counters";
 import {Embedded} from "../../../../../src/decorator/Embedded";
@@ -7,7 +7,7 @@ import {Embedded} from "../../../../../src/decorator/Embedded";
 @Table()
 export class Post {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
 
     @Column()

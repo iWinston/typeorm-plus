@@ -1,5 +1,5 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {GeneratedIdColumn} from "../../../../../src/decorator/columns/GeneratedIdColumn";
+import {GeneratedPrimaryColumn} from "../../../../../src/decorator/columns/GeneratedPrimaryColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
 import {Category} from "./Category";
@@ -7,7 +7,7 @@ import {Category} from "./Category";
 @Table()
 export class CategoryMetadata {
 
-    @GeneratedIdColumn()
+    @GeneratedPrimaryColumn()
     id: number;
     
     @Column()
