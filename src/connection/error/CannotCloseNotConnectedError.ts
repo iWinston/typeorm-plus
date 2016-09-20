@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries close not opened connection.
- *
- * @internal
  */
 export class CannotCloseNotConnectedError extends Error {
     name = "CannotCloseNotConnectedError";

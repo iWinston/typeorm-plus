@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to get connection that does not exist.
- *
- * @internal
  */
 export class ConnectionNotFoundError extends Error {
     name = "ConnectionNotFoundError";

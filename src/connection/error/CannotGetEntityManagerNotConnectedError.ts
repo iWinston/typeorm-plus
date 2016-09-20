@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to access entity manager before connection is established.
- *
- * @internal
  */
 export class CannotGetEntityManagerNotConnectedError extends Error {
     name = "CannotGetEntityManagerNotConnectedError";

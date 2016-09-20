@@ -25,8 +25,6 @@ import {IndexMetadata} from "../metadata/IndexMetadata";
  * 7. update primary keys - update old and create new primary key from changed columns
  * 8. create foreign keys which does not exist in the table yet
  * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore
- *
- * @internal
  */
 export class SchemaBuilder {
 

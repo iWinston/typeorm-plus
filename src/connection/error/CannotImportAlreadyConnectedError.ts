@@ -1,8 +1,6 @@
 /**
  * Thrown when consumer tries to import entities / entity schemas / subscribers / naming strategies after connection
  * is established.
- *
- * @internal
  */
 export class CannotImportAlreadyConnectedError extends Error {
     name = "CannotImportAlreadyConnected";

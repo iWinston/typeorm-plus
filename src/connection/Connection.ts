@@ -14,10 +14,7 @@ import {NoConnectionForRepositoryError} from "./error/NoConnectionForRepositoryE
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
 import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
-import {ReactiveRepository} from "../repository/ReactiveRepository";
-import {ReactiveEntityManager} from "../entity-manager/ReactiveEntityManager";
 import {TreeRepository} from "../repository/TreeRepository";
-import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {NamingStrategyNotFoundError} from "./error/NamingStrategyNotFoundError";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
@@ -28,7 +25,6 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityManagerNotConnectedError";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {SpecificRepository} from "../repository/SpecificRepository";
-import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
 import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
@@ -78,11 +74,6 @@ export class Connection {
      * Gets EntityManager of this connection.
      */
     private readonly _entityManager: EntityManager;
-
-    /**
-     * Gets ReactiveEntityManager of this connection.
-     */
-    private readonly _reactiveEntityManager: ReactiveEntityManager;
 
     /**
      * Stores all registered repositories.
@@ -138,7 +129,6 @@ export class Connection {
         this.driver = driver;
         this.logger = logger;
         this._entityManager = this.createEntityManager();
-        this._reactiveEntityManager = this.createReactiveEntityManager();
         this.broadcaster = this.createBroadcaster();
     }
 
@@ -161,17 +151,6 @@ export class Connection {
             throw new CannotGetEntityManagerNotConnectedError(this.name);
         
         return this._entityManager;
-    }
-
-    /**
-     * Gets entity manager that allows to perform repository operations with any entity in this connection.
-     * This version of entity manager is reactive - works with Observables instead of Promises.
-     */
-    get reactiveEntityManager() {
-        if (!this.isConnected)
-            throw new CannotGetEntityManagerNotConnectedError(this.name);
-        
-        return this._reactiveEntityManager;
     }
 
     // -------------------------------------------------------------------------
@@ -425,88 +404,6 @@ export class Connection {
     }
 
     /**
-     * Gets reactive repository for the given entity class.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getReactiveRepository<Entity>(entityClass: ObjectType<Entity>): ReactiveRepository<Entity>;
-
-    /**
-     * Gets reactive repository for the given entity name.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getReactiveRepository<Entity>(entityName: string): ReactiveRepository<Entity>;
-
-    /**
-     * Gets reactive repository for the given entity class or name.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
-        return this.findRepositoryAggregator(entityClassOrName).reactiveRepository;
-    }
-
-    /**
-     * Gets reactive tree repository for the given entity class.
-     * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureTable decorator.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getReactiveTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeReactiveRepository<Entity>;
-
-    /**
-     * Gets reactive tree repository for the given entity name.
-     * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureTable decorator.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getReactiveTreeRepository<Entity>(entityName: string): TreeReactiveRepository<Entity>;
-
-    /**
-     * Gets reactive tree repository for the given entity class or name.
-     * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureTable decorator.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getReactiveTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
-        const repository = this.findRepositoryAggregator(entityClassOrName).treeReactiveRepository;
-        if (!repository)
-            throw new RepositoryNotTreeError(entityClassOrName);
-        return repository;
-    }
-
-    /**
-     * Gets specific repository for the given entity class.
-     * SpecificReactiveRepository is a special repository that contains specific and non standard repository methods.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getSpecificReactiveRepository<Entity>(entityClass: ObjectType<Entity>): SpecificReactiveRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity name.
-     * SpecificReactiveRepository is a special repository that contains specific and non standard repository methods.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getSpecificReactiveRepository<Entity>(entityName: string): SpecificReactiveRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity class or name.
-     * SpecificReactiveRepository is a special repository that contains specific and non standard repository methods.
-     * Reactive repositories has same functionality as regular repositories,
-     * the only difference is that reactive repository methods return Observable instead of Promise.
-     */
-    getSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
-        const repositoryAggregator = this.findRepositoryAggregator(entityClassOrName);
-        return repositoryAggregator.specificReactiveRepository;
-    }
-
-    /**
      * Creates a new entity manager with a single opened connection to the database.
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it, to release connection back to pool.
@@ -514,16 +411,6 @@ export class Connection {
     createEntityManagerWithSingleDatabaseConnection() {
         const queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
         return new EntityManager(this, queryRunnerProvider);
-    }
-
-    /**
-     * Creates a new reactive entity manager with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
-     */
-    createReactiveEntityManagerWithSingleDatabaseConnection() {
-        const queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
-        return new ReactiveEntityManager(this, queryRunnerProvider);
     }
 
     // -------------------------------------------------------------------------
@@ -633,13 +520,6 @@ export class Connection {
      */
     protected createEntityManager() {
         return new EntityManager(this);
-    }
-
-    /**
-     * Creates a new default reactive entity manager without single connection setup.
-     */
-    protected createReactiveEntityManager() {
-        return new ReactiveEntityManager(this);
     }
 
     /**

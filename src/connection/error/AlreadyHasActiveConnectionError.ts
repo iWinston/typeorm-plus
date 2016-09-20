@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to recreate connection with the same name, but previous connection was not closed yet.
- *
- * @internal
  */
 export class AlreadyHasActiveConnectionError extends Error {
     name = "AlreadyHasActiveConnectionError";

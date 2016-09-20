@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to access repository before connection is established.
- *
- * @internal
  */
 export class NoConnectionForRepositoryError extends Error {
     name = "NoConnectionForRepositoryError";

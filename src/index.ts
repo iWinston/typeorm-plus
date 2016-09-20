@@ -66,6 +66,8 @@ export {Driver} from "./driver/Driver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {Repository} from "./repository/Repository";
+export {TreeRepository} from "./repository/TreeRepository";
+export {SpecificRepository} from "./repository/SpecificRepository";
 export {FindOptions} from "./find-options/FindOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";

@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer specifies driver type that does not exist or supported.
- *
- * @internal
  */
 export class MissingDriverError extends Error {
     name = "MissingDriverError";

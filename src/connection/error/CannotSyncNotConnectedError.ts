@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to sync a database schema after connection is established
- *
- * @internal
  */
 export class CannotSyncNotConnectedError extends Error {
     name = "CannotSyncNotConnectedError";

@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to change used naming strategy after connection is established.
- *
- * @internal
  */
 export class CannotUseNamingStrategyNotConnectedError extends Error {
     name = "CannotUseNamingStrategyNotConnectedError";

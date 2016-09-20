@@ -9,8 +9,6 @@ import {CannotCloseNotConnectedError} from "../../../src/connection/error/Cannot
 import {CannotImportAlreadyConnectedError} from "../../../src/connection/error/CannotImportAlreadyConnectedError";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
-import {ReactiveRepository} from "../../../src/repository/ReactiveRepository";
-import {TreeReactiveRepository} from "../../../src/repository/TreeReactiveRepository";
 import {getConnectionManager} from "../../../src/index";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
@@ -22,7 +20,6 @@ import {CannotUseNamingStrategyNotConnectedError} from "../../../src/connection/
 import {NamingStrategyNotFoundError} from "../../../src/connection/error/NamingStrategyNotFoundError";
 import {RepositoryNotTreeError} from "../../../src/connection/error/RepositoryNotTreeError";
 import {EntityManager} from "../../../src/entity-manager/EntityManager";
-import {ReactiveEntityManager} from "../../../src/entity-manager/ReactiveEntityManager";
 import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/error/CannotGetEntityManagerNotConnectedError";
 import {Blog} from "./modules/blog/entity/Blog";
 import {Question} from "./modules/question/entity/Question";
@@ -54,7 +51,7 @@ describe("Connection", () => {
 
         it("entity manager and reactive entity manager should not be accessible", () => {
             expect(() => connection.entityManager).to.throw(CannotGetEntityManagerNotConnectedError);
-            expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
+            // expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
         });
 
         // todo: they aren't promises anymore
@@ -82,8 +79,8 @@ describe("Connection", () => {
         it("should not be able to use repositories", () => {
             expect(() => connection.getRepository(Post)).to.throw(NoConnectionForRepositoryError);
             expect(() => connection.getTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
-            expect(() => connection.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
-            expect(() => connection.getReactiveTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
+            // expect(() => connection.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
+            // expect(() => connection.getReactiveTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
         });
 
         it("should be able to connect", () => {
@@ -104,7 +101,7 @@ describe("Connection", () => {
 
         it("entity manager and reactive entity manager should be accessible", () => connections.forEach(connection => {
             expect(connection.entityManager).to.be.instanceOf(EntityManager);
-            expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
+            // expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
         }));
 
         // todo: they aren't promises anymore
@@ -150,27 +147,27 @@ describe("Connection", () => {
             connection.getTreeRepository(Category).target.should.be.eql(Category);
         }));
 
-        it("should be able to get simple entity reactive repository", () => connections.forEach(connection => {
-            connection.getReactiveRepository(Post).should.be.instanceOf(ReactiveRepository);
-            connection.getReactiveRepository(Post).should.not.be.instanceOf(TreeReactiveRepository);
-            connection.getReactiveRepository(Post).target.should.be.eql(Post);
-        }));
+        // it("should be able to get simple entity reactive repository", () => connections.forEach(connection => {
+        //     connection.getReactiveRepository(Post).should.be.instanceOf(ReactiveRepository);
+        //     connection.getReactiveRepository(Post).should.not.be.instanceOf(TreeReactiveRepository);
+        //     connection.getReactiveRepository(Post).target.should.be.eql(Post);
+        // }));
 
-        it("should be able to get tree entity reactive repository", () => connections.forEach(connection => {
-            connection.getReactiveTreeRepository(Category).should.be.instanceOf(TreeReactiveRepository);
-            connection.getReactiveTreeRepository(Category).target.should.be.eql(Category);
-        }));
+        // it("should be able to get tree entity reactive repository", () => connections.forEach(connection => {
+        //     connection.getReactiveTreeRepository(Category).should.be.instanceOf(TreeReactiveRepository);
+        //     connection.getReactiveTreeRepository(Category).target.should.be.eql(Category);
+        // }));
 
         it("should not be able to get tree entity repository of the non-tree entities", () => connections.forEach(connection => {
             expect(() => connection.getTreeRepository(Post)).to.throw(RepositoryNotTreeError);
-            expect(() => connection.getReactiveTreeRepository(Post)).to.throw(RepositoryNotTreeError);
+            // expect(() => connection.getReactiveTreeRepository(Post)).to.throw(RepositoryNotTreeError);
         }));
 
         it("should not be able to get repositories that are not registered", () => connections.forEach(connection => {
             expect(() => connection.getRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
             expect(() => connection.getTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
-            expect(() => connection.getReactiveRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
-            expect(() => connection.getReactiveTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
+            // expect(() => connection.getReactiveRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
+            // expect(() => connection.getReactiveTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
         }));
 
     });

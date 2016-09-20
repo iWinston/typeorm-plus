@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to use naming strategy that does not exist.
- *
- * @internal
  */
 export class NamingStrategyNotFoundError extends Error {
     name = "NamingStrategyNotFoundError";

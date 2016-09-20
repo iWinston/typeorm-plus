@@ -1,7 +1,5 @@
 /**
  * Thrown when repository for the given class is not found.
- *
- * @internal
  */
 export class RepositoryNotTreeError extends Error {
     name = "RepositoryNotTreeError";

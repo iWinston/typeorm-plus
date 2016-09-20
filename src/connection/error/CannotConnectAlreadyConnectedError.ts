@@ -1,7 +1,5 @@
 /**
  * Thrown when consumer tries to connect when he already connected.
- *
- * @internal
  */
 export class CannotConnectAlreadyConnectedError extends Error {
     name = "CannotConnectAlreadyConnectedError";

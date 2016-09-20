@@ -57,7 +57,7 @@ export class Logger {
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    log(level: "log"|"debug"|"info"|"error", message: any) {
+    log(level: "log"|"info"|"warn"|"error", message: any) {
         if (!this.options) return;
 
         if (this.options.logger) {
@@ -67,11 +67,11 @@ export class Logger {
                 case "log":
                     console.log(message);
                     break;
-                case "debug":
-                    console.debug(message);
-                    break;
                 case "info":
                     console.info(message);
+                    break;
+                case "warn":
+                    console.warn(message);
                     break;
                 case "error":
                     console.error(message);

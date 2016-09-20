@@ -1,5 +1,5 @@
 {
-    "version": "1.8.0",
+    "version": "2.0.2",
     "compilerOptions": {
         "lib": ["es5", "es6", "dom"],
         "outDir": "build/es5",

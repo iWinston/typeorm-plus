@@ -1,8 +1,6 @@
 /**
  * Thrown when connection is trying to be created automatically from connection options found in the ormconfig.json
  * or environment variables, but failed due to missing these configurations.
- *
- * @internal
  */
 export class CannotDetermineConnectionOptionsError extends Error {
     name = "CannotDetermineConnectionOptionsError";
