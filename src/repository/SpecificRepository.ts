@@ -1,12 +1,9 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {EntityWithId} from "../persistment/operation/PersistOperation";
-import {FindOptions} from "../find-options/FindOptions";
-import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
-import {QueryRunner} from "../driver/QueryRunner";
-import {QueryRunnerProvider} from "./QueryRunnerProvider";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 
 /**
  * Repository for more specific operations.
@@ -45,7 +42,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async setRelation(relationName: string, entityId: any, relatedEntityId: any): Promise<void>;
+
+    /**
+     * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
+     * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async setRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void>;
+
+    /**
+     * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
+     * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async setRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
         const propertyName = this.metadata.computePropertyName(relationName);
         if (!this.metadata.hasRelationWithPropertyName(propertyName))
@@ -68,9 +77,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = entityId;
         }
 
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         await queryRunner.update(table, values, conditions);
-        await this.releaseProvidedQueryRunner(queryRunner);
+        await this.queryRunnerProvider.release(queryRunner);
     }
 
     /**
@@ -79,7 +88,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async setInverseRelation(relationName: string, relatedEntityId: any, entityId: any): Promise<void>;
+
+    /**
+     * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
+     * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async setInverseRelation(relationName: ((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void>;
+
+    /**
+     * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
+     * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async setInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void> {
         const propertyName = this.metadata.computePropertyName(relationName);
         if (!this.metadata.hasRelationWithPropertyName(propertyName))
@@ -102,9 +123,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.joinColumn.referencedColumn.name] = entityId;
         }
 
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         await queryRunner.update(table, values, conditions);
-        await this.releaseProvidedQueryRunner(queryRunner);
+        await this.queryRunnerProvider.release(queryRunner);
     }
 
     /**
@@ -113,7 +134,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async addToRelation(relationName: string, entityId: any, relatedEntityIds: any[]): Promise<void>;
+
+    /**
+     * Adds a new relation between two entities into relation's many-to-many table.
+     * Should be used when you want quickly and efficiently add a relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addToRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void>;
+
+    /**
+     * Adds a new relation between two entities into relation's many-to-many table.
+     * Should be used when you want quickly and efficiently add a relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addToRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
         const propertyName = this.metadata.computePropertyName(relationName);
         if (!this.metadata.hasRelationWithPropertyName(propertyName))
@@ -123,7 +156,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
             const values: any = { };
             if (relation.isOwning) {
@@ -137,7 +170,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
         });
         await Promise.all(insertPromises);
-        await this.releaseProvidedQueryRunner(queryRunner);
+        await this.queryRunnerProvider.release(queryRunner);
     }
 
     /**
@@ -146,7 +179,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async addToInverseRelation(relationName: string, relatedEntityId: any, entityIds: any[]): Promise<void>;
+
+    /**
+     * Adds a new relation between two entities into relation's many-to-many table from inverse side of the given relation.
+     * Should be used when you want quickly and efficiently add a relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addToInverseRelation(relationName: ((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void>;
+
+    /**
+     * Adds a new relation between two entities into relation's many-to-many table from inverse side of the given relation.
+     * Should be used when you want quickly and efficiently add a relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addToInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
         const propertyName = this.metadata.computePropertyName(relationName);
         if (!this.metadata.hasRelationWithPropertyName(propertyName))
@@ -156,7 +201,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
-        const queryRunner = await this.provideQueryRunner();
+        const queryRunner = await this.queryRunnerProvider.provide();
         try {
             const insertPromises = entityIds.map(entityId => {
                 const values: any = { };
@@ -173,7 +218,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             await Promise.all(insertPromises);
 
         } finally {
-            await this.releaseProvidedQueryRunner(queryRunner);
+            await this.queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -183,7 +228,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async removeFromRelation(relationName: string, entityId: any, relatedEntityIds: any[]): Promise<void>;
+
+    /**
+     * Removes a relation between two entities from relation's many-to-many table.
+     * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async removeFromRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void>;
+
+    /**
+     * Removes a relation between two entities from relation's many-to-many table.
+     * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async removeFromRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
         const propertyName = this.metadata.computePropertyName(relationName);
         if (!this.metadata.hasRelationWithPropertyName(propertyName))
@@ -220,7 +277,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async removeFromInverseRelation(relationName: string, relatedEntityId: any, entityIds: any[]): Promise<void>;
+
+    /**
+     * Removes a relation between two entities from relation's many-to-many table.
+     * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async removeFromInverseRelation(relationName: ((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void>;
+
+    /**
+     * Removes a relation between two entities from relation's many-to-many table.
+     * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async removeFromInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
         const propertyName = this.metadata.computePropertyName(relationName);
         if (!this.metadata.hasRelationWithPropertyName(propertyName))
@@ -254,7 +323,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async addAndRemoveFromRelation(relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+
+    /**
+     * Performs both #addToRelation and #removeFromRelation operations.
+     * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addAndRemoveFromRelation(relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
+
+    /**
+     * Performs both #addToRelation and #removeFromRelation operations.
+     * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addAndRemoveFromRelation(relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void> {
         await Promise.all([
             this.addToRelation(relation as any, entityId, addRelatedEntityIds),
@@ -268,7 +349,19 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async addAndRemoveFromInverseRelation(relation: string, relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void>;
+
+    /**
+     * Performs both #addToRelation and #removeFromRelation operations.
+     * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addAndRemoveFromInverseRelation(relation: ((t: Entity) => string|any), relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void>;
+
+    /**
+     * Performs both #addToRelation and #removeFromRelation operations.
+     * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
+     * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     */
     async addAndRemoveFromInverseRelation(relation: string|((t: Entity) => string|any), relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void> {
         await Promise.all([
             this.addToInverseRelation(relation as any, relatedEntityId, addEntityIds),
@@ -333,44 +426,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected provideQueryRunner(): Promise<QueryRunner> {
-        return this.connection.driver.createQueryRunner();
-    }
-
-    /**
-     * Note: release only query runners that provided by a provideQueryRunner() method. This is important and by design!
-     */
-    protected releaseProvidedQueryRunner(queryRunner: QueryRunner): Promise<void> {
-        return queryRunner.release();
-    }
-
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
-    private createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions) {
-        const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : <FindOptions> options;
-        const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
-
-        const alias = findOptions ? findOptions.alias : this.metadata.table.name;
-        const qb = this.repository.createQueryBuilder(alias);
-        if (findOptions) {
-            FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
-        }
-        if (conditions) {
-            Object.keys(conditions).forEach(key => {
-                const name = key.indexOf(".") === -1 ? alias + "." + key : key;
-                qb.andWhere(name + "=:" + key);
-            });
-            qb.addParameters(conditions);
-        }
-        return qb;
-    }
-
     /**
      * Extracts unique objects from given entity and all its downside relations.
      */
-    private extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> {
+    protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> {
         const promises = metadata.relations.map(relation => {
             const relMetadata = relation.inverseEntityMetadata;
 

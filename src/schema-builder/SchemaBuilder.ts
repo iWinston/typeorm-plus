@@ -5,7 +5,7 @@ import {ColumnSchema} from "./schema/ColumnSchema";
 import {ForeignKeySchema} from "./schema/ForeignKeySchema";
 import {IndexSchema} from "./schema/IndexSchema";
 import {Driver} from "../driver/Driver";
-import {QueryRunner} from "../driver/QueryRunner";
+import {QueryRunner} from "../query-runner/QueryRunner";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {Logger} from "../logger/Logger";
 import {PrimaryKeySchema} from "./schema/PrimaryKeySchema";

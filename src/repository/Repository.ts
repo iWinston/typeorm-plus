@@ -9,8 +9,8 @@ import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions} from "../find-options/FindOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {QueryRunner} from "../driver/QueryRunner";
-import {QueryRunnerProvider} from "./QueryRunnerProvider";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -18,31 +18,12 @@ import {QueryRunnerProvider} from "./QueryRunnerProvider";
 export class Repository<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
-    // Private Properties
-    // -------------------------------------------------------------------------
-
-    protected entityPersistOperationBuilder: EntityPersistOperationBuilder;
-    protected plainObjectToEntityTransformer: PlainObjectToNewEntityTransformer;
-    protected plainObjectToDatabaseEntityTransformer: PlainObjectToDatabaseEntityTransformer<Entity>;
-    protected queryRunnerProvider: QueryRunnerProvider;
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
                 protected metadata: EntityMetadata,
-                queryRunnerProvider?: QueryRunnerProvider) {
-
-        if (queryRunnerProvider) {
-            this.queryRunnerProvider = queryRunnerProvider;
-        } else {
-            this.queryRunnerProvider = new QueryRunnerProvider(connection.driver);
-        }
-
-        this.entityPersistOperationBuilder = new EntityPersistOperationBuilder(connection.entityMetadatas);
-        this.plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
-        this.plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
+                protected queryRunnerProvider?: QueryRunnerProvider) {
     }
 
     // -------------------------------------------------------------------------
@@ -115,13 +96,14 @@ export class Repository<Entity extends ObjectLiteral> {
      * Can copy properties from the given object into new entities.
      */
     create(plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
-        if (plainObjectOrObjects instanceof Array) {
+        if (plainObjectOrObjects instanceof Array)
             return plainObjectOrObjects.map(object => this.create(object as Object));
-        }
 
         const newEntity: Entity = this.metadata.create();
-        if (plainObjectOrObjects)
-            this.plainObjectToEntityTransformer.transform(newEntity, plainObjectOrObjects, this.metadata);
+        if (plainObjectOrObjects) {
+            const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
+            plainObjectToEntityTransformer.transform(newEntity, plainObjectOrObjects, this.metadata);
+        }
 
         return newEntity;
     }
@@ -134,15 +116,17 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     preload(object: Object): Promise<Entity> {
         const queryBuilder = this.createQueryBuilder(this.metadata.table.name);
-        return this.plainObjectToDatabaseEntityTransformer.transform(object, this.metadata, queryBuilder);
+        const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
+        return plainObjectToDatabaseEntityTransformer.transform(object, this.metadata, queryBuilder);
     }
 
     /**
-     * Merges multiple entities (or entity-like objects) into one new entity.
+     * Merges multiple entities (or entity-like objects) into a one new entity.
      */
     merge(...objects: ObjectLiteral[]): Entity {
-        const newEntity = this.create();
-        objects.forEach(object => this.plainObjectToEntityTransformer.transform(newEntity, object, this.metadata));
+        const newEntity: Entity = this.metadata.create();
+        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
+        objects.forEach(object => plainObjectToEntityTransformer.transform(newEntity, object, this.metadata));
         return newEntity;
     }
 
@@ -167,15 +151,17 @@ export class Repository<Entity extends ObjectLiteral> {
         if (entityOrEntities instanceof Array)
             return Promise.all(entityOrEntities.map(entity => this.persist(entity)));
 
-        const queryRunner = await this.queryRunnerProvider.provide();
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
         try {
             const allPersistedEntities = await this.extractObjectsById(entityOrEntities, this.metadata);
             let loadedDbEntity: Entity|null = null;
             if (this.hasId(entityOrEntities)) {
-                const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
+                const queryBuilder = new QueryBuilder<Entity>(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
                     .select(this.metadata.table.name)
                     .from(this.metadata.target, this.metadata.table.name);
-                loadedDbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
+                const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
+                loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
             }
 
             let entityWithIds: EntityWithId[] = [];
@@ -186,14 +172,15 @@ export class Repository<Entity extends ObjectLiteral> {
             const allDbEntities = await this.findNotLoadedIds(queryRunner, entityWithIds, allPersistedEntities);
             const persistedEntity = new EntityWithId(this.metadata, entityOrEntities);
             const dbEntity = new EntityWithId(this.metadata, loadedDbEntity!); // todo: find if this can be executed if loadedDbEntity is empty
-            const persistOperation = this.entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
+            const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
+            const persistOperation = entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
 
             const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
             await persistOperationExecutor.executePersistOperation(persistOperation);
             return entityOrEntities;
 
         } finally {
-            await this.queryRunnerProvider.release(queryRunner);
+            await queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -215,12 +202,14 @@ export class Repository<Entity extends ObjectLiteral> {
         if (entityOrEntities instanceof Array) // todo: make it in transaction, like in persist
             return Promise.all(entityOrEntities.map(entity => this.remove(entity)));
 
-        const queryRunner = await this.queryRunnerProvider.provide();
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
+        const queryRunner = await queryRunnerProvider.provide();
         try {
             const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
                 .select(this.metadata.table.name)
                 .from(this.metadata.target, this.metadata.table.name);
-            const dbEntity = await this.plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
+            const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
+            const dbEntity = await plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
 
             this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entityOrEntities[primaryColumn.name] = undefined);
             const [dbEntities, allPersistedEntities] = await Promise.all([
@@ -230,13 +219,14 @@ export class Repository<Entity extends ObjectLiteral> {
             const entityWithId = new EntityWithId(this.metadata, entityOrEntities);
             const dbEntityWithId = new EntityWithId(this.metadata, dbEntity);
 
-            const persistOperation = this.entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
+            const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
+            const persistOperation = entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
             const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
             await persistOperationExecutor.executePersistOperation(persistOperation);
             return entityOrEntities;
 
         } finally {
-            await this.queryRunnerProvider.release(queryRunner);
+            await queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -351,23 +341,28 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes a raw SQL query and returns a raw database results.
      */
     async query(query: string): Promise<any> {
-        const queryRunner = await this.queryRunnerProvider.provide();
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
         try {
             return queryRunner.query(query);
 
         } finally {
-            await this.queryRunnerProvider.release(queryRunner);
+            await queryRunnerProvider.release(queryRunner);
         }
     }
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided repository.
      */
-    async transaction(runInTransaction: () => Promise<any>|any): Promise<any> {
-        const queryRunner = await this.queryRunnerProvider.provide();
+    async transaction(runInTransaction: (repository: Repository<Entity>) => Promise<any>|any): Promise<any> {
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
+        const queryRunner = await queryRunnerProvider.provide();
+        const transactionRepository = new Repository<Entity>(this.connection, this.metadata, queryRunnerProvider);
+
         try {
             await queryRunner.beginTransaction();
-            const result = await runInTransaction();
+            const result = await runInTransaction(transactionRepository);
             await queryRunner.commitTransaction();
             return result;
 
@@ -376,7 +371,9 @@ export class Repository<Entity extends ObjectLiteral> {
             throw err;
 
         } finally {
-            await this.queryRunnerProvider.release(queryRunner);
+            await queryRunnerProvider.release(queryRunner);
+            if (!this.queryRunnerProvider) // if we used a new query runner provider then release it
+                await queryRunnerProvider.releaseReused();
         }
     }
 

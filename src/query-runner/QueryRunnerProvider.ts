@@ -1,4 +1,4 @@
-import {QueryRunner} from "../driver/QueryRunner";
+import {QueryRunner} from "./QueryRunner";
 import {Driver} from "../driver/Driver";
 
 /**
@@ -13,12 +13,27 @@ export class QueryRunnerProvider {
 
     protected reusableQueryRunner: QueryRunner;
 
+    /**
+     * Indicates if this entity manager is released.
+     * Entity manager can be released only if custom queryRunnerProvider is provided.
+     * Once entity manager is released, its repositories and some other methods can't be used anymore.
+     */
+    protected _isReleased: boolean;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected driver: Driver,
                 protected useSingleQueryRunner: boolean = false) {
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    get isReleased() {
+        return this._isReleased;
     }
 
     // -------------------------------------------------------------------------
@@ -57,6 +72,7 @@ export class QueryRunnerProvider {
      * Releases reused query runner.
      */
     async releaseReused(): Promise<void> {
+        this._isReleased = true;
         if (this.reusableQueryRunner)
             return this.reusableQueryRunner.release();
     }

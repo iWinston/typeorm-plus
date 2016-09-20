@@ -1,5 +1,5 @@
 import {DriverOptions} from "./DriverOptions";
-import {QueryRunner} from "./QueryRunner";
+import {QueryRunner} from "../query-runner/QueryRunner";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnType} from "../metadata/types/ColumnTypes";

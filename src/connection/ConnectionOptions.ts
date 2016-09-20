@@ -1,5 +1,5 @@
 import {DriverOptions} from "../driver/DriverOptions";
-import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
 
 /**

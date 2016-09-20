@@ -1,4 +1,5 @@
 import {OrderByCondition} from "./OrderByCondition";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Options to be passed to find methods.
@@ -19,9 +20,9 @@ import {OrderByCondition} from "./OrderByCondition";
  *     havingConditions: {
  *         "photo.filename": "bears.jpg"
  *     },
- *     orderBy: [
- *         { sort: "photo.id", order: "DESC" }
- *     ],
+ *     orderBy: {
+ *         "photo.id": "DESC"
+ *     },
  *     groupBy: [
  *         "photo.name"
  *     ],
@@ -92,13 +93,13 @@ export interface FindOptions {
      * WHERE conditions. Key-value object pair, where each key is a column name and value is a column value. 
      * "AND" is applied between all parameters.
      */
-    whereConditions?: Object;
+    whereConditions?: ObjectLiteral;
 
     /**
      * HAVING conditions. Key-value object pair, where each key is a column name and value is a column value.
      * "AND" is applied between all parameters.
      */
-    havingConditions?: Object;
+    havingConditions?: ObjectLiteral;
 
     /**
      * Array of ORDER BY expressions.

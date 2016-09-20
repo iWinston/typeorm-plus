@@ -8,11 +8,11 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
-import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {RepositoryNotTreeError} from "../connection/error/RepositoryNotTreeError";
 import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
-import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyReleasedError";
+import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
 
 /**
  * Common functions shared between different entity manager types.
@@ -20,29 +20,12 @@ import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyRel
 export abstract class BaseEntityManager {
 
     // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Provides single query runner for the all repositories retrieved from this entity manager.
-     * Works only when useSingleDatabaseConnection is enabled.
-     */
-    protected queryRunnerProvider?: QueryRunnerProvider;
-
-    /**
-     * Indicates if this entity manager is released.
-     * Entity manager can be released only if useSingleDatabaseConnection is enabled.
-     * Once entity manager is released, its repositories and some other methods can't be used anymore.
-     */
-    protected isReleased: boolean;
-
-    // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
 
     /**
      * Stores all registered repositories.
-     * Used when useSingleDatabaseConnection is enabled.
+     * Used when custom queryRunnerProvider is provided.
      */
     private readonly repositoryAggregators: RepositoryAggregator[] = [];
 
@@ -52,12 +35,10 @@ export abstract class BaseEntityManager {
 
     /**
      * @param connection Connection to be used in this entity manager
-     * @param useSingleDatabaseConnection Indicates if single database connection should be used for all queries execute
+     * @param queryRunnerProvider Custom query runner to be used for operations in this entity manager
      */
     constructor(protected connection: Connection,
-                protected useSingleDatabaseConnection: boolean) {
-        if (useSingleDatabaseConnection === true)
-            this.queryRunnerProvider = new QueryRunnerProvider(connection.driver, true);
+                protected queryRunnerProvider?: QueryRunnerProvider) {
     }
 
     // -------------------------------------------------------------------------
@@ -89,7 +70,7 @@ export abstract class BaseEntityManager {
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.useSingleDatabaseConnection)
+        if (this.queryRunnerProvider)
             return this.obtainRepositoryAggregator(entityClassOrName as any).repository;
 
         return this.connection.getRepository<Entity>(entityClassOrName as any);
@@ -120,7 +101,7 @@ export abstract class BaseEntityManager {
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.useSingleDatabaseConnection) {
+        if (this.queryRunnerProvider) {
             const treeRepository = this.obtainRepositoryAggregator(entityClassOrName).treeRepository;
             if (!treeRepository)
                 throw new RepositoryNotTreeError(entityClassOrName);
@@ -156,7 +137,7 @@ export abstract class BaseEntityManager {
     getReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): ReactiveRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.useSingleDatabaseConnection)
+        if (this.queryRunnerProvider)
             return this.obtainRepositoryAggregator(entityClassOrName as any).reactiveRepository;
 
         return this.connection.getReactiveRepository<Entity>(entityClassOrName as any);
@@ -187,7 +168,7 @@ export abstract class BaseEntityManager {
     getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.useSingleDatabaseConnection)
+        if (this.queryRunnerProvider)
             return this.obtainRepositoryAggregator(entityClassOrName as any).specificRepository;
 
         return this.connection.getSpecificRepository<Entity>(entityClassOrName as any);
@@ -218,7 +199,7 @@ export abstract class BaseEntityManager {
     getSpecificReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificReactiveRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.useSingleDatabaseConnection)
+        if (this.queryRunnerProvider)
             return this.obtainRepositoryAggregator(entityClassOrName).specificReactiveRepository;
 
         return this.connection.getSpecificReactiveRepository<Entity>(entityClassOrName as any);
@@ -249,7 +230,7 @@ export abstract class BaseEntityManager {
     getTreeReactiveRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeReactiveRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.useSingleDatabaseConnection) {
+        if (this.queryRunnerProvider) {
             const treeRepository = this.obtainRepositoryAggregator(entityClassOrName).treeReactiveRepository;
             if (!treeRepository)
                 throw new RepositoryNotTreeError(entityClassOrName);
@@ -344,13 +325,10 @@ export abstract class BaseEntityManager {
      * and this single query runner needs to be released after job with repository is done.
      */
     async release(): Promise<void> {
-        if (this.useSingleDatabaseConnection)
+        if (!this.queryRunnerProvider)
             throw new NoNeedToReleaseEntityManagerError();
 
-        this.isReleased = true;
-
-        if (this.queryRunnerProvider)
-            return this.queryRunnerProvider.releaseReused();
+        return this.queryRunnerProvider.releaseReused();
     }
 
     // -------------------------------------------------------------------------
@@ -361,8 +339,8 @@ export abstract class BaseEntityManager {
      * Gets, or if does not exist yet, creates and returns a repository aggregator for a particular entity target.
      */
     protected obtainRepositoryAggregator<Entity>(entityClassOrName: ObjectType<Entity>|string): RepositoryAggregator {
-        if (this.isReleased)
-            throw new EntityManagerAlreadyReleasedError();
+        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError();
 
         const metadata = this.connection.entityMetadatas.findByTarget(entityClassOrName);
         let repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);

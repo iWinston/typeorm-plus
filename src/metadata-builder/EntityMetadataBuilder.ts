@@ -13,14 +13,14 @@ import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
 import {JunctionEntityMetadataBuilder} from "./JunctionEntityMetadataBuilder";
 import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetadataBuilder";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
-import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
-import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
+import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {Driver} from "../driver/Driver";
 
 /**

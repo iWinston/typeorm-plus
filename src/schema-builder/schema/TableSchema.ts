@@ -3,7 +3,7 @@ import {IndexSchema} from "./IndexSchema";
 import {ForeignKeySchema} from "./ForeignKeySchema";
 import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {QueryRunner} from "../../driver/QueryRunner";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 
 /**
  * Table schema in the database represented in this class.

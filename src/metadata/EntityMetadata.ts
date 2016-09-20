@@ -8,7 +8,7 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {EntityMetadataArgs} from "../metadata-args/EntityMetadataArgs";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
+import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 
 // todo: IDEA. store all entity metadata in the EntityMetadata too? (this will open more features for metadata objects + no need to access connection in lot of places)
 

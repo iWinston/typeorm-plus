@@ -84,7 +84,8 @@ export class ReactiveRepository<Entity> {
      * replaced from the new object.
      */
     preload(object: Object): Rx.Observable<Entity> {
-        return Rx.Observable.fromPromise(this.repository.preload(object));
+        const promiseFn = () => this.repository.preload(object);
+        return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
     }
 
     /**
@@ -95,18 +96,36 @@ export class ReactiveRepository<Entity> {
     }
 
     /**
-     * Persists (saves) a given entity in the database. If entity does not exist in the database then it inserts it, 
-     * else if entity already exist in the database then it updates it.
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
      */
-    persist(entity: Entity): Rx.Observable<Entity> {
-        return Rx.Observable.fromPromise(this.repository.persist(entity));
+    persist(entities: Entity[]): Rx.Observable<Entity[]>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     * If entity does not exist in the database then inserts, otherwise updates.
+     */
+    persist(entity: Entity): Rx.Observable<Entity>;
+
+    /**
+     * Persists one or many given entities.
+     */
+    persist(entityOrEntities: Entity|Entity[]): Rx.Observable<Entity|Entity[]> {
+        if (entityOrEntities instanceof Array) {
+            const promiseFn = () => this.repository.persist(entityOrEntities as Entity[]);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity[]>); // monkey patch because of rxjs bug
+        } else {
+            const promiseFn = () => this.repository.persist(entityOrEntities as Entity);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
+        }
     }
 
     /**
      * Removes a given entity from the database.
      */
     remove(entity: Entity): Rx.Observable<Entity> {
-        return Rx.Observable.fromPromise(this.repository.remove(entity));
+        const promiseFn = () => this.repository.remove(entity);
+        return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
     }
 
     /**
@@ -134,13 +153,16 @@ export class ReactiveRepository<Entity> {
      */
     find(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity[]> {
         if (conditionsOrFindOptions && options) {
-            return Rx.Observable.fromPromise(this.repository.find(conditionsOrFindOptions, options));
+            const promiseFn = () => this.repository.find(conditionsOrFindOptions, options);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity[]>); // monkey patch because of rxjs bug
 
         } else if (conditionsOrFindOptions) {
-            return Rx.Observable.fromPromise(this.repository.find(conditionsOrFindOptions));
+            const promiseFn = () => this.repository.find(conditionsOrFindOptions);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity[]>); // monkey patch because of rxjs bug
 
         } else {
-            return Rx.Observable.fromPromise(this.repository.find());
+            const promiseFn = () => this.repository.find();
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity[]>); // monkey patch because of rxjs bug
         }
     }
 
@@ -169,13 +191,16 @@ export class ReactiveRepository<Entity> {
      */
     findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<[ Entity[], number ]> {
         if (conditionsOrFindOptions && options) {
-            return Rx.Observable.fromPromise(this.repository.findAndCount(conditionsOrFindOptions, options));
+            const promiseFn = () => this.repository.findAndCount(conditionsOrFindOptions, options);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<[ Entity[], number ]>); // monkey patch because of rxjs bug
 
         } else if (conditionsOrFindOptions) {
-            return Rx.Observable.fromPromise(this.repository.findAndCount(conditionsOrFindOptions));
+            const promiseFn = () => this.repository.findAndCount(conditionsOrFindOptions);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<[ Entity[], number ]>); // monkey patch because of rxjs bug
 
         } else {
-            return Rx.Observable.fromPromise(this.repository.findAndCount());
+            const promiseFn = () => this.repository.findAndCount();
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<[ Entity[], number ]>); // monkey patch because of rxjs bug
         }
     }
 
@@ -204,13 +229,16 @@ export class ReactiveRepository<Entity> {
      */
     findOne(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Rx.Observable<Entity> {
         if (conditionsOrFindOptions && options) {
-            return Rx.Observable.fromPromise(this.repository.findOne(conditionsOrFindOptions, options));
+            const promiseFn = () => this.repository.findOne(conditionsOrFindOptions, options);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
 
         } else if (conditionsOrFindOptions) {
-            return Rx.Observable.fromPromise(this.repository.findOne(conditionsOrFindOptions));
+            const promiseFn = () => this.repository.findOne(conditionsOrFindOptions);
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
 
         } else {
-            return Rx.Observable.fromPromise(this.repository.findOne());
+            const promiseFn = () => this.repository.findOne();
+            return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
         }
     }
 
@@ -218,21 +246,25 @@ export class ReactiveRepository<Entity> {
      * Finds entity with given id.
      */
     findOneById(id: any, options?: FindOptions): Rx.Observable<Entity> {
-        return Rx.Observable.fromPromise(this.repository.findOneById(id, options));
+        const promiseFn = () => this.repository.findOneById(id, options);
+        return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
     }
 
     /**
-     * Executes raw SQL query and returns raw database results.
+     * Executes a raw SQL query and returns raw database results.
      */
     query(query: string): Rx.Observable<any> {
-        return Rx.Observable.fromPromise(this.repository.query(query));
+        const promiseFn = () => this.repository.query(query);
+        return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
     }
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided repository.
      */
-    transaction(runInTransaction: () => Promise<any>): Rx.Observable<any> {
-        return Rx.Observable.fromPromise(this.repository.transaction(runInTransaction));
+    transaction(runInTransaction: (repository: Repository<Entity>) => Promise<any>): Rx.Observable<any> {
+        const promiseFn = () => this.repository.transaction(runInTransaction);
+        return Rx.Observable.fromPromise((promiseFn as any) as Promise<Entity>); // monkey patch because of rxjs bug
     }
 
 }

@@ -11,7 +11,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Logger} from "../../logger/Logger";
 import * as moment from "moment";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {QueryRunner} from "../QueryRunner";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 
 // todo(tests):

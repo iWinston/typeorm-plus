@@ -4,7 +4,7 @@ import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
-import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
+import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Driver} from "../driver/Driver";

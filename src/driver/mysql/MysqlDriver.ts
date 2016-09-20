@@ -6,7 +6,7 @@ import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalled
 import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {DriverUtils} from "../DriverUtils";
 import {Logger} from "../../logger/Logger";
-import {QueryRunner} from "../QueryRunner";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 import {MysqlQueryRunner} from "./MysqlQueryRunner";
 import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
 import * as moment from "moment";

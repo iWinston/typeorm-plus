@@ -3,12 +3,15 @@ import {Connection} from "../connection/Connection";
 import {FindOptions} from "../find-options/FindOptions";
 import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
-import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";
-import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyReleasedError";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
+import {EntityManager} from "./EntityManager";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its method, whatever
  * entity type are you passing. This version of ReactiveEntityManager works with reactive streams and observables.
+ *
+ * @experimental
  */
 export class ReactiveEntityManager extends BaseEntityManager {
 
@@ -16,8 +19,8 @@ export class ReactiveEntityManager extends BaseEntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, useSingleDatabaseConnection: boolean) {
-        super(connection, useSingleDatabaseConnection);
+    constructor(connection: Connection, queryRunnerProvider?: QueryRunnerProvider) {
+        super(connection, queryRunnerProvider);
     }
 
     // -------------------------------------------------------------------------
@@ -25,27 +28,56 @@ export class ReactiveEntityManager extends BaseEntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
      */
     persist<Entity>(entity: Entity): Rx.Observable<Entity>;
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
      */
     persist<Entity>(targetOrEntity: Function, entity: Entity): Rx.Observable<Entity>;
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
      */
     persist<Entity>(targetOrEntity: string, entity: Entity): Rx.Observable<Entity>;
 
     /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(entities: Entity[]): Rx.Observable<Entity[]>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: Function, entities: Entity[]): Rx.Observable<Entity[]>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: string, entities: Entity[]): Rx.Observable<Entity[]>;
+
+    /**
      * Persists (saves) a given entity in the database.
      */
-    persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
-        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
-        return this.getReactiveRepository<Entity>(target as any).persist(entity);
+    persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[]): Rx.Observable<Entity|Entity[]> {
+        const target = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Function|string;
+        const entity = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+        if (typeof target === "string") {
+            return this.getReactiveRepository<Entity|Entity[]>(target).persist(entity);
+        } else {
+            if (target instanceof Array) {
+                return this.getReactiveRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
+            } else {
+                return this.getReactiveRepository<Entity>(target.constructor).persist(entity as Entity);
+            }
+        }
     }
 
     /**
@@ -66,10 +98,33 @@ export class ReactiveEntityManager extends BaseEntityManager {
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Rx.Observable<Entity> {
-        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
-        return this.getReactiveRepository<Entity>(target as any).remove(entity);
+    remove<Entity>(entity: Entity[]): Rx.Observable<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: Function, entity: Entity[]): Rx.Observable<Entity[]>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: string, entity: Entity[]): Rx.Observable<Entity[]>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[]): Rx.Observable<Entity|Entity[]> {
+        const target = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Function|string;
+        const entity = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+        if (typeof target === "string") {
+            return this.getReactiveRepository<Entity|Entity[]>(target).remove(entity);
+        } else {
+            if (target instanceof Array) {
+                return this.getReactiveRepository<Entity[]>(target[0].constructor).remove(entity as Entity[]);
+            } else {
+                return this.getReactiveRepository<Entity>(target.constructor).remove(entity as Entity);
+            }
+        }
     }
 
     /**
@@ -189,8 +244,8 @@ export class ReactiveEntityManager extends BaseEntityManager {
      */
     query(query: string): Rx.Observable<any> {
         const promiseFn = async () => {
-            if (this.useSingleDatabaseConnection && this.isReleased)
-                throw new EntityManagerAlreadyReleasedError();
+            if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
 
             const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
             const queryRunner = await queryRunnerProvider.provide();
@@ -208,18 +263,20 @@ export class ReactiveEntityManager extends BaseEntityManager {
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
      */
-    transaction(runInTransaction: () => Promise<any>): Rx.Observable<any> {
+    transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Rx.Observable<any> {
         const promiseFn = async () => {
-            if (this.useSingleDatabaseConnection && this.isReleased)
-                throw new EntityManagerAlreadyReleasedError();
+            if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
 
-            const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+            const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
             const queryRunner = await queryRunnerProvider.provide();
+            const transactionEntityManager = new EntityManager(this.connection, queryRunnerProvider);
 
             try {
                 await queryRunner.beginTransaction();
-                const result = await runInTransaction();
+                const result = await runInTransaction(transactionEntityManager);
                 await queryRunner.commitTransaction();
                 return Promise.resolve(result);
 
@@ -229,6 +286,8 @@ export class ReactiveEntityManager extends BaseEntityManager {
 
             } finally {
                 await queryRunnerProvider.release(queryRunner);
+                if (!this.queryRunnerProvider) // if we used a new query runner provider then release it
+                    await queryRunnerProvider.releaseReused();
             }
         };
         return Rx.Observable.fromPromise(promiseFn as any);

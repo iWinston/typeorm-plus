@@ -235,7 +235,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = await userRepository.findOne({ alias: "user", orderBy: [{ sort: "user.id" }]});
+            const loadedUser = await userRepository.findOne({ alias: "user", orderBy: { "user.id": "ASC" }});
             loadedUser.id.should.be.equal(0);
             loadedUser.firstName.should.be.equal("name #0");
             loadedUser.secondName.should.be.equal("Doe");

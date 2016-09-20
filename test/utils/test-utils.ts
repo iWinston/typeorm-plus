@@ -2,7 +2,7 @@ import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {createConnection} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 import {DriverOptions} from "../../src/driver/DriverOptions";
-import {EntitySchema} from "../../src/metadata/entity-schema/EntitySchema";
+import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 
 export interface TestingConnectionOptions {
     entitySchemas?: EntitySchema[];

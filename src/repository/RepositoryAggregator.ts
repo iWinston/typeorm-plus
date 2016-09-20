@@ -8,7 +8,7 @@ import {getFromContainer} from "../index";
 import {RepositoryFactory} from "./RepositoryFactory";
 import {TreeRepository} from "./TreeRepository";
 import {TreeReactiveRepository} from "./TreeReactiveRepository";
-import {QueryRunnerProvider} from "./QueryRunnerProvider";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 
 /**
  * Aggregates all repositories of the specific metadata.

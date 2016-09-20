@@ -6,7 +6,7 @@ import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
+import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {Driver} from "../driver/Driver";
 
 /**

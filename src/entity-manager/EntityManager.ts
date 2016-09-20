@@ -2,8 +2,8 @@ import {Connection} from "../connection/Connection";
 import {FindOptions} from "../find-options/FindOptions";
 import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
-import {EntityManagerAlreadyReleasedError} from "./error/EntityManagerAlreadyReleasedError";
-import {QueryRunnerProvider} from "../repository/QueryRunnerProvider";
+import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -15,8 +15,8 @@ export class EntityManager extends BaseEntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, useSingleDatabaseConnection: boolean) {
-        super(connection, useSingleDatabaseConnection);
+    constructor(connection: Connection, queryRunnerProvider?: QueryRunnerProvider) {
+        super(connection, queryRunnerProvider);
     }
 
     // -------------------------------------------------------------------------
@@ -24,27 +24,56 @@ export class EntityManager extends BaseEntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
      */
     persist<Entity>(entity: Entity): Promise<Entity>;
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
      */
     persist<Entity>(targetOrEntity: Function, entity: Entity): Promise<Entity>;
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
      */
     persist<Entity>(targetOrEntity: string, entity: Entity): Promise<Entity>;
 
     /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(entities: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: Function, entities: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: string, entities: Entity[]): Promise<Entity[]>;
+
+    /**
      * Persists (saves) a given entity in the database.
      */
-    persist<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
-        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
-        return this.getRepository(target as any).persist(entity);
+    persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[]): Promise<Entity|Entity[]> {
+        const target = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Function|string;
+        const entity = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+        if (typeof target === "string") {
+            return this.getRepository<Entity|Entity[]>(target).persist(entity);
+        } else {
+            if (target instanceof Array) {
+                return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
+            } else {
+                return this.getRepository<Entity>(target.constructor).persist(entity as Entity);
+            }
+        }
     }
 
     /**
@@ -65,11 +94,36 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(targetOrEntity: Entity|Function|string, maybeEntity?: Entity): Promise<Entity> {
-        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? maybeEntity as Entity : targetOrEntity as Entity;
-        return this.getRepository(target as any).remove(entity);
+    remove<Entity>(entity: Entity[]): Promise<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: Function, entity: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: string, entity: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    remove<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[]): Promise<Entity|Entity[]> {
+        const target = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Function|string;
+        const entity = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+        if (typeof target === "string") {
+            return this.getRepository<Entity|Entity[]>(target).remove(entity);
+        } else {
+            if (target instanceof Array) {
+                return this.getRepository<Entity[]>(target[0].constructor).remove(entity as Entity[]);
+            } else {
+                return this.getRepository<Entity>(target.constructor).remove(entity as Entity);
+            }
+        }
     }
+
+    
     /**
      * Finds entities that match given conditions.
      */
@@ -186,8 +240,8 @@ export class EntityManager extends BaseEntityManager {
      * Executes raw SQL query and returns raw database results.
      */
     async query(query: string): Promise<any> {
-        if (this.useSingleDatabaseConnection && this.isReleased)
-            throw new EntityManagerAlreadyReleasedError();
+        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError();
 
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
@@ -202,17 +256,19 @@ export class EntityManager extends BaseEntityManager {
 
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
      */
-    async transaction(runInTransaction: () => Promise<any>): Promise<any> {
-        if (this.useSingleDatabaseConnection && this.isReleased)
-            throw new EntityManagerAlreadyReleasedError();
+    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
+        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         const queryRunner = await queryRunnerProvider.provide();
+        const transactionEntityManager = new EntityManager(this.connection, queryRunnerProvider);
 
         try {
             await queryRunner.beginTransaction();
-            const result = await runInTransaction();
+            const result = await runInTransaction(transactionEntityManager);
             await queryRunner.commitTransaction();
             return result;
 
@@ -222,6 +278,8 @@ export class EntityManager extends BaseEntityManager {
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
+            if (!this.queryRunnerProvider) // if we used a new query runner provider then release it
+                await queryRunnerProvider.releaseReused();
         }
     }
 

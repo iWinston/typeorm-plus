@@ -14,7 +14,7 @@ interface LoadMap {
  * Transforms plain old javascript object
  * Entity is constructed based on its entity metadata.
  */
-export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral> {
+export class PlainObjectToDatabaseEntityTransformer {
 
     // constructor(protected namingStrategy: NamingStrategyInterface) {
     // }
@@ -23,8 +23,8 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
     // Public Methods
     // -------------------------------------------------------------------------
 
-    async transform(plainObject: ObjectLiteral, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity> {
-        
+    async transform<Entity extends ObjectLiteral>(plainObject: ObjectLiteral, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity> {
+
         // if plain object does not have id then nothing to load really
         if (!metadata.checkIfObjectContainsAllPrimaryKeys(plainObject))
             return Promise.reject<Entity>("Given object does not have a primary column, cannot transform it to database entity.");
@@ -53,7 +53,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
             });
         }
 
-        return await queryBuilder.getSingleResult();
+        return queryBuilder.getSingleResult();
     }
 
     // -------------------------------------------------------------------------
@@ -61,7 +61,7 @@ export class PlainObjectToDatabaseEntityTransformer<Entity extends ObjectLiteral
     // -------------------------------------------------------------------------
     
 
-    private join(qb: QueryBuilder<Entity>, needToLoad: LoadMap[], parentAlias: string) {
+    private join<Entity extends ObjectLiteral>(qb: QueryBuilder<Entity>, needToLoad: LoadMap[], parentAlias: string) {
         needToLoad.forEach(i => {
             const alias = parentAlias + "_" + i.name;
             qb.leftJoinAndSelect(parentAlias + "." + i.name, alias);

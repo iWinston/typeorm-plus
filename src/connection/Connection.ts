@@ -21,18 +21,19 @@ import {TreeReactiveRepository} from "../repository/TreeReactiveRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {NamingStrategyNotFoundError} from "./error/NamingStrategyNotFoundError";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
-import {EntitySchema} from "../metadata/entity-schema/EntitySchema";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
 import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingStrategyNotConnectedError";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityManagerNotConnectedError";
-import {LazyRelationsWrapper} from "../repository/LazyRelationsWrapper";
+import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {SpecificReactiveRepository} from "../repository/ReactiveSpecificRepository";
 import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {Logger} from "../logger/Logger";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 
 /**
  * A single connection instance to the database. 
@@ -511,7 +512,8 @@ export class Connection {
      * After finishing with entity manager, don't forget to release it, to release connection back to pool.
      */
     createEntityManagerWithSingleDatabaseConnection() {
-        return new EntityManager(this, true);
+        const queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+        return new EntityManager(this, queryRunnerProvider);
     }
 
     /**
@@ -520,7 +522,8 @@ export class Connection {
      * After finishing with entity manager, don't forget to release it, to release connection back to pool.
      */
     createReactiveEntityManagerWithSingleDatabaseConnection() {
-        return new ReactiveEntityManager(this, true);
+        const queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+        return new ReactiveEntityManager(this, queryRunnerProvider);
     }
 
     // -------------------------------------------------------------------------
@@ -629,14 +632,14 @@ export class Connection {
      * Creates a new default entity manager without single connection setup.
      */
     protected createEntityManager() {
-        return new EntityManager(this, false);
+        return new EntityManager(this);
     }
 
     /**
      * Creates a new default reactive entity manager without single connection setup.
      */
     protected createReactiveEntityManager() {
-        return new ReactiveEntityManager(this, false);
+        return new ReactiveEntityManager(this);
     }
 
     /**

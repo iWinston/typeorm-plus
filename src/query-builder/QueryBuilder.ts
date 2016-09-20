@@ -6,8 +6,9 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {Driver} from "../driver/Driver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {QueryRunner} from "../driver/QueryRunner";
+import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {OrderByCondition} from "../find-options/OrderByCondition";
 
 /**
  * @internal
@@ -72,7 +73,7 @@ export class QueryBuilder<Entity> {
     private groupBys: string[] = [];
     private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
     private havings: { type: "simple"|"and"|"or", condition: string }[] = [];
-    private orderBys: { sort: string, order: "ASC"|"DESC" }[] = [];
+    private orderBys: OrderByCondition = {};
     private parameters: ObjectLiteral = {};
     private limit: number;
     private offset: number;
@@ -347,12 +348,12 @@ export class QueryBuilder<Entity> {
     }
 
     orderBy(sort: string, order: "ASC"|"DESC" = "ASC"): this {
-        this.orderBys = [{ sort: sort, order: order }];
+        this.orderBys = { [sort]: order };
         return this;
     }
 
     addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC"): this {
-        this.orderBys.push({ sort: sort, order: order });
+        this.orderBys[sort] = order;
         return this;
     }
 
@@ -831,7 +832,7 @@ export class QueryBuilder<Entity> {
         });
 
         if (!options || !options.skipOrderBys)
-            this.orderBys.forEach(orderBy => qb.addOrderBy(orderBy.sort, orderBy.order));
+            Object.keys(this.orderBys).forEach(columnName => qb.addOrderBy(columnName, this.orderBys[columnName]));
 
         Object.keys(this.parameters).forEach(key => qb.setParameter(key, this.parameters[key]));
 
@@ -1142,8 +1143,8 @@ export class QueryBuilder<Entity> {
     protected createOrderByExpression() {
 
         // if user specified a custom order then apply it
-        if (this.orderBys.length)
-            return " ORDER BY " + this.orderBys.map(order => this.replacePropertyNames(order.sort) + " " + order.order).join(", ");
+        if (Object.keys(this.orderBys).length > 0)
+            return " ORDER BY " + Object.keys(this.orderBys).map(columnName => this.replacePropertyNames(columnName) + " " + this.orderBys[columnName]).join(", ");
 
         // if table has a default order then apply it
         const metadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);

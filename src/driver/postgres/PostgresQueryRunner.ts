@@ -1,4 +1,4 @@
-import {QueryRunner} from "../QueryRunner";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {Logger} from "../../logger/Logger";
 import {DatabaseConnection} from "../DatabaseConnection";
@@ -12,7 +12,7 @@ import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
-import {QueryRunnerAlreadyReleasedError} from "../error/QueryRunnerAlreadyReleasedError";
+import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
 /**
@@ -216,7 +216,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
         // if no tables given then no need to proceed
 
-        if (!tableNames)
+        if (!tableNames || !tableNames.length)
             return [];
 
         // load tables, columns, indices and foreign keys

@@ -11,7 +11,7 @@ import {Driver} from "../driver/Driver";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {QueryRunner} from "../driver/QueryRunner";
+import {QueryRunner} from "../query-runner/QueryRunner";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**

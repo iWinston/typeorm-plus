@@ -3,6 +3,8 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 
 /**
  * Repository with additional functions to work with trees.
+ *
+ * @see Repository
  */
 export class TreeRepository<Entity> extends Repository<Entity> {
 
@@ -114,14 +116,13 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      *
     move(entity: Entity, to: Entity): Promise<void> {
         return Promise.resolve();
-    }
-    */
+    } */
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Protected Methods
     // -------------------------------------------------------------------------
 
-    private createRelationMaps(alias: string, scalarResults: any[]): { id: any, parentId: any }[] {
+    protected createRelationMaps(alias: string, scalarResults: any[]): { id: any, parentId: any }[] {
         return scalarResults.map(scalarResult => {
             return {
                 id: scalarResult[alias + "_" + this.metadata.firstPrimaryColumn.name],
@@ -130,7 +131,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         });
     }
     
-    private buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
+    protected buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const childProperty = this.metadata.treeChildrenRelation.propertyName;
         const parentEntityId = entity[this.metadata.firstPrimaryColumn.propertyName];
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
@@ -141,7 +142,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         });
     }
     
-    private buildParentEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
+    protected buildParentEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const parentProperty = this.metadata.treeParentRelation.propertyName;
         const entityId = entity[this.metadata.firstPrimaryColumn.propertyName];
         const parentRelationMap = relationMaps.find(relationMap => relationMap.id === entityId);
