@@ -1,10 +1,10 @@
-
 import {TableType} from "../metadata/types/TableTypes";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {OnDeleteType} from "../metadata/ForeignKeyMetadata";
 import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {ColumnType} from "../metadata/types/ColumnTypes";
 import {RelationType} from "../metadata/types/RelationTypes";
+
 export interface EntitySchema {
 
     /**
@@ -25,7 +25,7 @@ export interface EntitySchema {
     /**
      * Entity table's options.
      */
-    table: {
+    table?: {
 
         /**
          * Table name.
@@ -35,7 +35,7 @@ export interface EntitySchema {
         /**
          * Table type.
          */
-        type: TableType;
+        type?: TableType;
 
         /**
          * Specifies a property name by which queries will perform ordering by default when fetching rows.

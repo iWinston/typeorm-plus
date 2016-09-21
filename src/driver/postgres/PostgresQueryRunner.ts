@@ -215,7 +215,6 @@ export class PostgresQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         // if no tables given then no need to proceed
-
         if (!tableNames || !tableNames.length)
             return [];
 

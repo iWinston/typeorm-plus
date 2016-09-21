@@ -237,24 +237,26 @@ end;`;
             throw new QueryRunnerAlreadyReleasedError();
 
         // if no tables given then no need to proceed
-
         if (!tableNames || !tableNames.length)
             return [];
 
         // load tables, columns, indices and foreign keys
-        const tablesSql      = `SELECT table_name FROM user_tables`;
-        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'`;
+        const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
+        const tablesSql      = `SELECT TABLE_NAME FROM user_tables WHERE TABLE_NAME IN (${tableNamesString})`;
+        const columnsSql     = `SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE, IDENTITY_COLUMN FROM all_tab_cols WHERE TABLE_NAME IN (${tableNamesString})`;
         const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
         const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
         const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        const primaryKeysSql = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+        const constraintsSql = `SELECT cols.table_name, cols.column_name, cols.position, cons.constraint_type, cons.constraint_name
+FROM all_constraints cons, all_cons_columns cols WHERE cols.table_name IN (${tableNamesString}) 
+AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDER BY cols.table_name, cols.position`;
+        const [dbTables, dbColumns, /*dbIndices, dbForeignKeys, dbUniqueKeys, */constraints]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-            this.query(uniqueKeysSql),
-            this.query(primaryKeysSql),
+            // this.query(indicesSql),
+            // this.query(foreignKeysSql),
+            // this.query(uniqueKeysSql),
+            this.query(constraintsSql),
         ]);
 
         // if tables were not found in the db, no need to proceed
@@ -269,43 +271,63 @@ end;`;
             tableSchema.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === tableSchema.name)
                 .map(dbColumn => {
+                    const isPrimary = !!constraints
+                        .find(constraint => {
+                            return  constraint["TABLE_NAME"] === tableSchema.name &&
+                                    constraint["CONSTRAINT_TYPE"] === "P" &&
+                                    constraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
+                        });
+
+                    let columnType = dbColumn["DATA_TYPE"].toLowerCase();
+                    if (dbColumn["DATA_TYPE"].toLowerCase() === "varchar2" && dbColumn["DATA_LENGTH"] !== null) {
+                        columnType += "(" + dbColumn["DATA_LENGTH"] + ")";
+                    } else if (dbColumn["DATA_PRECISION"] !== null && dbColumn["DATA_SCALE"] !== null) {
+                        columnType += "(" + dbColumn["DATA_PRECISION"] + "," + dbColumn["DATA_SCALE"] + ")";
+                    } else if (dbColumn["DATA_SCALE"] !== null) {
+                        columnType += "(0," + dbColumn["DATA_SCALE"] + ")";
+                    } else if (dbColumn["DATA_PRECISION"] !== null) {
+                        columnType += "(" + dbColumn["DATA_PRECISION"] + ",0)";
+                    }
+
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
-                    columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase(); // todo: use normalize type?
+                    columnSchema.type = columnType;
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
-                    columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
-                    columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
-                    columnSchema.comment = dbColumn["COLUMN_COMMENT"];
+                    columnSchema.isNullable = dbColumn["NULLABLE"] !== "N";
+                    columnSchema.isPrimary = isPrimary;
+                    columnSchema.isGenerated = dbColumn["IDENTITY_COLUMN"] === "YES"; // todo
+                    columnSchema.comment = ""; // todo
                     return columnSchema;
                 });
 
             // create primary key schema
-            tableSchema.primaryKeys = primaryKeys
-                .filter(primaryKey => primaryKey["TABLE_NAME"] === tableSchema.name)
-                .map(primaryKey => new PrimaryKeySchema(primaryKey["CONSTRAINT_NAME"], primaryKey["COLUMN_NAME"]));
+            tableSchema.primaryKeys = constraints
+                .filter(constraint => constraint["TABLE_NAME"] === tableSchema.name && constraint["CONSTRAINT_TYPE"] === "P")
+                .map(constraint => new PrimaryKeySchema(constraint["CONSTRAINT_NAME"], constraint["COLUMN_NAME"]));
 
             // create foreign key schemas from the loaded indices
-            tableSchema.foreignKeys = dbForeignKeys
-                .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === tableSchema.name)
-                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
+            tableSchema.foreignKeys = constraints
+                .filter(constraint => constraint["TABLE_NAME"] === tableSchema.name && constraint["CONSTRAINT_TYPE"] === "R")
+                .map(constraint => new ForeignKeySchema(constraint["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
+
+            console.log(tableSchema);
 
             // create index schemas from the loaded indices
-            tableSchema.indices = dbIndices
-                .filter(dbIndex => {
-                    return  dbIndex["table_name"] === tableSchema.name &&
-                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
-                })
-                .map(dbIndex => dbIndex["INDEX_NAME"])
-                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
-                .map(dbIndexName => {
-                    const columnNames = dbIndices
-                        .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
-                        .map(dbIndex => dbIndex["COLUMN_NAME"]);
-
-                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
-                });
+            // tableSchema.indices = dbIndices
+            //     .filter(dbIndex => {
+            //         return  dbIndex["table_name"] === tableSchema.name &&
+            //             (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+            //             (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
+            //     })
+            //     .map(dbIndex => dbIndex["INDEX_NAME"])
+            //     .filter((value, index, self) => self.indexOf(value) === index) // unqiue
+            //     .map(dbIndexName => {
+            //         const columnNames = dbIndices
+            //             .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
+            //             .map(dbIndex => dbIndex["COLUMN_NAME"]);
+            //
+            //         return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
+            //     });
 
             return tableSchema;
         });
@@ -378,9 +400,9 @@ end;`;
             throw new QueryRunnerAlreadyReleasedError();
 
         const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "\"" + primaryKey.columnName + "\"");
-        await this.query(`ALTER TABLE ${dbTable.name} DROP PRIMARY KEY`);
+        await this.query(`ALTER TABLE "${dbTable.name}" DROP PRIMARY KEY`);
         if (primaryColumnNames.length > 0)
-            await this.query(`ALTER TABLE ${dbTable.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+            await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
 
     /**
@@ -393,7 +415,7 @@ end;`;
         const promises = foreignKeys.map(foreignKey => {
             const columnNames = foreignKey.columnNames.map(column => "\"" + column + "\"").join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "\"" + column + "\"").join(",");
-            let sql =   `ALTER TABLE ${dbTable.name} ADD CONSTRAINT "${foreignKey.name}" ` +
+            let sql = `ALTER TABLE "${dbTable.name}" ADD CONSTRAINT "${foreignKey.name}" ` +
                 `FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
@@ -411,7 +433,7 @@ end;`;
             throw new QueryRunnerAlreadyReleasedError();
 
         const promises = foreignKeys.map(foreignKey => {
-            const sql = `ALTER TABLE "${tableSchema.name}" DROP FOREIGN KEY "${foreignKey.name}"`;
+            const sql = `ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "${foreignKey.name}"`;
             return this.query(sql);
         });
 
@@ -454,14 +476,16 @@ end;`;
                 return "number(1)";
             case "integer":
             case "int":
+                // if (column.isGenerated)
+                //     return `number(22)`;
                 if (column.precision && column.scale)
                     return `number(${column.precision},${column.scale})`;
                 if (column.precision)
-                    return `number(${column.precision})`;
+                    return `number(${column.precision},0)`;
                 if (column.scale)
-                    return `number(${column.scale})`;
+                    return `number(0,${column.scale})`;
 
-                return "number(10)";
+                return "number(10,0)";
             case "smallint":
                 return "number(5)";
             case "bigint":
@@ -476,10 +500,10 @@ end;`;
                     return `decimal(${column.precision},${column.scale})`;
 
                 } else if (column.scale) {
-                    return `decimal(${column.scale})`;
+                    return `decimal(0,${column.scale})`;
 
                 } else if (column.precision) {
-                    return `decimal(${column.precision})`;
+                    return `decimal(${column.precision},0)`;
 
                 } else {
                     return "decimal";
