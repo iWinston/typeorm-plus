@@ -10,7 +10,7 @@ import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
  * This column creates an integer PRIMARY COLUMN with generated set to true.
  * This column creates is an alias for @PrimaryColumn("int", { generated: true }).
  */
-export function GeneratedPrimaryColumn(options?: ColumnOptions): Function {
+export function PrimaryGeneratedColumn(options?: ColumnOptions): Function {
     return function (object: Object, propertyName: string) {
 
         const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));

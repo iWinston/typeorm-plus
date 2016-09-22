@@ -1,4 +1,4 @@
-import {GeneratedPrimaryColumn, Column, Table, OneToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Table, OneToOne} from "../../../src/index";
 import {PostDetails} from "./PostDetails";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
@@ -10,7 +10,7 @@ import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 @Table("sample2_post")
 export class Post {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

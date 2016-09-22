@@ -1,9 +1,9 @@
-import {GeneratedPrimaryColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
 
 @Table("sample19_post_metadata")
 export class PostMetadata {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column("text")

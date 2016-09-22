@@ -1,11 +1,11 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {GeneratedPrimaryColumn} from "../../../../../src/decorator/columns/GeneratedPrimaryColumn";
+import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 
 @Table()
 export class Post {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

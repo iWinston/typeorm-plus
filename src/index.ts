@@ -16,7 +16,7 @@ export * from "./container";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";
 export * from "./decorator/columns/DiscriminatorColumn";
-export * from "./decorator/columns/GeneratedPrimaryColumn";
+export * from "./decorator/columns/PrimaryGeneratedColumn";
 export * from "./decorator/columns/PrimaryColumn";
 export * from "./decorator/columns/UpdateDateColumn";
 export * from "./decorator/columns/VersionColumn";
@@ -110,7 +110,7 @@ export function getConnectionManager(): ConnectionManager {
  * it will try to create connection from environment variables.
  * There are several environment variables you can set:
  *
- * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+ * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
  * - TYPEORM_URL - database connection url. Should be a string.
  * - TYPEORM_HOST - database host. Should be a string.
  * - TYPEORM_PORT - database access port. Should be a number.
@@ -161,7 +161,7 @@ export function createConnection(optionsOrConnectionNameFromConfig?: ConnectionO
  * it will try to create connection from environment variables.
  * There are several environment variables you can set:
  *
- * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+ * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
  * - TYPEORM_URL - database connection url. Should be a string.
  * - TYPEORM_HOST - database host. Should be a string.
  * - TYPEORM_PORT - database access port. Should be a number.

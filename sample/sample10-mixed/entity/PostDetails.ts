@@ -1,4 +1,4 @@
-import {GeneratedPrimaryColumn, Column, Table, OneToOne, OneToMany, ManyToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Table, OneToOne, OneToMany, ManyToOne} from "../../../src/index";
 import {Post} from "./Post";
 import {Chapter} from "./Chapter";
 import {Category} from "./Category";
@@ -6,7 +6,7 @@ import {Category} from "./Category";
 @Table("sample10_post_details")
 export class PostDetails {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

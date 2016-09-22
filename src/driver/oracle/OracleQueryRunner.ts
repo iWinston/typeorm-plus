@@ -161,13 +161,7 @@ export class OracleQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
         const insertSql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         if (generatedColumn) {
-            const sql2 = `
-declare lastId number; 
-begin ${insertSql} returning "id" into lastId;
-    dbms_output.enable;
-    dbms_output.put_line(lastId);
-    dbms_output.get_line(:ln, :st);
-end;`;
+            const sql2 = `declare lastId number; begin ${insertSql} returning "id" into lastId; dbms_output.enable; dbms_output.put_line(lastId); dbms_output.get_line(:ln, :st); end;`;
             const saveResult = await this.query(sql2, parameters.concat([
                 { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.STRING, maxSize: 32767 },
                 { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.NUMBER }
@@ -286,7 +280,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                     } else if (dbColumn["DATA_SCALE"] !== null) {
                         columnType += "(0," + dbColumn["DATA_SCALE"] + ")";
                     } else if (dbColumn["DATA_PRECISION"] !== null) {
-                        columnType += "(" + dbColumn["DATA_PRECISION"] + ",0)";
+                        columnType += "(" + dbColumn["DATA_PRECISION"] + ")";
                     }
 
                     const columnSchema = new ColumnSchema();
@@ -340,7 +334,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
         if (primaryKeyColumns.length > 0)
@@ -357,7 +351,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             throw new QueryRunnerAlreadyReleasedError();
 
         const queries = columns.map(column => {
-            const sql = `ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(column, false)}`;
+            const sql = `ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(column)}`;
             return this.query(sql);
         });
         await Promise.all(queries);
@@ -370,9 +364,39 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const updatePromises = changedColumns.map(changedColumn => {
-            const sql = `ALTER TABLE "${tableSchema.name}" CHANGE "${changedColumn.oldColumn.name}" ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
-            return this.query(sql);
+        const updatePromises = changedColumns.map(async changedColumn => {
+
+            if (changedColumn.newColumn.isGenerated !== changedColumn.oldColumn.isGenerated) {
+
+                if (changedColumn.newColumn.isGenerated) {
+                    if (tableSchema.primaryKeys.length > 0 && changedColumn.oldColumn.isPrimary) {
+                        console.log(tableSchema.primaryKeys);
+                        const dropPrimarySql = `ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "${tableSchema.primaryKeys[0].name}"`;
+                        await this.query(dropPrimarySql);
+                    }
+
+                    // since modifying identity column is not supported yet, we need to recreate this column
+                    const dropSql = `ALTER TABLE "${tableSchema.name}" DROP COLUMN "${changedColumn.newColumn.name}"`;
+                    await this.query(dropSql);
+
+                    const createSql = `ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(changedColumn.newColumn)}`;
+                    await this.query(createSql);
+
+                } else {
+                    const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${changedColumn.newColumn.name}" DROP IDENTITY`;
+                    await this.query(sql);
+
+                }
+            }
+
+            if (changedColumn.newColumn.isNullable !== changedColumn.oldColumn.isNullable) {
+                const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${changedColumn.newColumn.name}" ${changedColumn.newColumn.type} ${changedColumn.newColumn.isNullable ? "NULL" : "NOT NULL"}`;
+                await this.query(sql);
+
+            } else if (changedColumn.newColumn.type !== changedColumn.oldColumn.type) { // elseif is used because
+                const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${changedColumn.newColumn.name}" ${changedColumn.newColumn.type}`;
+                await this.query(sql);
+            }
         });
 
         await Promise.all(updatePromises);
@@ -386,7 +410,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             throw new QueryRunnerAlreadyReleasedError();
 
         const dropPromises = columns.map(column => {
-            return this.query(`ALTER TABLE "${dbTable.name}" DROP "${column.name}"`);
+            return this.query(`ALTER TABLE "${dbTable.name}" DROP COLUMN "${column.name}"`);
         });
 
         await Promise.all(dropPromises);
@@ -400,7 +424,9 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             throw new QueryRunnerAlreadyReleasedError();
 
         const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "\"" + primaryKey.columnName + "\"");
-        await this.query(`ALTER TABLE "${dbTable.name}" DROP PRIMARY KEY`);
+        console.log(dbTable.primaryKeys);
+        if (dbTable.primaryKeys.length > 0 && dbTable.primaryKeys[0].name)
+            await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKeys[0].name}"`);
         if (primaryColumnNames.length > 0)
             await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
@@ -491,10 +517,17 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             case "bigint":
                 return "number(20)";
             case "float":
-                return "float";
+                if (column.precision && column.scale)
+                    return `float(${column.precision},${column.scale})`;
+                if (column.precision)
+                    return `float(${column.precision},0)`;
+                if (column.scale)
+                    return `float(0,${column.scale})`;
+
+                return `float(126)`;
             case "double":
             case "number":
-                return "double precision";
+                return "float(126)";
             case "decimal":
                 if (column.precision && column.scale) {
                     return `decimal(${column.precision},${column.scale})`;
@@ -503,7 +536,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                     return `decimal(0,${column.scale})`;
 
                 } else if (column.precision) {
-                    return `decimal(${column.precision},0)`;
+                    return `decimal(${column.precision})`;
 
                 } else {
                     return "decimal";
@@ -544,11 +577,11 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
+    protected buildCreateColumnSql(column: ColumnSchema) {
         let c = `"${column.name}" ` + column.type;
         if (column.isNullable !== true && !column.isGenerated) // NOT NULL is not supported with GENERATED
             c += " NOT NULL";
-        // if (column.isPrimary === true && !skipPrimary)
+        // if (column.isPrimary === true && addPrimary)
         //     c += " PRIMARY KEY";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " GENERATED BY DEFAULT ON NULL AS IDENTITY";

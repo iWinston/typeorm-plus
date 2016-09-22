@@ -1,4 +1,4 @@
-import {GeneratedPrimaryColumn, Column, Table, ManyToMany} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Table, ManyToMany} from "../../../src/index";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {OneToOne} from "../../../src/decorator/relations/OneToOne";
@@ -8,7 +8,7 @@ import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 @Table("sample8_category")
 export class Category {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

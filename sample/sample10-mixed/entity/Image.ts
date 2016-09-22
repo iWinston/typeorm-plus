@@ -1,4 +1,4 @@
-import {GeneratedPrimaryColumn, Column, Table, ManyToOne, OneToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Table, ManyToOne, OneToOne} from "../../../src/index";
 import {Post} from "./Post";
 import {ImageDetails} from "./ImageDetails";
 import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
@@ -6,7 +6,7 @@ import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 @Table("sample10_image")
 export class Image {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

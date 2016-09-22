@@ -6,7 +6,7 @@ import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {ConnectionNotFoundError} from "../../../src/connection/error/ConnectionNotFoundError";
-import {GeneratedPrimaryColumn} from "../../../src/decorator/columns/GeneratedPrimaryColumn";
+import {PrimaryGeneratedColumn} from "../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../src/decorator/columns/Column";
 import {Table} from "../../../src/decorator/tables/Table";
 
@@ -15,7 +15,7 @@ describe("ConnectionManager", () => {
     @Table()
     class Post {
 
-        @GeneratedPrimaryColumn()
+        @PrimaryGeneratedColumn()
         id: number;
 
         @Column()

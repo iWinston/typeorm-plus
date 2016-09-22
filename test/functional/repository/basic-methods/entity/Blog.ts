@@ -1,5 +1,5 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
-import {GeneratedPrimaryColumn} from "../../../../../src/decorator/columns/GeneratedPrimaryColumn";
+import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Category} from "./Category";
 import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
@@ -8,7 +8,7 @@ import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
 @Table()
 export class Blog {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

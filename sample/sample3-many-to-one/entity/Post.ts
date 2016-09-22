@@ -1,4 +1,4 @@
-import {GeneratedPrimaryColumn, Column, Table, ManyToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Table, ManyToOne} from "../../../src/index";
 import {PostDetails} from "./PostDetails";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
@@ -9,7 +9,7 @@ import {PostMetadata} from "./PostMetadata";
 @Table("sample3_post")
 export class Post {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

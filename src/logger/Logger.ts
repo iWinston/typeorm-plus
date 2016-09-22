@@ -22,7 +22,7 @@ export class Logger {
     logQuery(query: string, parameters?: any[]) {
         if (this.options.logQueries ||
             process.env.LOGGER_CLI_SCHEMA_SYNC)
-            this.log("log", `executing query: ${query}${parameters && parameters.length ? "; PARAMETERS: " + JSON.stringify(parameters) : ""}`);
+            this.log("log", `executing query: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + JSON.stringify(parameters) : ""}`);
     }
 
     /**
@@ -32,7 +32,7 @@ export class Logger {
         if (this.options.logQueries ||
             this.options.logOnlyFailedQueries ||
             process.env.LOGGER_CLI_SCHEMA_SYNC)
-            this.log("error", `query failed: ${query}${parameters && parameters.length ? "; PARAMETERS: " + JSON.stringify(parameters) : ""}`);
+            this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + JSON.stringify(parameters) : ""}`);
     }
 
     /**

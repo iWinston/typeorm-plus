@@ -32,8 +32,8 @@ import {Logger} from "../logger/Logger";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 
 /**
- * A single connection instance to the database. 
- * Each connection has its own entity manager, repositories, broadcaster and entity metadatas.
+ * Connection is a single database connection to a specific database of a database management system.
+ * You can have multiple connections to multiple databases in your application.
  */
 export class Connection {
 
@@ -408,7 +408,7 @@ export class Connection {
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it, to release connection back to pool.
      */
-    createEntityManagerWithSingleDatabaseConnection() {
+    createEntityManagerWithSingleDatabaseConnection(): EntityManager {
         const queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
         return new EntityManager(this, queryRunnerProvider);
     }

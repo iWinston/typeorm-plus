@@ -3,7 +3,9 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
 
 /**
- * Connection's options.
+ * ConnectionOptions is an interface with settings and options for specific connection.
+ * Options contain database and other connection-related settings.
+ * Consumer must provide connection options for each of your connections.
  */
 export interface ConnectionOptions {
 
@@ -26,28 +28,28 @@ export interface ConnectionOptions {
     /**
      * Entities to be loaded for this connection.
      * Accepts both entity classes and directories where from entities need to be loaded.
-     * Directories supports glob patterns.
+     * Directories support glob patterns.
      */
     readonly entities?: Function[]|string[];
 
     /**
      * Subscribers to be loaded for this connection.
      * Accepts both subscriber classes and directories where from subscribers need to be loaded.
-     * Directories supports glob patterns.
+     * Directories support glob patterns.
      */
     readonly subscribers?: Function[]|string[];
 
     /**
      * Naming strategies to be loaded for this connection.
      * Accepts both naming strategy classes and directories where from naming strategies need to be loaded.
-     * Directories supports glob patterns.
+     * Directories support glob patterns.
      */
     readonly namingStrategies?: Function[]|string[];
 
     /**
      * Entity schemas to be loaded for this connection.
      * Accepts both entity schema classes and directories where from entity schemas need to be loaded.
-     * Directories supports glob patterns.
+     * Directories support glob patterns.
      */
     readonly entitySchemas?: EntitySchema[]|string[];
 

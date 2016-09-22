@@ -4,7 +4,7 @@
 export interface DriverOptions {
 
     /**
-     * Database type.
+     * Database type. This value is required.
      */
     readonly type: "mysql"|"mysql2"|"postgres"|"mariadb"|"sqlite"|"oracle"|"mssql";
 

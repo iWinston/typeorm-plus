@@ -1,10 +1,10 @@
-import {GeneratedPrimaryColumn, Column, Table, ManyToMany} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Table, ManyToMany} from "../../../src/index";
 import {Post} from "./Post";
 
 @Table("sample4_post_metadata")
 export class PostMetadata {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

@@ -1,9 +1,10 @@
-import {GeneratedPrimaryColumn, Column, Table} from "../../../src/index";
+import {Column, Table} from "../../../src/index";
+import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 
-@Table("sample1_post")
+@Table("sample01_post")
 export class Post {
 
-    @GeneratedPrimaryColumn()
+    @PrimaryColumn("int")
     id: number;
 
     @Column()
@@ -12,7 +13,9 @@ export class Post {
     @Column()
     text: string;
 
-    @Column()
+    @Column("int", {
+        nullable: false
+    })
     likesCount: number;
 
 }

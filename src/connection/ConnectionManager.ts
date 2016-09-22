@@ -16,8 +16,8 @@ import {OrmUtils} from "../util/OrmUtils";
 import {CannotDetermineConnectionOptionsError} from "./error/CannotDetermineConnectionOptionsError";
 
 /**
- * Connection manager holds all connections made to the databases
- * and provides functions to easily create new connections.
+ * ConnectionManager is used to store and manage all these different connections.
+ * It also provides useful factory methods to simplify connection creation.
  */
 export class ConnectionManager {
 
@@ -118,7 +118,7 @@ export class ConnectionManager {
      * it will try to create connection from environment variables.
      * There are several environment variables you can set:
      *
-     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
      * - TYPEORM_URL - database connection url. Should be a string.
      * - TYPEORM_HOST - database host. Should be a string.
      * - TYPEORM_PORT - database access port. Should be a number.
@@ -144,7 +144,7 @@ export class ConnectionManager {
     /**
      * Creates connection from the given connection options and registers it in the manager.
      */
-    async createAndConnect(options?: ConnectionOptions): Promise<Connection>;
+    async createAndConnect(options: ConnectionOptions): Promise<Connection>;
 
     /**
      * Creates connection with the given connection name from the ormconfig.json file and registers it in the manager.
@@ -186,7 +186,7 @@ export class ConnectionManager {
      * it will try to create connection from environment variables.
      * There are several environment variables you can set:
      *
-     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
      * - TYPEORM_URL - database connection url. Should be a string.
      * - TYPEORM_HOST - database host. Should be a string.
      * - TYPEORM_PORT - database access port. Should be a number.
@@ -221,7 +221,7 @@ export class ConnectionManager {
     async createAndConnectToAll(ormConfigPath?: string): Promise<Connection[]>;
 
     /**
-     * Creates connection and and registers them in the manager.
+     * Creates connections and and registers them in the manager.
      */
     async createAndConnectToAll(optionsOrOrmConfigFilePath?: ConnectionOptions[]|string): Promise<Connection[]> {
 

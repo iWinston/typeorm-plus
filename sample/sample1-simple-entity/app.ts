@@ -29,7 +29,7 @@ const options: ConnectionOptions = {
         logQueries: true,
         logSchemaCreation: true
     },
-    autoSchemaSync: false,
+    autoSchemaSync: true,
     entities: [Post]
 };
 /*const options: CreateConnectionOptions = {
