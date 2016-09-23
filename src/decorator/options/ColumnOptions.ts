@@ -11,24 +11,26 @@ export interface ColumnOptions {
     readonly type?: ColumnType;
 
     /**
-     * Column name.
+     * Column name in the database.
      */
     readonly name?: string;
 
     /**
-     * Column type's length. For example type = "string" and length = 100 means that ORM will create a column with
-     * type varchar(100).
+     * Column type's length. Used only on some column types.
+     * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
      */
     readonly length?: string;
 
     /**
-     * Indicates if this column is a PRIMARY.
+     * Indicates if this column is PRIMARY.
      * Same can be achieved if @PrimaryColumn decorator will be used.
      */
     readonly primary?: boolean;
 
     /**
-     * Specifies if this column will use AUTO_INCREMENT or not (e.g. generated number).
+     * Specifies if this column will use auto increment (sequence, generated identity).
+     * Note that only one column in entity can be marked as generated, and it must be a primary column.
+     * (todo: create validation logic for this condition)
      */
     readonly generated?: boolean;
 
@@ -41,12 +43,6 @@ export interface ColumnOptions {
      * Indicates if column's value can be set to NULL.
      */
     nullable?: boolean;
-
-    /**
-     * Extra column definition. Should be used only in emergency situations. Note that if you'll use this property
-     * auto schema generation will not work properly anymore.
-     */
-    readonly columnDefinition?: string;
 
     /**
      * Column comment.
@@ -69,11 +65,6 @@ export interface ColumnOptions {
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     readonly scale?: number;
-
-    /**
-     * Column collation. Note that not all databases support it.
-     */
-    readonly collation?: string; // todo: looks like this is not used
 
     /**
      * Indicates if this date column will contain a timezone.

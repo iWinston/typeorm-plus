@@ -85,12 +85,6 @@ export class ColumnMetadata {
     readonly isNullable: boolean = false;
 
     /**
-     * Extra sql definition for the given column. 
-     * Can be used to make temporary tweaks. Not recommended to use.
-     */
-    readonly columnDefinition: string = "";
-
-    /**
      * Column comment.
      */
     readonly comment: string = "";
@@ -111,11 +105,6 @@ export class ColumnMetadata {
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     readonly scale: number;
-
-    /**
-     * Column collation. Note that not all databases support it.
-     */
-    readonly collation: string;
 
     /**
      * Indicates if this date column will contain a timezone.
@@ -160,8 +149,6 @@ export class ColumnMetadata {
             this.isUnique = args.options.unique;
         if (args.options.nullable)
             this.isNullable = args.options.nullable;
-        if (args.options.columnDefinition)
-            this.columnDefinition = args.options.columnDefinition;
         if (args.options.comment)
             this.comment = args.options.comment;
         if (args.options.default)
@@ -170,8 +157,6 @@ export class ColumnMetadata {
             this.scale = args.options.scale;
         if (args.options.precision)
             this.precision = args.options.precision;
-        if (args.options.collation)
-            this.collation = args.options.collation;
         if (args.options.timezone)
             this.timezone = args.options.timezone;
     }

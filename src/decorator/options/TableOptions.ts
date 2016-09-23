@@ -12,6 +12,8 @@ export interface TableOptions {
 
     /**
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
+     * Note that it used only during table creation.
+     * If you update this value and table is already created, it will not change table's engine type.
      */
     readonly engine?: string;
     

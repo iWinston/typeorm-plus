@@ -3,8 +3,7 @@ import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 import {TableOptions} from "../options/TableOptions";
 
 /**
- * This decorator is used to mark classes that will be a tables. Database schema will be created for all classes
- * decorated with it, and Repository can be retrieved and used for it.
+ * Used on a tables that stores its children in a tree using closure deisgn pattern.
  */
 export function ClosureTable(name?: string, options?: TableOptions) {
     return function (target: Function) {

@@ -89,12 +89,10 @@ export class EntityMetadataBuilder {
                         generated: columnSchema.generated,
                         unique: columnSchema.unique,
                         nullable: columnSchema.nullable,
-                        columnDefinition: columnSchema.columnDefinition,
                         comment: columnSchema.comment,
                         default: columnSchema.default,
                         precision: columnSchema.precision,
-                        scale: columnSchema.scale,
-                        collation: columnSchema.collation
+                        scale: columnSchema.scale
                     }
                 };
                 
