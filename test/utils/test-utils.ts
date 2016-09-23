@@ -84,7 +84,7 @@ export async function setupTestingConnections(options?: TestingConnectionOptions
         entities: options && options.entities ? options.entities : [],
         entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
         logging: {
-            // logQueries: true, // uncomment for debugging
+            logQueries: true, // uncomment for debugging
             logOnlyFailedQueries: true,
             logFailedQueryError: true
         },

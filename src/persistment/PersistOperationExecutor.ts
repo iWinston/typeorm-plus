@@ -353,7 +353,7 @@ export class PersistOperationExecutor {
         if (!operation.insertOperation.entityId)
             throw new Error(`insert operation does not have entity id`);
 
-        let tableName: string, relationName: string, relationId: ObjectLiteral, idColumn: string, id: any, updateMap: ObjectLiteral;
+        let tableName: string, relationName: string, relationId: ObjectLiteral, idColumn: string, id: any, updateMap: ObjectLiteral|undefined;
         const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
 
         if (operation.updatedRelation.isOneToMany || operation.updatedRelation.isOneToOneNotOwner) {
@@ -370,7 +370,10 @@ export class PersistOperationExecutor {
 
         } else {
             const metadata = this.entityMetadatas.findByTarget(operation.entityTarget);
-            const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null; // todo: use join column instead of primary column here
+            let idInInserts: ObjectLiteral|undefined = undefined;
+            if (relatedInsertOperation && relatedInsertOperation.entityId) {
+                idInInserts = { [metadata.firstPrimaryColumn.propertyName]: relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] };
+            } // todo: use join column instead of primary column here
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.name;
             relationId = operation.insertOperation.entityId[metadata.firstPrimaryColumn.propertyName]; // todo: make sure entityId is always a map
@@ -378,6 +381,9 @@ export class PersistOperationExecutor {
             // id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
             updateMap = metadata.getEntityIdMap(operation.targetEntity) || idInInserts; // todo: make sure idInInserts always object even when id is single!!!
         }
+        if (!updateMap)
+            throw new Error(`Cannot execute update by relation operation, because cannot find update criteria`);
+
         return this.queryRunner.update(tableName, { [relationName]: relationId }, updateMap);
     }
 
