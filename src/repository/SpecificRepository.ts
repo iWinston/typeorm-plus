@@ -373,7 +373,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Removes entity with the given id.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async removeById(id: any) {
+    async removeById(id: any): Promise<void> {
         const alias = this.metadata.table.name;
         const parameters: ObjectLiteral = {};
         let condition = "";
@@ -399,7 +399,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Removes all entities with the given ids.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async removeByIds(ids: any[]) {
+    async removeByIds(ids: any[]): Promise<void> {
         const alias = this.metadata.table.name;
         const parameters: ObjectLiteral = {};
         let condition = "";

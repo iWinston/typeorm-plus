@@ -45,9 +45,7 @@ export class RepositoryAggregator {
         this.metadata = metadata;
 
         if (metadata.table.isClosure) {
-            this.treeRepository = repositoryFactory.createTreeRepository(connection, metadata, queryRunnerProvider);
-            this.repository = this.treeRepository;
-
+            this.repository = this.treeRepository = repositoryFactory.createTreeRepository(connection, metadata, queryRunnerProvider);
         } else {
             this.repository = repositoryFactory.createRepository(connection, metadata, queryRunnerProvider);
         }

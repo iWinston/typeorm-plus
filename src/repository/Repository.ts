@@ -3,14 +3,11 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {EntityPersistOperationBuilder} from "../persistment/EntityPersistOperationsBuilder";
-import {PersistOperationExecutor} from "../persistment/PersistOperationExecutor";
-import {EntityWithId} from "../persistment/operation/PersistOperation";
 import {FindOptions} from "../find-options/FindOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {QueryRunner} from "../query-runner/QueryRunner";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {EntityPersister} from "../persistment/EntityPersister";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -154,30 +151,12 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            const allPersistedEntities = await this.extractObjectsById(entityOrEntities, this.metadata);
-            let loadedDbEntity: Entity|null = null;
+            const entityPersister = new EntityPersister<Entity>(this.connection, this.metadata, queryRunner);
             if (this.hasId(entityOrEntities)) {
-                const queryBuilder = new QueryBuilder<Entity>(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
-                    .select(this.metadata.table.name)
-                    .from(this.metadata.target, this.metadata.table.name);
-                const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
-                loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
+                return await entityPersister.update(entityOrEntities); // await is needed here because we are using finally
+            } else {
+                return await entityPersister.insert(entityOrEntities); // await is needed here because we are using finally
             }
-
-            let entityWithIds: EntityWithId[] = [];
-            if (loadedDbEntity)
-                entityWithIds = await this.extractObjectsById(loadedDbEntity, this.metadata);
-
-            // need to find db entities that were not loaded by initialize method
-            const allDbEntities = await this.findNotLoadedIds(queryRunner, entityWithIds, allPersistedEntities);
-            const persistedEntity = new EntityWithId(this.metadata, entityOrEntities);
-            const dbEntity = new EntityWithId(this.metadata, loadedDbEntity!); // todo: find if this can be executed if loadedDbEntity is empty
-            const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-            const persistOperation = entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
-
-            const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
-            await persistOperationExecutor.executePersistOperation(persistOperation);
-            return entityOrEntities;
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
@@ -198,32 +177,16 @@ export class Repository<Entity extends ObjectLiteral> {
      * Removes one or many given entities.
      */
     async remove(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
+
         // if multiple entities given then go throw all of them and save them
-        if (entityOrEntities instanceof Array) // todo: make it in transaction, like in persist
+        if (entityOrEntities instanceof Array)
             return Promise.all(entityOrEntities.map(entity => this.remove(entity)));
 
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner) // todo: better to pass connection?
-                .select(this.metadata.table.name)
-                .from(this.metadata.target, this.metadata.table.name);
-            const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
-            const dbEntity = await plainObjectToDatabaseEntityTransformer.transform(entityOrEntities, this.metadata, queryBuilder);
-
-            this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entityOrEntities[primaryColumn.name] = undefined);
-            const [dbEntities, allPersistedEntities] = await Promise.all([
-                this.extractObjectsById(dbEntity, this.metadata),
-                this.extractObjectsById(entityOrEntities, this.metadata)
-            ]);
-            const entityWithId = new EntityWithId(this.metadata, entityOrEntities);
-            const dbEntityWithId = new EntityWithId(this.metadata, dbEntity);
-
-            const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-            const persistOperation = entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
-            const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner); // todo: better to pass connection?
-            await persistOperationExecutor.executePersistOperation(persistOperation);
-            return entityOrEntities;
+            const entityPersister = new EntityPersister<Entity>(this.connection, this.metadata, queryRunner);
+            return await entityPersister.remove(entityOrEntities); // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
@@ -344,7 +307,7 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            return queryRunner.query(query);
+            return await queryRunner.query(query); // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
@@ -381,15 +344,22 @@ export class Repository<Entity extends ObjectLiteral> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions) {
-        const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : <FindOptions> options;
+    /**
+     * Creates a query builder from the given conditions or find options.
+     * Used to create a query builder for find* methods.
+     */
+    protected createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): QueryBuilder<Entity> {
+        const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : options as FindOptions;
         const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
 
         const alias = findOptions ? findOptions.alias : this.metadata.table.name;
         const qb = this.createQueryBuilder(alias);
-        if (findOptions) {
+
+        // if find options are given then apply them to query builder
+        if (findOptions)
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
-        }
+
+        // if conditions are given then apply them to query builder
         if (conditions) {
             Object.keys(conditions).forEach(key => {
                 const name = key.indexOf(".") === -1 ? alias + "." + key : key;
@@ -397,86 +367,8 @@ export class Repository<Entity extends ObjectLiteral> {
             });
             qb.addParameters(conditions);
         }
+
         return qb;
-    }
-
-    /**
-     * When ORM loads dbEntity it uses joins to load all entity dependencies. However when dbEntity is newly persisted
-     * to the db, but uses already exist in the db relational entities, those entities cannot be loaded, and will
-     * absent in dbEntities. To fix it, we need to go throw all persistedEntities we have, find out those which have
-     * ids, check if we did not load them yet and try to load them. This algorithm will make sure that all dbEntities
-     * are loaded. Further it will help insert operations to work correctly.
-     */
-    protected findNotLoadedIds(queryRunner: QueryRunner, dbEntities: EntityWithId[], persistedEntities: EntityWithId[]): Promise<EntityWithId[]> {
-        const missingDbEntitiesLoad = persistedEntities
-            .filter(entityWithId => entityWithId.id !== null && entityWithId.id !== undefined) // todo: not sure if this condition will work
-            .filter(entityWithId => !dbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.compareId(entityWithId.id!)))
-            .map(entityWithId => {
-                const metadata = this.connection.entityMetadatas.findByTarget(entityWithId.entityTarget);
-                const alias = (entityWithId.entityTarget as any).name;
-                const qb = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner)
-                    .select(alias)
-                    .from(entityWithId.entityTarget, alias);
-
-                const parameters: ObjectLiteral = {};
-                let condition = "";
-
-                if (this.metadata.hasParentIdColumn) {
-                    condition = this.metadata.parentIdColumns.map(parentIdColumn => {
-                        parameters[parentIdColumn.propertyName] = entityWithId.id![parentIdColumn.propertyName];
-                        return alias + "." + parentIdColumn.propertyName + "=:" + parentIdColumn.propertyName;
-                    }).join(" AND ");
-                } else {
-                    condition = this.metadata.primaryColumns.map(primaryColumn => {
-                        parameters[primaryColumn.propertyName] = entityWithId.id![primaryColumn.propertyName];
-                        return alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName;
-                    }).join(" AND ");
-                }
-
-                const qbResult = qb.where(condition, parameters).getSingleResult();
-                // const repository = this.connection.getRepository(entityWithId.entityTarget as any); // todo: fix type
-                return qbResult.then(loadedEntity => {
-                    if (!loadedEntity) return undefined;
-
-                    return new EntityWithId(metadata, loadedEntity);
-                });
-            });
-
-        return Promise.all<EntityWithId>(missingDbEntitiesLoad).then(missingDbEntities => {
-            return dbEntities.concat(missingDbEntities.filter(dbEntity => !!dbEntity));
-        });
-    }
-
-    /**
-     * Extracts unique objects from given entity and all its downside relations.
-     */
-    protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: EntityWithId[] = []): Promise<EntityWithId[]> { // todo: why promises used there?
-        const promises = metadata.relations.map(relation => {
-            const relMetadata = relation.inverseEntityMetadata;
-
-            const value = relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
-            if (!value)
-                return undefined;
-            
-            if (value instanceof Array) {
-                const subPromises = value.map((subEntity: any) => {
-                    return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
-                });
-                return Promise.all(subPromises);
-                
-            } else {
-                return this.extractObjectsById(value, relMetadata, entityWithIds);
-            }
-        });
-        
-        return Promise.all<any>(promises.filter(result => !!result)).then(() => {
-            if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
-                const entityWithId = new EntityWithId(metadata, entity);
-                entityWithIds.push(entityWithId);
-            }
-
-            return entityWithIds;
-        });
     }
 
 }

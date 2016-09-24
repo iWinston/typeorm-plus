@@ -17,21 +17,21 @@ export class RepositoryFactory {
     /**
      * Creates a regular repository.
      */
-    createRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider) {
+    createRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): Repository<any> {
         return new Repository<any>(connection, metadata, queryRunnerProvider);
     }
 
     /**
      * Creates a tree repository.
      */
-    createTreeRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider) {
+    createTreeRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): TreeRepository<any> {
         return new TreeRepository<any>(connection, metadata, queryRunnerProvider);
     }
 
     /**
      * Creates a specific repository.
      */
-    createSpecificRepository(connection: Connection, metadata: EntityMetadata, repository: Repository<any>, queryRunnerProvider?: QueryRunnerProvider) {
+    createSpecificRepository(connection: Connection, metadata: EntityMetadata, repository: Repository<any>, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<any> {
         return new SpecificRepository(connection, metadata, repository, queryRunnerProvider);
     }
 

@@ -247,7 +247,7 @@ export class EntityManager extends BaseEntityManager {
         const queryRunner = await queryRunnerProvider.provide();
 
         try {
-            return queryRunner.query(query);
+            return await queryRunner.query(query);  // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);

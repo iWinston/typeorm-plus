@@ -455,7 +455,7 @@ export class QueryBuilder<Entity> {
 
         const [sql, parameters] = this.getSqlWithParameters();
         try {
-            return queryRunner.query(sql, parameters);
+            return await queryRunner.query(sql, parameters);  // await is needed here because we are using finally
 
         } finally {
             if (ownQueryRunner)
