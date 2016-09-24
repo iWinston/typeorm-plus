@@ -1,19 +1,15 @@
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-import {Broadcaster} from "../subscriber/Broadcaster";
-import {Driver} from "../driver/Driver";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {Connection} from "../connection/Connection";
 
 export class LazyRelationsWrapper {
     
-    constructor(private driver: Driver,
-                private entityMetadatas: EntityMetadataCollection,
-                private broadcaster: Broadcaster) {
+    constructor(private connection: Connection) {
         
     }
     
     wrap(object: Object, relation: RelationMetadata) {
-        const lazyRelationsWrapper = this;
+        const connection = this.connection;
         const index = "__" + relation.propertyName + "__";
         const loadIndex = "__load_" + relation.propertyName + "__";
         const resolveIndex = "__has_" + relation.propertyName + "__";
@@ -25,7 +21,7 @@ export class LazyRelationsWrapper {
                 if (this[loadIndex])
                     return this[loadIndex];
 
-                const qb = new QueryBuilder(lazyRelationsWrapper.driver, lazyRelationsWrapper.entityMetadatas, lazyRelationsWrapper.broadcaster);
+                const qb = new QueryBuilder(connection);
                 if (relation.isManyToMany || relation.isOneToMany) {
 
                     if (relation.hasInverseSide) { // if we don't have inverse side then we can't select and join by relation from inverse side

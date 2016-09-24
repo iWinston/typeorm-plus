@@ -50,7 +50,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      */
     async update(entity: Entity): Promise<Entity> {
         const allPersistedEntities = await this.extractObjectsById(entity, this.metadata);
-        const queryBuilder = new QueryBuilder<Entity>(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner) // todo: better to pass connection?
+        const queryBuilder = new QueryBuilder<Entity>(this.connection, this.queryRunner)
             .select(this.metadata.table.name)
             .from(this.metadata.target, this.metadata.table.name);
         const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
@@ -74,7 +74,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * Removes given entity from the database.
      */
     async remove(entity: Entity): Promise<Entity> {
-        const queryBuilder = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner) // todo: better to pass connection?
+        const queryBuilder = new QueryBuilder(this.connection, this.queryRunner)
             .select(this.metadata.table.name)
             .from(this.metadata.target, this.metadata.table.name);
         const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
@@ -113,7 +113,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
             .map(entityWithId => {
                 const metadata = this.connection.entityMetadatas.findByTarget(entityWithId.entityTarget);
                 const alias = (entityWithId.entityTarget as any).name;
-                const qb = new QueryBuilder(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner)
+                const qb = new QueryBuilder(this.connection, queryRunner)
                     .select(alias)
                     .from(entityWithId.entityTarget, alias);
 

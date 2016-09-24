@@ -540,8 +540,7 @@ export class Connection {
      * Creates a lazy relations wrapper.
      */
     protected createLazyRelationsWrapper() {
-        // todo: send connection instead?
-        return new LazyRelationsWrapper(this.driver, this.entityMetadatas, this.broadcaster);
+        return new LazyRelationsWrapper(this);
     }
 
 }

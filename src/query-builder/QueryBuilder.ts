@@ -1,14 +1,12 @@
 import {Alias} from "./alias/Alias";
 import {AliasMap} from "./alias/AliasMap";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
-import {Broadcaster} from "../subscriber/Broadcaster";
-import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-import {Driver} from "../driver/Driver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OrderByCondition} from "../find-options/OrderByCondition";
+import {Connection} from "../connection/Connection";
 
 /**
  * @internal
@@ -85,11 +83,8 @@ export class QueryBuilder<Entity> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private driver: Driver,
-                private entityMetadatas: EntityMetadataCollection,
-                private broadcaster: Broadcaster,
-                private queryRunner?: QueryRunner) {
-        this.aliasMap = new AliasMap(entityMetadatas);
+    constructor(protected connection: Connection, protected queryRunner?: QueryRunner) {
+        this.aliasMap = new AliasMap(connection.entityMetadatas);
     }
 
     // -------------------------------------------------------------------------
@@ -403,7 +398,7 @@ export class QueryBuilder<Entity> {
         sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
-        [sql] = this.driver.escapeQueryWithParameters(sql, this.parameters);
+        [sql] = this.connection.driver.escapeQueryWithParameters(sql, this.parameters);
         return sql;
     }
 
@@ -431,14 +426,14 @@ export class QueryBuilder<Entity> {
             sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
-        return this.driver.escapeQueryWithParameters(sql, this.getParameters());
+        return this.connection.driver.escapeQueryWithParameters(sql, this.getParameters());
     }
 
     getParameters(): ObjectLiteral {
         const parameters: ObjectLiteral = Object.assign({}, this.parameters);
 
         // add discriminator column parameter if it exist
-        const mainMetadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
         if (mainMetadata.hasDiscriminatorColumn)
             parameters["discriminatorColumnValue"] = mainMetadata.discriminatorValue;
 
@@ -450,7 +445,7 @@ export class QueryBuilder<Entity> {
         let queryRunner = this.queryRunner;
         if (!queryRunner) {
             ownQueryRunner = true;
-            queryRunner = await this.driver.createQueryRunner();
+            queryRunner = await this.connection.driver.createQueryRunner();
         }
 
         const [sql, parameters] = this.getSqlWithParameters();
@@ -486,7 +481,7 @@ export class QueryBuilder<Entity> {
         let queryRunner = this.queryRunner;
         if (!queryRunner) {
             ownQueryRunner = true;
-            queryRunner = await this.driver.createQueryRunner();
+            queryRunner = await this.connection.driver.createQueryRunner();
         }
 
         const mainAliasName = this.aliasMap.mainAlias.name;
@@ -494,11 +489,11 @@ export class QueryBuilder<Entity> {
         if (this.firstResult || this.maxResults) {
             const [sql, parameters] = this.getSqlWithParameters(); // todo: fix for sql server. We cant skip order by here! // { skipOrderBy: true }
 
-            const distinctAlias = this.driver.escapeTableName("distinctAlias");
-            const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
+            const distinctAlias = this.connection.driver.escapeTableName("distinctAlias");
+            const metadata = this.connection.entityMetadatas.findByTarget(this.fromEntity.alias.target);
             let idsQuery = `SELECT `;
             idsQuery += metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.driver.escapeAliasName(mainAliasName + "_" + primaryColumn.name);
+                const propertyName = this.connection.driver.escapeAliasName(mainAliasName + "_" + primaryColumn.name);
                 if (index === 0) {
                     return `DISTINCT(${distinctAlias}.${propertyName}) as ids_${primaryColumn.name}`;
                 } else {
@@ -507,7 +502,7 @@ export class QueryBuilder<Entity> {
             }).join(", ");
             idsQuery += ` FROM (${sql}) ${distinctAlias}`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
 
-            if (this.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
+            if (this.connection.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
 
                 if (this.firstResult)
                     idsQuery += ` ORDER BY "ids_${metadata.firstPrimaryColumn.name}" OFFSET ${this.firstResult} ROWS`;
@@ -549,7 +544,7 @@ export class QueryBuilder<Entity> {
                     .then(results => {
                         return this.rawResultsToEntities(results);
                     })
-                    .then(results => this.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results))
+                    .then(results => this.connection.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results))
                     .then(results => {
                         return {
                             entities: results,
@@ -582,7 +577,7 @@ export class QueryBuilder<Entity> {
                             });
                     })
                     .then(results => {
-                        return this.broadcaster
+                        return this.connection.broadcaster
                             .broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results)
                             .then(() => results);
                     })
@@ -631,7 +626,7 @@ export class QueryBuilder<Entity> {
 
             const relation = parentMetadata.findRelationWithPropertyName(relationCountMeta.alias.parentPropertyName);
 
-            const queryBuilder: QueryBuilder<any> = new (this.constructor as any)(this.driver, this.entityMetadatas, this.broadcaster, queryRunner);
+            const queryBuilder: QueryBuilder<any> = new (this.constructor as any)(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner);
             let condition = "";
 
             const metadata = this.aliasMap.getEntityMetadataByAlias(relationCountMeta.alias);
@@ -686,7 +681,7 @@ export class QueryBuilder<Entity> {
 
             return queryBuilder
                 .select(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} AS id`)
-                .addSelect(`COUNT(${ this.driver.escapeAliasName(relation.propertyName) + "." + this.driver.escapeColumnName(relation.inverseEntityMetadata.primaryColumn.name) }) as cnt`)
+                .addSelect(`COUNT(${ this.connection.driver.escapeAliasName(relation.propertyName) + "." + this.connection.driver.escapeColumnName(relation.inverseEntityMetadata.primaryColumn.name) }) as cnt`)
                 .from(parentMetadata.target, parentMetadata.name)
                 .leftJoin(parentMetadata.name + "." + relation.propertyName, relation.propertyName, relationCountMeta.conditionType, relationCountMeta.condition)
                 .setParameters(this.parameters)
@@ -698,7 +693,7 @@ export class QueryBuilder<Entity> {
                     relationCountMeta.entities.forEach(entityWithMetadata => {
                         const entityId = entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName];
                         const entityResult = results.find(result => {
-                            return entityId === this.driver.prepareHydratedValue(result.id, entityWithMetadata.metadata.primaryColumn);
+                            return entityId === this.connection.driver.prepareHydratedValue(result.id, entityWithMetadata.metadata.primaryColumn);
                         });
                         if (entityResult) {
 
@@ -730,15 +725,15 @@ export class QueryBuilder<Entity> {
         let queryRunner = this.queryRunner;
         if (!queryRunner) {
             ownQueryRunner = true;
-            queryRunner = await this.driver.createQueryRunner();
+            queryRunner = await this.connection.driver.createQueryRunner();
         }
 
         const mainAlias = this.aliasMap.mainAlias.name;
-        const metadata = this.entityMetadatas.findByTarget(this.fromEntity.alias.target);
+        const metadata = this.connection.entityMetadatas.findByTarget(this.fromEntity.alias.target);
 
-        const distinctAlias = this.driver.escapeAliasName(mainAlias);
+        const distinctAlias = this.connection.driver.escapeAliasName(mainAlias);
         let countSql = `COUNT(` + metadata.primaryColumnsWithParentIdColumns.map((primaryColumn, index) => {
-            const propertyName = this.driver.escapeColumnName(primaryColumn.name);
+            const propertyName = this.connection.driver.escapeColumnName(primaryColumn.name);
             if (index === 0) {
                 return `DISTINCT(${distinctAlias}.${propertyName})`;
             } else {
@@ -774,7 +769,7 @@ export class QueryBuilder<Entity> {
     }
 
     clone(options?: { queryRunner?: QueryRunner, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean, ignoreParentTablesJoins?: boolean }): QueryBuilder<Entity> {
-        const qb = new QueryBuilder(this.driver, this.entityMetadatas, this.broadcaster, options ? options.queryRunner : undefined);
+        const qb = new QueryBuilder(this.connection, options ? options.queryRunner : undefined);
         if (options && options.ignoreParentTablesJoins)
             qb.ignoreParentTablesJoins = options.ignoreParentTablesJoins;
 
@@ -853,7 +848,7 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     protected rawResultsToEntities(results: any[]) {
-        const transformer = new RawSqlResultsToEntityTransformer(this.driver, this.aliasMap, this.extractJoinMappings(), this.relationCountMetas);
+        const transformer = new RawSqlResultsToEntityTransformer(this.connection.driver, this.aliasMap, this.extractJoinMappings(), this.relationCountMetas);
         return transformer.transform(results);
     }
 
@@ -880,7 +875,7 @@ export class QueryBuilder<Entity> {
             // add select from the main table
             if (this.selects.indexOf(alias) !== -1) {
                 metadata.columns.forEach(column => {
-                    allSelects.push(this.driver.escapeAliasName(alias) + "." + this.driver.escapeColumnName(column.name) + " AS " + this.driver.escapeAliasName(alias + "_" + column.name));
+                    allSelects.push(this.connection.driver.escapeAliasName(alias) + "." + this.connection.driver.escapeColumnName(column.name) + " AS " + this.connection.driver.escapeAliasName(alias + "_" + column.name));
                 });
             }
 
@@ -895,19 +890,19 @@ export class QueryBuilder<Entity> {
                 const joinMetadata = this.aliasMap.getEntityMetadataByAlias(join.alias);
                 if (joinMetadata) {
                     joinMetadata.columns.forEach(column => {
-                        allSelects.push(this.driver.escapeAliasName(join.alias.name) + "." + this.driver.escapeColumnName(column.name) + " AS " + this.driver.escapeAliasName(join.alias.name + "_" + column.name));
+                        allSelects.push(this.connection.driver.escapeAliasName(join.alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + " AS " + this.connection.driver.escapeAliasName(join.alias.name + "_" + column.name));
                     });
                 } else {
-                    allSelects.push(this.driver.escapeAliasName(join.alias.name));
+                    allSelects.push(this.connection.driver.escapeAliasName(join.alias.name));
                 }
             });
 
         if (!this.ignoreParentTablesJoins) {
-            const metadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
             if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + this.driver.escapeAliasName(metadata.parentEntityMetadata.table.name);
+                const alias = "parentIdColumn_" + this.connection.driver.escapeAliasName(metadata.parentEntityMetadata.table.name);
                 metadata.parentEntityMetadata.columns.forEach(column => {
-                    allSelects.push(alias + "." + this.driver.escapeColumnName(column.name) + " AS " + alias + "_" + this.driver.escapeAliasName(column.name));
+                    allSelects.push(alias + "." + this.connection.driver.escapeColumnName(column.name) + " AS " + alias + "_" + this.connection.driver.escapeAliasName(column.name));
                 });
             }
         }
@@ -929,7 +924,7 @@ export class QueryBuilder<Entity> {
             // const junctionTable = junctionMetadata.table.name;
 
             junctionMetadata.columns.forEach(column => {
-                allSelects.push(this.driver.escapeAliasName(join.alias.name) + "." + this.driver.escapeColumnName(column.name) + " AS " + this.driver.escapeAliasName(join.alias.name + "_" + column.name));
+                allSelects.push(this.connection.driver.escapeAliasName(join.alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + " AS " + this.connection.driver.escapeAliasName(join.alias.name + "_" + column.name));
             });
         });
 
@@ -945,9 +940,9 @@ export class QueryBuilder<Entity> {
         // create a selection query
         switch (this.type) {
             case "select":
-                return "SELECT " + allSelects.join(", ") + " FROM " + this.driver.escapeTableName(tableName) + " " + this.driver.escapeAliasName(alias);
+                return "SELECT " + allSelects.join(", ") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + this.connection.driver.escapeAliasName(alias);
             case "delete":
-                return "DELETE " + (alias ? this.driver.escapeAliasName(alias) : "") + " FROM " + this.driver.escapeTableName(tableName) + " " + (alias ? this.driver.escapeAliasName(alias) : "");
+                return "DELETE " + (alias ? this.connection.driver.escapeAliasName(alias) : "") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + (alias ? this.connection.driver.escapeAliasName(alias) : "");
             case "update":
                 const updateSet = Object.keys(this.updateQuerySet).map(key => key + "=:updateQuerySet_" + key);
                 const params = Object.keys(this.updateQuerySet).reduce((object, key) => {
@@ -956,7 +951,7 @@ export class QueryBuilder<Entity> {
                     return object;
                 }, {});
                 this.addParameters(params);
-                return "UPDATE " + tableName + " " + (alias ? this.driver.escapeAliasName(alias) : "") + " SET " + updateSet;
+                return "UPDATE " + tableName + " " + (alias ? this.connection.driver.escapeAliasName(alias) : "") + " SET " + updateSet;
         }
 
         throw new Error("No query builder type is specified.");
@@ -975,7 +970,7 @@ export class QueryBuilder<Entity> {
             }
         }).join(" ");
 
-        const mainMetadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
         if (mainMetadata.hasDiscriminatorColumn)
             return ` WHERE ${ conditions.length ? "(" + conditions + ")" : "" } AND ${mainMetadata.discriminatorColumn.name}=:discriminatorColumnValue`;
 
@@ -993,16 +988,16 @@ export class QueryBuilder<Entity> {
             metadata.embeddeds.forEach(embedded => {
                 embedded.columns.forEach(column => {
                     const expression = alias.name + "." + embedded.propertyName + "." + column.propertyName + "([ =]|.{0}$)";
-                    statement = statement.replace(new RegExp(expression, "gm"), this.driver.escapeAliasName(alias.name) + "." + this.driver.escapeColumnName(column.name) + "$1");
+                    statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + "$1");
                 });
             });
             metadata.columns.forEach(column => {
                 const expression = alias.name + "." + column.propertyName + "([ =]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), this.driver.escapeAliasName(alias.name) + "." + this.driver.escapeColumnName(column.name) + "$1");
+                statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + "$1");
             });
             metadata.relationsWithJoinColumns.forEach(relation => {
                 const expression = alias.name + "." + relation.propertyName + "([ =]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), this.driver.escapeAliasName(alias.name) + "." + this.driver.escapeColumnName(relation.name) + "$1");
+                statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(relation.name) + "$1");
             });
         });
         return statement;
@@ -1028,14 +1023,14 @@ export class QueryBuilder<Entity> {
 
             let condition1 = "";
             if (relation.isOwning) {
-                condition1 = this.driver.escapeAliasName(junctionAlias) + "." + this.driver.escapeColumnName(junctionMetadata.columns[0].name) + "=" + this.driver.escapeAliasName(parentAlias) + "." + this.driver.escapeColumnName(joinTableColumn);
+                condition1 = this.connection.driver.escapeAliasName(junctionAlias) + "." + this.connection.driver.escapeColumnName(junctionMetadata.columns[0].name) + "=" + this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(joinTableColumn);
                 // condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
             } else {
-                condition1 = this.driver.escapeAliasName(junctionAlias) + "." + this.driver.escapeColumnName(junctionMetadata.columns[1].name) + "=" + this.driver.escapeAliasName(parentAlias) + "." + this.driver.escapeColumnName(joinTableColumn);
+                condition1 = this.connection.driver.escapeAliasName(junctionAlias) + "." + this.connection.driver.escapeColumnName(junctionMetadata.columns[1].name) + "=" + this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(joinTableColumn);
                 // condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[0].name;
             }
 
-            return " " + join.type + " JOIN " + junctionTable + " " + this.driver.escapeAliasName(junctionAlias) + " " + join.conditionType + " " + condition1;
+            return " " + join.type + " JOIN " + junctionTable + " " + this.connection.driver.escapeAliasName(junctionAlias) + " " + join.conditionType + " " + condition1;
                 // " " + joinType + " JOIN " + joinTableName + " " + joinAlias + " " + join.conditionType + " " + condition2 + appendedCondition;
             // console.log(join);
             // return " " + join.type + " JOIN " + joinTableName + " " + join.alias.name + " " + (join.condition ? (join.conditionType + " " + join.condition) : "");
@@ -1056,7 +1051,7 @@ export class QueryBuilder<Entity> {
 
             const parentAlias = join.alias.parentAliasName;
             if (!parentAlias) {
-                return " " + joinType + " JOIN " + this.driver.escapeTableName(joinTableName) + " " + this.driver.escapeAliasName(join.alias.name) + " " + (join.condition ? ( join.conditionType + " " + this.replacePropertyNames(join.condition) ) : "");
+                return " " + joinType + " JOIN " + this.connection.driver.escapeTableName(joinTableName) + " " + this.connection.driver.escapeAliasName(join.alias.name) + " " + (join.condition ? ( join.conditionType + " " + this.replacePropertyNames(join.condition) ) : "");
             }
 
             const foundAlias = this.aliasMap.findAliasByName(parentAlias);
@@ -1081,25 +1076,25 @@ export class QueryBuilder<Entity> {
 
                 let condition1 = "", condition2 = "";
                 if (relation.isOwning) {
-                    condition1 = this.driver.escapeAliasName(junctionAlias) + "." + this.driver.escapeColumnName(junctionMetadata.columns[0].name) + "=" + this.driver.escapeAliasName(parentAlias) + "." + this.driver.escapeColumnName(joinTableColumn);
-                    condition2 = this.driver.escapeAliasName(joinAlias) + "." + this.driver.escapeColumnName(inverseJoinColumnName) + "=" + this.driver.escapeAliasName(junctionAlias) + "." + this.driver.escapeColumnName(junctionMetadata.columns[1].name);
+                    condition1 = this.connection.driver.escapeAliasName(junctionAlias) + "." + this.connection.driver.escapeColumnName(junctionMetadata.columns[0].name) + "=" + this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(joinTableColumn);
+                    condition2 = this.connection.driver.escapeAliasName(joinAlias) + "." + this.connection.driver.escapeColumnName(inverseJoinColumnName) + "=" + this.connection.driver.escapeAliasName(junctionAlias) + "." + this.connection.driver.escapeColumnName(junctionMetadata.columns[1].name);
                 } else {
-                    condition1 = this.driver.escapeAliasName(junctionAlias) + "." + this.driver.escapeColumnName(junctionMetadata.columns[1].name) + "=" + this.driver.escapeAliasName(parentAlias) + "." + this.driver.escapeColumnName(joinTableColumn);
-                    condition2 = this.driver.escapeAliasName(joinAlias) + "." + this.driver.escapeColumnName(inverseJoinColumnName) + "=" + this.driver.escapeAliasName(junctionAlias) + "." + this.driver.escapeColumnName(junctionMetadata.columns[0].name);
+                    condition1 = this.connection.driver.escapeAliasName(junctionAlias) + "." + this.connection.driver.escapeColumnName(junctionMetadata.columns[1].name) + "=" + this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(joinTableColumn);
+                    condition2 = this.connection.driver.escapeAliasName(joinAlias) + "." + this.connection.driver.escapeColumnName(inverseJoinColumnName) + "=" + this.connection.driver.escapeAliasName(junctionAlias) + "." + this.connection.driver.escapeColumnName(junctionMetadata.columns[0].name);
                 }
 
-                return " " + joinType + " JOIN " + this.driver.escapeTableName(junctionTable) + " " + this.driver.escapeAliasName(junctionAlias) + " " + join.conditionType + " " + condition1 +
-                       " " + joinType + " JOIN " + this.driver.escapeTableName(joinTableName) + " " + this.driver.escapeAliasName(joinAlias) + " " + join.conditionType + " " + condition2 + appendedCondition;
+                return " " + joinType + " JOIN " + this.connection.driver.escapeTableName(junctionTable) + " " + this.connection.driver.escapeAliasName(junctionAlias) + " " + join.conditionType + " " + condition1 +
+                       " " + joinType + " JOIN " + this.connection.driver.escapeTableName(joinTableName) + " " + this.connection.driver.escapeAliasName(joinAlias) + " " + join.conditionType + " " + condition2 + appendedCondition;
 
             } else if (relation.isManyToOne || (relation.isOneToOne && relation.isOwning)) {
                 const joinTableColumn = relation.joinColumn.referencedColumn.name;
-                const condition = this.driver.escapeAliasName(join.alias.name) + "." + this.driver.escapeColumnName(joinTableColumn) + "=" + this.driver.escapeAliasName(parentAlias) + "." + this.driver.escapeColumnName(relation.name);
-                return " " + joinType + " JOIN " + this.driver.escapeTableName(joinTableName) + " " + this.driver.escapeAliasName(join.alias.name) + " " + join.conditionType + " " + condition + appendedCondition;
+                const condition = this.connection.driver.escapeAliasName(join.alias.name) + "." + this.connection.driver.escapeColumnName(joinTableColumn) + "=" + this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(relation.name);
+                return " " + joinType + " JOIN " + this.connection.driver.escapeTableName(joinTableName) + " " + this.connection.driver.escapeAliasName(join.alias.name) + " " + join.conditionType + " " + condition + appendedCondition;
 
             } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {
                 const joinTableColumn = relation.inverseRelation.joinColumn.referencedColumn.name;
-                const condition = this.driver.escapeAliasName(join.alias.name) + "." + this.driver.escapeColumnName(relation.inverseRelation.name) + "=" + this.driver.escapeAliasName(parentAlias) + "." + this.driver.escapeColumnName(joinTableColumn);
-                return " " + joinType + " JOIN " + this.driver.escapeTableName(joinTableName) + " " + this.driver.escapeAliasName(join.alias.name) + " " + join.conditionType + " " + condition + appendedCondition;
+                const condition = this.connection.driver.escapeAliasName(join.alias.name) + "." + this.connection.driver.escapeColumnName(relation.inverseRelation.name) + "=" + this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(joinTableColumn);
+                return " " + joinType + " JOIN " + this.connection.driver.escapeTableName(joinTableName) + " " + this.connection.driver.escapeAliasName(join.alias.name) + " " + join.conditionType + " " + condition + appendedCondition;
 
             } else {
                 throw new Error("Unexpected relation type"); // this should not be possible
@@ -1107,10 +1102,10 @@ export class QueryBuilder<Entity> {
         }).join(" ");
 
         if (!this.ignoreParentTablesJoins) {
-            const metadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
             if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
-                const alias = this.driver.escapeAliasName("parentIdColumn_" + metadata.parentEntityMetadata.table.name);
-                joins += " JOIN " + this.driver.escapeTableName(metadata.parentEntityMetadata.table.name)
+                const alias = this.connection.driver.escapeAliasName("parentIdColumn_" + metadata.parentEntityMetadata.table.name);
+                joins += " JOIN " + this.connection.driver.escapeTableName(metadata.parentEntityMetadata.table.name)
                     + " " + alias + " ON ";
                 joins += metadata.parentIdColumns.map(parentIdColumn => {
                     return this.aliasMap.mainAlias.name + "." + parentIdColumn.name + "=" + alias + "." + parentIdColumn.propertyName;
@@ -1147,7 +1142,7 @@ export class QueryBuilder<Entity> {
             return " ORDER BY " + Object.keys(this.orderBys).map(columnName => this.replacePropertyNames(columnName) + " " + this.orderBys[columnName]).join(", ");
 
         // if table has a default order then apply it
-        const metadata = this.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
         if (metadata.table.orderBy)
             return " ORDER BY " + Object
                 .keys(metadata.table.orderBy)
