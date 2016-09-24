@@ -10,7 +10,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  */
-export class EntityWithId { // todo: move entity with id creation into metadata?
+export class OperateEntity { // todo: move entity with id creation into metadata?
     entityTarget: Function|string;
     entity: any;
 
@@ -35,10 +35,10 @@ export class PersistOperation {
     
     // todo: what if we have two same entities in the insert operations?
 
-    dbEntity: EntityWithId;
-    persistedEntity: EntityWithId;
-    allDbEntities: EntityWithId[];
-    allPersistedEntities: EntityWithId[];
+    dbEntity: OperateEntity;
+    persistedEntity: OperateEntity;
+    allDbEntities: OperateEntity[];
+    allPersistedEntities: OperateEntity[];
     inserts: InsertOperation[] = [];
     removes: RemoveOperation[] = [];
     updates: UpdateOperation[] = [];

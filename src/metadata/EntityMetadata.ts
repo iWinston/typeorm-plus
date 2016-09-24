@@ -663,4 +663,20 @@ export class EntityMetadata {
         });
     }
 
+    /**
+     * Iterates throw entity and finds and extracts all values from relations in the entity.
+     * If relation value is an array its being flattened.
+     */
+    extractRelationValuesFromEntity(entity: ObjectLiteral, relations: RelationMetadata[]): [RelationMetadata, any][] {
+        const relationsAndValues: [RelationMetadata, any][] = [];
+        relations.forEach(relation => {
+            const value = relation.getEntityValue(entity);
+            if (value instanceof Array) {
+                value.forEach(subValue => relationsAndValues.push([relation, subValue]));
+            } else if (value) {
+                relationsAndValues.push([relation, value]);
+            }
+        });
+        return relationsAndValues;
+    }
 }
