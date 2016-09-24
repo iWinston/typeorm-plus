@@ -626,7 +626,7 @@ export class QueryBuilder<Entity> {
 
             const relation = parentMetadata.findRelationWithPropertyName(relationCountMeta.alias.parentPropertyName);
 
-            const queryBuilder: QueryBuilder<any> = new (this.constructor as any)(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, queryRunner);
+            const queryBuilder = new QueryBuilder(this.connection, queryRunner);
             let condition = "";
 
             const metadata = this.aliasMap.getEntityMetadataByAlias(relationCountMeta.alias);
@@ -854,6 +854,7 @@ export class QueryBuilder<Entity> {
 
     protected createSelectExpression() {
         // todo throw exception if selects or from is missing
+        console.log("select expression: ", this.aliasMap);
 
         let alias: string = "", tableName: string;
         const allSelects: string[] = [];
