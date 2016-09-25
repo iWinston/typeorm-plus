@@ -27,42 +27,29 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
-     * Inserts given entity into the database.
+     * Persists given entity in the database.
      */
-    async insert(entity: Entity): Promise<Entity> {
+    async persist(entity: Entity): Promise<Entity> {
         const allPersistedEntities = await this.flattenEntityRelationTree(entity, this.metadata);
-
-        // need to find db entities that were not loaded by initialize method
-        const allDbEntities = await this.findNotLoadedIds(allPersistedEntities);
-        const persistedEntity = new OperateEntity(this.metadata, entity);
-        const dbEntity = new OperateEntity(this.metadata, undefined!); // todo: find if this can be executed if loadedDbEntity is empty
-        const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
-
-        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
-        await persistOperationExecutor.executePersistOperation(persistOperation);
-        return entity;
-    }
-
-    /**
-     * Updates given entity in the database.
-     */
-    async update(entity: Entity): Promise<Entity> {
-        const allPersistedEntities = await this.flattenEntityRelationTree(entity, this.metadata);
-        const queryBuilder = new QueryBuilder<Entity>(this.connection, this.queryRunner)
-            .select(this.metadata.table.name)
-            .from(this.metadata.target, this.metadata.table.name);
         const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
-        const loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entity, this.metadata, queryBuilder);
 
-        const entityWithIds = await this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
+        let dbEntity: OperateEntity|undefined, entityWithIds: OperateEntity[] = [];
+        if (this.hasId(entity)) {
+            const queryBuilder = new QueryBuilder<Entity>(this.connection, this.queryRunner)
+                .select(this.metadata.table.name)
+                .from(this.metadata.target, this.metadata.table.name);
+            const loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entity, this.metadata, queryBuilder);
+            if (loadedDbEntity) {
+                dbEntity = new OperateEntity(this.metadata, loadedDbEntity);
+                entityWithIds = await this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
+            }
+        }
 
         // need to find db entities that were not loaded by initialize method
         const allDbEntities = await this.findNotLoadedIds(allPersistedEntities, entityWithIds);
         const persistedEntity = new OperateEntity(this.metadata, entity);
-        const dbEntity = new OperateEntity(this.metadata, loadedDbEntity);
         const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(this.metadata, dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
+        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedEntity, allDbEntities, allPersistedEntities);
 
         const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
         await persistOperationExecutor.executePersistOperation(persistOperation);
@@ -95,6 +82,20 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * todo: multiple implementations of hasId: here, in repository, in entity metadata
+     */
+    protected hasId(entity: Entity): boolean {
+        return this.metadata.primaryColumns.every(primaryColumn => {
+            const columnName = primaryColumn.propertyName;
+            return !!entity &&
+                entity.hasOwnProperty(columnName) &&
+                entity[columnName] !== null &&
+                entity[columnName] !== undefined &&
+                entity[columnName] !== "";
+        });
+    }
 
     /**
      * When ORM loads dbEntity it uses joins to load all entity dependencies. However when dbEntity is newly persisted

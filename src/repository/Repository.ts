@@ -152,11 +152,12 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunner = await queryRunnerProvider.provide();
         try {
             const entityPersister = new EntityPersister<Entity>(this.connection, this.metadata, queryRunner);
-            if (this.hasId(entityOrEntities)) {
-                return await entityPersister.update(entityOrEntities); // await is needed here because we are using finally
-            } else {
-                return await entityPersister.insert(entityOrEntities); // await is needed here because we are using finally
-            }
+            return await entityPersister.persist(entityOrEntities); // await is needed here because we are using finally
+            // if (this.hasId(entityOrEntities)) {
+            //     return await entityPersister.update(entityOrEntities); // await is needed here because we are using finally
+            // } else {
+            //     return await entityPersister.insert(entityOrEntities); // await is needed here because we are using finally
+            // }
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
