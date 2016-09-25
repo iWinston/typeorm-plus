@@ -125,8 +125,8 @@ import {createConnection, CreateConnectionOptions} from "typeorm";
 import {Photo} from "./Photo";
 
 const options: CreateConnectionOptions = {
-    driver: "mysql", // specify driver type here. Right now only "mysql" is supported
-    connection: {
+    driver: {
+        type: "mysql", // specify driver type here. Right now only "mysql" is supported
         host: "localhost", // mysql host
         port: 3306, // mysql port
         username: "root", // mysql database username
