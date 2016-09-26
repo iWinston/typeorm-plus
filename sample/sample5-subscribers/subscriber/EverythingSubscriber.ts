@@ -8,21 +8,21 @@ import {UpdateEvent} from "../../../src/subscriber/event/UpdateEvent";
 export class EverythingSubscriber implements EntitySubscriberInterface<any> {
     
     /**
-     * Called after entity insertion.
+     * Called before entity insertion.
      */
     beforeInsert(event: InsertEvent<any>) {
         console.log(`BEFORE ENTITY INSERTED: `, event.entity);
     }
 
     /**
-     * Called after entity insertion.
+     * Called before entity insertion.
      */
     beforeUpdate(event: UpdateEvent<any>) {
         console.log(`BEFORE ENTITY UPDATED: `, event.entity);
     }
 
     /**
-     * Called after entity insertion.
+     * Called before entity insertion.
      */
     beforeRemove(event: RemoveEvent<any>) {
         console.log(`BEFORE ENTITY WITH ID ${event.entityId} REMOVED: `, event.entity);

@@ -4,6 +4,7 @@ import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
 import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -132,7 +133,7 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
@@ -142,12 +143,12 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
+    find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity[]> {
         if (conditionsOrFindOptions && options) {
             return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
             
@@ -161,28 +162,38 @@ export class EntityManager extends BaseEntityManager {
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
     findAndCount<Entity>(entityClass: ObjectType<Entity>): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
     findAndCount<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
         if (conditionsOrFindOptions && options) {
             return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
 
@@ -202,7 +213,7 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: Object): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
@@ -212,12 +223,12 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: Object, options: FindOptions): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity> {
         if (conditionsOrFindOptions && options) {
             return this.getRepository(entityClass).findOne(conditionsOrFindOptions, options);
 
