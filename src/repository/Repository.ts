@@ -29,7 +29,8 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Returns object that is managed by this repository.
-     * If this repository manages entity from schema, then it returns a name of that schema instead.
+     * If this repository manages entity from schema,
+     * then it returns a name of that schema instead.
      */
     get target(): Function|string {
         return this.metadata.target;
@@ -202,7 +203,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities that match given conditions.
      */
-    async find(conditions: Object): Promise<Entity[]>;
+    async find(conditions: ObjectLiteral): Promise<Entity[]>;
 
     /**
      * Finds entities with given find options.
@@ -212,40 +213,50 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities that match given conditions and find options.
      */
-    async find(conditions: Object, options: FindOptions): Promise<Entity[]>;
+    async find(conditions: ObjectLiteral, options: FindOptions): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions and/or find options.
      */
-    async find(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity[]> {
+    async find(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity[]> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
             .getResults();
     }
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
     async findAndCount(): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
-    async findAndCount(conditions: Object): Promise<[ Entity[], number ]>;
+    async findAndCount(conditions: ObjectLiteral): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
     async findAndCount(options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
-    async findAndCount(conditions: Object, options: FindOptions): Promise<[ Entity[], number ]>;
+    async findAndCount(conditions: ObjectLiteral, options: FindOptions): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (maxResults, firstResult) options.
      */
-    async findAndCount(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
+    async findAndCount(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
             .getResultsAndCount();
     }
@@ -258,7 +269,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given conditions.
      */
-    async findOne(conditions: Object): Promise<Entity>;
+    async findOne(conditions: ObjectLiteral): Promise<Entity>;
 
     /**
      * Finds first entity that matches given find options.
@@ -268,18 +279,19 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given conditions and find options.
      */
-    async findOne(conditions: Object, options: FindOptions): Promise<Entity>;
+    async findOne(conditions: ObjectLiteral, options: FindOptions): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    async findOne(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): Promise<Entity> {
+    async findOne(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
             .getSingleResult();
     }
 
     /**
      * Finds entity with given id.
+     * Optionally find options can be applied.
      */
     async findOneById(id: any, options?: FindOptions): Promise<Entity> {
         const conditions: ObjectLiteral = {};

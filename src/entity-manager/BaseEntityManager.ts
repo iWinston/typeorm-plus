@@ -9,6 +9,7 @@ import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {RepositoryNotTreeError} from "../connection/error/RepositoryNotTreeError";
 import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
 import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
+import {SpecificRepository} from "../repository/SpecificRepository";
 
 /**
  * Common functions shared between different entity manager types.
@@ -109,6 +110,37 @@ export abstract class BaseEntityManager {
     }
 
     /**
+     * Gets specific repository for the given entity class.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
+     */
+    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
+     */
+    getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity class or name.
+     * If single database connection mode is used, then repository is obtained from the
+     * repository aggregator, where each repository is individually created for this entity manager.
+     * When single database connection is not used, repository is being obtained from the connection.
+     */
+    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.queryRunnerProvider)
+            return this.obtainRepositoryAggregator(entityClassOrName).specificRepository;
+
+        return this.connection.getSpecificRepository<Entity>(entityClassOrName as any);
+    }
+
+    /**
      * Checks if entity has an id.
      */
     hasId(entity: Object): boolean;
@@ -187,7 +219,7 @@ export abstract class BaseEntityManager {
     /**
      * Releases all resources used by entity manager.
      * This is used when entity manager is created with a single query runner,
-     * and this single query runner needs to be released after job with repository is done.
+     * and this single query runner needs to be released after job with entity manager is done.
      */
     async release(): Promise<void> {
         if (!this.queryRunnerProvider)

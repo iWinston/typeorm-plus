@@ -54,7 +54,7 @@ export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/Index";
 export * from "./decorator/NamingStrategy";
-export * from "./decorator/TableInheritance";
+export * from "./decorator/tables/TableInheritance";
 export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
 

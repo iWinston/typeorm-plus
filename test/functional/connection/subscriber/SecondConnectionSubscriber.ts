@@ -1,8 +1,8 @@
 import {EntitySubscriberInterface} from "../../../../src/subscriber/EntitySubscriberInterface";
-import {EntityEventSubscriber} from "../../../../src/decorator/listeners/EventSubscriber";
+import {EventSubscriber} from "../../../../src/decorator/listeners/EventSubscriber";
 import {InsertEvent} from "../../../../src/subscriber/event/InsertEvent";
 
-@EntityEventSubscriber()
+@EventSubscriber()
 export class SecondConnectionSubscriber implements EntitySubscriberInterface<any> {
     
     /**
