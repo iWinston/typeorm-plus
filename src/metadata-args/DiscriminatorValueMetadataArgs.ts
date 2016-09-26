@@ -1,5 +1,5 @@
 /**
- * Arguments for DiscriminatorNameMetadata class.
+ * DiscriminatorValue properties.
  */
 export interface DiscriminatorValueMetadataArgs {
 

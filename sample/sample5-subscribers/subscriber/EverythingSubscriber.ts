@@ -1,10 +1,10 @@
-import {EntityEventSubscriber} from "../../../src/decorator/listeners/EventSubscriber";
+import {EventSubscriber} from "../../../src/decorator/listeners/EventSubscriber";
 import {EntitySubscriberInterface} from "../../../src/subscriber/EntitySubscriberInterface";
 import {InsertEvent} from "../../../src/subscriber/event/InsertEvent";
 import {RemoveEvent} from "../../../src/subscriber/event/RemoveEvent";
 import {UpdateEvent} from "../../../src/subscriber/event/UpdateEvent";
 
-@EntityEventSubscriber()
+@EventSubscriber()
 export class EverythingSubscriber implements EntitySubscriberInterface<any> {
     
     /**
