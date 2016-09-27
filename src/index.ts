@@ -29,7 +29,7 @@ export * from "./decorator/listeners/BeforeRemove";
 export * from "./decorator/listeners/BeforeUpdate";
 export * from "./decorator/listeners/EventSubscriber";
 export * from "./decorator/options/ColumnOptions";
-export * from "./decorator/options/CompositeIndexOptions";
+export * from "./decorator/options/IndexOptions";
 export * from "./decorator/options/JoinColumnOptions";
 export * from "./decorator/options/JoinTableOptions";
 export * from "./decorator/options/RelationOptions";

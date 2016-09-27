@@ -1,46 +1,46 @@
 import {getMetadataArgsStorage} from "../index";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
-import {CompositeIndexOptions} from "./options/CompositeIndexOptions";
+import {IndexOptions} from "./options/IndexOptions";
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
-export function Index(options?: CompositeIndexOptions): Function;
+export function Index(options?: IndexOptions): Function;
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
-export function Index(name: string, options?: CompositeIndexOptions): Function;
+export function Index(name: string, options?: IndexOptions): Function;
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
-export function Index(name: string, fields: string[], options?: CompositeIndexOptions): Function;
+export function Index(name: string, fields: string[], options?: IndexOptions): Function;
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
-export function Index(fields: string[], options?: CompositeIndexOptions): Function;
+export function Index(fields: string[], options?: IndexOptions): Function;
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
-export function Index(fields: (object: any) => any[], options?: CompositeIndexOptions): Function;
+export function Index(fields: (object: any) => any[], options?: IndexOptions): Function;
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
-export function Index(name: string, fields: (object: any) => any[], options?: CompositeIndexOptions): Function;
+export function Index(name: string, fields: (object: any) => any[], options?: IndexOptions): Function;
 
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
 export function Index(nameOrFields: string|string[]|((object: any) => any[]),
-                      maybeFieldsOrOptions?: ((object: any) => any[])|CompositeIndexOptions|string[],
-                      maybeOptions?: CompositeIndexOptions): Function {
+                      maybeFieldsOrOptions?: ((object: any) => any[])|IndexOptions|string[],
+                      maybeOptions?: IndexOptions): Function {
     const name = typeof nameOrFields === "string" ? nameOrFields : undefined;
     const fields = typeof nameOrFields === "string" ? <((object: any) => any[])|string[]> maybeFieldsOrOptions : nameOrFields;
-    const options = typeof maybeFieldsOrOptions === "object" ? <CompositeIndexOptions> maybeFieldsOrOptions : maybeOptions;
+    const options = typeof maybeFieldsOrOptions === "object" ? <IndexOptions> maybeFieldsOrOptions : maybeOptions;
 
     return function (clsOrObject: Function|Object, propertyName?: string) {
         const args: IndexMetadataArgs = {
