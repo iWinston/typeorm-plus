@@ -52,38 +52,42 @@ export interface JoinMapping {
     isMany: boolean;
 }
 
+/**
+ * Allows to build complex sql queries in a fashion way and execute those queries.
+ */
 export class QueryBuilder<Entity> {
 
     // -------------------------------------------------------------------------
-    // Private properties
+    // Protected properties
     // -------------------------------------------------------------------------
 
-    private aliasMap: AliasMap;
-    private type: "select"|"update"|"delete" = "select";
-    private selects: string[] = [];
-    private fromEntity: { alias: Alias };
-    private fromTableName: string;
-    private fromTableAlias: string;
-    private updateQuerySet: Object;
-    private joins: Join[] = [];
-    private joinRelationIds: JoinRelationId[] = [];
-    private relationCountMetas: RelationCountMeta[] = [];
-    private groupBys: string[] = [];
-    private wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
-    private havings: { type: "simple"|"and"|"or", condition: string }[] = [];
-    private orderBys: OrderByCondition = {};
-    private parameters: ObjectLiteral = {};
-    private limit: number;
-    private offset: number;
-    private firstResult: number;
-    private maxResults: number;
-    private ignoreParentTablesJoins: boolean = false;
+    protected aliasMap: AliasMap;
+    protected type: "select"|"update"|"delete" = "select";
+    protected selects: string[] = [];
+    protected fromEntity: { alias: Alias };
+    protected fromTableName: string;
+    protected fromTableAlias: string;
+    protected updateQuerySet: Object;
+    protected joins: Join[] = [];
+    protected joinRelationIds: JoinRelationId[] = [];
+    protected relationCountMetas: RelationCountMeta[] = [];
+    protected groupBys: string[] = [];
+    protected wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
+    protected havings: { type: "simple"|"and"|"or", condition: string }[] = [];
+    protected orderBys: OrderByCondition = {};
+    protected parameters: ObjectLiteral = {};
+    protected limit: number;
+    protected offset: number;
+    protected firstResult: number;
+    protected maxResults: number;
+    protected ignoreParentTablesJoins: boolean = false;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection, protected queryRunner?: QueryRunner) {
+    constructor(protected connection: Connection,
+                protected queryRunner?: QueryRunner) {
         this.aliasMap = new AliasMap(connection.entityMetadatas);
     }
 
@@ -91,6 +95,9 @@ export class QueryBuilder<Entity> {
     // Accessors
     // -------------------------------------------------------------------------
 
+    /**
+     * Gets the main alias string used in this query builder.
+     */
     get alias(): string {
         return this.aliasMap.mainAlias.name;
     }
@@ -99,8 +106,24 @@ export class QueryBuilder<Entity> {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    delete(entity?: Function): this;
-    delete(tableName?: string): this;
+    /**
+     * Creates DELETE query.
+     */
+    delete(): this;
+
+    /**
+     * Creates DELETE query for the given entity.
+     */
+    delete(entity: Function): this;
+
+    /**
+     * Creates DELETE query for the given table name.
+     */
+    delete(tableName: string): this;
+
+    /**
+     * Creates DELETE query.
+     */
     delete(tableNameOrEntity?: string|Function): this {
         if (tableNameOrEntity instanceof Function) {
             const aliasName = (<any> tableNameOrEntity).name;
@@ -116,11 +139,26 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    update(updateSet: Object): this;
-    update(entity: Function, updateSet: Object): this;
-    update(tableName: string, updateSet: Object): this;
-    update(tableNameOrEntityOrUpdateSet?: string|Function|Object, maybeUpdateSet?: Object): this {
-        const updateSet = maybeUpdateSet ? maybeUpdateSet : <Object> tableNameOrEntityOrUpdateSet;
+    /**
+     * Creates UPDATE query and applies given update values.
+     */
+    update(updateSet: ObjectLiteral): this;
+
+    /**
+     * Creates UPDATE query for the given entity and applies given update values.
+     */
+    update(entity: Function, updateSet: ObjectLiteral): this;
+
+    /**
+     * Creates UPDATE query for the given table name and applies given update values.
+     */
+    update(tableName: string, updateSet: ObjectLiteral): this;
+
+    /**
+     * Creates UPDATE query and applies given update values.
+     */
+    update(tableNameOrEntityOrUpdateSet?: string|Function|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): this {
+        const updateSet = maybeUpdateSet ? maybeUpdateSet : <ObjectLiteral> tableNameOrEntityOrUpdateSet;
 
         if (tableNameOrEntityOrUpdateSet instanceof Function) {
             const aliasName = (<any> tableNameOrEntityOrUpdateSet).name;
@@ -138,9 +176,34 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    select(selection?: string): this;
-    select(selection?: string[]): this;
+    /**
+     * Creates SELECT query.
+     * Replaces all old selections if they exist.
+     */
+    select(): this;
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all old selections if they exist.
+     */
+    select(selection: string): this;
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all old selections if they exist.
+     */
+    select(selection: string[]): this;
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all old selections if they exist.
+     */
     select(...selection: string[]): this;
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all old selections if they exist.
+     */
     select(selection?: string|string[]): this {
         this.type = "select";
         if (selection) {
@@ -153,9 +216,24 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Adds new selection to the SELECT query.
+     */
     addSelect(selection: string): this;
+
+    /**
+     * Adds new selection to the SELECT query.
+     */
     addSelect(selection: string[]): this;
+
+    /**
+     * Adds new selection to the SELECT query.
+     */
     addSelect(...selection: string[]): this;
+
+    /**
+     * Adds new selection to the SELECT query.
+     */
     addSelect(selection: string|string[]): this {
         if (selection instanceof Array)
             this.selects = this.selects.concat(selection);
@@ -165,9 +243,22 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Specifies FROM which table select/update/delete will be executed.
+     * Also sets a main string alias of the selection data.
+     */
     from(tableName: string, alias: string): this;
-    from(entity: Function, alias: string): this;
+
+    /**
+     * Specifies FROM which entity's table select/update/delete will be executed.
+     * Also sets a main string alias of the selection data.
+     */
     from(entity: Function|string, alias: string): this;
+
+    /**
+     * Specifies FROM on which table select/update/delete will be executed.
+     * Also sets a main string alias of the selection data.
+     */
     from(entityOrTableName: Function|string, alias: string): this {
 
         if (entityOrTableName instanceof Function || this.isValueSimpleString(entityOrTableName)) {
@@ -182,28 +273,338 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    countRelationAndMap(mapProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+    /**
+     * INNER JOINs (without selection) entity's property.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
 
-        const [parentAliasName, parentPropertyName] = property.split(".");
-        const alias = parentAliasName + "_" + parentPropertyName + "_relation_count";
-        const aliasObj = new Alias(alias);
-        this.aliasMap.addAlias(aliasObj);
-        aliasObj.parentAliasName = parentAliasName;
-        aliasObj.parentPropertyName = parentPropertyName;
+    /**
+     * INNER JOINs (without selection) given entity's table.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoin(entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
 
-        const relationCountMeta: RelationCountMeta = {
-            mapToProperty: mapProperty,
-            conditionType: conditionType,
-            condition: condition,
-            alias: aliasObj,
-            entities: []
-        };
-        this.relationCountMetas.push(relationCountMeta);
-        if (parameters)
-            this.addParameters(parameters);
-        return this;
+    /**
+     * INNER JOINs (without selection) given table.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoin(tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs (without selection).
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
     }
 
+    /**
+     * LEFT JOINs (without selection) entity's property.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs (without selection) entity's table.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoin(entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs (without selection) given table.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoin(tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs (without selection).
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters);
+    }
+
+    /**
+     * INNER JOINs entity's property and adds all selection properties to SELECT.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs entity and adds all selection properties to SELECT.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndSelect(entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs table and adds all selection properties to SELECT.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndSelect(tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs and adds all selection properties to SELECT.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        this.addSelect(alias);
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
+    }
+
+    /**
+     * LEFT JOINs entity's property and adds all selection properties to SELECT.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs entity and adds all selection properties to SELECT.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndSelect(entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs table and adds all selection properties to SELECT.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndSelect(tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs and adds all selection properties to SELECT.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        this.addSelect(alias);
+        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters);
+    }
+
+    /**
+     * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapMany(mapToProperty: string, tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        this.addSelect(alias);
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
+    }
+
+    /**
+     * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapOne(mapToProperty: string, tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        this.addSelect(alias);
+        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
+    }
+
+    /**
+     * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapMany(mapToProperty: string, tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        this.addSelect(alias);
+        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
+    }
+
+    /**
+     * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapOne(mapToProperty: string, tableName: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        this.addSelect(alias);
+        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
+    }
+
+    /**
+     * LEFT JOINs relation id.
+     * Optionally, you can add condition and parameters used in condition.
+     *
+     * @experimental
+     */
+    leftJoinRelationId(property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: ObjectLiteral): this {
+        return this.joinRelationId("LEFT", undefined, property, conditionType, condition, parameters);
+    }
+
+    /**
+     * INNER JOINs relation id.
+     * Optionally, you can add condition and parameters used in condition.
+     *
+     * @experimental
+     */
+    innerJoinRelationId(property: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this {
+        return this.joinRelationId("INNER", undefined, property, conditionType, condition, parameters);
+    }
+
+    /**
+     * LEFT JOINs relation id and maps it into some entity's property.
+     * Optionally, you can add condition and parameters used in condition.
+     *
+     * @experimental
+     */
+    leftJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
+    }
+
+    /**
+     * INNER JOINs relation id and maps it into some entity's property.
+     * Optionally, you can add condition and parameters used in condition.
+     *
+     * @experimental
+     */
+    innerJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+        return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
+    }
+
+    /**
+     * Counts number of entities of entity's relation.
+     * Optionally, you can add condition and parameters used in condition.
+     *
+     * @experimental
+     */
     countRelation(property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
 
         const [parentAliasName, parentPropertyName] = property.split(".");
@@ -226,168 +627,221 @@ export class QueryBuilder<Entity> {
         return this;
     }
 
-    leftJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
+    /**
+     * Counts number of entities of entity's relation and maps the value into some entity's property.
+     * Optionally, you can add condition and parameters used in condition.
+     *
+     * @experimental
+     */
+    countRelationAndMap(mapProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
+
+        const [parentAliasName, parentPropertyName] = property.split(".");
+        const alias = parentAliasName + "_" + parentPropertyName + "_relation_count";
+        const aliasObj = new Alias(alias);
+        this.aliasMap.addAlias(aliasObj);
+        aliasObj.parentAliasName = parentAliasName;
+        aliasObj.parentPropertyName = parentPropertyName;
+
+        const relationCountMeta: RelationCountMeta = {
+            mapToProperty: mapProperty,
+            conditionType: conditionType,
+            condition: condition,
+            alias: aliasObj,
+            entities: []
+        };
+        this.relationCountMetas.push(relationCountMeta);
+        if (parameters)
+            this.addParameters(parameters);
+        return this;
     }
 
-    innerJoinRelationIdAndMap(mapToProperty: string, property: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        return this.joinRelationId("INNER", mapToProperty, property, conditionType, condition, parameters);
-    }
-
-    innerJoinRelationId(property: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this {
-        return this.joinRelationId("INNER", undefined, property, conditionType, condition, parameters);
-    }
-
-    leftJoinRelationId(property: string, conditionType: "ON"|"WITH" = "ON", condition?: string, parameters?: ObjectLiteral): this {
-        return this.joinRelationId("LEFT", undefined, property, conditionType, condition, parameters);
-    }
-
-    innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        this.addSelect(alias);
-        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
-    }
-
-    innerJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        this.addSelect(alias);
-        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
-    }
-
-    innerJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        this.addSelect(alias);
-        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
-    }
-
-    innerJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    innerJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        return this.join("INNER", entityOrProperty, alias, conditionType, condition, parameters);
-    }
-
-    leftJoinAndMapMany(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoinAndMapMany(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        this.addSelect(alias);
-        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, true);
-    }
-
-    leftJoinAndMapOne(mapToProperty: string, property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoinAndMapOne(mapToProperty: string, entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        this.addSelect(alias);
-        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters, mapToProperty, false);
-    }
-
-    leftJoinAndSelect(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoinAndSelect(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoinAndSelect(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        this.addSelect(alias);
-        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters);
-    }
-
-    leftJoin(property: string, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoin(entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral): this;
-    leftJoin(entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral): this {
-        return this.join("LEFT", entityOrProperty, alias, conditionType, condition, parameters);
-    }
-
+    /**
+     * Sets WHERE condition in the query builder.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
+     * Additionally you can add parameters used in where expression.
+     */
     where(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "simple", condition: where });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
+    /**
+     * Adds new AND WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
     andWhere(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "and", condition: where });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
+    /**
+     * Adds new OR WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
     orWhere(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "or", condition: where });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
-    groupBy(groupBy: string): this {
-        this.groupBys = [groupBy];
-        return this;
-    }
-
-    addGroupBy(groupBy: string): this {
-        this.groupBys.push(groupBy);
-        return this;
-    }
-
+    /**
+     * Sets HAVING condition in the query builder.
+     * If you had previously HAVING expression defined,
+     * calling this function will override previously set HAVING conditions.
+     * Additionally you can add parameters used in where expression.
+     */
     having(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "simple", condition: having });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
+    /**
+     * Adds new AND HAVING condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
     andHaving(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "and", condition: having });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
+    /**
+     * Adds new OR HAVING condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
     orHaving(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "or", condition: having });
         if (parameters) this.addParameters(parameters);
         return this;
     }
 
+    /**
+     * Sets GROUP BY condition in the query builder.
+     * If you had previously GROUP BY expression defined,
+     * calling this function will override previously set GROUP BY conditions.
+     */
+    groupBy(groupBy: string): this {
+        this.groupBys = [groupBy];
+        return this;
+    }
+
+    /**
+     * Adds GROUP BY condition in the query builder.
+     */
+    addGroupBy(groupBy: string): this {
+        this.groupBys.push(groupBy);
+        return this;
+    }
+
+    /**
+     * Sets ORDER BY condition in the query builder.
+     * If you had previously ORDER BY expression defined,
+     * calling this function will override previously set ORDER BY conditions.
+     */
     orderBy(sort: string, order: "ASC"|"DESC" = "ASC"): this {
         this.orderBys = { [sort]: order };
         return this;
     }
 
+    /**
+     * Adds ORDER BY condition in the query builder.
+     */
     addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC"): this {
         this.orderBys[sort] = order;
         return this;
     }
 
+    /**
+     * Set's LIMIT - maximum number of rows to be selected.
+     * NOTE that it may not work as you expect if you are using joins.
+     * If you want to implement pagination, and you are having join in your query,
+     * then use instead setMaxResults instead.
+     */
     setLimit(limit: number): this {
         this.limit = limit;
         return this;
     }
 
+    /**
+     * Set's OFFSET - selection offset.
+     * NOTE that it may not work as you expect if you are using joins.
+     * If you want to implement pagination, and you are having join in your query,
+     * then use instead setFirstResult instead.
+     */
     setOffset(offset: number): this {
         this.offset = offset;
         return this;
     }
 
-    setFirstResult(firstResult: number): this {
-        this.firstResult = firstResult;
-        return this;
-    }
-
+    /**
+     * Set's maximum number of entities to be selected.
+     */
     setMaxResults(maxResults: number): this {
         this.maxResults = maxResults;
         return this;
     }
 
+    /**
+     * Set's offset of entities to be selected.
+     */
+    setFirstResult(firstResult: number): this {
+        this.firstResult = firstResult;
+        return this;
+    }
+
+    /**
+     * Sets given parameter's value.
+     */
     setParameter(key: string, value: any): this {
         this.parameters[key] = value;
         return this;
     }
 
+    /**
+     * Sets given object literal as parameters.
+     * Note, that it clears all previously set parameters.
+     */
     setParameters(parameters: ObjectLiteral): this {
         this.parameters = {};
-        Object.keys(parameters).forEach(key => this.parameters[key] = parameters[key]);
+        Object.keys(parameters).forEach(key => {
+            this.parameters[key] = parameters[key];
+        });
         return this;
     }
 
+    /**
+     * Adds all parameters from the given object.
+     * Unlike setParameters method it does not clear all previously set parameters.
+     */
     addParameters(parameters: ObjectLiteral): this {
-        Object.keys(parameters).forEach(key => this.parameters[key] = parameters[key]);
+        Object.keys(parameters).forEach(key => {
+            this.parameters[key] = parameters[key];
+        });
         return this;
     }
 
+    /**
+     * Gets all set parameters.
+     */
+    getParameters(): ObjectLiteral {
+        const parameters: ObjectLiteral = Object.assign({}, this.parameters);
+
+        // add discriminator column parameter if it exist
+        const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        if (mainMetadata.hasDiscriminatorColumn)
+            parameters["discriminatorColumnValue"] = mainMetadata.discriminatorValue;
+
+        return parameters;
+    }
+
+    /**
+     * Gets generated sql that will be executed.
+     * Parameters in the query are escaped for the currently used driver.
+     */
     getSql(): string {
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
@@ -402,6 +856,9 @@ export class QueryBuilder<Entity> {
         return sql;
     }
 
+    /**
+     * Gets generated sql without parameters being replaced.
+     */
     getGeneratedQuery(): string {
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
@@ -415,6 +872,9 @@ export class QueryBuilder<Entity> {
         return sql;
     }
 
+    /**
+     * Gets sql to be executed with all parameters used in it.
+     */
     getSqlWithParameters(options?: { skipOrderBy?: boolean }): [string, any[]] {
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
@@ -429,17 +889,9 @@ export class QueryBuilder<Entity> {
         return this.connection.driver.escapeQueryWithParameters(sql, this.getParameters());
     }
 
-    getParameters(): ObjectLiteral {
-        const parameters: ObjectLiteral = Object.assign({}, this.parameters);
-
-        // add discriminator column parameter if it exist
-        const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
-        if (mainMetadata.hasDiscriminatorColumn)
-            parameters["discriminatorColumnValue"] = mainMetadata.discriminatorValue;
-
-        return parameters;
-    }
-
+    /**
+     * Executes sql generated by query builder.
+     */
     async execute(): Promise<any> {
         let ownQueryRunner = false;
         let queryRunner = this.queryRunner;
@@ -458,21 +910,9 @@ export class QueryBuilder<Entity> {
         }
     }
 
-    getScalarResults<T>(): Promise<T[]> {
-        return this.execute();
-    }
-
-    getSingleScalarResult<T>(): Promise<T> {
-        return this.getScalarResults().then(results => results[0]);
-
-    }
-
-    getResults(): Promise<Entity[]> {
-        return this.getResultsAndScalarResults().then(results => {
-            return results.entities;
-        });
-    }
-
+    /**
+     * Executes sql generated by query builder and returns object with scalar results and entities created from them.
+     */
     async getResultsAndScalarResults(): Promise<{ entities: Entity[], scalarResults: any[] }> {
         if (!this.aliasMap.hasMainAlias)
             throw new Error(`Alias is not set. Looks like nothing is selected. Use select*, delete, update method to set an alias.`);
@@ -595,130 +1035,9 @@ export class QueryBuilder<Entity> {
         }
     }
 
-    /*private extractIdMap(alias: Alias, results: Entity[]): { alias: Alias, ids: any[] }[] {
-
-        // console.log("results ids:", results.map(result => result[]));
-        const metadata = this.aliasMap.getEntityMetadataByAlias(alias);
-        if (!metadata)
-            throw new Error("Cannot get entity metadata for the given alias " + this.aliasMap.mainAlias.name);
-
-        /!*
-        results.forEach(result => {
-        });
-
-        metadata.relations.forEach(relation => {
-            this.aliasMap.
-        });
-        *!/
-    }*/
-
-    private loadRelationCounts(queryRunner: QueryRunner, results: Entity[]): Promise<{}> {
-
-        const promises = this.relationCountMetas.map(relationCountMeta => {
-            const parentAlias = relationCountMeta.alias.parentAliasName;
-            const foundAlias = this.aliasMap.findAliasByName(parentAlias);
-            if (!foundAlias)
-                throw new Error(`Alias "${parentAlias}" was not found`);
-
-            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
-            if (!parentMetadata)
-                throw new Error("Cannot get entity metadata for the given alias " + foundAlias.name);
-
-            const relation = parentMetadata.findRelationWithPropertyName(relationCountMeta.alias.parentPropertyName);
-
-            const queryBuilder = new QueryBuilder(this.connection, queryRunner);
-            let condition = "";
-
-            const metadata = this.aliasMap.getEntityMetadataByAlias(relationCountMeta.alias);
-            if (!metadata)
-                throw new Error("Cannot get entity metadata for the given alias " + relationCountMeta.alias.name);
-
-            let joinTableName: string = metadata.table.name;
-
-            const junctionMetadata = relation.junctionEntityMetadata;
-            const appendedCondition = relationCountMeta.condition ? " AND " + this.replacePropertyNames(relationCountMeta.condition) : "";
-
-            /*if (relation.isManyToMany) {
-                const junctionTable = junctionMetadata.table.name;
-                const junctionAlias = relationCountMeta.alias.parentAliasName + "_" + relationCountMeta.alias.name;
-                const joinAlias = relationCountMeta.alias.name;
-                const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
-                const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
-                const inverseJoinColumnName = joinTable.inverseReferencedColumn.name; // not sure if this is correct
-
-                let condition1 = "", condition2 = "";
-                if (relation.isOwning) {
-                    condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn;
-                    condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
-                } else {
-                    condition1 = junctionAlias + "." + junctionMetadata.columns[1].name + "=" + parentAlias + "." + joinTableColumn;
-                    condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[0].name;
-                }
-
-                condition = " LEFT JOIN " + junctionTable + " " + junctionAlias + " " + relationCountMeta.conditionType + " " + condition1 +
-                    " LEFT JOIN " + joinTableName + " " + joinAlias + " " + relationCountMeta.conditionType + " " + condition2 + appendedCondition;
-
-            } else if (relation.isManyToOne || (relation.isOneToOne && relation.isOwning)) {
-                const joinTableColumn = relation.joinColumn.referencedColumn.name;
-                const condition2 = relationCountMeta.alias.name + "." + joinTableColumn + "=" + parentAlias + "." + relation.name;
-                condition = " LEFT JOIN " + joinTableName + " " + relationCountMeta.alias.name + " " + relationCountMeta.conditionType + " " + condition2 + appendedCondition;
-
-            } else {
-                throw new Error(`Relation count can be applied only `); // this should be done on entity build
-            }*/
-
-            // if (relationCountMeta.condition)
-            //     condition += relationCountMeta.condition;
-            // relationCountMeta.alias.target;
-            // todo: FIX primaryColumn usages
-
-            const ids = relationCountMeta.entities
-                .map(entityWithMetadata => entityWithMetadata.metadata.getEntityIdMap(entityWithMetadata.entity))
-                .filter(idMap => idMap !== undefined)
-                .map(idMap => idMap![parentMetadata.primaryColumn.propertyName]);
-            if (!ids || !ids.length)
-                throw new Error(`No ids found to load relation counters`);
-
-            return queryBuilder
-                .select(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} AS id`)
-                .addSelect(`COUNT(${ this.connection.driver.escapeAliasName(relation.propertyName) + "." + this.connection.driver.escapeColumnName(relation.inverseEntityMetadata.primaryColumn.name) }) as cnt`)
-                .from(parentMetadata.target, parentMetadata.name)
-                .leftJoin(parentMetadata.name + "." + relation.propertyName, relation.propertyName, relationCountMeta.conditionType, relationCountMeta.condition)
-                .setParameters(this.parameters)
-                .where(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} IN (:relationCountIds)`, { relationCountIds: ids })
-                .groupBy(parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName)
-                .getScalarResults()
-                .then((results: { id: any, cnt: any }[]) => {
-                    // console.log(relationCountMeta.entities);
-                    relationCountMeta.entities.forEach(entityWithMetadata => {
-                        const entityId = entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName];
-                        const entityResult = results.find(result => {
-                            return entityId === this.connection.driver.prepareHydratedValue(result.id, entityWithMetadata.metadata.primaryColumn);
-                        });
-                        if (entityResult) {
-
-                            if (relationCountMeta.mapToProperty) {
-                                const [parentName, propertyName] = (relationCountMeta.mapToProperty as string).split(".");
-                                // todo: right now mapping is working only on the currently countRelation class, but
-                                // different properties are working. make different classes to work too
-                                entityWithMetadata.entity[propertyName] = parseInt(entityResult.cnt);
-
-                            } else if (relation.countField) {
-                                entityWithMetadata.entity[relation.countField] = parseInt(entityResult.cnt);
-                            }
-                        }
-                    });
-                });
-        });
-
-        return Promise.all(promises);
-    }
-
-
-    getSingleResult(): Promise<Entity> {
-        return this.getResults().then(entities => entities[0]);
-    }
-
+    /**
+     * Gets count - number of entities selected by sql generated by this query builder.
+     */
     async getCount(): Promise<number> {
 
         let ownQueryRunner = false;
@@ -733,13 +1052,13 @@ export class QueryBuilder<Entity> {
 
         const distinctAlias = this.connection.driver.escapeAliasName(mainAlias);
         let countSql = `COUNT(` + metadata.primaryColumnsWithParentIdColumns.map((primaryColumn, index) => {
-            const propertyName = this.connection.driver.escapeColumnName(primaryColumn.name);
-            if (index === 0) {
-                return `DISTINCT(${distinctAlias}.${propertyName})`;
-            } else {
-                return `${distinctAlias}.${propertyName})`;
-            }
-        }).join(", ") + ") as cnt";
+                const propertyName = this.connection.driver.escapeColumnName(primaryColumn.name);
+                if (index === 0) {
+                    return `DISTINCT(${distinctAlias}.${propertyName})`;
+                } else {
+                    return `${distinctAlias}.${propertyName})`;
+                }
+            }).join(", ") + ") as cnt";
 
         const countQuery = this
             .clone({ queryRunner: queryRunner, skipOrderBys: true, ignoreParentTablesJoins: true })
@@ -760,6 +1079,24 @@ export class QueryBuilder<Entity> {
         }
     }
 
+    /**
+     * Gets all scalar results returned by execution of generated query builder sql.
+     */
+    getScalarResults<T>(): Promise<T[]> {
+        return this.execute();
+    }
+
+    /**
+     * Gets first scalar result returned by execution of generated query builder sql.
+     */
+    getSingleScalarResult<T>(): Promise<T> {
+        return this.getScalarResults().then(results => results[0]);
+
+    }
+
+    /**
+     * Gets entities and count returned by execution of generated query builder sql.
+     */
     getResultsAndCount(): Promise<[Entity[], number]> {
         // todo: share database connection and counter
         return Promise.all<any>([
@@ -768,6 +1105,25 @@ export class QueryBuilder<Entity> {
         ]);
     }
 
+    /**
+     * Gets entities returned by execution of generated query builder sql.
+     */
+    getResults(): Promise<Entity[]> {
+        return this.getResultsAndScalarResults().then(results => {
+            return results.entities;
+        });
+    }
+
+    /**
+     * Gets single entity returned by execution of generated query builder sql.
+     */
+    getSingleResult(): Promise<Entity> {
+        return this.getResults().then(entities => entities[0]);
+    }
+
+    /**
+     * Clones query builder as it is.
+     */
     clone(options?: { queryRunner?: QueryRunner, skipOrderBys?: boolean, skipLimit?: boolean, skipOffset?: boolean, ignoreParentTablesJoins?: boolean }): QueryBuilder<Entity> {
         const qb = new QueryBuilder(this.connection, options ? options.queryRunner : undefined);
         if (options && options.ignoreParentTablesJoins)
@@ -846,6 +1202,108 @@ export class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    protected loadRelationCounts(queryRunner: QueryRunner, results: Entity[]): Promise<{}> {
+
+        const promises = this.relationCountMetas.map(relationCountMeta => {
+            const parentAlias = relationCountMeta.alias.parentAliasName;
+            const foundAlias = this.aliasMap.findAliasByName(parentAlias);
+            if (!foundAlias)
+                throw new Error(`Alias "${parentAlias}" was not found`);
+
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(foundAlias);
+            if (!parentMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + foundAlias.name);
+
+            const relation = parentMetadata.findRelationWithPropertyName(relationCountMeta.alias.parentPropertyName);
+
+            const queryBuilder = new QueryBuilder(this.connection, queryRunner);
+            let condition = "";
+
+            const metadata = this.aliasMap.getEntityMetadataByAlias(relationCountMeta.alias);
+            if (!metadata)
+                throw new Error("Cannot get entity metadata for the given alias " + relationCountMeta.alias.name);
+
+            let joinTableName: string = metadata.table.name;
+
+            const junctionMetadata = relation.junctionEntityMetadata;
+            const appendedCondition = relationCountMeta.condition ? " AND " + this.replacePropertyNames(relationCountMeta.condition) : "";
+
+            /*if (relation.isManyToMany) {
+             const junctionTable = junctionMetadata.table.name;
+             const junctionAlias = relationCountMeta.alias.parentAliasName + "_" + relationCountMeta.alias.name;
+             const joinAlias = relationCountMeta.alias.name;
+             const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
+             const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
+             const inverseJoinColumnName = joinTable.inverseReferencedColumn.name; // not sure if this is correct
+
+             let condition1 = "", condition2 = "";
+             if (relation.isOwning) {
+             condition1 = junctionAlias + "." + junctionMetadata.columns[0].name + "=" + parentAlias + "." + joinTableColumn;
+             condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[1].name;
+             } else {
+             condition1 = junctionAlias + "." + junctionMetadata.columns[1].name + "=" + parentAlias + "." + joinTableColumn;
+             condition2 = joinAlias + "." + inverseJoinColumnName + "=" + junctionAlias + "." + junctionMetadata.columns[0].name;
+             }
+
+             condition = " LEFT JOIN " + junctionTable + " " + junctionAlias + " " + relationCountMeta.conditionType + " " + condition1 +
+             " LEFT JOIN " + joinTableName + " " + joinAlias + " " + relationCountMeta.conditionType + " " + condition2 + appendedCondition;
+
+             } else if (relation.isManyToOne || (relation.isOneToOne && relation.isOwning)) {
+             const joinTableColumn = relation.joinColumn.referencedColumn.name;
+             const condition2 = relationCountMeta.alias.name + "." + joinTableColumn + "=" + parentAlias + "." + relation.name;
+             condition = " LEFT JOIN " + joinTableName + " " + relationCountMeta.alias.name + " " + relationCountMeta.conditionType + " " + condition2 + appendedCondition;
+
+             } else {
+             throw new Error(`Relation count can be applied only `); // this should be done on entity build
+             }*/
+
+            // if (relationCountMeta.condition)
+            //     condition += relationCountMeta.condition;
+            // relationCountMeta.alias.target;
+            // todo: FIX primaryColumn usages
+
+            const ids = relationCountMeta.entities
+                .map(entityWithMetadata => entityWithMetadata.metadata.getEntityIdMap(entityWithMetadata.entity))
+                .filter(idMap => idMap !== undefined)
+                .map(idMap => idMap![parentMetadata.primaryColumn.propertyName]);
+            if (!ids || !ids.length)
+                throw new Error(`No ids found to load relation counters`);
+
+            return queryBuilder
+                .select(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} AS id`)
+                .addSelect(`COUNT(${ this.connection.driver.escapeAliasName(relation.propertyName) + "." + this.connection.driver.escapeColumnName(relation.inverseEntityMetadata.primaryColumn.name) }) as cnt`)
+                .from(parentMetadata.target, parentMetadata.name)
+                .leftJoin(parentMetadata.name + "." + relation.propertyName, relation.propertyName, relationCountMeta.conditionType, relationCountMeta.condition)
+                .setParameters(this.parameters)
+                .where(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} IN (:relationCountIds)`, { relationCountIds: ids })
+                .groupBy(parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName)
+                .getScalarResults()
+                .then((results: { id: any, cnt: any }[]) => {
+                    // console.log(relationCountMeta.entities);
+                    relationCountMeta.entities.forEach(entityWithMetadata => {
+                        const entityId = entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName];
+                        const entityResult = results.find(result => {
+                            return entityId === this.connection.driver.prepareHydratedValue(result.id, entityWithMetadata.metadata.primaryColumn);
+                        });
+                        if (entityResult) {
+
+                            if (relationCountMeta.mapToProperty) {
+                                const [parentName, propertyName] = (relationCountMeta.mapToProperty as string).split(".");
+                                // todo: right now mapping is working only on the currently countRelation class, but
+                                // different properties are working. make different classes to work too
+                                entityWithMetadata.entity[propertyName] = parseInt(entityResult.cnt);
+
+                            } else if (relation.countField) {
+                                entityWithMetadata.entity[relation.countField] = parseInt(entityResult.cnt);
+                            }
+                        }
+                    });
+                });
+        });
+
+        return Promise.all(promises);
+    }
 
     protected rawResultsToEntities(results: any[]) {
         const transformer = new RawSqlResultsToEntityTransformer(this.connection.driver, this.aliasMap, this.extractJoinMappings(), this.relationCountMetas);
@@ -1197,6 +1655,9 @@ export class QueryBuilder<Entity> {
     protected join(joinType: "INNER"|"LEFT", entity: Function, alias: string, conditionType?: "ON"|"WITH", condition?: string, parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany?: boolean): this;
     protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH", condition: string, parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany?: boolean): this;
     protected join(joinType: "INNER"|"LEFT", entityOrProperty: Function|string, alias: string, conditionType: "ON"|"WITH" = "ON", condition: string = "", parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany: boolean = false): this {
+
+        // todo: entityOrProperty can be a table name. implement if its a table
+        // todo: entityOrProperty can be target name. implement proper behaviour if it is.
 
         let tableName = "";
         const aliasObj = new Alias(alias);
