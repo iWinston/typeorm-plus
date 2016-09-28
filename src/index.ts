@@ -7,6 +7,9 @@ import {Connection} from "./connection/Connection";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
 import {ConnectionOptions} from "./connection/ConnectionOptions";
 import {getFromContainer, defaultContainer} from "./container";
+import {ObjectType} from "./common/ObjectType";
+import {Repository} from "./repository/Repository";
+import {EntityManager} from "./entity-manager/EntityManager";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -200,4 +203,37 @@ export function createConnections(ormConfigPath?: string): Promise<Connection[]>
  */
 export function createConnections(optionsOrOrmConfigFilePath?: ConnectionOptions[]|string): Promise<Connection[]> {
     return getConnectionManager().createAndConnectToAll(optionsOrOrmConfigFilePath as any);
+}
+
+/**
+ * Gets connection from the connection manager.
+ * If connection name wasn't specified, then "default" connection will be retrieved.
+ */
+export function getConnection(connectionName: string = "default"): Connection {
+    return getConnectionManager().get(connectionName);
+}
+
+/**
+ * Gets entity manager from the connection.
+ * If connection name wasn't specified, then "default" connection will be retrieved.
+ */
+export function getEntityManager(connectionName: string = "default"): EntityManager {
+    return getConnectionManager().get(connectionName).entityManager;
+}
+
+/**
+ * Gets repository for the given entity class.
+ */
+export function getRepository<Entity>(entityClass: ObjectType<Entity>, connectionName: string): Repository<Entity>;
+
+/**
+ * Gets repository for the given entity name.
+ */
+export function getRepository<Entity>(entityName: string, connectionName: string): Repository<Entity>;
+
+/**
+ * Gets repository for the given entity class or name.
+ */
+export function getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, connectionName: string = "default"): Repository<Entity> {
+    return getConnectionManager().get(connectionName).getRepository<Entity>(entityClassOrName as any);
 }
