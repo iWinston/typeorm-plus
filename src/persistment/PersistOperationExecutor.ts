@@ -418,8 +418,8 @@ export class PersistOperationExecutor {
         const valueMaps: { tableName: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
 
         updateOperation.columns.forEach(column => {
-            if (!column.target) return;
-            const metadata = this.entityMetadatas.findByTarget(column.target);
+            if (!column.entityTarget) return;
+            const metadata = this.entityMetadatas.findByTarget(column.entityTarget);
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
             if (!valueMap) {
                 valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
@@ -430,7 +430,7 @@ export class PersistOperationExecutor {
         });
 
         updateOperation.relations.forEach(relation => {
-            const metadata = this.entityMetadatas.findByTarget(relation.target);
+            const metadata = this.entityMetadatas.findByTarget(relation.entityTarget);
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
             if (!valueMap) {
                 valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };

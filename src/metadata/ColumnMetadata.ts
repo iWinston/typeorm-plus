@@ -166,6 +166,16 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     /**
+     * Gets column's entity target.
+     * Original target returns target of the class where column is.
+     * This class can be an abstract class, but column even is from that class,
+     * but its more related to a specific entity. That's why we need this field.
+     */
+    get entityTarget(): Function|string {
+        return this.entityMetadata.target;
+    }
+
+    /**
      * Column name in the database.
      */
     get name(): string {

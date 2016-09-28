@@ -191,6 +191,16 @@ export class RelationMetadata {
     // ---------------------------------------------------------------------
 
     /**
+     * Gets relation's entity target.
+     * Original target returns target of the class where relation is.
+     * This class can be an abstract class, but relation even is from that class,
+     * but its more related to a specific entity. That's why we need this field.
+     */
+    get entityTarget(): Function|string {
+        return this.entityMetadata.target;
+    }
+
+    /**
      * Gets the name of column in the database. 
      * //Cannot be used with many-to-many relations since they don't have a column in the database.
      * //Also only owning sides of the relations have this property.
