@@ -1,7 +1,5 @@
 /**
  * Thrown when user tries to execute operation that requires connection to be established.
- *
- * @internal
  */
 export class ConnectionIsNotSetError extends Error {
     name = "ConnectionIsNotSetError";

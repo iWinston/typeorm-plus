@@ -1,8 +1,6 @@
 /**
  * Thrown when accessed to the class with entity metadata,
  * however on that time entity metadata is not set in the class.
- *
- * @internal
  */
 export class EntityMetadataNotSetError extends Error {
     name = "EntityMetadataNotSetError";

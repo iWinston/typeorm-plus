@@ -1,7 +1,5 @@
 /**
  * Thrown when transaction is not started yet and user tries to run commit or rollback.
- *
- * @internal
  */
 export class TransactionNotStartedError extends Error {
     name = "TransactionNotStartedError";

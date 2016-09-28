@@ -12,8 +12,6 @@ import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
 
 /**
  * Validates built entity metadatas.
- * 
- * @internal
  */
 export class EntityMetadataValidator {
 

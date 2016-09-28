@@ -11,8 +11,6 @@ import {Driver} from "../driver/Driver";
 
 /**
  * Helps to create EntityMetadatas for junction tables.
- *
- * @internal
  */
 export interface JunctionEntityMetadataBuilderArgs {
     namingStrategy: NamingStrategyInterface;
@@ -23,8 +21,6 @@ export interface JunctionEntityMetadataBuilderArgs {
 
 /**
  * Helps to create EntityMetadatas for junction tables.
- * 
- * @internal
  */
 export class JunctionEntityMetadataBuilder {
     

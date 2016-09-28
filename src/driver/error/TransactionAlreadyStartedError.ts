@@ -1,7 +1,5 @@
 /**
  * Thrown when transaction is already started and user tries to run it again.
- *
- * @internal
  */
 export class TransactionAlreadyStartedError extends Error {
     name = "TransactionAlreadyStartedError";

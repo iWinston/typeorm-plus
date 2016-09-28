@@ -1,4 +1,3 @@
-/** @internal */
 export class OrmUtils {
     
     static groupBy<T, R>(array: T[], propertyCallback: (item: T) => R): { id: R, items: T[] }[] {

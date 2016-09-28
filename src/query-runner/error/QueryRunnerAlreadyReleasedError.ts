@@ -1,5 +1,4 @@
 /**
- * @internal
  */
 export class QueryRunnerAlreadyReleasedError extends Error {
     name = "QueryRunnerAlreadyReleasedError";

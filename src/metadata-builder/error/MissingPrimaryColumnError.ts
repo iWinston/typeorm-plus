@@ -1,7 +1,6 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
- * @internal
  */
 export class MissingPrimaryColumnError extends Error {
     name = "MissingPrimaryColumnError";

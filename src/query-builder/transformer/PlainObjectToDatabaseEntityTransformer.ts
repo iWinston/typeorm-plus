@@ -3,7 +3,6 @@ import {QueryBuilder} from "../QueryBuilder";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
- * @internal
  */
 interface LoadMap {
     name: string;

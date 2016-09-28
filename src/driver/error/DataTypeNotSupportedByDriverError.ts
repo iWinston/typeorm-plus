@@ -1,7 +1,5 @@
 /**
  * Thrown if some data type is not supported by a driver.
- *
- * @internal
  */
 export class DataTypeNotSupportedByDriverError extends Error {
     name = "DataTypeNotSupportedByDriverError";

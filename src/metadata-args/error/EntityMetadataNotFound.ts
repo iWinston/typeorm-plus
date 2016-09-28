@@ -1,5 +1,4 @@
 /**
- * @internal
  */
 export class EntityMetadataNotFound extends Error {
     name = "EntityMetadataNotFound";

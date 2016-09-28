@@ -1,7 +1,5 @@
 /**
  * Thrown when some unexpected error occur on driver packages load.
- *
- * @internal
  */
 export class DriverPackageLoadError extends Error {
     name = "DriverPackageLoadError";

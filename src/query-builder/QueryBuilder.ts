@@ -9,7 +9,6 @@ import {OrderByCondition} from "../find-options/OrderByCondition";
 import {Connection} from "../connection/Connection";
 
 /**
- * @internal
  */
 export interface Join {
     alias: Alias;
@@ -42,7 +41,6 @@ export interface RelationCountMeta {
 }
 
 /**
- * @internal
  */
 export interface JoinMapping {
     type: "join"|"relationId";

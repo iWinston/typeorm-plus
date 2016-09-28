@@ -3,7 +3,6 @@ import {Alias} from "./Alias";
 import {EntityMetadataCollection} from "../../metadata-args/collection/EntityMetadataCollection";
 
 /**
- * @internal
  */
 export class AliasMap {
     

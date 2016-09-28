@@ -25,8 +25,6 @@ import {Driver} from "../driver/Driver";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
- * 
- * @internal
  */
 export class EntityMetadataBuilder {
 

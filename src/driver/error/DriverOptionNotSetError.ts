@@ -1,7 +1,5 @@
 /**
  * Thrown if some required driver's option is not set.
- *
- * @internal
  */
 export class DriverOptionNotSetError extends Error {
     name = "DriverOptionNotSetError";

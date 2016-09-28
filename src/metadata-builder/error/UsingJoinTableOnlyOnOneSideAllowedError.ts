@@ -2,7 +2,6 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
- * @internal
  */
 export class UsingJoinTableOnlyOnOneSideAllowedError extends Error {
     name = "UsingJoinTableOnlyOnOneSideAllowedError";

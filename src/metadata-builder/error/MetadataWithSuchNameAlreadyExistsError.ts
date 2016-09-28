@@ -1,5 +1,4 @@
 /**
- * @internal
  */
 export class MetadataWithSuchNameAlreadyExistsError extends Error {
     name = "MetadataWithSuchNameAlreadyExistsError";

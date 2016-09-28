@@ -8,8 +8,6 @@ import {JoinMapping, RelationCountMeta} from "../QueryBuilder";
 /**
  * Transforms raw sql results returned from the database into entity object. 
  * Entity is constructed based on its entity metadata.
- *
- * @internal
  */
 export class RawSqlResultsToEntityTransformer {
 

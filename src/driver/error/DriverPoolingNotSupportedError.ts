@@ -1,7 +1,5 @@
 /**
  * Thrown if database driver does not support pooling.
- *
- * @internal
  */
 export class DriverPoolingNotSupportedError extends Error {
     name = "DriverPoolingNotSupportedError";

@@ -1,7 +1,5 @@
 /**
  * Thrown when required driver's package is not installed.
- *
- * @internal
  */
 export class DriverPackageNotInstalledError extends Error {
     name = "DriverPackageNotInstalledError";
