@@ -111,7 +111,6 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     protected async findNotLoadedIds(persistedEntities: OperateEntity[], dbEntities?: OperateEntity[]): Promise<OperateEntity[]> {
         const newDbEntities: OperateEntity[] = dbEntities ? dbEntities.map(dbEntity => dbEntity) : [];
         const missingDbEntitiesLoad = persistedEntities.map(async entityWithId => {
-            console.log(entityWithId);
             if (entityWithId.id === null ||  // todo: not sure if this condition will work
                 entityWithId.id === undefined || // todo: not sure if this condition will work
                 newDbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.compareId(entityWithId.id!)))
