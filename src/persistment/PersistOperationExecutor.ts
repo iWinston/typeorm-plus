@@ -349,7 +349,6 @@ export class PersistOperationExecutor {
     }
 
     private updateByRelation(operation: UpdateByRelationOperation, insertOperations: InsertOperation[]) {
-
         if (!operation.insertOperation.entityId)
             throw new Error(`insert operation does not have entity id`);
 
@@ -362,12 +361,8 @@ export class PersistOperationExecutor {
             tableName = metadata.table.name;
             relationName = operation.updatedRelation.inverseRelation.name;
             relationId = operation.targetEntity[metadata.firstPrimaryColumn.propertyName] || idInInserts; // todo: make sure idInInserts is always a map
-            // relationId = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
-            // idColumn = metadata.primaryColumn.name;
-            // id = operation.insertOperation.entityId;
-
-            updateMap = operation.insertOperation.entityId;
-
+            
+            updateMap = metadata.transformIdMapToColumnNames(operation.insertOperation.entityId);
         } else {
             const metadata = this.entityMetadatas.findByTarget(operation.entityTarget);
             let idInInserts: ObjectLiteral|undefined = undefined;
@@ -379,7 +374,7 @@ export class PersistOperationExecutor {
             relationId = operation.insertOperation.entityId[metadata.firstPrimaryColumn.propertyName]; // todo: make sure entityId is always a map
             // idColumn = metadata.primaryColumn.name;
             // id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
-            updateMap = metadata.getEntityIdMap(operation.targetEntity) || idInInserts; // todo: make sure idInInserts always object even when id is single!!!
+            updateMap = metadata.getEntityIdColumnMap(operation.targetEntity) || idInInserts; // todo: make sure idInInserts always object even when id is single!!!
         }
         if (!updateMap)
             throw new Error(`Cannot execute update by relation operation, because cannot find update criteria`);
@@ -392,7 +387,7 @@ export class PersistOperationExecutor {
         const fromEntityMetadata = this.entityMetadatas.findByTarget(operation.fromEntityTarget);
         const tableName = targetEntityMetadata.table.name;
         const targetRelation = operation.fromRelation.inverseRelation;
-        const updateMap = targetEntityMetadata.getEntityIdMap(operation.targetEntity);
+        const updateMap = targetEntityMetadata.getEntityIdColumnMap(operation.targetEntity);
         if (!updateMap) return; // todo: is return correct here?
 
         const fromEntityInsertOperation = insertOperations.find(o => o.entity === operation.fromEntity);
@@ -533,7 +528,7 @@ export class PersistOperationExecutor {
             });
             await this.queryRunner.delete(metadata.table.name, childConditions);
         } else {
-            await this.queryRunner.delete(metadata.table.name, metadata.getEntityIdMap(entity)!);
+            await this.queryRunner.delete(metadata.table.name, metadata.getEntityIdColumnMap(entity)!);
         }
     }
 

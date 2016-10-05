@@ -556,6 +556,31 @@ export class EntityMetadata {
     }
 
     /**
+     * Same as `getEntityIdMap` but the key of the map will be the column names instead of the property names. 
+     */
+    getEntityIdColumnMap(entity: any): ObjectLiteral|undefined {
+        return this.transformIdMapToColumnNames(this.getEntityIdMap(entity));
+    }
+
+    transformIdMapToColumnNames(idMap: ObjectLiteral|undefined) {
+        if (!idMap) {
+            return idMap;
+        }
+        const map: ObjectLiteral = {};
+        Object.keys(idMap).forEach(propertyName => {
+            const column = this.getColumnByPropertyName(propertyName);
+            if (column) {
+                map[column.name] = idMap[propertyName];
+            }
+        });
+        return map;
+    }
+
+    getColumnByPropertyName(propertyName: string) {
+        return this._columns.find(column => column.propertyName === propertyName);
+    }
+    
+    /**
      * Checks if column with the given property name exist.
      */
     hasColumnWithPropertyName(propertyName: string): boolean {
