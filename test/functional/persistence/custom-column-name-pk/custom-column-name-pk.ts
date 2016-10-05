@@ -10,6 +10,7 @@ describe("persistence > cascade operations with custom name", () => {
     before(async () => connections = await setupTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
+        dropSchemaOnConnection: true
     }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
@@ -42,7 +43,6 @@ describe("persistence > cascade operations with custom name", () => {
                     "post.id": "ASC"
                 }
             });
-            console.log(posts);
 
             posts.should.be.eql([{
                 id: 1,

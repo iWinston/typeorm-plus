@@ -17,6 +17,7 @@ describe("persistence > one-to-many", function() {
         return setupTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
+            dropSchemaOnConnection: true,
             skipPostgres: true // TODO: fix it, right now postgres is failing for some reason when pooling enabled
         }).then(all => connections = all);
     });

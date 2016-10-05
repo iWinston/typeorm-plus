@@ -90,7 +90,7 @@ export class IndexMetadata {
         const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyName) !== -1);
         const missingColumnNames = columnPropertyNames.filter(columnPropertyName => !this.entityMetadata.columns.find(column => column.propertyName === columnPropertyName));
         if (missingColumnNames.length > 0) {
-            console.log(this.entityMetadata.columns);
+            // console.log(this.entityMetadata.columns);
             throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
         }
 

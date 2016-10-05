@@ -120,7 +120,10 @@ export class EntityMetadata {
         this.relations.forEach(relation => relation.entityMetadata = this);
         this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
         this.indices.forEach(index => index.entityMetadata = this);
-        this.embeddeds.forEach(embedded => embedded.entityMetadata = this);
+        this.embeddeds.forEach(embedded => {
+            embedded.entityMetadata = this;
+            embedded.columns.forEach(column => column.entityMetadata = this);
+        });
     }
 
     // -------------------------------------------------------------------------
