@@ -370,8 +370,8 @@ export class EntityPersistOperationBuilder {
         });
         return metadata.relations.reduce((operations, relation) => {
             const relationMetadata = relation.inverseEntityMetadata;
-            const relationIdProperty = relationMetadata.firstPrimaryColumn.propertyName; // todo: join column metadata should be used instead of primaryColumn
             const value = this.getEntityRelationValue(relation, newEntity);
+                        
             if (value === null || value === undefined)
                 return operations;
 
@@ -381,6 +381,7 @@ export class EntityPersistOperationBuilder {
                 value.forEach((subEntity: any) => {
 
                     if (relation.isManyToMany) {
+                        const relationIdProperty = relationMetadata.firstPrimaryColumn.propertyName; // todo: join column metadata should be used instead of primaryColumn
                         const has = !dbValue || !dbValue.find((e: any) => e[relationIdProperty] === subEntity[relationIdProperty]);
 
                         if (has) {

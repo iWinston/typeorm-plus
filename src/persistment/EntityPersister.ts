@@ -111,7 +111,6 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     protected async findNotLoadedIds(persistedEntities: OperateEntity[], dbEntities?: OperateEntity[]): Promise<OperateEntity[]> {
         const newDbEntities: OperateEntity[] = dbEntities ? dbEntities.map(dbEntity => dbEntity) : [];
         const missingDbEntitiesLoad = persistedEntities.map(async entityWithId => {
-
             if (entityWithId.id === null ||  // todo: not sure if this condition will work
                 entityWithId.id === undefined || // todo: not sure if this condition will work
                 newDbEntities.find(dbEntity => dbEntity.entityTarget === entityWithId.entityTarget && dbEntity.compareId(entityWithId.id!)))
@@ -121,19 +120,20 @@ export class EntityPersister<Entity extends ObjectLiteral> {
             const parameters: ObjectLiteral = {};
             let condition = "";
 
-            if (this.metadata.hasParentIdColumn) {
-                condition = this.metadata.parentIdColumns.map(parentIdColumn => {
+            const metadata = this.connection.entityMetadatas.findByTarget(entityWithId.entityTarget);
+
+            if (metadata.hasParentIdColumn) {
+                condition = metadata.parentIdColumns.map(parentIdColumn => {
                     parameters[parentIdColumn.propertyName] = entityWithId.id![parentIdColumn.propertyName];
                     return alias + "." + parentIdColumn.propertyName + "=:" + parentIdColumn.propertyName;
                 }).join(" AND ");
             } else {
-                condition = this.metadata.primaryColumns.map(primaryColumn => {
+                condition = metadata.primaryColumns.map(primaryColumn => {
                     parameters[primaryColumn.propertyName] = entityWithId.id![primaryColumn.propertyName];
                     return alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName;
                 }).join(" AND ");
             }
 
-            const metadata = this.connection.entityMetadatas.findByTarget(entityWithId.entityTarget);
             const loadedEntity = await new QueryBuilder(this.connection, this.queryRunner)
                 .select(alias)
                 .from(entityWithId.entityTarget, alias)

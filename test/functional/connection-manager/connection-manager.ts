@@ -40,7 +40,7 @@ describe("ConnectionManager", () => {
             connection.isConnected.should.be.false;
         });
 
-        it("should create a postgres connection when postgres driver is specified", () => {
+       /* it("should create a postgres connection when postgres driver is specified", () => {
             const options: ConnectionOptions = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
@@ -50,7 +50,7 @@ describe("ConnectionManager", () => {
             connection.name.should.be.equal("myPostgresConnection");
             connection.driver.should.be.instanceOf(PostgresDriver);
             connection.isConnected.should.be.false;
-        });
+        });*/
 
     });
 
@@ -68,7 +68,7 @@ describe("ConnectionManager", () => {
             await connection.close();
         });
 
-        it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
+    /*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
             const options: ConnectionOptions = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
@@ -79,7 +79,7 @@ describe("ConnectionManager", () => {
             connection.driver.should.be.instanceOf(PostgresDriver);
             connection.isConnected.should.be.true;
             await connection.close();
-        });
+        });*/
 
     });
 
@@ -155,7 +155,7 @@ describe("ConnectionManager", () => {
             await connection.close();
          });
 
-        it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+     /*   it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchemaOnConnection: true,
                 autoSchemaSync: true,
@@ -176,9 +176,9 @@ describe("ConnectionManager", () => {
             expect(loadedPost).to.be.undefined;
 
             await connection.close();
-         });
+         });*/
 
-        it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+    /*    it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchemaOnConnection: true,
                 autoSchemaSync: true,
@@ -198,7 +198,7 @@ describe("ConnectionManager", () => {
             const loadedPost = await connection.entityManager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();
-         });
+         });*/
 
     });
 
