@@ -20,7 +20,7 @@ describe("persistence > many-to-many", function() {
             host: "localhost",
             port: 3306,
             username: "root",
-            password: "root",
+            password: "admin",
             database: "test"
         },
         logging: {
