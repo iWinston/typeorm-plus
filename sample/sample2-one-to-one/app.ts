@@ -10,9 +10,9 @@ import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "postgres",
+        type: "mysql",
         host: "localhost",
-        port: 5432,
+        port: 3306,
         username: "root",
         password: "admin",
         database: "test"

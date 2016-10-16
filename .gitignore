@@ -1,6 +1,5 @@
 build/
 coverage/
 node_modules/
-typings/
 npm-debug.log
-config/parameters.json
+ormconfig.json
