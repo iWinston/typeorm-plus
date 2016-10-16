@@ -10,6 +10,7 @@ describe("persistence > cascade operations", () => {
     before(async () => connections = await setupTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
+        dropSchemaOnConnection: true,
     }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
