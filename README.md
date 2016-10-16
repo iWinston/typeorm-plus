@@ -2,7 +2,10 @@
 
 [![Join the chat at https://gitter.im/pleerock/typeorm](https://badges.gitter.im/pleerock/typeorm.svg)](https://gitter.im/pleerock/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-> ORM development is in alpha stage. Don't be frustrated with bugs if you face them.
+> Please support a project by simply putting a github star. 
+Share this library with friends on twitter and everywhere else you can.
+
+> ORM is in active development. Don't be frustrated with bugs if you face them.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
@@ -275,6 +278,7 @@ export class Photo {
 Now, when our entity is created, lets create `app.ts` file and setup our connection there:
 
 ```typescript
+import "reflect-metadata";
 import {createConnection} from "typeorm";
 import {Photo} from "./entity/Photo";
 
