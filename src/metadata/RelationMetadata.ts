@@ -163,7 +163,7 @@ export class RelationMetadata {
             this._inverseSideProperty = args.inverseSideProperty;
         if (args.propertyType)
             this.propertyType = args.propertyType;
-        if (args.isLazy)
+        if (args.isLazy !== undefined)
             this.isLazy = args.isLazy;
         if (args.options.cascadeInsert || args.options.cascadeAll)
             this.isCascadeInsert = true;
@@ -171,11 +171,11 @@ export class RelationMetadata {
             this.isCascadeUpdate = true;
         if (args.options.cascadeRemove || args.options.cascadeAll)
             this.isCascadeRemove = true;
-        if (args.options.nullable)
+        if (args.options.nullable !== undefined)
             this.isNullable = args.options.nullable;
         if (args.options.onDelete)
             this.onDelete = args.options.onDelete;
-        if (args.options.primary)
+        if (args.options.primary !== undefined)
             this.isPrimary = args.options.primary;
         if (args.isTreeParent)
             this.isTreeParent = true;

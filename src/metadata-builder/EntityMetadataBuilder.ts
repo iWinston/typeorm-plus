@@ -461,6 +461,9 @@ export class EntityMetadataBuilder {
                 metadata.foreignKeys.push(foreignKey);
             });
 
+        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
+        getFromContainer(EntityMetadataValidator).validateDependencies(entityMetadatas);
+
         return entityMetadatas;
     }
     

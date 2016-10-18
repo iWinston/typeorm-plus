@@ -6,6 +6,8 @@ import {MissingJoinColumnError} from "./error/MissingJoinColumnError";
 import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
+import {CircularRelationsError} from "./error/CircularRelationsError";
+const DepGraph = require("dependency-graph").DepGraph;
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -24,6 +26,29 @@ export class EntityMetadataValidator {
      */
     validateMany(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas));
+    }
+
+    /**
+     * Validates dependencies of the entity metadatas.
+     */
+    validateDependencies(entityMetadatas: EntityMetadata[]) {
+        const graph = new DepGraph();
+        entityMetadatas.forEach(entityMetadata => {
+            graph.addNode(entityMetadata.name);
+        });
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.relationsWithJoinColumns
+                .filter(relation => !relation.isNullable)
+                .forEach(relation => {
+                    graph.addDependency(entityMetadata.name, relation.inverseEntityMetadata.name);
+                });
+        });
+        try {
+            graph.overallOrder();
+
+        } catch (err) {
+            throw new CircularRelationsError(err.toString().replace("Error: Dependency Cycle Found: ", ""));
+        }
     }
 
     /**

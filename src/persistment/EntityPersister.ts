@@ -7,6 +7,7 @@ import {EntityPersistOperationBuilder} from "./EntityPersistOperationsBuilder";
 import {PersistOperationExecutor} from "./PersistOperationExecutor";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {PersistedEntityNotFoundError} from "./error/PersistedEntityNotFoundError";
 
 /**
  * Manages entity persistence - insert, update and remove of entity.
@@ -28,12 +29,15 @@ export class EntityPersister<Entity extends ObjectLiteral> {
 
     /**
      * Persists given entity in the database.
+     * Persistence is a complex process:
+     * 1. flatten all persist entities
+     * 2. load from the database all entities that has primary keys and might be updated
      */
     async persist(entity: Entity): Promise<Entity> {
-        const allNewEntities = await this.flattenEntityRelationTree(entity, this.metadata);
-        const persistedEntity = allNewEntities.find(operatedEntity => operatedEntity.entity === entity);
-        if (!persistedEntity)
-            throw new Error(`Internal error. Persisted entity was not found in the list of prepared operated entities`);
+        const allPersistedOperatedEntities = this.flattenEntityRelationTree(entity, this.metadata);
+        const persistedOperatedEntity = allPersistedOperatedEntities.find(operatedEntity => operatedEntity.entity === entity);
+        if (!persistedOperatedEntity)
+            throw new PersistedEntityNotFoundError();
 
         let dbEntity: OperateEntity|undefined, allDbInNewEntities: OperateEntity[] = [];
 
@@ -46,14 +50,14 @@ export class EntityPersister<Entity extends ObjectLiteral> {
             const loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entity, this.metadata, queryBuilder);
             if (loadedDbEntity) {
                 dbEntity = new OperateEntity(this.metadata, loadedDbEntity);
-                allDbInNewEntities = await this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
+                allDbInNewEntities = this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
             }
         }
 
         // need to find db entities that were not loaded by initialize method
-        const allDbEntities = await this.findNotLoadedIds(allNewEntities, allDbInNewEntities);
+        const allDbEntities = await this.findNotLoadedIds(allPersistedOperatedEntities, allDbInNewEntities);
         const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedEntity, allDbEntities, allNewEntities);
+        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedOperatedEntity, allDbEntities, allPersistedOperatedEntities);
 
         const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
         await persistOperationExecutor.executePersistOperation(persistOperation);
@@ -158,8 +162,12 @@ export class EntityPersister<Entity extends ObjectLiteral> {
             operateEntities.push(new OperateEntity(metadata, entity));
 
             metadata.extractRelationValuesFromEntity(entity, metadata.relations)
-                .filter(([relation, value]) => !operateEntities.find(operateEntity => operateEntity.entity === value))  // exclude duplicate entities and avoid recursion
-                .forEach(([relation, value]) => recursive(value, relation.inverseEntityMetadata));
+                .filter(([relation, value]) => { // exclude duplicate entities and avoid recursion
+                    return !operateEntities.find(operateEntity => operateEntity.entity === value);
+                })
+                .forEach(([relation, value]) => {
+                    recursive(value, relation.inverseEntityMetadata);
+                });
         };
         recursive(entity, metadata);
         return operateEntities;

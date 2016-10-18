@@ -4,22 +4,22 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 
-describe("relations > relation mapped to relation with different name (#56)", () => {
+describe.skip("cascades > should insert by cascades from both sides (#57)", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
+        dropSchemaOnConnection: true
     }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
-    it("should work perfectly", () => Promise.all(connections.map(async connection => {
+    it("should insert by cascades from owner side", () => Promise.all(connections.map(async connection => {
 
-        // first create and save details
+        // first create details but don't save them because they will be saved by cascades
         const details = new PostDetails();
         details.keyword = "post-1";
-        await connection.entityManager.persist(details);
 
         // then create and save a post with details
         const post1 = new Post();
@@ -36,12 +36,13 @@ describe("relations > relation mapped to relation with different name (#56)", ()
         });
 
         posts.should.be.eql([{
-            id: 1,
+            key: 1,
             title: "Hello Post #1",
             details: {
                 keyword: "post-1"
             }
         }]);
+
     })));
 
 });
