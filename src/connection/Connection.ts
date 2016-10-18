@@ -351,6 +351,11 @@ export class Connection {
     getRepository<Entity>(entityName: string): Repository<Entity>;
 
     /**
+     * Gets repository for the given entity name.
+     */
+    getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity>;
+
+    /**
      * Gets repository for the given entity class or name.
      */
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {

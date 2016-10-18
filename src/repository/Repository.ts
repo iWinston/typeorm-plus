@@ -290,6 +290,43 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Finds entities with ids.
+     * Optionally find options can be applied.
+     * todo: add this method into all other repositories and entity managers
+     */
+    async findByIds(ids: any[], options?: FindOptions): Promise<Entity[]> {
+        const qb = this.createFindQueryBuilder(undefined, options);
+
+        const whereStrings = ids.map((id, index) => {
+            const whereSubStrings: string[] = [];
+            const parameters: ObjectLiteral = {};
+            if (this.metadata.hasMultiplePrimaryKeys) {
+                this.metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
+                    whereSubStrings.push(id[primaryColumn.name] + "=:id_" + index + "_" + secondIndex);
+                    parameters["id_" + index + "_" + secondIndex] = id[primaryColumn.name];
+                });
+                this.metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
+                    whereSubStrings.push(id[primaryColumn.name] + "=:parentId_" + index + "_" + secondIndex);
+                    parameters["parentId_" + index + "_" + secondIndex] = id[primaryColumn.propertyName];
+                });
+            } else {
+                if (this.metadata.primaryColumns.length > 0) {
+                    whereSubStrings.push(this.metadata.firstPrimaryColumn.name + "=:id_" + index);
+                    parameters["id_" + index] = id;
+
+                } else if (this.metadata.parentIdColumns.length > 0) {
+                    whereSubStrings.push(this.metadata.parentIdColumns[0].name + "=:parentId_" + index);
+                    parameters["parentId_" + index] = id;
+                }
+            }
+            return whereSubStrings.join(" AND ");
+        });
+        qb.andWhere("(" + whereStrings.join(" OR ") + ")");
+
+        return qb.getResults();
+    }
+
+    /**
      * Finds entity with given id.
      * Optionally find options can be applied.
      */

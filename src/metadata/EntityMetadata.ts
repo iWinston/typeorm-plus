@@ -537,6 +537,9 @@ export class EntityMetadata {
         return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.createPropertiesMap());
     }
 
+    /**
+     * todo: undefined entities should not go there
+     */
     getEntityIdMap(entity: any): ObjectLiteral|undefined {
         if (!entity)
             return undefined;

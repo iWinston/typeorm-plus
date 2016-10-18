@@ -1,6 +1,6 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {PersistOperation, OperateEntity} from "./operation/PersistOperation";
+import {PersistOperation} from "./operation/PersistOperation";
 import {InsertOperation} from "./operation/InsertOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 import {JunctionInsertOperation} from "./operation/JunctionInsertOperation";
@@ -11,6 +11,7 @@ import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetada
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {Subject} from "./subject/Subject";
 
 /**
  * 1. collect all exist objects from the db entity
@@ -57,10 +58,10 @@ export class EntityPersistOperationBuilder {
     /**
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
-    buildFullPersistment(dbEntity: OperateEntity|undefined,
-                         persistedEntity: OperateEntity,
-                         dbEntities: OperateEntity[],
-                         allPersistedEntities: OperateEntity[]): PersistOperation {
+    buildFullPersistment(dbEntity: Subject|undefined,
+                         persistedEntity: Subject,
+                         dbEntities: Subject[],
+                         allPersistedEntities: Subject[]): PersistOperation {
         
         // const dbEntities = this.extractObjectsById(dbEntity, metadata);
         // const allPersistedEntities = this.extractObjectsById(persistedEntity, metadata);
@@ -91,10 +92,10 @@ export class EntityPersistOperationBuilder {
      * Finds columns and relations from entity2 which does not exist or does not match in entity1.
      */
     buildOnlyRemovement(metadata: EntityMetadata,
-                        dbEntity: OperateEntity,
-                        persistedEntity: OperateEntity,
-                        dbEntities: OperateEntity[],
-                        allPersistedEntities: OperateEntity[]): PersistOperation {
+                        dbEntity: Subject,
+                        persistedEntity: Subject,
+                        dbEntities: Subject[],
+                        allPersistedEntities: Subject[]): PersistOperation {
         // const dbEntities = this.extractObjectsById(dbEntity, metadata);
         // const allEntities = this.extractObjectsById(newEntity, metadata);
 
@@ -115,8 +116,8 @@ export class EntityPersistOperationBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private findCascadeInsertedEntities(newEntityWithId: OperateEntity,
-                                        dbEntities: OperateEntity[],
+    private findCascadeInsertedEntities(newEntityWithId: Subject,
+                                        dbEntities: Subject[],
                                         fromRelation?: RelationMetadata,
                                         operations: InsertOperation[] = []): InsertOperation[] {
         const newEntity = newEntityWithId.entity;
@@ -138,11 +139,11 @@ export class EntityPersistOperationBuilder {
 
             if (value instanceof Array) {
                 value.forEach((subValue: any) => {
-                    const subValueWithId = new OperateEntity(inverseMetadata, subValue);
+                    const subValueWithId = new Subject(inverseMetadata, subValue);
                     this.findCascadeInsertedEntities(subValueWithId, dbEntities, relation, operations);
                 });
             } else {
-                const valueWithId = new OperateEntity(inverseMetadata, value);
+                const valueWithId = new Subject(inverseMetadata, value);
                 this.findCascadeInsertedEntities(valueWithId, dbEntities, relation, operations);
             }
         });
@@ -152,9 +153,9 @@ export class EntityPersistOperationBuilder {
 
     private findCascadeUpdateEntities(updatesByRelations: UpdateByRelationOperation[],
                                       metadata: EntityMetadata,
-                                      dbEntityWithId: OperateEntity,
-                                      newEntityWithId: OperateEntity,
-                                      dbEntities: OperateEntity[],
+                                      dbEntityWithId: Subject,
+                                      newEntityWithId: Subject,
+                                      dbEntities: Subject[],
                                       fromRelation?: RelationMetadata,
                                       operations: UpdateOperation[] = []): UpdateOperation[] {
         const dbEntity = dbEntityWithId.entity;
@@ -193,8 +194,8 @@ export class EntityPersistOperationBuilder {
                         return dbValue.entityTarget === relation.entityMetadata.target && dbValue.entity[referencedColumnName] === subEntity[relationIdColumnName];
                     });
                     if (dbValue) {
-                        const dbValueWithId = new OperateEntity(relMetadata, dbValue.entity);
-                        const subEntityWithId = new OperateEntity(relMetadata, subEntity);
+                        const dbValueWithId = new Subject(relMetadata, dbValue.entity);
+                        const subEntityWithId = new Subject(relMetadata, subEntity);
                         this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValueWithId, subEntityWithId, dbEntities, relation, operations);
                     }
                 });
@@ -204,8 +205,8 @@ export class EntityPersistOperationBuilder {
                     return dbValue.entityTarget === relation.entityMetadata.target && dbValue.entity[referencedColumnName] === value[relationIdColumnName];
                 });
                 if (dbValue) {
-                    const dbValueWithId = new OperateEntity(relMetadata, dbValue.entity);
-                    const valueWithId = new OperateEntity(relMetadata, value);
+                    const dbValueWithId = new Subject(relMetadata, dbValue.entity);
+                    const valueWithId = new Subject(relMetadata, value);
                     this.findCascadeUpdateEntities(updatesByRelations, relMetadata, dbValueWithId, valueWithId, dbEntities, relation, operations);
                 }
             }
@@ -215,8 +216,8 @@ export class EntityPersistOperationBuilder {
     }
 
     private findCascadeRemovedEntities(metadata: EntityMetadata,
-                                       dbEntityWithId: OperateEntity,
-                                       allPersistedEntities: OperateEntity[],
+                                       dbEntityWithId: Subject,
+                                       allPersistedEntities: Subject[],
                                        fromRelation: RelationMetadata|undefined,
                                        fromMetadata: EntityMetadata|undefined,
                                        fromEntityId: ObjectLiteral|undefined,
@@ -244,14 +245,14 @@ export class EntityPersistOperationBuilder {
             if (dbValue instanceof Array) {
                 dbValue.forEach((subDbEntity: any) => {
                     if (subDbEntity) {
-                        const subDbEntityWithId = new OperateEntity(relMetadata, subDbEntity);
+                        const subDbEntityWithId = new Subject(relMetadata, subDbEntity);
 
                         const relationOperations = this.findCascadeRemovedEntities(relMetadata, subDbEntityWithId, allPersistedEntities, relation, metadata, metadata.getEntityIdMap(dbEntity), isObjectRemoved);
                         relationOperations.forEach(o => operations.push(o));
                     }
                 });
             } else if (dbValue) {
-                const dbValueWithId = new OperateEntity(relMetadata, dbValue);
+                const dbValueWithId = new Subject(relMetadata, dbValue);
                 
                 const relationOperations = this.findCascadeRemovedEntities(relMetadata, dbValueWithId, allPersistedEntities, relation, metadata, metadata.getEntityIdMap(dbEntity), isObjectRemoved);
                 relationOperations.forEach(o => operations.push(o));
@@ -262,8 +263,8 @@ export class EntityPersistOperationBuilder {
     }
 
     private updateInverseRelations(metadata: EntityMetadata,
-                                   dbOperateEntity: OperateEntity|undefined,
-                                   newOperateEntity: OperateEntity,
+                                   dbOperateEntity: Subject|undefined,
+                                   newOperateEntity: Subject,
                                    operations: UpdateByInverseSideOperation[] = []): UpdateByInverseSideOperation[] { // todo: why its not called recursively?
         // const dbEntity = dbOperateEntity.entity;
         const newEntity = newOperateEntity.entity;
@@ -320,13 +321,13 @@ export class EntityPersistOperationBuilder {
      *
      */
 
-    private updateRelations(insertOperations: InsertOperation[], newEntity: OperateEntity): UpdateByRelationOperation[] {
+    private updateRelations(insertOperations: InsertOperation[], newEntity: Subject): UpdateByRelationOperation[] {
         return insertOperations.reduce((operations, insertOperation) => {
             return operations.concat(this.findRelationsWithEntityInside(insertOperation, newEntity));
         }, <UpdateByRelationOperation[]> []);
     }
 
-    private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchInWithId: OperateEntity): UpdateByRelationOperation[] {
+    private findRelationsWithEntityInside(insertOperation: InsertOperation, entityToSearchInWithId: Subject): UpdateByRelationOperation[] {
         const entityToSearchIn = entityToSearchInWithId.entity;
         const metadata = this.entityMetadatas.findByTarget(entityToSearchInWithId.entityTarget);
 
@@ -342,7 +343,7 @@ export class EntityPersistOperationBuilder {
                     if (!relation.isManyToMany && sub === insertOperation.entity)
                         operations.push(new UpdateByRelationOperation(entityToSearchInWithId.entityTarget, entityToSearchIn, insertOperation, relation));
 
-                    const subWithId = new OperateEntity(inverseMetadata, sub);
+                    const subWithId = new Subject(inverseMetadata, sub);
                     const subOperations = this.findRelationsWithEntityInside(insertOperation, subWithId);
                     subOperations.forEach(o => operations.push(o));
                 });
@@ -353,7 +354,7 @@ export class EntityPersistOperationBuilder {
                     operations.push(new UpdateByRelationOperation(entityToSearchInWithId.entityTarget, entityToSearchIn, insertOperation, relation));
                 }
 
-                const valueWithId = new OperateEntity(inverseMetadata, value);
+                const valueWithId = new Subject(inverseMetadata, value);
                 const subOperations = this.findRelationsWithEntityInside(insertOperation, valueWithId);
                 subOperations.forEach(o => operations.push(o));
 
@@ -363,7 +364,7 @@ export class EntityPersistOperationBuilder {
         return operations;
     }
 
-    private findJunctionInsertOperations(metadata: EntityMetadata, newEntityWithId: OperateEntity, dbEntities: OperateEntity[], isRoot = true): JunctionInsertOperation[] {
+    private findJunctionInsertOperations(metadata: EntityMetadata, newEntityWithId: Subject, dbEntities: Subject[], isRoot = true): JunctionInsertOperation[] {
         const newEntity = newEntityWithId.entity;
         const dbEntity = dbEntities.find(dbEntity => {
             return dbEntity.compareId(metadata.getEntityIdMap(newEntity)!) && dbEntity.entityTarget === metadata.target;
@@ -396,14 +397,14 @@ export class EntityPersistOperationBuilder {
                     }
 
                     if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
-                        const subEntityWithId = new OperateEntity(relationMetadata, subEntity);
+                        const subEntityWithId = new Subject(relationMetadata, subEntity);
                         const subOperations = this.findJunctionInsertOperations(relationMetadata, subEntityWithId, dbEntities, false);
                         subOperations.forEach(o => operations.push(o));
                     }
                 });
             } else {
                 if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) {
-                    const valueWithId = new OperateEntity(relationMetadata, value);
+                    const valueWithId = new Subject(relationMetadata, value);
                     const subOperations = this.findJunctionInsertOperations(relationMetadata, valueWithId, dbEntities, false);
                     subOperations.forEach(o => operations.push(o));
                 }
@@ -413,7 +414,7 @@ export class EntityPersistOperationBuilder {
         }, <JunctionInsertOperation[]> []);
     }
 
-    private findJunctionRemoveOperations(metadata: EntityMetadata, dbEntityWithId: OperateEntity, newEntities: OperateEntity[], isRoot = true): JunctionInsertOperation[] {
+    private findJunctionRemoveOperations(metadata: EntityMetadata, dbEntityWithId: Subject, newEntities: Subject[], isRoot = true): JunctionInsertOperation[] {
         const dbEntity = dbEntityWithId.entity;
         // if (!dbEntity) // if new entity is persisted then it does not have anything to be deleted
         //     return [];
@@ -449,14 +450,14 @@ export class EntityPersistOperationBuilder {
                         }
 
                         if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) { // todo: its a remove operation, why updates are used here?
-                            const subEntityWithId = new OperateEntity(relationMetadata, subEntity);
+                            const subEntityWithId = new Subject(relationMetadata, subEntity);
                             const subOperations = this.findJunctionRemoveOperations(relationMetadata, subEntityWithId, newEntities, false);
                             subOperations.forEach(o => operations.push(o));
                         }
                     });
                 } else if (dbValue) { // todo: not sure about this check?
                     if (isRoot || this.checkCascadesAllowed("update", metadata, relation)) { // todo: its a remove operation, why updates are used here?
-                        const dbValueWithId = new OperateEntity(relationMetadata, dbValue);
+                        const dbValueWithId = new Subject(relationMetadata, dbValue);
                         const subOperations = this.findJunctionRemoveOperations(relationMetadata, dbValueWithId, newEntities, false);
                         subOperations.forEach(o => operations.push(o));
                     }
@@ -510,7 +511,7 @@ export class EntityPersistOperationBuilder {
         });
     }
 
-    private findEntityWithId(entityWithIds: OperateEntity[], entityTarget: Function|string|undefined, id: ObjectLiteral) {
+    private findEntityWithId(entityWithIds: Subject[], entityTarget: Function|string|undefined, id: ObjectLiteral) {
         return entityWithIds.find(entityWithId => entityWithId.compareId(id) && entityWithId.entityTarget === entityTarget);
     }
 

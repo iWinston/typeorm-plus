@@ -1,5 +1,4 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {OperateEntity} from "./operation/PersistOperation";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
@@ -8,6 +7,7 @@ import {PersistOperationExecutor} from "./PersistOperationExecutor";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {PersistedEntityNotFoundError} from "./error/PersistedEntityNotFoundError";
+import {Subject} from "./subject/Subject";
 
 /**
  * Manages entity persistence - insert, update and remove of entity.
@@ -34,12 +34,12 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * 2. load from the database all entities that has primary keys and might be updated
      */
     async persist(entity: Entity): Promise<Entity> {
-        const allPersistedOperatedEntities = this.flattenEntityRelationTree(entity, this.metadata);
-        const persistedOperatedEntity = allPersistedOperatedEntities.find(operatedEntity => operatedEntity.entity === entity);
-        if (!persistedOperatedEntity)
+        const persistedOEs = this.flattenEntityRelationTree(entity, this.metadata);
+        const persistedOE = persistedOEs.find(operatedEntity => operatedEntity.entity === entity);
+        if (!persistedOE)
             throw new PersistedEntityNotFoundError();
 
-        let dbEntity: OperateEntity|undefined, allDbInNewEntities: OperateEntity[] = [];
+        let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
 
         // if entity has an id then check
         if (this.hasId(entity)) {
@@ -49,15 +49,15 @@ export class EntityPersister<Entity extends ObjectLiteral> {
             const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
             const loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entity, this.metadata, queryBuilder);
             if (loadedDbEntity) {
-                dbEntity = new OperateEntity(this.metadata, loadedDbEntity);
+                dbEntity = new Subject(this.metadata, loadedDbEntity);
                 allDbInNewEntities = this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
             }
         }
 
         // need to find db entities that were not loaded by initialize method
-        const allDbEntities = await this.findNotLoadedIds(allPersistedOperatedEntities, allDbInNewEntities);
+        const allDbEntities = await this.findNotLoadedIds(persistedOEs, allDbInNewEntities);
         const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedOperatedEntity, allDbEntities, allPersistedOperatedEntities);
+        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedOE, allDbEntities, persistedOEs);
 
         const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
         await persistOperationExecutor.executePersistOperation(persistOperation);
@@ -77,8 +77,8 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entity[primaryColumn.name] = undefined);
         const dbEntities = this.flattenEntityRelationTree(dbEntity, this.metadata);
         const allPersistedEntities = this.flattenEntityRelationTree(entity, this.metadata);
-        const entityWithId = new OperateEntity(this.metadata, entity);
-        const dbEntityWithId = new OperateEntity(this.metadata, dbEntity);
+        const entityWithId = new Subject(this.metadata, entity);
+        const dbEntityWithId = new Subject(this.metadata, dbEntity);
 
         const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
         const persistOperation = entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
@@ -112,8 +112,8 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * ids, check if we did not load them yet and try to load them. This algorithm will make sure that all dbEntities
      * are loaded. Further it will help insert operations to work correctly.
      */
-    protected async findNotLoadedIds(persistedEntities: OperateEntity[], dbEntities?: OperateEntity[]): Promise<OperateEntity[]> {
-        const newDbEntities: OperateEntity[] = dbEntities ? dbEntities.map(dbEntity => dbEntity) : [];
+    protected async findNotLoadedIds(persistedEntities: Subject[], dbEntities?: Subject[]): Promise<Subject[]> {
+        const newDbEntities: Subject[] = dbEntities ? dbEntities.map(dbEntity => dbEntity) : [];
         const missingDbEntitiesLoad = persistedEntities.map(async entityWithId => {
             if (entityWithId.id === null ||  // todo: not sure if this condition will work
                 entityWithId.id === undefined || // todo: not sure if this condition will work
@@ -145,7 +145,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
                 .getSingleResult();
 
             if (loadedEntity)
-                newDbEntities.push(new OperateEntity(metadata, loadedEntity));
+                newDbEntities.push(new Subject(metadata, loadedEntity));
         });
 
         await Promise.all(missingDbEntitiesLoad);
@@ -155,11 +155,11 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     /**
      * Extracts unique entities from given entity and all its downside relations.
      */
-    protected flattenEntityRelationTree(entity: Entity, metadata: EntityMetadata): OperateEntity[] {
-        const operateEntities: OperateEntity[] = [];
+    protected flattenEntityRelationTree(entity: Entity, metadata: EntityMetadata): Subject[] {
+        const operateEntities: Subject[] = [];
 
         const recursive = (entity: Entity, metadata: EntityMetadata) => {
-            operateEntities.push(new OperateEntity(metadata, entity));
+            operateEntities.push(new Subject(metadata, entity));
 
             metadata.extractRelationValuesFromEntity(entity, metadata.relations)
                 .filter(([relation, value]) => { // exclude duplicate entities and avoid recursion

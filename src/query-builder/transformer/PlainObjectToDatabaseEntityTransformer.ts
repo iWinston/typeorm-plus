@@ -1,6 +1,6 @@
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryBuilder} from "../QueryBuilder";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  */
@@ -27,7 +27,7 @@ export class PlainObjectToDatabaseEntityTransformer {
         // if plain object does not have id then nothing to load really
         if (!metadata.checkIfObjectContainsAllPrimaryKeys(plainObject))
             return Promise.reject<Entity>("Given object does not have a primary column, cannot transform it to database entity.");
-        
+
         const alias = queryBuilder.alias;
         const needToLoad = this.buildLoadMap(plainObject, metadata, true);
 
@@ -58,7 +58,6 @@ export class PlainObjectToDatabaseEntityTransformer {
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
-    
 
     private join<Entity extends ObjectLiteral>(qb: QueryBuilder<Entity>, needToLoad: LoadMap[], parentAlias: string) {
         needToLoad.forEach(i => {
@@ -68,7 +67,7 @@ export class PlainObjectToDatabaseEntityTransformer {
                 this.join(qb, i.child, alias);
         });
     }
-    
+
     private buildLoadMap(object: any, metadata: EntityMetadata, isFirstLevelDepth = false): LoadMap[] {
         // todo: rething the way we are trying to load things using left joins cause there are situations when same
         // todo: entities are loaded multiple times and become different objects (problem with duplicate entities in dbEntities)
