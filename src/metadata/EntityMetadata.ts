@@ -562,6 +562,21 @@ export class EntityMetadata {
     }
 
     /**
+     * todo: undefined entities should not go there??
+     * todo: shouldnt be entity ObjectLiteral here?
+     */
+    getEntityIdMixedMap(entity: any): any {
+        if (!entity)
+            return undefined;
+
+        if (this.hasMultiplePrimaryKeys) {
+            return this.getEntityIdMap(entity);
+        } else {
+            return entity[this.firstPrimaryColumn.propertyName]; // todo: what about parent primary column?
+        }
+    }
+
+    /**
      * Same as `getEntityIdMap` but the key of the map will be the column names instead of the property names. 
      */
     getEntityIdColumnMap(entity: any): ObjectLiteral|undefined {
@@ -685,13 +700,30 @@ export class EntityMetadata {
         return this.compareIds(firstEntityIds, secondEntityIds);
     }
 
-    compareIds(firstIds: ObjectLiteral|undefined, secondIds: ObjectLiteral|undefined): boolean {
-        if (!firstIds || !secondIds)
+    compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
+        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
             return false;
 
-        return Object.keys(firstIds).every(key => {
-            return firstIds[key] === secondIds[key];
+        return Object.keys(firstId).every(key => {
+            return firstId[key] === secondId[key];
         });
+    }
+
+    /**
+     * Compares two entity ids.
+     * If any of the given value is empty then it will return false.
+     */
+    compareEntityMixedIds(firstId: any, secondId: any): boolean {
+        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
+            return false;
+
+        if (this.hasMultiplePrimaryKeys) {
+            return Object.keys(firstId).every(key => {
+                return firstId[key] === secondId[key];
+            });
+        } else {
+            return firstId === secondId;
+        }
     }
 
     /**
@@ -710,4 +742,32 @@ export class EntityMetadata {
         });
         return relationsAndValues;
     }
+
+    /**
+     * Checks if given entity has an id.
+     */
+    hasId(entity: ObjectLiteral): boolean {
+
+        // if (this.metadata.parentEntityMetadata) {
+        //     return this.metadata.parentEntityMetadata.parentIdColumns.every(parentIdColumn => {
+        //         const columnName = parentIdColumn.propertyName;
+        //         return !!entity &&
+        //             entity.hasOwnProperty(columnName) &&
+        //             entity[columnName] !== null &&
+        //             entity[columnName] !== undefined &&
+        //             entity[columnName] !== "";
+        //     });
+
+        // } else {
+        return this.primaryColumns.every(primaryColumn => {
+            const columnName = primaryColumn.propertyName;
+            return !!entity &&
+                entity.hasOwnProperty(columnName) &&
+                entity[columnName] !== null &&
+                entity[columnName] !== undefined &&
+                entity[columnName] !== "";
+        });
+        // }
+    }
+
 }

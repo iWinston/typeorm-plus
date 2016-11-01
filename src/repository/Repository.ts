@@ -41,26 +41,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * If entity contains compose ids, then it checks them all.
      */
     hasId(entity: Entity): boolean {
-        // if (this.metadata.parentEntityMetadata) {
-        //     return this.metadata.parentEntityMetadata.parentIdColumns.every(parentIdColumn => {
-        //         const columnName = parentIdColumn.propertyName;
-        //         return !!entity &&
-        //             entity.hasOwnProperty(columnName) &&
-        //             entity[columnName] !== null &&
-        //             entity[columnName] !== undefined &&
-        //             entity[columnName] !== "";
-        //     });
-
-        // } else {
-            return this.metadata.primaryColumns.every(primaryColumn => {
-                const columnName = primaryColumn.propertyName;
-                return !!entity &&
-                    entity.hasOwnProperty(columnName) &&
-                    entity[columnName] !== null &&
-                    entity[columnName] !== undefined &&
-                    entity[columnName] !== "";
-            });
-        // }
+        return this.metadata.hasId(entity);
     }
 
     /**
@@ -296,34 +277,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async findByIds(ids: any[], options?: FindOptions): Promise<Entity[]> {
         const qb = this.createFindQueryBuilder(undefined, options);
-
-        const whereStrings = ids.map((id, index) => {
-            const whereSubStrings: string[] = [];
-            const parameters: ObjectLiteral = {};
-            if (this.metadata.hasMultiplePrimaryKeys) {
-                this.metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(id[primaryColumn.name] + "=:id_" + index + "_" + secondIndex);
-                    parameters["id_" + index + "_" + secondIndex] = id[primaryColumn.name];
-                });
-                this.metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(id[primaryColumn.name] + "=:parentId_" + index + "_" + secondIndex);
-                    parameters["parentId_" + index + "_" + secondIndex] = id[primaryColumn.propertyName];
-                });
-            } else {
-                if (this.metadata.primaryColumns.length > 0) {
-                    whereSubStrings.push(this.metadata.firstPrimaryColumn.name + "=:id_" + index);
-                    parameters["id_" + index] = id;
-
-                } else if (this.metadata.parentIdColumns.length > 0) {
-                    whereSubStrings.push(this.metadata.parentIdColumns[0].name + "=:parentId_" + index);
-                    parameters["parentId_" + index] = id;
-                }
-            }
-            return whereSubStrings.join(" AND ");
-        });
-        qb.andWhere("(" + whereStrings.join(" OR ") + ")");
-
-        return qb.getResults();
+        return qb.andWhereInIds(ids).getResults();
     }
 
     /**

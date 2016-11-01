@@ -83,7 +83,7 @@ export class EntityPersistOperationBuilder {
         if (dbEntity)
             persistOperation.junctionRemoves = this.findJunctionRemoveOperations(metadata, dbEntity, allPersistedEntities);
 
-        // persistOperation.log();
+        persistOperation.log();
 
         return persistOperation;
     }

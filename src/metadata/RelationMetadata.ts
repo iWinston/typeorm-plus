@@ -399,6 +399,28 @@ export class RelationMetadata {
         return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
     }
 
+    getOwnEntityRelationId(entity: ObjectLiteral): any {
+        if (this.isManyToMany) {
+            if (this.isOwning) {
+                return entity[this.joinTable.referencedColumn.propertyName];
+            } else {
+                return entity[this.joinTable.inverseReferencedColumn.propertyName];
+            }
+        }
+        // todo: implement for others too.
+    }
+
+    getInverseEntityRelationId(entity: ObjectLiteral): any {
+        if (this.isManyToMany) {
+            if (this.isOwning) {
+                return entity[this.joinTable.inverseReferencedColumn.propertyName];
+            } else {
+                return entity[this.joinTable.referencedColumn.propertyName];
+            }
+        }
+        // todo: implement for others too.
+    }
+
     // ---------------------------------------------------------------------
     // Private Methods
     // ---------------------------------------------------------------------
@@ -418,5 +440,4 @@ export class RelationMetadata {
         // throw new Error("Cannot compute inverse side of the relation");
         return "";
     }
-
 }

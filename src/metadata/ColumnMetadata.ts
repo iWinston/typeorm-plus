@@ -2,6 +2,7 @@ import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnType} from "./types/ColumnTypes";
 import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import {RelationMetadata} from "./RelationMetadata";
 
 /**
  * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
@@ -29,6 +30,11 @@ export class ColumnMetadata {
      * Embedded metadata where this column metadata is.
      */
     embeddedMetadata: EmbeddedMetadata;
+
+    /**
+     * If this column is foreign key of some relation then this relation's metadata will be here.
+     */
+    relationMetadata: RelationMetadata;
 
     // ---------------------------------------------------------------------
     // Public Readonly Properties

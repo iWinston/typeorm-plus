@@ -6,11 +6,31 @@ import {EntityPersistOperationBuilder} from "./EntityPersistOperationsBuilder";
 import {PersistOperationExecutor} from "./PersistOperationExecutor";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {PersistedEntityNotFoundError} from "./error/PersistedEntityNotFoundError";
 import {Subject} from "./subject/Subject";
+import {SubjectFactory} from "./subject/SubjectFactory";
+import {DatabaseSubjectsLoader} from "../query-builder/transformer/DatabaseSubjectsLoader";
+import {SubjectCollection} from "./subject/SubjectCollection";
+import {NewJunctionInsertOperation} from "./operation/NewJunctionInsertOperation";
+import {NewJunctionRemoveOperation} from "./operation/NewJunctionRemoveOperation";
+import {NewInsertOperation} from "./operation/NewInsertOperation";
+import {CascadesNotAllowedError} from "./error/CascadesNotAllowedError";
+import {NewUpdateOperation} from "./operation/NewUpdateOperation";
+import {NewRemoveOperation} from "./operation/NewRemoveOperation";
 
 /**
  * Manages entity persistence - insert, update and remove of entity.
+ *
+ *
+ * Rules of updating by cascades.
+ * Insert operation can lead to:
+ *  - insert operations
+ *  - update operations
+ * Update operation can lead to:
+ *  - insert operations
+ *  - update operations
+ *  - remove operations
+ * Remove operation can lead to:
+ *  - remove operation
  */
 export class EntityPersister<Entity extends ObjectLiteral> {
 
@@ -34,12 +54,60 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * 2. load from the database all entities that has primary keys and might be updated
      */
     async persist(entity: Entity): Promise<Entity> {
-        const persistedOEs = this.flattenEntityRelationTree(entity, this.metadata);
-        const persistedOE = persistedOEs.find(operatedEntity => operatedEntity.entity === entity);
-        if (!persistedOE)
-            throw new PersistedEntityNotFoundError();
+        const subjectFactory = new SubjectFactory();
+        const databaseSubjectLoader = new DatabaseSubjectsLoader(this.connection);
+        const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
+        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
 
-        let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
+        // this gives us all subjects that are new or which needs to be updated, including subject with original persisted entity
+        // we don't have removed subjects yet because they are removed from original entity and
+        // the only way we can get know them is load from the database
+        const persistedSubjects = subjectFactory.createCollectionFromEntityAndRelations(entity, this.metadata);
+        const persistedSubject = persistedSubjects.findByEntity(entity)!; // its impossible here to return undefined
+
+        // first we load from the database all entities from inserted/updated subjects
+        const databaseSubjects = await databaseSubjectLoader.load(persistedSubjects);
+        const removedDatabaseSubjects = await databaseSubjectLoader.loadRemoved(persistedSubjects);
+        const databaseSubject = databaseSubjects.findByEntityLike(this.metadata.target, entity);
+
+        const insertedSubjects = new SubjectCollection();
+        const updatedSubjects  = new SubjectCollection();
+        const removedSubjects  = new SubjectCollection();
+
+        // if (remove) {
+        // todo: need only call buildRemoveOperations, exclude other operations
+        // this.buildRemoveOperations(databaseSubject, persistedSubjects, databaseSubjects),
+        // }
+
+        // update inverse side operation
+        const [updateOperations, insertOperations, removeOperations] = [
+            this.buildInsertOperations(persistedSubject, persistedSubjects, databaseSubjects),
+            this.buildUpdateOperations(persistedSubject, persistedSubjects, databaseSubjects),
+            this.buildRemoveOperations(persistedSubject, persistedSubjects, databaseSubjects), // this won't work for remove of persistedEntity itself
+        ];
+
+        // find subjects that needs to be inserted and removed from junction table
+        const [junctionInsertOperations, junctionRemoveOperations] = await Promise.all([
+            this.buildInsertJunctionOperations(persistedSubjects),
+            this.buildRemoveJunctionOperations(persistedSubjects)
+        ]);
+
+        // todo: most probable order of execution of queries
+        // todo: first need to execute remove queries
+        // todo: then insert queries (need to execute as much insert queries as possible, with ordering of inserted objects)
+        // todo: then update queries (merge with update by relation queries before that?)
+        // todo: then update by relation queries
+        // todo: then insert into junction tables
+
+        // we need to execute junction insert and remove operations after its referenced entities are persisted
+        // because all inserted and removed values into junction table are depend of the rows in the database since they have FKs
+
+
+        // then we find out which entities were removed from original entity and find them in the database
+
+
+
+        /*let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
 
         // if entity has an id then check
         if (this.hasId(entity)) {
@@ -52,16 +120,343 @@ export class EntityPersister<Entity extends ObjectLiteral> {
                 dbEntity = new Subject(this.metadata, loadedDbEntity);
                 allDbInNewEntities = this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
             }
-        }
+        }*/
 
         // need to find db entities that were not loaded by initialize method
-        const allDbEntities = await this.findNotLoadedIds(persistedOEs, allDbInNewEntities);
-        const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedOE, allDbEntities, persistedOEs);
-
-        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
+        // const allDbEntities = await this.findNotLoadedIds(persistedSubjects, allDbInNewEntities);
+        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(databaseSubject, persistedSubject, databaseSubjects, persistedSubjects);
         await persistOperationExecutor.executePersistOperation(persistOperation);
         return entity;
+    }
+
+    /**
+     * Post {
+     *  Author {
+     *   Photo {
+     *   }
+     *  }
+     * }
+     */
+
+    /**
+     * Remove operations differs a bit with other operations (insert and update).
+     * We iterate throw persisted entities and its relations to find removed entities.
+     * Once we find removed entities, we iterate throw database entities and find all relations
+     * of the removed entity that has cascades and add them to list of removed entities too.
+     */
+    private buildRemoveOperations(persistentSubject: Subject, persistentSubjects: SubjectCollection, dbSubjects: SubjectCollection): NewRemoveOperation[] {
+        const removeOperations: NewRemoveOperation[] = [];
+
+        // goes down by entity relations and finds all removed entities that should be removed by cascades
+        function buildByCascadesFromDatabaseSubject(dbSubject: Subject) {
+            persistentSubject.metadata
+                .extractRelationValuesFromEntity(dbSubject.entity, persistentSubject.metadata.relations)
+                .forEach(([relation, value]) => {
+                    // since subject is a db subject, value from relation will be a number
+                    // todo: then what to do with one-to-many relation? (i see two options: 1. do same as with junction operations - create separate operation for one-to-many; 2. load all inverse entities in dbEntities and try to find element there
+
+                    if (relation.isCascadeRemove) {
+                        const subjectInDatabase = dbSubjects.findByEntityId(relation.target, value)!; // its impossible here to return undefined
+                        removeOperations.push(new NewRemoveOperation(subjectInDatabase));
+                    }
+
+                    const subjectInPersistent = persistentSubjects.findByEntityId(relation.inverseEntityMetadata.target, value);
+                    if (subjectInPersistent) { // this means that nothing deleted, continue iteration in entity relations
+
+                        // if cascade remove is not set in this relation, no need to go deeper and check for nested cascade removes
+                        if (relation.isCascadeRemove)
+                            buildByCascadesFromPersistedSubject(subjectInPersistent);
+
+                    } else { // this means our object is in db but it was removed in the persistent entity
+
+                        // if subject is removed but cascades are not allowed then throw an exception
+                        if (!relation.isCascadeRemove)
+                            throw new CascadesNotAllowedError("remove", persistentSubject.metadata, relation);
+
+                        // if object is new and cascades are allowed then register a new insert operation
+                    }
+
+                });
+        }
+
+        // goes down by entity relations and finds all removed entities that should be removed by cascades
+        function buildByCascadesFromPersistedSubject(persistentSubject: Subject) {
+
+            // find persistent subject in the database
+            const dbSubject = dbSubjects.findByEntityLike(persistentSubject);
+            if (!dbSubject) // if it was not found then its probably a new entity a no need to do anything
+                return;
+
+            // traverse over values in the db entity and find
+            persistentSubject.metadata
+                .extractRelationValuesFromEntity(dbSubject.entity, persistentSubject.metadata.relations)
+                .forEach(([relation, value]) => {
+                    // note value is from db subject, value from relation will be a number
+                    // todo: then what to do with one-to-many relation? (i see two options: 1. do same as with junction operations - create separate operation for one-to-many; 2. load all inverse entities in dbEntities and try to find element there
+
+                    const subjectInPersistent = persistentSubjects.findByEntityId(relation.inverseEntityMetadata.target, value);
+                    if (subjectInPersistent) { // this means that nothing deleted, continue iteration in entity relations
+
+                        // if cascade remove is not set in this relation, no need to go deeper and check for nested cascade removes
+                        if (relation.isCascadeRemove)
+                            buildByCascadesFromPersistedSubject(subjectInPersistent);
+
+                    } else { // this means our object is in db but it was removed in the persistent entity
+
+                        // if subject is removed but cascades are not allowed then throw an exception
+                        if (!relation.isCascadeRemove)
+                            throw new CascadesNotAllowedError("remove", persistentSubject.metadata, relation);
+
+                        // if object is new and cascades are allowed then register a new insert operation
+                        const subjectInDatabase = dbSubjects.findByEntityId(relation.target, value)!; // its impossible here to return undefined
+                        removeOperations.push(new NewRemoveOperation(subjectInDatabase));
+
+                        // now find all removed entities in the removed subject. To do it we need to traverse
+                        // over database subject and go down throw its relations
+                        buildByCascadesFromDatabaseSubject(subjectInDatabase);
+                    }
+
+                });
+        }
+
+        // todo: this should be outside of this entity
+        // if main persisted subject is removed then create remove operation for it too
+        // if (!persistentSubject.metadata.hasId(persistentSubject.entity)) // todo: during main persisment object removal we should not check if entity has an id, entity can have an id and must be removed if it was implicitly set
+        //     removeOperations.push(new NewRemoveOperation(persistentSubject));
+
+        buildByCascadesFromPersistedSubject(persistentSubject);
+        return removeOperations;
+    }
+
+    private buildUpdateOperations(persistedSubject: Subject, persistentSubjects: SubjectCollection, dbSubjects: SubjectCollection): NewUpdateOperation[] {
+        const updateOperations: NewUpdateOperation[] = [];
+
+        // goes down by entity relations and finds all updated entities that should be updated by cascades
+        function buildByCascades(subject: Subject) { // todo(refactor): send value instead of subject and find it in this method?
+            subject.metadata
+                .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
+                .forEach(([relation, value]) => {
+
+                    const subjectInDb = dbSubjects.findByEntityLike(relation.inverseEntityMetadata.target, value);
+                    if (subjectInDb) { // this means our object is in db and we should check which columns are changed
+
+                        // if subject is updated but cascades are not allowed then throw an exception
+                        if (!relation.isCascadeUpdate)
+                            throw new CascadesNotAllowedError("update", subject.metadata, relation);
+
+                        // if object is new and cascades are allowed then register a new insert operation
+                        const diffColumns = this.diffColumns(persistedSubject, subjectInDb);
+                        const diffRelations = this.diffRelationalColumns(persistedSubject, subjectInDb);
+                        updateOperations.push(new NewUpdateOperation(subjectInDb, diffColumns, diffRelations));
+                    }
+
+                    // go recursively to find other cascade insert operations
+                    const relationalValueSubject = persistentSubjects.findByEntity(value)!; // its impossible here to return undefined
+                    buildByCascades(relationalValueSubject);
+                });
+        }
+
+        // if main persisted subject is updated then create update operation for it too
+        const subjectInDb = dbSubjects.findByEntityLike(persistedSubject.entityTarget, persistedSubject.entity);
+        if (subjectInDb) {
+            const diffColumns = this.diffColumns(persistedSubject, subjectInDb);
+            const diffRelations = this.diffRelationalColumns(persistedSubject, subjectInDb);
+            updateOperations.push(new NewUpdateOperation(persistedSubject, diffColumns, diffRelations));
+        }
+
+        buildByCascades(persistedSubject);
+        return updateOperations;
+    }
+
+    /**
+     * Differentiate columns from the updated entity and entity stored in the database.
+     */
+    private diffColumns(updatedSubject: Subject, dbSubject: Subject) {
+        return updatedSubject.metadata.allColumns.filter(column => {
+            if (column.isVirtual ||
+                column.isParentId ||
+                column.isDiscriminator ||
+                column.isUpdateDate ||
+                column.isVersion ||
+                column.isCreateDate ||
+                // column.isRelationId || // todo: probably need to skip relation ids here?
+                updatedSubject.entity[column.propertyName] === undefined ||
+                column.getEntityValue(updatedSubject) === column.getEntityValue(dbSubject))
+                return false;
+
+            // filter out "relational columns" only in the case if there is a relation object in entity
+            if (!column.isInEmbedded && updatedSubject.metadata.hasRelationWithDbName(column.propertyName)) {
+                const relation = updatedSubject.metadata.findRelationWithDbName(column.propertyName); // todo: why with dbName ?
+                if (updatedSubject.entity[relation.propertyName] !== null && updatedSubject.entity[relation.propertyName] !== undefined) // todo: explain this condition
+                    return false;
+            }
+            return true;
+        });
+    }
+
+    /**
+     * Difference columns of the owning one-to-one and many-to-one columns.
+     */
+    private diffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */updatedSubject: Subject, dbSubject: Subject) {
+        return updatedSubject.metadata.allRelations.filter(relation => {
+            if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
+                return false;
+
+            // here we cover two scenarios:
+            // 1. related entity can be another entity which is natural way
+            // 2. related entity can be entity id which is hacked way of updating entity
+            // todo: what to do if there is a column with relationId? (cover this too?)
+            const updatedEntityRelationId: any =
+                updatedSubject.entity[relation.propertyName] instanceof Object ?
+                    updatedSubject.metadata.getEntityIdMixedMap(updatedSubject.entity[relation.propertyName])
+                : updatedSubject.entity[relation.propertyName];
+
+
+            // here because we have enabled RELATION_ID_VALUES option in the QueryBuilder when we loaded db entities
+            // we have in the dbSubject only relationIds.
+            // This allows us to compare relation id in the updated subject with id in the database
+            const dbEntityRelationId = dbSubject.entity[relation.propertyName];
+
+            // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
+            // todo: if (updatesByRelations.find(operation => operation.targetEntity === updatedSubject && operation.updatedRelation === relation))
+            // todo:     return false;
+
+            // we don't perform operation over undefined properties
+            if (updatedEntityRelationId === undefined)
+                return false;
+
+            // if both are empty totally no need to do anything
+            if ((updatedEntityRelationId === undefined || updatedEntityRelationId === null) &&
+                (dbEntityRelationId === undefined || dbEntityRelationId === null))
+                return false;
+
+            // if relation ids aren't equal then we need to update them
+            return updatedEntityRelationId !== dbEntityRelationId;
+        });
+    }
+
+    private buildInsertOperations(persistedSubject: Subject, persistentSubjects: SubjectCollection, dbSubjects: SubjectCollection): NewInsertOperation[] {
+        const insertOperations: NewInsertOperation[] = [];
+
+        // goes down by entity relations and finds all new entities that should be persisted
+        function buildByCascades(subject: Subject) {
+            subject.metadata
+                .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
+                .forEach(([relation, value]) => {
+
+                    let subjectInDb = dbSubjects.findByEntityLike(relation.inverseEntityMetadata.target, value);
+                    if (!subjectInDb) { // this means our object is new and should be saved into the db
+
+                        // if subject is new and should be inserted but cascades are not allowed then throw an exception
+                        if (!relation.isCascadeInsert)
+                            throw new CascadesNotAllowedError("insert", subject.metadata, relation);
+
+                        // if object is new and cascades are allowed then register a new insert operation
+                        subjectInDb = new Subject(relation.inverseEntityMetadata, value);
+                        dbSubjects.push(subjectInDb); // this prevents us to persist same entity twice
+                        insertOperations.push(new NewInsertOperation(subjectInDb));
+                    }
+
+                    // go recursively to find other cascade insert operations
+                    const relationalValueSubject = persistentSubjects.findByEntity(value)!; // its impossible here to return undefined
+                    buildByCascades(relationalValueSubject);
+                });
+        }
+
+        // if main persisted subject is new then create insert operation for it too
+        const subjectInDb = dbSubjects.findByEntityLike(persistedSubject.entityTarget, persistedSubject.entity);
+        if (!subjectInDb) {
+            dbSubjects.push(persistedSubject); // this prevents us to persist same entity twice
+            insertOperations.push(new NewInsertOperation(persistedSubject));
+        }
+
+        buildByCascades(persistedSubject);
+        return insertOperations;
+    }
+
+    /**
+     * Builds all junction insert operations used to insert new bind data into junction tables.
+     */
+    private async buildInsertJunctionOperations(persistedSubjects: SubjectCollection): Promise<NewJunctionInsertOperation[]> {
+        const junctionInsertOperations: NewJunctionInsertOperation[] = [];
+        const promises = persistedSubjects.map(persistedSubject => {
+            const promises = persistedSubject.metadata.manyToManyRelations.map(async relation => {
+
+                // extract entity value - we only need to proceed if value is defined and its an array
+                const value = relation.getEntityValue(persistedSubject.entity);
+                if (!(value instanceof Array))
+                    return;
+
+                // get all inverse entities that are "bind" to the currently persisted entity
+                const inverseEntityRelationIds = value
+                    .map(v => relation.getInverseEntityRelationId(v))
+                    .filter(v => v !== undefined && v !== null);
+
+                // load from db all relation ids of inverse entities "bind" to the currently persisted entity
+                // this way we gonna check which relation ids are new
+                const existInverseEntityRelationIds = await this.connection
+                    .getSpecificRepository(persistedSubject.entityTarget)
+                    .findRelationIds(relation, persistedSubject.entity, inverseEntityRelationIds);
+
+                // now from all entities in the persisted entity find only those which aren't found in the db
+                const newRelationIds = inverseEntityRelationIds.filter(inverseEntityRelationId => {
+                    return !existInverseEntityRelationIds.find(relationId => inverseEntityRelationId === relationId);
+                });
+                /*const persistedEntities = value.filter(val => {
+                    const relationValue = relation.getInverseEntityRelationId(val);
+                    return !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
+                });*/ // todo: remove later if not necessary
+
+                // finally create a new junction insert operation and push it to the array of such operations
+                if (newRelationIds.length > 0) {
+                    const operation = new NewJunctionInsertOperation(relation, persistedSubject.entity, newRelationIds);
+                    junctionInsertOperations.push(operation);
+                }
+            });
+
+            return Promise.all(promises);
+        });
+
+        await Promise.all(promises);
+        return junctionInsertOperations;
+    }
+
+    /**
+     * Builds all junction remove operations used to remove bind data from junction tables.
+     */
+    private async buildRemoveJunctionOperations(persistedSubjects: SubjectCollection): Promise<NewJunctionRemoveOperation[]> {
+        const junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
+        const promises = persistedSubjects.map(persistedSubject => {
+            const promises = persistedSubject.metadata.manyToManyRelations.map(async relation => {
+
+                // extract entity value - we only need to proceed if value is defined and its an array
+                const value = relation.getEntityValue(persistedSubject.entity);
+                if (!(value instanceof Array))
+                    return;
+
+                // get all inverse entities that are "bind" to the currently persisted entity
+                const inverseEntityRelationIds = value
+                    .map(v => relation.getInverseEntityRelationId(v))
+                    .filter(v => v !== undefined && v !== null);
+
+                // load from db all relation ids of inverse entities that are NOT "bind" to the currently persisted entity
+                // this way we gonna check which relation ids are missing (e.g. removed)
+                const removedInverseEntityRelationIds = await this.connection
+                    .getSpecificRepository(persistedSubject.entityTarget)
+                    .findRelationIds(relation, persistedSubject.entity, undefined, inverseEntityRelationIds);
+
+                // finally create a new junction remove operation and push it to the array of such operations
+                if (removedInverseEntityRelationIds.length > 0) {
+                    const operation = new NewJunctionRemoveOperation(relation, persistedSubject.entity, removedInverseEntityRelationIds);
+                    junctionRemoveOperations.push(operation);
+                }
+            });
+
+            return Promise.all(promises);
+        });
+
+        await Promise.all(promises);
+        return junctionRemoveOperations;
     }
 
     /**
@@ -154,23 +549,24 @@ export class EntityPersister<Entity extends ObjectLiteral> {
 
     /**
      * Extracts unique entities from given entity and all its downside relations.
+     * @deprecated
      */
     protected flattenEntityRelationTree(entity: Entity, metadata: EntityMetadata): Subject[] {
-        const operateEntities: Subject[] = [];
+        const subjects: Subject[] = [];
 
         const recursive = (entity: Entity, metadata: EntityMetadata) => {
-            operateEntities.push(new Subject(metadata, entity));
+            subjects.push(new Subject(metadata, entity));
 
             metadata.extractRelationValuesFromEntity(entity, metadata.relations)
                 .filter(([relation, value]) => { // exclude duplicate entities and avoid recursion
-                    return !operateEntities.find(operateEntity => operateEntity.entity === value);
+                    return !subjects.find(subject => subject.entity === value);
                 })
                 .forEach(([relation, value]) => {
                     recursive(value, relation.inverseEntityMetadata);
                 });
         };
         recursive(entity, metadata);
-        return operateEntities;
+        return subjects;
     }
 
 }

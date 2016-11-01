@@ -3,6 +3,7 @@ import {setupTestingConnections, closeConnections, reloadDatabases} from "../../
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
+import {Photo} from "./entity/Photo";
 
 describe("persistence > cascade operations", () => {
 
@@ -16,6 +17,44 @@ describe("persistence > cascade operations", () => {
     after(() => closeConnections(connections));
 
     describe("cascade insert", function() {
+
+        it.only("should work perfectly", () => Promise.all(connections.map(async connection => {
+
+            // create category
+            const category1 = new Category();
+            category1.name = "Category saved by cascades #1";
+
+            // create photos
+            const photo1 = new Photo();
+            photo1.url = "http://me.com/photo";
+            const photo2 = new Photo();
+            photo2.url = "http://me.com/photo";
+
+            // create post
+            const post1 = new Post();
+            post1.title = "Hello Post #1";
+            post1.category = category1;
+            await connection.entityManager.persist(post1);
+
+            await connection.entityManager.persist([photo1, photo2]);
+
+            post1.photos = [photo1];
+            await connection.entityManager.persist(post1);
+
+            console.log("********************************************************");
+            console.log("********************************************************");
+
+            post1.photos = [photo1, photo2];
+
+            await connection.entityManager.persist(post1);
+
+            console.log("********************************************************");
+            console.log("********************************************************");
+
+            post1.title = "Updated Post";
+            await connection.entityManager.persist(post1);
+
+        })));
 
         it("should insert entity when cascade option is set", () => Promise.all(connections.map(async connection => {
 

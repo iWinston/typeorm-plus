@@ -135,5 +135,10 @@ export interface FindOptions {
      * Parameters used in the WHERE and HAVING expressions.
      */
     parameters?: Object;
+
+    /**
+     * Indicates if query builder should add virtual columns to the entity too.
+     */
+    enabledOptions?: ("RELATION_ID_VALUES")[];
     
 }

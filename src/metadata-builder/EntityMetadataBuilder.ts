@@ -357,6 +357,7 @@ export class EntityMetadataBuilder {
                             primary: relation.isPrimary
                         }
                     });
+                    relationalColumn.relationMetadata = relation;
                     metadata.addColumn(relationalColumn);
                 }
 

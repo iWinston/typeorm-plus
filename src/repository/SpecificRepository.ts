@@ -4,6 +4,9 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {Subject} from "../persistment/subject/Subject";
+import {RelationMetadata} from "../metadata/RelationMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {QueryBuilder} from "../query-builder/QueryBuilder";
 
 /**
  * Repository for more specific operations.
@@ -422,9 +425,74 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             .execute();
     }
 
+    /**
+     * Converts entity or entities to id or ids map.
+     */
+    private convertEntityOrEntitiesToIdOrIds(column: ColumnMetadata, entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
+        if (entityOrEntities instanceof Array) {
+            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(column, entity));
+
+        } else {
+            if (entityOrEntities instanceof Object) {
+                return entityOrEntities[column.propertyName];
+            } else {
+                return entityOrEntities;
+            }
+        }
+    }
+
+    /**
+     * Finds all relation ids in the given entities.
+     */
+    async findRelationIds(relationOrName: RelationMetadata|string|((...args: any[]) => any), entityOrEntities: Entity[]|Entity|any|any[], inIds?: any[], notInIds?: any[]): Promise<any[]> {
+
+        const relation = this.convertMixedRelationToMetadata(relationOrName);
+        if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
+
+        const entityReferencedColumn = relation.isOwning ? relation.joinTable.referencedColumn : relation.joinTable.inverseReferencedColumn;
+        const ownerEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[0] : relation.junctionEntityMetadata.columns[1];
+        const inverseEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[1] : relation.junctionEntityMetadata.columns[0];
+
+        let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumn, entityOrEntities);
+        if (!(entityIds instanceof Array)) entityIds = [entityIds];
+
+        const ids: any[] = [];
+        const promises = entityIds.map((entityId: any) => {
+            const qb = new QueryBuilder(this.connection/*, dbConnection*/)
+                .select("junction." + inverseEntityColumn.name + " AS id")
+                .fromTable(relation.junctionEntityMetadata.table.name, "junction")
+                .andWhere("junction." + ownerEntityColumn.name + "=:entityId", { entityId: entityId });
+
+            if (inIds && inIds.length > 0)
+                qb.andWhere("junction." + inverseEntityColumn.name + " IN (:inIds)", { inIds: inIds });
+
+            if (notInIds && notInIds.length > 0)
+                qb.andWhere("junction." + inverseEntityColumn.name + " NOT IN (:notInIds)", { notInIds: notInIds });
+
+            return qb.getScalarResults()
+                .then((results: { id: any }[]) => {
+                    results.forEach(result => ids.push(result.id)); // todo: prepare result?
+                });
+        });
+
+        await Promise.all(promises);
+        return ids;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Converts relation name, relation name in function into RelationMetadata.
+     */
+    protected convertMixedRelationToMetadata(relationOrName: RelationMetadata|string|((...args: any[]) => any)): RelationMetadata {
+        if (relationOrName instanceof RelationMetadata)
+            return relationOrName;
+
+        const relationName = relationOrName instanceof Function ? relationOrName(this.metadata.createPropertiesMap()) : relationOrName;
+        return this.metadata.findRelationWithPropertyName(relationName);
+    }
 
     /**
      * Extracts unique objects from given entity and all its downside relations.

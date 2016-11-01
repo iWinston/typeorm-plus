@@ -9,25 +9,32 @@ export class Subject { // todo: move entity with id creation into metadata?
     // Properties
     // -------------------------------------------------------------------------
 
-    entityTarget: Function|string;
-    entity: any;
+    metadata: EntityMetadata;
+    entity: ObjectLiteral;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(public metadata: EntityMetadata, entity: ObjectLiteral) {
-        // todo: check id usage
+    constructor(metadata: EntityMetadata, entity: ObjectLiteral) {
+        this.metadata = metadata;
         this.entity = entity;
-        this.entityTarget = metadata.target;
     }
 
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
 
+    get entityTarget(): Function|string {
+        return this.metadata.target;
+    }
+
     get id() {
         return this.metadata.getEntityIdMap(this.entity);
+    }
+
+    get mixedId() {
+        return this.metadata.getEntityIdMixedMap(this.entity);
     }
 
     // -------------------------------------------------------------------------

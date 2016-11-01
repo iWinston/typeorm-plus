@@ -334,6 +334,11 @@ export class Connection {
     getMetadata(entity: string): EntityMetadata;
 
     /**
+     * Gets the entity metadata of the given entity class or schema name.
+     */
+    getMetadata(entity: Function|string): EntityMetadata;
+
+    /**
      Gets entity metadata for the given entity class or schema name.
      */
     getMetadata(entity: Function|string): EntityMetadata {
@@ -399,6 +404,12 @@ export class Connection {
      * SpecificRepository is a special repository that contains specific and non standard repository methods.
      */
     getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity class or name.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
+     */
+    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity>;
 
     /**
      * Gets specific repository for the given entity class or name.

@@ -80,6 +80,11 @@ export class QueryBuilder<Entity> {
     protected maxResults: number;
     protected ignoreParentTablesJoins: boolean = false;
 
+    /**
+     * Indicates if virtual columns should be included in entity result.
+     */
+    protected enableRelationIdValues: boolean = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -242,32 +247,24 @@ export class QueryBuilder<Entity> {
     }
 
     /**
-     * Specifies FROM which table select/update/delete will be executed.
-     * Also sets a main string alias of the selection data.
-     */
-    from(tableName: string, alias: string): this;
-
-    /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from(entity: Function|string, alias: string): this;
+    from(entityTarget: Function|string, alias: string): this {
+        const aliasObj = new Alias(alias);
+        aliasObj.target = entityTarget;
+        this.aliasMap.addMainAlias(aliasObj);
+        this.fromEntity = { alias: aliasObj };
+        return this;
+    }
 
     /**
-     * Specifies FROM on which table select/update/delete will be executed.
+     * Specifies FROM which table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from(entityOrTableName: Function|string, alias: string): this {
-
-        if (entityOrTableName instanceof Function || this.isValueSimpleString(entityOrTableName)) {
-            const aliasObj = new Alias(alias);
-            aliasObj.target = entityOrTableName;
-            this.aliasMap.addMainAlias(aliasObj);
-            this.fromEntity = { alias: aliasObj };
-        } else { // this is required to perform selection from subquery results
-            this.fromTableName = <string> entityOrTableName;
-            this.fromTableAlias = alias;
-        }
+    fromTable(tableName: string, alias: string) {
+        this.fromTableName = <string> tableName;
+        this.fromTableAlias = alias;
         return this;
     }
 
@@ -676,12 +673,34 @@ export class QueryBuilder<Entity> {
     }
 
     /**
+     * Adds new AND WHERE with conditions for the given ids.
+     *
+     * @experimental Maybe this method should be moved to repository?
+     */
+    andWhereInIds(ids: any[]): this {
+        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
+        this.andWhere(whereExpression, parameters);
+        return this;
+    }
+
+    /**
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
     orWhere(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "or", condition: where });
         if (parameters) this.addParameters(parameters);
+        return this;
+    }
+
+    /**
+     * Adds new OR WHERE with conditions for the given ids.
+     *
+     * @experimental Maybe this method should be moved to repository?
+     */
+    orWhereInIds(ids: any[]): this {
+        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
+        this.orWhere(whereExpression, parameters);
         return this;
     }
 
@@ -829,9 +848,11 @@ export class QueryBuilder<Entity> {
         const parameters: ObjectLiteral = Object.assign({}, this.parameters);
 
         // add discriminator column parameter if it exist
-        const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
-        if (mainMetadata.hasDiscriminatorColumn)
-            parameters["discriminatorColumnValue"] = mainMetadata.discriminatorValue;
+        if (!this.fromTableName) {
+            const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            if (mainMetadata.hasDiscriminatorColumn)
+                parameters["discriminatorColumnValue"] = mainMetadata.discriminatorValue;
+        }
 
         return parameters;
     }
@@ -926,7 +947,7 @@ export class QueryBuilder<Entity> {
             queryRunner = await this.connection.driver.createQueryRunner();
         }
 
-        const mainAliasName = this.aliasMap.mainAlias.name;
+        const mainAliasName = this.fromTableName ? this.fromTableName : this.aliasMap.mainAlias.name;
         let scalarResults: any[];
         if (this.firstResult || this.maxResults) {
             const [sql, parameters] = this.getSqlWithParameters(); // todo: fix for sql server. We cant skip order by here! // { skipOrderBy: true }
@@ -986,7 +1007,20 @@ export class QueryBuilder<Entity> {
                     .then(results => {
                         return this.rawResultsToEntities(results);
                     })
-                    .then(results => this.connection.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results))
+                    .then(results => {
+
+                        return this.loadRelationCounts(queryRunner as QueryRunner, results)
+                            .then(counts => {
+                                // console.log("counts: ", counts);
+                                return results;
+                            });
+                    })
+                    .then(results => {
+                        if (!this.fromTableName)
+                            return this.connection.broadcaster.broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results).then(() => results);
+
+                        return results;
+                    })
                     .then(results => {
                         return {
                             entities: results,
@@ -1004,7 +1038,7 @@ export class QueryBuilder<Entity> {
             const [sql, parameters] = this.getSqlWithParameters();
 
             try {
-                // console.log(sql);
+                console.log(sql);
                 return await queryRunner.query(sql, parameters)
                     .then(results => {
                         scalarResults = results;
@@ -1019,9 +1053,12 @@ export class QueryBuilder<Entity> {
                             });
                     })
                     .then(results => {
-                        return this.connection.broadcaster
-                            .broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results)
-                            .then(() => results);
+                        if (!this.fromTableName) {
+                            return this.connection.broadcaster
+                                .broadcastLoadEventsForAll(this.aliasMap.mainAlias.target, results)
+                                .then(() => results);
+                        }
+                        return results;
                     })
                     .then(results => {
                         return {
@@ -1050,7 +1087,7 @@ export class QueryBuilder<Entity> {
             queryRunner = await this.connection.driver.createQueryRunner();
         }
 
-        const mainAlias = this.aliasMap.mainAlias.name;
+        const mainAlias = this.fromTableName ? this.fromTableName : this.aliasMap.mainAlias.name; // todo: will this work with "fromTableName"?
         const metadata = this.connection.entityMetadatas.findByTarget(this.fromEntity.alias.target);
 
         const distinctAlias = this.connection.driver.escapeAliasName(mainAlias);
@@ -1146,8 +1183,9 @@ export class QueryBuilder<Entity> {
 
         if (this.fromEntity && this.fromEntity.alias && this.fromEntity.alias.target) {
             qb.from(this.fromEntity.alias.target, this.fromEntity.alias.name);
+
         } else if (this.fromTableName) {
-            qb.from(this.fromTableName, this.fromTableAlias);
+            qb.fromTable(this.fromTableName, this.fromTableAlias);
         }
 
         this.joins.forEach(join => {
@@ -1200,6 +1238,16 @@ export class QueryBuilder<Entity> {
             .setMaxResults(this.maxResults);
 
         return qb;
+    }
+
+    /**
+     * Enables special query builder options.
+     */
+    enableOption(option: "RELATION_ID_VALUES") {
+        switch (option) {
+            case "RELATION_ID_VALUES":
+                this.enableRelationIdValues = true;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -1309,7 +1357,7 @@ export class QueryBuilder<Entity> {
     }
 
     protected rawResultsToEntities(results: any[]) {
-        const transformer = new RawSqlResultsToEntityTransformer(this.connection.driver, this.aliasMap, this.extractJoinMappings(), this.relationCountMetas);
+        const transformer = new RawSqlResultsToEntityTransformer(this.connection.driver, this.aliasMap, this.extractJoinMappings(), this.relationCountMetas, this.enableRelationIdValues);
         return transformer.transform(results);
     }
 
@@ -1358,7 +1406,7 @@ export class QueryBuilder<Entity> {
                 }
             });
 
-        if (!this.ignoreParentTablesJoins) {
+        if (!this.ignoreParentTablesJoins && !this.fromTableName) {
             const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
             if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
                 const alias = "parentIdColumn_" + this.connection.driver.escapeAliasName(metadata.parentEntityMetadata.table.name);
@@ -1388,6 +1436,25 @@ export class QueryBuilder<Entity> {
                 allSelects.push(this.connection.driver.escapeAliasName(join.alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + " AS " + this.connection.driver.escapeAliasName(join.alias.name + "_" + column.name));
             });
         });
+
+        //
+        /*if (this.enableRelationIdValues) {
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.mainAlias);
+            if (!parentMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + this.aliasMap.mainAlias.name);
+
+            const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            metadata.manyToManyRelations.forEach(relation => {
+
+                const junctionMetadata = relation.junctionEntityMetadata;
+                junctionMetadata.columns.forEach(column => {
+                    const select = this.connection.driver.escapeAliasName(this.aliasMap.mainAlias.name + "_" + relation.name + "_ids") + "." +
+                        this.connection.driver.escapeColumnName(column.name) + " AS " +
+                        this.connection.driver.escapeAliasName(this.aliasMap.mainAlias.name + "_" + relation.name + "_ids_" + column.name);
+                    allSelects.push(select);
+                });
+            });
+        }*/
 
         // add all other selects
         this.selects.filter(select => {
@@ -1431,9 +1498,12 @@ export class QueryBuilder<Entity> {
             }
         }).join(" ");
 
-        const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
-        if (mainMetadata.hasDiscriminatorColumn)
-            return ` WHERE ${ conditions.length ? "(" + conditions + ")" : "" } AND ${mainMetadata.discriminatorColumn.name}=:discriminatorColumnValue`;
+        if (!this.fromTableName) {
+            const mainMetadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            if (mainMetadata.hasDiscriminatorColumn)
+                return ` WHERE ${ conditions.length ? "(" + conditions + ")" : "" } AND ${mainMetadata.discriminatorColumn.name}=:discriminatorColumnValue`;
+
+        }
 
         if (!conditions.length) return "";
         return " WHERE " + conditions;
@@ -1562,7 +1632,7 @@ export class QueryBuilder<Entity> {
             }
         }).join(" ");
 
-        if (!this.ignoreParentTablesJoins) {
+        if (!this.ignoreParentTablesJoins && !this.fromTableName) {
             const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
             if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
                 const alias = this.connection.driver.escapeAliasName("parentIdColumn_" + metadata.parentEntityMetadata.table.name);
@@ -1573,6 +1643,37 @@ export class QueryBuilder<Entity> {
                 });
             }
         }
+
+        /*if (this.enableRelationIdValues) {
+            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.mainAlias);
+            if (!parentMetadata)
+                throw new Error("Cannot get entity metadata for the given alias " + this.aliasMap.mainAlias.name);
+
+            const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            joins += metadata.manyToManyRelations.map(relation => {
+
+                const junctionMetadata = relation.junctionEntityMetadata;
+                const junctionTable = junctionMetadata.table.name;
+                const junctionAlias = this.aliasMap.mainAlias.name + "_" + relation.name + "_ids";
+                const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
+                const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
+
+                let condition1 = "";
+                if (relation.isOwning) {
+                    condition1 = this.connection.driver.escapeAliasName(junctionAlias) + "." +
+                        this.connection.driver.escapeColumnName(junctionMetadata.columns[0].name) + "=" +
+                        this.connection.driver.escapeAliasName(this.aliasMap.mainAlias.name) + "." +
+                        this.connection.driver.escapeColumnName(joinTableColumn);
+                } else {
+                    condition1 = this.connection.driver.escapeAliasName(junctionAlias) + "." +
+                        this.connection.driver.escapeColumnName(junctionMetadata.columns[1].name) + "=" +
+                        this.connection.driver.escapeAliasName(this.aliasMap.mainAlias.name) + "." +
+                        this.connection.driver.escapeColumnName(joinTableColumn);
+                }
+
+                return " LEFT JOIN " + junctionTable + " " + this.connection.driver.escapeAliasName(junctionAlias) + " ON " + condition1;
+            }).join(" ");
+        }*/
 
         return joins;
     }
@@ -1603,12 +1704,14 @@ export class QueryBuilder<Entity> {
             return " ORDER BY " + Object.keys(this.orderBys).map(columnName => this.replacePropertyNames(columnName) + " " + this.orderBys[columnName]).join(", ");
 
         // if table has a default order then apply it
-        const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
-        if (metadata.table.orderBy)
-            return " ORDER BY " + Object
-                .keys(metadata.table.orderBy)
-                .map(key => this.replacePropertyNames(key) + " " + metadata.table.orderBy![key])
-                .join(", ");
+        if (!this.fromTableName) {
+            const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+            if (metadata.table.orderBy)
+                return " ORDER BY " + Object
+                        .keys(metadata.table.orderBy)
+                        .map(key => this.replacePropertyNames(key) + " " + metadata.table.orderBy![key])
+                        .join(", ");
+        }
 
         return "";
     }
@@ -1731,6 +1834,39 @@ export class QueryBuilder<Entity> {
             return false;
 
         return true;
+    }
+
+    /**
+     * Creates "WHERE" expression and variables for the given "ids".
+     */
+    protected createWhereIdsExpression(ids: any[]): [string, ObjectLiteral] {
+        const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+        const parameters: ObjectLiteral = {};
+        const whereStrings = ids.map((id, index) => {
+            const whereSubStrings: string[] = [];
+            if (metadata.hasMultiplePrimaryKeys) {
+                metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
+                    whereSubStrings.push(id[primaryColumn.name] + "=:id_" + index + "_" + secondIndex);
+                    parameters["id_" + index + "_" + secondIndex] = id[primaryColumn.name];
+                });
+                metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
+                    whereSubStrings.push(id[primaryColumn.name] + "=:parentId_" + index + "_" + secondIndex);
+                    parameters["parentId_" + index + "_" + secondIndex] = id[primaryColumn.propertyName];
+                });
+            } else {
+                if (metadata.primaryColumns.length > 0) {
+                    whereSubStrings.push(metadata.firstPrimaryColumn.name + "=:id_" + index);
+                    parameters["id_" + index] = id;
+
+                } else if (metadata.parentIdColumns.length > 0) {
+                    whereSubStrings.push(metadata.parentIdColumns[0].name + "=:parentId_" + index);
+                    parameters["parentId_" + index] = id;
+                }
+            }
+            return whereSubStrings.join(" AND ");
+        });
+
+        return ["(" + whereStrings.join(" OR ") + ")", parameters];
     }
 
 }

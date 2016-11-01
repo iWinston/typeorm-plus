@@ -405,7 +405,7 @@ describe("one-to-one", function() {
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    loadedPost.metadata = undefined;
+                    loadedPost.metadata = null;
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {

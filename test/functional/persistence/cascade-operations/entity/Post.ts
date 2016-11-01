@@ -3,6 +3,9 @@ import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/Prima
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {Category} from "./Category";
+import {Photo} from "./Photo";
+import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
+import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
 
 @Table()
 export class Post {
@@ -17,5 +20,11 @@ export class Post {
         cascadeInsert: true
     })
     category: Category;
+
+    @ManyToMany(type => Photo, {
+        cascadeInsert: true
+    })
+    @JoinTable()
+    photos: Photo[];
 
 }

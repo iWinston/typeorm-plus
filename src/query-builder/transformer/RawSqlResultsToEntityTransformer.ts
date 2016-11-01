@@ -18,7 +18,8 @@ export class RawSqlResultsToEntityTransformer {
     constructor(private driver: Driver,
                 private aliasMap: AliasMap,
                 private joinMappings: JoinMapping[],
-                private relationCountMetas: RelationCountMeta[]) {
+                private relationCountMetas: RelationCountMeta[],
+                private enableRelationIdValues: boolean) {
     }
 
     // -------------------------------------------------------------------------
@@ -63,7 +64,23 @@ export class RawSqlResultsToEntityTransformer {
     private transformIntoSingleResult(rawSqlResults: any[], alias: Alias, metadata: EntityMetadata) {
         const entity: any = metadata.create();
         let hasData = false;
-        
+
+        // console.log(rawSqlResults);
+
+        // add special columns that contains relation ids
+        if (this.enableRelationIdValues) {
+            metadata.columns
+                .filter(column => !!column.relationMetadata)
+                .forEach(column => {
+                    const valueInObject = rawSqlResults[0][alias.name + "_" + column.name]; // we use zero index since its grouped data
+                    if (valueInObject !== undefined && valueInObject !== null && column.propertyName) {
+                        const value = this.driver.prepareHydratedValue(valueInObject, column);
+                        entity[column.propertyName] = value;
+                        hasData = true;
+                    }
+                });
+        } // */
+
         this.joinMappings
             .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.parentAliasName && joinMapping.alias.target)
             .map(joinMapping => {

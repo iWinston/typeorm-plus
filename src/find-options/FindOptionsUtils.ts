@@ -27,7 +27,8 @@ export class FindOptionsUtils {
                     !!possibleOptions.innerJoinAndSelect ||
                     !!possibleOptions.leftJoin ||
                     !!possibleOptions.innerJoin ||
-                    !!possibleOptions.parameters
+                    !!possibleOptions.parameters ||
+                    !!possibleOptions.enabledOptions
                 );
     }
 
@@ -97,6 +98,12 @@ export class FindOptionsUtils {
 
         if (options.parameters)
             qb.addParameters(options.parameters);
+
+        if (options.enabledOptions) {
+            options.enabledOptions.forEach(option => {
+                qb.enableOption(option);
+            });
+        }
         
         return qb;
     }
