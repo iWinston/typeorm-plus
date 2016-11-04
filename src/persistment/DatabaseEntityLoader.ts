@@ -152,22 +152,13 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
             // todo: added here because of type safety. theoretically it should not be empty, but what to do? throw exception if its empty?
             if (!subject.databaseEntity) return;
 
-            // if this subject is persisted subject then we get its value to check if its not empty or its values changed
-            let persistValueRelationId: any = null;
-            if (subject.entity) {
-                persistValueRelationId = relation.getEntityValue(subject.entity);
-                // persistValue = persistValueRelationId; // use it if entity itself is needed
-                if (persistValueRelationId) persistValueRelationId = relation.getInverseEntityRelationId(persistValueRelationId);
-                if (persistValueRelationId === undefined) return; // skip undefined properties
-            }
-
             // for one-to-one owner and many-to-one relations no need to load entity to check if something removed
             // because join column is in this side of relation and we have a database entity with which we can compare
             // and understand if relation was removed or not
-            if (relation.isOneToOneOwner || relation.isManyToOne) { // this indicates that relation value inside object is removed
+            if (relation.isOneToOneOwner || relation.isManyToOne) {
 
                 /**
-                 * By example (one-to-one). Let's say we have a one-to-one relation between Post and Details.
+                 * By example (one-to-one owner). Let's say we have a one-to-one relation between Post and Details.
                  * Post contains detailsId. It means he owns relation. Post has cascade remove with details.
                  * Now here we have a post object with removed details.
                  * We need to remove Details if post.details = null
@@ -195,6 +186,14 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 // if database relation id does not exist in the database object then nothing to remove
                 if (relationIdInDatabaseEntity !== null && relationIdInDatabaseEntity !== undefined)
                     return;
+
+                // if this subject is persisted subject then we get its value to check if its not empty or its values changed
+                let persistValueRelationId: any = null;
+                if (subject.entity) {
+                    const persistValue = relation.getEntityValue(subject.entity);
+                    if (persistValue) persistValueRelationId = relation.getInverseEntityRelationId(persistValue);
+                    if (persistValueRelationId === undefined) return; // skip undefined properties
+                }
 
                 // object is removed only if relation id in the persisted entity is empty or is changed
                 if (persistValueRelationId === null || persistValueRelationId === relationIdInDatabaseEntity)
@@ -227,7 +226,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                     if (databaseEntity) {
                         alreadyLoadedRelatedDatabaseSubject = new Subject(valueMetadata, undefined, databaseEntity);
-                        this.loadMap.push(subject);
+                        this.loadMap.push(alreadyLoadedRelatedDatabaseSubject);
                     }
                 }
 
@@ -239,8 +238,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
             // for one-to-one not owner we need to load entity to understand that it was really removed or not,
             // since column value that indicates relation is stored on inverse side
-            // that's why we need to load object and
-            if (relation.isOneToOneNotOwner) { // this indicates that relation value inside object is removed
+            if (relation.isOneToOneNotOwner) {
 
                 /**
                  * By example. Let's say we have a one-to-one relation between Post and Details.
@@ -254,8 +252,14 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 // (example) "valueMetadata" - is an entity metadata of the Post object.
                 // (example) "subject.databaseEntity" - is a details object
 
-                // note that if databaseEntity has relation, it can only be a relation id,
-                // because of query builder option "RELATION_ID_VALUES" we used
+                // if this subject is persisted subject then we get its value to check if its not empty or its values changed
+                let persistValueRelationId: any = null;
+                if (subject.entity) {
+                    const persistValue = relation.getEntityValue(subject.entity);
+                    if (persistValue) persistValueRelationId = relation.getInverseEntityRelationId(persistValue);
+                    if (persistValueRelationId === undefined) return; // skip undefined properties
+                }
+
                 // (example) returns us referenced column (detail's id)
                 const relationIdInDatabaseEntity = relation.getOwnEntityRelationId(subject.databaseEntity);
 
@@ -291,10 +295,8 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     // add only if database entity exist - because in the case of inverse side of the one-to-one relation
                     // we cannot check if it was removed or not until we query the database
                     // and it can be a situation that relation wasn't exist at all. This is particular that case
-                    if (databaseEntity) {
-                        alreadyLoadedRelatedDatabaseSubject = new Subject(valueMetadata, undefined, databaseEntity);
-                        this.loadMap.push(subject);
-                    }
+                    alreadyLoadedRelatedDatabaseSubject = new Subject(valueMetadata, undefined, databaseEntity);
+                    this.loadMap.push(alreadyLoadedRelatedDatabaseSubject);
                 }
 
                 // check if we really has a relation between entities. If relation not found then alreadyLoadedRelatedDatabaseSubject will be empty
@@ -311,6 +313,112 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     alreadyLoadedRelatedDatabaseSubject.markedAsRemoved = true;
                     await this.findCascadeRemovedEntitiesToLoad(alreadyLoadedRelatedDatabaseSubject);
                 }
+            }
+
+            // for one-to-many we need to load entities to understand which was really removed
+            // since column value that indicates relation is stored on inverse side
+            if (relation.isOneToMany || relation.isManyToMany) {
+
+                /**
+                 * By example. Let's say we have a one-to-many relation between Post and Details.
+                 * Post contains detailsId. It means he owns relation.
+                 * It also means that one details contains multiple post, and one post contain only one details.
+                 * Details has cascade remove with post.
+                 * Now here we have a details object with removed post.
+                 * There can be one or multiple removed posts, because posts is an array in details.
+                 * If details.posts is undefined then we skip it as we do with any persisted undefined property.
+                 * If details.posts is an empty array it means all its items should be removed.
+                 * If details.posts is a null it means same - all its items has been removed.
+                 * We need to remove each Post in the databaseDetails where post is missing in details.posts
+                 * but databasePost.detailsId = details.id exist in the db.
+                 */
+
+                // (example) "relation" - is a relation in details with post.
+                // (example) "valueMetadata" - is an entity metadata of the Post object.
+                // (example) "subject.databaseEntity" - is a details object
+
+                // (example) returns us referenced column (detail's id)
+                const relationIdInDatabaseEntity = relation.getOwnEntityRelationId(subject.databaseEntity);
+
+                // if database relation id does not exist then nothing to remove (but can this be possible?)
+                if (relationIdInDatabaseEntity !== null && relationIdInDatabaseEntity !== undefined)
+                    return;
+
+                // if this subject is persisted subject then we get its value to check if its not empty or its values changed
+                let persistValue: any = null;
+                if (subject.entity) {
+                    persistValue = relation.getEntityValue(subject.entity);
+                    if (persistValue === undefined) return; // skip undefined properties
+                }
+
+                // we can't get already loaded objects from loadMap because we don't know exactly how
+                // many objects are in database entity, and entities from loadMap may return us not all of them
+                // that's why we are forced to load all its entities from the database even if loaded some of them before
+                // (example) we need to load a posts where post.detailsId = details.id
+                let databaseEntities: ObjectLiteral[] = [];
+
+                if (relation.isManyToManyOwner) {
+                    databaseEntities = await this.connection
+                        .getRepository<ObjectLiteral>(valueMetadata.target)
+                        .createQueryBuilder(qbAlias)
+                        .innerJoin(subject.metadata.target, "persistenceJoinedRelation", "ON", qbAlias + "." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                        .setParameter("id", relation.getOwnEntityRelationId(subject.entity))
+                        .enableOption("RELATION_ID_VALUES")
+                        .getResults();
+
+                } else if (relation.isManyToManyNotOwner) {
+                    databaseEntities = await this.connection
+                        .getRepository<ObjectLiteral>(valueMetadata.target)
+                        .createQueryBuilder(qbAlias)
+                        .innerJoin(subject.metadata.target, "persistenceJoinedRelation", "ON", qbAlias + "." + relation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                        .setParameter("id", relation.getOwnEntityRelationId(subject.entity))
+                        .enableOption("RELATION_ID_VALUES")
+                        .getResults();
+
+                } else {
+                    databaseEntities = await this.connection
+                        .getRepository<ObjectLiteral>(valueMetadata.target)
+                        .createQueryBuilder(qbAlias)
+                        .where(qbAlias + "." + relation.inverseSideProperty + "=:id") // todo: need to escape alias and propertyName?
+                        .setParameter("id", relation.getOwnEntityRelationId(subject.entity))
+                        .enableOption("RELATION_ID_VALUES")
+                        .getResults();
+                }
+
+                // add to loadMap loaded entities if some of them are missing
+                databaseEntities.forEach(databaseEntity => {
+                    const subjectInLoadMap = this.loadMap.findByEntityLike(valueMetadata.target, databaseEntity);
+                    if (subjectInLoadMap && !subjectInLoadMap.databaseEntity) {
+                        subjectInLoadMap.databaseEntity = databaseEntity;
+
+                    } else if (!subjectInLoadMap) {
+                        const subject = new Subject(valueMetadata, undefined, databaseEntity);
+                        this.loadMap.push(subject);
+                    }
+                });
+
+                //
+                const promises = databaseEntities.map(async databaseEntity => {
+                    const relatedEntitySubject = this.loadMap.findByDatabaseEntityLike(valueMetadata.target, databaseEntity);
+                    if (!relatedEntitySubject) return; // should not be possible
+
+                    if (persistValue === null) {
+                        relatedEntitySubject.markedAsRemoved = true;
+                        await this.findCascadeRemovedEntitiesToLoad(relatedEntitySubject);
+                    }
+
+                    const relatedValue = (persistValue as ObjectLiteral[]).find(persistedRelatedValue => {
+                        const relatedId = relation.getInverseEntityRelationId(persistedRelatedValue);
+                        return relatedId === relation.getInverseEntityRelationId(relatedEntitySubject!.databaseEntity!);
+                    });
+
+                    if (!relatedValue) {
+                        relatedEntitySubject.markedAsRemoved = true;
+                        await this.findCascadeRemovedEntitiesToLoad(relatedEntitySubject);
+                    }
+                });
+
+                await Promise.all(promises);
             }
         });
 
