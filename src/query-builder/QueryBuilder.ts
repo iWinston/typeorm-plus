@@ -1243,11 +1243,13 @@ export class QueryBuilder<Entity> {
     /**
      * Enables special query builder options.
      */
-    enableOption(option: "RELATION_ID_VALUES") {
+    enableOption(option: "RELATION_ID_VALUES"): this {
         switch (option) {
             case "RELATION_ID_VALUES":
                 this.enableRelationIdValues = true;
         }
+
+        return this;
     }
 
     // -------------------------------------------------------------------------

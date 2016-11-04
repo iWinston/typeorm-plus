@@ -3,22 +3,28 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  */
-export class Subject { // todo: move entity with id creation into metadata?
+export class Subject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
 
     // -------------------------------------------------------------------------
     // Properties
     // -------------------------------------------------------------------------
 
     metadata: EntityMetadata;
-    entity: ObjectLiteral;
+    entity: ObjectLiteral; // todo: rename to persistEntity, make it optional!
+    databaseEntity?: ObjectLiteral;
+
+    markedAsInserted: boolean = false;
+    markedAsUpdated: boolean = false;
+    markedAsRemoved: boolean = false;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(metadata: EntityMetadata, entity: ObjectLiteral) {
+    constructor(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) {
         this.metadata = metadata;
-        this.entity = entity;
+        this.entity = entity!; // todo: temporary
+        this.databaseEntity = databaseEntity;
     }
 
     // -------------------------------------------------------------------------

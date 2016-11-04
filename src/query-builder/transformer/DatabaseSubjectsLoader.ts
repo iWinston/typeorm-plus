@@ -20,8 +20,9 @@ export class DatabaseSubjectsLoader {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     */
     async load<Entity extends ObjectLiteral>(subjectCollection: SubjectCollection): Promise<SubjectCollection> {
-
         const subjects = new SubjectCollection();
         const promises = subjectCollection
             .groupByEntityTargets()
@@ -47,4 +48,5 @@ export class DatabaseSubjectsLoader {
     loadRemoved(persistedSubjects: SubjectCollection) {
 
     }
+
 }

@@ -16,6 +16,7 @@ import {NewInsertOperation} from "./operation/NewInsertOperation";
 import {CascadesNotAllowedError} from "./error/CascadesNotAllowedError";
 import {NewUpdateOperation} from "./operation/NewUpdateOperation";
 import {NewRemoveOperation} from "./operation/NewRemoveOperation";
+import {DatabaseEntityLoader} from "./DatabaseEntityLoader";
 
 /**
  * Manages entity persistence - insert, update and remove of entity.
@@ -48,12 +49,88 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
+     * To be able to execute persistence operations we need to load all entities from the database we need.
+     * Loading should be efficient - we need to load entities in as few queries as possible + load as less data as we can.
+     * This is how we determine which entities needs to be loaded from db:
+     *
+     * 1. example with cascade updates and inserts:
+     *
+     * [Y] - means "yes, we load"
+     * [N] - means "no, we don't load"
+     * in {} braces we specify what cascade options are set between relations
+     *
+     * if Post is new, author is not set in the post
+     *
+     * [Y] Post -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+     *   [Y] Author -> {all} // no because author is not set
+     *     [Y] Photo -> {all} // no because author and its photo are not set
+     *       [Y] Tag -> {all} // no because author and its photo and its tag are not set
+     *
+     * if Post is new, author is new (or anything else is new)
+     * if Post is updated
+     * if Post and/or Author are updated
+     *
+     * [Y] Post -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+     *   [Y] Author -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+     *     [Y] Photo -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+     *       [Y] Tag -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+     *
+     * Here we load post, author, photo, tag to check if they are new or not to persist insert or update operation.
+     * We load post, author, photo, tag only if they exist in the relation.
+     * From these examples we can see that we always load entity relations when it has "update" or "insert" cascades.
+     *
+     * 2. example with cascade removes
+     *
+     * if entity is new its remove operations by cascades should not be executed
+     * if entity is updated then values that are null or missing in array (not undefined!, undefined means skip - don't do anything) are treated as removed
+     * if entity is removed then all its downside relations which has cascade remove should be removed
+     *
+     * Once we find removed entity - we load it, and every downside entity which has "remove" cascade set.
+     *
+     * At the end we have all entities we need to operate with.
+     * Next step is to store all loaded entities to manipulate them efficiently.
+
+    async load(entity: Entity): Promise<void> {
+
+        class LoadEntity {
+            constructor(public target: Function|string,
+                        public mixedId: any) {
+            }
+        }
+
+        const loadMap: LoadEntity[] = [];
+
+        const recursive = (entity: ObjectLiteral, metadata: EntityMetadata) => {
+            metadata
+                .extractRelationValuesFromEntity(entity, metadata.relations)
+                .forEach(([relation, value, valueMetadata]) => {
+
+                    if (relation.isEntityDefined(value) && (relation.isCascadeInsert || relation.isCascadeUpdate)) {
+                        loadMap.push(new LoadEntity(valueMetadata.target, valueMetadata.getEntityIdMixedMap(value)));
+                        recursive(value, valueMetadata);
+                    }
+                });
+        };
+
+        recursive(entity, this.metadata);
+
+    }*/
+
+    /**
      * Persists given entity in the database.
      * Persistence is a complex process:
      * 1. flatten all persist entities
      * 2. load from the database all entities that has primary keys and might be updated
      */
     async persist(entity: Entity): Promise<Entity> {
+
+        if (true === true) {
+            const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+            await databaseEntityLoader.load(entity, this.metadata);
+            console.log();
+            return entity;
+        }
+
         const subjectFactory = new SubjectFactory();
         const databaseSubjectLoader = new DatabaseSubjectsLoader(this.connection);
         const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
@@ -64,6 +141,12 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         // the only way we can get know them is load from the database
         const persistedSubjects = subjectFactory.createCollectionFromEntityAndRelations(entity, this.metadata);
         const persistedSubject = persistedSubjects.findByEntity(entity)!; // its impossible here to return undefined
+
+        // to make persistence to work we need to load all entities from the database
+        // we load persistent entity itself, we load all entities in its relations or downside relations
+        // that we need to update or remove. This mechanizm is complicated and we need to traverse
+        // over relations tree of persistent entity and find which entities we really need to load from the db
+
 
         // first we load from the database all entities from inserted/updated subjects
         const databaseSubjects = await databaseSubjectLoader.load(persistedSubjects);
@@ -485,20 +568,6 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * todo: multiple implementations of hasId: here, in repository, in entity metadata
-     */
-    protected hasId(entity: Entity): boolean {
-        return this.metadata.primaryColumns.every(primaryColumn => {
-            const columnName = primaryColumn.propertyName;
-            return !!entity &&
-                entity.hasOwnProperty(columnName) &&
-                entity[columnName] !== null &&
-                entity[columnName] !== undefined &&
-                entity[columnName] !== "";
-        });
-    }
 
     /**
      * When ORM loads dbEntity it uses joins to load all entity dependencies. However when dbEntity is newly persisted

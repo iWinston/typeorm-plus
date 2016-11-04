@@ -36,7 +36,7 @@ describe("persistence > cascade operations", () => {
             post1.category = category1;
             await connection.entityManager.persist(post1);
 
-            await connection.entityManager.persist([photo1, photo2]);
+           /* await connection.entityManager.persist([photo1, photo2]);
 
             post1.photos = [photo1];
             await connection.entityManager.persist(post1);
@@ -52,7 +52,7 @@ describe("persistence > cascade operations", () => {
             console.log("********************************************************");
 
             post1.title = "Updated Post";
-            await connection.entityManager.persist(post1);
+            await connection.entityManager.persist(post1);*/
 
         })));
 

@@ -31,7 +31,7 @@ import {Subject} from "./subject/Subject";
  * 6. go throw all relations and find junction
  *      6.1.
  *      
- * if relation has "all" then all of above:
+ * if relation has "all" then all of below:
  * if relation has "insert" it can insert a new entity
  * if relation has "update" it can only update related entity
  * if relation has "remove" it can only remove related entity

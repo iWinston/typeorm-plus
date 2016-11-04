@@ -11,6 +11,16 @@ export class SubjectCollection extends Array<Subject> {
     // -------------------------------------------------------------------------
 
     /**
+     * Pushes subject to the collection only in the case if subject with same entity target and entity id
+     * does not exist in the collection.
+     */
+    pushIfNotExist(subject: Subject) {
+        const existSubject = this.findByEntityLike(subject);
+        if (!existSubject)
+            this.push(subject);
+    }
+
+    /**
      * Finds subject with a given entity.
      */
     findByEntity(entity: ObjectLiteral): Subject|undefined {
@@ -60,6 +70,19 @@ export class SubjectCollection extends Array<Subject> {
     findByEntityId(entityTarget: Function|string, id: any) {
         return this.find(subject => {
             return subject.entityTarget === entityTarget && subject.metadata.compareEntityMixedIds(subject.mixedId, id);
+        });
+    }
+
+    findByDatabaseEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
+        return this.find(subject => {
+            return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.databaseEntity, entity);
+        });
+    }
+
+    findByDatabaseId(entityTarget: Function|string, id: any) {
+        return this.find(subject => {
+            const databaseEntityMixedId = subject.metadata.getEntityIdMixedMap(subject.databaseEntity);
+            return subject.entityTarget === entityTarget && subject.metadata.compareEntityMixedIds(databaseEntityMixedId, id);
         });
     }
 

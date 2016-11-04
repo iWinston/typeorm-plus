@@ -317,6 +317,7 @@ export class RelationMetadata {
 
     /**
      * Checks if this relation is owner side of the "one-to-one" relation.
+     * Owner side means this side of relation has a join column in the table.
      */
     get isOneToOneOwner(): boolean {
         return this.isOneToOne && this.isOwning;
@@ -324,6 +325,7 @@ export class RelationMetadata {
 
     /**
      * Checks if this relation is NOT owner side of the "one-to-one" relation.
+     * NOT owner side means this side of relation does not have a join column in the table.
      */
     get isOneToOneNotOwner(): boolean {
         return this.isOneToOne && !this.isOwning;
@@ -351,6 +353,22 @@ export class RelationMetadata {
     }
 
     /**
+     * Checks if this relation's type is "many-to-many", and is owner side of the relationship.
+     * Owner side means this side of relation has a join table.
+     */
+    get isManyToManyOwner(): boolean {
+        return this.isManyToMany && this.isOwning;
+    }
+
+    /**
+     * Checks if this relation's type is "many-to-many", and is NOT owner side of the relationship.
+     * Not owner side means this side of relation does not have a join table.
+     */
+    get isManyToManyNotOwner(): boolean {
+        return this.isManyToMany && !this.isOwning;
+    }
+
+    /**
      * Checks if inverse side is specified by a relation.
      */
     get hasInverseSide(): boolean {
@@ -360,7 +378,7 @@ export class RelationMetadata {
     /**
      * Gets the property name of the inverse side of the relation.
      */
-    get inverseSideProperty(): string {
+    get inverseSideProperty(): string { // todo: should be called inverseSidePropertyName ?
 
         if (this._inverseSideProperty) {
             return this.computeInverseSide(this._inverseSideProperty);
@@ -399,26 +417,44 @@ export class RelationMetadata {
         return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
     }
 
-    getOwnEntityRelationId(entity: ObjectLiteral): any {
-        if (this.isManyToMany) {
-            if (this.isOwning) {
-                return entity[this.joinTable.referencedColumn.propertyName];
-            } else {
-                return entity[this.joinTable.inverseReferencedColumn.propertyName];
-            }
-        }
-        // todo: implement for others too.
+    /**
+     * Checks if given entity is not null or undefined.
+     */
+    isEntityDefined(entity: ObjectLiteral|undefined|null): boolean {
+        return entity !== null && entity !== undefined;
     }
 
-    getInverseEntityRelationId(entity: ObjectLiteral): any {
-        if (this.isManyToMany) {
-            if (this.isOwning) {
-                return entity[this.joinTable.inverseReferencedColumn.propertyName];
-            } else {
-                return entity[this.joinTable.referencedColumn.propertyName];
-            }
+    /**
+     * todo: lazy relations are not supported here? implement logic?
+     */
+    getOwnEntityRelationId(ownEntity: ObjectLiteral): any {
+        if (this.isManyToManyOwner) {
+            return ownEntity[this.joinTable.referencedColumn.propertyName];
+
+        } else if (this.isManyToManyNotOwner) {
+            return ownEntity[this.joinTable.inverseReferencedColumn.propertyName];
+
+        } else if (this.isOneToOneOwner || this.isManyToOne) {
+            return ownEntity[this.joinColumn.propertyName];
+
+        } else if (this.isOneToOneNotOwner || this.isOneToMany) {
+            return ownEntity[this.joinColumn.referencedColumn.propertyName];
         }
-        // todo: implement for others too.
+    }
+
+    getInverseEntityRelationId(inverseEntity: ObjectLiteral): any {
+        if (this.isManyToManyOwner) {
+            return inverseEntity[this.joinTable.inverseReferencedColumn.propertyName];
+
+        } else if (this.isManyToManyNotOwner) {
+            return inverseEntity[this.joinTable.referencedColumn.propertyName];
+
+        } else if (this.isOneToOneOwner || this.isManyToOne) {
+            return inverseEntity[this.joinColumn.referencedColumn.propertyName];
+
+        } else if (this.isOneToOneNotOwner || this.isOneToMany) {
+            return inverseEntity[this.joinColumn.propertyName];
+        }
     }
 
     // ---------------------------------------------------------------------
