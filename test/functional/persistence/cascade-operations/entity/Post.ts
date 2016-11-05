@@ -17,12 +17,16 @@ export class Post {
     title: string;
 
     @ManyToOne(type => Category, category => category.posts, {
-        cascadeInsert: true
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
     })
-    category: Category;
+    category: Category|null;
 
     @ManyToMany(type => Photo, {
-        cascadeInsert: true
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
     })
     @JoinTable()
     photos: Photo[];

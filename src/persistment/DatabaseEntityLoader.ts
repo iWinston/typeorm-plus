@@ -62,7 +62,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
     /**
      * If this gonna be reused then what to do with marked flags?
-     * One of solution can be clone this object and reset all marked states for this persistment.
+     * One of solution can be clone this object and reset all marked states for this persistence.
      * Or from reused just extract databaseEntities from their subjects? (looks better)
      */
     private loadedSubjects: SubjectCollection = new SubjectCollection();
@@ -79,18 +79,20 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     async load(entity: Entity, metadata: EntityMetadata): Promise<void> {
-        // this.persistedEntity = new Subject(metadata, entity);
-        // this.loadedSubjects.push(this.persistedEntity);
+        const persistedEntity = new Subject(metadata, entity);
+        this.loadedSubjects.push(persistedEntity);
         this.populateSubjectsWithCascadeUpdateAndInsertEntities(entity, metadata);
         await this.loadDatabaseEntities();
         // this.findCascadeInsertAndUpdateEntities(entity, metadata);
+
+        console.log("loadedSubjects: ", this.loadedSubjects);
 
         const findCascadeRemoveOperations = this.loadedSubjects
             .filter(subject => !!subject.databaseEntity) // means we only attempt to load for non new entities
             .map(subject => this.findCascadeRemovedEntitiesToLoad(subject));
         await Promise.all(findCascadeRemoveOperations);
 
-        console.log(this.loadedSubjects);
+        console.log("all persistence subjects: ", this.loadedSubjects);
     }
 
     // -------------------------------------------------------------------------
@@ -191,7 +193,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      *  BIG NOTE: objects are being removed by cascades not only when relation is removed, but also when
      *  relation is replaced (e.g. changed with different object).
      */
-    protected async findCascadeRemovedEntitiesToLoad(subject: Subject/*, forceRemove = false*/): Promise<void> {
+    protected async findCascadeRemovedEntitiesToLoad(subject: Subject): Promise<void> {
 
         // note: we can't use extractRelationValuesFromEntity here because it does not handle empty arrays
         const promises = subject.metadata.relations.map(async relation => {
@@ -236,7 +238,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 const relationIdInDatabaseEntity = relation.getOwnEntityRelationId(subject.databaseEntity); // (example) returns post.detailsId
 
                 // if database relation id does not exist in the database object then nothing to remove
-                if (relationIdInDatabaseEntity !== null && relationIdInDatabaseEntity !== undefined)
+                if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
                     return;
 
                 // if this subject is persisted subject then we get its value to check if its not empty or its values changed
@@ -248,7 +250,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 }
 
                 // object is removed only if relation id in the persisted entity is empty or is changed
-                if (persistValueRelationId === null || persistValueRelationId === relationIdInDatabaseEntity)
+                if (persistValueRelationId !== null && persistValueRelationId === relationIdInDatabaseEntity)
                     return;
 
                 // first check if we already loaded this object before load from the database
@@ -272,7 +274,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
                         .where(qbAlias + "." + relation.joinColumn.referencedColumn.propertyName + "=:id") // todo: need to escape alias and propertyName?
-                        .setParameter("id", relation.getOwnEntityRelationId(subject.databaseEntity)) // (example) subject.entity is a post here
+                        .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
                         .enableOption("RELATION_ID_VALUES")
                         .getSingleResult();
 
@@ -283,6 +285,12 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 }
 
                 if (alreadyLoadedRelatedDatabaseSubject) {
+
+                    // if object is already marked as removed then no need to proceed because it already was proceed
+                    // if we remove this it will cause a recursion
+                    if (alreadyLoadedRelatedDatabaseSubject.mustBeRemoved)
+                        return;
+
                     alreadyLoadedRelatedDatabaseSubject.mustBeRemoved = true;
                     await this.findCascadeRemovedEntitiesToLoad(alreadyLoadedRelatedDatabaseSubject);
                 }
@@ -316,7 +324,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 const relationIdInDatabaseEntity = relation.getOwnEntityRelationId(subject.databaseEntity);
 
                 // if database relation id does not exist then nothing to remove (but can this be possible?)
-                if (relationIdInDatabaseEntity !== null && relationIdInDatabaseEntity !== undefined)
+                if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
                     return;
 
                 // first check if we already have this object loaded before load from the database
@@ -340,7 +348,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id") // todo: need to escape alias and propertyName?
-                        .setParameter("id", relation.getOwnEntityRelationId(subject.entity)) // (example) subject.entity is a details here, and the value is details.id
+                        .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
                         .enableOption("RELATION_ID_VALUES")
                         .getSingleResult();
 
@@ -360,6 +368,11 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     // (example) postFromPersistedDetails.id === postFromDatabaseDetails - means nothing changed
                     if (persistValueRelationId && persistValueRelationId ===
                         relation.getInverseEntityRelationId(alreadyLoadedRelatedDatabaseSubject.databaseEntity))
+                        return;
+
+                    // if object is already marked as removed then no need to proceed because it already was proceed
+                    // if we remove this it will cause a recursion
+                    if (alreadyLoadedRelatedDatabaseSubject.mustBeRemoved)
                         return;
 
                     alreadyLoadedRelatedDatabaseSubject.mustBeRemoved = true;
@@ -393,7 +406,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 const relationIdInDatabaseEntity = relation.getOwnEntityRelationId(subject.databaseEntity);
 
                 // if database relation id does not exist then nothing to remove (but can this be possible?)
-                if (relationIdInDatabaseEntity !== null && relationIdInDatabaseEntity !== undefined)
+                if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
                     return;
 
                 // if this subject is persisted subject then we get its value to check if its not empty or its values changed
@@ -413,8 +426,8 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
-                        .innerJoin(subject.metadata.target, "persistenceJoinedRelation", "ON", qbAlias + "." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
-                        .setParameter("id", relation.getOwnEntityRelationId(subject.entity))
+                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON", "persistenceJoinedRelation." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                        .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
                         .getResults();
 
@@ -422,8 +435,8 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
-                        .innerJoin(subject.metadata.target, "persistenceJoinedRelation", "ON", qbAlias + "." + relation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
-                        .setParameter("id", relation.getOwnEntityRelationId(subject.entity))
+                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON", "persistenceJoinedRelation." + relation.inverseRelation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                        .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
                         .getResults();
 
@@ -432,7 +445,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id") // todo: need to escape alias and propertyName?
-                        .setParameter("id", relation.getOwnEntityRelationId(subject.entity))
+                        .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
                         .getResults();
                 }
@@ -452,11 +465,16 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 //
                 const promises = databaseEntities.map(async databaseEntity => {
                     const relatedEntitySubject = this.loadedSubjects.findByDatabaseEntityLike(valueMetadata.target, databaseEntity);
-                    if (!relatedEntitySubject) return; // should not be possible
+                    if (!relatedEntitySubject) return; // should not be possible, anyway add it for type-safety
+
+                    // if object is already marked as removed then no need to proceed because it already was proceed
+                    // if we remove this it will cause a recursion
+                    if (relatedEntitySubject.mustBeRemoved) return;
 
                     if (persistValue === null) {
                         relatedEntitySubject.mustBeRemoved = true;
                         await this.findCascadeRemovedEntitiesToLoad(relatedEntitySubject);
+                        return;
                     }
 
                     const relatedValue = (persistValue as ObjectLiteral[]).find(persistedRelatedValue => {

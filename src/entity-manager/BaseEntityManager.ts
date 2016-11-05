@@ -162,8 +162,8 @@ export abstract class BaseEntityManager {
     /**
      * Creates a new query builder that can be used to build an sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>, alias: string): QueryBuilder<Entity> {
-        return this.getRepository(entityClass).createQueryBuilder(alias);
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string): QueryBuilder<Entity> {
+        return this.getRepository(entityClass as any).createQueryBuilder(alias);
     }
 
     /**

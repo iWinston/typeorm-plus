@@ -7,8 +7,6 @@ import {PersistOperationExecutor} from "./PersistOperationExecutor";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./subject/Subject";
-import {SubjectFactory} from "./subject/SubjectFactory";
-import {DatabaseSubjectsLoader} from "../query-builder/transformer/DatabaseSubjectsLoader";
 import {SubjectCollection} from "./subject/SubjectCollection";
 import {NewJunctionInsertOperation} from "./operation/NewJunctionInsertOperation";
 import {NewJunctionRemoveOperation} from "./operation/NewJunctionRemoveOperation";
@@ -123,8 +121,41 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * 2. load from the database all entities that has primary keys and might be updated
      */
     async persist(entity: Entity): Promise<Entity> {
-
         if (true === true) {
+            const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+            await databaseEntityLoader.load(entity, this.metadata);
+        }
+
+        const allNewEntities = await this.flattenEntityRelationTree(entity, this.metadata);
+        const persistedEntity = allNewEntities.find(operatedEntity => operatedEntity.entity === entity);
+        if (!persistedEntity)
+            throw new Error(`Internal error. Persisted entity was not found in the list of prepared operated entities`);
+
+        let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
+
+        // if entity has an id then check
+        if (this.metadata.hasId(entity)) {
+            const queryBuilder = new QueryBuilder<Entity>(this.connection, this.queryRunner)
+                .select(this.metadata.table.name)
+                .from(this.metadata.target, this.metadata.table.name);
+            const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
+            const loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entity, this.metadata, queryBuilder);
+            if (loadedDbEntity) {
+                dbEntity = new Subject(this.metadata, loadedDbEntity);
+                allDbInNewEntities = await this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
+            }
+        }
+
+        // need to find db entities that were not loaded by initialize method
+        const allDbEntities = await this.findNotLoadedIds(allNewEntities, allDbInNewEntities);
+        const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
+        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedEntity, allDbEntities, allNewEntities);
+
+        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
+        await persistOperationExecutor.executePersistOperation(persistOperation);
+        return entity;
+
+        /*if (true === true) {
             const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
             await databaseEntityLoader.load(entity, this.metadata);
             console.log();
@@ -190,7 +221,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
 
 
 
-        /*let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
+        /!*let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
 
         // if entity has an id then check
         if (this.hasId(entity)) {
@@ -203,13 +234,13 @@ export class EntityPersister<Entity extends ObjectLiteral> {
                 dbEntity = new Subject(this.metadata, loadedDbEntity);
                 allDbInNewEntities = this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
             }
-        }*/
+        }*!/
 
         // need to find db entities that were not loaded by initialize method
         // const allDbEntities = await this.findNotLoadedIds(persistedSubjects, allDbInNewEntities);
         const persistOperation = entityPersistOperationBuilder.buildFullPersistment(databaseSubject, persistedSubject, databaseSubjects, persistedSubjects);
         await persistOperationExecutor.executePersistOperation(persistOperation);
-        return entity;
+        return entity;*/
     }
 
     /**

@@ -34,7 +34,23 @@ describe("persistence > cascade operations", () => {
             const post1 = new Post();
             post1.title = "Hello Post #1";
             post1.category = category1;
+            post1.category.photos = [photo1, photo2];
             await connection.entityManager.persist(post1);
+
+            console.log("********************************************************");
+
+            const posts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.category", "category")
+                // .innerJoinAndSelect("post.photos", "photos")
+                .getResults();
+
+            console.log("********************************************************");
+            console.log("posts: ", posts);
+
+            // posts[0].category = null; // todo: uncomment to check remove
+            console.log("removing post's category: ", posts[0]);
+            await connection.entityManager.persist(posts[0]);
 
            /* await connection.entityManager.persist([photo1, photo2]);
 

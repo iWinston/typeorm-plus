@@ -432,13 +432,13 @@ export class RelationMetadata {
             return ownEntity[this.joinTable.referencedColumn.propertyName];
 
         } else if (this.isManyToManyNotOwner) {
-            return ownEntity[this.joinTable.inverseReferencedColumn.propertyName];
+            return ownEntity[this.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
 
         } else if (this.isOneToOneOwner || this.isManyToOne) {
             return ownEntity[this.joinColumn.propertyName];
 
         } else if (this.isOneToOneNotOwner || this.isOneToMany) {
-            return ownEntity[this.joinColumn.referencedColumn.propertyName];
+            return ownEntity[this.inverseRelation.joinColumn.referencedColumn.propertyName];
         }
     }
 
@@ -447,13 +447,13 @@ export class RelationMetadata {
             return inverseEntity[this.joinTable.inverseReferencedColumn.propertyName];
 
         } else if (this.isManyToManyNotOwner) {
-            return inverseEntity[this.joinTable.referencedColumn.propertyName];
+            return inverseEntity[this.inverseRelation.joinTable.referencedColumn.propertyName];
 
         } else if (this.isOneToOneOwner || this.isManyToOne) {
             return inverseEntity[this.joinColumn.referencedColumn.propertyName];
 
         } else if (this.isOneToOneNotOwner || this.isOneToMany) {
-            return inverseEntity[this.joinColumn.propertyName];
+            return inverseEntity[this.inverseRelation.joinColumn.propertyName];
         }
     }
 
