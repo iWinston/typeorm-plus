@@ -39,12 +39,28 @@ export class PersistSubjectExecutor {
         const updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         const removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
 
+        // validation
+        // check if remove subject also must be inserted or updated - then we throw an exception
+        const removeInInserts = removeSubjects.find(removeSubject => insertSubjects.indexOf(removeSubject) !== -1);
+        if (removeInInserts)
+            throw new Error(`Removed entity ${removeInInserts.entityTarget} is also scheduled for insert operation.`);
+
+        const removeInUpdates = removeSubjects.find(removeSubject => updateSubjects.indexOf(removeSubject) !== -1);
+        if (removeInUpdates)
+            throw new Error(`Removed entity "${removeInUpdates.entityTarget}" is also scheduled for update operation. ` +
+                `Make sure you are not updating and removing same object (note that update or remove may be executed by cascade operations).`);
+
         try {
+
+            // broadcast events before we start updating
             this.connection.broadcaster.broadcastBeforeEventsForAll(insertSubjects, updateSubjects, removeSubjects);
+
+            // open transaction if its not opened yet
             if (!this.queryRunner.isTransactionActive()) {
                 isTransactionStartedByItself = true;
                 await this.queryRunner.beginTransaction();
             }
+
             await this.executeInsertOperations(insertSubjects);
             await this.executeInsertClosureTableOperations(insertSubjects);
             await this.executeUpdateTreeLevelOperations(insertSubjects);
@@ -56,21 +72,25 @@ export class PersistSubjectExecutor {
             await this.executeUpdateOperations(updateSubjects);
             await this.executeRemoveOperations(removeSubjects);
 
+            // commit transaction if it was started by us
             if (isTransactionStartedByItself === true)
                 await this.queryRunner.commitTransaction();
 
-            await this.updateIdsOfInsertedEntities(insertSubjects);
-            await this.updateIdsOfRemovedEntities(removeSubjects);
-            await this.updateSpecialColumnsInEntities(insertSubjects, updateSubjects);
+            // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
+            await this.updateSpecialColumnsInPersistedEntities(insertSubjects, updateSubjects);
 
+            // finally broadcast events
             this.connection.broadcaster.broadcastAfterEventsForAll(insertSubjects, updateSubjects, removeSubjects);
 
         } catch (error) {
+
+            // rollback transaction if it was started by us
             if (isTransactionStartedByItself) {
                 try {
                     await this.queryRunner.rollbackTransaction();
                 } catch (secondaryError) { }
             }
+
             throw error;
         }
     }
@@ -169,10 +189,12 @@ export class PersistSubjectExecutor {
     }
 
     /**
-     * Updates all ids of the inserted entities.
+     * Updates all special columns of the saving entities (create date, update date, versioning).
      */
-    private updateIdsOfInsertedEntities(insertedSubject: Subject[]) {
-        insertedSubject.forEach(subject => {
+    private updateSpecialColumnsInPersistedEntities(insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]) {
+
+        // update entity ids of the newly inserted entities
+        insertSubjects.forEach(subject => {
             subject.metadata.primaryColumns.forEach(primaryColumn => {
                 if (subject.entityId)
                     subject.entity[primaryColumn.propertyName] = subject.entityId[primaryColumn.propertyName];
@@ -182,12 +204,7 @@ export class PersistSubjectExecutor {
                     subject.entity[primaryColumn.propertyName] = subject.entityId[primaryColumn.propertyName];
             });
         });
-    }
 
-    /**
-     * Updates all special columns of the saving entities (create date, update date, versioning).
-     */
-    private updateSpecialColumnsInEntities(insertSubjects: Subject[], updateSubjects: Subject[]) {
         insertSubjects.forEach(subject => {
             if (subject.metadata.hasUpdateDateColumn)
                 subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
@@ -212,12 +229,8 @@ export class PersistSubjectExecutor {
             if (subject.metadata.hasVersionColumn)
                 subject.entity[subject.metadata.versionColumn.propertyName]++;
         });
-    }
 
-    /**
-     * Removes all ids of the removed entities.
-     */
-    private updateIdsOfRemovedEntities(removeSubjects: Subject[]) {
+        // remove ids from the entities that were removed
         removeSubjects.forEach(subject => {
             // const removedEntity = removeSubjects.allPersistedEntities.find(allNewEntity => {
             //     return allNewEntity.entityTarget === subject.entityTarget && allNewEntity.compareId(subject.metadata.getEntityIdMap(subject.entity)!);
@@ -447,22 +460,26 @@ export class PersistSubjectExecutor {
      * If entity uses class-table-inheritance, then multiple inserts may by performed to save all entities.
      */
     private async insert(subject: Subject): Promise<any> {
-        const metadata = this.connection.entityMetadatas.findByTarget(subject.entityTarget);
+
         let generatedId: any;
+        const parentEntityMetadata = subject.metadata.parentEntityMetadata;
+        const metadata = subject.metadata;
+        const entity = subject.entity;
+
         if (metadata.table.isClassTableChild) {
-            const parentValuesMap = this.collectColumnsAndValues(metadata.parentEntityMetadata, subject.entity, subject.date, undefined, metadata.discriminatorValue);
-            generatedId = await this.queryRunner.insert(metadata.parentEntityMetadata.table.name, parentValuesMap, metadata.parentEntityMetadata.generatedColumnIfExist);
-            const childValuesMap = this.collectColumnsAndValues(metadata, subject.entity, subject.date, generatedId);
+            const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue);
+            generatedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
+            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, generatedId);
             const secondGeneratedId = await this.queryRunner.insert(metadata.table.name, childValuesMap, metadata.generatedColumnIfExist);
             if (!generatedId && secondGeneratedId) generatedId = secondGeneratedId;
         } else {
-            const valuesMap = this.collectColumnsAndValues(metadata, subject.entity, subject.date);
+            const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date);
             generatedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
         }
 
         // if there is a generated column and we have a generated id then store it in the insert operation for further use
-        if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.hasGeneratedColumn && generatedId) {
-            subject.entityId = { [metadata.parentEntityMetadata.generatedColumn.propertyName]: generatedId };
+        if (parentEntityMetadata && parentEntityMetadata.hasGeneratedColumn && generatedId) {
+            subject.entityId = { [parentEntityMetadata.generatedColumn.propertyName]: generatedId };
 
         } else if (metadata.hasGeneratedColumn && generatedId) {
             subject.entityId = { [metadata.generatedColumn.propertyName]: generatedId };
@@ -475,7 +492,6 @@ export class PersistSubjectExecutor {
         const columns = metadata.columns
             .filter(column => !column.isVirtual && !column.isParentId && !column.isDiscriminator && column.hasEntityValue(entity));
 
-        const columnNames = columns.map(column => column.name);
         const values = columns.map(column => this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column));
 
         const relationColumns = metadata.relations
@@ -494,7 +510,7 @@ export class PersistSubjectExecutor {
                 return value;
             });
 
-        const allColumns = columnNames.concat(relationColumns);
+        const allColumns = columns.map(column => column.name).concat(relationColumns);
         const allValues = values.concat(relationValues);
 
         if (metadata.hasCreateDateColumn) {
