@@ -219,15 +219,15 @@ export class MysqlDriver implements Driver {
             case ColumnTypes.DATE:
                 if (moment(value).isValid())
                     return moment(value).format("YYYY-MM-DD");
-                else return '0000-00-00';
+                else return "0000-00-00";
             case ColumnTypes.TIME:
                 if (moment(value).isValid())
                     return moment(value).format("HH:mm:ss");
-                else return '00:00:00';
+                else return "00:00:00";
             case ColumnTypes.DATETIME:
                 if (moment(value).isValid())
                     return moment(value).format("YYYY-MM-DD HH:mm:ss");
-                else return '0000-00-00 00:00:00';
+                else return "0000-00-00 00:00:00";
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
             case ColumnTypes.SIMPLE_ARRAY:
