@@ -1,5 +1,4 @@
 import {PersistOperation} from "./operation/PersistOperation";
-import {UpdateOperation} from "./operation/UpdateOperation";
 import {InsertOperation} from "./operation/InsertOperation";
 import {JunctionRemoveOperation} from "./operation/JunctionRemoveOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
@@ -51,18 +50,18 @@ export class PersistSubjectExecutor {
             await this.executeUpdateTreeLevelOperations(insertSubjects);
             await this.executeInsertJunctionsOperations(junctionInsertOperations, insertSubjects);
             await this.executeRemoveJunctionsOperations(junctionRemoveOperations);
-            await this.executeRemoveRelationOperations(persistOperation);
-            await this.executeUpdateRelationsOperations(persistOperation);
-            await this.executeUpdateInverseRelationsOperations(persistOperation);
-            await this.executeUpdateOperations(persistOperation);
-            await this.executeRemoveOperations(persistOperation);
+            await this.executeRemoveRelationOperations(persistOperation); // todo: can we add these operations into list of updated?
+            await this.executeUpdateRelationsOperations(persistOperation); // todo: merge these operations with update operations?
+            await this.executeUpdateInverseRelationsOperations(persistOperation); // todo: merge these operations with update operations?
+            await this.executeUpdateOperations(updateSubjects);
+            await this.executeRemoveOperations(removeSubjects);
 
             if (isTransactionStartedByItself === true)
                 await this.queryRunner.commitTransaction();
 
-            await this.updateIdsOfInsertedEntities(persistOperation);
-            await this.updateIdsOfRemovedEntities(persistOperation);
-            await this.updateSpecialColumnsInEntities(persistOperation);
+            await this.updateIdsOfInsertedEntities(insertSubjects);
+            await this.updateIdsOfRemovedEntities(removeSubjects);
+            await this.updateSpecialColumnsInEntities(insertSubjects, updateSubjects);
 
             this.connection.broadcaster.broadcastAfterEventsForAll(insertSubjects, updateSubjects, removeSubjects);
 
@@ -146,10 +145,8 @@ export class PersistSubjectExecutor {
     /**
      * Executes update operations.
      */
-    private async executeUpdateOperations(persistOperation: PersistOperation): Promise<void> {
-        await Promise.all(persistOperation.updates.map(updateOperation => {
-            return this.update(updateOperation);
-        }));
+    private async executeUpdateOperations(updateSubjects: Subject[]): Promise<void> {
+        await Promise.all(updateSubjects.map(subject => this.update(subject)));
     }
 
     /**
@@ -167,25 +164,22 @@ export class PersistSubjectExecutor {
     /**
      * Executes remove operations.
      */
-    private executeRemoveOperations(persistOperation: PersistOperation) {
-        return Promise.all(persistOperation.removes.map(operation => {
-            return this.delete(operation.target, operation.entity);
-        }));
+    private executeRemoveOperations(removeSubjects: Subject[]) {
+        return Promise.all(removeSubjects.map(subject => this.remove(subject)));
     }
 
     /**
      * Updates all ids of the inserted entities.
      */
-    private updateIdsOfInsertedEntities(persistOperation: PersistOperation) {
-        persistOperation.inserts.forEach(insertOperation => {
-            const metadata = this.connection.entityMetadatas.findByTarget(insertOperation.target);
-            metadata.primaryColumns.forEach(primaryColumn => {
-                if (insertOperation.entityId)
-                    insertOperation.entity[primaryColumn.propertyName] = insertOperation.entityId[primaryColumn.propertyName];
+    private updateIdsOfInsertedEntities(insertedSubject: Subject[]) {
+        insertedSubject.forEach(subject => {
+            subject.metadata.primaryColumns.forEach(primaryColumn => {
+                if (subject.entityId)
+                    subject.entity[primaryColumn.propertyName] = subject.entityId[primaryColumn.propertyName];
             });
-            metadata.parentPrimaryColumns.forEach(primaryColumn => {
-                if (insertOperation.entityId)
-                    insertOperation.entity[primaryColumn.propertyName] = insertOperation.entityId[primaryColumn.propertyName];
+            subject.metadata.parentPrimaryColumns.forEach(primaryColumn => {
+                if (subject.entityId)
+                    subject.entity[primaryColumn.propertyName] = subject.entityId[primaryColumn.propertyName];
             });
         });
     }
@@ -193,49 +187,46 @@ export class PersistSubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, versioning).
      */
-    private updateSpecialColumnsInEntities(persistOperation: PersistOperation) {
-        persistOperation.inserts.forEach(insertOperation => {
-            const metadata = this.connection.entityMetadatas.findByTarget(insertOperation.target);
-            if (metadata.hasUpdateDateColumn)
-                insertOperation.entity[metadata.updateDateColumn.propertyName] = insertOperation.date;
-            if (metadata.hasCreateDateColumn)
-                insertOperation.entity[metadata.createDateColumn.propertyName] = insertOperation.date;
-            if (metadata.hasVersionColumn)
-                insertOperation.entity[metadata.versionColumn.propertyName]++;
-            if (metadata.hasTreeLevelColumn) {
+    private updateSpecialColumnsInEntities(insertSubjects: Subject[], updateSubjects: Subject[]) {
+        insertSubjects.forEach(subject => {
+            if (subject.metadata.hasUpdateDateColumn)
+                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasCreateDateColumn)
+                subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasVersionColumn)
+                subject.entity[subject.metadata.versionColumn.propertyName]++;
+            if (subject.metadata.hasTreeLevelColumn) {
                 // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
                 // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
-                insertOperation.entity[metadata.treeLevelColumn.propertyName] = insertOperation.treeLevel;
+                subject.entity[subject.metadata.treeLevelColumn.propertyName] = subject.treeLevel;
             }
-            /*if (metadata.hasTreeChildrenCountColumn) {
-                insertOperation.entity[metadata.treeChildrenCountColumn.propertyName] = 0;
+            /*if (subject.metadata.hasTreeChildrenCountColumn) {
+                 subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
             }*/
         });
-        persistOperation.updates.forEach(updateOperation => {
-            const metadata = this.connection.entityMetadatas.findByTarget(updateOperation.target);
-            if (metadata.hasUpdateDateColumn)
-                updateOperation.entity[metadata.updateDateColumn.propertyName] = updateOperation.date;
-            if (metadata.hasCreateDateColumn)
-                updateOperation.entity[metadata.createDateColumn.propertyName] = updateOperation.date;
-            if (metadata.hasVersionColumn)
-                updateOperation.entity[metadata.versionColumn.propertyName]++;
+        updateSubjects.forEach(subject => {
+            if (subject.metadata.hasUpdateDateColumn)
+                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasCreateDateColumn)
+                subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasVersionColumn)
+                subject.entity[subject.metadata.versionColumn.propertyName]++;
         });
     }
 
     /**
      * Removes all ids of the removed entities.
      */
-    private updateIdsOfRemovedEntities(persistOperation: PersistOperation) {
-        persistOperation.removes.forEach(removeOperation => {
-            const metadata = this.connection.entityMetadatas.findByTarget(removeOperation.target);
-            const removedEntity = persistOperation.allPersistedEntities.find(allNewEntity => {
-                return allNewEntity.entityTarget === removeOperation.target && allNewEntity.compareId(metadata.getEntityIdMap(removeOperation.entity)!);
+    private updateIdsOfRemovedEntities(removeSubjects: Subject[]) {
+        removeSubjects.forEach(subject => {
+            // const removedEntity = removeSubjects.allPersistedEntities.find(allNewEntity => {
+            //     return allNewEntity.entityTarget === subject.entityTarget && allNewEntity.compareId(subject.metadata.getEntityIdMap(subject.entity)!);
+            // });
+            // if (removedEntity) {
+            subject.metadata.primaryColumns.forEach(primaryColumn => {
+                subject.entity[primaryColumn.propertyName] = undefined;
             });
-            if (removedEntity) {
-                metadata.primaryColumns.forEach(primaryColumn => {
-                    removedEntity.entity[primaryColumn.propertyName] = undefined;
-                });
-            }
+            // }
         });
     }
 
@@ -325,14 +316,13 @@ export class PersistSubjectExecutor {
         return this.queryRunner.update(tableName, { [targetRelation.name]: targetEntityId }, updateMap);
     }
 
-    private async update(updateOperation: UpdateOperation): Promise<void> {
-        const entity = updateOperation.entity;
-        const metadata = this.connection.entityMetadatas.findByTarget(updateOperation.target);
+    private async update(subject: Subject): Promise<void> {
+        const entity = subject.entity;
 
         // we group by table name, because metadata can have different table names
         const valueMaps: { tableName: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
 
-        updateOperation.columns.forEach(column => {
+        subject.diffColumns.forEach(column => {
             if (!column.entityTarget) return;
             const metadata = this.connection.entityMetadatas.findByTarget(column.entityTarget);
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
@@ -344,7 +334,7 @@ export class PersistSubjectExecutor {
             valueMap.values[column.name] = this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
         });
 
-        updateOperation.relations.forEach(relation => {
+        subject.diffRelations.forEach(relation => {
             const metadata = this.connection.entityMetadatas.findByTarget(relation.entityTarget);
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
             if (!valueMap) {
@@ -360,45 +350,45 @@ export class PersistSubjectExecutor {
         if (Object.keys(valueMaps).length === 0)
             return;
 
-        if (metadata.hasUpdateDateColumn) {
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+        if (subject.metadata.hasUpdateDateColumn) {
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.table.name);
             if (!valueMap) {
-                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMap = { tableName: subject.metadata.table.name, metadata: subject.metadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[metadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), metadata.updateDateColumn);
+            valueMap.values[subject.metadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
         }
 
-        if (metadata.hasVersionColumn) {
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+        if (subject.metadata.hasVersionColumn) {
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.table.name);
             if (!valueMap) {
-                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMap = { tableName: subject.metadata.table.name, metadata: subject.metadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[metadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[metadata.versionColumn.propertyName] + 1, metadata.versionColumn);
+            valueMap.values[subject.metadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, metadata.versionColumn);
         }
 
-        if (metadata.parentEntityMetadata) {
-            if (metadata.parentEntityMetadata.hasUpdateDateColumn) {
-                let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.parentEntityMetadata.table.name);
+        if (subject.metadata.parentEntityMetadata) {
+            if (subject.metadata.parentEntityMetadata.hasUpdateDateColumn) {
+                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
                 if (!valueMap) {
-                    valueMap = { tableName: metadata.parentEntityMetadata.table.name, metadata: metadata.parentEntityMetadata, values: {} };
+                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
                     valueMaps.push(valueMap);
                 }
 
-                valueMap.values[metadata.parentEntityMetadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), metadata.parentEntityMetadata.updateDateColumn);
+                valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
             }
 
-            if (metadata.parentEntityMetadata.hasVersionColumn) {
-                let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.parentEntityMetadata.table.name);
+            if (subject.metadata.parentEntityMetadata.hasVersionColumn) {
+                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
                 if (!valueMap) {
-                    valueMap = { tableName: metadata.parentEntityMetadata.table.name, metadata: metadata.parentEntityMetadata, values: {} };
+                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
                     valueMaps.push(valueMap);
                 }
 
-                valueMap.values[metadata.parentEntityMetadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[metadata.parentEntityMetadata.versionColumn.propertyName] + 1, metadata.parentEntityMetadata.versionColumn);
+                valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.parentEntityMetadata.versionColumn.propertyName] + 1, subject.metadata.parentEntityMetadata.versionColumn);
             }
         }
 
@@ -433,22 +423,21 @@ export class PersistSubjectExecutor {
         throw new Error("Remove operation relation is not set"); // todo: find out how its possible
     }
 
-    private async delete(target: Function|string, entity: any): Promise<void> {
-        const metadata = this.connection.entityMetadatas.findByTarget(target);
-        if (metadata.parentEntityMetadata) {
+    private async remove(subject: Subject): Promise<void> {
+        if (subject.metadata.parentEntityMetadata) {
             const parentConditions: ObjectLiteral = {};
-            metadata.parentPrimaryColumns.forEach(column => {
-                parentConditions[column.name] = entity[column.propertyName];
+            subject.metadata.parentPrimaryColumns.forEach(column => {
+                parentConditions[column.name] = subject.entity[column.propertyName];
             });
-            await this.queryRunner.delete(metadata.parentEntityMetadata.table.name, parentConditions);
+            await this.queryRunner.delete(subject.metadata.parentEntityMetadata.table.name, parentConditions);
 
             const childConditions: ObjectLiteral = {};
-            metadata.primaryColumnsWithParentIdColumns.forEach(column => {
-                childConditions[column.name] = entity[column.propertyName];
+            subject.metadata.primaryColumnsWithParentIdColumns.forEach(column => {
+                childConditions[column.name] = subject.entity[column.propertyName];
             });
-            await this.queryRunner.delete(metadata.table.name, childConditions);
+            await this.queryRunner.delete(subject.metadata.table.name, childConditions);
         } else {
-            await this.queryRunner.delete(metadata.table.name, metadata.getEntityIdColumnMap(entity)!);
+            await this.queryRunner.delete(subject.metadata.table.name, subject.metadata.getEntityIdColumnMap(subject.entity)!);
         }
     }
 
