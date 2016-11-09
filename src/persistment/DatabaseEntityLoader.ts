@@ -3,6 +3,8 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./subject/Subject";
 import {SubjectCollection} from "./subject/SubjectCollection";
+import {NewJunctionRemoveOperation} from "./operation/NewJunctionRemoveOperation";
+import {NewJunctionInsertOperation} from "./operation/NewJunctionInsertOperation";
 
 
 // at the end, subjects which does not have database entities are newly persisted entities
@@ -65,7 +67,9 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      * One of solution can be clone this object and reset all marked states for this persistence.
      * Or from reused just extract databaseEntities from their subjects? (looks better)
      */
-    private loadedSubjects: SubjectCollection = new SubjectCollection();
+    loadedSubjects: SubjectCollection = new SubjectCollection();
+    junctionInsertOperations: NewJunctionInsertOperation[];
+    junctionRemoveOperations: NewJunctionRemoveOperation[];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -80,19 +84,33 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
     async load(entity: Entity, metadata: EntityMetadata): Promise<void> {
         const persistedEntity = new Subject(metadata, entity);
+        persistedEntity.canBeInserted = true;
+        persistedEntity.canBeUpdated = true;
         this.loadedSubjects.push(persistedEntity);
         this.populateSubjectsWithCascadeUpdateAndInsertEntities(entity, metadata);
         await this.loadDatabaseEntities();
         // this.findCascadeInsertAndUpdateEntities(entity, metadata);
 
-        console.log("loadedSubjects: ", this.loadedSubjects);
+        // console.log("loadedSubjects: ", this.loadedSubjects);
 
         const findCascadeRemoveOperations = this.loadedSubjects
             .filter(subject => !!subject.databaseEntity) // means we only attempt to load for non new entities
             .map(subject => this.findCascadeRemovedEntitiesToLoad(subject));
         await Promise.all(findCascadeRemoveOperations);
 
-        console.log("all persistence subjects: ", this.loadedSubjects);
+        // find subjects that needs to be inserted and removed from junction table
+        const [junctionInsertOperations, junctionRemoveOperations] = await Promise.all([
+            this.buildInsertJunctionOperations(),
+            this.buildRemoveJunctionOperations()
+        ]);
+        this.junctionInsertOperations = junctionInsertOperations;
+        this.junctionRemoveOperations = junctionRemoveOperations;
+
+        // when executing insert/update operations we need to exclude entities scheduled for remove
+        // for junction operations we only get insert and update operations
+
+        // persistedEntity.mustBeRemoved = true;
+        // todo: execute operations
     }
 
     // -------------------------------------------------------------------------
@@ -495,5 +513,90 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
         await Promise.all(promises);
     }
 
+    /**
+     * Builds all junction insert operations used to insert new bind data into junction tables.
+     *
+     */
+    private async buildInsertJunctionOperations(): Promise<NewJunctionInsertOperation[]> {
+        const junctionInsertOperations: NewJunctionInsertOperation[] = [];
+        const promises = this.loadedSubjects.map(persistedSubject => { // todo: exclude if object is removed?
+            const promises = persistedSubject.metadata.manyToManyRelations.map(async relation => {
+
+                // extract entity value - we only need to proceed if value is defined and its an array
+                const value = relation.getEntityValue(persistedSubject.entity);
+                if (!(value instanceof Array))
+                    return;
+
+                // get all inverse entities relation ids that are "bind" to the currently persisted entity
+                const inverseEntityRelationIds = value
+                    .map(v => relation.getInverseEntityRelationId(v))
+                    .filter(v => v !== undefined && v !== null);
+
+                // load from db all relation ids of inverse entities "bind" to the currently persisted entity
+                // this way we gonna check which relation ids are new
+                const existInverseEntityRelationIds = await this.connection
+                    .getSpecificRepository(persistedSubject.entityTarget)
+                    .findRelationIds(relation, persistedSubject.entity, inverseEntityRelationIds);
+
+                // now from all entities in the persisted entity find only those which aren't found in the db
+                const newRelationIds = inverseEntityRelationIds.filter(inverseEntityRelationId => {
+                    return !existInverseEntityRelationIds.find(relationId => inverseEntityRelationId === relationId);
+                });
+                /*const persistedEntities = value.filter(val => {
+                 const relationValue = relation.getInverseEntityRelationId(val);
+                 return !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
+                 });*/ // todo: remove later if not necessary
+
+                // finally create a new junction insert operation and push it to the array of such operations
+                if (newRelationIds.length > 0) {
+                    const operation = new NewJunctionInsertOperation(relation, persistedSubject, newRelationIds);
+                    junctionInsertOperations.push(operation);
+                }
+            });
+
+            return Promise.all(promises);
+        });
+
+        await Promise.all(promises);
+        return junctionInsertOperations;
+    }
+
+    /**
+     * Builds all junction remove operations used to remove bind data from junction tables.
+     */
+    private async buildRemoveJunctionOperations(): Promise<NewJunctionRemoveOperation[]> {
+        const junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
+        const promises = this.loadedSubjects.map(persistedSubject => { // todo: exclude if object is removed?
+            const promises = persistedSubject.metadata.manyToManyRelations.map(async relation => {
+
+                // extract entity value - we only need to proceed if value is defined and its an array
+                const value = relation.getEntityValue(persistedSubject.entity);
+                if (!(value instanceof Array))
+                    return;
+
+                // get all inverse entities that are "bind" to the currently persisted entity
+                const inverseEntityRelationIds = value
+                    .map(v => relation.getInverseEntityRelationId(v))
+                    .filter(v => v !== undefined && v !== null);
+
+                // load from db all relation ids of inverse entities that are NOT "bind" to the currently persisted entity
+                // this way we gonna check which relation ids are missing (e.g. removed)
+                const removedInverseEntityRelationIds = await this.connection
+                    .getSpecificRepository(persistedSubject.entityTarget)
+                    .findRelationIds(relation, persistedSubject.entity, undefined, inverseEntityRelationIds);
+
+                // finally create a new junction remove operation and push it to the array of such operations
+                if (removedInverseEntityRelationIds.length > 0) {
+                    const operation = new NewJunctionRemoveOperation(relation, persistedSubject.entity, removedInverseEntityRelationIds);
+                    junctionRemoveOperations.push(operation);
+                }
+            });
+
+            return Promise.all(promises);
+        });
+
+        await Promise.all(promises);
+        return junctionRemoveOperations;
+    }
 
 }

@@ -13,11 +13,30 @@ export class Subject { // todo: move entity with id creation into metadata? // t
 
     metadata: EntityMetadata;
     entity: ObjectLiteral; // todo: rename to persistEntity, make it optional!
-    databaseEntity?: ObjectLiteral;
+    _databaseEntity?: ObjectLiteral;
 
     canBeInserted: boolean = false;
     canBeUpdated: boolean = false;
     mustBeRemoved: boolean = false;
+
+    diffColumns: ColumnMetadata[] = [];
+    diffRelations: RelationMetadata[] = [];
+
+    /**
+     * When subject is newly persisted it may have a generated entity id.
+     * In this case it should be written here.
+     */
+    entityId: any; // todo: rename to newEntityId
+
+    /**
+     * Used in newly persisted entities which are tree tables.
+     */
+    treeLevel: number;
+
+    /**
+     * Date when this entity is persisted.
+     */
+    date: Date;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -45,6 +64,24 @@ export class Subject { // todo: move entity with id creation into metadata? // t
         return this.metadata.getEntityIdMixedMap(this.entity);
     }
 
+    get mustBeInserted() {
+        return !!this.databaseEntity;
+    }
+
+    get mustBeUpdated() {
+        return this.diffColumns.length > 0 || this.diffRelations.length > 0;
+    }
+
+    get databaseEntity(): ObjectLiteral|undefined {
+        return this._databaseEntity;
+    }
+
+    set databaseEntity(databaseEntity: ObjectLiteral|undefined) {
+        this._databaseEntity = databaseEntity;
+        this.buildDiffColumns();
+        this.buildDiffRelationalColumns();
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -53,11 +90,15 @@ export class Subject { // todo: move entity with id creation into metadata? // t
         return this.metadata.compareIds(this.id, id);
     }
 
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
     /**
      * Differentiate columns from the updated entity and entity stored in the database.
      */
-    diffColumns(updatedSubject: Subject, dbSubject: Subject): ColumnMetadata[] {
-        return updatedSubject.metadata.allColumns.filter(column => {
+    private buildDiffColumns(): ColumnMetadata[] {
+        return this.metadata.allColumns.filter(column => {
             if (column.isVirtual ||
                 column.isParentId ||
                 column.isDiscriminator ||
@@ -65,14 +106,14 @@ export class Subject { // todo: move entity with id creation into metadata? // t
                 column.isVersion ||
                 column.isCreateDate ||
                 // column.isRelationId || // todo: probably need to skip relation ids here?
-                updatedSubject.entity[column.propertyName] === undefined ||
-                column.getEntityValue(updatedSubject) === column.getEntityValue(dbSubject))
+                this.entity[column.propertyName] === undefined ||
+                column.getEntityValue(this.entity) === column.getEntityValue(this.databaseEntity))
                 return false;
 
             // filter out "relational columns" only in the case if there is a relation object in entity
-            if (!column.isInEmbedded && updatedSubject.metadata.hasRelationWithDbName(column.propertyName)) {
-                const relation = updatedSubject.metadata.findRelationWithDbName(column.propertyName); // todo: why with dbName ?
-                if (updatedSubject.entity[relation.propertyName] !== null && updatedSubject.entity[relation.propertyName] !== undefined) // todo: explain this condition
+            if (!column.isInEmbedded && this.metadata.hasRelationWithDbName(column.propertyName)) {
+                const relation = this.metadata.findRelationWithDbName(column.propertyName); // todo: why with dbName ?
+                if (this.entity[relation.propertyName] !== null && this.entity[relation.propertyName] !== undefined) // todo: explain this condition
                     return false;
             }
             return true;
@@ -82,8 +123,8 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     /**
      * Difference columns of the owning one-to-one and many-to-one columns.
      */
-    diffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */updatedSubject: Subject, dbSubject: Subject): RelationMetadata[] {
-        return updatedSubject.metadata.allRelations.filter(relation => {
+    private buildDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): RelationMetadata[] {
+        return this.metadata.allRelations.filter(relation => {
             if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
                 return false;
 
@@ -92,18 +133,18 @@ export class Subject { // todo: move entity with id creation into metadata? // t
             // 2. related entity can be entity id which is hacked way of updating entity
             // todo: what to do if there is a column with relationId? (cover this too?)
             const updatedEntityRelationId: any =
-                updatedSubject.entity[relation.propertyName] instanceof Object ?
-                    updatedSubject.metadata.getEntityIdMixedMap(updatedSubject.entity[relation.propertyName])
-                    : updatedSubject.entity[relation.propertyName];
+                this.entity[relation.propertyName] instanceof Object ?
+                    this.metadata.getEntityIdMixedMap(this.entity[relation.propertyName])
+                    : this.entity[relation.propertyName];
 
 
             // here because we have enabled RELATION_ID_VALUES option in the QueryBuilder when we loaded db entities
             // we have in the dbSubject only relationIds.
             // This allows us to compare relation id in the updated subject with id in the database
-            const dbEntityRelationId = dbSubject.entity[relation.propertyName];
+            const dbEntityRelationId = this.databaseEntity![relation.propertyName];
 
             // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
-            // todo: if (updatesByRelations.find(operation => operation.targetEntity === updatedSubject && operation.updatedRelation === relation))
+            // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))
             // todo:     return false;
 
             // we don't perform operation over undefined properties

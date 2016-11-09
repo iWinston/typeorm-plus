@@ -45,6 +45,8 @@ describe("persistence > cascade operations", () => {
                 // .innerJoinAndSelect("post.photos", "photos")
                 .getResults();
 
+            posts[0].title = "Updated Post #1";
+
             console.log("********************************************************");
             console.log("posts: ", posts);
 

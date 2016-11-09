@@ -318,7 +318,6 @@ export class EntityPersistOperationBuilder {
      *   update table where this relation (owner side)
      *   set its relation property to inserted id
      *   where
-     *
      */
 
     private updateRelations(insertOperations: InsertOperation[], newEntity: Subject): UpdateByRelationOperation[] {

@@ -8,8 +8,6 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./subject/Subject";
 import {SubjectCollection} from "./subject/SubjectCollection";
-import {NewJunctionInsertOperation} from "./operation/NewJunctionInsertOperation";
-import {NewJunctionRemoveOperation} from "./operation/NewJunctionRemoveOperation";
 import {NewInsertOperation} from "./operation/NewInsertOperation";
 import {CascadesNotAllowedError} from "./error/CascadesNotAllowedError";
 import {NewUpdateOperation} from "./operation/NewUpdateOperation";
@@ -121,39 +119,39 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * 2. load from the database all entities that has primary keys and might be updated
      */
     async persist(entity: Entity): Promise<Entity> {
-        if (true === true) {
-            const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
-            await databaseEntityLoader.load(entity, this.metadata);
-        }
+        const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+        await databaseEntityLoader.load(entity, this.metadata);
+        console.log("all persistence subjects: ", databaseEntityLoader.loadedSubjects);
+        return entity;
 
-        const allNewEntities = await this.flattenEntityRelationTree(entity, this.metadata);
-        const persistedEntity = allNewEntities.find(operatedEntity => operatedEntity.entity === entity);
-        if (!persistedEntity)
-            throw new Error(`Internal error. Persisted entity was not found in the list of prepared operated entities`);
-
-        let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
-
-        // if entity has an id then check
-        if (this.metadata.hasId(entity)) {
-            const queryBuilder = new QueryBuilder<Entity>(this.connection, this.queryRunner)
-                .select(this.metadata.table.name)
-                .from(this.metadata.target, this.metadata.table.name);
-            const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
-            const loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entity, this.metadata, queryBuilder);
-            if (loadedDbEntity) {
-                dbEntity = new Subject(this.metadata, loadedDbEntity);
-                allDbInNewEntities = await this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
-            }
-        }
+        // const allNewEntities = await this.flattenEntityRelationTree(entity, this.metadata);
+        // const persistedEntity = allNewEntities.find(operatedEntity => operatedEntity.entity === entity);
+        // if (!persistedEntity)
+        //     throw new Error(`Internal error. Persisted entity was not found in the list of prepared operated entities`);
+        //
+        // let dbEntity: Subject|undefined, allDbInNewEntities: Subject[] = [];
+        //
+        // // if entity has an id then check
+        // if (this.metadata.hasId(entity)) {
+        //     const queryBuilder = new QueryBuilder<Entity>(this.connection, this.queryRunner)
+        //         .select(this.metadata.table.name)
+        //         .from(this.metadata.target, this.metadata.table.name);
+        //     const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
+        //     const loadedDbEntity = await plainObjectToDatabaseEntityTransformer.transform(entity, this.metadata, queryBuilder);
+        //     if (loadedDbEntity) {
+        //         dbEntity = new Subject(this.metadata, loadedDbEntity);
+        //         allDbInNewEntities = await this.flattenEntityRelationTree(loadedDbEntity, this.metadata);
+        //     }
+        // }
 
         // need to find db entities that were not loaded by initialize method
-        const allDbEntities = await this.findNotLoadedIds(allNewEntities, allDbInNewEntities);
-        const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-        const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedEntity, allDbEntities, allNewEntities);
-
-        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
-        await persistOperationExecutor.executePersistOperation(persistOperation);
-        return entity;
+        // const allDbEntities = await this.findNotLoadedIds(allNewEntities, allDbInNewEntities);
+        // const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
+        // const persistOperation = entityPersistOperationBuilder.buildFullPersistment(dbEntity, persistedEntity, allDbEntities, allNewEntities);
+        //
+        // const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
+        // await persistOperationExecutor.executePersistOperation(persistOperation);
+        // return entity;
 
         /*if (true === true) {
             const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
@@ -257,6 +255,8 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * We iterate throw persisted entities and its relations to find removed entities.
      * Once we find removed entities, we iterate throw database entities and find all relations
      * of the removed entity that has cascades and add them to list of removed entities too.
+     *
+     * @deprecated
      */
     private buildRemoveOperations(persistentSubject: Subject, persistentSubjects: SubjectCollection, dbSubjects: SubjectCollection): NewRemoveOperation[] {
         const removeOperations: NewRemoveOperation[] = [];
@@ -342,6 +342,9 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         return removeOperations;
     }
 
+    /**
+     * @deprecated
+     */
     private buildUpdateOperations(persistedSubject: Subject, persistentSubjects: SubjectCollection, dbSubjects: SubjectCollection): NewUpdateOperation[] {
         const updateOperations: NewUpdateOperation[] = [];
 
@@ -384,6 +387,8 @@ export class EntityPersister<Entity extends ObjectLiteral> {
 
     /**
      * Differentiate columns from the updated entity and entity stored in the database.
+     *
+     * @deprecated
      */
     private diffColumns(updatedSubject: Subject, dbSubject: Subject) {
         return updatedSubject.metadata.allColumns.filter(column => {
@@ -410,6 +415,8 @@ export class EntityPersister<Entity extends ObjectLiteral> {
 
     /**
      * Difference columns of the owning one-to-one and many-to-one columns.
+     *
+     * @deprecated
      */
     private diffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */updatedSubject: Subject, dbSubject: Subject) {
         return updatedSubject.metadata.allRelations.filter(relation => {
@@ -449,6 +456,9 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         });
     }
 
+    /**
+     * @deprecated
+     */
     private buildInsertOperations(persistedSubject: Subject, persistentSubjects: SubjectCollection, dbSubjects: SubjectCollection): NewInsertOperation[] {
         const insertOperations: NewInsertOperation[] = [];
 
@@ -489,91 +499,6 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Builds all junction insert operations used to insert new bind data into junction tables.
-     */
-    private async buildInsertJunctionOperations(persistedSubjects: SubjectCollection): Promise<NewJunctionInsertOperation[]> {
-        const junctionInsertOperations: NewJunctionInsertOperation[] = [];
-        const promises = persistedSubjects.map(persistedSubject => {
-            const promises = persistedSubject.metadata.manyToManyRelations.map(async relation => {
-
-                // extract entity value - we only need to proceed if value is defined and its an array
-                const value = relation.getEntityValue(persistedSubject.entity);
-                if (!(value instanceof Array))
-                    return;
-
-                // get all inverse entities that are "bind" to the currently persisted entity
-                const inverseEntityRelationIds = value
-                    .map(v => relation.getInverseEntityRelationId(v))
-                    .filter(v => v !== undefined && v !== null);
-
-                // load from db all relation ids of inverse entities "bind" to the currently persisted entity
-                // this way we gonna check which relation ids are new
-                const existInverseEntityRelationIds = await this.connection
-                    .getSpecificRepository(persistedSubject.entityTarget)
-                    .findRelationIds(relation, persistedSubject.entity, inverseEntityRelationIds);
-
-                // now from all entities in the persisted entity find only those which aren't found in the db
-                const newRelationIds = inverseEntityRelationIds.filter(inverseEntityRelationId => {
-                    return !existInverseEntityRelationIds.find(relationId => inverseEntityRelationId === relationId);
-                });
-                /*const persistedEntities = value.filter(val => {
-                    const relationValue = relation.getInverseEntityRelationId(val);
-                    return !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
-                });*/ // todo: remove later if not necessary
-
-                // finally create a new junction insert operation and push it to the array of such operations
-                if (newRelationIds.length > 0) {
-                    const operation = new NewJunctionInsertOperation(relation, persistedSubject.entity, newRelationIds);
-                    junctionInsertOperations.push(operation);
-                }
-            });
-
-            return Promise.all(promises);
-        });
-
-        await Promise.all(promises);
-        return junctionInsertOperations;
-    }
-
-    /**
-     * Builds all junction remove operations used to remove bind data from junction tables.
-     */
-    private async buildRemoveJunctionOperations(persistedSubjects: SubjectCollection): Promise<NewJunctionRemoveOperation[]> {
-        const junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
-        const promises = persistedSubjects.map(persistedSubject => {
-            const promises = persistedSubject.metadata.manyToManyRelations.map(async relation => {
-
-                // extract entity value - we only need to proceed if value is defined and its an array
-                const value = relation.getEntityValue(persistedSubject.entity);
-                if (!(value instanceof Array))
-                    return;
-
-                // get all inverse entities that are "bind" to the currently persisted entity
-                const inverseEntityRelationIds = value
-                    .map(v => relation.getInverseEntityRelationId(v))
-                    .filter(v => v !== undefined && v !== null);
-
-                // load from db all relation ids of inverse entities that are NOT "bind" to the currently persisted entity
-                // this way we gonna check which relation ids are missing (e.g. removed)
-                const removedInverseEntityRelationIds = await this.connection
-                    .getSpecificRepository(persistedSubject.entityTarget)
-                    .findRelationIds(relation, persistedSubject.entity, undefined, inverseEntityRelationIds);
-
-                // finally create a new junction remove operation and push it to the array of such operations
-                if (removedInverseEntityRelationIds.length > 0) {
-                    const operation = new NewJunctionRemoveOperation(relation, persistedSubject.entity, removedInverseEntityRelationIds);
-                    junctionRemoveOperations.push(operation);
-                }
-            });
-
-            return Promise.all(promises);
-        });
-
-        await Promise.all(promises);
-        return junctionRemoveOperations;
-    }
-
-    /**
      * Removes given entity from the database.
      */
     async remove(entity: Entity): Promise<Entity> {
@@ -606,6 +531,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      * absent in dbEntities. To fix it, we need to go throw all persistedEntities we have, find out those which have
      * ids, check if we did not load them yet and try to load them. This algorithm will make sure that all dbEntities
      * are loaded. Further it will help insert operations to work correctly.
+     * @deprecated
      */
     protected async findNotLoadedIds(persistedEntities: Subject[], dbEntities?: Subject[]): Promise<Subject[]> {
         const newDbEntities: Subject[] = dbEntities ? dbEntities.map(dbEntity => dbEntity) : [];
