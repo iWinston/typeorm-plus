@@ -5,6 +5,7 @@ import {Subject} from "./subject/Subject";
 import {SubjectCollection} from "./subject/SubjectCollection";
 import {NewJunctionRemoveOperation} from "./operation/NewJunctionRemoveOperation";
 import {NewJunctionInsertOperation} from "./operation/NewJunctionInsertOperation";
+const DepGraph = require("dependency-graph").DepGraph;
 
 
 // at the end, subjects which does not have database entities are newly persisted entities
@@ -111,6 +112,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
         // persistedEntity.mustBeRemoved = true;
         // todo: execute operations
+
     }
 
     // -------------------------------------------------------------------------
@@ -134,6 +136,10 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                 // if there is a value in the relation and insert or update cascades are set - it means we must load entity
                 if (relation.isEntityDefined(value) && (relation.isCascadeInsert || relation.isCascadeUpdate)) {
+
+                    // if we already has this entity in list of loaded subjects then skip it to avoid recursion
+                    if (this.loadedSubjects.hasWithEntity(value))
+                        return;
 
                     // add to the array of subjects to load only if there is no same entity there already
                     const subject = new Subject(valueMetadata, value); // todo: store relations inside to create correct order then? // todo: try to find by likeDatabaseEntity and replace its persistment entity?

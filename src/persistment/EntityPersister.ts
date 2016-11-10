@@ -13,6 +13,7 @@ import {CascadesNotAllowedError} from "./error/CascadesNotAllowedError";
 import {NewUpdateOperation} from "./operation/NewUpdateOperation";
 import {NewRemoveOperation} from "./operation/NewRemoveOperation";
 import {DatabaseEntityLoader} from "./DatabaseEntityLoader";
+import {PersistSubjectExecutor} from "./PersistSubjectExecutor";
 
 /**
  * Manages entity persistence - insert, update and remove of entity.
@@ -122,6 +123,11 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
         await databaseEntityLoader.load(entity, this.metadata);
         console.log("all persistence subjects: ", databaseEntityLoader.loadedSubjects);
+
+
+        const executor = new PersistSubjectExecutor(this.connection, this.queryRunner);
+        await executor.execute(databaseEntityLoader.loadedSubjects, databaseEntityLoader.junctionInsertOperations, databaseEntityLoader.junctionRemoveOperations);
+
         return entity;
 
         // const allNewEntities = await this.flattenEntityRelationTree(entity, this.metadata);

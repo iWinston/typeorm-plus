@@ -43,7 +43,7 @@ export class PersistSubjectExecutor {
         // check if remove subject also must be inserted or updated - then we throw an exception
         const removeInInserts = removeSubjects.find(removeSubject => insertSubjects.indexOf(removeSubject) !== -1);
         if (removeInInserts)
-            throw new Error(`Removed entity ${removeInInserts.entityTarget} is also scheduled for insert operation.`);
+            throw new Error(`Removed entity ${removeInInserts.entityTarget} is also scheduled for insert operation. This looks like ORM problem. Please report a github issue.`);
 
         const removeInUpdates = removeSubjects.find(removeSubject => updateSubjects.indexOf(removeSubject) !== -1);
         if (removeInUpdates)
@@ -62,22 +62,22 @@ export class PersistSubjectExecutor {
             }
 
             await this.executeInsertOperations(insertSubjects);
-            await this.executeInsertClosureTableOperations(insertSubjects);
-            await this.executeUpdateTreeLevelOperations(insertSubjects);
-            await this.executeInsertJunctionsOperations(junctionInsertOperations, insertSubjects);
-            await this.executeRemoveJunctionsOperations(junctionRemoveOperations);
-            await this.executeRemoveRelationOperations(persistOperation); // todo: can we add these operations into list of updated?
-            await this.executeUpdateRelationsOperations(persistOperation); // todo: merge these operations with update operations?
-            await this.executeUpdateInverseRelationsOperations(persistOperation); // todo: merge these operations with update operations?
-            await this.executeUpdateOperations(updateSubjects);
-            await this.executeRemoveOperations(removeSubjects);
+            // await this.executeInsertClosureTableOperations(insertSubjects);
+            // await this.executeUpdateTreeLevelOperations(insertSubjects);
+            // await this.executeInsertJunctionsOperations(junctionInsertOperations, insertSubjects);
+            // await this.executeRemoveJunctionsOperations(junctionRemoveOperations);
+            // await this.executeRemoveRelationOperations(persistOperation); // todo: can we add these operations into list of updated?
+            // await this.executeUpdateRelationsOperations(persistOperation); // todo: merge these operations with update operations?
+            // await this.executeUpdateInverseRelationsOperations(persistOperation); // todo: merge these operations with update operations?
+            // await this.executeUpdateOperations(updateSubjects);
+            // await this.executeRemoveOperations(removeSubjects);
 
             // commit transaction if it was started by us
             if (isTransactionStartedByItself === true)
                 await this.queryRunner.commitTransaction();
 
             // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
-            await this.updateSpecialColumnsInPersistedEntities(insertSubjects, updateSubjects);
+            // await this.updateSpecialColumnsInPersistedEntities(insertSubjects, updateSubjects, removeSubjects);
 
             // finally broadcast events
             this.connection.broadcaster.broadcastAfterEventsForAll(insertSubjects, updateSubjects, removeSubjects);
@@ -103,7 +103,35 @@ export class PersistSubjectExecutor {
      * Executes insert operations.
      */
     private async executeInsertOperations(insertSubjects: Subject[]): Promise<void> {
-        await Promise.all(insertSubjects.map(subject => this.insert(subject)));
+
+        // for insertion we separate two groups of entities:
+        // - first group of entities are entities which does not have any relations
+        //   or entities which does not have any non-nullable relation
+        // - second group of entities are entities which does have non-nullable relations
+        // note: these two groups should be inserted in sequence, not in parallel, because second group is depend on first
+
+        // insert process of the entities from the first group which can only have nullable relations are actually a two-step process:
+        // - first we insert entities without their relations, explicitly left them NULL
+        // - later we update inserted entity once again with id of the object inserted with it
+        // yes, two queries are being executed, but this is by design.
+        // there is no better way to solve this problem and others at the same time.
+
+        // insert process of the entities from the second group which can have only non nullable relations is a single-step process:
+        // - we simply insert all entities and get into attention all its dependencies which were inserted in the first group
+
+        const firstInsertSubjects = insertSubjects.filter(subject => {
+            const relationsWithJoinColumns = subject.metadata.relationsWithJoinColumns;
+            return relationsWithJoinColumns.length === 0 || !!relationsWithJoinColumns.find(relation => relation.isNullable);
+        });
+        const secondInsertSubjects = insertSubjects.filter(subject => {
+            return !firstInsertSubjects.find(subjectFromFirstGroup => subjectFromFirstGroup === subject);
+        });
+
+        // console.log("firstInsertSubjects: ", firstInsertSubjects);
+        // console.log("secondInsertSubjects: ", secondInsertSubjects);
+
+        await Promise.all(firstInsertSubjects.map(subject => this.insert(subject, [])));
+        await Promise.all(secondInsertSubjects.map(subject => this.insert(subject, firstInsertSubjects)));
     }
 
     /**
@@ -459,94 +487,134 @@ export class PersistSubjectExecutor {
      * If entity has an generated column, then after saving new generated value will be stored to the InsertOperation.
      * If entity uses class-table-inheritance, then multiple inserts may by performed to save all entities.
      */
-    private async insert(subject: Subject): Promise<any> {
+    private async insert(subject: Subject, alreadyInsertedSubjects: Subject[]): Promise<any> {
 
-        let generatedId: any;
         const parentEntityMetadata = subject.metadata.parentEntityMetadata;
         const metadata = subject.metadata;
         const entity = subject.entity;
 
-        if (metadata.table.isClassTableChild) {
-            const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue);
-            generatedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
-            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, generatedId);
+        // if entity uses class table inheritance then we need to separate entity into sub values that will be inserted into multiple tables
+        if (metadata.table.isClassTableChild) { // todo: with current implementation inheritance of multiple class table children will not work
+
+            // first insert entity values into parent class table
+            const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects);
+            subject.newlyGeneratedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
+
+            // second insert entity values into child class table
+            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, subject.newlyGeneratedId, undefined, alreadyInsertedSubjects);
             const secondGeneratedId = await this.queryRunner.insert(metadata.table.name, childValuesMap, metadata.generatedColumnIfExist);
-            if (!generatedId && secondGeneratedId) generatedId = secondGeneratedId;
-        } else {
-            const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date);
-            generatedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
+            if (!subject.newlyGeneratedId && secondGeneratedId) subject.newlyGeneratedId = secondGeneratedId;
+
+        } else { // in the case when class table inheritance is not used
+            const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
+            subject.newlyGeneratedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
         }
 
+        // todo: remove this block once usage of subject.entityId are removed
         // if there is a generated column and we have a generated id then store it in the insert operation for further use
-        if (parentEntityMetadata && parentEntityMetadata.hasGeneratedColumn && generatedId) {
-            subject.entityId = { [parentEntityMetadata.generatedColumn.propertyName]: generatedId };
+        if (parentEntityMetadata && parentEntityMetadata.hasGeneratedColumn && subject.newlyGeneratedId) {
+            subject.entityId = { [parentEntityMetadata.generatedColumn.propertyName]: subject.newlyGeneratedId };
 
-        } else if (metadata.hasGeneratedColumn && generatedId) {
-            subject.entityId = { [metadata.generatedColumn.propertyName]: generatedId };
+        } else if (metadata.hasGeneratedColumn && subject.newlyGeneratedId) {
+            subject.entityId = { [metadata.generatedColumn.propertyName]: subject.newlyGeneratedId };
         }
 
     }
 
-    private collectColumnsAndValues(metadata: EntityMetadata, entity: any, date: Date, parentIdColumnValue?: any, discriminatorValue?: any): ObjectLiteral {
+    private collectColumnsAndValues(metadata: EntityMetadata, entity: any, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[]): ObjectLiteral {
 
-        const columns = metadata.columns
-            .filter(column => !column.isVirtual && !column.isParentId && !column.isDiscriminator && column.hasEntityValue(entity));
+        // extract all columns
+        const columns = metadata.columns.filter(column => {
+            return !column.isVirtual && !column.isParentId && !column.isDiscriminator && column.hasEntityValue(entity);
+        });
 
-        const values = columns.map(column => this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column));
+        const relationColumns = metadata.relationsWithJoinColumns
+            .filter(relation => entity.hasOwnProperty(relation.propertyName));
 
-        const relationColumns = metadata.relations
-            .filter(relation => !relation.isManyToMany && relation.isOwning && !!relation.inverseEntityMetadata)
-            .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .map(relation => relation.name);
+        const columnNames = columns.map(column => column.name);
+        const relationColumnNames = relationColumns.map(relation => relation.name);
+        const allColumnNames = columnNames.concat(relationColumnNames);
 
-        const relationValues = metadata.relations
-            .filter(relation => !relation.isManyToMany && relation.isOwning && !!relation.inverseEntityMetadata)
-            .filter(relation => entity.hasOwnProperty(relation.propertyName))
-            .map(relation => {
-                const value = this.getEntityRelationValue(relation, entity);
-                if (value !== null && value !== undefined) // in the case if relation has null, which can be saved
-                    return value[relation.inverseEntityMetadata.firstPrimaryColumn.propertyName]; // todo: it should be get by field set in join column in the relation metadata
+        const columnValues = columns.map(column => {
+            return this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
+        });
 
+        // extract all values
+        const relationValues = relationColumns.map(relation => {
+            const value = relation.getEntityValue(entity);
+            if (value === null || value === undefined)
                 return value;
+
+            // if relation value is stored in the entity itself then use it from there
+            const relationId = relation.getInverseEntityRelationId(value); // todo: check it
+            if (relationId)
+                return relationId;
+
+            // otherwise try to find relational value from just inserted subjects
+            const alreadyInsertedSubject = alreadyInsertedSubjects.find(insertedSubject => {
+                return insertedSubject.entity === value;
             });
+            if (alreadyInsertedSubject) {
+                const referencedColumn = relation.joinColumn.referencedColumn;
 
-        const allColumns = columns.map(column => column.name).concat(relationColumns);
-        const allValues = values.concat(relationValues);
+                // if join column references to the primary generated column then seek in the newEntityId of the insertedSubject
+                if (referencedColumn.isGenerated)
+                    return alreadyInsertedSubject.newlyGeneratedId;
 
+                // if it references to create or update date columns
+                if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
+                    return this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
+
+                // if it references to version column
+                if (referencedColumn.isVersion)
+                    return this.connection.driver.preparePersistentValue(1, referencedColumn);
+
+                // todo: implement other referenced column types
+            }
+        });
+
+        const allValues = columnValues.concat(relationValues);
+
+        // add special column and value - date of creation
         if (metadata.hasCreateDateColumn) {
-            allColumns.push(metadata.createDateColumn.name);
+            allColumnNames.push(metadata.createDateColumn.name);
             allValues.push(this.connection.driver.preparePersistentValue(date, metadata.createDateColumn));
         }
 
+        // add special column and value - date of updating
         if (metadata.hasUpdateDateColumn) {
-            allColumns.push(metadata.updateDateColumn.name);
+            allColumnNames.push(metadata.updateDateColumn.name);
             allValues.push(this.connection.driver.preparePersistentValue(date, metadata.updateDateColumn));
         }
 
+        // add special column and value - version column
         if (metadata.hasVersionColumn) {
-            allColumns.push(metadata.versionColumn.name);
+            allColumnNames.push(metadata.versionColumn.name);
             allValues.push(this.connection.driver.preparePersistentValue(1, metadata.versionColumn));
         }
 
+        // add special column and value - discriminator value (for tables using table inheritance)
         if (metadata.hasDiscriminatorColumn) {
-            allColumns.push(metadata.discriminatorColumn.name);
+            allColumnNames.push(metadata.discriminatorColumn.name);
             allValues.push(this.connection.driver.preparePersistentValue(discriminatorValue || metadata.discriminatorValue, metadata.discriminatorColumn));
         }
 
+        // add special column and value - tree level and tree parents (for tree-type tables)
         if (metadata.hasTreeLevelColumn && metadata.hasTreeParentRelation) {
             const parentEntity = entity[metadata.treeParentRelation.propertyName];
             const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
 
-            allColumns.push(metadata.treeLevelColumn.name);
+            allColumnNames.push(metadata.treeLevelColumn.name);
             allValues.push(parentLevel + 1);
         }
 
+        // add special column and value - parent id column (for tables using table inheritance)
         if (metadata.parentEntityMetadata && metadata.hasParentIdColumn) {
-            allColumns.push(metadata.parentIdColumn.name); // todo: should be array of primary keys
+            allColumnNames.push(metadata.parentIdColumn.name); // todo: should be array of primary keys
             allValues.push(parentIdColumnValue || entity[metadata.parentEntityMetadata.firstPrimaryColumn.propertyName]); // todo: should be array of primary keys
         }
 
-        return this.zipObject(allColumns, allValues);
+        return this.zipObject(allColumnNames, allValues);
     }
 
     private insertIntoClosureTable(subject: Subject, updateMap: ObjectLiteral) {

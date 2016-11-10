@@ -6,6 +6,7 @@ import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
 import {Photo} from "./Photo";
 import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
+import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 
 @Table()
 export class Category {
@@ -30,5 +31,12 @@ export class Category {
     })
     @JoinTable()
     photos: Photo[];
+
+    @ManyToOne(type => Photo, {
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
+    })
+    photo: Photo|null;
 
 }

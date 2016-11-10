@@ -86,4 +86,8 @@ export class SubjectCollection extends Array<Subject> {
         });
     }
 
+    hasWithEntity(entity: ObjectLiteral): boolean {
+        return !!this.findByEntity(entity);
+    }
+
 }

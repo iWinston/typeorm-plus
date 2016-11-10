@@ -77,5 +77,5 @@ export class JoinColumnMetadata {
 
         return this.relation.inverseEntityMetadata.firstPrimaryColumn;
     }
-    
+
 }

@@ -25,8 +25,19 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     /**
      * When subject is newly persisted it may have a generated entity id.
      * In this case it should be written here.
+     *
+     * @deprecated use newlyGeneratedId instead. Difference between this and newly generated id
+     * is that newly generated id hold value itself, without being in object.
+     * When we have generated value we always have only one primary key thous we dont need object
      */
     entityId: any; // todo: rename to newEntityId
+
+    /**
+     * When subject is newly persisted it may have a generated entity id.
+     * In this case it should be written here.
+     *
+     */
+    newlyGeneratedId: any;
 
     /**
      * Used in newly persisted entities which are tree tables.
@@ -65,7 +76,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     }
 
     get mustBeInserted() {
-        return !!this.databaseEntity;
+        return !this.databaseEntity;
     }
 
     get mustBeUpdated() {
@@ -78,8 +89,10 @@ export class Subject { // todo: move entity with id creation into metadata? // t
 
     set databaseEntity(databaseEntity: ObjectLiteral|undefined) {
         this._databaseEntity = databaseEntity;
-        this.buildDiffColumns();
-        this.buildDiffRelationalColumns();
+        if (this.entity && databaseEntity) {
+            this.buildDiffColumns();
+            this.buildDiffRelationalColumns();
+        }
     }
 
     // -------------------------------------------------------------------------
