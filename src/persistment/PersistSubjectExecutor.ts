@@ -50,6 +50,8 @@ export class PersistSubjectExecutor {
             throw new Error(`Removed entity "${removeInUpdates.entityTarget}" is also scheduled for update operation. ` +
                 `Make sure you are not updating and removing same object (note that update or remove may be executed by cascade operations).`);
 
+        // todo: there is nothing to update in inserted entity too
+
         try {
 
             // broadcast events before we start updating
@@ -64,7 +66,7 @@ export class PersistSubjectExecutor {
             await this.executeInsertOperations(insertSubjects);
             // await this.executeInsertClosureTableOperations(insertSubjects);
             // await this.executeUpdateTreeLevelOperations(insertSubjects);
-            // await this.executeInsertJunctionsOperations(junctionInsertOperations, insertSubjects);
+            await this.executeInsertJunctionsOperations(junctionInsertOperations, insertSubjects);
             // await this.executeRemoveJunctionsOperations(junctionRemoveOperations);
             // await this.executeRemoveRelationOperations(persistOperation); // todo: can we add these operations into list of updated?
             // await this.executeUpdateRelationsOperations(persistOperation); // todo: merge these operations with update operations?
@@ -132,6 +134,79 @@ export class PersistSubjectExecutor {
 
         await Promise.all(firstInsertSubjects.map(subject => this.insert(subject, [])));
         await Promise.all(secondInsertSubjects.map(subject => this.insert(subject, firstInsertSubjects)));
+
+        const updatePromises: Promise<any>[] = [];
+        insertSubjects.forEach(subject => {
+
+            // we need to update relation ids of the newly inserted objects (where we inserted NULLs in relations)
+            const updateOptions: ObjectLiteral = {};
+            subject.metadata.relationsWithJoinColumns.forEach(relation => {
+                const referencedColumn = relation.joinColumn.referencedColumn;
+
+                insertSubjects.forEach(insertedSubject => {
+                    if (subject.entity[relation.propertyName] === insertedSubject.entity) {
+
+                        if (referencedColumn.isGenerated)
+                            updateOptions[relation.name] = insertedSubject.newlyGeneratedId;
+
+                        // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+                    }
+                });
+            });
+            if (Object.keys(updateOptions).length > 0) {
+                const conditions = subject.metadata.getEntityIdMap(subject.entity) || subject.metadata.createSimpleIdMap(subject.newlyGeneratedId);
+                const updatePromise = this.queryRunner.update(subject.metadata.table.name, updateOptions, conditions);
+                updatePromises.push(updatePromise);
+            }
+
+            // we need to update relation ids if newly inserted objects are used from inverse side in one-to-many inverse relation
+            subject.metadata.oneToManyRelations.forEach(relation => {
+                const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
+                const value = subject.entity[relation.propertyName];
+
+                if (value instanceof Array) {
+                    value.forEach(subValue => {
+                        insertSubjects.forEach(insertedSubject => {
+                            if (subValue === insertedSubject.entity) {
+
+                                if (referencedColumn.isGenerated) {
+                                    const conditions = insertedSubject.metadata.getEntityIdMap(insertedSubject.entity) || insertedSubject.metadata.createSimpleIdMap(insertedSubject.newlyGeneratedId);
+                                    const updateOptions = { [relation.inverseRelation.joinColumn.name]: subject.newlyGeneratedId };
+                                    const updatePromise = this.queryRunner.update(relation.inverseRelation.entityMetadata.table.name, updateOptions, conditions);
+                                    updatePromises.push(updatePromise);
+                                }
+
+                                 // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+                            }
+                        });
+
+                    });
+                }
+            });
+
+            // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
+            subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning).forEach(relation => {
+                const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
+                insertSubjects.forEach(insertedSubject => {
+                    if (subject.entity[relation.propertyName] === insertedSubject.entity) {
+
+                        if (referencedColumn.isGenerated) {
+                            const conditions = insertedSubject.metadata.getEntityIdMap(insertedSubject.entity) || insertedSubject.metadata.createSimpleIdMap(insertedSubject.newlyGeneratedId);
+                            const updateOptions = { [relation.inverseRelation.joinColumn.name]: subject.newlyGeneratedId };
+                            const updatePromise = this.queryRunner.update(relation.inverseRelation.entityMetadata.table.name, updateOptions, conditions);
+                            updatePromises.push(updatePromise);
+                        }
+
+                         // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+                    }
+                });
+            });
+
+        });
+
+        await Promise.all(updatePromises);
+
+        // todo: make sure to search in all insertSubjects during updating too if updated entity uses links to the newly persisted entity
     }
 
     /**
@@ -656,7 +731,7 @@ export class PersistSubjectExecutor {
         }
     }
 
-    private insertJunctions(junctionOperation: NewJunctionInsertOperation, insertOperations: Subject[]) {
+    /*private insertJunctions(junctionOperation: NewJunctionInsertOperation, insertOperations: Subject[]) {
         // I think here we can only support to work only with single primary key entities
 
         const metadata1 = this.connection.entityMetadatas.findByTarget(junctionOperation.entity1Target);
@@ -688,13 +763,56 @@ export class PersistSubjectExecutor {
         
         let values: any[]; 
         // order may differ, find solution (column.table to compare with entity metadata table?)
-        if (metadata1.table === junctionMetadata.foreignKeys[0].referencedTable) {
+        if (metadata1.table === junctionOperation.metadata.foreignKeys[0].referencedTable) {
             values = [id1, id2];
         } else {
             values = [id2, id1];
         }
         
-        return this.queryRunner.insert(junctionMetadata.table.name, this.zipObject(columns, values));
+        return this.queryRunner.insert(junctionOperation.metadata.table.name, this.zipObject(columns, values));
+    }*/
+
+    private async insertJunctions(junctionOperation: NewJunctionInsertOperation, insertSubjects: Subject[]): Promise<void> {
+        // I think here we can only support to work only with single primary key entities
+
+        const relation = junctionOperation.relation;
+        const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable;
+        const firstColumn = relation.isOwning ? joinTable.referencedColumn : joinTable.inverseReferencedColumn;
+        const secondColumn = relation.isOwning ? joinTable.inverseReferencedColumn : joinTable.referencedColumn;
+
+        let ownId = junctionOperation.relation.getOwnEntityRelationId(junctionOperation.subject.entity);
+        if (!ownId) {
+            if (firstColumn.isGenerated) {
+                ownId = junctionOperation.subject.newlyGeneratedId;
+            }
+            // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+        }
+
+        if (!ownId)
+            throw new Error(`Cannot insert object of ${junctionOperation.subject.entityTarget} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
+
+        const promises = junctionOperation.junctionEntities.map(newBindEntity => {
+
+            let relationId = junctionOperation.relation.getInverseEntityRelationId(newBindEntity);
+            if (!relationId) {
+                const insertSubject = insertSubjects.find(subject => subject.entity === newBindEntity);
+                if (insertSubject) {
+                    if (secondColumn.isGenerated) {
+                        relationId = insertSubject.newlyGeneratedId;
+                    }
+                }
+            }
+
+            if (!relationId)
+                throw new Error(`Cannot insert object of ${relation.inverseRelation.entityTarget} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
+
+            const columns = relation.junctionEntityMetadata.columns.map(column => column.name);
+            const values = relation.isOwning ? [ownId, relationId] : [relationId, ownId];
+
+            return this.queryRunner.insert(relation.junctionEntityMetadata.table.name, this.zipObject(columns, values));
+        });
+
+        await Promise.all(promises);
     }
 
     private removeJunctions(junctionOperation: JunctionRemoveOperation) {

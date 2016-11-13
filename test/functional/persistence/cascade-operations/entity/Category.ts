@@ -7,6 +7,8 @@ import {Photo} from "./Photo";
 import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
 import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
+import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
+import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 
 @Table()
 export class Category {
@@ -17,6 +19,14 @@ export class Category {
     @Column()
     name: string;
 
+    @OneToOne(type => Post, post => post.oneCategory, {
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
+    })
+    @JoinColumn()
+    onePost: Post;
+
     @OneToMany(type => Post, post => post.category, {
         cascadeInsert: true,
         cascadeUpdate: true,
@@ -24,7 +34,7 @@ export class Category {
     })
     posts: Post[];
 
-    @ManyToMany(type => Photo, {
+    @ManyToMany(type => Photo, photo => photo.categories, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true

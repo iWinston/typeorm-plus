@@ -449,7 +449,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const relation = this.convertMixedRelationToMetadata(relationOrName);
         if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
 
-        const entityReferencedColumn = relation.isOwning ? relation.joinTable.referencedColumn : relation.joinTable.inverseReferencedColumn;
+        const entityReferencedColumn = relation.isOwning ? relation.joinTable.referencedColumn : relation.inverseRelation.joinTable.inverseReferencedColumn;
         const ownerEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[0] : relation.junctionEntityMetadata.columns[1];
         const inverseEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[1] : relation.junctionEntityMetadata.columns[0];
 

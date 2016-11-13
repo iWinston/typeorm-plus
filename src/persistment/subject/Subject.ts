@@ -76,11 +76,11 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     }
 
     get mustBeInserted() {
-        return !this.databaseEntity;
+        return this.canBeInserted && !this.databaseEntity;
     }
 
     get mustBeUpdated() {
-        return this.diffColumns.length > 0 || this.diffRelations.length > 0;
+        return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
     }
 
     get databaseEntity(): ObjectLiteral|undefined {

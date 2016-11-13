@@ -1,28 +1,38 @@
 import {Table} from "../../../../../src/decorator/tables/Table";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
-import {Category} from "./Category";
+import {Post} from "./Post";
+import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
 import {Photo} from "./Photo";
 import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
+import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
+import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 
 @Table()
-export class Post {
+export class Category {
 
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column()
-    title: string;
+    name: string;
 
-    @ManyToOne(type => Category, category => category.posts, {
+    @OneToOne(type => Post, post => post.oneCategory, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
     })
-    category: Category|null;
+    @JoinColumn()
+    onePost: Post;
+
+    @OneToMany(type => Post, post => post.category, {
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true
+    })
+    posts: Post[];
 
     @ManyToMany(type => Photo, {
         cascadeInsert: true,
@@ -32,11 +42,11 @@ export class Post {
     @JoinTable()
     photos: Photo[];
 
-    @OneToOne(type => Category, category => category.onePost, {
+    @ManyToOne(type => Photo, {
         cascadeInsert: true,
         cascadeUpdate: true,
         cascadeRemove: true
     })
-    oneCategory: Category;
+    photo: Photo|null;
 
 }

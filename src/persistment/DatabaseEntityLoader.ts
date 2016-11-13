@@ -545,17 +545,17 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     .findRelationIds(relation, persistedSubject.entity, inverseEntityRelationIds);
 
                 // now from all entities in the persisted entity find only those which aren't found in the db
-                const newRelationIds = inverseEntityRelationIds.filter(inverseEntityRelationId => {
+                /*const newRelationIds = inverseEntityRelationIds.filter(inverseEntityRelationId => {
                     return !existInverseEntityRelationIds.find(relationId => inverseEntityRelationId === relationId);
-                });
-                /*const persistedEntities = value.filter(val => {
-                 const relationValue = relation.getInverseEntityRelationId(val);
-                 return !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
-                 });*/ // todo: remove later if not necessary
+                });*/
+                const persistedEntities = value.filter(val => {
+                    const relationValue = relation.getInverseEntityRelationId(val);
+                    return !relationValue || !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
+                }); // todo: remove later if not necessary
 
                 // finally create a new junction insert operation and push it to the array of such operations
-                if (newRelationIds.length > 0) {
-                    const operation = new NewJunctionInsertOperation(relation, persistedSubject, newRelationIds);
+                if (persistedEntities.length > 0) {
+                    const operation = new NewJunctionInsertOperation(relation, persistedSubject, persistedEntities);
                     junctionInsertOperations.push(operation);
                 }
             });

@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Photo} from "./entity/Photo";
 
-describe("persistence > cascade operations", () => {
+describe("persistence > insert operations", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
@@ -18,23 +18,17 @@ describe("persistence > cascade operations", () => {
 
     describe("cascade insert", function() {
 
-        it.only("should work perfectly", () => Promise.all(connections.map(async connection => {
-
+        it("should work perfectly", () => Promise.all(connections.map(async connection => {
 
             // create category
             const category1 = new Category();
             category1.name = "Category saved by cascades #1";
             // category1.onePost = post1;
 
-            // create category
-            const category2 = new Category();
-            category2.name = "Category saved by cascades #2";
-            // category1.onePost = post1;
-
             // create post
             const post1 = new Post();
             post1.title = "Hello Post #1";
-            // post1.oneCategory = category1;
+            post1.oneCategory = category1;
 
             // todo(next): check out to one
 
@@ -42,17 +36,13 @@ describe("persistence > cascade operations", () => {
             const photo1 = new Photo();
             photo1.url = "http://me.com/photo";
             photo1.post = post1;
-            photo1.categories = [category1, category2];
-
             const photo2 = new Photo();
             photo2.url = "http://me.com/photo";
             photo2.post = post1;
 
-            // category1.photos = [photo1, photo2];
-
             // post1.category = category1;
             // post1.category.photos = [photo1, photo2];
-            await connection.entityManager.persist(photo1);
+            await connection.entityManager.persist(post1);
 
             console.log("********************************************************");
 

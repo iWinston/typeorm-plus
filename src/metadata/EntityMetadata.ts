@@ -562,6 +562,23 @@ export class EntityMetadata {
     }
 
     /**
+     */
+    createSimpleIdMap(id: any): ObjectLiteral {
+        const map: ObjectLiteral = {};
+        if (this.parentEntityMetadata) {
+            this.primaryColumnsWithParentIdColumns.forEach(column => {
+                map[column.propertyName] = id;
+            });
+
+        } else {
+            this.primaryColumns.forEach(column => {
+                map[column.propertyName] = id;
+            });
+        }
+        return map;
+    }
+
+    /**
      * todo: undefined entities should not go there??
      * todo: shouldnt be entity ObjectLiteral here?
      */
