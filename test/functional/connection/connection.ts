@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
+import {View} from "./entity/View";
 import {Category} from "./entity/Category";
 import {setupTestingConnections, closeConnections, createTestingConnectionOptions} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
@@ -14,6 +15,7 @@ import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
 import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
 import {RepositoryNotFoundError} from "../../../src/connection/error/RepositoryNotFoundError";
+import {DefaultNamingStrategy} from "../../../src/naming-strategy/DefaultNamingStrategy";
 import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStrategy";
 import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
 import {CannotUseNamingStrategyNotConnectedError} from "../../../src/connection/error/CannotUseNamingStrategyNotConnectedError";
@@ -349,6 +351,20 @@ describe("Connection", () => {
             connection.useNamingStrategy(FirstCustomNamingStrategy);
             return connection.connect().should.be.rejectedWith(NamingStrategyNotFoundError);
         });
+
+    });
+
+    describe("skip schema generation when skipSchemaSync option is used", function() {
+
+        let connections: Connection[];
+        beforeEach(() => setupTestingConnections({ entities: [View] }).then(all => connections = all));
+        afterEach(() => closeConnections(connections));
+        it("database should be empty after schema sync", () => Promise.all(connections.map(async connection => {
+            await connection.syncSchema(true);
+            const queryRunner = await connection.driver.createQueryRunner();
+            let schema = await queryRunner.loadSchemaTables(["view"], new DefaultNamingStrategy());
+            expect(schema.some(table => table.name === "view")).to.be.false;
+        })));
 
     });
     

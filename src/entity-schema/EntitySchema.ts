@@ -41,6 +41,7 @@ export interface EntitySchema {
          * Specifies a property name by which queries will perform ordering by default when fetching rows.
          */
         orderBy?: OrderByCondition;
+
     };
 
     /**

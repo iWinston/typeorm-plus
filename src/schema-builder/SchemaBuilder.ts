@@ -95,11 +95,15 @@ export class SchemaBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
+    protected get entityToSyncMetadatas(): EntityMetadataCollection {
+        return this.entityMetadatas.filter(metadata => !metadata.table.skipSchemaSync);
+    }
+
     /**
      * Loads all table schemas from the database.
      */
     protected loadTableSchemas(): Promise<TableSchema[]> {
-        const tableNames = this.entityMetadatas.map(metadata => metadata.table.name);
+        const tableNames = this.entityToSyncMetadatas.map(metadata => metadata.table.name);
         return this.queryRunner.loadSchemaTables(tableNames, this.namingStrategy);
     }
 
@@ -107,7 +111,7 @@ export class SchemaBuilder {
      * Drops all (old) foreign keys that exist in the table schemas, but do not exist in the entity metadata.
      */
     protected async dropOldForeignKeys(): Promise<void> {
-        await Promise.all(this.entityMetadatas.map(async metadata => {
+        await Promise.all(this.entityToSyncMetadatas.map(async metadata => {
 
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
@@ -136,8 +140,7 @@ export class SchemaBuilder {
      * Primary key only can be created in conclusion with auto generated column.
      */
     protected async createNewTables(): Promise<void> {
-        await Promise.all(this.entityMetadatas.map(async metadata => {
-
+        await Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             // check if table does not exist yet
             const existTableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (existTableSchema)
@@ -157,7 +160,7 @@ export class SchemaBuilder {
      * We drop their keys too, since it should be safe.
      */
     protected dropRemovedColumns() {
-        return Promise.all(this.entityMetadatas.map(async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema) return;
 
@@ -194,7 +197,7 @@ export class SchemaBuilder {
      * Columns are created without keys.
      */
     protected addNewColumns() {
-        return Promise.all(this.entityMetadatas.map(async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;
@@ -220,7 +223,7 @@ export class SchemaBuilder {
      * Still don't create keys. Also we don't touch foreign keys of the changed columns.
      */
     protected updateExistColumns() {
-        return Promise.all(this.entityMetadatas.map(async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;
@@ -267,7 +270,7 @@ export class SchemaBuilder {
      * Creates primary keys which does not exist in the table yet.
      */
     protected updatePrimaryKeys() {
-        return Promise.all(this.entityMetadatas.map(async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name && !table.justCreated);
             if (!tableSchema)
                 return;
@@ -297,7 +300,7 @@ export class SchemaBuilder {
      * Creates foreign keys which does not exist in the table yet.
      */
     protected createForeignKeys() {
-        return Promise.all(this.entityMetadatas.map(async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;
@@ -321,7 +324,7 @@ export class SchemaBuilder {
      */
     protected createIndices() {
         // return Promise.all(this.entityMetadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
-        return Promise.all(this.entityMetadatas.map(async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;

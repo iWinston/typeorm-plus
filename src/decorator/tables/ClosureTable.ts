@@ -11,7 +11,8 @@ export function ClosureTable(name?: string, options?: TableOptions) {
             target: target,
             name: name,
             type: "closure",
-            orderBy: options && options.orderBy ? options.orderBy : undefined
+            orderBy: options && options.orderBy ? options.orderBy : undefined,
+            skipSchemaSync: !!(options && options.skipSchemaSync === true)
         };
         getMetadataArgsStorage().tables.add(args);
     };

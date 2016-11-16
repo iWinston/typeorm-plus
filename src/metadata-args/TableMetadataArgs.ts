@@ -33,5 +33,10 @@ export interface TableMetadataArgs {
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
      */
     readonly engine?: string;
+
+    /**
+     * Whether table must be synced during schema build or not
+     */
+    readonly skipSchemaSync?: boolean;
     
 }
