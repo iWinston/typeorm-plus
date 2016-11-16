@@ -32,6 +32,11 @@ export class TableMetadata {
      */
     readonly engine?: string;
 
+    /**
+     * Whether table must be synced during schema build or not
+     */
+    readonly skipSchemaSync?: boolean;
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -64,6 +69,7 @@ export class TableMetadata {
         this._name = args.name;
         this._orderBy = args.orderBy;
         this.engine = args.engine;
+        this.skipSchemaSync = args.skipSchemaSync;
     }
     
     // ---------------------------------------------------------------------

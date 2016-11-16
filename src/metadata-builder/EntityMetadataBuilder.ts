@@ -191,6 +191,7 @@ export class EntityMetadataBuilder {
         const allMergedArgs = metadataArgsStorage.getMergedTableMetadatas(entityClasses);
         allMergedArgs.forEach(mergedArgs => {
 
+        
             const tables = [mergedArgs.table].concat(mergedArgs.children);
             tables.forEach(tableArgs => {
 
@@ -207,6 +208,7 @@ export class EntityMetadataBuilder {
 
                 // create metadatas from args
                 const argsForTable = mergedArgs.inheritance && mergedArgs.inheritance.type === "single-table" ? mergedArgs.table : tableArgs;
+                
                 const table = new TableMetadata(argsForTable);
                 const columns = mergedArgs.columns.map(args => {
 
@@ -224,7 +226,6 @@ export class EntityMetadataBuilder {
                 const discriminatorValueArgs = mergedArgs.discriminatorValues.find(discriminatorValueArgs => {
                     return discriminatorValueArgs.target === tableArgs.target;
                 });
-
                 // create a new entity metadata
                 const entityMetadata = new EntityMetadata({
                     target: tableArgs.target,
@@ -239,7 +240,6 @@ export class EntityMetadataBuilder {
                     discriminatorValue: discriminatorValueArgs ? discriminatorValueArgs.value : (tableArgs.target as any).name // todo: pass this to naming strategy to generate a name
                 }, lazyRelationsWrapper);
                 entityMetadatas.push(entityMetadata);
-
                 // create entity's relations join tables
                 entityMetadata.manyToManyRelations.forEach(relation => {
                     const joinTableMetadata = mergedArgs.joinTables.findByProperty(relation.propertyName);

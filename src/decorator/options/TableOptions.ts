@@ -16,5 +16,10 @@ export interface TableOptions {
      * If you update this value and table is already created, it will not change table's engine type.
      */
     readonly engine?: string;
+
+    /**
+     * Specifies if this table will be skipped during schema synchronization.
+     */
+    readonly skipSchemaSync?: boolean;
     
 }

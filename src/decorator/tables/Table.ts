@@ -14,6 +14,7 @@ export function Table(name?: string, options?: TableOptions) {
             type: "regular",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
             engine: options && options.engine ? options.engine : undefined,
+            skipSchemaSync: (options && options.skipSchemaSync === true) || false
         };
         getMetadataArgsStorage().tables.add(args);
     };

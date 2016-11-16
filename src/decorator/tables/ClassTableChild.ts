@@ -11,7 +11,8 @@ export function ClassTableChild(tableName?: string, options?: TableOptions) {
             target: target,
             name: tableName,
             type: "class-table-child",
-            orderBy: options && options.orderBy ? options.orderBy : undefined
+            orderBy: options && options.orderBy ? options.orderBy : undefined,
+            skipSchemaSync: (options && options.skipSchemaSync === true) || false
         };
         getMetadataArgsStorage().tables.add(args);
     };
