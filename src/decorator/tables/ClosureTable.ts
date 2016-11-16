@@ -12,7 +12,7 @@ export function ClosureTable(name?: string, options?: TableOptions) {
             name: name,
             type: "closure",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
-            skipSchemaSync: (options && options.skipSchemaSync === true) || false
+            skipSchemaSync: !!(options && options.skipSchemaSync === true)
         };
         getMetadataArgsStorage().tables.add(args);
     };

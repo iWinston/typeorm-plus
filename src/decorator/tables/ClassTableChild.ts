@@ -12,7 +12,7 @@ export function ClassTableChild(tableName?: string, options?: TableOptions) {
             name: tableName,
             type: "class-table-child",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
-            skipSchemaSync: (options && options.skipSchemaSync === true) || false
+            skipSchemaSync: !!(options && options.skipSchemaSync === true)
         };
         getMetadataArgsStorage().tables.add(args);
     };

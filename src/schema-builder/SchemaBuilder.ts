@@ -96,7 +96,7 @@ export class SchemaBuilder {
     // -------------------------------------------------------------------------
 
     protected get entityToSyncMetadatas(): EntityMetadataCollection {
-        return <EntityMetadataCollection>this.entityMetadatas.filter( metadata => !metadata.table.skipSchemaSync );
+        return this.entityMetadatas.filter(metadata => !metadata.table.skipSchemaSync);
     }
 
     /**

@@ -363,7 +363,7 @@ describe("Connection", () => {
             await connection.syncSchema(true);
             const queryRunner = await connection.driver.createQueryRunner();
             let schema = await queryRunner.loadSchemaTables(["view"], new DefaultNamingStrategy());
-            expect(!schema.some( table => table.name === "view" )).to.be.true;
+            expect(schema.some(table => table.name === "view")).to.be.false;
         })));
 
     });
