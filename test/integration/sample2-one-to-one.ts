@@ -19,7 +19,7 @@ describe("one-to-one", function() {
     // -------------------------------------------------------------------------
 
     const options: ConnectionOptions = {
-        driver: createTestingConnectionOptions("postgres"),
+        driver: createTestingConnectionOptions("mysql"),
         entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
     };
 
@@ -356,6 +356,7 @@ describe("one-to-one", function() {
                         .getSingleResult();
 
                 }).then(loadedPost => {
+                    console.log("loadedPost: ", loadedPost);
                     loadedPost.image.url = "new-logo.png";
                     return postRepository.persist(loadedPost);
 

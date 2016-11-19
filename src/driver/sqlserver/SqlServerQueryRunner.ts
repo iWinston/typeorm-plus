@@ -236,13 +236,24 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const conditionString = this.parametrize(conditions).join(" AND ");
+        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
+        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
+
         const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
-        const parameters = Object.keys(conditions).map(key => conditions[key]);
         await this.query(sql, parameters);
     }
 

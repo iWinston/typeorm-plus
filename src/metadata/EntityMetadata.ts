@@ -562,6 +562,27 @@ export class EntityMetadata {
     }
 
     /**
+     * Same as getEntityIdMap, but instead of id column property names it returns database column names.
+     */
+    getDatabaseEntityIdMap(entity: ObjectLiteral): ObjectLiteral|undefined {
+        const map: ObjectLiteral = {};
+        if (this.parentEntityMetadata) {
+            this.primaryColumnsWithParentIdColumns.forEach(column => {
+                map[column.name] = entity[column.propertyName];
+            });
+
+        } else {
+            this.primaryColumns.forEach(column => {
+                map[column.name] = entity[column.propertyName];
+            });
+        }
+        const hasAllIds = this.primaryColumns.every(primaryColumn => {
+            return map[primaryColumn.name] !== undefined && map[primaryColumn.name] !== null;
+        });
+        return hasAllIds ? map : undefined;
+    }
+
+    /**
      */
     createSimpleIdMap(id: any): ObjectLiteral {
         const map: ObjectLiteral = {};
@@ -573,6 +594,24 @@ export class EntityMetadata {
         } else {
             this.primaryColumns.forEach(column => {
                 map[column.propertyName] = id;
+            });
+        }
+        return map;
+    }
+
+    /**
+     * Same as createSimpleIdMap, but instead of id column property names it returns database column names.
+     */
+    createSimpleDatabaseIdMap(id: any): ObjectLiteral {
+        const map: ObjectLiteral = {};
+        if (this.parentEntityMetadata) {
+            this.primaryColumnsWithParentIdColumns.forEach(column => {
+                map[column.name] = id;
+            });
+
+        } else {
+            this.primaryColumns.forEach(column => {
+                map[column.name] = id;
             });
         }
         return map;

@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe("persistence > cascade operations with custom name", () => {
+describe.only("persistence > cascade operations with custom name", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({

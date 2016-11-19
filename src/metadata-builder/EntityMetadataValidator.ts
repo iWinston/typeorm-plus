@@ -7,7 +7,6 @@ import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
 import {CircularRelationsError} from "./error/CircularRelationsError";
-const DepGraph = require("dependency-graph").DepGraph;
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -32,6 +31,8 @@ export class EntityMetadataValidator {
      * Validates dependencies of the entity metadatas.
      */
     validateDependencies(entityMetadatas: EntityMetadata[]) {
+
+        const DepGraph = require("dependency-graph").DepGraph;
         const graph = new DepGraph();
         entityMetadatas.forEach(entityMetadata => {
             graph.addNode(entityMetadata.name);

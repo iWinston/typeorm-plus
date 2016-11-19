@@ -17,7 +17,7 @@ describe("many-to-many", function() {
     // -------------------------------------------------------------------------
 
     const options: ConnectionOptions = {
-        driver: createTestingConnectionOptions("postgres"),
+        driver: createTestingConnectionOptions("mysql"),
         entities: [__dirname + "/../../sample/sample4-many-to-many/entity/*"],
         // logging: {
         //     logQueries: true,
@@ -71,6 +71,7 @@ describe("many-to-many", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
+            newPost.details = [];
             newPost.details.push(details);
             
             return postRepository.persist(newPost).then(post => savedPost = post);
@@ -113,6 +114,7 @@ describe("many-to-many", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
+            expectedPost.details = [];
             expectedPost.details.push(new PostDetails());
             expectedPost.details[0].id = savedPost.details[0].id;
             expectedPost.details[0].authorName = savedPost.details[0].authorName;
@@ -140,7 +142,8 @@ describe("many-to-many", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            
+
+            expectedDetails.posts = [];
             expectedDetails.posts.push(expectedPost);
             
             return postDetailsRepository
@@ -193,6 +196,7 @@ describe("many-to-many", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
+            newPost.categories = [];
             newPost.categories.push(category);
 
             return postRepository.persist(newPost).then(post => savedPost = post);
@@ -231,6 +235,7 @@ describe("many-to-many", function() {
             expectedPost.id = savedPost.id;
             expectedPost.title = savedPost.title;
             expectedPost.text = savedPost.text;
+            expectedPost.categories = [];
             expectedPost.categories.push(new PostCategory());
             expectedPost.categories[0].id = savedPost.categories[0].id;
             expectedPost.categories[0].name = savedPost.categories[0].name;
@@ -286,6 +291,7 @@ describe("many-to-many", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
+            newPost.details = [];
             newPost.details.push(details);
 
             return postRepository
@@ -324,6 +330,7 @@ describe("many-to-many", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
+            newPost.details = [];
             newPost.details.push(details);
 
             return postRepository
@@ -374,6 +381,7 @@ describe("many-to-many", function() {
                 .persist(newImage)
                 .then(image => {
                     savedImage = image;
+                    newPost.images = [];
                     newPost.images.push(image);
                     return postRepository.persist(newPost);
 
@@ -423,6 +431,7 @@ describe("many-to-many", function() {
                 .persist(newMetadata)
                 .then(metadata => {
                     savedMetadata = metadata;
+                    newPost.metadatas = [];
                     newPost.metadatas.push(metadata);
                     return postRepository.persist(newPost);
 
@@ -466,6 +475,7 @@ describe("many-to-many", function() {
 
             details = new PostDetails();
             details.comment = "post details comment";
+            details.posts = [];
             details.posts.push(newPost);
 
             return postDetailsRepository.persist(details).then(details => savedDetails = details);
@@ -503,6 +513,7 @@ describe("many-to-many", function() {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedDetails.id;
             expectedDetails.comment = savedDetails.comment;
+            expectedDetails.posts = [];
             expectedDetails.posts.push(new Post());
             expectedDetails.posts[0].id = newPost.id;
             expectedDetails.posts[0].text = newPost.text;
@@ -534,6 +545,7 @@ describe("many-to-many", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
+            newPost.details = [];
             newPost.details.push(details);
 
             return postRepository
@@ -587,6 +599,7 @@ describe("many-to-many", function() {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
+            newPost.categories = [];
             newPost.categories.push(category1, category2);
 
             return postRepository

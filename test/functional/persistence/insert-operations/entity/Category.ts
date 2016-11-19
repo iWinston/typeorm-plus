@@ -19,20 +19,51 @@ export class Category {
     @Column()
     name: string;
 
-    @OneToOne(type => Post, post => post.oneCategory, {
+    @OneToMany(type => Post, post => post.manyToOneCategory, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeRemove: true,
+    })
+    oneToManyPosts: Post[];
+
+    @OneToMany(type => Post, post => post.noCascadeManyToOneCategory, {
+        cascadeInsert: false,
+        cascadeUpdate: false,
+        cascadeRemove: false,
+    })
+    noCascadeOneToManyPosts: Post[];
+
+    @OneToOne(type => Post, post => post.oneToOneCategory, {
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true,
     })
     @JoinColumn()
-    onePost: Post;
+    oneToOneOwnerPost: Post;
 
-    @OneToMany(type => Post, post => post.category, {
+    @OneToOne(type => Post, post => post.noCascadeOneToOneCategory, {
+        cascadeInsert: false,
+        cascadeUpdate: false,
+        cascadeRemove: false,
+    })
+    @JoinColumn()
+    noCascadeOneToOnePost: Post;
+
+    @ManyToMany(type => Post, post => post.manyToManyOwnerCategories, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeRemove: true,
     })
-    posts: Post[];
+    @JoinTable()
+    manyToManyPosts: Post[];
+
+    @ManyToMany(type => Post, post => post.noCascadeManyToManyOwnerCategories, {
+        cascadeInsert: false,
+        cascadeUpdate: false,
+        cascadeRemove: false,
+    })
+    @JoinTable()
+    noCascadeManyToManyPosts: Post[];
 
     @ManyToMany(type => Photo, {
         cascadeInsert: true,

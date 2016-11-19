@@ -1,9 +1,6 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {EntityPersistOperationBuilder} from "./EntityPersistOperationsBuilder";
-import {PersistOperationExecutor} from "./PersistOperationExecutor";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./subject/Subject";
@@ -114,6 +111,38 @@ export class EntityPersister<Entity extends ObjectLiteral> {
     }*/
 
     /**
+     * Removes given entity from the database.
+     */
+    async remove(entity: Entity): Promise<Entity> {
+
+        const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+        await databaseEntityLoader.remove(entity, this.metadata);
+        // console.log("all persistence subjects: ", databaseEntityLoader.loadedSubjects);
+
+        const executor = new PersistSubjectExecutor(this.connection, this.queryRunner);
+        await executor.execute(databaseEntityLoader.loadedSubjects, databaseEntityLoader.junctionInsertOperations, databaseEntityLoader.junctionRemoveOperations);
+
+        /*
+        const queryBuilder = new QueryBuilder(this.connection, this.queryRunner)
+            .select(this.metadata.table.name)
+            .from(this.metadata.target, this.metadata.table.name);
+        const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
+        const dbEntity = await plainObjectToDatabaseEntityTransformer.transform<Entity>(entity, this.metadata, queryBuilder);
+
+        this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entity[primaryColumn.name] = undefined);
+        const dbEntities = this.flattenEntityRelationTree(dbEntity, this.metadata);
+        const allPersistedEntities = this.flattenEntityRelationTree(entity, this.metadata);
+        const entityWithId = new Subject(this.metadata, entity);
+        const dbEntityWithId = new Subject(this.metadata, dbEntity);
+
+        const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
+        const persistOperation = entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
+        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
+        await persistOperationExecutor.executePersistOperation(persistOperation);*/
+        return entity;
+    }
+
+    /**
      * Persists given entity in the database.
      * Persistence is a complex process:
      * 1. flatten all persist entities
@@ -121,9 +150,8 @@ export class EntityPersister<Entity extends ObjectLiteral> {
      */
     async persist(entity: Entity): Promise<Entity> {
         const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
-        await databaseEntityLoader.load(entity, this.metadata);
-        console.log("all persistence subjects: ", databaseEntityLoader.loadedSubjects);
-
+        await databaseEntityLoader.persist(entity, this.metadata);
+        // console.log("all persistence subjects: ", databaseEntityLoader.loadedSubjects);
 
         const executor = new PersistSubjectExecutor(this.connection, this.queryRunner);
         await executor.execute(databaseEntityLoader.loadedSubjects, databaseEntityLoader.junctionInsertOperations, databaseEntityLoader.junctionRemoveOperations);
@@ -502,29 +530,6 @@ export class EntityPersister<Entity extends ObjectLiteral> {
 
         buildByCascades(persistedSubject);
         return insertOperations;
-    }
-
-    /**
-     * Removes given entity from the database.
-     */
-    async remove(entity: Entity): Promise<Entity> {
-        const queryBuilder = new QueryBuilder(this.connection, this.queryRunner)
-            .select(this.metadata.table.name)
-            .from(this.metadata.target, this.metadata.table.name);
-        const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
-        const dbEntity = await plainObjectToDatabaseEntityTransformer.transform<Entity>(entity, this.metadata, queryBuilder);
-
-        this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entity[primaryColumn.name] = undefined);
-        const dbEntities = this.flattenEntityRelationTree(dbEntity, this.metadata);
-        const allPersistedEntities = this.flattenEntityRelationTree(entity, this.metadata);
-        const entityWithId = new Subject(this.metadata, entity);
-        const dbEntityWithId = new Subject(this.metadata, dbEntity);
-
-        const entityPersistOperationBuilder = new EntityPersistOperationBuilder(this.connection.entityMetadatas);
-        const persistOperation = entityPersistOperationBuilder.buildOnlyRemovement(this.metadata, dbEntityWithId, entityWithId, dbEntities, allPersistedEntities);
-        const persistOperationExecutor = new PersistOperationExecutor(this.connection.driver, this.connection.entityMetadatas, this.connection.broadcaster, this.queryRunner); // todo: better to pass connection?
-        await persistOperationExecutor.executePersistOperation(persistOperation);
-        return entity;
     }
 
     // -------------------------------------------------------------------------

@@ -67,6 +67,19 @@ export class Subject { // todo: move entity with id creation into metadata? // t
         return this.metadata.target;
     }
 
+    /**
+     * Returns readable / loggable name of the entity target.
+     */
+    get entityTargetName(): string {
+        if (this.entityTarget instanceof Function) {
+            if (this.entityTarget.name) {
+                return this.entityTarget.name;
+            }
+        }
+
+        return this.entityTarget as string;
+    }
+
     get id() {
         return this.metadata.getEntityIdMap(this.entity);
     }
@@ -90,8 +103,8 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     set databaseEntity(databaseEntity: ObjectLiteral|undefined) {
         this._databaseEntity = databaseEntity;
         if (this.entity && databaseEntity) {
-            this.buildDiffColumns();
-            this.buildDiffRelationalColumns();
+            this.diffColumns = this.buildDiffColumns();
+            this.diffRelations = this.buildDiffRelationalColumns();
         }
     }
 

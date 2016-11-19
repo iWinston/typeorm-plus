@@ -138,6 +138,7 @@ describe("many-to-one", function() {
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
             
+            expectedDetails.posts = [];
             expectedDetails.posts.push(expectedPost);
             
             return postDetailsRepository
@@ -407,7 +408,7 @@ describe("many-to-one", function() {
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    loadedPost.metadata = undefined;
+                    loadedPost.metadata = null;
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {
@@ -437,6 +438,7 @@ describe("many-to-one", function() {
 
             details = new PostDetails();
             details.comment = "post details comment";
+            details.posts = [];
             details.posts.push(newPost);
 
             return postDetailsRepository.persist(details).then(details => savedDetails = details);
@@ -474,6 +476,7 @@ describe("many-to-one", function() {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedDetails.id;
             expectedDetails.comment = savedDetails.comment;
+            expectedDetails.posts = [];
             expectedDetails.posts.push(new Post());
             expectedDetails.posts[0].id = newPost.id;
             expectedDetails.posts[0].text = newPost.text;

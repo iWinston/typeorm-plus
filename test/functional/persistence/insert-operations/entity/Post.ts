@@ -17,26 +17,64 @@ export class Post {
     @Column()
     title: string;
 
-    @ManyToOne(type => Category, category => category.posts, {
+    @ManyToOne(type => Category, category => category.oneToManyPosts, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeRemove: true,
     })
-    category: Category|null;
+    manyToOneCategory: Category;
 
-    @ManyToMany(type => Photo, {
+    @ManyToOne(type => Category, category => category.noCascadeOneToManyPosts, {
+        cascadeInsert: false,
+        cascadeUpdate: false,
+        cascadeRemove: false,
+    })
+    noCascadeManyToOneCategory: Category;
+
+    @OneToOne(type => Category, category => category.oneToOneOwnerPost, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeRemove: true,
+    })
+    oneToOneCategory: Category;
+
+    @OneToOne(type => Category, category => category.noCascadeOneToOnePost, {
+        cascadeInsert: false,
+        cascadeUpdate: false,
+        cascadeRemove: false,
+    })
+    noCascadeOneToOneCategory: Category;
+
+    @ManyToMany(type => Category, category => category.manyToManyPosts, {
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true,
+    })
+    @JoinTable()
+    manyToManyOwnerCategories: Category[];
+
+    @ManyToMany(type => Category, category => category.noCascadeManyToManyPosts, {
+        cascadeInsert: false,
+        cascadeUpdate: false,
+        cascadeRemove: false,
+    })
+    @JoinTable()
+    noCascadeManyToManyOwnerCategories: Category[];
+
+    @ManyToMany(type => Photo, photo => photo.posts, {
+        cascadeInsert: true,
+        cascadeUpdate: true,
+        cascadeRemove: true,
     })
     @JoinTable()
     photos: Photo[];
 
-    @OneToOne(type => Category, category => category.onePost, {
+    @ManyToMany(type => Photo, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeRemove: true,
     })
-    oneCategory: Category;
+    @JoinTable()
+    noInversePhotos: Photo[];
 
 }

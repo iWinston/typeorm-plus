@@ -1038,7 +1038,7 @@ export class QueryBuilder<Entity> {
             const [sql, parameters] = this.getSqlWithParameters();
 
             try {
-                console.log(sql);
+                // console.log(sql);
                 return await queryRunner.query(sql, parameters)
                     .then(results => {
                         scalarResults = results;
@@ -1101,7 +1101,7 @@ export class QueryBuilder<Entity> {
             }).join(", ") + ") as cnt";
 
         const countQuery = this
-            .clone({ queryRunner: queryRunner, skipOrderBys: true, ignoreParentTablesJoins: true })
+            .clone({ queryRunner: queryRunner, skipOrderBys: true, ignoreParentTablesJoins: true, skipLimit: true, skipOffset: true })
             .select(countSql);
 
         const [countQuerySql, countQueryParameters] = countQuery.getSqlWithParameters();

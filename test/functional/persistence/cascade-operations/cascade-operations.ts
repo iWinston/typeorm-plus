@@ -3,7 +3,6 @@ import {setupTestingConnections, closeConnections, reloadDatabases} from "../../
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {Photo} from "./entity/Photo";
 
 describe("persistence > cascade operations", () => {
 
@@ -16,9 +15,9 @@ describe("persistence > cascade operations", () => {
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
-    describe("cascade insert", function() {
+    describe.skip("cascade insert", function() {
 
-        it.only("should work perfectly", () => Promise.all(connections.map(async connection => {
+        it("should work perfectly", () => Promise.all(connections.map(async connection => {
 
 
             // create category
@@ -34,25 +33,41 @@ describe("persistence > cascade operations", () => {
             // create post
             const post1 = new Post();
             post1.title = "Hello Post #1";
-            // post1.oneCategory = category1;
+            post1.oneCategory = category1;
 
             // todo(next): check out to one
 
             // create photos
-            const photo1 = new Photo();
+            /*const photo1 = new Photo();
             photo1.url = "http://me.com/photo";
             photo1.post = post1;
             photo1.categories = [category1, category2];
 
             const photo2 = new Photo();
             photo2.url = "http://me.com/photo";
-            photo2.post = post1;
+            photo2.post = post1;*/
 
             // category1.photos = [photo1, photo2];
 
             // post1.category = category1;
             // post1.category.photos = [photo1, photo2];
-            await connection.entityManager.persist(photo1);
+            await connection.entityManager.persist(post1);
+
+            console.log("********************************************************");
+            console.log("updating: ", post1);
+            console.log("********************************************************");
+
+            post1.title = "updated post #1";
+            post1.oneCategory.name = "updated category";
+            await connection.entityManager.persist(post1);
+
+            console.log("********************************************************");
+            console.log("removing: ", post1);
+            console.log("********************************************************");
+
+            await connection.entityManager.remove(post1);
+
+            // await connection.entityManager.persist(post1);
 
             console.log("********************************************************");
 

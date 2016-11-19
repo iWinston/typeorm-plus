@@ -426,6 +426,17 @@ export class RelationMetadata {
 
     /**
      * todo: lazy relations are not supported here? implement logic?
+     *
+     * examples:
+     *
+     * - isOneToOneNotOwner or isOneToMany:
+     *  Post has a Category.
+     *  Post is owner side.
+     *  Category is inverse side.
+     *  Post.category is mapped to Category.id
+     *
+     *  if from Post relation we are passing Category here,
+     *  it should return a post.category
      */
     getOwnEntityRelationId(ownEntity: ObjectLiteral): any {
         if (this.isManyToManyOwner) {
@@ -442,6 +453,21 @@ export class RelationMetadata {
         }
     }
 
+    /**
+     *
+     * examples:
+     *
+     * - isOneToOneNotOwner or isOneToMany:
+     *  Post has a Category.
+     *  Post is owner side.
+     *  Category is inverse side.
+     *  Post.category is mapped to Category.id
+     *
+     *  if from Post relation we are passing Category here,
+     *  it should return a category.id
+     *
+     *  @deprecated Looks like this method does not make sence and does same as getOwnEntityRelationId ?
+     */
     getInverseEntityRelationId(inverseEntity: ObjectLiteral): any {
         if (this.isManyToManyOwner) {
             return inverseEntity[this.joinTable.inverseReferencedColumn.propertyName];
