@@ -356,7 +356,6 @@ describe("one-to-one", function() {
                         .getSingleResult();
 
                 }).then(loadedPost => {
-                    console.log("loadedPost: ", loadedPost);
                     loadedPost.image.url = "new-logo.png";
                     return postRepository.persist(loadedPost);
 

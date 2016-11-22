@@ -27,6 +27,7 @@ describe("persistence > multi primary keys", () => {
 
             // create first category and post and save them
             const category1 = new Category();
+            category1.categoryId = 123;
             category1.name = "Category saved by cascades #1";
             category1.posts = [post1];
 
@@ -48,7 +49,7 @@ describe("persistence > multi primary keys", () => {
                 secondId: 2,
                 title: "Hello Post #1",
                 category: {
-                    categoryId: 1,
+                    categoryId: 123,
                     name: "Category saved by cascades #1"
                 }
             }]);

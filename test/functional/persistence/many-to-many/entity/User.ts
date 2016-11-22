@@ -13,7 +13,7 @@ export class User {
     @Column()
     name: string;
 
-    @ManyToOne(type => Post)
+    @ManyToOne(type => Post, { cascadeUpdate: true })
     post: Post;
 
 }

@@ -19,6 +19,12 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     canBeUpdated: boolean = false;
     mustBeRemoved: boolean = false;
 
+    /**
+     * List of relations which need to be unset.
+     * This is used to update relation from inverse side.
+     */
+    unsetRelations: RelationMetadata[] = [];
+
     diffColumns: ColumnMetadata[] = [];
     diffRelations: RelationMetadata[] = [];
 
@@ -94,6 +100,10 @@ export class Subject { // todo: move entity with id creation into metadata? // t
 
     get mustBeUpdated() {
         return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
+    }
+
+    get hasUnsetRelations(): boolean {
+        return this.unsetRelations.length > 0;
     }
 
     get databaseEntity(): ObjectLiteral|undefined {

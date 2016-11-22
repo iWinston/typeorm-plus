@@ -104,6 +104,10 @@ export class EntityMetadataValidator {
                 if (relation.hasInverseSide && relation.inverseRelation.joinColumn && relation.isOneToOne)
                     throw new UsingJoinColumnOnlyOnOneSideAllowedError(entityMetadata, relation);
 
+                // check if join column really has referenced column
+                if (relation.joinColumn && !relation.joinColumn.referencedColumn)
+                    throw new Error(`Join column does not have referenced column set`);
+
             }
 
             // if its a one-to-one relation and JoinColumn is missing on both sides of the relation

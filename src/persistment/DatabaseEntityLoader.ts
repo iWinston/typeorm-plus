@@ -110,7 +110,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
         // when executing insert/update operations we need to exclude entities scheduled for remove
         // for junction operations we only get insert and update operations
 
-        console.log("subjects: ", this.loadedSubjects);
+        // console.log("subjects: ", this.loadedSubjects);
     }
 
     async remove(entity: Entity, metadata: EntityMetadata): Promise<void> {
@@ -275,15 +275,12 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      *  BIG NOTE: objects are being removed by cascades not only when relation is removed, but also when
      *  relation is replaced (e.g. changed with different object).
      */
-    protected async findCascadeRemovedEntitiesToLoad(subject: Subject): Promise<void> {
+    protected async findCascadeRemovedEntitiesToLoad(subject: Subject): Promise<void> { // todo: rename to findRemovedEntities ?
 
         // note: we can't use extractRelationValuesFromEntity here because it does not handle empty arrays
         const promises = subject.metadata.relations.map(async relation => {
             const valueMetadata = relation.inverseEntityMetadata;
             const qbAlias = valueMetadata.table.name;
-
-            // we only need relations that has cascade remove set
-            if (!relation.isCascadeRemove) return;
 
             // todo: added here because of type safety. theoretically it should not be empty, but what to do? throw exception if its empty?
             if (!subject.databaseEntity) return;
@@ -292,6 +289,9 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
             // because join column is in this side of relation and we have a database entity with which we can compare
             // and understand if relation was removed or not
             if (relation.isOneToOneOwner || relation.isManyToOne) {
+
+                // we only work with cascade removes here
+                if (!relation.isCascadeRemove) return;
 
                 /**
                  * By example (one-to-one owner). Let's say we have a one-to-one relation between Post and Details.
@@ -382,6 +382,9 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
             // since column value that indicates relation is stored on inverse side
             if (relation.isOneToOneNotOwner) {
 
+                // we only work with cascade removes here
+                if (!relation.isCascadeRemove) return; // todo: no
+
                 /**
                  * By example. Let's say we have a one-to-one relation between Post and Details.
                  * Post contains detailsId. It means he owns relation. Details has cascade remove with post.
@@ -466,6 +469,9 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
             // since column value that indicates relation is stored on inverse side
             if (relation.isOneToMany || relation.isManyToMany) {
 
+                // we only work with cascade removes here
+                // if (!relation.isCascadeRemove && !relation.isCascadeUpdate) return;
+
                 /**
                  * By example. Let's say we have a one-to-many relation between Post and Details.
                  * Post contains detailsId. It means he owns relation.
@@ -483,8 +489,6 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 // (example) "relation" - is a relation in details with post.
                 // (example) "valueMetadata" - is an entity metadata of the Post object.
                 // (example) "subject.databaseEntity" - is a details object
-
-                    console.log("one to many. I shall remove");
 
                 // (example) returns us referenced column (detail's id)
                 const relationIdInDatabaseEntity = relation.getOwnEntityRelationId(subject.databaseEntity);
@@ -507,24 +511,41 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 let databaseEntities: ObjectLiteral[] = [];
 
                 if (relation.isManyToManyOwner) {
+
+                    // we only need to load inverse entities if cascade removes are set
+                    // because remove by cascades is the only reason we need relational entities here
+                    if (!relation.isCascadeRemove) return;
+
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON", "persistenceJoinedRelation." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON",
+                            "persistenceJoinedRelation." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
                         .getResults();
 
                 } else if (relation.isManyToManyNotOwner) {
+
+                    // we only need to load inverse entities if cascade removes are set
+                    // because remove by cascades is the only reason we need relational entities here
+                    if (!relation.isCascadeRemove) return;
+
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON", "persistenceJoinedRelation." + relation.inverseRelation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON",
+                            "persistenceJoinedRelation." + relation.inverseRelation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
                         .getResults();
 
-                } else {
+                } else { // this case can only be a oneToMany relation
+
+                    // in this case we need inverse entities not only because of cascade removes
+                    // because we also need inverse entities to be able to perform update of entities
+                    // in the inverse side when entities is detached from one-to-many relation
+
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
@@ -546,29 +567,46 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     }
                 });
 
-                //
+                // iterate throw loaded inverse entities to find out removed entities and inverse updated entities (only for one-to-many relation)
                 const promises = databaseEntities.map(async databaseEntity => {
+
+                    // find a subject object of the related database entity
                     const relatedEntitySubject = this.loadedSubjects.findByDatabaseEntityLike(valueMetadata.target, databaseEntity);
                     if (!relatedEntitySubject) return; // should not be possible, anyway add it for type-safety
 
                     // if object is already marked as removed then no need to proceed because it already was proceed
-                    // if we remove this it will cause a recursion
-                    if (relatedEntitySubject.mustBeRemoved) return;
+                    // if we remove this check it will cause a recursion
+                    if (relatedEntitySubject.mustBeRemoved) return; // todo: add another check for entity in unsetRelations?
 
-                    if (persistValue === null) {
-                        relatedEntitySubject.mustBeRemoved = true;
-                        await this.findCascadeRemovedEntitiesToLoad(relatedEntitySubject);
-                        return;
-                    }
-
-                    const relatedValue = (persistValue as ObjectLiteral[]).find(persistedRelatedValue => {
+                    // check if in persisted value there is a database value to understand if it was removed or not
+                    let relatedValue = ((persistValue || []) as ObjectLiteral[]).find(persistedRelatedValue => {
                         const relatedId = relation.getInverseEntityRelationId(persistedRelatedValue);
                         return relatedId === relation.getInverseEntityRelationId(relatedEntitySubject!.databaseEntity!);
                     });
 
-                    if (!relatedValue) {
-                        relatedEntitySubject.mustBeRemoved = true;
-                        await this.findCascadeRemovedEntitiesToLoad(relatedEntitySubject);
+                    // if relation value is set to undefined then we don't do anything - simply skip any check and remove
+                    // but if relation value is set to null then it means user wants to remove each entity in this relation
+                    // OR
+                    // value was removed from persisted value - means we need to mark it as removed
+                    // and check if mark as removed all underlying entities that has cascade remove
+                    if (persistValue === null || !relatedValue) {
+
+                        // if cascade remove option is set then need to remove related entity
+                        if (relation.isCascadeRemove) {
+                            relatedEntitySubject.mustBeRemoved = true;
+
+                            // mark as removed all underlying entities that has cascade remove
+                            await this.findCascadeRemovedEntitiesToLoad(relatedEntitySubject);
+                            return;
+
+                        // if cascade remove option is not set then it means we simply need to remove
+                        // reference to this entity from inverse side (from loaded database entity)
+                        // this applies only on one-to-many relationship
+                        } else if (relation.isOneToMany && relation.inverseRelation) {
+                            relatedEntitySubject.unsetRelations.push(relation.inverseRelation);
+                            return;
+                        }
+
                     }
                 });
 

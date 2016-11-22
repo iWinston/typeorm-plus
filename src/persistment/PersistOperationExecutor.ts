@@ -42,7 +42,7 @@ export class PersistOperationExecutor {
         // persistOperation.log();
 
         return Promise.resolve()
-            .then(() => this.broadcastBeforeEvents(persistOperation))
+            // .then(() => this.broadcastBeforeEvents(persistOperation))
             .then(() => {
                 if (!this.queryRunner.isTransactionActive()) {
                     isTransactionStartedByItself = true;
@@ -70,7 +70,7 @@ export class PersistOperationExecutor {
             .then(() => this.updateIdsOfInsertedEntities(persistOperation))
             .then(() => this.updateIdsOfRemovedEntities(persistOperation))
             .then(() => this.updateSpecialColumnsInEntities(persistOperation))
-            .then(() => this.broadcastAfterEvents(persistOperation))
+            // .then(() => this.broadcastAfterEvents(persistOperation))
             .catch(error => {
                 if (isTransactionStartedByItself === true) {
                     return this.queryRunner.rollbackTransaction()
@@ -91,7 +91,7 @@ export class PersistOperationExecutor {
 
     /**
      * Broadcast all before persistment events - beforeInsert, beforeUpdate and beforeRemove events.
-     */
+
     private broadcastBeforeEvents(persistOperation: PersistOperation) {
 
         const insertEvents = persistOperation.inserts.map(insertOperation => {
@@ -117,11 +117,11 @@ export class PersistOperationExecutor {
         return Promise.all(insertEvents)
             .then(() => Promise.all(updateEvents))
             .then(() => Promise.all(removeEvents)); // todo: do we really should send it in order?
-    }
+    } */
 
     /**
      * Broadcast all after persistment events - afterInsert, afterUpdate and afterRemove events.
-     */
+
     private broadcastAfterEvents(persistOperation: PersistOperation) {
 
         const insertEvents = persistOperation.inserts.map(insertOperation => {
@@ -147,7 +147,7 @@ export class PersistOperationExecutor {
         return Promise.all(insertEvents)
             .then(() => Promise.all(updateEvents))
             .then(() => Promise.all(removeEvents)); // todo: do we really should send it in order?
-    }
+    } */
 
     /**
      * Executes insert operations.

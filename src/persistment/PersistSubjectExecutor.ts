@@ -1,4 +1,3 @@
-import {PersistOperation} from "./operation/PersistOperation";
 import {InsertOperation} from "./operation/InsertOperation";
 import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
 import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
@@ -37,6 +36,7 @@ export class PersistSubjectExecutor {
         const insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         const updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         const removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
+        const unsetRelationSubjects = subjects.filter(subject => subject.hasUnsetRelations);
 
         // validation
         // check if remove subject also must be inserted or updated - then we throw an exception
@@ -70,6 +70,7 @@ export class PersistSubjectExecutor {
             // await this.executeUpdateRelationsOperations(persistOperation); // todo: merge these operations with update operations?
             // await this.executeUpdateInverseRelationsOperations(persistOperation); // todo: merge these operations with update operations?
             await this.executeUpdateOperations(updateSubjects);
+            await this.executeUnsetRelationOperations(unsetRelationSubjects);
             await this.executeRemoveOperations(removeSubjects);
 
             // commit transaction if it was started by us
@@ -141,15 +142,17 @@ export class PersistSubjectExecutor {
             subject.metadata.relationsWithJoinColumns.forEach(relation => {
                 const referencedColumn = relation.joinColumn.referencedColumn;
 
-                insertSubjects.forEach(insertedSubject => {
-                    if (subject.entity[relation.propertyName] === insertedSubject.entity) {
-
-                        if (referencedColumn.isGenerated)
-                            updateOptions[relation.name] = insertedSubject.newlyGeneratedId;
-
-                        // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+                if (subject.entity[relation.propertyName]) {
+                    const relationId = subject.entity[relation.propertyName][referencedColumn.propertyName];
+                    if (relationId) {
+                        updateOptions[relation.name] = relationId;
                     }
-                });
+                }
+
+                const insertSubject = insertSubjects.find(insertedSubject => subject.entity[relation.propertyName] === insertedSubject.entity);
+                if (insertSubject && referencedColumn.isGenerated)
+                    updateOptions[relation.name] = insertSubject.newlyGeneratedId;
+
             });
             if (Object.keys(updateOptions).length > 0) {
                 const conditions = subject.metadata.getDatabaseEntityIdMap(subject.entity) || subject.metadata.createSimpleDatabaseIdMap(subject.newlyGeneratedId);
@@ -164,19 +167,22 @@ export class PersistSubjectExecutor {
 
                 if (value instanceof Array) {
                     value.forEach(subValue => {
-                        insertSubjects.forEach(insertedSubject => {
-                            if (subValue === insertedSubject.entity) {
 
-                                if (referencedColumn.isGenerated) {
-                                    const conditions = insertedSubject.metadata.getDatabaseEntityIdMap(insertedSubject.entity) || insertedSubject.metadata.createSimpleDatabaseIdMap(insertedSubject.newlyGeneratedId);
-                                    const updateOptions = { [relation.inverseRelation.joinColumn.name]: subject.newlyGeneratedId };
-                                    const updatePromise = this.queryRunner.update(relation.inverseRelation.entityMetadata.table.name, updateOptions, conditions);
-                                    updatePromises.push(updatePromise);
-                                }
+                        let relationId = subValue[referencedColumn.propertyName];
+                        if (!relationId) {
+                            const insertSubject = insertSubjects.find(insertedSubject => subValue === insertedSubject.entity);
 
-                                 // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
-                            }
-                        });
+                            if (insertSubject && referencedColumn.isGenerated)
+                                relationId = insertSubject.newlyGeneratedId;
+
+                            // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+                        }
+
+                        const id = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId;
+                        const conditions = relation.inverseEntityMetadata.getDatabaseEntityIdMap(subValue) || relation.inverseEntityMetadata.createSimpleDatabaseIdMap(relationId);
+                        const updateOptions = { [relation.inverseRelation.joinColumn.name]: id }; // todo: what if subject's id is not generated?
+                        const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.table.name, updateOptions, conditions);
+                        updatePromises.push(updatePromise);
 
                     });
                 }
@@ -248,20 +254,36 @@ export class PersistSubjectExecutor {
 
     /**
      * Executes update relations operations.
-     */
+
     private executeUpdateRelationsOperations(updateSubjects: Subject[], insertSubjects: Subject[]) {
         return Promise.all(updateSubjects.map(subject => {
             return this.updateByRelation(subject, insertSubjects);
         }));
-    }
+    } */
 
     /**
      * Executes update relations operations.
      */
-    private executeUpdateInverseRelationsOperations(persistOperation: PersistOperation) {
-        return Promise.all(persistOperation.updatesByInverseRelations.map(updateInverseOperation => {
-            return this.updateInverseRelation(updateInverseOperation, persistOperation.inserts);
+    private executeUnsetRelationOperations(subjects: Subject[]) {
+        return Promise.all(subjects.map(subject => {
+            return this.unsetRelations(subject);
         }));
+    }
+
+    private async unsetRelations(subject: Subject) {
+        const values: ObjectLiteral = {};
+        subject.unsetRelations.forEach(relation => {
+            values[relation.name] = null;
+        });
+
+        if (!subject.databaseEntity)
+            throw new Error(`Internal error. Cannot unset relation of subject that does not have database entity.`);
+
+        const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
+        if (!idMap)
+            throw new Error(`Internal error. Cannot get id of the updating entity.`);
+
+        return this.queryRunner.update(subject.metadata.table.name, values, idMap);
     }
 
     /**
@@ -273,7 +295,7 @@ export class PersistSubjectExecutor {
 
     /**
      * Executes remove relations operations.
-     */
+
     private executeRemoveRelationOperations(removeSubjects: Subject[]) {
         return Promise.all(removeSubjects
             // .filter(operation => {
@@ -281,7 +303,7 @@ export class PersistSubjectExecutor {
             // })
             .map(subject => this.updateDeletedRelations(subject))
         );
-    }
+    } */
 
     /**
      * Executes remove operations.
@@ -509,7 +531,7 @@ export class PersistSubjectExecutor {
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[subject.metadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, metadata.versionColumn);
+            valueMap.values[subject.metadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
         }
 
         if (subject.metadata.parentEntityMetadata) {
@@ -535,22 +557,15 @@ export class PersistSubjectExecutor {
         }
 
         await Promise.all(valueMaps.map(valueMap => {
-            const conditions: ObjectLiteral = {};
-            if (valueMap.metadata.parentEntityMetadata && valueMap.metadata.parentEntityMetadata.inheritanceType === "class-table") { // valueMap.metadata.getEntityIdMap(entity)!
-                valueMap.metadata.parentIdColumns.forEach(column => {
-                    conditions[column.name] = entity[column.propertyName];
-                });
+            const idMap = valueMap.metadata.getDatabaseEntityIdMap(entity);
+            if (!idMap)
+                throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
-            } else {
-                valueMap.metadata.primaryColumns.forEach(column => {
-                    conditions[column.name] = entity[column.propertyName];
-                });
-            }
-            return this.queryRunner.update(valueMap.tableName, valueMap.values, conditions);
+            return this.queryRunner.update(valueMap.tableName, valueMap.values, idMap);
         }));
     }
 
-    private updateDeletedRelations(subject: Subject) { // todo: check if both many-to-one deletions work too
+    /*private updateDeletedRelations(subject: Subject) { // todo: check if both many-to-one deletions work too
         if (!subject.fromEntityId)
             throw new Error(`remove operation does not have entity id`);
 
@@ -563,7 +578,7 @@ export class PersistSubjectExecutor {
         }
 
         throw new Error("Remove operation relation is not set"); // todo: find out how its possible
-    }
+    }*/
 
     private async remove(subject: Subject): Promise<void> {
         if (subject.metadata.parentEntityMetadata) {
@@ -734,7 +749,7 @@ export class PersistSubjectExecutor {
         if (!parentEntityId && referencedColumn.isGenerated) {
             const parentInsertedSubject = insertedSubjects.find(subject => subject.entity === parentEntity);
             // todo: throw exception if parentInsertedSubject is not set
-            parentEntityId = parentInsertedSubject.newlyGeneratedId;
+            parentEntityId = parentInsertedSubject!.newlyGeneratedId;
         } // todo: implement other special column types too
 
         subject.treeLevel = await this.queryRunner.insertIntoClosureTable(tableName, newEntityId, parentEntityId, subject.metadata.hasTreeLevelColumn);
