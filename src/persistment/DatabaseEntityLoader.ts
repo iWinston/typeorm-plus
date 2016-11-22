@@ -608,12 +608,40 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                     // if object is already marked as removed then no need to proceed because it already was proceed
                     // if we remove this check it will cause a recursion
-                    if (relatedEntitySubject.mustBeRemoved) return; // todo: add another check for entity in unsetRelations?
+                    if (relatedEntitySubject.mustBeRemoved) return;  // todo: add another check for entity in unsetRelations?
 
                     // check if in persisted value there is a database value to understand if it was removed or not
-                    let relatedValue = ((persistValue || []) as ObjectLiteral[]).find(persistedRelatedValue => {
-                        const relatedId = relation.getInverseEntityRelationId(persistedRelatedValue);
-                        return relatedId === relation.getInverseEntityRelationId(relatedEntitySubject!.databaseEntity!);
+                    let relatedValue = ((persistValue || []) as ObjectLiteral[]).find(persistValueItem => {
+                        return valueMetadata.compareEntities(relatedEntitySubject!.databaseEntity!, persistValueItem);
+                        // const relatedId = relation.getInverseEntityRelationId(persistValueItem);
+                        /*let relatedId: any;
+                        if (relation.isOneToMany) {
+                            relatedId = persistValueItem[relation.inverseRelation.joinColumn.referencedColumn.propertyName];
+
+                        } else if (relation.isManyToManyOwner) {
+                            relatedId = persistValueItem[relation.joinTable.referencedColumn.propertyName];
+
+                        } else if (relation.isManyToManyNotOwner) {
+                            relatedId = persistValueItem[relation.joinTable.inverseReferencedColumn.propertyName];
+
+                        }
+
+                        let inverseRelatedId: any;
+                        if (relation.isOneToMany) {
+                            inverseRelatedId = relatedEntitySubject!.databaseEntity![relation.inverseRelation.joinColumn.propertyName];
+
+                        } else if (relation.isManyToManyOwner) {
+                            inverseRelatedId = relatedEntitySubject!.databaseEntity![relation.joinTable.inverseReferencedColumn.propertyName];
+
+                        } else if (relation.isManyToManyNotOwner) {
+                            inverseRelatedId = relatedEntitySubject!.databaseEntity![relation.joinTable.referencedColumn.propertyName];
+
+                        }
+
+                        console.log("persistValueItem:", persistValueItem);
+                        console.log("databaseEntity:", relatedEntitySubject!.databaseEntity);
+                        console.log("relatedId; ", relatedId, "===", inverseRelatedId);
+                        return relatedId === inverseRelatedId;*/
                     });
 
                     // if relation value is set to undefined then we don't do anything - simply skip any check and remove
@@ -629,14 +657,12 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                             // mark as removed all underlying entities that has cascade remove
                             await this.findCascadeRemovedEntitiesToLoad(relatedEntitySubject);
-                            return;
 
                         // if cascade remove option is not set then it means we simply need to remove
                         // reference to this entity from inverse side (from loaded database entity)
                         // this applies only on one-to-many relationship
                         } else if (relation.isOneToMany && relation.inverseRelation) {
                             relatedEntitySubject.unsetRelations.push(relation.inverseRelation);  // todo: implement same for one-to-one
-                            return;
                         }
 
                     }

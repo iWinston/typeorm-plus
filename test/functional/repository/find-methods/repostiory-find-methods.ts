@@ -20,7 +20,7 @@ describe("repository > find methods", () => {
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
-    describe("find and findAndCount", function() {
+    describe.skip("find and findAndCount", function() {
 
         it("should return everything when no criteria given", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
@@ -218,7 +218,7 @@ describe("repository > find methods", () => {
 
     });
 
-    describe("findOne", function() {
+    describe.skip("findOne", function() {
 
         it("should return first when no criteria given", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
@@ -293,7 +293,7 @@ describe("repository > find methods", () => {
 
     });
 
-    describe("findOneById", function() {
+    describe.skip("findOneById", function() {
 
         it("should return entity by a given id", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");

@@ -306,7 +306,6 @@ export class PersistSubjectExecutor {
         if (!idMap)
             throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
-        console.log(subject.metadata.table.name, values, idMap);
         return this.queryRunner.update(subject.metadata.table.name, values, idMap);
     }
 
