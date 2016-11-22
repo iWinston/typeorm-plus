@@ -24,6 +24,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
      * This is used to update relation from inverse side.
      */
     unsetRelations: RelationMetadata[] = [];
+    setRelations: { relation: RelationMetadata, value: any }[] = [];
 
     diffColumns: ColumnMetadata[] = [];
     diffRelations: RelationMetadata[] = [];
@@ -104,6 +105,10 @@ export class Subject { // todo: move entity with id creation into metadata? // t
 
     get hasUnsetRelations(): boolean {
         return this.unsetRelations.length > 0;
+    }
+
+    get hasSetRelations(): boolean {
+        return this.setRelations.length > 0;
     }
 
     get databaseEntity(): ObjectLiteral|undefined {

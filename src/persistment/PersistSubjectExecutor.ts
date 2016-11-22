@@ -37,6 +37,7 @@ export class PersistSubjectExecutor {
         const updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         const removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
         const unsetRelationSubjects = subjects.filter(subject => subject.hasUnsetRelations);
+        const setRelationSubjects = subjects.filter(subject => subject.hasSetRelations);
 
         // validation
         // check if remove subject also must be inserted or updated - then we throw an exception
@@ -71,6 +72,7 @@ export class PersistSubjectExecutor {
             // await this.executeUpdateInverseRelationsOperations(persistOperation); // todo: merge these operations with update operations?
             await this.executeUpdateOperations(updateSubjects);
             await this.executeUnsetRelationOperations(unsetRelationSubjects);
+            await this.executeSetRelationOperations(setRelationSubjects);
             await this.executeRemoveOperations(removeSubjects);
 
             // commit transaction if it was started by us
@@ -283,6 +285,28 @@ export class PersistSubjectExecutor {
         if (!idMap)
             throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
+        return this.queryRunner.update(subject.metadata.table.name, values, idMap);
+    }
+    private executeSetRelationOperations(subjects: Subject[]) {
+        return Promise.all(subjects.map(subject => {
+            return this.setRelations(subject);
+        }));
+    }
+
+    private async setRelations(subject: Subject) {
+        const values: ObjectLiteral = {};
+        subject.setRelations.forEach(setRelation => {
+            values[setRelation.relation.name] = setRelation.value[setRelation.relation.joinColumn.referencedColumn.propertyName]; // todo: || fromInsertedSubjects ??
+        });
+
+        if (!subject.databaseEntity)
+            throw new Error(`Internal error. Cannot unset relation of subject that does not have database entity.`);
+
+        const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
+        if (!idMap)
+            throw new Error(`Internal error. Cannot get id of the updating entity.`);
+
+        console.log(subject.metadata.table.name, values, idMap);
         return this.queryRunner.update(subject.metadata.table.name, values, idMap);
     }
 

@@ -282,7 +282,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
             const valueMetadata = relation.inverseEntityMetadata;
             const qbAlias = valueMetadata.table.name;
 
-            // todo: added here because of type safety. theoretically it should not be empty, but what to do? throw exception if its empty?
+            // added for type-safety, but subject without databaseEntity cant come here anyway because of checks on upper levels
             if (!subject.databaseEntity) return;
 
             // for one-to-one owner and many-to-one relations no need to load entity to check if something removed
@@ -567,6 +567,38 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     }
                 });
 
+
+                // add new relations for newly bind entities from the one-to-many relations
+                if (relation.isOneToMany && persistValue) { // todo: implement same for one-to-one
+                    const promises = (persistValue as ObjectLiteral[]).map(async persistValue => {
+
+                        // try to find in the database entities persistedValue (entity bind to this relation)
+                        const persistedValueInDatabaseEntity = databaseEntities.find(databaseEntity => {
+                            return valueMetadata.compareEntities(persistValue, databaseEntity);
+                        });
+
+                        // if it does not exist in the database entity - it means we need to bind it
+                        // to bind it we need to update related entity itself
+                        // this operation is performed only in one-to-many relations
+                        if (!persistedValueInDatabaseEntity) {
+
+                            // now find subject with
+                            let loadedSubject = this.loadedSubjects.findByDatabaseEntityLike(valueMetadata.target, persistValue);
+                            if (!loadedSubject) {
+                                const databaseEntity = await this.connection
+                                    .getRepository<ObjectLiteral>(valueMetadata.target)
+                                    .findOneById(valueMetadata.getEntityIdMixedMap(persistValue), { alias: qbAlias, enabledOptions: ["RELATION_ID_VALUES"] }); // todo: check if databaseEntity is defined?
+
+                                loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
+                                this.loadedSubjects.push(loadedSubject);
+                            }
+                            loadedSubject.setRelations.push({ relation: relation.inverseRelation, value: subject.entity });
+                        }
+                    });
+
+                    await Promise.all(promises);
+                }
+
                 // iterate throw loaded inverse entities to find out removed entities and inverse updated entities (only for one-to-many relation)
                 const promises = databaseEntities.map(async databaseEntity => {
 
@@ -603,11 +635,12 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                         // reference to this entity from inverse side (from loaded database entity)
                         // this applies only on one-to-many relationship
                         } else if (relation.isOneToMany && relation.inverseRelation) {
-                            relatedEntitySubject.unsetRelations.push(relation.inverseRelation);
+                            relatedEntitySubject.unsetRelations.push(relation.inverseRelation);  // todo: implement same for one-to-one
                             return;
                         }
 
                     }
+
                 });
 
                 await Promise.all(promises);
