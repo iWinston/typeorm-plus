@@ -171,7 +171,16 @@ export class Connection {
         this._isConnected = true;
 
         // build all metadatas registered in the current connection
-        this.buildMetadatas();
+        try {
+            this.buildMetadatas();
+
+        } catch (error) {
+
+            // if for some reason build metadata fail (for example validation error during entity metadata check)
+            // connection needs to be closed
+            await this.close();
+            throw error;
+        }
         
         return this;
     }
@@ -464,6 +473,15 @@ export class Connection {
         const namingStrategy = this.createNamingStrategy();
         const lazyRelationsWrapper = this.createLazyRelationsWrapper();
 
+        // take imported event subscribers
+        if (this.subscriberClasses && this.subscriberClasses.length) {
+            getMetadataArgsStorage()
+                .entitySubscribers
+                .filterByTargets(this.subscriberClasses)
+                .map(metadata => getFromContainer(metadata.target))
+                .forEach(subscriber => this.entitySubscribers.push(subscriber));
+        }
+
         // take imported entity listeners
         if (this.entityClasses && this.entityClasses.length) {
             getMetadataArgsStorage()
@@ -490,15 +508,6 @@ export class Connection {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
                 });
-        }
-
-        // take imported event subscribers
-        if (this.subscriberClasses && this.subscriberClasses.length) {
-            getMetadataArgsStorage()
-                .entitySubscribers
-                .filterByTargets(this.subscriberClasses)
-                .map(metadata => getFromContainer(metadata.target))
-                .forEach(subscriber => this.entitySubscribers.push(subscriber));
         }
     }
 
