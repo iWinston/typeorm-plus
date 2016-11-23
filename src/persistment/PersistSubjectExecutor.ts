@@ -1,7 +1,3 @@
-import {InsertOperation} from "./operation/InsertOperation";
-import {UpdateByRelationOperation} from "./operation/UpdateByRelationOperation";
-import {UpdateByInverseSideOperation} from "./operation/UpdateByInverseSideOperation";
-import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
@@ -228,13 +224,6 @@ export class PersistSubjectExecutor {
     }
 
     /**
-     * Executes update tree level operations in inserted entities right after data into closure table inserted.
-
-    private executeUpdateTreeLevelOperations(insertOperations: Subject[]) {
-        return Promise.all(insertOperations.map(subject => this.updateTreeLevel(subject)));
-    }*/
-
-    /**
      * Executes insert junction operations.
      */
     private async executeInsertJunctionsOperations(subjects: Subject[], insertSubjects: Subject[]): Promise<void> {
@@ -264,15 +253,6 @@ export class PersistSubjectExecutor {
 
     /**
      * Executes update relations operations.
-
-    private executeUpdateRelationsOperations(updateSubjects: Subject[], insertSubjects: Subject[]) {
-        return Promise.all(updateSubjects.map(subject => {
-            return this.updateByRelation(subject, insertSubjects);
-        }));
-    } */
-
-    /**
-     * Executes update relations operations.
      */
     private executeUnsetRelationOperations(subjects: Subject[]) {
         return Promise.all(subjects.map(subject => {
@@ -295,6 +275,7 @@ export class PersistSubjectExecutor {
 
         return this.queryRunner.update(subject.metadata.table.name, values, idMap);
     }
+
     private executeSetRelationOperations(subjects: Subject[]) {
         return Promise.all(subjects.map(subject => {
             return this.setRelations(subject);
@@ -323,18 +304,6 @@ export class PersistSubjectExecutor {
     private async executeUpdateOperations(updateSubjects: Subject[]): Promise<void> {
         await Promise.all(updateSubjects.map(subject => this.update(subject)));
     }
-
-    /**
-     * Executes remove relations operations.
-
-    private executeRemoveRelationOperations(removeSubjects: Subject[]) {
-        return Promise.all(removeSubjects
-            // .filter(operation => {
-            //     return !!(operation.relation && !operation.relation.isManyToMany && !operation.relation.isOneToMany);
-            // })
-            .map(subject => this.updateDeletedRelations(subject))
-        );
-    } */
 
     /**
      * Executes remove operations.
@@ -425,92 +394,6 @@ export class PersistSubjectExecutor {
         });
     }
 
-    private findUpdateOperationForEntity(operations: UpdateByRelationOperation[], insertSubjects: Subject[], target: any): ObjectLiteral {
-        // we are using firstPrimaryColumn here because this method is used only in executeInsertClosureTableOperations method
-        // which means only for tree tables, but multiple primary keys are not supported in tree tables
-
-        let updateMap: ObjectLiteral = {};
-        operations
-            .forEach(operation => { // duplication with updateByRelation method
-                const metadata = this.connection.entityMetadatas.findByTarget(operation.insertOperation.target);
-                const relatedInsertOperation = insertSubjects.find(o => o.entity === operation.targetEntity);
-
-                // todo: looks like first primary column should not be used there for two reasons:
-                // 1. there can be multiple primary columns, which one is mapped in the relation
-                // 2. parent primary column
-                // join column should be used instead
-
-                if (operation.updatedRelation.isOneToMany) {
-                    const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null;
-                    if (operation.insertOperation.entity === target)
-                        updateMap[operation.updatedRelation.inverseRelation.propertyName] = operation.targetEntity[metadata.firstPrimaryColumn.propertyName] || idInInserts;
-
-                } else {
-                    if (operation.targetEntity === target && operation.insertOperation.entityId)
-                        updateMap[operation.updatedRelation.propertyName] = operation.insertOperation.entityId[metadata.firstPrimaryColumn.propertyName];
-                }
-            });
-
-        return updateMap;
-    }
-
-    private updateByRelation(operation: UpdateByRelationOperation, insertOperations: InsertOperation[]) {
-        if (!operation.insertOperation.entityId)
-            throw new Error(`insert operation does not have entity id`);
-
-        let tableName: string, relationName: string, relationId: ObjectLiteral, idColumn: string, id: any, updateMap: ObjectLiteral|undefined;
-        const relatedInsertOperation = insertOperations.find(o => o.entity === operation.targetEntity);
-
-        if (operation.updatedRelation.isOneToMany || operation.updatedRelation.isOneToOneNotOwner) {
-            const metadata = this.connection.entityMetadatas.findByTarget(operation.insertOperation.target);
-            const idInInserts = relatedInsertOperation && relatedInsertOperation.entityId ? relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] : null; // todo: use join column instead of primary column here
-            tableName = metadata.table.name;
-            relationName = operation.updatedRelation.inverseRelation.name;
-            relationId = operation.targetEntity[metadata.firstPrimaryColumn.propertyName] || idInInserts; // todo: make sure idInInserts is always a map
-            
-            updateMap = metadata.transformIdMapToColumnNames(operation.insertOperation.entityId);
-        } else {
-            const metadata = this.connection.entityMetadatas.findByTarget(operation.entityTarget);
-            let idInInserts: ObjectLiteral|undefined = undefined;
-            if (relatedInsertOperation && relatedInsertOperation.entityId) {
-                idInInserts = { [metadata.firstPrimaryColumn.name]: relatedInsertOperation.entityId[metadata.firstPrimaryColumn.propertyName] };
-            } // todo: use join column instead of primary column here
-            tableName = metadata.table.name;
-            relationName = operation.updatedRelation.name;
-            relationId = operation.insertOperation.entityId[metadata.firstPrimaryColumn.propertyName]; // todo: make sure entityId is always a map
-            // idColumn = metadata.primaryColumn.name;
-            // id = operation.targetEntity[metadata.primaryColumn.propertyName] || idInInserts;
-            updateMap = metadata.getDatabaseEntityIdMap(operation.targetEntity) || idInInserts; // todo: make sure idInInserts always object even when id is single!!!
-        }
-        if (!updateMap)
-            throw new Error(`Cannot execute update by relation operation, because cannot find update criteria`);
-
-        return this.queryRunner.update(tableName, { [relationName]: relationId }, updateMap);
-    }
-
-    private updateInverseRelation(operation: UpdateByInverseSideOperation, insertOperations: InsertOperation[]) {
-        const targetEntityMetadata = this.connection.entityMetadatas.findByTarget(operation.entityTarget);
-        const fromEntityMetadata = this.connection.entityMetadatas.findByTarget(operation.fromEntityTarget);
-        const tableName = targetEntityMetadata.table.name;
-        const targetRelation = operation.fromRelation.inverseRelation;
-        const updateMap = targetEntityMetadata.getDatabaseEntityIdMap(operation.targetEntity);
-        if (!updateMap) return; // todo: is return correct here?
-
-        const fromEntityInsertOperation = insertOperations.find(o => o.entity === operation.fromEntity);
-        let targetEntityId: any; // todo: better do it during insertion - pass UpdateByInverseSideOperation[] to insert and do it there
-        if (operation.operationType === "remove") {
-            targetEntityId = null;
-        } else {
-            if (fromEntityInsertOperation && fromEntityInsertOperation.entityId && targetRelation.joinColumn.referencedColumn === fromEntityMetadata.firstPrimaryColumn) {
-                targetEntityId = fromEntityInsertOperation.entityId[fromEntityMetadata.firstPrimaryColumn.name];
-            } else {
-                targetEntityId = operation.fromEntity[targetRelation.joinColumn.referencedColumn.name];
-            }
-        }
-
-        return this.queryRunner.update(tableName, { [targetRelation.name]: targetEntityId }, updateMap);
-    }
-
     private async update(subject: Subject): Promise<void> {
         const entity = subject.entity;
 
@@ -537,7 +420,7 @@ export class PersistSubjectExecutor {
                 valueMaps.push(valueMap);
             }
 
-            const value = this.getEntityRelationValue(relation, entity);
+            const value = relation.getEntityValue(entity);
             valueMap.values[relation.name] = value !== null && value !== undefined ? value[relation.inverseEntityMetadata.firstPrimaryColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
         });
 
@@ -791,89 +674,6 @@ export class PersistSubjectExecutor {
         }
     }
 
-    /**
-     * @deprecated
-
-    private async updateTreeLevel(subject: Subject): Promise<void> {
-        if (subject.metadata.hasTreeLevelColumn && subject.treeLevel) {
-            const values = { [subject.metadata.treeLevelColumn.name]: subject.treeLevel };
-            await this.queryRunner.update(subject.metadata.table.name, values, subject.entityId);
-        }
-    }*/
-
-    /**
-     * @deprecated
-     */
-    private insertIntoClosureTable(subject: Subject, updateMap: ObjectLiteral) {
-        // here we can only support to work only with single primary key entities
-
-        const entity = subject.entity;
-        const metadata = this.connection.entityMetadatas.findByTarget(subject.entityTarget);
-        const parentEntity = entity[metadata.treeParentRelation.propertyName];
-
-        let parentEntityId: any = 0;
-        if (parentEntity && parentEntity[metadata.firstPrimaryColumn.propertyName]) {
-            parentEntityId = parentEntity[metadata.firstPrimaryColumn.propertyName];
-
-        } else if (updateMap && updateMap[metadata.treeParentRelation.propertyName]) { // todo: name or propertyName: depend how update will be implemented. or even find relation of this treeParent and use its name?
-            parentEntityId = updateMap[metadata.treeParentRelation.propertyName];
-        }
-
-        if (!subject.entityId)
-            throw new Error(`operation does not have entity id`);
-        // todo: this code does not take in count a primary column from the parent entity metadata
-        return this.queryRunner.insertIntoClosureTable(metadata.closureJunctionTable.table.name, subject.entityId[metadata.firstPrimaryColumn.propertyName], parentEntityId, metadata.hasTreeLevelColumn)
-            /*.then(() => {
-                // we also need to update children count in parent
-                if (parentEntity && parentEntityId) {
-                    const values = { [metadata.treeChildrenCountColumn.name]: parentEntity[metadata.treeChildrenCountColumn.name] + 1 };
-                    return this.connection.driver.update(metadata.table.name, values, { [metadata.primaryColumn.name]: parentEntityId });
-                }
-                return;
-            })*/;
-    }
-
-    /*private insertJunctions(junctionOperation: NewJunctionInsertOperation, insertOperations: Subject[]) {
-        // I think here we can only support to work only with single primary key entities
-
-        const metadata1 = this.connection.entityMetadatas.findByTarget(junctionOperation.entity1Target);
-        const metadata2 = this.connection.entityMetadatas.findByTarget(junctionOperation.entity2Target);
-        const columns = junctionOperation.metadata.columns.map(column => column.name);
-        const insertOperation1 = insertOperations.find(o => o.entity === junctionOperation.entity1);
-        const insertOperation2 = insertOperations.find(o => o.entity === junctionOperation.entity2);
-
-        // todo: firstPrimaryColumn should not be used there! use join column's properties instead!
-
-        let id1 = junctionOperation.entity1[metadata1.firstPrimaryColumn.propertyName];
-        let id2 = junctionOperation.entity2[metadata2.firstPrimaryColumn.propertyName];
-        
-        if (!id1) {
-            if (insertOperation1 && insertOperation1.entityId) {
-                id1 = insertOperation1.entityId[metadata1.firstPrimaryColumn.propertyName];
-            } else {
-                throw new Error(`Cannot insert object of ${junctionOperation.entity1.constructor.name} type. Looks like its not persisted yet, or cascades are not set on the relation.`);
-            }
-        } 
-        
-        if (!id2) {
-            if (insertOperation2 && insertOperation2.entityId) {
-                id2 = insertOperation2.entityId[metadata2.firstPrimaryColumn.propertyName];
-            } else {
-                throw new Error(`Cannot insert object of ${junctionOperation.entity2.constructor.name} type. Looks like its not persisted yet, or cascades are not set on the relation.`);
-            }
-        }
-        
-        let values: any[]; 
-        // order may differ, find solution (column.table to compare with entity metadata table?)
-        if (metadata1.table === junctionOperation.metadata.foreignKeys[0].referencedTable) {
-            values = [id1, id2];
-        } else {
-            values = [id2, id1];
-        }
-        
-        return this.queryRunner.insert(junctionOperation.metadata.table.name, this.zipObject(columns, values));
-    }*/
-
     private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert, insertSubjects: Subject[]): Promise<void> {
         // I think here we can only support to work only with single primary key entities
 
@@ -935,10 +735,6 @@ export class PersistSubjectExecutor {
             (<any> object)[column] = values[index];
             return object;
         }, {});
-    }
-
-    private getEntityRelationValue(relation: RelationMetadata, entity: any) {
-        return relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
     }
 
 }
