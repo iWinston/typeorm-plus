@@ -3,7 +3,7 @@ import {setupTestingConnections, closeConnections, reloadDatabases} from "../../
 import {Connection} from "../../../../src/connection/Connection";
 import {Customer} from "./entity/Customer";
 
-describe.only("indices > basic unique index test", () => {
+describe("indices > basic unique index test", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
