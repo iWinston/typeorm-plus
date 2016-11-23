@@ -203,15 +203,19 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      * Loads database entities for all loaded subjects which does not have database entities set.
      */
     protected async loadDatabaseEntities(): Promise<void> {
-        const promises = this.loadedSubjects
+        const promises: Promise<any>[] = [];
+        this.loadedSubjects
             .groupByEntityTargets()
-            .map(subjectGroup => {
+            .forEach(subjectGroup => {
                 const allIds = subjectGroup.subjects
                     .filter(subject => !subject.databaseEntity)
-                    .map(subject => subject.mixedId);
+                    .map(subject => subject.mixedId)
+                    .filter(mixedId => mixedId !== undefined && mixedId !== null);
+                if (!allIds.length)
+                    return;
 
                 const metadata = this.connection.getMetadata(subjectGroup.target);
-                return this.connection
+                const promise = this.connection
                     .getRepository<ObjectLiteral>(subjectGroup.target)
                     .findByIds(allIds, { alias: metadata.table.name, enabledOptions: ["RELATION_ID_VALUES"] })
                     .then(entities => {
@@ -221,6 +225,8 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                                 subject.databaseEntity = entity;
                         });
                     });
+
+                promises.push(promise);
             });
 
         await Promise.all(promises);

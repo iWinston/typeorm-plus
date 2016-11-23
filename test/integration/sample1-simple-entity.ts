@@ -22,7 +22,7 @@ describe("insertion", function() {
     // Specifications: persist
     // -------------------------------------------------------------------------
 
-    it("basic insert functionality", () => Promise.all(connections.map(async connection => {
+    it.only("basic insert functionality", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
 
         let newPost = new Post();
