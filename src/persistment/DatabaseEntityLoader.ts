@@ -585,7 +585,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                                 loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
                                 this.loadedSubjects.push(loadedSubject);
                             }
-                            loadedSubject.setRelations.push({ relation: relation.inverseRelation, value: subject.entity });
+                            loadedSubject.relationUpdates.push({ relation: relation.inverseRelation, value: subject.entity });
                         }
                     });
 
@@ -626,7 +626,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                         // reference to this entity from inverse side (from loaded database entity)
                         // this applies only on one-to-many relationship
                         } else if (relation.isOneToMany && relation.inverseRelation) {
-                            relatedEntitySubject.unsetRelations.push(relation.inverseRelation);  // todo: implement same for one-to-one
+                            relatedEntitySubject.relationUpdates.push({ relation: relation.inverseRelation, value: null });  // todo: implement same for one-to-one
                         }
 
                     }

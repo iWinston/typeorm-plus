@@ -30,7 +30,6 @@ export class PersistSubjectExecutor {
         const insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         const updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         const removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
-        const unsetRelationSubjects = subjects.filter(subject => subject.hasUnsetRelations);
         const setRelationSubjects = subjects.filter(subject => subject.hasSetRelations);
 
         // validation
@@ -61,12 +60,8 @@ export class PersistSubjectExecutor {
             await this.executeInsertClosureTableOperations(insertSubjects);
             await this.executeInsertJunctionsOperations(subjects, insertSubjects);
             await this.executeRemoveJunctionsOperations(subjects);
-            // await this.executeRemoveRelationOperations(persistOperation); // todo: can we add these operations into list of updated?
-            // await this.executeUpdateRelationsOperations(persistOperation); // todo: merge these operations with update operations?
-            // await this.executeUpdateInverseRelationsOperations(persistOperation); // todo: merge these operations with update operations?
             await this.executeUpdateOperations(updateSubjects);
-            await this.executeUnsetRelationOperations(unsetRelationSubjects);
-            await this.executeSetRelationOperations(setRelationSubjects);
+            await this.executeUpdateRelations(setRelationSubjects);
             await this.executeRemoveOperations(removeSubjects);
 
             // commit transaction if it was started by us
@@ -77,11 +72,11 @@ export class PersistSubjectExecutor {
             await this.updateSpecialColumnsInPersistedEntities(insertSubjects, updateSubjects, removeSubjects);
 
             // finally broadcast events
-            this.connection.broadcaster.broadcastAfterEventsForAll(insertSubjects, updateSubjects, removeSubjects);
+            await this.connection.broadcaster.broadcastAfterEventsForAll(insertSubjects, updateSubjects, removeSubjects);
 
         } catch (error) {
 
-            // rollback transaction if it was started by us
+            // rollback transaction if it was started by this class
             if (isTransactionStartedByItself) {
                 try {
                     await this.queryRunner.rollbackTransaction();
@@ -93,7 +88,7 @@ export class PersistSubjectExecutor {
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Private Methods: Insertion
     // -------------------------------------------------------------------------
 
     /**
@@ -123,9 +118,6 @@ export class PersistSubjectExecutor {
         const secondInsertSubjects = insertSubjects.filter(subject => {
             return !firstInsertSubjects.find(subjectFromFirstGroup => subjectFromFirstGroup === subject);
         });
-
-        // console.log("firstInsertSubjects: ", firstInsertSubjects);
-        // console.log("secondInsertSubjects: ", secondInsertSubjects);
 
         await Promise.all(firstInsertSubjects.map(subject => this.insert(subject, [])));
         await Promise.all(secondInsertSubjects.map(subject => this.insert(subject, firstInsertSubjects)));
@@ -207,309 +199,6 @@ export class PersistSubjectExecutor {
         await Promise.all(updatePromises);
 
         // todo: make sure to search in all insertSubjects during updating too if updated entity uses links to the newly persisted entity
-    }
-
-    /**
-     * Executes insert operations for closure tables.
-     */
-    private executeInsertClosureTableOperations(insertSubjects: Subject[]/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
-        const promises = insertSubjects
-            .filter(subject => subject.metadata.table.isClosure)
-            .map(async subject => {
-                // const relationsUpdateMap = this.findUpdateOperationForEntity(updatesByRelations, insertSubjects, subject.entity);
-                // subject.treeLevel = await this.insertIntoClosureTable(subject, relationsUpdateMap);
-                await this.insertClosureTableValues(subject, insertSubjects);
-            });
-        return Promise.all(promises);
-    }
-
-    /**
-     * Executes insert junction operations.
-     */
-    private async executeInsertJunctionsOperations(subjects: Subject[], insertSubjects: Subject[]): Promise<void> {
-        const promises: Promise<any>[] = [];
-        subjects.forEach(subject => {
-            subject.junctionInserts.forEach(junctionInsert => {
-                promises.push(this.insertJunctions(subject, junctionInsert, insertSubjects));
-            });
-        });
-
-        await Promise.all(promises);
-    }
-
-    /**
-     * Executes remove junction operations.
-     */
-    private async executeRemoveJunctionsOperations(subjects: Subject[]): Promise<void> {
-        const promises: Promise<any>[] = [];
-        subjects.forEach(subject => {
-            subject.junctionRemoves.forEach(junctionRemove => {
-                promises.push(this.removeJunctions(subject, junctionRemove));
-            });
-        });
-
-        await Promise.all(promises);
-    }
-
-    /**
-     * Executes update relations operations.
-     */
-    private executeUnsetRelationOperations(subjects: Subject[]) {
-        return Promise.all(subjects.map(subject => {
-            return this.unsetRelations(subject);
-        }));
-    }
-
-    private async unsetRelations(subject: Subject) {
-        const values: ObjectLiteral = {};
-        subject.unsetRelations.forEach(relation => {
-            values[relation.name] = null;
-        });
-
-        if (!subject.databaseEntity)
-            throw new Error(`Internal error. Cannot unset relation of subject that does not have database entity.`);
-
-        const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
-        if (!idMap)
-            throw new Error(`Internal error. Cannot get id of the updating entity.`);
-
-        return this.queryRunner.update(subject.metadata.table.name, values, idMap);
-    }
-
-    private executeSetRelationOperations(subjects: Subject[]) {
-        return Promise.all(subjects.map(subject => {
-            return this.setRelations(subject);
-        }));
-    }
-
-    private async setRelations(subject: Subject) {
-        const values: ObjectLiteral = {};
-        subject.setRelations.forEach(setRelation => {
-            values[setRelation.relation.name] = setRelation.value[setRelation.relation.joinColumn.referencedColumn.propertyName]; // todo: || fromInsertedSubjects ??
-        });
-
-        if (!subject.databaseEntity)
-            throw new Error(`Internal error. Cannot unset relation of subject that does not have database entity.`);
-
-        const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
-        if (!idMap)
-            throw new Error(`Internal error. Cannot get id of the updating entity.`);
-
-        return this.queryRunner.update(subject.metadata.table.name, values, idMap);
-    }
-
-    /**
-     * Executes update operations.
-     */
-    private async executeUpdateOperations(updateSubjects: Subject[]): Promise<void> {
-        await Promise.all(updateSubjects.map(subject => this.update(subject)));
-    }
-
-    /**
-     * Executes remove operations.
-     */
-    private async executeRemoveOperations(removeSubjects: Subject[]): Promise<void> {
-        // order subjects in a proper order
-
-        /*const DepGraph = require("dependency-graph").DepGraph;
-        const graph = new DepGraph();
-        removeSubjects.forEach(subject => {
-            // console.log("adding node: ", subject.metadata.name);
-            if (!graph.hasNode(subject.metadata.name))
-                graph.addNode(subject.metadata.name);
-        });
-        removeSubjects.forEach(subject => {
-            subject.metadata
-                .relationsWithJoinColumns
-                .filter(relation => relation.isCascadeRemove)
-                .forEach(relation => {
-                    if (graph.hasNode(subject.metadata.name) && graph.hasNode(relation.inverseEntityMetadata.name))
-                        graph.addDependency(subject.metadata.name, relation.inverseEntityMetadata.name);
-                });
-        });
-        try {
-            const order = graph.overallOrder();
-            console.log("order: ", order);
-
-        } catch (err) {
-            throw new Error(err.toString().replace("Error: Dependency Cycle Found: ", ""));
-        }*/
-
-        await Promise.all(removeSubjects.map(subject => this.remove(subject)));
-    }
-
-    /**
-     * Updates all special columns of the saving entities (create date, update date, versioning).
-     */
-    private updateSpecialColumnsInPersistedEntities(insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]) {
-
-        // update entity ids of the newly inserted entities
-        insertSubjects.forEach(subject => {
-            subject.metadata.primaryColumns.forEach(primaryColumn => {
-                if (subject.newlyGeneratedId)
-                    subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
-            });
-            subject.metadata.parentPrimaryColumns.forEach(primaryColumn => {
-                if (subject.newlyGeneratedId)
-                    subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
-            });
-        });
-
-        insertSubjects.forEach(subject => {
-            if (subject.metadata.hasUpdateDateColumn)
-                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
-            if (subject.metadata.hasCreateDateColumn)
-                subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
-            if (subject.metadata.hasVersionColumn)
-                subject.entity[subject.metadata.versionColumn.propertyName]++;
-            if (subject.metadata.hasTreeLevelColumn) {
-                // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
-                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
-                subject.entity[subject.metadata.treeLevelColumn.propertyName] = subject.treeLevel;
-            }
-            /*if (subject.metadata.hasTreeChildrenCountColumn) {
-                 subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
-            }*/
-        });
-        updateSubjects.forEach(subject => {
-            if (subject.metadata.hasUpdateDateColumn)
-                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
-            if (subject.metadata.hasCreateDateColumn)
-                subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
-            if (subject.metadata.hasVersionColumn)
-                subject.entity[subject.metadata.versionColumn.propertyName]++;
-        });
-
-        // remove ids from the entities that were removed
-        removeSubjects.forEach(subject => {
-            if (!subject.entity) return;
-            // const removedEntity = removeSubjects.allPersistedEntities.find(allNewEntity => {
-            //     return allNewEntity.entityTarget === subject.entityTarget && allNewEntity.compareId(subject.metadata.getEntityIdMap(subject.entity)!);
-            // });
-            // if (removedEntity) {
-            subject.metadata.primaryColumns.forEach(primaryColumn => {
-                subject.entity[primaryColumn.propertyName] = undefined;
-            });
-            // }
-        });
-    }
-
-    private async update(subject: Subject): Promise<void> {
-        const entity = subject.entity;
-
-        // we group by table name, because metadata can have different table names
-        const valueMaps: { tableName: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
-
-        subject.diffColumns.forEach(column => {
-            if (!column.entityTarget) return; // todo: how this can be possible?
-            const metadata = this.connection.entityMetadatas.findByTarget(column.entityTarget);
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
-            if (!valueMap) {
-                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
-                valueMaps.push(valueMap);
-            }
-
-            valueMap.values[column.name] = this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
-        });
-
-        subject.diffRelations.forEach(relation => {
-            const metadata = this.connection.entityMetadatas.findByTarget(relation.entityTarget);
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
-            if (!valueMap) {
-                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
-                valueMaps.push(valueMap);
-            }
-
-            const value = relation.getEntityValue(entity);
-            valueMap.values[relation.name] = value !== null && value !== undefined ? value[relation.inverseEntityMetadata.firstPrimaryColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
-        });
-
-        // if number of updated columns = 0 no need to update updated date and version columns
-        if (Object.keys(valueMaps).length === 0)
-            return;
-
-        if (subject.metadata.hasUpdateDateColumn) {
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.table.name);
-            if (!valueMap) {
-                valueMap = { tableName: subject.metadata.table.name, metadata: subject.metadata, values: {} };
-                valueMaps.push(valueMap);
-            }
-
-            valueMap.values[subject.metadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
-        }
-
-        if (subject.metadata.hasVersionColumn) {
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.table.name);
-            if (!valueMap) {
-                valueMap = { tableName: subject.metadata.table.name, metadata: subject.metadata, values: {} };
-                valueMaps.push(valueMap);
-            }
-
-            valueMap.values[subject.metadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
-        }
-
-        if (subject.metadata.parentEntityMetadata) {
-            if (subject.metadata.parentEntityMetadata.hasUpdateDateColumn) {
-                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
-                if (!valueMap) {
-                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
-                    valueMaps.push(valueMap);
-                }
-
-                valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
-            }
-
-            if (subject.metadata.parentEntityMetadata.hasVersionColumn) {
-                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
-                if (!valueMap) {
-                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
-                    valueMaps.push(valueMap);
-                }
-
-                valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.parentEntityMetadata.versionColumn.propertyName] + 1, subject.metadata.parentEntityMetadata.versionColumn);
-            }
-        }
-
-        await Promise.all(valueMaps.map(valueMap => {
-            const idMap = valueMap.metadata.getDatabaseEntityIdMap(entity);
-            if (!idMap)
-                throw new Error(`Internal error. Cannot get id of the updating entity.`);
-
-            return this.queryRunner.update(valueMap.tableName, valueMap.values, idMap);
-        }));
-    }
-
-    /*private updateDeletedRelations(subject: Subject) { // todo: check if both many-to-one deletions work too
-        if (!subject.fromEntityId)
-            throw new Error(`remove operation does not have entity id`);
-
-        if (removeOperation.relation) {
-            return this.queryRunner.update(
-                removeOperation.fromMetadata.table.name,
-                { [removeOperation.relation.name]: null },
-                removeOperation.fromEntityId
-            );
-        }
-
-        throw new Error("Remove operation relation is not set"); // todo: find out how its possible
-    }*/
-
-    private async remove(subject: Subject): Promise<void> {
-        if (subject.metadata.parentEntityMetadata) {
-            const parentConditions: ObjectLiteral = {};
-            subject.metadata.parentPrimaryColumns.forEach(column => {
-                parentConditions[column.name] = subject.databaseEntity![column.propertyName];
-            });
-            await this.queryRunner.delete(subject.metadata.parentEntityMetadata.table.name, parentConditions);
-
-            const childConditions: ObjectLiteral = {};
-            subject.metadata.primaryColumnsWithParentIdColumns.forEach(column => {
-                childConditions[column.name] = subject.databaseEntity![column.propertyName];
-            });
-            await this.queryRunner.delete(subject.metadata.table.name, childConditions);
-        } else {
-            await this.queryRunner.delete(subject.metadata.table.name, subject.metadata.getEntityIdColumnMap(subject.databaseEntity!)!);
-        }
     }
 
     /**
@@ -647,6 +336,24 @@ export class PersistSubjectExecutor {
         return this.zipObject(allColumnNames, allValues);
     }
 
+    // -------------------------------------------------------------------------
+    // Private Methods: Insertion into closure tables
+    // -------------------------------------------------------------------------
+
+    /**
+     * Executes insert operations for closure tables.
+     */
+    private executeInsertClosureTableOperations(insertSubjects: Subject[]/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
+        const promises = insertSubjects
+            .filter(subject => subject.metadata.table.isClosure)
+            .map(async subject => {
+                // const relationsUpdateMap = this.findUpdateOperationForEntity(updatesByRelations, insertSubjects, subject.entity);
+                // subject.treeLevel = await this.insertIntoClosureTable(subject, relationsUpdateMap);
+                await this.insertClosureTableValues(subject, insertSubjects);
+            });
+        return Promise.all(promises);
+    }
+
     private async insertClosureTableValues(subject: Subject, insertedSubjects: Subject[]): Promise<void> {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
@@ -672,6 +379,174 @@ export class PersistSubjectExecutor {
             const values = { [subject.metadata.treeLevelColumn.name]: subject.treeLevel };
             await this.queryRunner.update(subject.metadata.table.name, values, { [referencedColumn.name]: newEntityId });
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods: Update
+    // -------------------------------------------------------------------------
+
+    /**
+     * Executes update operations.
+     */
+    private async executeUpdateOperations(updateSubjects: Subject[]): Promise<void> {
+        await Promise.all(updateSubjects.map(subject => this.update(subject)));
+    }
+
+    private async update(subject: Subject): Promise<void> {
+        const entity = subject.entity;
+
+        // we group by table name, because metadata can have different table names
+        const valueMaps: { tableName: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
+
+        subject.diffColumns.forEach(column => {
+            if (!column.entityTarget) return; // todo: how this can be possible?
+            const metadata = this.connection.entityMetadatas.findByTarget(column.entityTarget);
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
+
+            valueMap.values[column.name] = this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
+        });
+
+        subject.diffRelations.forEach(relation => {
+            const metadata = this.connection.entityMetadatas.findByTarget(relation.entityTarget);
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
+
+            const value = relation.getEntityValue(entity);
+            valueMap.values[relation.name] = value !== null && value !== undefined ? value[relation.inverseEntityMetadata.firstPrimaryColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
+        });
+
+        // if number of updated columns = 0 no need to update updated date and version columns
+        if (Object.keys(valueMaps).length === 0)
+            return;
+
+        if (subject.metadata.hasUpdateDateColumn) {
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: subject.metadata.table.name, metadata: subject.metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
+
+            valueMap.values[subject.metadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
+        }
+
+        if (subject.metadata.hasVersionColumn) {
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.table.name);
+            if (!valueMap) {
+                valueMap = { tableName: subject.metadata.table.name, metadata: subject.metadata, values: {} };
+                valueMaps.push(valueMap);
+            }
+
+            valueMap.values[subject.metadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
+        }
+
+        if (subject.metadata.parentEntityMetadata) {
+            if (subject.metadata.parentEntityMetadata.hasUpdateDateColumn) {
+                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
+                if (!valueMap) {
+                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
+                    valueMaps.push(valueMap);
+                }
+
+                valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.name] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
+            }
+
+            if (subject.metadata.parentEntityMetadata.hasVersionColumn) {
+                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
+                if (!valueMap) {
+                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
+                    valueMaps.push(valueMap);
+                }
+
+                valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.name] = this.connection.driver.preparePersistentValue(entity[subject.metadata.parentEntityMetadata.versionColumn.propertyName] + 1, subject.metadata.parentEntityMetadata.versionColumn);
+            }
+        }
+
+        await Promise.all(valueMaps.map(valueMap => {
+            const idMap = valueMap.metadata.getDatabaseEntityIdMap(entity);
+            if (!idMap)
+                throw new Error(`Internal error. Cannot get id of the updating entity.`);
+
+            return this.queryRunner.update(valueMap.tableName, valueMap.values, idMap);
+        }));
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods: Update only relations
+    // -------------------------------------------------------------------------
+
+    private executeUpdateRelations(subjects: Subject[]) {
+        return Promise.all(subjects.map(subject => this.updateRelations(subject)));
+    }
+
+    private async updateRelations(subject: Subject) {
+        const values: ObjectLiteral = {};
+        subject.relationUpdates.forEach(setRelation => {
+            const value = setRelation.value ? setRelation.value[setRelation.relation.joinColumn.referencedColumn.propertyName] : null;
+            values[setRelation.relation.name] = value; // todo: || fromInsertedSubjects ??
+        });
+
+        if (!subject.databaseEntity)
+            throw new Error(`Internal error. Cannot unset relation of subject that does not have database entity.`);
+
+        const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
+        if (!idMap)
+            throw new Error(`Internal error. Cannot get id of the updating entity.`);
+
+        return this.queryRunner.update(subject.metadata.table.name, values, idMap);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods: Remove
+    // -------------------------------------------------------------------------
+
+    /**
+     * Executes remove operations.
+     */
+    private async executeRemoveOperations(removeSubjects: Subject[]): Promise<void> {
+        await Promise.all(removeSubjects.map(subject => this.remove(subject)));
+    }
+
+    private async remove(subject: Subject): Promise<void> {
+        if (subject.metadata.parentEntityMetadata) {
+            const parentConditions: ObjectLiteral = {};
+            subject.metadata.parentPrimaryColumns.forEach(column => {
+                parentConditions[column.name] = subject.databaseEntity![column.propertyName];
+            });
+            await this.queryRunner.delete(subject.metadata.parentEntityMetadata.table.name, parentConditions);
+
+            const childConditions: ObjectLiteral = {};
+            subject.metadata.primaryColumnsWithParentIdColumns.forEach(column => {
+                childConditions[column.name] = subject.databaseEntity![column.propertyName];
+            });
+            await this.queryRunner.delete(subject.metadata.table.name, childConditions);
+        } else {
+            await this.queryRunner.delete(subject.metadata.table.name, subject.metadata.getEntityIdColumnMap(subject.databaseEntity!)!);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods: Insertion into junction tables
+    // -------------------------------------------------------------------------
+
+    /**
+     * Executes insert junction operations.
+     */
+    private async executeInsertJunctionsOperations(subjects: Subject[], insertSubjects: Subject[]): Promise<void> {
+        const promises: Promise<any>[] = [];
+        subjects.forEach(subject => {
+            subject.junctionInserts.forEach(junctionInsert => {
+                promises.push(this.insertJunctions(subject, junctionInsert, insertSubjects));
+            });
+        });
+
+        await Promise.all(promises);
     }
 
     private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert, insertSubjects: Subject[]): Promise<void> {
@@ -717,6 +592,24 @@ export class PersistSubjectExecutor {
         await Promise.all(promises);
     }
 
+    // -------------------------------------------------------------------------
+    // Private Methods: Remove from junction tables
+    // -------------------------------------------------------------------------
+
+    /**
+     * Executes remove junction operations.
+     */
+    private async executeRemoveJunctionsOperations(subjects: Subject[]): Promise<void> {
+        const promises: Promise<any>[] = [];
+        subjects.forEach(subject => {
+            subject.junctionRemoves.forEach(junctionRemove => {
+                promises.push(this.removeJunctions(subject, junctionRemove));
+            });
+        });
+
+        await Promise.all(promises);
+    }
+
     private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
         const ownId = junctionRemove.relation.getOwnEntityRelationId(subject.entity || subject.databaseEntity);
@@ -729,6 +622,70 @@ export class PersistSubjectExecutor {
 
         await Promise.all(removePromises);
     }
+
+    // -------------------------------------------------------------------------
+    // Private Methods: Refresh entity values after persistence
+    // -------------------------------------------------------------------------
+
+    /**
+     * Updates all special columns of the saving entities (create date, update date, versioning).
+     */
+    private updateSpecialColumnsInPersistedEntities(insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]) {
+
+        // update entity ids of the newly inserted entities
+        insertSubjects.forEach(subject => {
+            subject.metadata.primaryColumns.forEach(primaryColumn => {
+                if (subject.newlyGeneratedId)
+                    subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
+            });
+            subject.metadata.parentPrimaryColumns.forEach(primaryColumn => {
+                if (subject.newlyGeneratedId)
+                    subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
+            });
+        });
+
+        insertSubjects.forEach(subject => {
+            if (subject.metadata.hasUpdateDateColumn)
+                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasCreateDateColumn)
+                subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasVersionColumn)
+                subject.entity[subject.metadata.versionColumn.propertyName]++;
+            if (subject.metadata.hasTreeLevelColumn) {
+                // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
+                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
+                subject.entity[subject.metadata.treeLevelColumn.propertyName] = subject.treeLevel;
+            }
+            /*if (subject.metadata.hasTreeChildrenCountColumn) {
+                 subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
+            }*/
+        });
+        updateSubjects.forEach(subject => {
+            if (subject.metadata.hasUpdateDateColumn)
+                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasCreateDateColumn)
+                subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
+            if (subject.metadata.hasVersionColumn)
+                subject.entity[subject.metadata.versionColumn.propertyName]++;
+        });
+
+        // remove ids from the entities that were removed
+        removeSubjects.forEach(subject => {
+            if (!subject.entity) return;
+            // const removedEntity = removeSubjects.allPersistedEntities.find(allNewEntity => {
+            //     return allNewEntity.entityTarget === subject.entityTarget && allNewEntity.compareId(subject.metadata.getEntityIdMap(subject.entity)!);
+            // });
+            // if (removedEntity) {
+            subject.metadata.primaryColumns.forEach(primaryColumn => {
+                subject.entity[primaryColumn.propertyName] = undefined;
+            });
+            // }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Methods: Others
+    // -------------------------------------------------------------------------
 
     private zipObject(keys: any[], values: any[]): Object {
         return keys.reduce((object, column, index) => {

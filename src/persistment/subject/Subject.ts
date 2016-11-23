@@ -13,6 +13,11 @@ export interface JunctionRemove {
     junctionRelationIds: any[];
 }
 
+export interface RelationUpdate {
+    relation: RelationMetadata;
+    value: any;
+}
+
 /**
  */
 export class Subject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
@@ -33,8 +38,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
      * List of relations which need to be unset.
      * This is used to update relation from inverse side.
      */
-    unsetRelations: RelationMetadata[] = [];
-    setRelations: { relation: RelationMetadata, value: any }[] = [];
+    relationUpdates: RelationUpdate[] = [];
 
     diffColumns: ColumnMetadata[] = [];
     diffRelations: RelationMetadata[] = [];
@@ -117,12 +121,8 @@ export class Subject { // todo: move entity with id creation into metadata? // t
         return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
     }
 
-    get hasUnsetRelations(): boolean {
-        return this.unsetRelations.length > 0;
-    }
-
     get hasSetRelations(): boolean {
-        return this.setRelations.length > 0;
+        return this.relationUpdates.length > 0;
     }
 
     get databaseEntity(): ObjectLiteral|undefined {

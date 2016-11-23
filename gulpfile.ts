@@ -60,7 +60,7 @@ export class Gulpfile {
         const tsProject = ts.createProject("tsconfig.json", { typescript: require("typescript") });
         const tsResult = gulp.src(["./src/**/*.ts", "./node_modules/@types/**/*.ts"])
             .pipe(sourcemaps.init())
-            .pipe(ts(tsProject));
+            .pipe(tsProject());
 
         return [
             tsResult.dts.pipe(gulp.dest("./build/package")),
