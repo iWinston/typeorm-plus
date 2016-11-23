@@ -129,7 +129,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
         const dbEntity = await plainObjectToDatabaseEntityTransformer.transform<Entity>(entity, this.metadata, queryBuilder);
 
-        this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entity[primaryColumn.name] = undefined);
+        this.metadata.primaryColumnsWithParentPrimaryColumns.forEach(primaryColumn => entity[primaryColumn.propertyName] = undefined);
         const dbEntities = this.flattenEntityRelationTree(dbEntity, this.metadata);
         const allPersistedEntities = this.flattenEntityRelationTree(entity, this.metadata);
         const entityWithId = new Subject(this.metadata, entity);

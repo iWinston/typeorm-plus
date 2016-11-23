@@ -217,11 +217,17 @@ export class MysqlDriver implements Driver {
             case ColumnTypes.BOOLEAN:
                 return value === true ? 1 : 0;
             case ColumnTypes.DATE:
-                return moment(value).format("YYYY-MM-DD");
+                if (moment(value).isValid())
+                    return moment(value).format("YYYY-MM-DD");
+                else return "0000-00-00";
             case ColumnTypes.TIME:
-                return moment(value).format("HH:mm:ss");
+                if (moment(value).isValid())
+                    return moment(value).format("HH:mm:ss");
+                else return "00:00:00";
             case ColumnTypes.DATETIME:
-                return moment(value).format("YYYY-MM-DD HH:mm:ss");
+                if (moment(value).isValid())
+                    return moment(value).format("YYYY-MM-DD HH:mm:ss");
+                else return "0000-00-00 00:00:00";
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
             case ColumnTypes.SIMPLE_ARRAY:

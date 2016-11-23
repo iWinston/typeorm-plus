@@ -29,5 +29,15 @@ export class EntityMetadataCollection extends Array<EntityMetadata> {
         
         return metadata;
     }
+
+    filter(callbackfn: (value: EntityMetadata, index?: number, array?: Array<EntityMetadata>) => any, thisArg?: any): EntityMetadataCollection {
+        thisArg = thisArg || void 0;
+        return this.reduce(function(out: EntityMetadataCollection, val: EntityMetadata, index: number, array: Array<EntityMetadata>) {
+            if (callbackfn.call(thisArg, val, index, array)) {
+                out.push(val);
+            }
+            return out;
+        }, new EntityMetadataCollection());
+    }
     
 }
