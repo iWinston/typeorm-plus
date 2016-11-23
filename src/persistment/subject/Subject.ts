@@ -121,7 +121,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
         return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
     }
 
-    get hasSetRelations(): boolean {
+    get hasRelationUpdates(): boolean {
         return this.relationUpdates.length > 0;
     }
 
@@ -216,5 +216,15 @@ export class Subject { // todo: move entity with id creation into metadata? // t
         });
     }
 
+
+    /**
+     * Gets id of the persisted entity.
+     * If entity itself has an id then it simply returns it.
+     * If entity does not have an id then it returns newly generated id.
+     */
+    getPersistedEntityIdMap(): any {
+        return  this.metadata.getDatabaseEntityIdMap(this.entity) ||
+                this.metadata.createSimpleDatabaseIdMap(this.newlyGeneratedId);
+    }
 
 }

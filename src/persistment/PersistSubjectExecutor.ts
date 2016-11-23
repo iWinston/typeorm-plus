@@ -30,7 +30,7 @@ export class PersistSubjectExecutor {
         const insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         const updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         const removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
-        const setRelationSubjects = subjects.filter(subject => subject.hasSetRelations);
+        const relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
 
         // validation
         // check if remove subject also must be inserted or updated - then we throw an exception
@@ -61,7 +61,7 @@ export class PersistSubjectExecutor {
             await this.executeInsertJunctionsOperations(subjects, insertSubjects);
             await this.executeRemoveJunctionsOperations(subjects);
             await this.executeUpdateOperations(updateSubjects);
-            await this.executeUpdateRelations(setRelationSubjects);
+            await this.executeUpdateRelations(relationUpdateSubjects);
             await this.executeRemoveOperations(removeSubjects);
 
             // commit transaction if it was started by us
@@ -93,58 +93,81 @@ export class PersistSubjectExecutor {
 
     /**
      * Executes insert operations.
+     *
+     * For insertion we separate two groups of entities:
+     * - first group of entities are entities which do not have any relations
+     *      or entities which do not have any non-nullable relation
+     * - second group of entities are entities which does have non-nullable relations
+     *
+     * Insert process of the entities from the first group which can only have nullable relations are actually a two-step process:
+     * - first we insert entities without their relations, explicitly left them NULL
+     * - later we update inserted entity once again with id of the object inserted with it
+     *
+     * Yes, two queries are being executed, but this is by design.
+     * There is no better way to solve this problem and others at the same time.
+     *
+     * Insert process of the entities from the second group which can have only non nullable relations is a single-step process:
+     * - we simply insert all entities and get into attention all its dependencies which were inserted in the first group
      */
     private async executeInsertOperations(insertSubjects: Subject[]): Promise<void> {
 
-        // for insertion we separate two groups of entities:
-        // - first group of entities are entities which does not have any relations
-        //   or entities which does not have any non-nullable relation
-        // - second group of entities are entities which does have non-nullable relations
-        // note: these two groups should be inserted in sequence, not in parallel, because second group is depend on first
+        // separate insert entities into groups:
 
-        // insert process of the entities from the first group which can only have nullable relations are actually a two-step process:
-        // - first we insert entities without their relations, explicitly left them NULL
-        // - later we update inserted entity once again with id of the object inserted with it
-        // yes, two queries are being executed, but this is by design.
-        // there is no better way to solve this problem and others at the same time.
+        // first group of subjects are subjects without any non-nullable column
+        // we need to insert first such entities because second group entities may rely on those entities.
+        const firstInsertSubjects = insertSubjects.filter(subject => subject.metadata.hasNonNullableColumns);
 
-        // insert process of the entities from the second group which can have only non nullable relations is a single-step process:
-        // - we simply insert all entities and get into attention all its dependencies which were inserted in the first group
+        // second group - are all other subjects
+        // since in this group there are non nullable columns, some of them may depend on value of the
+        // previously inserted entity (which only can be entity with all nullable columns)
+        const secondInsertSubjects = insertSubjects.filter(subject => !subject.metadata.hasNonNullableColumns);
 
-        const firstInsertSubjects = insertSubjects.filter(subject => {
-            const relationsWithJoinColumns = subject.metadata.relationsWithJoinColumns;
-            return relationsWithJoinColumns.length === 0 || !!relationsWithJoinColumns.find(relation => relation.isNullable);
-        });
-        const secondInsertSubjects = insertSubjects.filter(subject => {
-            return !firstInsertSubjects.find(subjectFromFirstGroup => subjectFromFirstGroup === subject);
-        });
-
+        // note: these operations should be executed in sequence, not in parallel
+        // because second group depend of obtained data from the first group
         await Promise.all(firstInsertSubjects.map(subject => this.insert(subject, [])));
         await Promise.all(secondInsertSubjects.map(subject => this.insert(subject, firstInsertSubjects)));
 
+        // we need to update relation ids of the newly inserted objects (where we inserted NULLs in relations)
+        // once we inserted all entities, we need to update relations which were bind to inserted entities.
+        // For example we have a relation many-to-one Post<->Category. Relation is nullable.
+        // New category was set to the new post and post where persisted.
+        // Here this method executes two inserts: one for post, one for category,
+        // but category in post is inserted with "null".
+        // now we need to update post table - set category with a newly persisted category id.
         const updatePromises: Promise<any>[] = [];
         insertSubjects.forEach(subject => {
 
-            // we need to update relation ids of the newly inserted objects (where we inserted NULLs in relations)
+            // first update relations with join columns (one-to-one owner and many-to-one relations)
             const updateOptions: ObjectLiteral = {};
             subject.metadata.relationsWithJoinColumns.forEach(relation => {
                 const referencedColumn = relation.joinColumn.referencedColumn;
+                const relatedEntity = subject.entity[relation.propertyName];
 
-                if (subject.entity[relation.propertyName]) {
-                    const relationId = subject.entity[relation.propertyName][referencedColumn.propertyName];
-                    if (relationId) {
-                        updateOptions[relation.name] = relationId;
-                    }
+                // if relation value is not set then nothing to do here
+                if (!relatedEntity)
+                    return;
+
+                // if relation id exist exist in the related entity then simply use it
+                const relationId = relatedEntity[referencedColumn.propertyName];
+                if (relationId) {
+                    updateOptions[relation.name] = relationId;
+
+                } else {
+
+                    // otherwise check if relation id was just now inserted and we can use its generated values
+                    const insertSubject = insertSubjects.find(insertedSubject => relatedEntity === insertedSubject.entity);
+                    if (insertSubject && referencedColumn.isGenerated)
+                        updateOptions[relation.name] = insertSubject.newlyGeneratedId;
+
+                    // todo: implement other special types too
                 }
 
-                const insertSubject = insertSubjects.find(insertedSubject => subject.entity[relation.propertyName] === insertedSubject.entity);
-                if (insertSubject && referencedColumn.isGenerated)
-                    updateOptions[relation.name] = insertSubject.newlyGeneratedId;
-
             });
+
+            // if we found relations which we can update - then update them
             if (Object.keys(updateOptions).length > 0) {
-                const conditions = subject.metadata.getDatabaseEntityIdMap(subject.entity) || subject.metadata.createSimpleDatabaseIdMap(subject.newlyGeneratedId);
-                const updatePromise = this.queryRunner.update(subject.metadata.table.name, updateOptions, conditions);
+                const relatedEntityIdMap = subject.getPersistedEntityIdMap();
+                const updatePromise = this.queryRunner.update(subject.metadata.table.name, updateOptions, relatedEntityIdMap);
                 updatePromises.push(updatePromise);
             }
 
@@ -179,8 +202,10 @@ export class PersistSubjectExecutor {
             // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
             subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning).forEach(relation => {
                 const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
+                const value = subject.entity[relation.propertyName];
+
                 insertSubjects.forEach(insertedSubject => {
-                    if (subject.entity[relation.propertyName] === insertedSubject.entity) {
+                    if (value === insertedSubject.entity) {
 
                         if (referencedColumn.isGenerated) {
                             const conditions = insertedSubject.metadata.getDatabaseEntityIdMap(insertedSubject.entity) || insertedSubject.metadata.createSimpleDatabaseIdMap(insertedSubject.newlyGeneratedId);

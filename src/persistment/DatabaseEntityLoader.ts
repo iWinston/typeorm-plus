@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./subject/Subject";
 import {SubjectCollection} from "./subject/SubjectCollection";
-const DepGraph = require("dependency-graph").DepGraph;
 
 // at the end, subjects which does not have database entities are newly persisted entities
 // subjects which has both entities and databaseEntities needs to be compared and updated
@@ -58,16 +57,12 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
     // Protected properties
     // -------------------------------------------------------------------------
 
-    // private persistedEntity: Subject;
-
     /**
      * If this gonna be reused then what to do with marked flags?
      * One of solution can be clone this object and reset all marked states for this persistence.
      * Or from reused just extract databaseEntities from their subjects? (looks better)
      */
     loadedSubjects: SubjectCollection = new SubjectCollection();
-    // junctionInsertOperations: NewJunctionInsertOperation[] = [];
-    // junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor

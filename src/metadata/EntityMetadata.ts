@@ -826,4 +826,12 @@ export class EntityMetadata {
         // }
     }
 
+    /**
+     * Checks if there any non-nullable column exist in this entity.
+     */
+    get hasNonNullableColumns(): boolean {
+        return  this.relationsWithJoinColumns.length === 0 ||
+                this.relationsWithJoinColumns.every(relation => relation.isNullable);
+    }
+
 }
