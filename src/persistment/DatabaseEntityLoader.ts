@@ -3,10 +3,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./subject/Subject";
 import {SubjectCollection} from "./subject/SubjectCollection";
-import {NewJunctionRemoveOperation} from "./operation/NewJunctionRemoveOperation";
-import {NewJunctionInsertOperation} from "./operation/NewJunctionInsertOperation";
 const DepGraph = require("dependency-graph").DepGraph;
-
 
 // at the end, subjects which does not have database entities are newly persisted entities
 // subjects which has both entities and databaseEntities needs to be compared and updated
@@ -69,8 +66,8 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      * Or from reused just extract databaseEntities from their subjects? (looks better)
      */
     loadedSubjects: SubjectCollection = new SubjectCollection();
-    junctionInsertOperations: NewJunctionInsertOperation[] = [];
-    junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
+    // junctionInsertOperations: NewJunctionInsertOperation[] = [];
+    // junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -100,12 +97,10 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
         await Promise.all(findCascadeRemoveOperations);
 
         // find subjects that needs to be inserted and removed from junction table
-        const [junctionInsertOperations, junctionRemoveOperations] = await Promise.all([
+        await Promise.all([
             this.buildInsertJunctionOperations(),
             this.buildRemoveJunctionOperations()
         ]);
-        this.junctionInsertOperations = junctionInsertOperations;
-        this.junctionRemoveOperations = junctionRemoveOperations;
 
         // when executing insert/update operations we need to exclude entities scheduled for remove
         // for junction operations we only get insert and update operations
@@ -129,10 +124,8 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
         await Promise.all(findCascadeRemoveOperations);
 
         // find subjects that needs to be inserted and removed from junction table
-        const [junctionRemoveOperations] = await Promise.all([
-            this.buildRemoveJunctionOperations()
-        ]);
-        this.junctionRemoveOperations = junctionRemoveOperations;
+        await this.buildRemoveJunctionOperations();
+        // this.junctionRemoveOperations = junctionRemoveOperations;
 
         // when executing insert/update operations we need to exclude entities scheduled for remove
         // for junction operations we only get insert and update operations
@@ -613,35 +606,6 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                     // check if in persisted value there is a database value to understand if it was removed or not
                     let relatedValue = ((persistValue || []) as ObjectLiteral[]).find(persistValueItem => {
                         return valueMetadata.compareEntities(relatedEntitySubject!.databaseEntity!, persistValueItem);
-                        // const relatedId = relation.getInverseEntityRelationId(persistValueItem);
-                        /*let relatedId: any;
-                        if (relation.isOneToMany) {
-                            relatedId = persistValueItem[relation.inverseRelation.joinColumn.referencedColumn.propertyName];
-
-                        } else if (relation.isManyToManyOwner) {
-                            relatedId = persistValueItem[relation.joinTable.referencedColumn.propertyName];
-
-                        } else if (relation.isManyToManyNotOwner) {
-                            relatedId = persistValueItem[relation.joinTable.inverseReferencedColumn.propertyName];
-
-                        }
-
-                        let inverseRelatedId: any;
-                        if (relation.isOneToMany) {
-                            inverseRelatedId = relatedEntitySubject!.databaseEntity![relation.inverseRelation.joinColumn.propertyName];
-
-                        } else if (relation.isManyToManyOwner) {
-                            inverseRelatedId = relatedEntitySubject!.databaseEntity![relation.joinTable.inverseReferencedColumn.propertyName];
-
-                        } else if (relation.isManyToManyNotOwner) {
-                            inverseRelatedId = relatedEntitySubject!.databaseEntity![relation.joinTable.referencedColumn.propertyName];
-
-                        }
-
-                        console.log("persistValueItem:", persistValueItem);
-                        console.log("databaseEntity:", relatedEntitySubject!.databaseEntity);
-                        console.log("relatedId; ", relatedId, "===", inverseRelatedId);
-                        return relatedId === inverseRelatedId;*/
                     });
 
                     // if relation value is set to undefined then we don't do anything - simply skip any check and remove
@@ -680,8 +644,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      * Builds all junction insert operations used to insert new bind data into junction tables.
      *
      */
-    private async buildInsertJunctionOperations(): Promise<NewJunctionInsertOperation[]> {
-        const junctionInsertOperations: NewJunctionInsertOperation[] = [];
+    private async buildInsertJunctionOperations(): Promise<void> {
 
         // no need to insert junctions of the removed entities
         const persistedSubjects = this.loadedSubjects.filter(subject => !subject.mustBeRemoved);
@@ -716,8 +679,10 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                 // finally create a new junction insert operation and push it to the array of such operations
                 if (persistedEntities.length > 0) {
-                    const operation = new NewJunctionInsertOperation(relation, subject, persistedEntities);
-                    junctionInsertOperations.push(operation);
+                    subject.junctionInserts.push({
+                        relation: relation,
+                        junctionEntities: persistedEntities
+                    });
                 }
             });
 
@@ -725,14 +690,13 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
         });
 
         await Promise.all(promises);
-        return junctionInsertOperations;
     }
 
     /**
      * Builds all junction remove operations used to remove bind data from junction tables.
      */
-    private async buildRemoveJunctionOperations(): Promise<NewJunctionRemoveOperation[]> {
-        const junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
+    private async buildRemoveJunctionOperations(): Promise<void> {
+        // const junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
         const promises = this.loadedSubjects.map(subject => {
             const promises = subject.metadata.manyToManyRelations.map(async relation => {
 
@@ -747,8 +711,10 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                     // finally create a new junction remove operation and push it to the array of such operations
                     if (removedInverseEntityRelationIds.length > 0) {
-                        const operation = new NewJunctionRemoveOperation(relation, subject, removedInverseEntityRelationIds);
-                        junctionRemoveOperations.push(operation);
+                        subject.junctionRemoves.push({
+                            relation: relation,
+                            junctionRelationIds: removedInverseEntityRelationIds
+                        });
                     }
 
                 } else { // else simply check changed junctions in the persisted entity
@@ -771,8 +737,10 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                     // finally create a new junction remove operation and push it to the array of such operations
                     if (removedInverseEntityRelationIds.length > 0) {
-                        const operation = new NewJunctionRemoveOperation(relation, subject, removedInverseEntityRelationIds);
-                        junctionRemoveOperations.push(operation);
+                        subject.junctionRemoves.push({
+                            relation: relation,
+                            junctionRelationIds: removedInverseEntityRelationIds
+                        });
                     }
                 }
             });
@@ -781,7 +749,6 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
         });
 
         await Promise.all(promises);
-        return junctionRemoveOperations;
     }
 
 }

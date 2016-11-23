@@ -6,10 +6,8 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {Subject} from "./subject/Subject";
+import {Subject, JunctionInsert, JunctionRemove} from "./subject/Subject";
 import {SubjectCollection} from "./subject/SubjectCollection";
-import {NewJunctionInsertOperation} from "./operation/NewJunctionInsertOperation";
-import {NewJunctionRemoveOperation} from "./operation/NewJunctionRemoveOperation";
 
 /**
  * Executes PersistOperation in the given connection.
@@ -30,7 +28,7 @@ export class PersistSubjectExecutor {
     /**
      * Executes given persist operation.
      */
-    async execute(subjects: SubjectCollection, junctionInsertOperations: NewJunctionInsertOperation[], junctionRemoveOperations: NewJunctionRemoveOperation[]) {
+    async execute(subjects: SubjectCollection) {
         let isTransactionStartedByItself = false;
 
         const insertSubjects = subjects.filter(subject => subject.mustBeInserted);
@@ -65,8 +63,8 @@ export class PersistSubjectExecutor {
 
             await this.executeInsertOperations(insertSubjects);
             await this.executeInsertClosureTableOperations(insertSubjects);
-            await this.executeInsertJunctionsOperations(junctionInsertOperations, insertSubjects);
-            await this.executeRemoveJunctionsOperations(junctionRemoveOperations);
+            await this.executeInsertJunctionsOperations(subjects, insertSubjects);
+            await this.executeRemoveJunctionsOperations(subjects);
             // await this.executeRemoveRelationOperations(persistOperation); // todo: can we add these operations into list of updated?
             // await this.executeUpdateRelationsOperations(persistOperation); // todo: merge these operations with update operations?
             // await this.executeUpdateInverseRelationsOperations(persistOperation); // todo: merge these operations with update operations?
@@ -239,19 +237,29 @@ export class PersistSubjectExecutor {
     /**
      * Executes insert junction operations.
      */
-    private executeInsertJunctionsOperations(junctionInsertOperations: NewJunctionInsertOperation[], insertSubjects: Subject[]) {
-        return Promise.all(junctionInsertOperations.map(junctionOperation => {
-            return this.insertJunctions(junctionOperation, insertSubjects);
-        }));
+    private async executeInsertJunctionsOperations(subjects: Subject[], insertSubjects: Subject[]): Promise<void> {
+        const promises: Promise<any>[] = [];
+        subjects.forEach(subject => {
+            subject.junctionInserts.forEach(junctionInsert => {
+                promises.push(this.insertJunctions(subject, junctionInsert, insertSubjects));
+            });
+        });
+
+        await Promise.all(promises);
     }
 
     /**
      * Executes remove junction operations.
      */
-    private executeRemoveJunctionsOperations(junctionRemoveOperations: NewJunctionRemoveOperation[]) {
-        return Promise.all(junctionRemoveOperations.map(junctionOperation => {
-            return this.removeJunctions(junctionOperation);
-        }));
+    private async executeRemoveJunctionsOperations(subjects: Subject[]): Promise<void> {
+        const promises: Promise<any>[] = [];
+        subjects.forEach(subject => {
+            subject.junctionRemoves.forEach(junctionRemove => {
+                promises.push(this.removeJunctions(subject, junctionRemove));
+            });
+        });
+
+        await Promise.all(promises);
     }
 
     /**
@@ -866,28 +874,28 @@ export class PersistSubjectExecutor {
         return this.queryRunner.insert(junctionOperation.metadata.table.name, this.zipObject(columns, values));
     }*/
 
-    private async insertJunctions(junctionOperation: NewJunctionInsertOperation, insertSubjects: Subject[]): Promise<void> {
+    private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert, insertSubjects: Subject[]): Promise<void> {
         // I think here we can only support to work only with single primary key entities
 
-        const relation = junctionOperation.relation;
+        const relation = junctionInsert.relation;
         const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable;
         const firstColumn = relation.isOwning ? joinTable.referencedColumn : joinTable.inverseReferencedColumn;
         const secondColumn = relation.isOwning ? joinTable.inverseReferencedColumn : joinTable.referencedColumn;
 
-        let ownId = junctionOperation.relation.getOwnEntityRelationId(junctionOperation.subject.entity);
+        let ownId = relation.getOwnEntityRelationId(subject.entity);
         if (!ownId) {
             if (firstColumn.isGenerated) {
-                ownId = junctionOperation.subject.newlyGeneratedId;
+                ownId = subject.newlyGeneratedId;
             }
             // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
         }
 
         if (!ownId)
-            throw new Error(`Cannot insert object of ${junctionOperation.subject.entityTarget} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
+            throw new Error(`Cannot insert object of ${subject.entityTarget} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
 
-        const promises = junctionOperation.junctionEntities.map(newBindEntity => {
+        const promises = junctionInsert.junctionEntities.map(newBindEntity => {
 
-            let relationId = junctionOperation.relation.getInverseEntityRelationId(newBindEntity);
+            let relationId = relation.getInverseEntityRelationId(newBindEntity);
             if (!relationId) {
                 const insertSubject = insertSubjects.find(subject => subject.entity === newBindEntity);
                 if (insertSubject) {
@@ -909,13 +917,13 @@ export class PersistSubjectExecutor {
         await Promise.all(promises);
     }
 
-    private async removeJunctions(junctionOperation: NewJunctionRemoveOperation) {
-        const junctionMetadata = junctionOperation.relation.junctionEntityMetadata;
-        const ownId = junctionOperation.relation.getOwnEntityRelationId(junctionOperation.subject.entity || junctionOperation.subject.databaseEntity);
-        const ownColumn = junctionOperation.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
-        const relateColumn = junctionOperation.relation.isOwning ? junctionMetadata.columns[1] : junctionMetadata.columns[0];
+    private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
+        const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
+        const ownId = junctionRemove.relation.getOwnEntityRelationId(subject.entity || subject.databaseEntity);
+        const ownColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
+        const relateColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[1] : junctionMetadata.columns[0];
 
-        const removePromises = junctionOperation.junctionEntityRelationIds.map(async relationId => {
+        const removePromises = junctionRemove.junctionRelationIds.map(async relationId => {
             await this.queryRunner.delete(junctionMetadata.table.name, { [ownColumn.name]: ownId, [relateColumn.name]: relationId });
         });
 

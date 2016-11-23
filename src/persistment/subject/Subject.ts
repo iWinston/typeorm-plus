@@ -3,6 +3,16 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 
+export interface JunctionInsert {
+    relation: RelationMetadata;
+    junctionEntities: ObjectLiteral[];
+}
+
+export interface JunctionRemove {
+    relation: RelationMetadata;
+    junctionRelationIds: any[];
+}
+
 /**
  */
 export class Subject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
@@ -55,6 +65,10 @@ export class Subject { // todo: move entity with id creation into metadata? // t
      * Date when this entity is persisted.
      */
     date: Date;
+
+    junctionInserts: JunctionInsert[] = [];
+
+    junctionRemoves: JunctionRemove[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
