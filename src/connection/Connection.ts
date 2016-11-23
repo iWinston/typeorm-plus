@@ -167,11 +167,11 @@ export class Connection {
         // connect to the database via its driver
         await this.driver.connect();
 
-        // build all metadatas registered in the current connection
-        this.buildMetadatas();
-
         // set connected status for the current connection
         this._isConnected = true;
+
+        // build all metadatas registered in the current connection
+        this.buildMetadatas();
         
         return this;
     }
@@ -464,15 +464,6 @@ export class Connection {
         const namingStrategy = this.createNamingStrategy();
         const lazyRelationsWrapper = this.createLazyRelationsWrapper();
 
-        // take imported event subscribers
-        if (this.subscriberClasses && this.subscriberClasses.length) {
-            getMetadataArgsStorage()
-                .entitySubscribers
-                .filterByTargets(this.subscriberClasses)
-                .map(metadata => getFromContainer(metadata.target))
-                .forEach(subscriber => this.entitySubscribers.push(subscriber));
-        }
-
         // take imported entity listeners
         if (this.entityClasses && this.entityClasses.length) {
             getMetadataArgsStorage()
@@ -499,6 +490,15 @@ export class Connection {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
                 });
+        }
+
+        // take imported event subscribers
+        if (this.subscriberClasses && this.subscriberClasses.length) {
+            getMetadataArgsStorage()
+                .entitySubscribers
+                .filterByTargets(this.subscriberClasses)
+                .map(metadata => getFromContainer(metadata.target))
+                .forEach(subscriber => this.entitySubscribers.push(subscriber));
         }
     }
 
