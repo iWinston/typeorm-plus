@@ -1450,7 +1450,7 @@ export class QueryBuilder<Entity> {
 
                 const junctionMetadata = relation.junctionEntityMetadata;
                 junctionMetadata.columns.forEach(column => {
-                    const select = this.connection.driver.escapeAliasName(this.aliasMap.mainAlias.name + "_" + relation.name + "_ids") + "." +
+                    const select = this.connection.driver.escapeAliasName(this.aliasMap.mainAlias.name + "_" + junctionMetadata.table.name + "_ids") + "." +
                         this.connection.driver.escapeColumnName(column.name) + " AS " +
                         this.connection.driver.escapeAliasName(this.aliasMap.mainAlias.name + "_" + relation.name + "_ids_" + column.name);
                     allSelects.push(select);
@@ -1656,7 +1656,7 @@ export class QueryBuilder<Entity> {
 
                 const junctionMetadata = relation.junctionEntityMetadata;
                 const junctionTable = junctionMetadata.table.name;
-                const junctionAlias = this.aliasMap.mainAlias.name + "_" + relation.name + "_ids";
+                const junctionAlias = this.aliasMap.mainAlias.name + "_" + junctionTable + "_ids";
                 const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
                 const joinTableColumn = joinTable.referencedColumn.name; // not sure if this is correct
 
