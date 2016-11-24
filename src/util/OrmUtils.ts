@@ -40,5 +40,5 @@ export class OrmUtils {
             return object;
         }, {} as ObjectLiteral);
     }
-    
+
 }

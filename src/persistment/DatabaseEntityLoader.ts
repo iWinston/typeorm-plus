@@ -707,6 +707,8 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      */
     private async buildRemoveJunctionOperations(): Promise<void> {
 
+        // todo: merge junction remove and insert operations
+
         // no need to remove junctions of the just inserted entities
         const subjects = this.loadedSubjects.filter(subject => !subject.mustBeInserted);
         const promises = subjects.map(subject => {

@@ -2,6 +2,8 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 
 export interface JunctionInsert {
     relation: RelationMetadata;
@@ -68,7 +70,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     /**
      * Date when this entity is persisted.
      */
-    date: Date;
+    date: Date = new Date();
 
     junctionInserts: JunctionInsert[] = [];
 
@@ -154,6 +156,38 @@ export class Subject { // todo: move entity with id creation into metadata? // t
      */
     private buildDiffColumns(): ColumnMetadata[] {
         return this.metadata.allColumns.filter(column => {
+
+            let entityValue = column.getEntityValue(this.entity);
+            let databaseValue = column.getEntityValue(this.databaseEntity);
+
+            if (entityValue !== null && entityValue !== undefined) {
+                if (column.type === ColumnTypes.DATE) {
+                    entityValue = DataTransformationUtils.mixedDateToDateString(entityValue);
+
+                } else if (column.type === ColumnTypes.TIME) {
+                    entityValue = DataTransformationUtils.mixedDateToTimeString(entityValue);
+
+                } else if (column.type === ColumnTypes.DATETIME) {
+                    if (column.loadInLocalTimezone) {
+                        entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
+                        databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
+                    } else {
+                        entityValue = DataTransformationUtils.mixedDateToUtcDatetimeString(entityValue);
+                        databaseValue = DataTransformationUtils.mixedDateToUtcDatetimeString(databaseValue);
+                    }
+
+                } else if (column.type === ColumnTypes.JSON) {
+                    entityValue = JSON.stringify(entityValue);
+                    if (databaseValue !== null && databaseValue !== undefined)
+                        databaseValue = JSON.stringify(databaseValue);
+
+                } else if (column.type === ColumnTypes.SIMPLE_ARRAY) {
+                    entityValue = DataTransformationUtils.stringToSimpleArray(entityValue);
+                    databaseValue = DataTransformationUtils.stringToSimpleArray(databaseValue);
+                }
+            }
+
+
             if (column.isVirtual ||
                 column.isParentId ||
                 column.isDiscriminator ||
@@ -161,7 +195,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
                 column.isVersion ||
                 column.isCreateDate ||
                 this.entity[column.propertyName] === undefined ||
-                column.getEntityValue(this.entity) === column.getEntityValue(this.databaseEntity))
+                entityValue === databaseValue)
                 return false;
 
             // filter out "relational columns" only in the case if there is a relation object in entity

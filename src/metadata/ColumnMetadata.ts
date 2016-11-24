@@ -119,6 +119,20 @@ export class ColumnMetadata {
      */
     readonly timezone: boolean;
 
+    /**
+     * Indicates if date object must be stored in given date's timezone.
+     * By default date is saved in UTC timezone.
+     * Works only with "datetime" columns.
+     */
+    readonly storeInLocalTimezone?: boolean;
+
+    /**
+     * Indicates if date object must be loaded and set to the Date object in local timezone.
+     * By default date is loaded in UTC timezone.
+     * Works only with "datetime" columns.
+     */
+    readonly loadInLocalTimezone?: boolean;
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -165,6 +179,10 @@ export class ColumnMetadata {
             this.precision = args.options.precision;
         if (args.options.timezone)
             this.timezone = args.options.timezone;
+        if (args.options.storeInLocalTimezone)
+            this.storeInLocalTimezone = args.options.storeInLocalTimezone;
+        if (args.options.loadInLocalTimezone)
+            this.loadInLocalTimezone = args.options.loadInLocalTimezone;
     }
 
     // ---------------------------------------------------------------------

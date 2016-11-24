@@ -8,11 +8,11 @@ import {DriverUtils} from "../DriverUtils";
 import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {MysqlQueryRunner} from "./MysqlQueryRunner";
-import {ColumnTypes, ColumnType} from "../../metadata/types/ColumnTypes";
-import * as moment from "moment";
+import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -212,72 +212,57 @@ export class MysqlDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, column: ColumnMetadata): any {
-        switch (column.type) {
+    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (value === null || value === undefined)
+            return null;
+
+        switch (columnMetadata.type) {
             case ColumnTypes.BOOLEAN:
                 return value === true ? 1 : 0;
+
             case ColumnTypes.DATE:
-                if (moment(value).isValid())
-                    return moment(value).format("YYYY-MM-DD");
-                else return "0000-00-00";
+                return DataTransformationUtils.mixedDateToDateString(value);
+
             case ColumnTypes.TIME:
-                if (moment(value).isValid())
-                    return moment(value).format("HH:mm:ss");
-                else return "00:00:00";
+                return DataTransformationUtils.mixedDateToTimeString(value);
+
             case ColumnTypes.DATETIME:
-                if (moment(value).isValid())
-                    return moment(value).format("YYYY-MM-DD HH:mm:ss");
-                else return "0000-00-00 00:00:00";
+                if (columnMetadata.storeInLocalTimezone) {
+                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                } else {
+                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                }
+
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
+
             case ColumnTypes.SIMPLE_ARRAY:
-                return (value as any[])
-                    .map(i => String(i))
-                    .join(",");
+                return DataTransformationUtils.simpleArrayToString(value);
         }
 
         return value;
     }
 
     /**
-     * Prepares given value to a value to be persisted, based on its column metadata.
-     */
-    prepareHydratedValue(value: any, type: ColumnType): any;
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type.
-     */
-    prepareHydratedValue(value: any, column: ColumnMetadata): any;
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    prepareHydratedValue(value: any, columnOrColumnType: ColumnMetadata|ColumnType): any {
-        const type = columnOrColumnType instanceof ColumnMetadata ? columnOrColumnType.type : columnOrColumnType;
-        switch (type) {
+    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        switch (columnMetadata.type) {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 
-            case ColumnTypes.DATE:
-                if (value instanceof Date)
-                    return value;
-
-                return moment(value, "YYYY-MM-DD").toDate();
-
-            case ColumnTypes.TIME:
-                return moment(value, "HH:mm:ss").toDate();
-
             case ColumnTypes.DATETIME:
-                if (value instanceof Date)
-                    return value;
-
-                return moment(value, "YYYY-MM-DD HH:mm:ss").toDate();
+                if (columnMetadata.loadInLocalTimezone) {
+                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                } else {
+                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                }
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return (value as string).split(",");
+                return DataTransformationUtils.stringToSimpleArray(value);
         }
 
         return value;
