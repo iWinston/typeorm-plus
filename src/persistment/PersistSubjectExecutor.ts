@@ -148,17 +148,17 @@ export class PersistSubjectExecutor {
                 if (!relatedEntity)
                     return;
 
+                const insertSubject = insertSubjects.find(insertedSubject => relatedEntity === insertedSubject.entity);
+
                 // if relation id exist exist in the related entity then simply use it
-                const relationId = relatedEntity[referencedColumn.propertyName];
-                if (relationId) {
-                    updateOptions[relation.name] = relationId;
-                    return;
-                }
+                const relationId = relatedEntity[referencedColumn.propertyName]; // todo: what about relationId got from relation column, not relation itself? todo: create relation.getEntityRelationId(entity)
 
                 // otherwise check if relation id was just now inserted and we can use its generated values
-                const insertSubject = insertSubjects.find(insertedSubject => relatedEntity === insertedSubject.entity);
                 if (insertSubject) {
-                    if (referencedColumn.isGenerated) {
+                    if (relationId) {
+                        updateOptions[relation.name] = relationId;
+
+                    } else if (referencedColumn.isGenerated) {
                         updateOptions[relation.name] = insertSubject.newlyGeneratedId;
                     }
                     // todo: implement other special types too
@@ -185,10 +185,11 @@ export class PersistSubjectExecutor {
                 relatedEntity.forEach(subRelatedEntity => {
 
                     let relationId = subRelatedEntity[referencedColumn.propertyName];
-                    if (!relationId) {
-                        const insertSubject = insertSubjects.find(insertedSubject => subRelatedEntity === insertedSubject.entity);
+                    const insertSubject = insertSubjects.find(insertedSubject => subRelatedEntity === insertedSubject.entity);
 
-                        if (insertSubject && referencedColumn.isGenerated)
+                    if (insertSubject) {
+
+                        if (!relationId && referencedColumn.isGenerated)
                             relationId = insertSubject.newlyGeneratedId;
 
                         // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)

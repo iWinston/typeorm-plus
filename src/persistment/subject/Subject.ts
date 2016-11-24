@@ -160,7 +160,6 @@ export class Subject { // todo: move entity with id creation into metadata? // t
                 column.isUpdateDate ||
                 column.isVersion ||
                 column.isCreateDate ||
-                // column.isRelationId || // todo: probably need to skip relation ids here?
                 this.entity[column.propertyName] === undefined ||
                 column.getEntityValue(this.entity) === column.getEntityValue(this.databaseEntity))
                 return false;
@@ -195,8 +194,10 @@ export class Subject { // todo: move entity with id creation into metadata? // t
 
             // here because we have enabled RELATION_ID_VALUES option in the QueryBuilder when we loaded db entities
             // we have in the dbSubject only relationIds.
-            // This allows us to compare relation id in the updated subject with id in the database
-            const dbEntityRelationId = this.databaseEntity![relation.propertyName];
+            // this allows us to compare relation id in the updated subject with id in the database.
+            // note that we used relation.name instead of relation.propertyName because query builder with RELATION_ID_VALUES
+            // returns values in the relation.name column, not relation.propertyName column
+            const dbEntityRelationId = this.databaseEntity![relation.name];
 
             // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
             // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))

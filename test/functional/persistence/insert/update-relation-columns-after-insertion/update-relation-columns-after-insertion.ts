@@ -1,0 +1,36 @@
+import "reflect-metadata";
+import {Post} from "./entity/Post";
+import {Category} from "./entity/Category";
+import {Connection} from "../../../../../src/connection/Connection";
+import {setupTestingConnections, reloadDatabases, closeConnections} from "../../../../utils/test-utils";
+
+describe("persistence > insert > update-relation-columns-after-insertion", () => {
+
+    let connections: Connection[];
+    before(async () => connections = await setupTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,
+
+    }));
+    beforeEach(() => reloadDatabases(connections));
+    after(() => closeConnections(connections));
+
+    it("should work perfectly", () => Promise.all(connections.map(async connection => {
+
+        // create category
+        const category1 = new Category();
+        category1.name = "Category saved by cascades #1";
+        await connection.entityManager.persist(category1);
+
+        // create post
+        const post1 = new Post();
+        post1.title = "Hello Post #1";
+        post1.category = category1;
+        await connection.entityManager.persist(post1);
+
+        // todo: HERE FOR CALCULATIONS WE NEED TO CALCULATE OVERALL NUMBER OF QUERIES TO PREVENT EXTRA QUERIES
+
+    })));
+
+});
