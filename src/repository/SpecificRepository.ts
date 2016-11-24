@@ -456,8 +456,17 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumn, entityOrEntities);
         if (!(entityIds instanceof Array)) entityIds = [entityIds];
 
+        // /*
+        // filter out empty entity ids
+        entityIds = (entityIds as any[]).filter(entityId => entityId !== null && entityId !== undefined);
+
+        // if no entity ids at the end, then we don't need to load anything
+        if ((entityIds as any[]).length === 0)
+            return [];
+        // */
+
         const ids: any[] = [];
-        const promises = entityIds.map((entityId: any) => {
+        const promises = (entityIds as any[]).map((entityId: any) => {
             const qb = new QueryBuilder(this.connection/*, dbConnection*/)
                 .select("junction." + inverseEntityColumn.name + " AS id")
                 .fromTable(relation.junctionEntityMetadata.table.name, "junction")

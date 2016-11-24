@@ -210,7 +210,7 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
                 const allIds = subjectGroup.subjects
                     .filter(subject => !subject.databaseEntity)
                     .map(subject => subject.mixedId)
-                    .filter(mixedId => mixedId !== undefined && mixedId !== null);
+                    .filter(mixedId => mixedId !== undefined && mixedId !== null && mixedId !== "");
                 if (!allIds.length)
                     return;
 
@@ -643,7 +643,6 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
     /**
      * Builds all junction insert operations used to insert new bind data into junction tables.
-     *
      */
     private async buildInsertJunctionOperations(): Promise<void> {
 
@@ -654,35 +653,45 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
             const promises = subject.metadata.manyToManyRelations.map(async relation => {
 
                 // extract entity value - we only need to proceed if value is defined and its an array
-                const value = relation.getEntityValue(subject.entity);
-                if (!(value instanceof Array))
+                const relatedValue = relation.getEntityValue(subject.entity);
+                if (!(relatedValue instanceof Array))
                     return;
 
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
-                const inverseEntityRelationIds = value
-                    .map(v => relation.getInverseEntityRelationId(v))
-                    .filter(v => v !== undefined && v !== null);
+                const inverseEntityRelationIds = relatedValue
+                    .map(subRelationValue => {
+                        return relation.isManyToManyOwner
+                            ? subRelationValue[relation.joinTable.inverseReferencedColumn.propertyName]
+                            : subRelationValue[relation.inverseRelation.joinTable.referencedColumn.propertyName];
+                    })
+                    .filter(subRelationValue => subRelationValue !== undefined && subRelationValue !== null);
 
                 // load from db all relation ids of inverse entities "bind" to the currently persisted entity
                 // this way we gonna check which relation ids are new
-                const existInverseEntityRelationIds = await this.connection
-                    .getSpecificRepository(subject.entityTarget)
-                    .findRelationIds(relation, subject.entity, inverseEntityRelationIds);
+                let existInverseEntityRelationIds: any[] = [];
+
+                // since we need to check if entities exist in the given array of ids retrieved from the persisted entities
+                // and if those entities don't have ids, this means they are not persisted yet and we don't need to
+                // check if they exist in junction table
+                if (inverseEntityRelationIds.length > 0) {
+                    existInverseEntityRelationIds = await this.connection
+                        .getSpecificRepository(subject.entityTarget)
+                        .findRelationIds(relation, subject.entity, inverseEntityRelationIds);
+                }
 
                 // now from all entities in the persisted entity find only those which aren't found in the db
-                /*const newRelationIds = inverseEntityRelationIds.filter(inverseEntityRelationId => {
-                    return !existInverseEntityRelationIds.find(relationId => inverseEntityRelationId === relationId);
-                });*/ // todo: remove later if not necessary
-                const persistedEntities = value.filter(val => {
-                    const relationValue = relation.getInverseEntityRelationId(val);
+                const newJunctionEntities = relatedValue.filter(subRelatedValue => {
+                    const relationValue = relation.isManyToManyOwner
+                        ? subRelatedValue[relation.joinTable.inverseReferencedColumn.propertyName]
+                        : subRelatedValue[relation.inverseRelation.joinTable.referencedColumn.propertyName];
                     return !relationValue || !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
                 });
 
                 // finally create a new junction insert operation and push it to the array of such operations
-                if (persistedEntities.length > 0) {
+                if (newJunctionEntities.length > 0) {
                     subject.junctionInserts.push({
                         relation: relation,
-                        junctionEntities: persistedEntities
+                        junctionEntities: newJunctionEntities
                     });
                 }
             });
@@ -697,8 +706,10 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
      * Builds all junction remove operations used to remove bind data from junction tables.
      */
     private async buildRemoveJunctionOperations(): Promise<void> {
-        // const junctionRemoveOperations: NewJunctionRemoveOperation[] = [];
-        const promises = this.loadedSubjects.map(subject => {
+
+        // no need to remove junctions of the just inserted entities
+        const subjects = this.loadedSubjects.filter(subject => !subject.mustBeInserted);
+        const promises = subjects.map(subject => {
             const promises = subject.metadata.manyToManyRelations.map(async relation => {
 
                 // if subject marked to be removed then all its junctions must be removed
@@ -727,8 +738,12 @@ export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 
                     // get all inverse entities that are "bind" to the currently persisted entity
                     const inverseEntityRelationIds = value
-                        .map(v => relation.getInverseEntityRelationId(v))
-                        .filter(v => v !== undefined && v !== null);
+                        .map(subRelationValue => {
+                            return relation.isManyToManyOwner
+                                ? subRelationValue[relation.joinTable.inverseReferencedColumn.propertyName]
+                                : subRelationValue[relation.inverseRelation.joinTable.referencedColumn.propertyName];
+                        })
+                        .filter(subRelationValue => subRelationValue !== undefined && subRelationValue !== null);
 
                     // load from db all relation ids of inverse entities that are NOT "bind" to the currently persisted entity
                     // this way we gonna check which relation ids are missing (e.g. removed)
