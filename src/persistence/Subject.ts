@@ -22,7 +22,7 @@ export interface RelationUpdate {
 
 /**
  */
-export class PersistenceSubject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
+export class Subject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
 
     // -------------------------------------------------------------------------
     // Properties

@@ -7,8 +7,8 @@ import {FindOptions} from "../find-options/FindOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {PersistenceSubjectOperationExecutor} from "../persistence/PersistenceSubjectOperationExecutor";
-import {PersistenceSubjectBuilder} from "../persistence/PersistenceSubjectBuilder";
+import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
+import {SubjectBuilder} from "../persistence/SubjectBuilder";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -135,10 +135,10 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunner = await queryRunnerProvider.provide();
         try {
 
-            const databaseEntityLoader = new PersistenceSubjectBuilder(this.connection);
+            const databaseEntityLoader = new SubjectBuilder(this.connection);
             await databaseEntityLoader.persist(entityOrEntities, this.metadata);
 
-            const executor = new PersistenceSubjectOperationExecutor(this.connection, queryRunner);
+            const executor = new SubjectOperationExecutor(this.connection, queryRunner);
             await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities; // await is needed here because we are using finally
@@ -171,10 +171,10 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunner = await queryRunnerProvider.provide();
         try {
 
-            const databaseEntityLoader = new PersistenceSubjectBuilder(this.connection);
+            const databaseEntityLoader = new SubjectBuilder(this.connection);
             await databaseEntityLoader.remove(entityOrEntities, this.metadata);
 
-            const executor = new PersistenceSubjectOperationExecutor(this.connection, queryRunner);
+            const executor = new SubjectOperationExecutor(this.connection, queryRunner);
             await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities;

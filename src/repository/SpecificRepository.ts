@@ -3,7 +3,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {PersistenceSubject} from "../persistence/PersistenceSubject";
+import {Subject} from "../persistence/Subject";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
@@ -506,7 +506,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     /**
      * Extracts unique objects from given entity and all its downside relations.
      */
-    protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: PersistenceSubject[] = []): Promise<PersistenceSubject[]> {
+    protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: Subject[] = []): Promise<Subject[]> {
         const promises = metadata.relations.map(relation => {
             const relMetadata = relation.inverseEntityMetadata;
 
@@ -527,7 +527,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         return Promise.all<any>(promises.filter(result => !!result)).then(() => {
             if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
-                const entityWithId = new PersistenceSubject(metadata, entity);
+                const entityWithId = new Subject(metadata, entity);
                 entityWithIds.push(entityWithId);
             }
 

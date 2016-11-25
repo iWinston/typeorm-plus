@@ -1,7 +1,7 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
-import {PersistenceSubject} from "./PersistenceSubject";
+import {Subject} from "./Subject";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -56,7 +56,7 @@ import {PersistenceSubject} from "./PersistenceSubject";
  * Remove operation can lead to:
  *  - remove operation
  */
-export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
+export class SubjectBuilder<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
     // Protected properties
@@ -67,7 +67,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
      * One of solution can be clone this object and reset all marked states for this persistence.
      * Or from reused just extract databaseEntities from their subjects? (looks better)
      */
-    operateSubjects: PersistenceSubject[] = [];
+    operateSubjects: Subject[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -83,7 +83,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
     async persist(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
-        const mainPersistedSubject = new PersistenceSubject(metadata, entity);
+        const mainPersistedSubject = new Subject(metadata, entity);
         mainPersistedSubject.canBeInserted = true;
         mainPersistedSubject.canBeUpdated = true;
         this.operateSubjects.push(mainPersistedSubject);
@@ -111,7 +111,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
     async remove(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently removed entity and mark that it must be removed
-        const mainRemovedSubject = new PersistenceSubject(metadata, entity);
+        const mainRemovedSubject = new Subject(metadata, entity);
         mainRemovedSubject.mustBeRemoved = true;
         this.operateSubjects.push(mainRemovedSubject);
 
@@ -149,7 +149,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
      * That's why we first need to load all changed entities, then extract ids of the removed entities from them,
      * and only then load removed entities by extracted ids.
      */
-    protected buildCascadeUpdateAndInsertOperateSubjects(subject: PersistenceSubject): void {
+    protected buildCascadeUpdateAndInsertOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
             .filter(([relation, value, valueMetadata]) => {
@@ -171,7 +171,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
 
                 // mark subject with what we can do with it
                 // and add to the array of subjects to load only if there is no same entity there already
-                const valueSubject = new PersistenceSubject(valueMetadata, value);
+                const valueSubject = new Subject(valueMetadata, value);
                 valueSubject.canBeInserted = relation.isCascadeInsert === true;
                 valueSubject.canBeUpdated = relation.isCascadeUpdate === true;
                 this.operateSubjects.push(valueSubject);
@@ -184,7 +184,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
     /**
      * Builds and pushes to array of operate entities all entities that must be removed.
      */
-    protected buildCascadeRemoveOperateSubjects(subject: PersistenceSubject): void {
+    protected buildCascadeRemoveOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
             .filter(([relation, value, valueMetadata]) => {
@@ -202,7 +202,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
                 }
 
                 // add to the array of subjects to load only if there is no same entity there already
-                const valueSubject = new PersistenceSubject(valueMetadata, value);
+                const valueSubject = new Subject(valueMetadata, value);
                 valueSubject.mustBeRemoved = true;
                 this.operateSubjects.push(valueSubject);
 
@@ -266,7 +266,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
      *  BIG NOTE: objects are being removed by cascades not only when relation is removed, but also when
      *  relation is replaced (e.g. changed with different object).
      */
-    protected async buildCascadeRemovedAndRelationUpdateOperateSubjects(subject: PersistenceSubject): Promise<void> {
+    protected async buildCascadeRemovedAndRelationUpdateOperateSubjects(subject: Subject): Promise<void> {
 
         // note: we can't use extractRelationValuesFromEntity here because it does not handle empty arrays
         const promises = subject.metadata.relations.map(async relation => {
@@ -352,7 +352,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
                         .getSingleResult();
 
                     if (databaseEntity) {
-                        alreadyLoadedRelatedDatabaseSubject = new PersistenceSubject(valueMetadata, undefined, databaseEntity);
+                        alreadyLoadedRelatedDatabaseSubject = new Subject(valueMetadata, undefined, databaseEntity);
                         this.operateSubjects.push(alreadyLoadedRelatedDatabaseSubject);
                     }
                 }
@@ -431,7 +431,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
                     // add only if database entity exist - because in the case of inverse side of the one-to-one relation
                     // we cannot check if it was removed or not until we query the database
                     // and it can be a situation that relation wasn't exist at all. This is particular that case
-                    alreadyLoadedRelatedDatabaseSubject = new PersistenceSubject(valueMetadata, undefined, databaseEntity);
+                    alreadyLoadedRelatedDatabaseSubject = new Subject(valueMetadata, undefined, databaseEntity);
                     this.operateSubjects.push(alreadyLoadedRelatedDatabaseSubject);
                 }
 
@@ -555,7 +555,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
                         subjectInLoadMap.databaseEntity = databaseEntity;
 
                     } else if (!subjectInLoadMap) {
-                        const subject = new PersistenceSubject(valueMetadata, undefined, databaseEntity);
+                        const subject = new Subject(valueMetadata, undefined, databaseEntity);
                         this.operateSubjects.push(subject);
                     }
                 });
@@ -582,7 +582,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
                                     .getRepository<ObjectLiteral>(valueMetadata.target)
                                     .findOneById(valueMetadata.getEntityIdMixedMap(persistValue), { alias: qbAlias, enabledOptions: ["RELATION_ID_VALUES"] }); // todo: check if databaseEntity is defined?
 
-                                loadedSubject = new PersistenceSubject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
+                                loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
                                 this.operateSubjects.push(loadedSubject);
                             }
                             loadedSubject.relationUpdates.push({ relation: relation.inverseRelation, value: subject.entity });
@@ -736,7 +736,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
      * Finds subject where entity like given subject's entity.
      * Comparision made by entity id.
      */
-    protected findByEntityLike(entityTarget: Function|string, entity: ObjectLiteral): PersistenceSubject|undefined {
+    protected findByEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
         return this.operateSubjects.find(subject => {
             return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
         });
@@ -746,7 +746,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
      * Finds subject where entity like given subject's database entity.
      * Comparision made by entity id.
      */
-    protected findByDatabaseEntityLike(entityTarget: Function|string, entity: ObjectLiteral): PersistenceSubject|undefined {
+    protected findByDatabaseEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
         return this.operateSubjects.find(subject => {
             return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.databaseEntity, entity);
         });
@@ -755,7 +755,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
     /**
      * Groups given Subject objects into groups separated by entity targets.
      */
-    protected groupByEntityTargets(): { target: Function|string, subjects: PersistenceSubject[] }[] {
+    protected groupByEntityTargets(): { target: Function|string, subjects: Subject[] }[] {
         return this.operateSubjects.reduce((groups, operatedEntity) => {
             let group = groups.find(group => group.target === operatedEntity.entityTarget);
             if (!group) {
@@ -764,7 +764,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
             }
             group.subjects.push(operatedEntity);
             return groups;
-        }, [] as { target: Function|string, subjects: PersistenceSubject[] }[]);
+        }, [] as { target: Function|string, subjects: Subject[] }[]);
     }
 
 }
