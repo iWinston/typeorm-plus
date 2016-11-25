@@ -136,17 +136,12 @@ export class Repository<Entity extends ObjectLiteral> {
         try {
 
             const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
-            await databaseEntityLoader.remove(entityOrEntities, this.metadata);
+            await databaseEntityLoader.persist(entityOrEntities, this.metadata);
 
             const executor = new PersistSubjectExecutor(this.connection, queryRunner);
             await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities; // await is needed here because we are using finally
-            // if (this.hasId(entityOrEntities)) {
-            //     return await entityPersister.update(entityOrEntities); // await is needed here because we are using finally
-            // } else {
-            //     return await entityPersister.insert(entityOrEntities); // await is needed here because we are using finally
-            // }
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
@@ -177,7 +172,7 @@ export class Repository<Entity extends ObjectLiteral> {
         try {
 
             const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
-            await databaseEntityLoader.persist(entityOrEntities, this.metadata);
+            await databaseEntityLoader.remove(entityOrEntities, this.metadata);
 
             const executor = new PersistSubjectExecutor(this.connection, queryRunner);
             await executor.execute(databaseEntityLoader.operateSubjects);
