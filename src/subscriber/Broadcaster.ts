@@ -3,7 +3,7 @@ import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Subject} from "../persistence/subject/Subject";
+import {PersistenceSubject} from "../persistence/PersistenceSubject";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -26,7 +26,7 @@ export class Broadcaster {
     /**
      * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
      */
-    async broadcastBeforeEventsForAll(insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]): Promise<void> {
+    async broadcastBeforeEventsForAll(insertSubjects: PersistenceSubject[], updateSubjects: PersistenceSubject[], removeSubjects: PersistenceSubject[]): Promise<void> {
         const insertPromises = insertSubjects.map(subject => this.broadcastBeforeInsertEvent(subject));
         const updatePromises = updateSubjects.map(subject => this.broadcastBeforeUpdateEvent(subject));
         const removePromises = removeSubjects.map(subject => this.broadcastBeforeRemoveEvent(subject));
@@ -37,7 +37,7 @@ export class Broadcaster {
     /**
      * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE" events for all given subjects.
      */
-    async broadcastAfterEventsForAll(insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]): Promise<void> {
+    async broadcastAfterEventsForAll(insertSubjects: PersistenceSubject[], updateSubjects: PersistenceSubject[], removeSubjects: PersistenceSubject[]): Promise<void> {
         const insertPromises = insertSubjects.map(subject => this.broadcastAfterInsertEvent(subject));
         const updatePromises = updateSubjects.map(subject => this.broadcastAfterUpdateEvent(subject));
         const removePromises = removeSubjects.map(subject => this.broadcastAfterRemoveEvent(subject));
@@ -51,7 +51,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeInsertEvent(subject: Subject): Promise<void> {
+    async broadcastBeforeInsertEvent(subject: PersistenceSubject): Promise<void> {
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && this.isAllowedListener(listener, subject.entity))
@@ -70,7 +70,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeUpdateEvent(subject: Subject): Promise<void> { // todo: send relations too?
+    async broadcastBeforeUpdateEvent(subject: PersistenceSubject): Promise<void> { // todo: send relations too?
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && this.isAllowedListener(listener, subject.entity))
@@ -94,7 +94,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeRemoveEvent(subject: Subject): Promise<void> {
+    async broadcastBeforeRemoveEvent(subject: PersistenceSubject): Promise<void> {
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && this.isAllowedListener(listener, subject.entity))
@@ -116,7 +116,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterInsertEvent(subject: Subject): Promise<void> {
+    async broadcastAfterInsertEvent(subject: PersistenceSubject): Promise<void> {
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && this.isAllowedListener(listener, subject.entity))
@@ -137,7 +137,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterUpdateEvent(subject: Subject): Promise<void> {
+    async broadcastAfterUpdateEvent(subject: PersistenceSubject): Promise<void> {
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && this.isAllowedListener(listener, subject.entity))
@@ -161,7 +161,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterRemoveEvent(subject: Subject): Promise<void> {
+    async broadcastAfterRemoveEvent(subject: PersistenceSubject): Promise<void> {
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && this.isAllowedListener(listener, subject.entity))

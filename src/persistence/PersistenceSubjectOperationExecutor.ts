@@ -2,14 +2,14 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {Subject, JunctionInsert, JunctionRemove} from "./subject/Subject";
-import {SubjectCollection} from "./subject/SubjectCollection";
+import {PersistenceSubject, JunctionInsert, JunctionRemove} from "./PersistenceSubject";
+import {SubjectCollection} from "./SubjectCollection";
 import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Executes PersistOperation in the given connection.
  */
-export class PersistSubjectExecutor {
+export class PersistenceSubjectOperationExecutor {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -110,7 +110,7 @@ export class PersistSubjectExecutor {
      * Insert process of the entities from the second group which can have only non nullable relations is a single-step process:
      * - we simply insert all entities and get into attention all its dependencies which were inserted in the first group
      */
-    private async executeInsertOperations(insertSubjects: Subject[]): Promise<void> {
+    private async executeInsertOperations(insertSubjects: PersistenceSubject[]): Promise<void> {
 
         // separate insert entities into groups:
 
@@ -236,7 +236,7 @@ export class PersistSubjectExecutor {
      * If entity has an generated column, then after saving new generated value will be stored to the InsertOperation.
      * If entity uses class-table-inheritance, then multiple inserts may by performed to save all entities.
      */
-    private async insert(subject: Subject, alreadyInsertedSubjects: Subject[]): Promise<any> {
+    private async insert(subject: PersistenceSubject, alreadyInsertedSubjects: PersistenceSubject[]): Promise<any> {
 
         const parentEntityMetadata = subject.metadata.parentEntityMetadata;
         const metadata = subject.metadata;
@@ -258,19 +258,9 @@ export class PersistSubjectExecutor {
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
             subject.newlyGeneratedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
         }
-
-        // todo: remove this block once usage of subject.entityId are removed
-        // if there is a generated column and we have a generated id then store it in the insert operation for further use
-        if (parentEntityMetadata && parentEntityMetadata.hasGeneratedColumn && subject.newlyGeneratedId) {
-            subject.entityId = { [parentEntityMetadata.generatedColumn.propertyName]: subject.newlyGeneratedId };
-
-        } else if (metadata.hasGeneratedColumn && subject.newlyGeneratedId) {
-            subject.entityId = { [metadata.generatedColumn.propertyName]: subject.newlyGeneratedId };
-        }
-
     }
 
-    private collectColumnsAndValues(metadata: EntityMetadata, entity: any, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[]): ObjectLiteral {
+    private collectColumnsAndValues(metadata: EntityMetadata, entity: any, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: PersistenceSubject[]): ObjectLiteral {
 
         // extract all columns
         const columns = metadata.columns.filter(column => {
@@ -373,7 +363,7 @@ export class PersistSubjectExecutor {
     /**
      * Executes insert operations for closure tables.
      */
-    private executeInsertClosureTableOperations(insertSubjects: Subject[]/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
+    private executeInsertClosureTableOperations(insertSubjects: PersistenceSubject[]/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
         const promises = insertSubjects
             .filter(subject => subject.metadata.table.isClosure)
             .map(async subject => {
@@ -384,7 +374,7 @@ export class PersistSubjectExecutor {
         return Promise.all(promises);
     }
 
-    private async insertClosureTableValues(subject: Subject, insertedSubjects: Subject[]): Promise<void> {
+    private async insertClosureTableValues(subject: PersistenceSubject, insertedSubjects: PersistenceSubject[]): Promise<void> {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
         const tableName = subject.metadata.closureJunctionTable.table.name;
@@ -418,11 +408,11 @@ export class PersistSubjectExecutor {
     /**
      * Executes update operations.
      */
-    private async executeUpdateOperations(updateSubjects: Subject[]): Promise<void> {
+    private async executeUpdateOperations(updateSubjects: PersistenceSubject[]): Promise<void> {
         await Promise.all(updateSubjects.map(subject => this.update(subject)));
     }
 
-    private async update(subject: Subject): Promise<void> {
+    private async update(subject: PersistenceSubject): Promise<void> {
         const entity = subject.entity;
 
         // we group by table name, because metadata can have different table names
@@ -511,11 +501,11 @@ export class PersistSubjectExecutor {
     // Private Methods: Update only relations
     // -------------------------------------------------------------------------
 
-    private executeUpdateRelations(subjects: Subject[]) {
+    private executeUpdateRelations(subjects: PersistenceSubject[]) {
         return Promise.all(subjects.map(subject => this.updateRelations(subject)));
     }
 
-    private async updateRelations(subject: Subject) {
+    private async updateRelations(subject: PersistenceSubject) {
         const values: ObjectLiteral = {};
         subject.relationUpdates.forEach(setRelation => {
             const value = setRelation.value ? setRelation.value[setRelation.relation.joinColumn.referencedColumn.propertyName] : null;
@@ -539,11 +529,11 @@ export class PersistSubjectExecutor {
     /**
      * Executes remove operations.
      */
-    private async executeRemoveOperations(removeSubjects: Subject[]): Promise<void> {
+    private async executeRemoveOperations(removeSubjects: PersistenceSubject[]): Promise<void> {
         await Promise.all(removeSubjects.map(subject => this.remove(subject)));
     }
 
-    private async remove(subject: Subject): Promise<void> {
+    private async remove(subject: PersistenceSubject): Promise<void> {
         if (subject.metadata.parentEntityMetadata) {
             const parentConditions: ObjectLiteral = {};
             subject.metadata.parentPrimaryColumns.forEach(column => {
@@ -568,7 +558,7 @@ export class PersistSubjectExecutor {
     /**
      * Executes insert junction operations.
      */
-    private async executeInsertJunctionsOperations(subjects: Subject[], insertSubjects: Subject[]): Promise<void> {
+    private async executeInsertJunctionsOperations(subjects: PersistenceSubject[], insertSubjects: PersistenceSubject[]): Promise<void> {
         const promises: Promise<any>[] = [];
         subjects.forEach(subject => {
             subject.junctionInserts.forEach(junctionInsert => {
@@ -582,7 +572,7 @@ export class PersistSubjectExecutor {
     /**
      * Executes insert junction operation.
      */
-    private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert, insertSubjects: Subject[]): Promise<void> {
+    private async insertJunctions(subject: PersistenceSubject, junctionInsert: JunctionInsert, insertSubjects: PersistenceSubject[]): Promise<void> {
         // I think here we can only support to work only with single primary key entities
 
         const relation = junctionInsert.relation;
@@ -644,7 +634,7 @@ export class PersistSubjectExecutor {
     /**
      * Executes remove junction operations.
      */
-    private async executeRemoveJunctionsOperations(subjects: Subject[]): Promise<void> {
+    private async executeRemoveJunctionsOperations(subjects: PersistenceSubject[]): Promise<void> {
         const promises: Promise<any>[] = [];
         subjects.forEach(subject => {
             subject.junctionRemoves.forEach(junctionRemove => {
@@ -658,7 +648,7 @@ export class PersistSubjectExecutor {
     /**
      * Executes remove junction operation.
      */
-    private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
+    private async removeJunctions(subject: PersistenceSubject, junctionRemove: JunctionRemove) {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
         const ownId = junctionRemove.relation.getOwnEntityRelationId(subject.entity || subject.databaseEntity);
         const ownColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
@@ -677,7 +667,7 @@ export class PersistSubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, versioning).
      */
-    private updateSpecialColumnsInPersistedEntities(insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]) {
+    private updateSpecialColumnsInPersistedEntities(insertSubjects: PersistenceSubject[], updateSubjects: PersistenceSubject[], removeSubjects: PersistenceSubject[]) {
 
         // update entity columns that gets updated on each entity insert
         insertSubjects.forEach(subject => {

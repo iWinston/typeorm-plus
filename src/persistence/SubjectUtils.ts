@@ -1,11 +1,11 @@
-import {Subject} from "./Subject";
+import {PersistenceSubject} from "./PersistenceSubject";
 
 export class SubjectUtils {
 
     /**
      * Groups given Subject objects into groups separated by entity targets.
      */
-    static groupByEntityTargets(subjects: Subject[]): { target: Function|string, subjects: Subject[] }[] {
+    static groupByEntityTargets(subjects: PersistenceSubject[]): { target: Function|string, subjects: PersistenceSubject[] }[] {
         return subjects.reduce((groups, operatedEntity) => {
             let group = groups.find(group => group.target === operatedEntity.entityTarget);
             if (!group) {
@@ -14,7 +14,7 @@ export class SubjectUtils {
             }
             group.subjects.push(operatedEntity);
             return groups;
-        }, [] as { target: Function|string, subjects: Subject[] }[]);
+        }, [] as { target: Function|string, subjects: PersistenceSubject[] }[]);
     }
 
 }

@@ -1,9 +1,9 @@
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
+import {ColumnTypes} from "../metadata/types/ColumnTypes";
+import {DataTransformationUtils} from "../util/DataTransformationUtils";
 
 export interface JunctionInsert {
     relation: RelationMetadata;
@@ -22,7 +22,7 @@ export interface RelationUpdate {
 
 /**
  */
-export class Subject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
+export class PersistenceSubject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
 
     // -------------------------------------------------------------------------
     // Properties

@@ -7,7 +7,7 @@ import {FindOptions} from "../find-options/FindOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {PersistSubjectExecutor} from "../persistence/PersistSubjectExecutor";
+import {PersistenceSubjectOperationExecutor} from "../persistence/PersistenceSubjectOperationExecutor";
 import {PersistenceSubjectBuilder} from "../persistence/PersistenceSubjectBuilder";
 
 /**
@@ -138,7 +138,7 @@ export class Repository<Entity extends ObjectLiteral> {
             const databaseEntityLoader = new PersistenceSubjectBuilder(this.connection);
             await databaseEntityLoader.persist(entityOrEntities, this.metadata);
 
-            const executor = new PersistSubjectExecutor(this.connection, queryRunner);
+            const executor = new PersistenceSubjectOperationExecutor(this.connection, queryRunner);
             await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities; // await is needed here because we are using finally
@@ -174,7 +174,7 @@ export class Repository<Entity extends ObjectLiteral> {
             const databaseEntityLoader = new PersistenceSubjectBuilder(this.connection);
             await databaseEntityLoader.remove(entityOrEntities, this.metadata);
 
-            const executor = new PersistSubjectExecutor(this.connection, queryRunner);
+            const executor = new PersistenceSubjectOperationExecutor(this.connection, queryRunner);
             await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities;

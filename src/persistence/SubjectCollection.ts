@@ -1,9 +1,9 @@
-import {Subject} from "./Subject";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {PersistenceSubject} from "./PersistenceSubject";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  */
-export class SubjectCollection extends Array<Subject> {
+export class SubjectCollection extends Array<PersistenceSubject> {
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -13,7 +13,7 @@ export class SubjectCollection extends Array<Subject> {
      * Pushes subject to the collection only in the case if subject with same entity target and entity id
      * does not exist in the collection.
      */
-    pushIfNotExist(subject: Subject) {
+    pushIfNotExist(subject: PersistenceSubject) {
         const existSubject = this.findByEntityLike(subject);
         if (!existSubject)
             this.push(subject);
@@ -22,7 +22,7 @@ export class SubjectCollection extends Array<Subject> {
     /**
      * Finds subject with a given entity.
      */
-    findByEntity(entity: ObjectLiteral): Subject|undefined {
+    findByEntity(entity: ObjectLiteral): PersistenceSubject|undefined {
         return this.find(subject => subject.entity === entity);
     }
 
@@ -30,21 +30,21 @@ export class SubjectCollection extends Array<Subject> {
      * Finds subject where entity like given entity.
      * Comparision made by entity id.
      */
-    findByEntityLike(likeSubject: Subject): Subject|undefined;
+    findByEntityLike(likeSubject: PersistenceSubject): PersistenceSubject|undefined;
 
     /**
      * Finds subject where entity like given subject's entity.
      * Comparision made by entity id.
      */
-    findByEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined;
+    findByEntityLike(entityTarget: Function|string, entity: ObjectLiteral): PersistenceSubject|undefined;
 
     /**
      * Finds subject where entity like given entity or subject's entity.
      * Comparision made by entity id.
      */
-    findByEntityLike(entityTargetOrSubject: Function|string|Subject, maybeEntity?: ObjectLiteral): Subject|undefined {
-        const entityTarget = entityTargetOrSubject instanceof Subject ? entityTargetOrSubject.metadata.target : entityTargetOrSubject;
-        const entity = entityTargetOrSubject instanceof Subject ? entityTargetOrSubject.entity : maybeEntity!;
+    findByEntityLike(entityTargetOrSubject: Function|string|PersistenceSubject, maybeEntity?: ObjectLiteral): PersistenceSubject|undefined {
+        const entityTarget = entityTargetOrSubject instanceof PersistenceSubject ? entityTargetOrSubject.metadata.target : entityTargetOrSubject;
+        const entity = entityTargetOrSubject instanceof PersistenceSubject ? entityTargetOrSubject.entity : maybeEntity!;
 
         return this.find(subject => {
             return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
@@ -57,7 +57,7 @@ export class SubjectCollection extends Array<Subject> {
         });
     }
 
-    findByDatabaseEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
+    findByDatabaseEntityLike(entityTarget: Function|string, entity: ObjectLiteral): PersistenceSubject|undefined {
         return this.find(subject => {
             return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.databaseEntity, entity);
         });
