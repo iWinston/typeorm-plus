@@ -3,7 +3,6 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {PersistenceSubject, JunctionInsert, JunctionRemove} from "./PersistenceSubject";
-import {SubjectCollection} from "./SubjectCollection";
 import {OrmUtils} from "../util/OrmUtils";
 
 /**
@@ -25,7 +24,7 @@ export class PersistenceSubjectOperationExecutor {
     /**
      * Executes given persist operation.
      */
-    async execute(subjects: SubjectCollection) {
+    async execute(subjects: PersistenceSubject[]) {
         let isTransactionStartedByItself = false;
 
         const insertSubjects = subjects.filter(subject => subject.mustBeInserted);

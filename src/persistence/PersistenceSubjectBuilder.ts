@@ -2,8 +2,6 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {PersistenceSubject} from "./PersistenceSubject";
-import {SubjectCollection} from "./SubjectCollection";
-import {SubjectUtils} from "./SubjectUtils";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -69,7 +67,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
      * One of solution can be clone this object and reset all marked states for this persistence.
      * Or from reused just extract databaseEntities from their subjects? (looks better)
      */
-    operateSubjects: SubjectCollection = new SubjectCollection();
+    operateSubjects: PersistenceSubject[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -162,7 +160,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
             .forEach(([relation, value, valueMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.operateSubjects.findByEntity(value); // todo: findByEntity or findByEntityLike ?
+                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
                 if (alreadyExistValueSubject) {
                     if (alreadyExistValueSubject.canBeInserted === false)
                         alreadyExistValueSubject.canBeInserted = relation.isCascadeInsert === true;
@@ -197,7 +195,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
             .forEach(([relation, value, valueMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.operateSubjects.findByEntity(value);  // todo: findByEntity or findByEntityLike ?
+                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
                 if (alreadyExistValueSubject) {
                     alreadyExistValueSubject.mustBeRemoved = true;
                     return;
@@ -222,10 +220,8 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
     protected async loadOperateSubjectsDatabaseEntities(): Promise<void> {
 
         // we are grouping subjects by target to perform more optimized queries using WHERE IN operator
-        const subjectGroups = SubjectUtils.groupByEntityTargets(this.operateSubjects);
-
         // go throw the groups and perform loading of database entities of each subject in the group
-        const promises = subjectGroups.map(async subjectGroup => {
+        const promises = this.groupByEntityTargets().map(async subjectGroup => {
 
             // prepare entity ids of the subjects we need to load
             const allIds = subjectGroup.subjects
@@ -245,7 +241,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject
             entities.forEach(entity => {
-                const subject = this.operateSubjects.findByEntityLike(subjectGroup.target, entity);
+                const subject = this.findByEntityLike(subjectGroup.target, entity);
                 if (subject)
                     subject.databaseEntity = entity;
             });
@@ -554,7 +550,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
 
                 // add to loadMap loaded entities if some of them are missing
                 databaseEntities.forEach(databaseEntity => {
-                    const subjectInLoadMap = this.operateSubjects.findByEntityLike(valueMetadata.target, databaseEntity);
+                    const subjectInLoadMap = this.findByEntityLike(valueMetadata.target, databaseEntity);
                     if (subjectInLoadMap && !subjectInLoadMap.databaseEntity) {
                         subjectInLoadMap.databaseEntity = databaseEntity;
 
@@ -580,7 +576,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
                         if (!persistedValueInDatabaseEntity) {
 
                             // now find subject with
-                            let loadedSubject = this.operateSubjects.findByDatabaseEntityLike(valueMetadata.target, persistValue);
+                            let loadedSubject = this.findByDatabaseEntityLike(valueMetadata.target, persistValue);
                             if (!loadedSubject) {
                                 const databaseEntity = await this.connection
                                     .getRepository<ObjectLiteral>(valueMetadata.target)
@@ -600,7 +596,7 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
                 const promises = databaseEntities.map(async databaseEntity => {
 
                     // find a subject object of the related database entity
-                    const relatedEntitySubject = this.operateSubjects.findByDatabaseEntityLike(valueMetadata.target, databaseEntity);
+                    let relatedEntitySubject = this.findByDatabaseEntityLike(valueMetadata.target, databaseEntity);
                     if (!relatedEntitySubject) return; // should not be possible, anyway add it for type-safety
 
                     // if object is already marked as removed then no need to proceed because it already was proceed
@@ -734,6 +730,41 @@ export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
         });
 
         await Promise.all(promises);
+    }
+
+    /**
+     * Finds subject where entity like given subject's entity.
+     * Comparision made by entity id.
+     */
+    protected findByEntityLike(entityTarget: Function|string, entity: ObjectLiteral): PersistenceSubject|undefined {
+        return this.operateSubjects.find(subject => {
+            return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
+        });
+    }
+
+    /**
+     * Finds subject where entity like given subject's database entity.
+     * Comparision made by entity id.
+     */
+    protected findByDatabaseEntityLike(entityTarget: Function|string, entity: ObjectLiteral): PersistenceSubject|undefined {
+        return this.operateSubjects.find(subject => {
+            return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.databaseEntity, entity);
+        });
+    }
+
+    /**
+     * Groups given Subject objects into groups separated by entity targets.
+     */
+    protected groupByEntityTargets(): { target: Function|string, subjects: PersistenceSubject[] }[] {
+        return this.operateSubjects.reduce((groups, operatedEntity) => {
+            let group = groups.find(group => group.target === operatedEntity.entityTarget);
+            if (!group) {
+                group = { target: operatedEntity.entityTarget, subjects: [] };
+                groups.push(group);
+            }
+            group.subjects.push(operatedEntity);
+            return groups;
+        }, [] as { target: Function|string, subjects: PersistenceSubject[] }[]);
     }
 
 }
