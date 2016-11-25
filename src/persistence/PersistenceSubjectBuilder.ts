@@ -58,7 +58,7 @@ import {SubjectUtils} from "./subject/SubjectUtils";
  * Remove operation can lead to:
  *  - remove operation
  */
-export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
+export class PersistenceSubjectBuilder<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
     // Protected properties

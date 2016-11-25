@@ -7,8 +7,8 @@ import {FindOptions} from "../find-options/FindOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {PersistSubjectExecutor} from "../persistment/PersistSubjectExecutor";
-import {DatabaseEntityLoader} from "../persistment/DatabaseEntityLoader";
+import {PersistSubjectExecutor} from "../persistence/PersistSubjectExecutor";
+import {PersistenceSubjectBuilder} from "../persistence/PersistenceSubjectBuilder";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -135,7 +135,7 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunner = await queryRunnerProvider.provide();
         try {
 
-            const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+            const databaseEntityLoader = new PersistenceSubjectBuilder(this.connection);
             await databaseEntityLoader.persist(entityOrEntities, this.metadata);
 
             const executor = new PersistSubjectExecutor(this.connection, queryRunner);
@@ -171,7 +171,7 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunner = await queryRunnerProvider.provide();
         try {
 
-            const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+            const databaseEntityLoader = new PersistenceSubjectBuilder(this.connection);
             await databaseEntityLoader.remove(entityOrEntities, this.metadata);
 
             const executor = new PersistSubjectExecutor(this.connection, queryRunner);

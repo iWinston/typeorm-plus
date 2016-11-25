@@ -3,7 +3,7 @@ import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Subject} from "../persistment/subject/Subject";
+import {Subject} from "../persistence/subject/Subject";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.

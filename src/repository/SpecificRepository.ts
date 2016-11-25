@@ -3,7 +3,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {Subject} from "../persistment/subject/Subject";
+import {Subject} from "../persistence/subject/Subject";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
