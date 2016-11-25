@@ -225,8 +225,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
             // prepare entity ids of the subjects we need to load
             const allIds = subjectGroup.subjects
-                .filter(subject => !subject.databaseEntity) // we don't load if subject already has a database entity loaded
-                .map(subject => subject.mixedId) // we only need entity id
+                .filter(subject => !subject.hasDatabaseEntity) // we don't load if subject already has a database entity loaded
+                .map(subject => subject.metadata.getEntityIdMixedMap(subject.entity)) // we only need entity id
                 .filter(mixedId => mixedId !== undefined && mixedId !== null && mixedId !== ""); // we don't need empty ids
 
             // if there no ids found (which means all entities are new and have generated ids) - then nothing to load there
@@ -274,7 +274,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             const qbAlias = valueMetadata.table.name;
 
             // added for type-safety, but subject without databaseEntity cant come here anyway because of checks on upper levels
-            if (!subject.databaseEntity) return;
+            if (!subject.hasDatabaseEntity) return;
 
             // for one-to-one owner and many-to-one relations no need to load entity to check if something removed
             // because join column is in this side of relation and we have a database entity with which we can compare
@@ -316,7 +316,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // if this subject is persisted subject then we get its value to check if its not empty or its values changed
                 let persistValueRelationId: any = undefined;
-                if (subject.entity) {
+                if (subject.hasEntity) {
                     const persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue) persistValueRelationId = persistValue[relation.joinColumn.referencedColumn.propertyName];
                     if (persistValueRelationId === undefined) return; // skip undefined properties
@@ -330,7 +330,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let alreadyLoadedRelatedDatabaseSubject = this.operateSubjects.find(relatedSubject => {
 
                     // (example) filter only subject that has database entity loaded and its target is Details
-                    if (!relatedSubject.databaseEntity || relatedSubject.entityTarget !== valueMetadata.target)
+                    if (!relatedSubject.hasDatabaseEntity || relatedSubject.entityTarget !== valueMetadata.target)
                         return false;
 
                     // (example) here we seek a Details loaded from the database in the subjects
@@ -390,7 +390,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // if this subject is persisted subject then we get its value to check if its not empty or its values changed
                 let persistValueRelationId: any = undefined;
-                if (subject.entity && !subject.mustBeRemoved) {
+                if (subject.hasEntity && !subject.mustBeRemoved) {
                     const persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue) persistValueRelationId = persistValue[relation.inverseRelation.joinColumn.propertyName];
                     if (persistValueRelationId === undefined) return; // skip undefined properties
@@ -407,7 +407,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let alreadyLoadedRelatedDatabaseSubject = this.operateSubjects.find(relatedSubject => {
 
                     // (example) filter only subject that has database entity loaded and its target is Post
-                    if (!relatedSubject.databaseEntity || relatedSubject.entityTarget !== valueMetadata.target)
+                    if (!relatedSubject.hasDatabaseEntity || relatedSubject.entityTarget !== valueMetadata.target)
                         return false;
 
                     // (example) here we seek a Post loaded from the database in the subjects
@@ -436,7 +436,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 }
 
                 // check if we really has a relation between entities. If relation not found then alreadyLoadedRelatedDatabaseSubject will be empty
-                if (alreadyLoadedRelatedDatabaseSubject && alreadyLoadedRelatedDatabaseSubject.databaseEntity) {
+                if (alreadyLoadedRelatedDatabaseSubject && alreadyLoadedRelatedDatabaseSubject.hasDatabaseEntity) {
 
                     // also check if relation value exist then then make sure its changed
                     // (example) persistValue is a postFromPersistedDetails here
@@ -483,7 +483,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // if this subject is persisted subject then we get its value to check if its not empty or its values changed
                 let persistValue: any = undefined;
-                if (subject.entity) {
+                if (subject.hasEntity) {
                     persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue === undefined) return; // skip undefined properties
                 }
@@ -551,7 +551,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // add to loadMap loaded entities if some of them are missing
                 databaseEntities.forEach(databaseEntity => {
                     const subjectInLoadMap = this.findByEntityLike(valueMetadata.target, databaseEntity);
-                    if (subjectInLoadMap && !subjectInLoadMap.databaseEntity) {
+                    if (subjectInLoadMap && !subjectInLoadMap.hasDatabaseEntity) {
                         subjectInLoadMap.databaseEntity = databaseEntity;
 
                     } else if (!subjectInLoadMap) {
@@ -605,7 +605,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     // check if in persisted value there is a database value to understand if it was removed or not
                     let relatedValue = ((persistValue || []) as ObjectLiteral[]).find(persistValueItem => {
-                        return valueMetadata.compareEntities(relatedEntitySubject!.databaseEntity!, persistValueItem);
+                        return valueMetadata.compareEntities(relatedEntitySubject!.databaseEntity, persistValueItem);
                     });
 
                     // if relation value is set to undefined then we don't do anything - simply skip any check and remove
@@ -681,9 +681,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // we could load this relation ids with entity using however this way it may be more efficient, because
                 // this way we load only relations that come, e.g. we don't load data for empty relations set with object.
                 // this is also useful when object is being saved partial.
-                const existInverseEntityRelationIds = await this.connection
-                    .getSpecificRepository(subject.entityTarget)
-                    .findRelationIds(relation, subject.databaseEntity);
+                let existInverseEntityRelationIds: any[] = [];
+
+                // if subject don't have database entity it means its new and we don't need to remove something that is not exist
+                if (subject.hasDatabaseEntity) {
+                    existInverseEntityRelationIds = await this.connection
+                        .getSpecificRepository(subject.entityTarget)
+                        .findRelationIds(relation, subject.databaseEntity);
+                }
 
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
                 const changedInverseEntityRelationIds = relatedValue
@@ -738,6 +743,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      */
     protected findByEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
         return this.operateSubjects.find(subject => {
+            if (!subject.hasEntity)
+                return false;
+
             return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
         });
     }
@@ -748,6 +756,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      */
     protected findByDatabaseEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
         return this.operateSubjects.find(subject => {
+            if (!subject.hasDatabaseEntity)
+                return false;
+
             return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.databaseEntity, entity);
         });
     }

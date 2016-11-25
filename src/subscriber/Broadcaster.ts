@@ -98,7 +98,7 @@ export class Broadcaster {
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && this.isAllowedListener(listener, subject.entity))
-            .map(entityListener => subject.databaseEntity![entityListener.propertyName]());
+            .map(entityListener => subject.databaseEntity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.beforeRemove)

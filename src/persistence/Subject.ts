@@ -5,36 +5,125 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {DataTransformationUtils} from "../util/DataTransformationUtils";
 
+/**
+ * Holds information about insert operation into junction table.
+ */
 export interface JunctionInsert {
+
+    /**
+     * Relation of the junction table.
+     */
     relation: RelationMetadata;
+
+    /**
+     * Entities that needs to be "bind" to the subject.
+     */
     junctionEntities: ObjectLiteral[];
 }
 
+/**
+ * Holds information about remove operation from the junction table.
+ */
 export interface JunctionRemove {
+
+    /**
+     * Relation of the junction table.
+     */
     relation: RelationMetadata;
+
+    /**
+     * Entity ids that needs to be removed from the junction table.
+     */
     junctionRelationIds: any[];
 }
 
+/**
+ * Holds information about relation update in some subject.
+ */
 export interface RelationUpdate {
+
+    /**
+     * Relation that needs to be updated.
+     */
     relation: RelationMetadata;
+
+    /**
+     * New value that needs to be set into into new relation.
+     */
     value: any;
 }
 
 /**
+ * Subject is a subject of persistence.
+ * It holds information about each entity that needs to be persisted:
+ * - what entity should be persisted
+ * - what is database representation of the persisted entity
+ * - what entity metadata of the persisted entity
+ * - what is allowed to with persisted entity (insert/update/remove)
+ *
+ * Having this collection of subjects we can perform database queries.
  */
-export class Subject { // todo: move entity with id creation into metadata? // todo: rename to EntityWithMetadata ?
+export class Subject {
 
     // -------------------------------------------------------------------------
-    // Properties
+    // Private Properties
     // -------------------------------------------------------------------------
 
-    metadata: EntityMetadata;
-    entity: ObjectLiteral; // todo: rename to persistEntity, make it optional!
-    _databaseEntity?: ObjectLiteral;
+    /**
+     * Persist entity (changed entity).
+     */
+    private _persistEntity?: ObjectLiteral;
 
+    /**
+     * Database entity.
+     */
+    private _databaseEntity?: ObjectLiteral;
+
+    // -------------------------------------------------------------------------
+    // Public Readonly Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Entity metadata of the subject entity.
+     */
+    readonly metadata: EntityMetadata;
+
+    /**
+     * Date when this entity is persisted.
+     */
+    readonly date: Date = new Date();
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Indicates if this subject can be inserted into the database.
+     * This means that this subject either is newly persisted, either can be inserted by cascades.
+     */
     canBeInserted: boolean = false;
+
+    /**
+     * Indicates if this subject can be updated in the database.
+     * This means that this subject either was persisted, either can be updated by cascades.
+     */
     canBeUpdated: boolean = false;
+
+    /**
+     * Indicates if this subject MUST be removed from the database.
+     * This means that this subject either was removed, either was removed by cascades.
+     */
     mustBeRemoved: boolean = false;
+
+    /**
+     * Differentiated columns between persisted and database entities.
+     */
+    diffColumns: ColumnMetadata[] = [];
+
+    /**
+     * Differentiated relations between persisted and database entities.
+     */
+    diffRelations: RelationMetadata[] = [];
 
     /**
      * List of relations which need to be unset.
@@ -42,39 +131,27 @@ export class Subject { // todo: move entity with id creation into metadata? // t
      */
     relationUpdates: RelationUpdate[] = [];
 
-    diffColumns: ColumnMetadata[] = [];
-    diffRelations: RelationMetadata[] = [];
+    /**
+     * Records that needs to be inserted into the junction tables of this subject.
+     */
+    junctionInserts: JunctionInsert[] = [];
 
     /**
-     * When subject is newly persisted it may have a generated entity id.
-     * In this case it should be written here.
-     *
-     * @deprecated use newlyGeneratedId instead. Difference between this and newly generated id
-     * is that newly generated id hold value itself, without being in object.
-     * When we have generated value we always have only one primary key thous we dont need object
+     * Records that needs to be removed from the junction tables of this subject.
      */
-    entityId: any; // todo: rename to newEntityId
+    junctionRemoves: JunctionRemove[] = [];
 
     /**
      * When subject is newly persisted it may have a generated entity id.
      * In this case it should be written here.
      *
      */
-    newlyGeneratedId: any;
+    newlyGeneratedId?: any;
 
     /**
      * Used in newly persisted entities which are tree tables.
      */
-    treeLevel: number;
-
-    /**
-     * Date when this entity is persisted.
-     */
-    date: Date = new Date();
-
-    junctionInserts: JunctionInsert[] = [];
-
-    junctionRemoves: JunctionRemove[] = [];
+    treeLevel?: number;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -82,88 +159,130 @@ export class Subject { // todo: move entity with id creation into metadata? // t
 
     constructor(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) {
         this.metadata = metadata;
-        this.entity = entity!; // todo: temporary
-        this.databaseEntity = databaseEntity;
+        this._persistEntity = entity;
+        this._databaseEntity = databaseEntity;
     }
 
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
 
-    get entityTarget(): Function|string {
-        return this.metadata.target;
+    /**
+     * Gets entity sent to the persistence (e.g. changed entity).
+     * Throws error if persisted entity was not set.
+     */
+    get entity(): ObjectLiteral {
+        if (!this._persistEntity)
+            throw new Error(`Persistence entity is not set for the given subject.`);
+
+        return this._persistEntity;
     }
 
     /**
-     * Returns readable / loggable name of the entity target.
+     * Checks if subject has a persisted entity.
      */
-    get entityTargetName(): string {
-        if (this.entityTarget instanceof Function) {
-            if (this.entityTarget.name) {
-                return this.entityTarget.name;
-            }
-        }
-
-        return this.entityTarget as string;
+    get hasEntity(): boolean {
+        return !!this._persistEntity;
     }
 
-    get id() {
-        return this.metadata.getEntityIdMap(this.entity);
-    }
+    /**
+     * Gets entity from the database (e.g. original entity).
+     * Throws error if database entity was not set.
+     */
+    get databaseEntity(): ObjectLiteral {
+        if (!this._databaseEntity)
+            throw new Error(`Database entity is not set for the given subject.`);
 
-    get mixedId() {
-        return this.metadata.getEntityIdMixedMap(this.entity);
-    }
-
-    get mustBeInserted() {
-        return this.canBeInserted && !this.databaseEntity;
-    }
-
-    get mustBeUpdated() {
-        return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
-    }
-
-    get hasRelationUpdates(): boolean {
-        return this.relationUpdates.length > 0;
-    }
-
-    get databaseEntity(): ObjectLiteral|undefined {
         return this._databaseEntity;
     }
 
+    /**
+     * Checks if subject has a database entity.
+     */
     get hasDatabaseEntity(): boolean {
         return !!this._databaseEntity;
     }
 
-    set databaseEntity(databaseEntity: ObjectLiteral|undefined) {
+    /**
+     * Sets entity from the database (e.g. original entity).
+     * Once database entity set it calculates differentiated columns and relations
+     * between persistent entity and database entity.
+     */
+    set databaseEntity(databaseEntity: ObjectLiteral) {
         this._databaseEntity = databaseEntity;
-        if (this.entity && databaseEntity) {
+        if (this.hasEntity && databaseEntity) {
             this.diffColumns = this.buildDiffColumns();
             this.diffRelations = this.buildDiffRelationalColumns();
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
+    /**
+     * Gets entity target from the entity metadata of this subject.
+     */
+    get entityTarget(): Function|string {
+        return this.metadata.target;
+    }
 
-    compareId(id: ObjectLiteral): boolean { // todo: store metadata in this class and use compareIds of the metadata class instead of this duplication
-        return this.metadata.compareIds(this.id, id);
+    /**
+     * Checks if this subject must be inserted into the database.
+     * Subject can be inserted into the database if it is allowed to be inserted (explicitly persisted or by cascades)
+     * and if it does not have database entity set.
+     */
+    get mustBeInserted() {
+        return this.canBeInserted && !this.hasDatabaseEntity;
+    }
+
+    /**
+     * Checks if this subject must be updated into the database.
+     * Subject can be updated in the database if it is allowed to be updated (explicitly persisted or by cascades)
+     * and if it does have differentiated columns or relations.
+     */
+    get mustBeUpdated() {
+        return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
+    }
+
+    /**
+     * Checks if this subject has relations to be updated.
+     */
+    get hasRelationUpdates(): boolean {
+        return this.relationUpdates.length > 0;
+    }
+
+    /**
+     * Gets id of the persisted entity.
+     * If entity is not set then it returns undefined.
+     * If entity itself has an id then it simply returns it.
+     * If entity does not have an id then it returns newly generated id.
+     */
+    get getPersistedEntityIdMap(): any|undefined {
+        if (!this.hasEntity)
+            return undefined;
+
+        const entityIdMap = this.metadata.getDatabaseEntityIdMap(this.entity);
+        if (entityIdMap)
+            return entityIdMap;
+
+        if (this.newlyGeneratedId)
+            return this.metadata.createSimpleDatabaseIdMap(this.newlyGeneratedId);
+
+        return undefined;
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Protected Methods
     // -------------------------------------------------------------------------
 
     /**
      * Differentiate columns from the updated entity and entity stored in the database.
      */
-    private buildDiffColumns(): ColumnMetadata[] {
+    protected buildDiffColumns(): ColumnMetadata[] {
         return this.metadata.allColumns.filter(column => {
 
+            // prepare both entity and database values to make comparision
             let entityValue = column.getEntityValue(this.entity);
             let databaseValue = column.getEntityValue(this.databaseEntity);
 
+            // normalize special values to make proper comparision
             if (entityValue !== null && entityValue !== undefined) {
                 if (column.type === ColumnTypes.DATE) {
                     entityValue = DataTransformationUtils.mixedDateToDateString(entityValue);
@@ -191,7 +310,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
                 }
             }
 
-
+            // if its a special column or value is not defined or values aren't changed - then do nothing
             if (column.isVirtual ||
                 column.isParentId ||
                 column.isDiscriminator ||
@@ -205,9 +324,10 @@ export class Subject { // todo: move entity with id creation into metadata? // t
             // filter out "relational columns" only in the case if there is a relation object in entity
             if (!column.isInEmbedded && this.metadata.hasRelationWithDbName(column.propertyName)) {
                 const relation = this.metadata.findRelationWithDbName(column.propertyName); // todo: why with dbName ?
-                if (this.entity[relation.propertyName] !== null && this.entity[relation.propertyName] !== undefined) // todo: explain this condition
+                if (this.entity[relation.propertyName] !== null && this.entity[relation.propertyName] !== undefined)
                     return false;
             }
+
             return true;
         });
     }
@@ -215,7 +335,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
     /**
      * Difference columns of the owning one-to-one and many-to-one columns.
      */
-    private buildDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): RelationMetadata[] {
+    protected buildDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): RelationMetadata[] {
         return this.metadata.allRelations.filter(relation => {
             if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
                 return false;
@@ -235,7 +355,7 @@ export class Subject { // todo: move entity with id creation into metadata? // t
             // this allows us to compare relation id in the updated subject with id in the database.
             // note that we used relation.name instead of relation.propertyName because query builder with RELATION_ID_VALUES
             // returns values in the relation.name column, not relation.propertyName column
-            const dbEntityRelationId = this.databaseEntity![relation.name];
+            const dbEntityRelationId = this.databaseEntity[relation.name];
 
             // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
             // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))
@@ -253,17 +373,6 @@ export class Subject { // todo: move entity with id creation into metadata? // t
             // if relation ids aren't equal then we need to update them
             return updatedEntityRelationId !== dbEntityRelationId;
         });
-    }
-
-
-    /**
-     * Gets id of the persisted entity.
-     * If entity itself has an id then it simply returns it.
-     * If entity does not have an id then it returns newly generated id.
-     */
-    getPersistedEntityIdMap(): any {
-        return  this.metadata.getDatabaseEntityIdMap(this.entity) ||
-                this.metadata.createSimpleDatabaseIdMap(this.newlyGeneratedId);
     }
 
 }

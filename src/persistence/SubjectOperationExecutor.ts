@@ -36,11 +36,11 @@ export class SubjectOperationExecutor {
         // check if remove subject also must be inserted or updated - then we throw an exception
         const removeInInserts = removeSubjects.find(removeSubject => insertSubjects.indexOf(removeSubject) !== -1);
         if (removeInInserts)
-            throw new Error(`Removed entity ${removeInInserts.entityTargetName} is also scheduled for insert operation. This looks like ORM problem. Please report a github issue.`);
+            throw new Error(`Removed entity ${removeInInserts.metadata.name} is also scheduled for insert operation. This looks like ORM problem. Please report a github issue.`);
 
         const removeInUpdates = removeSubjects.find(removeSubject => updateSubjects.indexOf(removeSubject) !== -1);
         if (removeInUpdates)
-            throw new Error(`Removed entity "${removeInUpdates.entityTargetName}" is also scheduled for update operation. ` +
+            throw new Error(`Removed entity "${removeInUpdates.metadata.name}" is also scheduled for update operation. ` +
                 `Make sure you are not updating and removing same object (note that update or remove may be executed by cascade operations).`);
 
         // todo: there is nothing to update in inserted entity too
@@ -167,7 +167,7 @@ export class SubjectOperationExecutor {
 
             // if we found relations which we can update - then update them
             if (Object.keys(updateOptions).length > 0) {
-                const relatedEntityIdMap = subject.getPersistedEntityIdMap();
+                const relatedEntityIdMap = subject.getPersistedEntityIdMap;
                 const updatePromise = this.queryRunner.update(subject.metadata.table.name, updateOptions, relatedEntityIdMap);
                 updatePromises.push(updatePromise);
             }
@@ -511,9 +511,6 @@ export class SubjectOperationExecutor {
             values[setRelation.relation.name] = value; // todo: || fromInsertedSubjects ??
         });
 
-        if (!subject.databaseEntity)
-            throw new Error(`Internal error. Cannot unset relation of subject that does not have database entity.`);
-
         const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
         if (!idMap)
             throw new Error(`Internal error. Cannot get id of the updating entity.`);
@@ -536,17 +533,17 @@ export class SubjectOperationExecutor {
         if (subject.metadata.parentEntityMetadata) {
             const parentConditions: ObjectLiteral = {};
             subject.metadata.parentPrimaryColumns.forEach(column => {
-                parentConditions[column.name] = subject.databaseEntity![column.propertyName];
+                parentConditions[column.name] = subject.databaseEntity[column.propertyName];
             });
             await this.queryRunner.delete(subject.metadata.parentEntityMetadata.table.name, parentConditions);
 
             const childConditions: ObjectLiteral = {};
             subject.metadata.primaryColumnsWithParentIdColumns.forEach(column => {
-                childConditions[column.name] = subject.databaseEntity![column.propertyName];
+                childConditions[column.name] = subject.databaseEntity[column.propertyName];
             });
             await this.queryRunner.delete(subject.metadata.table.name, childConditions);
         } else {
-            await this.queryRunner.delete(subject.metadata.table.name, subject.metadata.getEntityIdColumnMap(subject.databaseEntity!)!);
+            await this.queryRunner.delete(subject.metadata.table.name, subject.metadata.getEntityIdColumnMap(subject.databaseEntity)!);
         }
     }
 
@@ -649,7 +646,8 @@ export class SubjectOperationExecutor {
      */
     private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
-        const ownId = junctionRemove.relation.getOwnEntityRelationId(subject.entity || subject.databaseEntity);
+        const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
+        const ownId = junctionRemove.relation.getOwnEntityRelationId(entity);
         const ownColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
         const relateColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[1] : junctionMetadata.columns[0];
         const removePromises = junctionRemove.junctionRelationIds.map(relationId => {
@@ -704,12 +702,13 @@ export class SubjectOperationExecutor {
         });
 
         // remove ids from the entities that were removed
-        removeSubjects.forEach(subject => {
-            if (!subject.entity) return;
-            subject.metadata.primaryColumns.forEach(primaryColumn => {
-                subject.entity[primaryColumn.propertyName] = undefined;
+        removeSubjects
+            .filter(subject => subject.hasEntity)
+            .forEach(subject => {
+                subject.metadata.primaryColumns.forEach(primaryColumn => {
+                    subject.entity[primaryColumn.propertyName] = undefined;
+                });
             });
-        });
     }
 
 }
