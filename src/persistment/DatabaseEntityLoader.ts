@@ -46,6 +46,17 @@ import {SubjectUtils} from "./subject/SubjectUtils";
  *
  * At the end we have all entities we need to operate with.
  * Next step is to store all loaded entities to manipulate them efficiently.
+ *
+ * Rules of updating by cascades.
+ * Insert operation can lead to:
+ *  - insert operations
+ *  - update operations
+ * Update operation can lead to:
+ *  - insert operations
+ *  - update operations
+ *  - remove operations
+ * Remove operation can lead to:
+ *  - remove operation
  */
 export class DatabaseEntityLoader<Entity extends ObjectLiteral> {
 

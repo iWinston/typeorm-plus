@@ -7,7 +7,8 @@ import {FindOptions} from "../find-options/FindOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {EntityPersister} from "../persistment/EntityPersister";
+import {PersistSubjectExecutor} from "../persistment/PersistSubjectExecutor";
+import {DatabaseEntityLoader} from "../persistment/DatabaseEntityLoader";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -133,8 +134,14 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            const entityPersister = new EntityPersister<Entity>(this.connection, this.metadata, queryRunner);
-            return await entityPersister.persist(entityOrEntities); // await is needed here because we are using finally
+
+            const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+            await databaseEntityLoader.remove(entityOrEntities, this.metadata);
+
+            const executor = new PersistSubjectExecutor(this.connection, queryRunner);
+            await executor.execute(databaseEntityLoader.operateSubjects);
+
+            return entityOrEntities; // await is needed here because we are using finally
             // if (this.hasId(entityOrEntities)) {
             //     return await entityPersister.update(entityOrEntities); // await is needed here because we are using finally
             // } else {
@@ -168,8 +175,14 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            const entityPersister = new EntityPersister<Entity>(this.connection, this.metadata, queryRunner);
-            return await entityPersister.remove(entityOrEntities); // await is needed here because we are using finally
+
+            const databaseEntityLoader = new DatabaseEntityLoader(this.connection);
+            await databaseEntityLoader.persist(entityOrEntities, this.metadata);
+
+            const executor = new PersistSubjectExecutor(this.connection, queryRunner);
+            await executor.execute(databaseEntityLoader.operateSubjects);
+
+            return entityOrEntities;
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
