@@ -1,5 +1,4 @@
 import {Subject} from "./Subject";
-import {SubjectGroup} from "./SubjectGroup";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
@@ -50,21 +49,6 @@ export class SubjectCollection extends Array<Subject> {
         return this.find(subject => {
             return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
         });
-    }
-
-    /**
-     * Groups given Subject objects into groups separated by entity targets.
-     */
-    groupByEntityTargets(): SubjectGroup[] {
-        return this.reduce((groups, operatedEntity) => {
-            let group = groups.find(group => group.target === operatedEntity.entityTarget);
-            if (!group) {
-                group = new SubjectGroup(operatedEntity.entityTarget);
-                groups.push(group);
-            }
-            group.subjects.push(operatedEntity);
-            return groups;
-        }, [] as SubjectGroup[]);
     }
 
     findByEntityId(entityTarget: Function|string, id: any) {

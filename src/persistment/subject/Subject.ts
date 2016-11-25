@@ -131,6 +131,10 @@ export class Subject { // todo: move entity with id creation into metadata? // t
         return this._databaseEntity;
     }
 
+    get hasDatabaseEntity(): boolean {
+        return !!this._databaseEntity;
+    }
+
     set databaseEntity(databaseEntity: ObjectLiteral|undefined) {
         this._databaseEntity = databaseEntity;
         if (this.entity && databaseEntity) {

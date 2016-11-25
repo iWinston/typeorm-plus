@@ -120,7 +120,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         // console.log("all persistence subjects: ", databaseEntityLoader.loadedSubjects);
 
         const executor = new PersistSubjectExecutor(this.connection, this.queryRunner);
-        await executor.execute(databaseEntityLoader.loadedSubjects);
+        await executor.execute(databaseEntityLoader.operateSubjects);
 
         /*
         const queryBuilder = new QueryBuilder(this.connection, this.queryRunner)
@@ -154,7 +154,7 @@ export class EntityPersister<Entity extends ObjectLiteral> {
         // console.log("all persistence subjects: ", databaseEntityLoader.loadedSubjects);
 
         const executor = new PersistSubjectExecutor(this.connection, this.queryRunner);
-        await executor.execute(databaseEntityLoader.loadedSubjects);
+        await executor.execute(databaseEntityLoader.operateSubjects);
 
         return entity;
 

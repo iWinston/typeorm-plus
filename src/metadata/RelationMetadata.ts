@@ -418,13 +418,6 @@ export class RelationMetadata {
     }
 
     /**
-     * Checks if given entity is not null or undefined.
-     */
-    isEntityDefined(entity: ObjectLiteral|undefined|null): boolean {
-        return entity !== null && entity !== undefined;
-    }
-
-    /**
      * todo: lazy relations are not supported here? implement logic?
      *
      * examples:
