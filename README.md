@@ -82,7 +82,7 @@ Also make sure you are using TypeScript compiler version > **2.1** and you have 
 
 #### Node.js version
 
-TypeORM was checked with Node.JS version 6 and above. 
+TypeORM was tested with Node.JS version 6 and above. 
 If you have errors during app bootstrap, try to upgrade your node.js version to the latest version.
     
 ## Quick Start
