@@ -70,6 +70,9 @@ export class EntityManager extends BaseEntityManager {
             return this.getRepository<Entity|Entity[]>(target).persist(entity);
         } else {
             if (target instanceof Array) {
+                if (target.length === 0)
+                    return Promise.resolve(target);
+
                 return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
             } else {
                 return this.getRepository<Entity>(target.constructor).persist(entity as Entity);
