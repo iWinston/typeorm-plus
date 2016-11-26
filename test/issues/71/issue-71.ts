@@ -5,7 +5,7 @@ import {expect} from "chai";
 import {Artikel} from "./entity/Artikel";
 import {Kollektion} from "./entity/Kollektion";
 
-describe.only("github issues > #71 ManyToOne relation with custom column name persistence fails", () => {
+describe("github issues > #71 ManyToOne relation with custom column name persistence fails", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
