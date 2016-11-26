@@ -71,7 +71,20 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
     
     Install only one of them, depend on which database you use.
     
+#### TypeScript configuration
 
+Also make sure you are using TypeScript compiler version > **2.1** and you have enabled following settings in `tsconfig.json`:
+
+```json
+"emitDecoratorMetadata": true,
+"experimentalDecorators": true,
+```
+
+#### Node.js version
+
+TypeORM was checked with Node.JS version 6 and above. 
+If you have errors during app bootstrap, try to upgrade your node.js version to the latest version.
+    
 ## Quick Start
 
 In TypeORM tables are created from Entities. 
@@ -297,7 +310,7 @@ createConnection({
     autoSchemaSync: true,
 }).then(connection => {
     // here you can start to work with your entities
-});
+}).catch(error => console.log(error));
 ```
 
 We are using mysql in this example, but you can use any other database. 
@@ -334,7 +347,7 @@ createConnection({
     autoSchemaSync: true,
 }).then(connection => {
     // here you can start to work with your entities
-});
+}).catch(error => console.log(error));
 ```
 
 ### Run the application
@@ -379,7 +392,7 @@ createConnection(/*...*/).then(connection => {
                 console.log("Photo has been saved");
             });
 
-});
+}).catch(error => console.log(error));
 ```
   
 ### Using async/await syntax
@@ -402,7 +415,7 @@ createConnection(/*...*/).then(async connection => {
     await connection.entityManager.persist(photo);
     console.log("Photo has been saved");
 
-});
+}).catch(error => console.log(error));
 ```
 
 ### Using Entity Manager
@@ -422,7 +435,7 @@ createConnection(/*...*/).then(async connection => {
     let savedPhotos = await connection.entityManager.find(Photo);
     console.log("All photos from the db: ", savedPhotos);
 
-});
+}).catch(error => console.log(error));
 ```
    
 savedPhotos will be an array of Photo objects with the data loaded from the database.
@@ -455,7 +468,7 @@ createConnection(/*...*/).then(async connection => {
     let savedPhotos = await photoRepository.find();
     console.log("All photos from the db: ", savedPhotos);
 
-});
+}).catch(error => console.log(error));
 ```
  
 ### Loading photos from the database
@@ -488,7 +501,7 @@ createConnection(/*...*/).then(async connection => {
     console.log("All photos: ", allPublishedPhotos);
     console.log("Photos count: ", allPublishedPhotos);
 
-});
+}).catch(error => console.log(error));
 ```
 
 ### Updating photo in the database
@@ -506,7 +519,7 @@ createConnection(/*...*/).then(async connection => {
     photoToUpdate.name = "Me, my friends and polar bears";
     await photoRepository.persist(photoToUpdate);
 
-});
+}).catch(error => console.log(error));
 ```
 
 Now photo with `id = 1` will be updated in the database.
@@ -526,7 +539,7 @@ createConnection(/*...*/).then(async connection => {
     let photoToRemove = await photoRepository.findOneById(1);
     await photoRepository.remove(photoToRemove);
 
-});
+}).catch(error => console.log(error));
 ``` 
 
 Now photo with `id = 1` will be removed from the database.
@@ -633,7 +646,8 @@ createConnection(/*...*/).then(async connection => {
 
     // done
     console.log("metadata is saved, and relation between metadata and photo is created in the database too");
-});
+
+}).catch(error => console.log(error));
 ```
  
 ### Adding inverse side of a relation
@@ -707,7 +721,8 @@ createConnection(/*...*/).then(async connection => {
         }
     });
 
-});
+
+}).catch(error => console.log(error));
 ```
         
 Here photos will contain array of photos from the database, and each photo will contain its photo metadata.
@@ -734,7 +749,8 @@ createConnection(/*...*/).then(async connection => {
             .innerJoinAndSelect("photo.metadata")
             .getResults();
 
-});
+
+}).catch(error => console.log(error));
 ```
 
 ### using cascade options to automatically save related objects
@@ -789,7 +805,8 @@ createConnection(options).then(async connection => {
     await photoRepository.persist(photo);
 
     console.log("Photo is saved, photo metadata is saved too.")
-});
+
+}).catch(error => console.log(error));
 ```     
 
 ### creating a many-to-one / one-to-many relation
