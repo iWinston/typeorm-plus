@@ -126,6 +126,7 @@ export class EntityMetadataValidator {
             // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
             // todo: with message like: "Inverse side is specified only on one side of the relationship. Specify on other side too to prevent confusion".
             // todo: add validation if there two entities with the same target, and show error message with description of the problem (maybe file was renamed/moved but left in output directory)
+            // todo: check if there are multiple columns on the same column applied.
 
         });
     }

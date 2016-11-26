@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe("persistence > general operations", () => {
+describe("github issues > #80 repository.persist fails when empty array is sent to the method", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
