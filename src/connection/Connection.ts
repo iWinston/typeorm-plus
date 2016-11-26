@@ -10,7 +10,6 @@ import {getMetadataArgsStorage, getFromContainer} from "../index";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
-import {NoConnectionForRepositoryError} from "./error/NoConnectionForRepositoryError";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
 import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
@@ -22,7 +21,6 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
 import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingStrategyNotConnectedError";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {CannotGetEntityManagerNotConnectedError} from "./error/CannotGetEntityManagerNotConnectedError";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {RepositoryAggregator} from "../repository/RepositoryAggregator";
@@ -147,8 +145,8 @@ export class Connection {
      * Gets entity manager that allows to perform repository operations with any entity in this connection.
      */
     get entityManager() {
-        if (!this.isConnected)
-            throw new CannotGetEntityManagerNotConnectedError(this.name);
+        // if (!this.isConnected)
+        //     throw new CannotGetEntityManagerNotConnectedError(this.name);
         
         return this._entityManager;
     }
@@ -446,8 +444,8 @@ export class Connection {
      * Finds repository aggregator of the given entity class or name.
      */
     protected findRepositoryAggregator(entityClassOrName: ObjectType<any>|string): RepositoryAggregator {
-        if (!this.isConnected)
-            throw new NoConnectionForRepositoryError(this.name);
+        // if (!this.isConnected)
+        //     throw new NoConnectionForRepositoryError(this.name);
 
         if (!this.entityMetadatas.hasTarget(entityClassOrName))
             throw new RepositoryNotFoundError(this.name, entityClassOrName);

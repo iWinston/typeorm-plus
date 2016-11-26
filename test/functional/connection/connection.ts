@@ -51,7 +51,7 @@ describe("Connection", () => {
             connection.isConnected.should.be.false;
         });
 
-        it("entity manager and reactive entity manager should not be accessible", () => {
+        it.skip("entity manager and reactive entity manager should not be accessible", () => {
             expect(() => connection.entityManager).to.throw(CannotGetEntityManagerNotConnectedError);
             // expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
         });
@@ -78,7 +78,7 @@ describe("Connection", () => {
             return connection.syncSchema().should.be.rejectedWith(CannotSyncNotConnectedError);
         });
 
-        it("should not be able to use repositories", () => {
+        it.skip("should not be able to use repositories", () => {
             expect(() => connection.getRepository(Post)).to.throw(NoConnectionForRepositoryError);
             expect(() => connection.getTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
             // expect(() => connection.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
