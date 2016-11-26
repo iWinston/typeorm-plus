@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
+import {setupTestingConnections, closeConnections, reloadDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe.only("persistence > general operations", () => {
+describe("persistence > general operations", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
