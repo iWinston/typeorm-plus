@@ -6,15 +6,50 @@ import {Subject, JunctionInsert, JunctionRemove} from "./Subject";
 import {OrmUtils} from "../util/OrmUtils";
 
 /**
- * Executes PersistOperation in the given connection.
+ * Executes all database operations (inserts, updated, deletes) that must be executed
+ * with given persistence subjects.
  */
 export class SubjectOperationExecutor {
+
+    // -------------------------------------------------------------------------
+    // Private Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * All subjects that needs to be operated.
+     */
+    private allSubjects: Subject[];
+
+    /**
+     * Subjects that must be inserted.
+     */
+    private insertSubjects: Subject[];
+
+    /**
+     * Subjects that must be updated.
+     */
+    private updateSubjects: Subject[];
+
+    /**
+     * Subjects that must be removed.
+     */
+    private removeSubjects: Subject[];
+
+    /**
+     * Subjects which relations should be updated.
+     */
+    private relationUpdateSubjects: Subject[];
+
+    /**
+     * Query runner used to execute queries.
+     */
+    private queryRunner: QueryRunner;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection, private queryRunner: QueryRunner) {
+    constructor(private connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -22,33 +57,30 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Executes given persist operation.
+     * Executes all operations over given array of subjects.
+     * Executes queries using given query runner.
      */
-    async execute(subjects: Subject[]) {
+    async execute(subjects: Subject[], queryRunner: QueryRunner) {
+
+        // validate all subjects first
+        subjects.forEach(subject => subject.validate());
+
+        // set class properties for easy use
+        this.queryRunner = queryRunner;
+        this.allSubjects = subjects;
+        this.insertSubjects = subjects.filter(subject => subject.mustBeInserted);
+        this.updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
+        this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
+        this.relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
+
+        // start execute queries in a transaction
+        // if transaction is already opened in this query runner then we don't touch it
+        // if its not opened yet then we open it here, and once we finish - we close it
         let isTransactionStartedByItself = false;
-
-        const insertSubjects = subjects.filter(subject => subject.mustBeInserted);
-        const updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
-        const removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
-        const relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
-
-        // validation
-        // check if remove subject also must be inserted or updated - then we throw an exception
-        const removeInInserts = removeSubjects.find(removeSubject => insertSubjects.indexOf(removeSubject) !== -1);
-        if (removeInInserts)
-            throw new Error(`Removed entity ${removeInInserts.metadata.name} is also scheduled for insert operation. This looks like ORM problem. Please report a github issue.`);
-
-        const removeInUpdates = removeSubjects.find(removeSubject => updateSubjects.indexOf(removeSubject) !== -1);
-        if (removeInUpdates)
-            throw new Error(`Removed entity "${removeInUpdates.metadata.name}" is also scheduled for update operation. ` +
-                `Make sure you are not updating and removing same object (note that update or remove may be executed by cascade operations).`);
-
-        // todo: there is nothing to update in inserted entity too
-
         try {
 
-            // broadcast events before we start updating
-            this.connection.broadcaster.broadcastBeforeEventsForAll(insertSubjects, updateSubjects, removeSubjects);
+            // broadcast "before" events before we start updating
+            this.connection.broadcaster.broadcastBeforeEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
             // open transaction if its not opened yet
             if (!this.queryRunner.isTransactionActive()) {
@@ -56,31 +88,32 @@ export class SubjectOperationExecutor {
                 await this.queryRunner.beginTransaction();
             }
 
-            await this.executeInsertOperations(insertSubjects);
-            await this.executeInsertClosureTableOperations(insertSubjects);
-            await this.executeInsertJunctionsOperations(subjects, insertSubjects);
-            await this.executeRemoveJunctionsOperations(subjects);
-            await this.executeUpdateOperations(updateSubjects);
-            await this.executeUpdateRelations(relationUpdateSubjects);
-            await this.executeRemoveOperations(removeSubjects);
+            await this.executeInsertOperations();
+            await this.executeInsertClosureTableOperations();
+            await this.executeInsertJunctionsOperations();
+            await this.executeRemoveJunctionsOperations();
+            await this.executeUpdateOperations();
+            await this.executeUpdateRelations();
+            await this.executeRemoveOperations();
 
             // commit transaction if it was started by us
             if (isTransactionStartedByItself === true)
                 await this.queryRunner.commitTransaction();
 
             // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
-            await this.updateSpecialColumnsInPersistedEntities(insertSubjects, updateSubjects, removeSubjects);
+            await this.updateSpecialColumnsInPersistedEntities();
 
-            // finally broadcast events
-            await this.connection.broadcaster.broadcastAfterEventsForAll(insertSubjects, updateSubjects, removeSubjects);
+            // finally broadcast "after" events
+            await this.connection.broadcaster.broadcastAfterEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         } catch (error) {
 
-            // rollback transaction if it was started by this class
+            // rollback transaction if it was started by us
             if (isTransactionStartedByItself) {
                 try {
                     await this.queryRunner.rollbackTransaction();
-                } catch (secondaryError) { }
+                } catch (secondaryError) {
+                }
             }
 
             throw error;
@@ -109,18 +142,18 @@ export class SubjectOperationExecutor {
      * Insert process of the entities from the second group which can have only non nullable relations is a single-step process:
      * - we simply insert all entities and get into attention all its dependencies which were inserted in the first group
      */
-    private async executeInsertOperations(insertSubjects: Subject[]): Promise<void> {
+    private async executeInsertOperations(): Promise<void> {
 
         // separate insert entities into groups:
 
         // first group of subjects are subjects without any non-nullable column
         // we need to insert first such entities because second group entities may rely on those entities.
-        const firstInsertSubjects = insertSubjects.filter(subject => subject.metadata.hasNonNullableColumns);
+        const firstInsertSubjects = this.insertSubjects.filter(subject => subject.metadata.hasNonNullableColumns);
 
         // second group - are all other subjects
         // since in this group there are non nullable columns, some of them may depend on value of the
         // previously inserted entity (which only can be entity with all nullable columns)
-        const secondInsertSubjects = insertSubjects.filter(subject => !subject.metadata.hasNonNullableColumns);
+        const secondInsertSubjects = this.insertSubjects.filter(subject => !subject.metadata.hasNonNullableColumns);
 
         // note: these operations should be executed in sequence, not in parallel
         // because second group depend of obtained data from the first group
@@ -135,7 +168,7 @@ export class SubjectOperationExecutor {
         // but category in post is inserted with "null".
         // now we need to update post table - set category with a newly persisted category id.
         const updatePromises: Promise<any>[] = [];
-        insertSubjects.forEach(subject => {
+        this.insertSubjects.forEach(subject => {
 
             // first update relations with join columns (one-to-one owner and many-to-one relations)
             const updateOptions: ObjectLiteral = {};
@@ -147,7 +180,7 @@ export class SubjectOperationExecutor {
                 if (!relatedEntity)
                     return;
 
-                const insertSubject = insertSubjects.find(insertedSubject => relatedEntity === insertedSubject.entity);
+                const insertSubject = this.insertSubjects.find(insertedSubject => relatedEntity === insertedSubject.entity);
 
                 // if relation id exist exist in the related entity then simply use it
                 const relationId = relatedEntity[referencedColumn.propertyName]; // todo: what about relationId got from relation column, not relation itself? todo: create relation.getEntityRelationId(entity)
@@ -160,7 +193,7 @@ export class SubjectOperationExecutor {
                     } else if (referencedColumn.isGenerated) {
                         updateOptions[relation.name] = insertSubject.newlyGeneratedId;
                     }
-                    // todo: implement other special types too
+                    // todo: handle other special types too
                 }
 
             });
@@ -184,7 +217,7 @@ export class SubjectOperationExecutor {
                 relatedEntity.forEach(subRelatedEntity => {
 
                     let relationId = subRelatedEntity[referencedColumn.propertyName];
-                    const insertSubject = insertSubjects.find(insertedSubject => subRelatedEntity === insertedSubject.entity);
+                    const insertSubject = this.insertSubjects.find(insertedSubject => subRelatedEntity === insertedSubject.entity);
 
                     if (insertSubject) {
 
@@ -208,7 +241,7 @@ export class SubjectOperationExecutor {
                 const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
                 const value = subject.entity[relation.propertyName];
 
-                insertSubjects.forEach(insertedSubject => {
+                this.insertSubjects.forEach(insertedSubject => {
                     if (value === insertedSubject.entity) {
 
                         if (referencedColumn.isGenerated) {
@@ -259,6 +292,9 @@ export class SubjectOperationExecutor {
         }
     }
 
+    /**
+     * Collects columns and values for the insert operation.
+     */
     private collectColumnsAndValues(metadata: EntityMetadata, entity: any, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[]): ObjectLiteral {
 
         // extract all columns
@@ -360,20 +396,23 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Executes insert operations for closure tables.
+     * Inserts all given subjects into closure table.
      */
-    private executeInsertClosureTableOperations(insertSubjects: Subject[]/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
-        const promises = insertSubjects
+    private executeInsertClosureTableOperations(/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
+        const promises = this.insertSubjects
             .filter(subject => subject.metadata.table.isClosure)
             .map(async subject => {
                 // const relationsUpdateMap = this.findUpdateOperationForEntity(updatesByRelations, insertSubjects, subject.entity);
                 // subject.treeLevel = await this.insertIntoClosureTable(subject, relationsUpdateMap);
-                await this.insertClosureTableValues(subject, insertSubjects);
+                await this.insertClosureTableValues(subject);
             });
         return Promise.all(promises);
     }
 
-    private async insertClosureTableValues(subject: Subject, insertedSubjects: Subject[]): Promise<void> {
+    /**
+     * Inserts given subject into closure table.
+     */
+    private async insertClosureTableValues(subject: Subject): Promise<void> {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
         const tableName = subject.metadata.closureJunctionTable.table.name;
@@ -387,7 +426,7 @@ export class SubjectOperationExecutor {
         const parentEntity = subject.entity[subject.metadata.treeParentRelation.propertyName];
         let parentEntityId = parentEntity[referencedColumn.propertyName];
         if (!parentEntityId && referencedColumn.isGenerated) {
-            const parentInsertedSubject = insertedSubjects.find(subject => subject.entity === parentEntity);
+            const parentInsertedSubject = this.insertSubjects.find(subject => subject.entity === parentEntity);
             // todo: throw exception if parentInsertedSubject is not set
             parentEntityId = parentInsertedSubject!.newlyGeneratedId;
         } // todo: implement other special column types too
@@ -405,12 +444,15 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Executes update operations.
+     * Updates all given subjects in the database.
      */
-    private async executeUpdateOperations(updateSubjects: Subject[]): Promise<void> {
-        await Promise.all(updateSubjects.map(subject => this.update(subject)));
+    private async executeUpdateOperations(): Promise<void> {
+        await Promise.all(this.updateSubjects.map(subject => this.update(subject)));
     }
 
+    /**
+     * Updates given subject in the database.
+     */
     private async update(subject: Subject): Promise<void> {
         const entity = subject.entity;
 
@@ -500,10 +542,16 @@ export class SubjectOperationExecutor {
     // Private Methods: Update only relations
     // -------------------------------------------------------------------------
 
-    private executeUpdateRelations(subjects: Subject[]) {
-        return Promise.all(subjects.map(subject => this.updateRelations(subject)));
+    /**
+     * Updates relations of all given subjects in the database.
+     */
+    private executeUpdateRelations() {
+        return Promise.all(this.relationUpdateSubjects.map(subject => this.updateRelations(subject)));
     }
 
+    /**
+     * Updates relations of the given subject in the database.
+     */
     private async updateRelations(subject: Subject) {
         const values: ObjectLiteral = {};
         subject.relationUpdates.forEach(setRelation => {
@@ -523,12 +571,15 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Executes remove operations.
+     * Removes all given subjects from the database.
      */
-    private async executeRemoveOperations(removeSubjects: Subject[]): Promise<void> {
-        await Promise.all(removeSubjects.map(subject => this.remove(subject)));
+    private async executeRemoveOperations(): Promise<void> {
+        await Promise.all(this.removeSubjects.map(subject => this.remove(subject)));
     }
 
+    /**
+     * Updates given subject from the database.
+     */
     private async remove(subject: Subject): Promise<void> {
         if (subject.metadata.parentEntityMetadata) {
             const parentConditions: ObjectLiteral = {};
@@ -552,13 +603,13 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Executes insert junction operations.
+     * Inserts into database junction tables all given array of subjects junction data.
      */
-    private async executeInsertJunctionsOperations(subjects: Subject[], insertSubjects: Subject[]): Promise<void> {
+    private async executeInsertJunctionsOperations(): Promise<void> {
         const promises: Promise<any>[] = [];
-        subjects.forEach(subject => {
+        this.allSubjects.forEach(subject => {
             subject.junctionInserts.forEach(junctionInsert => {
-                promises.push(this.insertJunctions(subject, junctionInsert, insertSubjects));
+                promises.push(this.insertJunctions(subject, junctionInsert));
             });
         });
 
@@ -566,9 +617,9 @@ export class SubjectOperationExecutor {
     }
 
     /**
-     * Executes insert junction operation.
+     * Inserts into database junction table given subject's junction insert data.
      */
-    private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert, insertSubjects: Subject[]): Promise<void> {
+    private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert): Promise<void> {
         // I think here we can only support to work only with single primary key entities
 
         const relation = junctionInsert.relation;
@@ -601,7 +652,7 @@ export class SubjectOperationExecutor {
             // if relation id is missing in the newly bind entity then check maybe it was just persisted
             // and we can use special newly generated value
             if (!relationId) {
-                const insertSubject = insertSubjects.find(subject => subject.entity === newBindEntity);
+                const insertSubject = this.insertSubjects.find(subject => subject.entity === newBindEntity);
                 if (insertSubject) {
                     if (secondColumn.isGenerated) {
                         relationId = insertSubject.newlyGeneratedId;
@@ -628,11 +679,11 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Executes remove junction operations.
+     * Removes from database junction tables all given array of subjects removal junction data.
      */
-    private async executeRemoveJunctionsOperations(subjects: Subject[]): Promise<void> {
+    private async executeRemoveJunctionsOperations(): Promise<void> {
         const promises: Promise<any>[] = [];
-        subjects.forEach(subject => {
+        this.allSubjects.forEach(subject => {
             subject.junctionRemoves.forEach(junctionRemove => {
                 promises.push(this.removeJunctions(subject, junctionRemove));
             });
@@ -642,7 +693,7 @@ export class SubjectOperationExecutor {
     }
 
     /**
-     * Executes remove junction operation.
+     * Removes from database junction table all given subject's removal junction data.
      */
     private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
@@ -664,10 +715,10 @@ export class SubjectOperationExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, versioning).
      */
-    private updateSpecialColumnsInPersistedEntities(insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]) {
+    private updateSpecialColumnsInPersistedEntities() {
 
         // update entity columns that gets updated on each entity insert
-        insertSubjects.forEach(subject => {
+        this.insertSubjects.forEach(subject => {
             subject.metadata.primaryColumns.forEach(primaryColumn => {
                 if (subject.newlyGeneratedId)
                     subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
@@ -694,7 +745,7 @@ export class SubjectOperationExecutor {
         });
 
         // update special columns that gets updated on each entity update
-        updateSubjects.forEach(subject => {
+        this.updateSubjects.forEach(subject => {
             if (subject.metadata.hasUpdateDateColumn)
                 subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
             if (subject.metadata.hasVersionColumn)
@@ -702,7 +753,7 @@ export class SubjectOperationExecutor {
         });
 
         // remove ids from the entities that were removed
-        removeSubjects
+        this.removeSubjects
             .filter(subject => subject.hasEntity)
             .forEach(subject => {
                 subject.metadata.primaryColumns.forEach(primaryColumn => {

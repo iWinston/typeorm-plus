@@ -138,8 +138,8 @@ export class Repository<Entity extends ObjectLiteral> {
             const databaseEntityLoader = new SubjectBuilder(this.connection);
             await databaseEntityLoader.persist(entityOrEntities, this.metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection, queryRunner);
-            await executor.execute(databaseEntityLoader.operateSubjects);
+            const executor = new SubjectOperationExecutor(this.connection);
+            await executor.execute(databaseEntityLoader.operateSubjects, queryRunner);
 
             return entityOrEntities; // await is needed here because we are using finally
 
@@ -174,8 +174,8 @@ export class Repository<Entity extends ObjectLiteral> {
             const databaseEntityLoader = new SubjectBuilder(this.connection);
             await databaseEntityLoader.remove(entityOrEntities, this.metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection, queryRunner);
-            await executor.execute(databaseEntityLoader.operateSubjects);
+            const executor = new SubjectOperationExecutor(this.connection);
+            await executor.execute(databaseEntityLoader.operateSubjects, queryRunner);
 
             return entityOrEntities;
 
