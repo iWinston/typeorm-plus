@@ -335,9 +335,6 @@ export class EntityMetadataBuilder {
             }
         });
 
-        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
-        getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
-
         // generate columns and foreign keys for tables with relations
         entityMetadatas.forEach(metadata => {
             metadata.relationsWithJoinColumns.forEach(relation => {
@@ -461,6 +458,9 @@ export class EntityMetadataBuilder {
                 foreignKey.entityMetadata = metadata;
                 metadata.foreignKeys.push(foreignKey);
             });
+
+        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
+        getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
 
         // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
         getFromContainer(EntityMetadataValidator).validateDependencies(entityMetadatas);
