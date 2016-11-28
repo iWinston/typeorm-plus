@@ -20,7 +20,10 @@ describe("one-to-one", function() {
 
     const options: ConnectionOptions = {
         driver: createTestingConnectionOptions("mysql"),
-        entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
+        entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor],
+        // logging: {
+        //     logQueries: true
+        // }
     };
 
     // connect to db

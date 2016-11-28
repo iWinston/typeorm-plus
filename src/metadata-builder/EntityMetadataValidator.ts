@@ -25,31 +25,7 @@ export class EntityMetadataValidator {
      */
     validateMany(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas));
-    }
-
-    /**
-     * Validates dependencies of the entity metadatas.
-     */
-    validateDependencies(entityMetadatas: EntityMetadata[]) {
-
-        const DepGraph = require("dependency-graph").DepGraph;
-        const graph = new DepGraph();
-        entityMetadatas.forEach(entityMetadata => {
-            graph.addNode(entityMetadata.name);
-        });
-        entityMetadatas.forEach(entityMetadata => {
-            entityMetadata.relationsWithJoinColumns
-                .filter(relation => !relation.isNullable)
-                .forEach(relation => {
-                    graph.addDependency(entityMetadata.name, relation.inverseEntityMetadata.name);
-                });
-        });
-        try {
-            graph.overallOrder();
-
-        } catch (err) {
-            throw new CircularRelationsError(err.toString().replace("Error: Dependency Cycle Found: ", ""));
-        }
+        this.validateDependencies(entityMetadatas);
     }
 
     /**
@@ -58,7 +34,7 @@ export class EntityMetadataValidator {
     validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[]) {
 
         // check if table metadata has an id
-        if (!entityMetadata.table.isClassTableChild && !entityMetadata.primaryColumns.length)
+        if (!entityMetadata.table.isClassTableChild && !entityMetadata.primaryColumns.length && !entityMetadata.junction)
             throw new MissingPrimaryColumnError(entityMetadata);
 
         // validate if table is using inheritance it has a discriminator
@@ -130,4 +106,30 @@ export class EntityMetadataValidator {
 
         });
     }
+
+    /**
+     * Validates dependencies of the entity metadatas.
+     */
+    protected validateDependencies(entityMetadatas: EntityMetadata[]) {
+
+        const DepGraph = require("dependency-graph").DepGraph;
+        const graph = new DepGraph();
+        entityMetadatas.forEach(entityMetadata => {
+            graph.addNode(entityMetadata.name);
+        });
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.relationsWithJoinColumns
+                .filter(relation => !relation.isNullable)
+                .forEach(relation => {
+                    graph.addDependency(entityMetadata.name, relation.inverseEntityMetadata.name);
+                });
+        });
+        try {
+            graph.overallOrder();
+
+        } catch (err) {
+            throw new CircularRelationsError(err.toString().replace("Error: Dependency Cycle Found: ", ""));
+        }
+    }
+
 }

@@ -146,14 +146,16 @@ export class SubjectOperationExecutor {
 
         // separate insert entities into groups:
 
+        // TODO: current ordering mechanism is bad. need to create a correct order in which entities should be persisted, need to build a dependency graph
+
         // first group of subjects are subjects without any non-nullable column
         // we need to insert first such entities because second group entities may rely on those entities.
-        const firstInsertSubjects = this.insertSubjects.filter(subject => subject.metadata.hasNonNullableColumns);
+        const firstInsertSubjects = this.insertSubjects.filter(subject => !subject.metadata.hasNonNullableColumns);
 
         // second group - are all other subjects
         // since in this group there are non nullable columns, some of them may depend on value of the
         // previously inserted entity (which only can be entity with all nullable columns)
-        const secondInsertSubjects = this.insertSubjects.filter(subject => !subject.metadata.hasNonNullableColumns);
+        const secondInsertSubjects = this.insertSubjects.filter(subject => subject.metadata.hasNonNullableColumns);
 
         // note: these operations should be executed in sequence, not in parallel
         // because second group depend of obtained data from the first group
@@ -168,7 +170,7 @@ export class SubjectOperationExecutor {
         // but category in post is inserted with "null".
         // now we need to update post table - set category with a newly persisted category id.
         const updatePromises: Promise<any>[] = [];
-        this.insertSubjects.forEach(subject => {
+        firstInsertSubjects.forEach(subject => {
 
             // first update relations with join columns (one-to-one owner and many-to-one relations)
             const updateOptions: ObjectLiteral = {};
@@ -180,81 +182,153 @@ export class SubjectOperationExecutor {
                 if (!relatedEntity)
                     return;
 
-                const insertSubject = this.insertSubjects.find(insertedSubject => relatedEntity === insertedSubject.entity);
+                // check if relation reference column is a relation
+                let relationId: any;
+                const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === relation.joinColumn.referencedColumn.propertyName);
+                if (columnRelation) { // if referenced column is a relation
+                    const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === relatedEntity[referencedColumn.propertyName]);
 
-                // if relation id exist exist in the related entity then simply use it
-                const relationId = relatedEntity[referencedColumn.propertyName]; // todo: what about relationId got from relation column, not relation itself? todo: create relation.getEntityRelationId(entity)
+                    // if this relation was just inserted
+                    if (insertSubject) {
 
-                // otherwise check if relation id was just now inserted and we can use its generated values
-                if (insertSubject) {
-                    if (relationId) {
-                        updateOptions[relation.name] = relationId;
+                        // check if we have this relation id already
+                        relationId = relatedEntity[referencedColumn.propertyName][columnRelation.propertyName];
+                        if (!relationId) {
 
-                    } else if (referencedColumn.isGenerated) {
-                        updateOptions[relation.name] = insertSubject.newlyGeneratedId;
+                            // if we don't have relation id then use special values
+                            if (referencedColumn.isGenerated) {
+                                relationId = insertSubject.newlyGeneratedId;
+                            }
+                            // todo: handle other special types too
+                        }
                     }
-                    // todo: handle other special types too
+
+                } else { // if referenced column is a simple non relational column
+                    const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === relatedEntity);
+
+                    // if this relation was just inserted
+                    if (insertSubject) {
+
+                        // check if we have this relation id already
+                        relationId = relatedEntity[referencedColumn.propertyName];
+                        if (!relationId) {
+
+                            // if we don't have relation id then use special values
+                            if (referencedColumn.isGenerated) {
+                                relationId = insertSubject.newlyGeneratedId;
+                            }
+                            // todo: handle other special types too
+                        }
+                    }
+
+                }
+
+                if (relationId) {
+                    updateOptions[relation.name] = relationId;
                 }
 
             });
 
             // if we found relations which we can update - then update them
-            if (Object.keys(updateOptions).length > 0) {
-                const relatedEntityIdMap = subject.getPersistedEntityIdMap;
-                const updatePromise = this.queryRunner.update(subject.metadata.table.name, updateOptions, relatedEntityIdMap);
+            if (Object.keys(updateOptions).length > 0 /*&& subject.hasEntity*/) {
+                // const relatedEntityIdMap = subject.getPersistedEntityIdMap; // todo: this works incorrectly
+
+                const columns = subject.metadata.parentEntityMetadata ? subject.metadata.primaryColumnsWithParentIdColumns : subject.metadata.primaryColumns;
+                const conditions: ObjectLiteral = {};
+
+                columns.forEach(column => {
+                    const entityValue = subject.entity[column.propertyName];
+
+                    // if entity id is a relation, then extract referenced column from that relation
+                    const columnRelation = subject.metadata.relations.find(relation => relation.propertyName === column.propertyName);
+
+                    if (entityValue && columnRelation && columnRelation.joinColumn) { // not sure if we need handle join column from inverse side
+                        let relationIdOfEntityValue = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                        if (!relationIdOfEntityValue) {
+                            const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
+                            if (entityValueInsertSubject && columnRelation.joinColumn.referencedColumn.isGenerated) {
+                                relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                            }
+                        }
+                        if (relationIdOfEntityValue) {
+                            conditions[column.name] = relationIdOfEntityValue;
+                        }
+
+                    } else {
+                        if (entityValue) {
+                            conditions[column.name] = entityValue;
+                        } else {
+                            if (subject.newlyGeneratedId) {
+                                conditions[column.name] = subject.newlyGeneratedId;
+                            }
+                        }
+                    }
+                });
+                if (!Object.keys(conditions).length)
+                    return;
+
+                const updatePromise = this.queryRunner.update(subject.metadata.table.name, updateOptions, conditions);
                 updatePromises.push(updatePromise);
             }
 
             // we need to update relation ids if newly inserted objects are used from inverse side in one-to-many inverse relation
-            subject.metadata.oneToManyRelations.forEach(relation => {
-                const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
-                const relatedEntity = subject.entity[relation.propertyName];
+            // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
+            const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
+            subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
+                .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
+                    const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
+                    const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumnsWithParentIdColumns : inverseEntityMetadata.primaryColumns;
+                    const conditions: ObjectLiteral = {};
 
-                // if related entity is not an array then no need to proceed
-                if (!(relatedEntity instanceof Array))
-                    return;
+                    columns.forEach(column => {
+                        const entityValue = subRelatedEntity[column.propertyName];
 
-                relatedEntity.forEach(subRelatedEntity => {
+                        // if entity id is a relation, then extract referenced column from that relation
+                        const columnRelation = inverseEntityMetadata.relations.find(relation => relation.propertyName === column.propertyName);
 
-                    let relationId = subRelatedEntity[referencedColumn.propertyName];
-                    const insertSubject = this.insertSubjects.find(insertedSubject => subRelatedEntity === insertedSubject.entity);
+                        if (entityValue && columnRelation && columnRelation.joinColumn) { // not sure if we need handle join column from inverse side
+                            let relationIdOfEntityValue = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                            if (!relationIdOfEntityValue) {
+                                const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
+                                if (entityValueInsertSubject && columnRelation.joinColumn.referencedColumn.isGenerated) {
+                                    relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                                }
+                            }
+                            if (relationIdOfEntityValue) {
+                                conditions[column.name] = relationIdOfEntityValue;
+                            }
 
-                    if (insertSubject) {
+                        } else {
+                            const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === subRelatedEntity);
+                            if (entityValue) {
+                                conditions[column.name] = entityValue;
+                            } else {
+                                if (entityValueInsertSubject && entityValueInsertSubject.newlyGeneratedId) {
+                                    conditions[column.name] = entityValueInsertSubject.newlyGeneratedId;
+                                }
+                            }
+                        }
+                    });
+                    if (!Object.keys(conditions).length)
+                        return;
 
-                        if (!relationId && referencedColumn.isGenerated)
-                            relationId = insertSubject.newlyGeneratedId;
-
-                        // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+                    const updateOptions: ObjectLiteral = { };
+                    const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === referencedColumn.propertyName);
+                    if (columnRelation) {
+                        let id = subject.entity[referencedColumn.propertyName][columnRelation.propertyName];
+                        if (!id) {
+                            const insertSubject = this.insertSubjects.find(subject => subject.entity === subject.entity[referencedColumn.propertyName]);
+                            if (insertSubject) {
+                                id = insertSubject.newlyGeneratedId;
+                            }
+                        }
+                        updateOptions[relation.inverseRelation.joinColumn.name] = id;
+                    } else {
+                        updateOptions[relation.inverseRelation.joinColumn.name] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId;
                     }
-
-                    const id = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId;
-                    const conditions = relation.inverseEntityMetadata.getDatabaseEntityIdMap(subRelatedEntity) || relation.inverseEntityMetadata.createSimpleDatabaseIdMap(relationId);
-                    const updateOptions = { [relation.inverseRelation.joinColumn.name]: id }; // todo: what if subject's id is not generated?
                     const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.table.name, updateOptions, conditions);
                     updatePromises.push(updatePromise);
-
                 });
-            });
-
-            // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
-            subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning).forEach(relation => {
-                const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
-                const value = subject.entity[relation.propertyName];
-
-                this.insertSubjects.forEach(insertedSubject => {
-                    if (value === insertedSubject.entity) {
-
-                        if (referencedColumn.isGenerated) {
-                            const conditions = insertedSubject.metadata.getDatabaseEntityIdMap(insertedSubject.entity) || insertedSubject.metadata.createSimpleDatabaseIdMap(insertedSubject.newlyGeneratedId);
-                            const updateOptions = { [relation.inverseRelation.joinColumn.name]: subject.newlyGeneratedId };
-                            const updatePromise = this.queryRunner.update(relation.inverseRelation.entityMetadata.table.name, updateOptions, conditions);
-                            updatePromises.push(updatePromise);
-                        }
-
-                         // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
-                    }
-                });
-            });
 
         });
 

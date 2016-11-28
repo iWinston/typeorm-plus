@@ -71,6 +71,7 @@ export class ClosureJunctionEntityMetadataBuilder {
         });
 
         return new EntityMetadata({
+            junction: true,
             target: "__virtual__",
             tablesPrefix: driver.options.tablesPrefix,
             namingStrategy: args.namingStrategy,

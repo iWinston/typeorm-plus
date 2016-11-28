@@ -73,9 +73,7 @@ describe("persistence > one-to-many", function() {
             const loadedPost = await postRepository.findOneById(1, findOptions);
             expect(loadedPost).not.to.be.empty;
             expect(loadedPost.categories).not.to.be.empty;
-            if (loadedPost.categories) {
-                expect(loadedPost.categories[0]).not.to.be.empty;
-            }
+            expect(loadedPost.categories![0]).not.to.be.empty;
         })));
 
     });

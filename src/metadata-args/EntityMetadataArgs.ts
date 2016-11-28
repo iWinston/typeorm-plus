@@ -11,6 +11,7 @@ import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
  */
 export interface EntityMetadataArgs {
 
+    readonly junction: boolean;
     readonly target: Function|string;
     readonly tablesPrefix?: string;
     readonly inheritanceType?: "single-table"|"class-table";

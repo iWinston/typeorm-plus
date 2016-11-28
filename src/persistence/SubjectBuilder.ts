@@ -227,7 +227,12 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             const allIds = subjectGroup.subjects
                 .filter(subject => !subject.hasDatabaseEntity) // we don't load if subject already has a database entity loaded
                 .map(subject => subject.metadata.getEntityIdMixedMap(subject.entity)) // we only need entity id
-                .filter(mixedId => mixedId !== undefined && mixedId !== null && mixedId !== ""); // we don't need empty ids
+                .filter(mixedId => { // we don't need empty ids
+                    if (mixedId instanceof Object)
+                        return Object.keys(mixedId).every(key => mixedId[key] !== undefined && mixedId[key] !== null && mixedId[key] !== "");
+
+                    return mixedId !== undefined && mixedId !== null && mixedId !== "";
+                });
 
             // if there no ids found (which means all entities are new and have generated ids) - then nothing to load there
             if (!allIds.length)

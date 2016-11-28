@@ -228,6 +228,7 @@ export class EntityMetadataBuilder {
                 });
                 // create a new entity metadata
                 const entityMetadata = new EntityMetadata({
+                    junction: false,
                     target: tableArgs.target,
                     tablesPrefix: driver.options.tablesPrefix,
                     namingStrategy: namingStrategy,
@@ -461,9 +462,6 @@ export class EntityMetadataBuilder {
 
         // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
         getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
-
-        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
-        getFromContainer(EntityMetadataValidator).validateDependencies(entityMetadatas);
 
         return entityMetadatas;
     }

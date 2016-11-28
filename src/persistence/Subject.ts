@@ -253,7 +253,7 @@ export class Subject {
      * If entity is not set then it returns undefined.
      * If entity itself has an id then it simply returns it.
      * If entity does not have an id then it returns newly generated id.
-     */
+
     get getPersistedEntityIdMap(): any|undefined {
         if (!this.hasEntity)
             return undefined;
@@ -266,7 +266,7 @@ export class Subject {
             return this.metadata.createSimpleDatabaseIdMap(this.newlyGeneratedId);
 
         return undefined;
-    }
+    }*/
 
     // -------------------------------------------------------------------------
     // Public Methods

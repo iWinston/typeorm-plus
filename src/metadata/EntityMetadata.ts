@@ -47,6 +47,11 @@ export class EntityMetadata {
     readonly target: Function|string;
 
     /**
+     * Indicates if this entity metadata of a junction table, or not.
+     */
+    readonly junction: boolean;
+
+    /**
      * Entity's table metadata.
      */
     readonly table: TableMetadata;
@@ -104,6 +109,7 @@ export class EntityMetadata {
     constructor(args: EntityMetadataArgs,
                 private lazyRelationsWrapper: LazyRelationsWrapper) {
         this.target = args.target;
+        this.junction = args.junction;
         this.tablesPrefix = args.tablesPrefix;
         this.namingStrategy = args.namingStrategy;
         this.table = args.tableMetadata;
@@ -547,18 +553,41 @@ export class EntityMetadata {
         const map: ObjectLiteral = {};
         if (this.parentEntityMetadata) {
             this.primaryColumnsWithParentIdColumns.forEach(column => {
-                map[column.propertyName] = entity[column.propertyName];
+                const entityValue = entity[column.propertyName];
+                if (entityValue === null || entityValue === undefined)
+                    return;
+
+                // if entity id is a relation, then extract referenced column from that relation
+                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
+
+                if (columnRelation && columnRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                } else {
+                    map[column.name] = entityValue;
+                }
             });
 
         } else {
             this.primaryColumns.forEach(column => {
-                map[column.propertyName] = entity[column.propertyName];
+                const entityValue = entity[column.propertyName];
+                if (entityValue === null || entityValue === undefined)
+                    return;
+
+                // if entity id is a relation, then extract referenced column from that relation
+                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
+
+                if (columnRelation && columnRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                } else {
+                    map[column.name] = entityValue;
+                }
             });
         }
-        const hasAllIds = this.primaryColumns.every(primaryColumn => {
-            return map[primaryColumn.propertyName] !== undefined && map[primaryColumn.propertyName] !== null;
-        });
-        return hasAllIds ? map : undefined;
+        return Object.keys(map).length > 0 ? map : undefined;
     }
 
     /**
@@ -568,22 +597,48 @@ export class EntityMetadata {
         const map: ObjectLiteral = {};
         if (this.parentEntityMetadata) {
             this.primaryColumnsWithParentIdColumns.forEach(column => {
-                map[column.name] = entity[column.propertyName];
+                const entityValue = entity[column.propertyName];
+                if (entityValue === null || entityValue === undefined)
+                    return;
+
+                // if entity id is a relation, then extract referenced column from that relation
+                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
+
+                if (columnRelation && columnRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                } else {
+                    map[column.name] = entityValue;
+                }
             });
 
         } else {
             this.primaryColumns.forEach(column => {
-                map[column.name] = entity[column.propertyName];
+                const entityValue = entity[column.propertyName];
+                if (entityValue === null || entityValue === undefined)
+                    return;
+
+                // if entity id is a relation, then extract referenced column from that relation
+                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
+
+                if (columnRelation && columnRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
+                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                } else {
+                    map[column.name] = entityValue;
+                }
             });
         }
-        const hasAllIds = this.primaryColumns.every(primaryColumn => {
-            return map[primaryColumn.name] !== undefined && map[primaryColumn.name] !== null;
+        const hasAllIds = Object.keys(map).every(key => {
+            return map[key] !== undefined && map[key] !== null;
         });
         return hasAllIds ? map : undefined;
     }
 
     /**
-     */
+
     createSimpleIdMap(id: any): ObjectLiteral {
         const map: ObjectLiteral = {};
         if (this.parentEntityMetadata) {
@@ -597,11 +652,11 @@ export class EntityMetadata {
             });
         }
         return map;
-    }
+    } */
 
     /**
      * Same as createSimpleIdMap, but instead of id column property names it returns database column names.
-     */
+
     createSimpleDatabaseIdMap(id: any): ObjectLiteral {
         const map: ObjectLiteral = {};
         if (this.parentEntityMetadata) {
@@ -615,7 +670,7 @@ export class EntityMetadata {
             });
         }
         return map;
-    }
+    }*/
 
     /**
      * todo: undefined entities should not go there??
@@ -830,8 +885,8 @@ export class EntityMetadata {
      * Checks if there any non-nullable column exist in this entity.
      */
     get hasNonNullableColumns(): boolean {
-        return  this.relationsWithJoinColumns.length === 0 ||
-                this.relationsWithJoinColumns.every(relation => relation.isNullable);
+        return this.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
+        // return this.relationsWithJoinColumns.some(relation => relation.isNullable || relation.isPrimary);
     }
 
 }

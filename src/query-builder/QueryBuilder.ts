@@ -1848,7 +1848,7 @@ export class QueryBuilder<Entity> {
             const whereSubStrings: string[] = [];
             if (metadata.hasMultiplePrimaryKeys) {
                 metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(id[primaryColumn.name] + "=:id_" + index + "_" + secondIndex);
+                    whereSubStrings.push(primaryColumn.name + "=:id_" + index + "_" + secondIndex);
                     parameters["id_" + index + "_" + secondIndex] = id[primaryColumn.name];
                 });
                 metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
