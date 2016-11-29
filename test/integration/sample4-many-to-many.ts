@@ -126,7 +126,7 @@ describe("many-to-many", function() {
                 .leftJoinAndSelect("post.details", "details")
                 .where("post.id=:id")
                 .setParameter("id", savedPost.id)
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -151,7 +151,7 @@ describe("many-to-many", function() {
                 .leftJoinAndSelect("details.posts", "posts")
                 .where("details.id=:id")
                 .setParameter("id", savedPost.id)
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 
@@ -164,7 +164,7 @@ describe("many-to-many", function() {
             return postRepository
                 .createQueryBuilder("post")
                 .where("post.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -178,7 +178,7 @@ describe("many-to-many", function() {
             return postDetailsRepository
                 .createQueryBuilder("details")
                 .where("details.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 
@@ -244,7 +244,7 @@ describe("many-to-many", function() {
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.categories", "categories")
                 .where("post.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -263,7 +263,7 @@ describe("many-to-many", function() {
                 .createQueryBuilder("p")
                 .leftJoinAndSelect("p.categories", "categories")
                 .where("p.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .then(loadedPost => {
                     loadedPost!.categories.splice(0, 1);
                     return postRepository.persist(loadedPost!);
@@ -308,7 +308,7 @@ describe("many-to-many", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult();
+                    .getOne();
             }).then(updatedPostReloaded => {
                 updatedPostReloaded.details[0].comment.should.be.equal("this is post");
             });
@@ -346,7 +346,7 @@ describe("many-to-many", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult();
+                    .getOne();
             }).then(updatedPostReloaded => {
                 expect(updatedPostReloaded.details).to.be.empty;
 
@@ -355,7 +355,7 @@ describe("many-to-many", function() {
                     .leftJoinAndSelect("details.posts", "posts")
                     .where("details.id=:id")
                     .setParameter("id", details.id)
-                    .getSingleResult()!;
+                    .getOne()!;
             }).then(reloadedDetails => {
                 expect(reloadedDetails).not.to.be.empty;
                 expect(reloadedDetails!.posts).to.be.empty;
@@ -392,7 +392,7 @@ describe("many-to-many", function() {
                         .leftJoinAndSelect("post.images", "images")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(loadedPost => {
                     loadedPost.images[0].url = "new-logo.png";
@@ -404,7 +404,7 @@ describe("many-to-many", function() {
                         .leftJoinAndSelect("post.images", "images")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
-                        .getSingleResult();
+                        .getOne();
                     
                 }).then(reloadedPost => {
                     reloadedPost.images[0].url.should.be.equal("new-logo.png");
@@ -442,7 +442,7 @@ describe("many-to-many", function() {
                         .leftJoinAndSelect("post.metadatas", "metadatas")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(loadedPost => {
                     loadedPost.metadatas = [];
@@ -454,7 +454,7 @@ describe("many-to-many", function() {
                         .leftJoinAndSelect("post.metadatas", "metadatas")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(reloadedPost => {
                     expect(reloadedPost.metadatas).to.be.empty;
@@ -523,7 +523,7 @@ describe("many-to-many", function() {
                 .createQueryBuilder("details")
                 .leftJoinAndSelect("details.posts", "posts")
                 .where("details.id=:id", { id: savedDetails.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 

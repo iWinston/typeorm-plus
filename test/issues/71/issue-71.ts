@@ -34,7 +34,7 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
             .createQueryBuilder(Artikel, "artikel")
             .innerJoinAndSelect("artikel.kollektion", "kollektion")
             .where("artikel.id=:id", { id: 1 })
-            .getSingleResult();
+            .getOne();
 
         expect(kollektion).not.to.be.empty;
         expect(loadedArtikel).not.to.be.empty;

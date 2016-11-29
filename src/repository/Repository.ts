@@ -209,7 +209,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async find(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity[]> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
-            .getResults();
+            .getMany();
     }
 
     /**
@@ -247,7 +247,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async findAndCount(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
-            .getResultsAndCount();
+            .getManyAndCount();
     }
 
     /**
@@ -275,7 +275,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async findOne(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity|undefined> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
-            .getSingleResult();
+            .getOne();
     }
 
     /**
@@ -284,7 +284,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async findByIds(ids: any[], options?: FindOptions): Promise<Entity[]> {
         const qb = this.createFindQueryBuilder(undefined, options);
-        return qb.andWhereInIds(ids).getResults();
+        return qb.andWhereInIds(ids).getMany();
     }
 
     /**
@@ -308,7 +308,7 @@ export class Repository<Entity extends ObjectLiteral> {
             }
         }
         return this.createFindQueryBuilder(conditions, options)
-            .getSingleResult();
+            .getOne();
     }
 
     /**

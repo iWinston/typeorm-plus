@@ -36,11 +36,11 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         const loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "categories")
-            .getSingleResult()!;
+            .getOne()!;
 
         const loadedCategories = await connection.entityManager
             .createQueryBuilder(Category, "category")
-            .getResults();
+            .getMany();
 
         expect(loadedPost!).not.to.be.empty;
         loadedPost!.should.be.eql({
@@ -70,11 +70,11 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         // load them again to make sure they are not exist anymore
         const loadedPosts2 = await connection.entityManager
             .createQueryBuilder(Post, "post")
-            .getResults();
+            .getMany();
 
         const loadedCategories2 = await connection.entityManager
             .createQueryBuilder(Category, "category")
-            .getResults();
+            .getMany();
 
         expect(loadedPosts2).to.be.empty;
         expect(loadedCategories2).to.be.empty;

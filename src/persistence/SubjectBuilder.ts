@@ -356,7 +356,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .where(qbAlias + "." + relation.joinColumn.referencedColumn.propertyName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
                         .enableOption("RELATION_ID_VALUES")
-                        .getSingleResult();
+                        .getOne();
 
                     if (databaseEntity) {
                         alreadyLoadedRelatedDatabaseSubject = new Subject(valueMetadata, undefined, databaseEntity);
@@ -433,7 +433,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
                         .enableOption("RELATION_ID_VALUES")
-                        .getSingleResult();
+                        .getOne();
 
                     // add only if database entity exist - because in the case of inverse side of the one-to-one relation
                     // we cannot check if it was removed or not until we query the database
@@ -513,11 +513,11 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON",
+                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
                             "persistenceJoinedRelation." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
-                        .getResults();
+                        .getMany();
 
                 } else if (relation.isManyToManyNotOwner) {
 
@@ -531,11 +531,11 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias)
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation", "ON",
+                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
                             "persistenceJoinedRelation." + relation.inverseRelation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
-                        .getResults();
+                        .getMany();
 
                 } else { // this case can only be a oneToMany relation
 
@@ -552,7 +552,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
-                        .getResults();
+                        .getMany();
                 }
 
                 // add to loadMap loaded entities if some of them are missing

@@ -49,7 +49,7 @@ describe("github issues > #58 relations with multiple primary keys", () => {
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "postCategory")
             .innerJoinAndSelect("postCategory.category", "category")
-            .getSingleResult();
+            .getOne();
 
         expect(loadedPost!).not.to.be.empty;
         loadedPost!.should.be.eql({

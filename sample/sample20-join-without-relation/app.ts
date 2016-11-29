@@ -60,15 +60,15 @@ createConnection(options).then(connection => {
             return postRepository
                 .createQueryBuilder("post")
                 .leftJoinAndMapMany("post.superCategories", "post.categories", "categories")
-                .leftJoinAndMapOne("post.author", Author, "author", "ON", "author.id=post.authorId")
-                .getResults();
+                .leftJoinAndMapOne("post.author", Author, "author", "author.id=post.authorId")
+                .getMany();
 
         }).then(posts => {
             console.log("Loaded posts: ", posts);
 
             return entityManager
                 .createQueryBuilder(Author, "author")
-                .getResults();
+                .getMany();
 
         }).then(authors => {
             console.log("Loaded authors: ", authors);

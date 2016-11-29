@@ -31,12 +31,12 @@ export class LazyRelationsWrapper {
                     } else {
                         qb.select(relation.propertyName)
                             .from(relation.type, relation.propertyName)
-                            .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name, "ON",
+                            .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name,
                                 `${relation.junctionEntityMetadata.name}.${relation.name}=:${relation.propertyName}Id`)
                             .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
                     }
 
-                    this[loadIndex] = qb.getResults().then(results => {
+                    this[loadIndex] = qb.getMany().then(results => {
                         this[index] = results;
                         this[resolveIndex] = true;
                         delete this[loadIndex];
@@ -58,12 +58,12 @@ export class LazyRelationsWrapper {
                         // loaded: category from post
                         qb.select(relation.propertyName) // category
                             .from(relation.type, relation.propertyName) // Category, category
-                            .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, "ON",
+                            .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name,
                                 `${relation.entityMetadata.name}.${relation.propertyName}=:${relation.propertyName}Id`) // Post, post, post.category = categoryId
                             .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
                     }
                     // console.log(qb.getSql());
-                    this[loadIndex] = qb.getSingleResult().then(result => {
+                    this[loadIndex] = qb.getOne().then(result => {
                         this[index] = result;
                         this[resolveIndex] = true;
                         delete this[loadIndex];

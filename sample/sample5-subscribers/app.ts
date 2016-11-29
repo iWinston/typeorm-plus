@@ -53,7 +53,7 @@ createConnection(options).then(connection => {
                 .leftJoinAndSelect("p.author", "author")
                 .leftJoinAndSelect("p.categories", "categories")
                 .where("p.id = :id", { id: loadedPost.id })
-                .getSingleResult();
+                .getOne();
         })
         .then(loadedPost => {
             console.log("---------------------------");

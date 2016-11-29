@@ -124,7 +124,7 @@ describe("one-to-one", function() {
                 .leftJoinAndSelect("post.details", "details")
                 .where("post.id=:id")
                 .setParameter("id", savedPost.id)
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -146,7 +146,7 @@ describe("one-to-one", function() {
                 .leftJoinAndSelect("details.post", "post")
                 .where("details.id=:id")
                 .setParameter("id", savedPost.id)
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 
@@ -159,7 +159,7 @@ describe("one-to-one", function() {
             return postRepository
                 .createQueryBuilder("post")
                 .where("post.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -173,7 +173,7 @@ describe("one-to-one", function() {
             return postDetailsRepository
                 .createQueryBuilder("details")
                 .where("details.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 
@@ -237,7 +237,7 @@ describe("one-to-one", function() {
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.category", "category")
                 .where("post.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -284,7 +284,7 @@ describe("one-to-one", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult();
+                    .getOne();
             }).then(updatedPostReloaded => {
                 updatedPostReloaded.details.comment.should.be.equal("this is post");
             });
@@ -321,7 +321,7 @@ describe("one-to-one", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult();
+                    .getOne();
             }).then(updatedPostReloaded => {
                 updatedPostReloaded.details.comment.should.be.equal("this is post");
             });
@@ -356,7 +356,7 @@ describe("one-to-one", function() {
                         .leftJoinAndSelect("post.image", "image")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(loadedPost => {
                     loadedPost.image.url = "new-logo.png";
@@ -368,7 +368,7 @@ describe("one-to-one", function() {
                         .leftJoinAndSelect("post.image", "image")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
-                        .getSingleResult();
+                        .getOne();
                     
                 }).then(reloadedPost => {
                     reloadedPost.image.url.should.be.equal("new-logo.png");
@@ -405,7 +405,7 @@ describe("one-to-one", function() {
                         .leftJoinAndSelect("post.metadata", "metadata")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(loadedPost => {
                     loadedPost.metadata = null;
@@ -417,7 +417,7 @@ describe("one-to-one", function() {
                         .leftJoinAndSelect("post.metadata", "metadata")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(reloadedPost => {
                     expect(reloadedPost.metadata).to.not.exist;

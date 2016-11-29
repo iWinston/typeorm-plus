@@ -66,7 +66,7 @@ describe("decorators > embedded", () => {
             const sortedPosts1 = await postRepository
                 .createQueryBuilder("post")
                 .orderBy("post.counters.comments", "DESC")
-                .getResults();
+                .getMany();
 
             sortedPosts1.should.be.eql([{
                 id: 2,
@@ -92,7 +92,7 @@ describe("decorators > embedded", () => {
             const sortedPosts2 = await postRepository
                 .createQueryBuilder("post")
                 .orderBy("post.counters.favorites", "DESC")
-                .getResults();
+                .getMany();
 
             sortedPosts2.should.be.eql([{
                 id: 1,

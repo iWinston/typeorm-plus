@@ -62,7 +62,7 @@ describe("QueryBuilder > relation-id", () => {
                 .createQueryBuilder("post")
                 .leftJoinRelationId("post.categories")
                 .where("post.id = :id", { id: post.id })
-                .getSingleResult())!;
+                .getOne())!;
 
             expect(loadedPost.tagId).to.not.be.empty;
             expect(loadedPost.tagId).to.be.equal(1);
@@ -74,7 +74,7 @@ describe("QueryBuilder > relation-id", () => {
                 .createQueryBuilder("post")
                 .leftJoinRelationId("post.categories")
                 .where("post.id = :id", { id: emptyPost.id })
-                .getSingleResult())!;
+                .getOne())!;
 
             should.not.exist(loadedEmptyPost.tagId);
             should.not.exist(loadedEmptyPost.categoryIds);
@@ -83,7 +83,7 @@ describe("QueryBuilder > relation-id", () => {
                 .createQueryBuilder("post")
                 .innerJoinRelationId("post.categories")
                 .where("post.id = :id", { id: emptyPost.id })
-                .getSingleResult())!;
+                .getOne())!;
 
             should.not.exist(loadedEmptyPost);
 
@@ -91,7 +91,7 @@ describe("QueryBuilder > relation-id", () => {
                 .createQueryBuilder("post")
                 .leftJoinRelationIdAndMap("post.allCategoryIds", "post.categories")
                 .where("post.id = :id", { id: post.id })
-                .getSingleResult())!;
+                .getOne())!;
 
             loadedPost.allCategoryIds.should.contain(1);
             loadedPost.allCategoryIds.should.contain(2);

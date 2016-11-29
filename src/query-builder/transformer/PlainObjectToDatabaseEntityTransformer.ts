@@ -52,7 +52,7 @@ export class PlainObjectToDatabaseEntityTransformer {
             });
         }
 
-        return queryBuilder.getSingleResult();
+        return queryBuilder.getOne();
     }
 
     // -------------------------------------------------------------------------

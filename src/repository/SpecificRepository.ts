@@ -462,7 +462,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             if (notInIds && notInIds.length > 0)
                 qb.andWhere("junction." + inverseEntityColumn.name + " NOT IN (:notInIds)", { notInIds: notInIds });
 
-            return qb.getScalarResults()
+            return qb.getScalarMany()
                 .then((results: { id: any }[]) => {
                     results.forEach(result => ids.push(result.id)); // todo: prepare result?
                 });

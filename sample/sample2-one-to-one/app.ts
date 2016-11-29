@@ -46,7 +46,7 @@ createConnection(options).then(connection => {
                 .createQueryBuilder("post")
                 .where("post.title=:keyword")
                 .setParameter("keyword", "hello")
-                .getResults();
+                .getMany();
         })
         .then(post => {
             console.log("Loaded post: ", post);
