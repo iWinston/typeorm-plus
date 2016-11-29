@@ -46,7 +46,7 @@ describe("persistence > one-to-many", function() {
             await postRepository.persist(newPost);
 
             const findOptions: FindOptions = { alias: "post", innerJoinAndSelect: { categories: "post.categories" } };
-            const loadedPost = await postRepository.findOneById(1, findOptions);
+            const loadedPost = (await postRepository.findOneById(1, findOptions))!;
             expect(loadedPost).not.to.be.empty;
             expect(loadedPost.categories).not.to.be.empty;
             expect(loadedPost.categories![0]).not.to.be.empty;
@@ -72,8 +72,8 @@ describe("persistence > one-to-many", function() {
             const findOptions: FindOptions = { alias: "post", innerJoinAndSelect: { categories: "post.categories" } };
             const loadedPost = await postRepository.findOneById(1, findOptions);
             expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.categories).not.to.be.empty;
-            expect(loadedPost.categories![0]).not.to.be.empty;
+            expect(loadedPost!.categories).not.to.be.empty;
+            expect(loadedPost!.categories![0]).not.to.be.empty;
         })));
 
     });
@@ -105,9 +105,9 @@ describe("persistence > one-to-many", function() {
             const findOptions: FindOptions = { alias: "post", innerJoinAndSelect: { categories: "post.categories" } };
             const loadedPost = await postRepository.findOneById(1, findOptions);
             expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.categories).not.to.be.empty;
-            expect(loadedPost.categories![0]).not.to.be.empty;
-            expect(loadedPost.categories![1]).to.be.empty;
+            expect(loadedPost!.categories).not.to.be.empty;
+            expect(loadedPost!.categories![0]).not.to.be.empty;
+            expect(loadedPost!.categories![1]).to.be.empty;
         })));
 
     });
@@ -139,7 +139,7 @@ describe("persistence > one-to-many", function() {
             const findOptions: FindOptions = { alias: "post", leftJoinAndSelect: { categories: "post.categories" } };
             const loadedPost = await postRepository.findOneById(1, findOptions);
             expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.categories).to.be.empty;
+            expect(loadedPost!.categories).to.be.empty;
         })));
 
     });
@@ -169,7 +169,7 @@ describe("persistence > one-to-many", function() {
             await postRepository.persist(newPost);
 
             const findOptions: FindOptions = { alias: "post", leftJoinAndSelect: { categories: "post.categories" } };
-            const loadedPost = await postRepository.findOneById(1, findOptions);
+            const loadedPost = (await postRepository.findOneById(1, findOptions))!;
             expect(loadedPost).not.to.be.empty;
             expect(loadedPost.categories).to.be.empty;
         })));

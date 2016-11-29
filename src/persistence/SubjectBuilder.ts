@@ -163,7 +163,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // here we should use findByEntityLike instead of findByEntity because findByEntityLike relays on ids,
                 // however these ids are missing in insert operation and using findByEntityLike can bring recursion
                 const alreadyExistValueSubject = this.findByEntity(value);
-                console.log(alreadyExistValueSubject);
                 if (alreadyExistValueSubject) {
                     if (alreadyExistValueSubject.canBeInserted === false)
                         alreadyExistValueSubject.canBeInserted = relation.isCascadeInsert === true;

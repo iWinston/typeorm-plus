@@ -1157,7 +1157,7 @@ export class QueryBuilder<Entity> {
     /**
      * Gets single entity returned by execution of generated query builder sql.
      */
-    getSingleResult(): Promise<Entity> {
+    getSingleResult(): Promise<Entity|undefined> {
         return this.getResults().then(entities => entities[0]);
     }
 

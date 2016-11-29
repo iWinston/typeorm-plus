@@ -101,7 +101,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return postRepository
                 .findOneById(1, { alias: "post", leftJoinAndSelect: { manyCategories: "post.manyCategories" } })
-                .then(post => loadedPost = post);
+                .then(post => loadedPost = post!);
         });
 
         it("should save successfully", function () {
@@ -150,7 +150,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return categoryRepository
                 .findOneById(1, { alias: "category", leftJoinAndSelect: { manyPosts: "category.manyPosts" } })
-                .then(category => loadedCategory = category);
+                .then(category => loadedCategory = category!);
         });
 
         it("should save successfully", function () {
@@ -207,7 +207,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return postRepository
                 .findOneById(1, { alias: "post", leftJoinAndSelect: { manyCategories: "post.manyCategories" } })
-                .then(post => loadedPost = post);
+                .then(post => loadedPost = post!);
         });
 
         it("should remove successfully", function () {
@@ -264,7 +264,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return categoryRepository
                 .findOneById(1, { alias: "category", leftJoinAndSelect: { manyPosts: "category.manyPosts" } })
-                .then(category => loadedCategory = category);
+                .then(category => loadedCategory = category!);
         });
 
         it("should remove successfully", function () {
@@ -306,7 +306,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return postRepository
                 .findOneById(1, { alias: "post", leftJoinAndSelect: { categories: "post.categories" } })
-                .then(post => loadedPost = post);
+                .then(post => loadedPost = post!);
         });
 
         it("should save successfully", function () {
@@ -347,7 +347,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return categoryRepository
                 .findOneById(1, { alias: "category", leftJoinAndSelect: { post: "category.post" } })
-                .then(category => loadedCategory = category);
+                .then(category => loadedCategory = category!);
         });
 
         it("should save successfully", function () {
@@ -386,7 +386,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return postRepository
                 .findOneById(1, { alias: "post", leftJoinAndSelect: { categories: "post.categories" } })
-                .then(post => loadedPost = post);
+                .then(post => loadedPost = post!);
         });
 
         it("should save successfully", function () {
@@ -425,7 +425,7 @@ describe("repository > set/add/remove relation methods", function() {
         before(function() {
             return categoryRepository
                 .findOneById(1, { alias: "category", leftJoinAndSelect: { post: "category.post" } })
-                .then(category => loadedCategory = category);
+                .then(category => loadedCategory = category!);
         });
 
         it("should save successfully", function () {

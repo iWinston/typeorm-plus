@@ -58,11 +58,11 @@ describe("QueryBuilder > relation-id", () => {
             expect(post.categories[0].id).to.not.be.empty;
             expect(post.categories[1].id).to.not.be.empty;
 
-            let loadedPost = await postRepository
+            let loadedPost = (await postRepository
                 .createQueryBuilder("post")
                 .leftJoinRelationId("post.categories")
                 .where("post.id = :id", { id: post.id })
-                .getSingleResult();
+                .getSingleResult())!;
 
             expect(loadedPost.tagId).to.not.be.empty;
             expect(loadedPost.tagId).to.be.equal(1);
@@ -70,28 +70,28 @@ describe("QueryBuilder > relation-id", () => {
             expect(loadedPost.categoryIds).to.contain(1);
             expect(loadedPost.categoryIds).to.contain(2);
 
-            let loadedEmptyPost = await postRepository
+            let loadedEmptyPost = (await postRepository
                 .createQueryBuilder("post")
                 .leftJoinRelationId("post.categories")
                 .where("post.id = :id", { id: emptyPost.id })
-                .getSingleResult();
+                .getSingleResult())!;
 
             should.not.exist(loadedEmptyPost.tagId);
             should.not.exist(loadedEmptyPost.categoryIds);
 
-            loadedEmptyPost = await postRepository
+            loadedEmptyPost = (await postRepository
                 .createQueryBuilder("post")
                 .innerJoinRelationId("post.categories")
                 .where("post.id = :id", { id: emptyPost.id })
-                .getSingleResult();
+                .getSingleResult())!;
 
             should.not.exist(loadedEmptyPost);
 
-            loadedPost = await postRepository
+            loadedPost = (await postRepository
                 .createQueryBuilder("post")
                 .leftJoinRelationIdAndMap("post.allCategoryIds", "post.categories")
                 .where("post.id = :id", { id: post.id })
-                .getSingleResult();
+                .getSingleResult())!;
 
             loadedPost.allCategoryIds.should.contain(1);
             loadedPost.allCategoryIds.should.contain(2);

@@ -47,7 +47,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     /**
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
      */
-    findDescendantsTree(entity: Entity): Promise<Entity> {
+    findDescendantsTree(entity: Entity): Promise<Entity|undefined> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
@@ -90,7 +90,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     /**
      * Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
      */
-    findAncestorsTree(entity: Entity): Promise<Entity> {
+    findAncestorsTree(entity: Entity): Promise<Entity|undefined> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createAncestorsQueryBuilder("treeEntity", "treeClosure", entity)

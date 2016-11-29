@@ -48,7 +48,7 @@ createConnection(options).then(async connection => {
     console.log("employee has been updated: ", employee);
 
     console.log("now loading the employee: ");
-    const loadedEmployee = await employeeRepository.findOneById(1);
+    const loadedEmployee = (await employeeRepository.findOneById(1))!;
     console.log("loaded employee: ", loadedEmployee);
 
     loadedEmployee.firstName = "dima";

@@ -38,7 +38,7 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
 
         expect(kollektion).not.to.be.empty;
         expect(loadedArtikel).not.to.be.empty;
-        loadedArtikel.should.be.eql({
+        loadedArtikel!.should.be.eql({
             id: 1,
             nummer: "1",
             name: "artikel #1",

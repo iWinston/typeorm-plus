@@ -426,22 +426,6 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Converts entity or entities to id or ids map.
-     */
-    private convertEntityOrEntitiesToIdOrIds(column: ColumnMetadata, entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
-        if (entityOrEntities instanceof Array) {
-            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(column, entity));
-
-        } else {
-            if (entityOrEntities instanceof Object) {
-                return entityOrEntities[column.propertyName];
-            } else {
-                return entityOrEntities;
-            }
-        }
-    }
-
-    /**
      * Finds all relation ids in the given entities.
      */
     async findRelationIds(relationOrName: RelationMetadata|string|((...args: any[]) => any), entityOrEntities: Entity[]|Entity|any|any[], inIds?: any[], notInIds?: any[]): Promise<any[]> {
@@ -491,6 +475,22 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Converts entity or entities to id or ids map.
+     */
+    protected convertEntityOrEntitiesToIdOrIds(column: ColumnMetadata, entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
+        if (entityOrEntities instanceof Array) {
+            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(column, entity));
+
+        } else {
+            if (entityOrEntities instanceof Object) {
+                return entityOrEntities[column.propertyName];
+            } else {
+                return entityOrEntities;
+            }
+        }
+    }
 
     /**
      * Converts relation name, relation name in function into RelationMetadata.

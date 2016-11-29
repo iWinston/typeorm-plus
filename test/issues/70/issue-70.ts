@@ -36,14 +36,14 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         const loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "categories")
-            .getSingleResult();
+            .getSingleResult()!;
 
         const loadedCategories = await connection.entityManager
             .createQueryBuilder(Category, "category")
             .getResults();
 
-        expect(loadedPost).not.to.be.empty;
-        loadedPost.should.be.eql({
+        expect(loadedPost!).not.to.be.empty;
+        loadedPost!.should.be.eql({
             id: 1,
             title: "Hello Post #1",
             categories: [{

@@ -253,27 +253,27 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given conditions.
      */
-    async findOne(): Promise<Entity>;
+    async findOne(): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    async findOne(conditions: ObjectLiteral): Promise<Entity>;
+    async findOne(conditions: ObjectLiteral): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given find options.
      */
-    async findOne(options: FindOptions): Promise<Entity>;
+    async findOne(options: FindOptions): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions and find options.
      */
-    async findOne(conditions: ObjectLiteral, options: FindOptions): Promise<Entity>;
+    async findOne(conditions: ObjectLiteral, options: FindOptions): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    async findOne(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity> {
+    async findOne(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity|undefined> {
         return this.createFindQueryBuilder(conditionsOrFindOptions, options)
             .getSingleResult();
     }
@@ -281,7 +281,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities with ids.
      * Optionally find options can be applied.
-     * todo: add this method into all other repositories and entity managers
      */
     async findByIds(ids: any[], options?: FindOptions): Promise<Entity[]> {
         const qb = this.createFindQueryBuilder(undefined, options);
@@ -292,7 +291,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entity with given id.
      * Optionally find options can be applied.
      */
-    async findOneById(id: any, options?: FindOptions): Promise<Entity> {
+    async findOneById(id: any, options?: FindOptions): Promise<Entity|undefined> {
         const conditions: ObjectLiteral = {};
         if (this.metadata.hasMultiplePrimaryKeys) {
             this.metadata.primaryColumns.forEach(primaryColumn => {

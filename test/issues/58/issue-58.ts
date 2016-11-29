@@ -51,8 +51,8 @@ describe("github issues > #58 relations with multiple primary keys", () => {
             .innerJoinAndSelect("postCategory.category", "category")
             .getSingleResult();
 
-        expect(loadedPost).not.to.be.empty;
-        loadedPost.should.be.eql({
+        expect(loadedPost!).not.to.be.empty;
+        loadedPost!.should.be.eql({
             id: 1,
             title: "Hello Post #1",
             categories: [{

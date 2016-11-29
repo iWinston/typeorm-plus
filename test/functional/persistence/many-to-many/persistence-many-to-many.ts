@@ -97,7 +97,7 @@ describe("persistence > many-to-many", function() {
         before(function() {
             return userRepository
                 .findOneById(1, { alias: "user", leftJoinAndSelect: { post: "user.post", categories: "post.categories" } })
-                .then(post => loadedUser = post);
+                .then(post => loadedUser = post!);
         });
 
         it("should contain a new category", function () {

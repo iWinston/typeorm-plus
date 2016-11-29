@@ -265,8 +265,8 @@ describe("many-to-many", function() {
                 .where("p.id=:id", { id: savedPost.id })
                 .getSingleResult()
                 .then(loadedPost => {
-                    loadedPost.categories.splice(0, 1);
-                    return postRepository.persist(loadedPost);
+                    loadedPost!.categories.splice(0, 1);
+                    return postRepository.persist(loadedPost!);
                 }).then(updatedPost => {
                     return postCategoryRepository.find({ name : "technology" });
                 }).then(foundCategory => {
@@ -355,10 +355,10 @@ describe("many-to-many", function() {
                     .leftJoinAndSelect("details.posts", "posts")
                     .where("details.id=:id")
                     .setParameter("id", details.id)
-                    .getSingleResult();
+                    .getSingleResult()!;
             }).then(reloadedDetails => {
                 expect(reloadedDetails).not.to.be.empty;
-                expect(reloadedDetails.posts).to.be.empty;
+                expect(reloadedDetails!.posts).to.be.empty;
             });
         });
     });

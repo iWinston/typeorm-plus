@@ -22,7 +22,7 @@ export class PlainObjectToDatabaseEntityTransformer {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    async transform<Entity extends ObjectLiteral>(plainObject: ObjectLiteral, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity> {
+    async transform<Entity extends ObjectLiteral>(plainObject: ObjectLiteral, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity|undefined> {
 
         // if plain object does not have id then nothing to load really
         if (!metadata.checkIfObjectContainsAllPrimaryKeys(plainObject))
