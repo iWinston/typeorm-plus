@@ -808,6 +808,10 @@ export class EntityMetadata {
     compareEntities(firstEntity: any, secondEntity: any) {
         const firstEntityIds = this.getEntityIdMap(firstEntity);
         const secondEntityIds = this.getEntityIdMap(secondEntity);
+        // console.log("firstEntity: ", firstEntity);
+        // console.log("firstEntityIds: ", firstEntityIds);
+        // console.log("secondEntity: ", secondEntity);
+        // console.log("secondEntityIds: ", secondEntityIds);
         return this.compareIds(firstEntityIds, secondEntityIds);
     }
 
