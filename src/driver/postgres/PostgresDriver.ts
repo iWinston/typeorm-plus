@@ -227,7 +227,11 @@ export class PostgresDriver implements Driver {
                 }
 
             case ColumnTypes.JSON:
-                return JSON.parse(value); // todo: isn't pg driver automatically handle it?
+                if (typeof value === "string") {
+                    return JSON.parse(value);
+                } else {
+                    return value;
+                }
 
             case ColumnTypes.SIMPLE_ARRAY:
                 return DataTransformationUtils.stringToSimpleArray(value);
