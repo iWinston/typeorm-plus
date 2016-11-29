@@ -587,10 +587,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                     .getRepository<ObjectLiteral>(valueMetadata.target)
                                     .findOneById(valueMetadata.getEntityIdMixedMap(persistValue), { alias: qbAlias, enabledOptions: ["RELATION_ID_VALUES"] }); // todo: check if databaseEntity is defined?
 
-                                loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
-                                this.operateSubjects.push(loadedSubject);
+                                if (databaseEntity) {
+                                    loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
+                                    this.operateSubjects.push(loadedSubject);
+                                }
                             }
-                            loadedSubject.relationUpdates.push({ relation: relation.inverseRelation, value: subject.entity });
+
+                            if (loadedSubject)
+                                loadedSubject.relationUpdates.push({ relation: relation.inverseRelation, value: subject.entity });
                         }
                     });
 
