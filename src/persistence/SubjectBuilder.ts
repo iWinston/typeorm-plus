@@ -160,7 +160,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             .forEach(([relation, value, valueMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
+                // here we should use findByEntityLike instead of findByEntity because findByEntityLike relays on ids,
+                // however these ids are missing in insert operation and using findByEntityLike can bring recursion
+                const alreadyExistValueSubject = this.findByEntity(value);
+                console.log(alreadyExistValueSubject);
                 if (alreadyExistValueSubject) {
                     if (alreadyExistValueSubject.canBeInserted === false)
                         alreadyExistValueSubject.canBeInserted = relation.isCascadeInsert === true;
@@ -195,7 +198,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             .forEach(([relation, value, valueMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
+                const alreadyExistValueSubject = this.findByEntity(value);
                 if (alreadyExistValueSubject) {
                     alreadyExistValueSubject.mustBeRemoved = true;
                     return;
@@ -740,6 +743,19 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
         });
 
         await Promise.all(promises);
+    }
+
+    /**
+     * Finds subject where entity is exactly given subject's entity.
+     * Comparision made by reference.
+     */
+    protected findByEntity(entity: ObjectLiteral): Subject|undefined {
+        return this.operateSubjects.find(subject => {
+            if (!subject.hasEntity)
+                return false;
+
+            return subject.entity === entity;
+        });
     }
 
     /**

@@ -561,11 +561,11 @@ export class EntityMetadata {
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
                 if (columnRelation && columnRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.propertyName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
                 } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.propertyName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
                 } else {
-                    map[column.name] = entityValue;
+                    map[column.propertyName] = entityValue;
                 }
             });
 
@@ -579,11 +579,11 @@ export class EntityMetadata {
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
                 if (columnRelation && columnRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.propertyName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
                 } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.propertyName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
                 } else {
-                    map[column.name] = entityValue;
+                    map[column.propertyName] = entityValue;
                 }
             });
         }
