@@ -27,6 +27,9 @@ export class DataTransformationUtils {
      * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
      */
     static mixedDateToDatetimeString(value: Date|any): string|any {
+        if (typeof value === "string") {
+            value = new Date(value);
+        }
         if (value instanceof Date) {
             return value.getFullYear() + "-" +
                 (value.getMonth() + 1) + "-" +
@@ -43,6 +46,9 @@ export class DataTransformationUtils {
      * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss" format.
      */
     static mixedDateToUtcDatetimeString(value: Date|any): string|any {
+        if (typeof value === "string") {
+            value = new Date(value);
+        }
         if (value instanceof Date) {
             return value.getUTCFullYear() + "-" +
                 (value.getUTCMonth() + 1) + "-" +
