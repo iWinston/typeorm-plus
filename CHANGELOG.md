@@ -7,7 +7,7 @@
     * `getResultsAndCount()` renamed to `getManyAndCount()`
     * in the innerJoin*/leftJoin* methods now no need to specify `ON`
     * in the innerJoin*/leftJoin* methods no longer supports parameters, use `addParameters` or `setParameter` instead.
-    * `setParameters` is removed because it confuses users
+    * `setParameters` is removed because it confuses users, use `addParameters` instead
     * `getOne` returns `Promise<Entity|undefined>`
 * breaking changes in `Repository` and `EntityManager`:
     * `findOne` and `findOneById` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
