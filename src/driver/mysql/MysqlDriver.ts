@@ -252,6 +252,9 @@ export class MysqlDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATETIME:
+                if (value instanceof Date)
+                    return value;
+                    
                 if (columnMetadata.loadInLocalTimezone) {
                     return DataTransformationUtils.mixedDateToDatetimeString(value);
                 } else {
