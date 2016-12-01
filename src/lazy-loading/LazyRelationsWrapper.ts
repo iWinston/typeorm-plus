@@ -22,21 +22,30 @@ export class LazyRelationsWrapper {
                     return this[loadIndex];
 
                 const qb = new QueryBuilder(connection);
-                if (relation.isManyToMany || relation.isOneToMany) {
+                if (relation.isManyToMany) {
 
-                    if (relation.hasInverseSide) { // if we don't have inverse side then we can't select and join by relation from inverse side
-                        qb.select(relation.propertyName)
-                            .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
-                            .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
-                            .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
-                    } else {
-                        qb.select(relation.propertyName)
-                            .from(relation.type, relation.propertyName)
-                            .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name,
-                                `${relation.junctionEntityMetadata.name}.${relation.name}=:${relation.propertyName}Id`)
-                            .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName])
-                            .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
-                    }
+                    qb.select(relation.propertyName)
+                        .from(relation.type, relation.propertyName)
+                        .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name,
+                            `${relation.junctionEntityMetadata.name}.${relation.name}=:${relation.propertyName}Id`)
+                        .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
+
+                    this[loadIndex] = qb.getMany().then(results => {
+                        this[index] = results;
+                        this[resolveIndex] = true;
+                        delete this[loadIndex];
+                        return this[index];
+                    }).catch(err => {
+                        throw err;
+                    });
+                    return this[loadIndex];
+
+                } else if (relation.isOneToMany) {
+
+                    qb.select(relation.propertyName)
+                        .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
+                        .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
+                        .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
 
                     this[loadIndex] = qb.getMany().then(results => {
                         this[index] = results;
@@ -73,6 +82,7 @@ export class LazyRelationsWrapper {
                         this[resolveIndex] = true;
                         delete this[loadIndex];
                         return this[index];
+
                     }).catch(err => {
                         throw err;
                     });
