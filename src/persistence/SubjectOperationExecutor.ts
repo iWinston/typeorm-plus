@@ -500,13 +500,35 @@ export class SubjectOperationExecutor {
         } // todo: implement other special column types too
 
         const parentEntity = subject.entity[subject.metadata.treeParentRelation.propertyName];
-        let parentEntityId = parentEntity[referencedColumn.propertyName];
-        if (!parentEntityId && referencedColumn.isGenerated) {
-            const parentInsertedSubject = this.insertSubjects.find(subject => subject.entity === parentEntity);
-            // todo: throw exception if parentInsertedSubject is not set
-            parentEntityId = parentInsertedSubject!.newlyGeneratedId;
-        } // todo: implement other special column types too
+        let parentEntityId: any = 0; // zero is important
+        if (parentEntity) {
+            parentEntityId = parentEntity[referencedColumn.propertyName];
+            if (!parentEntityId && referencedColumn.isGenerated) {
+                const parentInsertedSubject = this.insertSubjects.find(subject => subject.entity === parentEntity);
+                // todo: throw exception if parentInsertedSubject is not set
+                parentEntityId = parentInsertedSubject!.newlyGeneratedId;
+            } // todo: implement other special column types too
+        }
 
+        // try to find parent entity id in some other entity that has this entity in its children
+        if (!parentEntityId) {
+            const parentSubject = this.allSubjects.find(allSubject => {
+                if (!allSubject.hasEntity || !allSubject.metadata.table.isClosure || !allSubject.metadata.hasTreeChildrenRelation)
+                    return false;
+
+                const children = allSubject.entity[subject.metadata.treeChildrenRelation.propertyName];
+                return children instanceof Array ? children.indexOf(subject.entity) !== -1 : false;
+            });
+
+            if (parentSubject) {
+                parentEntityId = parentSubject.entity[referencedColumn.propertyName];
+                if (!parentEntityId && parentSubject.newlyGeneratedId) { // if still not found then it means parent just inserted with generated column
+                    parentEntityId = parentSubject.newlyGeneratedId;
+                }
+            }
+        }
+
+        // if parent entity exist then insert a new row into closure table
         subject.treeLevel = await this.queryRunner.insertIntoClosureTable(tableName, newEntityId, parentEntityId, subject.metadata.hasTreeLevelColumn);
 
         if (subject.metadata.hasTreeLevelColumn) {
