@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describes.skip("relations > relation with primary key", () => {
+describe.skip("relations > relation with primary key", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
