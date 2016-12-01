@@ -256,15 +256,15 @@ export class OracleDriver implements Driver {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 
-            case ColumnTypes.DATETIME:
-                if (value instanceof Date)
-                    return value;
-                    
-                if (columnMetadata.loadInLocalTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
+            // case ColumnTypes.DATETIME:
+            //     if (value instanceof Date)
+            //         return value;
+            //
+            //     if (columnMetadata.loadInLocalTimezone) {
+            //         return DataTransformationUtils.mixedDateToDatetimeString(value);
+            //     } else {
+            //         return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+            //     }
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);
