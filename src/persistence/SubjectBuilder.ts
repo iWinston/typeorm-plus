@@ -83,6 +83,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Builds operations for entity that is being inserted/updated.
+     */
     async persist(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
@@ -111,6 +114,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
         await this.buildJunctionOperations({ insert: true, remove: true });
     }
 
+    /**
+     * Builds only remove operations for entity that is being removed.
+     */
     async remove(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently removed entity and mark that it must be removed

@@ -418,6 +418,13 @@ export class RelationMetadata {
     }
 
     /**
+     * Checks if given entity has a value in a relation.
+     */
+    hasEntityValue(entity: ObjectLiteral): boolean {
+        return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
+    }
+
+    /**
      * todo: lazy relations are not supported here? implement logic?
      *
      * examples:

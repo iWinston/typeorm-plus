@@ -180,7 +180,7 @@ export class SubjectOperationExecutor {
             const updateOptions: ObjectLiteral = {};
             subject.metadata.relationsWithJoinColumns.forEach(relation => {
                 const referencedColumn = relation.joinColumn.referencedColumn;
-                const relatedEntity = subject.entity[relation.propertyName];
+                const relatedEntity = relation.getEntityValue(subject.entity);
 
                 // if relation value is not set then nothing to do here
                 if (!relatedEntity)
@@ -373,7 +373,7 @@ export class SubjectOperationExecutor {
     /**
      * Collects columns and values for the insert operation.
      */
-    private collectColumnsAndValues(metadata: EntityMetadata, entity: any, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[]): ObjectLiteral {
+    private collectColumnsAndValues(metadata: EntityMetadata, entity: ObjectLiteral, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[]): ObjectLiteral {
 
         // extract all columns
         const columns = metadata.columns.filter(column => {
@@ -381,7 +381,7 @@ export class SubjectOperationExecutor {
         });
 
         const relationColumns = metadata.relationsWithJoinColumns
-            .filter(relation => entity.hasOwnProperty(relation.propertyName));
+            .filter(relation => relation.hasEntityValue(entity));
 
         const columnNames = columns.map(column => column.name);
         const relationColumnNames = relationColumns.map(relation => relation.name);
@@ -394,8 +394,6 @@ export class SubjectOperationExecutor {
         // extract all values
         const relationValues = relationColumns.map(relation => {
             const value = relation.getEntityValue(entity);
-            if (value === null || value === undefined)
-                return value;
 
             // if relation value is stored in the entity itself then use it from there
             const relationId = relation.getInverseEntityRelationId(value); // todo: check it

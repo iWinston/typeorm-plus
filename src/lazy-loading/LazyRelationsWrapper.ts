@@ -27,13 +27,15 @@ export class LazyRelationsWrapper {
                     if (relation.hasInverseSide) { // if we don't have inverse side then we can't select and join by relation from inverse side
                         qb.select(relation.propertyName)
                             .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
-                            .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName);
+                            .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
+                            .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
                     } else {
                         qb.select(relation.propertyName)
                             .from(relation.type, relation.propertyName)
                             .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name,
                                 `${relation.junctionEntityMetadata.name}.${relation.name}=:${relation.propertyName}Id`)
-                            .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
+                            .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName])
+                            .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
                     }
 
                     this[loadIndex] = qb.getMany().then(results => {
@@ -51,18 +53,21 @@ export class LazyRelationsWrapper {
                     if (relation.hasInverseSide) {
                         qb.select(relation.propertyName)
                             .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
-                            .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName);
+                            .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
+                            .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
 
                     } else {
                         // (ow) post.category<=>category.post
                         // loaded: category from post
+                        // example: SELECT category.id AS category_id, category.name AS category_name FROM category category
+                        //              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
                         qb.select(relation.propertyName) // category
                             .from(relation.type, relation.propertyName) // Category, category
                             .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name,
-                                `${relation.entityMetadata.name}.${relation.propertyName}=:${relation.propertyName}Id`) // Post, post, post.category = categoryId
-                            .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
+                                `${relation.entityMetadata.name}.${relation.propertyName}=${relation.propertyName}.${relation.referencedColumn.propertyName}`)
+                            .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
                     }
-                    // console.log(qb.getSql());
+
                     this[loadIndex] = qb.getOne().then(result => {
                         this[index] = result;
                         this[resolveIndex] = true;
