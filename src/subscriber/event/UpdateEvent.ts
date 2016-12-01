@@ -9,7 +9,7 @@ export interface UpdateEvent<Entity> {
     /**
      * Updating entity.
      */
-    persistEntity: Entity;
+    entity: Entity;
 
     /**
      * Updating entity in the database.

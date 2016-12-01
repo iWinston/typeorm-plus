@@ -79,7 +79,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate!({
-                persistEntity: subject.entity,
+                entity: subject.entity,
                 databaseEntity: subject.databaseEntity,
                 updatedColumns: subject.diffColumns,
                 updatedRelations: subject.diffRelations,
@@ -104,6 +104,7 @@ export class Broadcaster {
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove!({
                 entity: subject.entity,
+                databaseEntity: subject.databaseEntity,
                 entityId: subject.metadata.getEntityIdMixedMap(subject.databaseEntity)
             }));
 
@@ -146,7 +147,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate!({
-                persistEntity: subject.entity,
+                entity: subject.entity,
                 databaseEntity: subject.databaseEntity,
                 updatedColumns: subject.diffColumns,
                 updatedRelations: subject.diffRelations,
@@ -170,7 +171,8 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove!({
-                entity: subject.entity,
+                entity: subject.hasEntity ? subject.entity : undefined,
+                databaseEntity: subject.databaseEntity,
                 entityId: subject.metadata.getEntityIdMixedMap(subject.databaseEntity)
             }));
 

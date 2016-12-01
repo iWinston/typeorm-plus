@@ -18,7 +18,7 @@ export class EverythingSubscriber implements EntitySubscriberInterface<any> {
      * Called before entity insertion.
      */
     beforeUpdate(event: UpdateEvent<any>) {
-        console.log(`BEFORE ENTITY UPDATED: `, event.persistEntity);
+        console.log(`BEFORE ENTITY UPDATED: `, event.entity);
     }
 
     /**
@@ -39,7 +39,7 @@ export class EverythingSubscriber implements EntitySubscriberInterface<any> {
      * Called after entity insertion.
      */
     afterUpdate(event: UpdateEvent<any>) {
-        console.log(`AFTER ENTITY UPDATED: `, event.persistEntity);
+        console.log(`AFTER ENTITY UPDATED: `, event.entity);
     }
 
     /**
