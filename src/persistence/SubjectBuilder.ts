@@ -671,7 +671,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      */
     private async buildJunctionOperations(options: { insert: boolean, remove: boolean }): Promise<void> {
 
-        const promises = this.operateSubjects.map(subject => {
+        const promises = this.operateSubjects.filter(subject => subject.hasEntity).map(subject => {
             const promises = subject.metadata.manyToManyRelations.map(async relation => {
 
                 // if subject marked to be removed then all its junctions must be removed
@@ -693,6 +693,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     return;
                 }
+
+                // if entity don't have entity then no need to find something that should be inserted or removed
+                if (!subject.hasEntity)
+                    return;
 
                 // else check changed junctions in the persisted entity
                 // extract entity value - we only need to proceed if value is defined and its an array
