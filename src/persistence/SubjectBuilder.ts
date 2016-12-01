@@ -2,6 +2,8 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {SpecificRepository} from "../repository/SpecificRepository";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -73,7 +75,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(protected connection: Connection,
+                protected queryRunnerProvider: QueryRunnerProvider) {
     }
 
     // -------------------------------------------------------------------------
@@ -241,7 +244,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // load database entities for all given ids
             const entities = await this.connection
                 .getRepository<ObjectLiteral>(subjectGroup.target)
-                .findByIds(allIds, { alias: "operateSubject", enabledOptions: ["RELATION_ID_VALUES"] });
+                .createQueryBuilder("operateSubject", this.queryRunnerProvider)
+                .andWhereInIds(allIds)
+                .enableOption("RELATION_ID_VALUES")
+                .getMany();
 
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject
@@ -350,7 +356,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) we need to load a details where details.id = post.details
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .where(qbAlias + "." + relation.joinColumn.referencedColumn.propertyName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
                         .enableOption("RELATION_ID_VALUES")
@@ -427,7 +433,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) we need to load a post where post.detailsId = details.id
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
                         .enableOption("RELATION_ID_VALUES")
@@ -510,7 +516,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
                             "persistenceJoinedRelation." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
@@ -528,7 +534,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
                             "persistenceJoinedRelation." + relation.inverseRelation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
@@ -546,7 +552,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
@@ -585,7 +591,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             if (!loadedSubject) {
                                 const databaseEntity = await this.connection
                                     .getRepository<ObjectLiteral>(valueMetadata.target)
-                                    .findOneById(valueMetadata.getEntityIdMixedMap(persistValue), { alias: qbAlias, enabledOptions: ["RELATION_ID_VALUES"] }); // todo: check if databaseEntity is defined?
+                                    .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                                    .andWhereInIds([valueMetadata.getEntityIdMixedMap(persistValue)])
+                                    .enableOption("RELATION_ID_VALUES")
+                                    .getOne();
 
                                 if (databaseEntity) {
                                     loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
@@ -664,8 +673,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
                     // this way we gonna check which relation ids are missing and which are new (e.g. inserted or removed)
-                    const existInverseEntityRelationIds = await this.connection
-                        .getSpecificRepository(subject.entityTarget)
+                    const specificRepository = new SpecificRepository(this.connection, subject.metadata, this.queryRunnerProvider);
+                    const existInverseEntityRelationIds = await specificRepository
                         .findRelationIds(relation, subject.databaseEntity);
 
                     // finally create a new junction remove operation and push it to the array of such operations
@@ -694,8 +703,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // if subject don't have database entity it means its new and we don't need to remove something that is not exist
                 if (subject.hasDatabaseEntity) {
-                    existInverseEntityRelationIds = await this.connection
-                        .getSpecificRepository(subject.entityTarget)
+                    const specificRepository = new SpecificRepository(this.connection, subject.metadata, this.queryRunnerProvider);
+                    existInverseEntityRelationIds = await specificRepository
                         .findRelationIds(relation, subject.databaseEntity);
                 }
 

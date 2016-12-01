@@ -32,7 +32,7 @@ export class RepositoryFactory {
      * Creates a specific repository.
      */
     createSpecificRepository(connection: Connection, metadata: EntityMetadata, repository: Repository<any>, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<any> {
-        return new SpecificRepository(connection, metadata, repository, queryRunnerProvider);
+        return new SpecificRepository(connection, metadata, queryRunnerProvider);
     }
 
 }

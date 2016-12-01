@@ -125,7 +125,7 @@ describe("lazy-relations", () => {
         const profile: any = profileRepository.create();
         profile.country = "Japan";
         await profileRepository.persist(profile);
-        
+
         const newUser: any = userRepository.create();
         newUser.firstName = "Umed";
         newUser.secondName = "San";

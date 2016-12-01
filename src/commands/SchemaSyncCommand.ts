@@ -1,4 +1,5 @@
 import {createConnections, createConnection} from "../index";
+import {Connection} from "../connection/Connection";
 
 /**
  * Synchronizes database schema with entities.
@@ -17,21 +18,29 @@ export class SchemaSyncCommand {
     }
 
     async handler(argv: any) {
+
+        let connection: Connection|undefined = undefined, connections: Connection[] = [];
         try {
             process.env.LOGGER_CLI_SCHEMA_SYNC = true;
             process.env.SKIP_SCHEMA_CREATION = true;
             if (argv.connection) {
-                const connection = await createConnection(argv.connection);
+                connection = await createConnection(argv.connection);
                 await connection.syncSchema(false);
                 await connection.close();
             } else {
-                const connections = await createConnections();
+                connections = await createConnections();
                 await Promise.all(connections.map(connection => connection.syncSchema(false)));
-                await Promise.all(connections.map(connection => connection.close()));
             }
+
         } catch (err) {
-            console.log(err);
+            console.error(err);
             throw err;
+
+        } finally {
+            if (connection)
+                await connection.close();
+
+            await Promise.all(connections.map(connection => connection.close()));
         }
     }
 }

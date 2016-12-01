@@ -1,7 +1,6 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Repository} from "./Repository";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {Subject} from "../persistence/Subject";
 import {RelationMetadata} from "../metadata/RelationMetadata";
@@ -25,7 +24,6 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
     constructor(protected connection: Connection,
                 protected metadata: EntityMetadata,
-                protected repository: Repository<Entity>,
                 queryRunnerProvider?: QueryRunnerProvider) {
 
         if (queryRunnerProvider) {
@@ -257,8 +255,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relatedEntityIds || !relatedEntityIds.length)
             return Promise.resolve();
 
-        const qb = this.repository.createQueryBuilder("junctionEntity")
-            .delete(relation.junctionEntityMetadata.table.name);
+        const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+            .delete()
+            .fromTable(relation.junctionEntityMetadata.table.name, "junctionEntity");
 
         const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
         const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
@@ -268,10 +267,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 .setParameter("relatedEntity_" + index, relatedEntityId);
         });
 
-        return qb
+        await qb
             .setParameter("entityId", entityId)
-            .execute()
-            .then(() => {});
+            .execute();
     }
 
     /**
@@ -306,8 +304,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!entityIds || !entityIds.length)
             return Promise.resolve();
 
-        const qb = this.repository.createQueryBuilder("junctionEntity")
-            .delete(relation.junctionEntityMetadata.table.name);
+        const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+            .delete()
+            .from(relation.junctionEntityMetadata.table.name, "junctionEntity");
 
         const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
         const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
@@ -392,8 +391,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             parameters["id"] = id;
         }
 
-        await this.repository.createQueryBuilder(alias)
+        await new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
+            .from(this.metadata.target, alias)
             .where(condition, parameters)
             .execute();
     }
@@ -419,8 +419,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             parameters["ids"] = ids;
         }
 
-        await this.repository.createQueryBuilder(alias)
+        await new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
+            .from(this.metadata.target, alias)
             .where(condition, parameters)
             .execute();
     }
@@ -451,7 +452,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const ids: any[] = [];
         const promises = (entityIds as any[]).map((entityId: any) => {
-            const qb = new QueryBuilder(this.connection/*, dbConnection*/)
+            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
                 .select("junction." + inverseEntityColumn.name + " AS id")
                 .fromTable(relation.junctionEntityMetadata.table.name, "junction")
                 .andWhere("junction." + ownerEntityColumn.name + "=:entityId", { entityId: entityId });

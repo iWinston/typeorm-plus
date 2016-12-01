@@ -4,12 +4,13 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe.skip("relations > relation with primary key", () => {
+describes.skip("relations > relation with primary key", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
+        // dropSchemaOnConnection: true
     }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));

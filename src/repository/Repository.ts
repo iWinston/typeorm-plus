@@ -48,8 +48,8 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder(alias: string): QueryBuilder<Entity> {
-        return new QueryBuilder(this.connection/*, dbConnection*/)
+    createQueryBuilder(alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
+        return new QueryBuilder(this.connection, queryRunnerProvider)
             .select(alias)
             .from(this.metadata.target, alias);
     }
@@ -131,20 +131,20 @@ export class Repository<Entity extends ObjectLiteral> {
         if (entityOrEntities instanceof Array)
             return Promise.all(entityOrEntities.map(entity => this.persist(entity)));
 
-        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
-        const queryRunner = await queryRunnerProvider.provide();
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
 
-            const databaseEntityLoader = new SubjectBuilder(this.connection);
+            const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
             await databaseEntityLoader.persist(entityOrEntities, this.metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection);
-            await executor.execute(databaseEntityLoader.operateSubjects, queryRunner);
+            const executor = new SubjectOperationExecutor(this.connection, queryRunnerProvider);
+            await executor.execute(databaseEntityLoader.operateSubjects);
 
-            return entityOrEntities; // await is needed here because we are using finally
+            return entityOrEntities;
 
         } finally {
-            await queryRunnerProvider.release(queryRunner);
+            if (!this.queryRunnerProvider) // release it only if its created by this method
+                await queryRunnerProvider.releaseReused();
         }
     }
 
@@ -168,19 +168,19 @@ export class Repository<Entity extends ObjectLiteral> {
             return Promise.all(entityOrEntities.map(entity => this.remove(entity)));
 
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
-        const queryRunner = await queryRunnerProvider.provide();
         try {
 
-            const databaseEntityLoader = new SubjectBuilder(this.connection);
+            const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
             await databaseEntityLoader.remove(entityOrEntities, this.metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection);
-            await executor.execute(databaseEntityLoader.operateSubjects, queryRunner);
+            const executor = new SubjectOperationExecutor(this.connection, queryRunnerProvider);
+            await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities;
 
         } finally {
-            await queryRunnerProvider.release(queryRunner);
+            if (!this.queryRunnerProvider) // release it only if its created by this method
+                await queryRunnerProvider.releaseReused();
         }
     }
 
@@ -292,23 +292,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Optionally find options can be applied.
      */
     async findOneById(id: any, options?: FindOptions): Promise<Entity|undefined> {
-        const conditions: ObjectLiteral = {};
-        if (this.metadata.hasMultiplePrimaryKeys) {
-            this.metadata.primaryColumns.forEach(primaryColumn => {
-                conditions[primaryColumn.name] = id[primaryColumn.name];
-            });
-            this.metadata.parentIdColumns.forEach(primaryColumn => {
-                conditions[primaryColumn.name] = id[primaryColumn.propertyName];
-            });
-        } else {
-            if (this.metadata.primaryColumns.length > 0) {
-                conditions[this.metadata.firstPrimaryColumn.name] = id;
-            } else if (this.metadata.parentIdColumns.length > 0) {
-                conditions[this.metadata.parentIdColumns[0].name] = id;
-            }
-        }
-        return this.createFindQueryBuilder(conditions, options)
-            .getOne();
+        const qb = this.createFindQueryBuilder(undefined, options);
+        return qb.andWhereInIds([id]).getOne();
     }
 
     /**

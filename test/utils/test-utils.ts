@@ -267,6 +267,9 @@ export function setupConnection(callback: (connection: Connection) => any, entit
             password: "admin",
             database: "test"
         },
+        // logging: {
+        //     logQueries: true
+        // },
         autoSchemaSync: true,
         entities: entities
     };

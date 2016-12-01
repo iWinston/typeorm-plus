@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject, JunctionInsert, JunctionRemove} from "./Subject";
 import {OrmUtils} from "../util/OrmUtils";
+import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -12,44 +13,44 @@ import {OrmUtils} from "../util/OrmUtils";
 export class SubjectOperationExecutor {
 
     // -------------------------------------------------------------------------
-    // Private Properties
+    // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
      * All subjects that needs to be operated.
      */
-    private allSubjects: Subject[];
+    protected allSubjects: Subject[];
 
     /**
      * Subjects that must be inserted.
      */
-    private insertSubjects: Subject[];
+    protected insertSubjects: Subject[];
 
     /**
      * Subjects that must be updated.
      */
-    private updateSubjects: Subject[];
+    protected updateSubjects: Subject[];
 
     /**
      * Subjects that must be removed.
      */
-    private removeSubjects: Subject[];
+    protected removeSubjects: Subject[];
 
     /**
      * Subjects which relations should be updated.
      */
-    private relationUpdateSubjects: Subject[];
+    protected relationUpdateSubjects: Subject[];
 
     /**
      * Query runner used to execute queries.
      */
-    private queryRunner: QueryRunner;
+    protected queryRunner: QueryRunner;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private connection: Connection, protected queryRunnerProvider: QueryRunnerProvider) {
     }
 
     // -------------------------------------------------------------------------
@@ -60,13 +61,12 @@ export class SubjectOperationExecutor {
      * Executes all operations over given array of subjects.
      * Executes queries using given query runner.
      */
-    async execute(subjects: Subject[], queryRunner: QueryRunner) {
+    async execute(subjects: Subject[]) {
 
         // validate all subjects first
         subjects.forEach(subject => subject.validate());
 
         // set class properties for easy use
-        this.queryRunner = queryRunner;
         this.allSubjects = subjects;
         this.insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
@@ -80,8 +80,9 @@ export class SubjectOperationExecutor {
         try {
 
             // broadcast "before" events before we start updating
-            this.connection.broadcaster.broadcastBeforeEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
+            await this.connection.broadcaster.broadcastBeforeEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
+            this.queryRunner = await this.queryRunnerProvider.provide();
             // open transaction if its not opened yet
             if (!this.queryRunner.isTransactionActive()) {
                 isTransactionStartedByItself = true;
@@ -103,21 +104,24 @@ export class SubjectOperationExecutor {
             // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
             await this.updateSpecialColumnsInPersistedEntities();
 
-            // finally broadcast "after" events
-            await this.connection.broadcaster.broadcastAfterEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
-
         } catch (error) {
 
             // rollback transaction if it was started by us
             if (isTransactionStartedByItself) {
                 try {
                     await this.queryRunner.rollbackTransaction();
+
                 } catch (secondaryError) {
                 }
             }
 
             throw error;
         }
+
+        // finally broadcast "after" events
+        // note that we are broadcasting events after we release connection to make sure its free if someone reuse connection inside listeners
+        await this.connection.broadcaster.broadcastAfterEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
+
     }
 
     // -------------------------------------------------------------------------

@@ -58,7 +58,7 @@ export class QueryRunnerProvider {
     /**
      * Query runner release logic extracted into separated methods intently,
      * to make possible to create a subclass with its own release query runner logic.
-     * Note: release only query runners that provided by a provideQueryRunner() method.
+     * Note: release only query runners that provided by a provide() method.
      * This is important and by design.
      */
     async release(queryRunner: QueryRunner): Promise<void> {
