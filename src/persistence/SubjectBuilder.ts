@@ -597,16 +597,19 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             // now find subject with
                             let loadedSubject = this.findByDatabaseEntityLike(valueMetadata.target, persistValue);
                             if (!loadedSubject) {
-                                const databaseEntity = await this.connection
-                                    .getRepository<ObjectLiteral>(valueMetadata.target)
-                                    .createQueryBuilder(qbAlias, this.queryRunnerProvider)
-                                    .andWhereInIds([valueMetadata.getEntityIdMixedMap(persistValue)])
-                                    .enableOption("RELATION_ID_VALUES")
-                                    .getOne();
+                                const id = valueMetadata.getEntityIdMixedMap(persistValue);
+                                if (id) { // if there is no id (for newly inserted) then we cant load
+                                    const databaseEntity = await this.connection
+                                        .getRepository<ObjectLiteral>(valueMetadata.target)
+                                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                                        .andWhereInIds([id])
+                                        .enableOption("RELATION_ID_VALUES")
+                                        .getOne();
 
-                                if (databaseEntity) {
-                                    loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
-                                    this.operateSubjects.push(loadedSubject);
+                                    if (databaseEntity) {
+                                        loadedSubject = new Subject(valueMetadata, undefined, databaseEntity); // todo: what if entity like object exist in the loaded subjects but without databaseEntity?
+                                        this.operateSubjects.push(loadedSubject);
+                                    }
                                 }
                             }
 
