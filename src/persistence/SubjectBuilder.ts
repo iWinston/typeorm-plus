@@ -524,7 +524,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            "persistenceJoinedRelation." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                            "persistenceJoinedRelation." + relation.joinTable.inverseJoinColumnName  + "=" + qbAlias + "." + relation.joinTable.inverseReferencedColumn.name +
+                            " AND persistenceJoinedRelation." + relation.joinTable.joinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
                         .getMany();
@@ -542,7 +543,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            "persistenceJoinedRelation." + relation.inverseRelation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
+                            "persistenceJoinedRelation." + relation.joinTable.joinColumnName  + "=" + qbAlias + "." + relation.joinTable.referencedColumn.name +
+                            " AND persistenceJoinedRelation." + relation.inverseRelation.joinTable.inverseJoinColumnName + "=:id") // todo: need to escape alias and propertyName?
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
                         .getMany();
