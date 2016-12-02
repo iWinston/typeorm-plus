@@ -13,6 +13,8 @@ export class QueryRunnerProvider {
 
     protected reusableQueryRunner: QueryRunner;
 
+    protected reusableQueryRunnerPromise: Promise<QueryRunner>;
+
     /**
      * Indicates if this entity manager is released.
      * Entity manager can be released only if custom queryRunnerProvider is provided.
@@ -44,14 +46,23 @@ export class QueryRunnerProvider {
      * Provides a new query runner used to run repository queries.
      * If use useSingleQueryRunner mode is enabled then reusable query runner will be provided instead.
      */
-    async provide(): Promise<QueryRunner> {
+    provide(): Promise<QueryRunner> {
         if (this.useSingleQueryRunner) {
-            if (!this.reusableQueryRunner)
-                this.reusableQueryRunner = await this.driver.createQueryRunner();
-
-            return this.reusableQueryRunner;
+            if (!this.reusableQueryRunner) {
+                if (!this.reusableQueryRunnerPromise) {
+                    // we do this because this method can be created multiple times
+                    // this will lead to multiple query runner creations
+                    this.reusableQueryRunnerPromise = this.driver
+                        .createQueryRunner()
+                        .then(reusableQueryRunner => {
+                            this.reusableQueryRunner = reusableQueryRunner;
+                            return reusableQueryRunner;
+                        });
+                }
+                return this.reusableQueryRunnerPromise;
+            }
+            return Promise.resolve(this.reusableQueryRunner);
         }
-
         return this.driver.createQueryRunner();
     }
 
