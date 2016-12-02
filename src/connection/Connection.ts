@@ -201,17 +201,7 @@ export class Connection {
      */
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.driver.createQueryRunner();
-        await queryRunner.beginTransaction();
-        try {
-            await queryRunner.clearDatabase();
-            await queryRunner.commitTransaction();
-            await queryRunner.release();
-
-        } catch (error) {
-            await queryRunner.rollbackTransaction();
-            await queryRunner.release();
-            throw error;
-        }
+        await queryRunner.clearDatabase();
     }
 
     /**

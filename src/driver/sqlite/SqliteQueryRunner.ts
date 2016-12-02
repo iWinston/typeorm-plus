@@ -66,9 +66,22 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const selectDropsQuery = `select 'drop table ' || name || ';' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        await Promise.all(dropQueries.map(q => this.query(q["query"])));
+        await this.query(`PRAGMA foreign_keys = OFF;`);
+        await this.beginTransaction();
+        try {
+            const selectDropsQuery = `select 'drop table ' || name || ';' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
+            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+            await this.query(`PRAGMA foreign_keys = ON;`);
+        }
     }
 
     /**

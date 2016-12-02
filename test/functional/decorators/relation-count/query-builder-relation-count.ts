@@ -10,7 +10,11 @@ describe("QueryBuilder > relation-count", () => {
     // const resourceDir = __dirname + "/../../../../../../test/functional/query-builder/join-relation-ids/";
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true }).then(all => connections = all));
+    before(() => setupTestingConnections({
+        entities: [Post, Category, Tag],
+        schemaCreate: true,
+        dropSchemaOnConnection: true
+    }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 

@@ -16,7 +16,7 @@ describe("QueryBuilder > relation-id", () => {
     // todo: also make sure all new qb features to work with FindOptions
     
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true }).then(all => connections = all));
+    before(() => setupTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 

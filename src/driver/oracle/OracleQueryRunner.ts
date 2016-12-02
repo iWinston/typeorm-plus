@@ -64,14 +64,27 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
-        const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+        await this.beginTransaction();
+        try {
+            const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
+            const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
-        await this.query(disableForeignKeysCheckQuery);
-        const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
-        await Promise.all(dropQueries.map(query => this.query(query["query"])));
-        await this.query(enableForeignKeysCheckQuery);
+            await this.query(disableForeignKeysCheckQuery);
+            const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
+            await Promise.all(dropQueries.map(query => this.query(query["query"])));
+            await this.query(enableForeignKeysCheckQuery);
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+        }
+
     }
 
     /**

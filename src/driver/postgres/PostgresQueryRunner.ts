@@ -63,9 +63,21 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        await Promise.all(dropQueries.map(q => this.query(q["query"])));
+        await this.beginTransaction();
+        try {
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
+            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+        }
     }
 
     /**

@@ -64,20 +64,32 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const allTablesSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
-        const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
-        const tableNames = allTablesResults.map(result => result["TABLE_NAME"]);
-        await Promise.all(tableNames.map(async tableName => {
-            const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM sys.foreign_keys WHERE referenced_object_id = object_id('${tableName}')`;
-            const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
-            return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
-                return this.query(dropQuery);
+        await this.beginTransaction();
+        try {
+            const allTablesSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
+            const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
+            const tableNames = allTablesResults.map(result => result["TABLE_NAME"]);
+            await Promise.all(tableNames.map(async tableName => {
+                const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM sys.foreign_keys WHERE referenced_object_id = object_id('${tableName}')`;
+                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
+                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
+                    return this.query(dropQuery);
+                }));
             }));
-        }));
-        await Promise.all(tableNames.map(tableName => {
-            const dropTableSql = `DROP TABLE "${tableName}"`;
-            return this.query(dropTableSql);
-        }));
+            await Promise.all(tableNames.map(tableName => {
+                const dropTableSql = `DROP TABLE "${tableName}"`;
+                return this.query(dropTableSql);
+            }));
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+        }
 
         // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '"' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
         // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
