@@ -327,8 +327,8 @@ export class Subject {
                         databaseValue = JSON.stringify(databaseValue);
 
                 } else if (column.type === ColumnTypes.SIMPLE_ARRAY) {
-                    entityValue = DataTransformationUtils.stringToSimpleArray(entityValue);
-                    databaseValue = DataTransformationUtils.stringToSimpleArray(databaseValue);
+                    entityValue = DataTransformationUtils.simpleArrayToString(entityValue);
+                    databaseValue = DataTransformationUtils.simpleArrayToString(databaseValue);
                 }
             }
 
