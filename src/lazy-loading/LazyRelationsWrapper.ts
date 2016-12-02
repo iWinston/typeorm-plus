@@ -2,24 +2,38 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {Connection} from "../connection/Connection";
 
+/**
+ * This class wraps entities and provides functions there to lazily load its relations.
+ */
 export class LazyRelationsWrapper {
-    
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
     constructor(private connection: Connection) {
-        
     }
-    
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
     wrap(object: Object, relation: RelationMetadata) {
         const connection = this.connection;
         const index = "__" + relation.propertyName + "__";
-        const loadIndex = "__load_" + relation.propertyName + "__";
-        const resolveIndex = "__has_" + relation.propertyName + "__";
+        const promiseIndex = "__promise__" + relation.propertyName + "__";
+        const resolveIndex = "__has__" + relation.propertyName + "__";
         
         Object.defineProperty(object, relation.propertyName, {
             get: function() {
                 if (this[resolveIndex] === true)
                     return Promise.resolve(this[index]);
-                if (this[loadIndex])
-                    return this[loadIndex];
+                if (this[promiseIndex])
+                    return this[promiseIndex];
+
+                // create shortcuts for better readability
+                const escapeAlias = (alias: string) => connection.driver.escapeAliasName(alias);
+                const escapeColumn = (column: string) => connection.driver.escapeColumnName(column);
 
                 const qb = new QueryBuilder(connection);
                 if (relation.isManyToMany) {
@@ -27,18 +41,18 @@ export class LazyRelationsWrapper {
                     qb.select(relation.propertyName)
                         .from(relation.type, relation.propertyName)
                         .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name,
-                            `${relation.junctionEntityMetadata.name}.${relation.name}=:${relation.propertyName}Id`)
+                            `${escapeAlias(relation.junctionEntityMetadata.name)}.${escapeColumn(relation.name)}=:${relation.propertyName}Id`)
                         .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
 
-                    this[loadIndex] = qb.getMany().then(results => {
+                    this[promiseIndex] = qb.getMany().then(results => {
                         this[index] = results;
                         this[resolveIndex] = true;
-                        delete this[loadIndex];
+                        delete this[promiseIndex];
                         return this[index];
                     }).catch(err => {
                         throw err;
                     });
-                    return this[loadIndex];
+                    return this[promiseIndex];
 
                 } else if (relation.isOneToMany) {
 
@@ -47,15 +61,16 @@ export class LazyRelationsWrapper {
                         .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
                         .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
 
-                    this[loadIndex] = qb.getMany().then(results => {
+                    this[promiseIndex] = qb.getMany().then(results => {
                         this[index] = results;
                         this[resolveIndex] = true;
-                        delete this[loadIndex];
+                        delete this[promiseIndex];
                         return this[index];
+
                     }).catch(err => {
                         throw err;
                     });
-                    return this[loadIndex];
+                    return this[promiseIndex];
 
                 } else {
 
@@ -73,20 +88,20 @@ export class LazyRelationsWrapper {
                         qb.select(relation.propertyName) // category
                             .from(relation.type, relation.propertyName) // Category, category
                             .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name,
-                                `${relation.entityMetadata.name}.${relation.propertyName}=${relation.propertyName}.${relation.referencedColumn.propertyName}`)
+                                `${escapeAlias(relation.entityMetadata.name)}.${escapeColumn(relation.propertyName)}=${escapeAlias(relation.propertyName)}.${escapeColumn(relation.referencedColumn.propertyName)}`)
                             .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
                     }
 
-                    this[loadIndex] = qb.getOne().then(result => {
+                    this[promiseIndex] = qb.getOne().then(result => {
                         this[index] = result;
                         this[resolveIndex] = true;
-                        delete this[loadIndex];
+                        delete this[promiseIndex];
                         return this[index];
 
                     }).catch(err => {
                         throw err;
                     });
-                    return this[loadIndex];
+                    return this[promiseIndex];
                 }
             },
             set: function(promise: Promise<any>) {

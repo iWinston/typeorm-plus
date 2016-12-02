@@ -167,7 +167,9 @@ export class MysqlQueryRunner implements QueryRunner {
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map(key => "?").join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
+        const sql = columns.length > 0
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         const result = await this.query(sql, parameters);
         return generatedColumn ? result.insertId : undefined;
     }

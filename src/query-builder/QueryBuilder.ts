@@ -1800,33 +1800,39 @@ export class QueryBuilder<Entity> {
      */
     protected createWhereIdsExpression(ids: any[]): [string, ObjectLiteral] {
         const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+
+        // create shortcuts for better readability
+        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+
         const alias = this.aliasMap.mainAlias.name;
         const parameters: ObjectLiteral = {};
         const whereStrings = ids.map((id, index) => {
             const whereSubStrings: string[] = [];
             if (metadata.hasMultiplePrimaryKeys) {
                 metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(alias + "." + primaryColumn.name + "=:id_" + index + "_" + secondIndex);
+                    whereSubStrings.push(escapeAlias(alias) + "." + escapeColumn(primaryColumn.name) + "=:id_" + index + "_" + secondIndex);
                     parameters["id_" + index + "_" + secondIndex] = id[primaryColumn.name];
                 });
                 metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(alias + "." + id[primaryColumn.name] + "=:parentId_" + index + "_" + secondIndex);
+                    whereSubStrings.push(escapeAlias(alias) + "." + escapeColumn(id[primaryColumn.name]) + "=:parentId_" + index + "_" + secondIndex);
                     parameters["parentId_" + index + "_" + secondIndex] = id[primaryColumn.propertyName];
                 });
             } else {
                 if (metadata.primaryColumns.length > 0) {
-                    whereSubStrings.push(alias + "." + metadata.firstPrimaryColumn.name + "=:id_" + index);
+                    whereSubStrings.push(escapeAlias(alias) + "." + escapeColumn(metadata.firstPrimaryColumn.name) + "=:id_" + index);
                     parameters["id_" + index] = id;
 
                 } else if (metadata.parentIdColumns.length > 0) {
-                    whereSubStrings.push(alias + "." + metadata.parentIdColumns[0].name + "=:parentId_" + index);
+                    whereSubStrings.push(escapeAlias(alias) + "." + escapeColumn(metadata.parentIdColumns[0].name) + "=:parentId_" + index);
                     parameters["parentId_" + index] = id;
                 }
             }
             return whereSubStrings.join(" AND ");
         });
 
-        return ["(" + whereStrings.join(" OR ") + ")", parameters];
+        const whereString = whereStrings.length > 1 ? "(" + whereStrings.join(" OR ") + ")" : whereStrings[0];
+        return [whereString, parameters];
     }
 
     protected async getQueryRunner(): Promise<QueryRunner> {

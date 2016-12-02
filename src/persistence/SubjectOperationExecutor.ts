@@ -331,6 +331,7 @@ export class SubjectOperationExecutor {
                     } else {
                         updateOptions[relation.inverseRelation.joinColumn.name] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId;
                     }
+
                     const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.table.name, updateOptions, conditions);
                     updatePromises.push(updatePromise);
                 });
@@ -352,23 +353,27 @@ export class SubjectOperationExecutor {
         const parentEntityMetadata = subject.metadata.parentEntityMetadata;
         const metadata = subject.metadata;
         const entity = subject.entity;
+        let newlyGeneratedId: any;
 
         // if entity uses class table inheritance then we need to separate entity into sub values that will be inserted into multiple tables
         if (metadata.table.isClassTableChild) { // todo: with current implementation inheritance of multiple class table children will not work
 
             // first insert entity values into parent class table
             const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects);
-            subject.newlyGeneratedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
+            newlyGeneratedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
 
             // second insert entity values into child class table
             const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, subject.newlyGeneratedId, undefined, alreadyInsertedSubjects);
             const secondGeneratedId = await this.queryRunner.insert(metadata.table.name, childValuesMap, metadata.generatedColumnIfExist);
-            if (!subject.newlyGeneratedId && secondGeneratedId) subject.newlyGeneratedId = secondGeneratedId;
+            if (!newlyGeneratedId && secondGeneratedId) newlyGeneratedId = secondGeneratedId;
 
         } else { // in the case when class table inheritance is not used
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
-            subject.newlyGeneratedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
+            newlyGeneratedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
         }
+
+        if (newlyGeneratedId && metadata.hasGeneratedColumn)
+            subject.newlyGeneratedId = newlyGeneratedId;
     }
 
     /**

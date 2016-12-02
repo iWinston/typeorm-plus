@@ -224,7 +224,11 @@ export class SqlServerQueryRunner implements QueryRunner {
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "@" + index).join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES (${values})`;
+
+        const sql = columns.length > 0
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES (${values})`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES`;
+
         const result = await this.query(sql, parameters);
         return generatedColumn ? result instanceof Array ? result[0][generatedColumn.name] : result[generatedColumn.name] : undefined;
     }

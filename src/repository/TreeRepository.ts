@@ -19,6 +19,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      * Roots are entities that have no ancestors. Finds them all.
      */
     findRoots(): Promise<Entity[]> {
+
         const parentPropertyName = this.metadata.treeParentRelation.propertyName;
         return this.createQueryBuilder("treeEntity")
             .where(`treeEntity.${parentPropertyName} IS NULL`)
@@ -29,10 +30,15 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      * Creates a query builder used to get descendants of the entities in a tree.
      */
     createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
-        const joinCondition = `${alias}.${this.metadata.firstPrimaryColumn.name}=${closureTableAlias}.descendant`;
+
+        // create shortcuts for better readability
+        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+
+        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.name)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
-            .where(`${closureTableAlias}.ancestor=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
+            .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 
     /**
@@ -72,10 +78,15 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      * Creates a query builder used to get ancestors of the entities in the tree.
      */
     createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
-        const joinCondition = `${alias}.${this.metadata.firstPrimaryColumn.name}=${closureTableAlias}.ancestor`;
+
+        // create shortcuts for better readability
+        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+
+        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.name)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
-            .where(`${closureTableAlias}.descendant=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
+            .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 
     /**

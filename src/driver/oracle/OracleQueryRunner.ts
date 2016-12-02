@@ -172,7 +172,10 @@ export class OracleQueryRunner implements QueryRunner {
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map(key => ":" + key).join(", ");
         const parameters = keys.map(key => keyValues[key]);
-        const insertSql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
+
+        const insertSql = columns.length > 0
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         if (generatedColumn) {
             const sql2 = `declare lastId number; begin ${insertSql} returning "id" into lastId; dbms_output.enable; dbms_output.put_line(lastId); dbms_output.get_line(:ln, :st); end;`;
             const saveResult = await this.query(sql2, parameters.concat([

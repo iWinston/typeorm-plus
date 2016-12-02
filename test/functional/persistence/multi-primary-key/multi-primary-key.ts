@@ -25,6 +25,13 @@ describe("persistence > multi primary keys", () => {
 
             await connection.entityManager.persist(post1);
 
+            post1.should.be.eql({
+                firstId: 1,
+                secondId: 2,
+                title: "Hello Post #1"
+            });
+
+
             // create first category and post and save them
             const category1 = new Category();
             category1.name = "Category saved by cascades #1";
@@ -52,6 +59,7 @@ describe("persistence > multi primary keys", () => {
                     name: "Category saved by cascades #1"
                 }
             }]);
+
         })));
     });
 });

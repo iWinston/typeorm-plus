@@ -35,11 +35,13 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         // check that all persisted objects exist
         const loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
-            .innerJoinAndSelect("post.categories", "categories")
+            .innerJoinAndSelect("post.categories", "category")
+            .orderBy("post.id, category.id")
             .getOne()!;
 
         const loadedCategories = await connection.entityManager
             .createQueryBuilder(Category, "category")
+            .orderBy("category.id")
             .getMany();
 
         expect(loadedPost!).not.to.be.empty;

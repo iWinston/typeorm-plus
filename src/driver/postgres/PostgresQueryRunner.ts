@@ -159,7 +159,9 @@ export class PostgresQueryRunner implements QueryRunner {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`;
+        const sql = columns.length > 0
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`;
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
         if (generatedColumn)
