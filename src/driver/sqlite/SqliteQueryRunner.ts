@@ -562,6 +562,7 @@ export class SqliteQueryRunner implements QueryRunner {
             const columnNames = foreignKey.columnNames.map(name => `"${name}"`).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
+            if (foreignKey.onDelete) sql1 += " ON DELETE " + foreignKey.onDelete;
         });
 
         const primaryKeyColumns = tableSchema.columns.filter(column => column.isPrimary && !column.isGenerated);
