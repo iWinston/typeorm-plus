@@ -13,7 +13,9 @@ export class Post {
     @OneToMany(type => Category, category => category.post)
     categories: Category[]|null;
 
-    @Column()
+    @Column({
+        default: "supervalue"
+    })
     title: string;
 
 }

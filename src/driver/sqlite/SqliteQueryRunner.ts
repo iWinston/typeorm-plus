@@ -544,6 +544,8 @@ export class SqliteQueryRunner implements QueryRunner {
             c += " UNIQUE";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " PRIMARY KEY AUTOINCREMENT";
+        if (column.default)
+            c += " DEFAULT '" + column.default + "'";
 
         return c;
     }

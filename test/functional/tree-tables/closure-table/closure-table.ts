@@ -82,7 +82,7 @@ describe("closure-table", () => {
 
     })));
 
-    it.only("should work correctly when saving using children categories", () => Promise.all(connections.map(async connection => {
+    it("should work correctly when saving using children categories", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getTreeRepository(Category);
 
         const a1 = new Category();

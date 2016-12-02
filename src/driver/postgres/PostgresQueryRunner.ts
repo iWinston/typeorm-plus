@@ -593,6 +593,8 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             c += " NOT NULL";
         if (column.isGenerated)
             c += " PRIMARY KEY";
+        if (column.default)
+            c += " DEFAULT '" + column.default + "'";
         return c;
     }
 

@@ -533,7 +533,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
         if (column.default)
-            c += " DEFAULT " + column.default + "";
+            c += " DEFAULT '" + column.default + "'";
         return c;
     }
 
