@@ -5,6 +5,7 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject, JunctionInsert, JunctionRemove} from "./Subject";
 import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -380,8 +381,59 @@ export class SubjectOperationExecutor {
             return !column.isVirtual && !column.isParentId && !column.isDiscriminator && column.hasEntityValue(entity);
         });
 
-        const relationColumns = metadata.relationsWithJoinColumns
-            .filter(relation => relation.hasEntityValue(entity));
+        const relationColumns: RelationMetadata[] = [];
+        const relationValues: any[] = [];
+        metadata.relationsWithJoinColumns.forEach(relation => {
+
+            let relationValue: any;
+            const value = relation.getEntityValue(entity);
+
+            if (value) {
+                // if relation value is stored in the entity itself then use it from there
+                const relationId = relation.getInverseEntityRelationId(value); // todo: check it
+                if (relationId) {
+                    relationValue = relationId;
+                }
+                // otherwise try to find relational value from just inserted subjects
+                const alreadyInsertedSubject = alreadyInsertedSubjects.find(insertedSubject => {
+                    return insertedSubject.entity === value;
+                });
+                if (alreadyInsertedSubject) {
+                    const referencedColumn = relation.joinColumn.referencedColumn;
+                    // if join column references to the primary generated column then seek in the newEntityId of the insertedSubject
+                    if (referencedColumn.isGenerated)
+                        relationValue = alreadyInsertedSubject.newlyGeneratedId;
+                    // if it references to create or update date columns
+                    if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
+                        relationValue = this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
+                    // if it references to version column
+                    if (referencedColumn.isVersion)
+                        relationValue = this.connection.driver.preparePersistentValue(1, referencedColumn);
+                }
+            } else if (relation.hasInverseSide) {
+                const inverseSubject = this.allSubjects.find(subject => {
+                    if (!subject.hasEntity || subject.entityTarget !== relation.inverseRelation.target)
+                        return false;
+
+                    const inverseRelationValue = subject.entity[relation.inverseRelation.propertyName];
+                    if (inverseRelationValue) {
+                        if (inverseRelationValue instanceof Array) {
+                            return inverseRelationValue.find(subValue => subValue === subValue);
+                        } else {
+                            return inverseRelationValue === entity;
+                        }
+                    }
+                });
+                if (inverseSubject && inverseSubject.entity[relation.joinColumn.referencedColumn.propertyName]) {
+                    relationValue = inverseSubject.entity[relation.joinColumn.referencedColumn.propertyName];
+                }
+            }
+
+            if (relationValue) {
+                relationColumns.push(relation);
+                relationValues.push(relationValue);
+            }
+        });
 
         const columnNames = columns.map(column => column.name);
         const relationColumnNames = relationColumns.map(relation => relation.name);
@@ -389,38 +441,6 @@ export class SubjectOperationExecutor {
 
         const columnValues = columns.map(column => {
             return this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
-        });
-
-        // extract all values
-        const relationValues = relationColumns.map(relation => {
-            const value = relation.getEntityValue(entity);
-
-            // if relation value is stored in the entity itself then use it from there
-            const relationId = relation.getInverseEntityRelationId(value); // todo: check it
-            if (relationId)
-                return relationId;
-
-            // otherwise try to find relational value from just inserted subjects
-            const alreadyInsertedSubject = alreadyInsertedSubjects.find(insertedSubject => {
-                return insertedSubject.entity === value;
-            });
-            if (alreadyInsertedSubject) {
-                const referencedColumn = relation.joinColumn.referencedColumn;
-
-                // if join column references to the primary generated column then seek in the newEntityId of the insertedSubject
-                if (referencedColumn.isGenerated)
-                    return alreadyInsertedSubject.newlyGeneratedId;
-
-                // if it references to create or update date columns
-                if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
-                    return this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
-
-                // if it references to version column
-                if (referencedColumn.isVersion)
-                    return this.connection.driver.preparePersistentValue(1, referencedColumn);
-
-                // todo: implement other referenced column types
-            }
         });
 
         const allValues = columnValues.concat(relationValues);
