@@ -19,7 +19,7 @@ export interface ColumnOptions {
      * Column type's length. Used only on some column types.
      * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
      */
-    readonly length?: string;
+    readonly length?: string|number;
 
     /**
      * Indicates if this column is PRIMARY.

@@ -160,7 +160,7 @@ export class ColumnMetadata {
             this.type = args.options.type;
 
         if (args.options.length)
-            this.length = args.options.length;
+            this.length = String(args.options.length);
         if (args.options.primary)
             this.isPrimary = args.options.primary;
         if (args.options.generated)
