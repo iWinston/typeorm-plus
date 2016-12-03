@@ -45,17 +45,11 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
             .getMany();
 
         expect(loadedPost!).not.to.be.empty;
-        loadedPost!.should.be.eql({
+        loadedPost!.should.include({
             id: 1,
-            title: "Hello Post #1",
-            categories: [{
-                id: 1,
-                name: "category #1"
-            }, {
-                id: 2,
-                name: "category #2"
-            }]
+            title: "Hello Post #1"
         });
+        loadedPost!.categories.length.should.be.equal(2);
 
         expect(loadedCategories).not.to.be.empty;
         loadedCategories.should.be.eql([{
