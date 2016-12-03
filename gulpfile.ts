@@ -4,14 +4,16 @@ const gulp = require("gulp");
 const del = require("del");
 const shell = require("gulp-shell");
 const replace = require("gulp-replace");
+const rename = require("gulp-rename");
+const file = require("gulp-file");
 const mocha = require("gulp-mocha");
 const chai = require("chai");
 const tslint = require("gulp-tslint");
 const stylish = require("tslint-stylish");
-const ts = require("gulp-typescript");
 const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
+const ts = require("gulp-typescript");
 
 @Gulpclass()
 export class Gulpfile {
@@ -35,6 +37,66 @@ export class Gulpfile {
     compile() {
         return gulp.src("package.json", { read: false })
             .pipe(shell(["tsc"]));
+    }
+
+    /**
+     */
+    @Task()
+    browserCopySources() {
+        return gulp.src([
+            "./src/**/*.ts",
+            "!./src/commands/*.ts",
+            "!./src/cli.ts",
+            "!./src/typeorm.ts",
+            "!./src/decorators-shim.ts",
+            "!./src/platform/PlatformTools.ts",
+            "!./src/platform/BrowserPlatformTools.ts"
+        ])
+            .pipe(gulp.dest("./build/browser/typeorm"));
+    }
+
+    @Task()
+    browserCopyMainBrowserFile() {
+        return gulp.src("./package.json", { read: false })
+            .pipe(file("typeorm.ts", `export * from "./typeorm/index";`))
+            .pipe(gulp.dest("./build/browser"));
+    }
+
+    @Task()
+    browserCopyPlatformTools() {
+        return gulp.src("./src/platform/BrowserPlatformTools.ts")
+            .pipe(rename("PlatformTools.ts"))
+            .pipe(gulp.dest("./build/browser/typeorm/platform"));
+    }
+
+    /**
+     * Runs typescript files compilation.
+     */
+    @MergedTask()
+    browserCompile() {
+        const tsProject = ts.createProject("tsconfig.json", {
+            outFile: "typeorm-browser.js",
+            module: "system",
+            target: "es6",
+            typescript: require("typescript")
+        });
+        const tsResult = gulp.src(["./build/browser/**/*.ts", "./node_modules/@types/**/*.ts"])
+            .pipe(sourcemaps.init())
+            .pipe(tsProject());
+
+        return [
+            tsResult.dts.pipe(gulp.dest("./build/package")),
+            tsResult.js
+                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
+                .pipe(gulp.dest("./build/package"))
+        ];
+    }
+
+    /**
+     */
+    @SequenceTask()
+    browser() {
+        return [["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"], "browserCompile"];
     }
 
     // -------------------------------------------------------------------------
