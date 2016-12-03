@@ -14,6 +14,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OrmUtils} from "../util/OrmUtils";
 import {CannotDetermineConnectionOptionsError} from "./error/CannotDetermineConnectionOptionsError";
 import {PlatformTools} from "../platform/PlatformTools";
+import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
 
 /**
  * ConnectionManager is used to store and manage all these different connections.
@@ -428,6 +429,8 @@ export class ConnectionManager {
                 return new OracleDriver(options, logger);
             case "mssql":
                 return new SqlServerDriver(options, logger);
+            case "websql":
+                return new WebsqlDriver(options, logger);
             default:
                 throw new MissingDriverError(options.type);
         }
