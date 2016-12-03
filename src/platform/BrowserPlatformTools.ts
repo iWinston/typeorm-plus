@@ -67,10 +67,9 @@ export class PlatformTools {
      * Gets environment variable.
      */
     static getEnvVariable(name: string): any {
-        if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: process.env["${name}"].`);
-
-        return "";
+        // if (this.type === "browser")
+        //     throw new Error(`This option/function is not supported in the browser environment. Failed operation: process.env["${name}"].`);
+        return undefined;
     }
 
 }
