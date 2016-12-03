@@ -58,17 +58,10 @@
     "typescript": "^2.1.1"
   },
   "dependencies": {
-    "@types/lodash": "4.14.40",
     "@types/node": "^6.0.50",
     "app-root-path": "^2.0.1",
-    "dependency-graph": "^0.5.0",
     "glob": "^7.1.1",
-    "lodash": "^4.17.2",
-    "path": "^0.12.7",
     "reflect-metadata": "^0.1.8",
-    "require-all": "^2.0.0",
-    "sha1": "^1.1.1",
-    "url": "^0.11.0",
     "yargonaut": "^1.1.2",
     "yargs": "^6.4.0"
   },

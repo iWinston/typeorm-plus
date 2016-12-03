@@ -4,7 +4,6 @@ import {DriverOptions} from "../DriverOptions";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Logger} from "../../logger/Logger";
@@ -12,6 +11,7 @@ import {SqliteQueryRunner} from "./SqliteQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {PlatformTools} from "../../platform/PlatformTools";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -255,12 +255,10 @@ export class SqliteDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        if (!require)
-            throw new DriverPackageLoadError();
-
         try {
-            this.sqlite = require("sqlite3").verbose();
-        } catch (e) {
+            this.sqlite = PlatformTools.load("sqlite3").verbose();
+
+        } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3");
         }
     }

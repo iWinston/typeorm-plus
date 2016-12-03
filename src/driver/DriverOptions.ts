@@ -6,7 +6,7 @@ export interface DriverOptions {
     /**
      * Database type. This value is required.
      */
-    readonly type: "mysql"|"mysql2"|"postgres"|"mariadb"|"sqlite"|"oracle"|"mssql";
+    readonly type: "mysql"|"postgres"|"mariadb"|"sqlite"|"oracle"|"mssql";
 
     /**
      * Connection url to where perform connection to.

@@ -3,7 +3,6 @@ import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {DriverUtils} from "../DriverUtils";
 import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -13,6 +12,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {PlatformTools} from "../../platform/PlatformTools";
 
 /**
  * Organizes communication with Oracle DBMS.
@@ -330,12 +330,10 @@ export class OracleDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        if (!require)
-            throw new DriverPackageLoadError();
-
         try {
-            this.oracle = require("oracledb");
-        } catch (e) {
+            this.oracle = PlatformTools.load("oracledb");
+
+        } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Oracle", "oracledb");
         }
     }

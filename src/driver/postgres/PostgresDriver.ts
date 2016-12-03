@@ -4,7 +4,6 @@ import {DriverOptions} from "../DriverOptions";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {DriverUtils} from "../DriverUtils";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -13,6 +12,7 @@ import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {PlatformTools} from "../../platform/PlatformTools";
 
 // todo(tests):
 // check connection with url
@@ -338,12 +338,10 @@ export class PostgresDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        if (!require)
-            throw new DriverPackageLoadError();
-
         try {
-            this.postgres = require("pg");
-        } catch (e) {
+            this.postgres = PlatformTools.load("pg");
+
+        } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg");
         }
     }

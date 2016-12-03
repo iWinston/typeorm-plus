@@ -1,5 +1,6 @@
 import {NamingStrategyInterface} from "./NamingStrategyInterface";
-import * as _ from "lodash";
+import {RandomGenerator} from "../util/RandomGenerator";
+import {snakeCase, camelCase} from "../util/StringUtils";
 
 /**
  * Naming strategy that is used by default.
@@ -7,7 +8,7 @@ import * as _ from "lodash";
 export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     tableName(className: string, customName: string): string {
-        return customName ? customName : _.snakeCase(className);
+        return customName ? customName : snakeCase(className);
     }
 
     columnName(propertyName: string, customName: string): string {
@@ -15,7 +16,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string, columnCustomName?: string): string {
-        return _.camelCase(embeddedPropertyName + "_" + (columnCustomName ? columnCustomName : columnPropertyName));
+        return camelCase(embeddedPropertyName + "_" + (columnCustomName ? columnCustomName : columnPropertyName));
     }
 
     relationName(propertyName: string): string {
@@ -27,7 +28,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
             return customName;
         
         const key = "ind_" + tableName + "_" + columns.join("_");
-        return "ind_" + require("sha1")(key);
+        return "ind_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
     joinColumnInverseSideName(joinColumnName: string, propertyName: string): string {
@@ -43,18 +44,18 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
                   secondPropertyName: string,
                   firstColumnName: string,
                   secondColumnName: string): string {
-        return _.snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName + "_" + secondColumnName);
+        return snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName + "_" + secondColumnName);
     }
 
     joinTableColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string {
-        const column1 = _.camelCase(tableName + "_" + columnName);
-        const column2 = _.camelCase(secondTableName + "_" + secondColumnName);
+        const column1 = camelCase(tableName + "_" + columnName);
+        const column2 = camelCase(secondTableName + "_" + secondColumnName);
         return column1 === column2 ? column1 + "_1" : column1; // todo: do we still need _1 prefix?!
     }
 
     joinTableInverseColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string {
-        const column1 = _.camelCase(tableName + "_" + columnName);
-        const column2 = _.camelCase(secondTableName + "_" + secondColumnName);
+        const column1 = camelCase(tableName + "_" + columnName);
+        const column2 = camelCase(secondTableName + "_" + secondColumnName);
         return column1 === column2 ? column1 + "_2" : column1; // todo: do we still need _2 prefix?!
     }
 
@@ -64,11 +65,11 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string {
         const key = `${tableName}_${columnNames.join("_")}_${referencedTableName}_${referencedColumnNames.join("_")}`;
-        return "fk_" + require("sha1")(key).substr(0, 27); // todo: use crypto instead?
+        return "fk_" + RandomGenerator.sha1(key).substr(0, 27); // todo: use crypto instead?
     }
 
     classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string {
-        return _.camelCase(parentTableName + "_" + parentTableIdPropertyName);
+        return camelCase(parentTableName + "_" + parentTableIdPropertyName);
     }
 
     /**

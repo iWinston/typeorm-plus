@@ -3,7 +3,6 @@ import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {DriverPackageLoadError} from "../error/DriverPackageLoadError";
 import {DriverUtils} from "../DriverUtils";
 import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -13,6 +12,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {PlatformTools} from "../../platform/PlatformTools";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -57,21 +57,15 @@ export class MysqlDriver implements Driver {
      */
     protected logger: Logger;
 
-    /**
-     * Driver type's version. node-mysql and mysql2 are supported.
-     */
-    protected version: "mysql"|"mysql2" = "mysql";
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mysql?: any, mysqlVersion: "mysql"|"mysql2" = "mysql") {
+    constructor(options: DriverOptions, logger: Logger, mysql?: any) {
 
         this.options = DriverUtils.buildDriverOptions(options);
         this.logger = logger;
         this.mysql = mysql;
-        this.version = mysqlVersion;
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -130,7 +124,7 @@ export class MysqlDriver implements Driver {
      */
     disconnect(): Promise<void> {
         if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError(this.version);
+            throw new ConnectionIsNotSetError("mysql");
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
@@ -155,7 +149,7 @@ export class MysqlDriver implements Driver {
      */
     async createQueryRunner(): Promise<QueryRunner> {
         if (!this.databaseConnection && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError(this.version));
+            return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
         return new MysqlQueryRunner(databaseConnection, this, this.logger);
@@ -312,20 +306,23 @@ export class MysqlDriver implements Driver {
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
-        throw new ConnectionIsNotSetError(this.version);
+        throw new ConnectionIsNotSetError("mysql");
     }
 
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        if (!require)
-            throw new DriverPackageLoadError();
-
         try {
-            this.mysql = require(this.version);
+            this.mysql = PlatformTools.load("mysql");  // try to load first supported package
+
         } catch (e) {
-            throw new DriverPackageNotInstalledError("Mysql", this.version);
+            try {
+                this.mysql = PlatformTools.load("mysql2"); // try to load second supported package
+
+            } catch (e) {
+                throw new DriverPackageNotInstalledError("Mysql", "mysql");
+            }
         }
     }
 
