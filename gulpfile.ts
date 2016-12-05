@@ -152,6 +152,17 @@ export class Gulpfile {
     }
 
     /**
+     * Removes /// <reference from compiled sources.
+     */
+    @Task()
+    packageReplaceReferences() {
+        return gulp.src("./build/package/**/*.d.ts")
+            .pipe(replace(`/// <reference types="node" />`, ""))
+            .pipe(replace(`/// <reference types="chai" />`, ""))
+            .pipe(gulp.dest("./build/package"));
+    }
+
+    /**
      * Moves all compiled files to the final package directory.
      */
     @Task()
@@ -178,16 +189,7 @@ export class Gulpfile {
     @Task()
     packageReadmeFile() {
         return gulp.src("./README.md")
-            .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
-            .pipe(gulp.dest("./build/package"));
-    }
-
-    /**
-     * This task will copy typings.json file to the build package.
-     */
-    @Task()
-    copyTypingsFile() {
-        return gulp.src("./typings.json")
+            // .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
             .pipe(gulp.dest("./build/package"));
     }
 
@@ -200,8 +202,8 @@ export class Gulpfile {
             "clean",
             "packageCompile",
             "packageMoveCompiledFiles",
-            "packageClearCompileDirectory",
-            ["packagePreparePackageFile", "packageReadmeFile", "copyTypingsFile"]
+            ["packageClearCompileDirectory", "packageReplaceReferences"],
+            ["packagePreparePackageFile", "packageReadmeFile"]
         ];
     }
 
