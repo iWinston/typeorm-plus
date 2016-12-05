@@ -6,6 +6,7 @@ const shell = require("gulp-shell");
 const replace = require("gulp-replace");
 const rename = require("gulp-rename");
 const file = require("gulp-file");
+const uglify = require("gulp-uglify");
 const mocha = require("gulp-mocha");
 const chai = require("chai");
 const tslint = require("gulp-tslint");
@@ -88,7 +89,7 @@ export class Gulpfile {
             tsResult.dts.pipe(gulp.dest("./build/package")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/package"))
+                .pipe(gulp.dest("./build/browser-package"))
         ];
     }
 
@@ -96,7 +97,16 @@ export class Gulpfile {
      */
     @SequenceTask()
     browser() {
-        return [["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"], "browserCompile"];
+        return [["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"], "browserCompile", "uglify"];
+    }
+
+    /**
+     */
+    @Task()
+    uglify() {
+        return gulp.src("./build/browser-package/*.js")
+            .pipe(uglify())
+            .pipe(gulp.dest("./build/browser-package"));
     }
 
     // -------------------------------------------------------------------------
