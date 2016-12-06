@@ -68,12 +68,15 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
     
         `npm install mssql --save`
     
-    * for **Oracle**
+    * for **Oracle** (experimental)
     
         `npm install oracledb --save`
     
     Install only one of them, depend on which database you use.
     
+    To make oracle driver to work you need to follow installation instructions from 
+    [their](https://github.com/oracle/node-oracledb) site.
+
 #### TypeScript configuration
 
 Also make sure you are using TypeScript compiler version > **2.1** and you have enabled following settings in `tsconfig.json`:
