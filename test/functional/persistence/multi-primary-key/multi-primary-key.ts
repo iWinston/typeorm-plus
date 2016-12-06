@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe("persistence > mutli primary keys", () => {
+describe("persistence > multi primary keys", () => {
 
     let connections: Connection[];
     before(async () => connections = await setupTestingConnections({
@@ -15,15 +15,22 @@ describe("persistence > mutli primary keys", () => {
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
-    describe("insertt", function () {
+    describe("insert", function () {
 
-        it("should insert entity when when there are mutli column primary keys", () => Promise.all(connections.map(async connection => {
+        it("should insert entity when when there are multi column primary keys", () => Promise.all(connections.map(async connection => {
             const post1 = new Post();
             post1.title = "Hello Post #1";
             post1.firstId = 1;
             post1.secondId = 2;
 
             await connection.entityManager.persist(post1);
+
+            post1.should.be.eql({
+                firstId: 1,
+                secondId: 2,
+                title: "Hello Post #1"
+            });
+
 
             // create first category and post and save them
             const category1 = new Category();
@@ -52,6 +59,7 @@ describe("persistence > mutli primary keys", () => {
                     name: "Category saved by cascades #1"
                 }
             }]);
+
         })));
     });
 });

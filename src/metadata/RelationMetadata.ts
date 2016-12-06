@@ -65,7 +65,7 @@ export class RelationMetadata {
      * The name of the field that will contain count of the rows of the relation.
      */
     countField: string|undefined;
-    
+
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
@@ -163,7 +163,7 @@ export class RelationMetadata {
             this._inverseSideProperty = args.inverseSideProperty;
         if (args.propertyType)
             this.propertyType = args.propertyType;
-        if (args.isLazy)
+        if (args.isLazy !== undefined)
             this.isLazy = args.isLazy;
         if (args.options.cascadeInsert || args.options.cascadeAll)
             this.isCascadeInsert = true;
@@ -171,11 +171,11 @@ export class RelationMetadata {
             this.isCascadeUpdate = true;
         if (args.options.cascadeRemove || args.options.cascadeAll)
             this.isCascadeRemove = true;
-        if (args.options.nullable)
+        if (args.options.nullable !== undefined)
             this.isNullable = args.options.nullable;
         if (args.options.onDelete)
             this.onDelete = args.options.onDelete;
-        if (args.options.primary)
+        if (args.options.primary !== undefined)
             this.isPrimary = args.options.primary;
         if (args.isTreeParent)
             this.isTreeParent = true;
@@ -201,7 +201,7 @@ export class RelationMetadata {
     }
 
     /**
-     * Gets the name of column in the database. 
+     * Gets the name of column in the database.
      * //Cannot be used with many-to-many relations since they don't have a column in the database.
      * //Also only owning sides of the relations have this property.
      */
@@ -214,8 +214,8 @@ export class RelationMetadata {
             } else if (this.joinColumn) {
                 return this.joinColumn.name;
             }
-            
-        } else if (this.hasInverseSide) { 
+
+        } else if (this.hasInverseSide) {
             if (this.inverseRelation.joinTable) {
                 return this.inverseRelation.joinTable.inverseJoinColumnName;
             } else if (this.inverseRelation.joinColumn && this.inverseRelation.joinColumn.referencedColumn) {
@@ -227,18 +227,18 @@ export class RelationMetadata {
     }
 
     /**
-     * Gets the name of column to which this relation is referenced. 
+     * Gets the name of column to which this relation is referenced.
      * //Cannot be used with many-to-many relations since all referenced are in the junction table.
      * //Also only owning sides of the relations have this property.
      */
     get referencedColumnName(): string {
         // if (!this.isOwning)
         //     throw new Error(`Only owning side of the relations can have information about referenced column names.`);
-        
+
         // for many-to-one and owner one-to-one relations we get referenced column from join column
         /*if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
             return this.joinColumn.referencedColumn.name;
-        
+
         // for many-to-many relation we give referenced column depend of owner side
         if (this.joinTable) { // need to check if this algorithm works correctly
             if (this.isOwning) {
@@ -251,7 +251,7 @@ export class RelationMetadata {
         if (this.isOwning) {
             if (this.joinTable) {
                 return this.joinTable.referencedColumn.name;
-                
+
             } else if (this.joinColumn) {
                 return this.joinColumn.referencedColumn.name;
             }
@@ -263,7 +263,7 @@ export class RelationMetadata {
                 return this.inverseRelation.joinColumn.name; // todo: didn't get this logic here
             }
         }
-        
+
         // this should not be possible, but anyway throw error
         throw new Error(`Cannot get referenced column name of the relation ${this.entityMetadata.name}#${this.name}`);
     }
@@ -304,8 +304,8 @@ export class RelationMetadata {
      */
     get isOwning() {
         return  !!(this.isManyToOne ||
-            (this.isManyToMany && this.joinTable) ||
-            (this.isOneToOne && this.joinColumn));
+                (this.isManyToMany && this.joinTable) ||
+                (this.isOneToOne && this.joinColumn));
     }
 
     /**
@@ -317,6 +317,7 @@ export class RelationMetadata {
 
     /**
      * Checks if this relation is owner side of the "one-to-one" relation.
+     * Owner side means this side of relation has a join column in the table.
      */
     get isOneToOneOwner(): boolean {
         return this.isOneToOne && this.isOwning;
@@ -324,6 +325,7 @@ export class RelationMetadata {
 
     /**
      * Checks if this relation is NOT owner side of the "one-to-one" relation.
+     * NOT owner side means this side of relation does not have a join column in the table.
      */
     get isOneToOneNotOwner(): boolean {
         return this.isOneToOne && !this.isOwning;
@@ -351,6 +353,22 @@ export class RelationMetadata {
     }
 
     /**
+     * Checks if this relation's type is "many-to-many", and is owner side of the relationship.
+     * Owner side means this side of relation has a join table.
+     */
+    get isManyToManyOwner(): boolean {
+        return this.isManyToMany && this.isOwning;
+    }
+
+    /**
+     * Checks if this relation's type is "many-to-many", and is NOT owner side of the relationship.
+     * Not owner side means this side of relation does not have a join table.
+     */
+    get isManyToManyNotOwner(): boolean {
+        return this.isManyToMany && !this.isOwning;
+    }
+
+    /**
      * Checks if inverse side is specified by a relation.
      */
     get hasInverseSide(): boolean {
@@ -360,7 +378,7 @@ export class RelationMetadata {
     /**
      * Gets the property name of the inverse side of the relation.
      */
-    get inverseSideProperty(): string {
+    get inverseSideProperty(): string { // todo: should be called inverseSidePropertyName ?
 
         if (this._inverseSideProperty) {
             return this.computeInverseSide(this._inverseSideProperty);
@@ -399,6 +417,72 @@ export class RelationMetadata {
         return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
     }
 
+    /**
+     * Checks if given entity has a value in a relation.
+     */
+    hasEntityValue(entity: ObjectLiteral): boolean {
+        return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
+    }
+
+    /**
+     * todo: lazy relations are not supported here? implement logic?
+     *
+     * examples:
+     *
+     * - isOneToOneNotOwner or isOneToMany:
+     *  Post has a Category.
+     *  Post is owner side.
+     *  Category is inverse side.
+     *  Post.category is mapped to Category.id
+     *
+     *  if from Post relation we are passing Category here,
+     *  it should return a post.category
+     */
+    getOwnEntityRelationId(ownEntity: ObjectLiteral): any {
+        if (this.isManyToManyOwner) {
+            return ownEntity[this.joinTable.referencedColumn.propertyName];
+
+        } else if (this.isManyToManyNotOwner) {
+            return ownEntity[this.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
+
+        } else if (this.isOneToOneOwner || this.isManyToOne) {
+            return ownEntity[this.joinColumn.propertyName];
+
+        } else if (this.isOneToOneNotOwner || this.isOneToMany) {
+            return ownEntity[this.inverseRelation.joinColumn.referencedColumn.propertyName];
+        }
+    }
+
+    /**
+     *
+     * examples:
+     *
+     * - isOneToOneNotOwner or isOneToMany:
+     *  Post has a Category.
+     *  Post is owner side.
+     *  Category is inverse side.
+     *  Post.category is mapped to Category.id
+     *
+     *  if from Post relation we are passing Category here,
+     *  it should return a category.id
+     *
+     *  @deprecated Looks like this method does not make sence and does same as getOwnEntityRelationId ?
+     */
+    getInverseEntityRelationId(inverseEntity: ObjectLiteral): any {
+        if (this.isManyToManyOwner) {
+            return inverseEntity[this.joinTable.inverseReferencedColumn.propertyName];
+
+        } else if (this.isManyToManyNotOwner) {
+            return inverseEntity[this.inverseRelation.joinTable.referencedColumn.propertyName];
+
+        } else if (this.isOneToOneOwner || this.isManyToOne) {
+            return inverseEntity[this.joinColumn.referencedColumn.propertyName];
+
+        } else if (this.isOneToOneNotOwner || this.isOneToMany) {
+            return inverseEntity[this.inverseRelation.joinColumn.propertyName];
+        }
+    }
+
     // ---------------------------------------------------------------------
     // Private Methods
     // ---------------------------------------------------------------------
@@ -418,5 +502,4 @@ export class RelationMetadata {
         // throw new Error("Cannot compute inverse side of the relation");
         return "";
     }
-
 }

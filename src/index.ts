@@ -1,6 +1,5 @@
 /*!
  */
-
 import {DriverOptions} from "./driver/DriverOptions";
 import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
@@ -113,7 +112,7 @@ export function getConnectionManager(): ConnectionManager {
  * it will try to create connection from environment variables.
  * There are several environment variables you can set:
  *
- * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+ * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
  * - TYPEORM_URL - database connection url. Should be a string.
  * - TYPEORM_HOST - database host. Should be a string.
  * - TYPEORM_PORT - database access port. Should be a number.
@@ -164,7 +163,7 @@ export function createConnection(optionsOrConnectionNameFromConfig?: ConnectionO
  * it will try to create connection from environment variables.
  * There are several environment variables you can set:
  *
- * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+ * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
  * - TYPEORM_URL - database connection url. Should be a string.
  * - TYPEORM_HOST - database host. Should be a string.
  * - TYPEORM_PORT - database access port. Should be a number.

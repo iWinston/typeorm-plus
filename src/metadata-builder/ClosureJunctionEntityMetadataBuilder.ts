@@ -23,7 +23,7 @@ export interface ClosureJunctionEntityMetadataBuilderArgs {
  * Helps to create EntityMetadatas for junction tables for closure tables.
  */
 export class ClosureJunctionEntityMetadataBuilder {
-    
+
     build(driver: Driver, lazyRelationsWrapper: LazyRelationsWrapper, args: ClosureJunctionEntityMetadataBuilderArgs) {
 
         const columns = [
@@ -37,7 +37,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                     type: args.primaryColumn.type,
                     name: "ancestor"
                 }
-            }), 
+            }),
             new ColumnMetadata(<ColumnMetadataArgs> {
                 target: "__virtual__",
                 propertyName: "__virtual__",
@@ -50,7 +50,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 }
             })
         ];
-        
+
         if (args.hasTreeLevelColumn) {
             columns.push(new ColumnMetadata(<ColumnMetadataArgs> {
                 target: "__virtual__",
@@ -71,6 +71,7 @@ export class ClosureJunctionEntityMetadataBuilder {
         });
 
         return new EntityMetadata({
+            junction: true,
             target: "__virtual__",
             tablesPrefix: driver.options.tablesPrefix,
             namingStrategy: args.namingStrategy,
@@ -82,5 +83,5 @@ export class ClosureJunctionEntityMetadataBuilder {
             ]
         }, lazyRelationsWrapper);
     }
-    
+
 }

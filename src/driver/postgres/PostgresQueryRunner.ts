@@ -63,9 +63,21 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        await Promise.all(dropQueries.map(q => this.query(q["query"])));
+        await this.beginTransaction();
+        try {
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
+            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+        }
     }
 
     /**
@@ -147,7 +159,9 @@ export class PostgresQueryRunner implements QueryRunner {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`;
+        const sql = columns.length > 0
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.name) : "" }`;
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
         if (generatedColumn)
@@ -175,14 +189,25 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const conditionString = this.parametrize(conditions).join(" AND ");
-        const parameters = Object.keys(conditions).map(key => conditions[key]);
-        const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(query, parameters);
+        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
+        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
+
+        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        await this.query(sql, parameters);
     }
 
     /**
@@ -287,7 +312,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["table_name"] === tableSchema.name &&
+                    return dbIndex["table_name"] === tableSchema.name &&
                         (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
                         (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["index_name"])) &&
                         (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"]));
@@ -582,6 +607,8 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             c += " NOT NULL";
         if (column.isGenerated)
             c += " PRIMARY KEY";
+        if (column.default)
+            c += " DEFAULT '" + column.default + "'";
         return c;
     }
 

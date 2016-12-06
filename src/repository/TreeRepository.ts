@@ -10,7 +10,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     // todo: implement moving
     // todo: implement removing
-    
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -19,20 +19,26 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      * Roots are entities that have no ancestors. Finds them all.
      */
     findRoots(): Promise<Entity[]> {
+
         const parentPropertyName = this.metadata.treeParentRelation.propertyName;
         return this.createQueryBuilder("treeEntity")
             .where(`treeEntity.${parentPropertyName} IS NULL`)
-            .getResults();
+            .getMany();
     }
 
     /**
      * Creates a query builder used to get descendants of the entities in a tree.
      */
     createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
-        const joinCondition = `${alias}.${this.metadata.firstPrimaryColumn.name}=${closureTableAlias}.descendant`;
+
+        // create shortcuts for better readability
+        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+
+        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.name)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
         return this.createQueryBuilder(alias)
-            .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, "ON", joinCondition)
-            .where(`${closureTableAlias}.ancestor=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
+            .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
+            .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 
     /**
@@ -41,7 +47,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     findDescendants(entity: Entity): Promise<Entity[]> {
         return this
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getResults();
+            .getMany();
     }
 
     /**
@@ -51,7 +57,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getResultsAndScalarResults()
+            .getEntitiesAndScalarResults()
             .then(entitiesAndScalars => {
                 const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.scalarResults);
                 this.buildChildrenEntityTree(entity, entitiesAndScalars.entities, relationMaps);
@@ -67,15 +73,20 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
             .getCount();
     }
-    
+
     /**
      * Creates a query builder used to get ancestors of the entities in the tree.
      */
     createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
-        const joinCondition = `${alias}.${this.metadata.firstPrimaryColumn.name}=${closureTableAlias}.ancestor`;
+
+        // create shortcuts for better readability
+        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+
+        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.name)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
         return this.createQueryBuilder(alias)
-            .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, "ON", joinCondition)
-            .where(`${closureTableAlias}.descendant=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
+            .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
+            .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 
     /**
@@ -84,7 +95,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     findAncestors(entity: Entity): Promise<Entity[]> {
         return this
             .createAncestorsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getResults();
+            .getMany();
     }
 
     /**
@@ -94,7 +105,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createAncestorsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getResultsAndScalarResults()
+            .getEntitiesAndScalarResults()
             .then(entitiesAndScalars => {
                 const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.scalarResults);
                 this.buildParentEntityTree(entity, entitiesAndScalars.entities, relationMaps);
@@ -130,7 +141,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             };
         });
     }
-    
+
     protected buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const childProperty = this.metadata.treeChildrenRelation.propertyName;
         const parentEntityId = entity[this.metadata.firstPrimaryColumn.propertyName];
@@ -141,7 +152,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             this.buildChildrenEntityTree(childEntity, entities, relationMaps);
         });
     }
-    
+
     protected buildParentEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const parentProperty = this.metadata.treeParentRelation.propertyName;
         const entityId = entity[this.metadata.firstPrimaryColumn.propertyName];
@@ -149,7 +160,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const parentEntity = entities.find(entity => {
             if (!parentRelationMap)
                 return false;
-                
+
             return entity[this.metadata.firstPrimaryColumn.propertyName] === parentRelationMap.parentId;
         });
         if (parentEntity) {
@@ -157,5 +168,5 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             this.buildParentEntityTree(entity[parentProperty], entities, relationMaps);
         }
     }
-    
+
 }

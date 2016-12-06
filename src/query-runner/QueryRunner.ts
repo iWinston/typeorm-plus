@@ -60,6 +60,11 @@ export interface QueryRunner {
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
      */
+    delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+
+    /**
+     * Performs a simple DELETE query by a given conditions in a given table.
+     */
     delete(tableName: string, conditions: Object): Promise<void>;
 
     /**

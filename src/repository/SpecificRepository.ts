@@ -1,9 +1,11 @@
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {OperateEntity} from "../persistment/operation/PersistOperation";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Repository} from "./Repository";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {Subject} from "../persistence/Subject";
+import {RelationMetadata} from "../metadata/RelationMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {QueryBuilder} from "../query-builder/QueryBuilder";
 
 /**
  * Repository for more specific operations.
@@ -22,7 +24,6 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
     constructor(protected connection: Connection,
                 protected metadata: EntityMetadata,
-                protected repository: Repository<Entity>,
                 queryRunnerProvider?: QueryRunnerProvider) {
 
         if (queryRunnerProvider) {
@@ -158,7 +159,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const queryRunner = await this.queryRunnerProvider.provide();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
-            const values: any = { };
+            const values: any = {};
             if (relation.isOwning) {
                 values[relation.junctionEntityMetadata.columns[0].name] = entityId;
                 values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
@@ -204,7 +205,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const queryRunner = await this.queryRunnerProvider.provide();
         try {
             const insertPromises = entityIds.map(entityId => {
-                const values: any = { };
+                const values: any = {};
                 if (relation.isOwning) {
                     values[relation.junctionEntityMetadata.columns[0].name] = entityId;
                     values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
@@ -254,8 +255,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relatedEntityIds || !relatedEntityIds.length)
             return Promise.resolve();
 
-        const qb = this.repository.createQueryBuilder("junctionEntity")
-            .delete(relation.junctionEntityMetadata.table.name);
+        const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+            .delete()
+            .fromTable(relation.junctionEntityMetadata.table.name, "junctionEntity");
 
         const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
         const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
@@ -265,10 +267,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 .setParameter("relatedEntity_" + index, relatedEntityId);
         });
 
-        return qb
+        await qb
             .setParameter("entityId", entityId)
-            .execute()
-            .then(() => {});
+            .execute();
     }
 
     /**
@@ -303,8 +304,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!entityIds || !entityIds.length)
             return Promise.resolve();
 
-        const qb = this.repository.createQueryBuilder("junctionEntity")
-            .delete(relation.junctionEntityMetadata.table.name);
+        const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+            .delete()
+            .from(relation.junctionEntityMetadata.table.name, "junctionEntity");
 
         const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
         const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
@@ -389,8 +391,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             parameters["id"] = id;
         }
 
-        await this.repository.createQueryBuilder(alias)
+        await new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
+            .from(this.metadata.target, alias)
             .where(condition, parameters)
             .execute();
     }
@@ -416,10 +419,60 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             parameters["ids"] = ids;
         }
 
-        await this.repository.createQueryBuilder(alias)
+        await new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
+            .from(this.metadata.target, alias)
             .where(condition, parameters)
             .execute();
+    }
+
+    /**
+     * Finds all relation ids in the given entities.
+     */
+    async findRelationIds(relationOrName: RelationMetadata|string|((...args: any[]) => any), entityOrEntities: Entity[]|Entity|any|any[], inIds?: any[], notInIds?: any[]): Promise<any[]> {
+
+        const relation = this.convertMixedRelationToMetadata(relationOrName);
+        if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
+
+        const entityReferencedColumn = relation.isOwning ? relation.joinTable.referencedColumn : relation.inverseRelation.joinTable.inverseReferencedColumn;
+        const ownerEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[0] : relation.junctionEntityMetadata.columns[1];
+        const inverseEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[1] : relation.junctionEntityMetadata.columns[0];
+
+        let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumn, entityOrEntities);
+        if (!(entityIds instanceof Array)) entityIds = [entityIds];
+
+        // filter out empty entity ids
+        entityIds = (entityIds as any[]).filter(entityId => entityId !== null && entityId !== undefined);
+
+        // if no entity ids at the end, then we don't need to load anything
+        if ((entityIds as any[]).length === 0)
+            return [];
+
+        // create shortcuts for better readability
+        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+
+        const ids: any[] = [];
+        const promises = (entityIds as any[]).map((entityId: any) => {
+            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+                .select(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " AS id")
+                .fromTable(relation.junctionEntityMetadata.table.name, "junction")
+                .andWhere(escapeAlias("junction") + "." + escapeColumn(ownerEntityColumn.name) + "=:entityId", {entityId: entityId});
+
+            if (inIds && inIds.length > 0)
+                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " IN (:inIds)", {inIds: inIds});
+
+            if (notInIds && notInIds.length > 0)
+                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " NOT IN (:notInIds)", {notInIds: notInIds});
+
+            return qb.getScalarMany()
+                .then((results: { id: any }[]) => {
+                    results.forEach(result => ids.push(result.id)); // todo: prepare result?
+                });
+        });
+
+        await Promise.all(promises);
+        return ids;
     }
 
     // -------------------------------------------------------------------------
@@ -427,9 +480,36 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
+     * Converts entity or entities to id or ids map.
+     */
+    protected convertEntityOrEntitiesToIdOrIds(column: ColumnMetadata, entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
+        if (entityOrEntities instanceof Array) {
+            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(column, entity));
+
+        } else {
+            if (entityOrEntities instanceof Object) {
+                return entityOrEntities[column.propertyName];
+            } else {
+                return entityOrEntities;
+            }
+        }
+    }
+
+    /**
+     * Converts relation name, relation name in function into RelationMetadata.
+     */
+    protected convertMixedRelationToMetadata(relationOrName: RelationMetadata|string|((...args: any[]) => any)): RelationMetadata {
+        if (relationOrName instanceof RelationMetadata)
+            return relationOrName;
+
+        const relationName = relationOrName instanceof Function ? relationOrName(this.metadata.createPropertiesMap()) : relationOrName;
+        return this.metadata.findRelationWithPropertyName(relationName);
+    }
+
+    /**
      * Extracts unique objects from given entity and all its downside relations.
      */
-    protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: OperateEntity[] = []): Promise<OperateEntity[]> {
+    protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: Subject[] = []): Promise<Subject[]> {
         const promises = metadata.relations.map(relation => {
             const relMetadata = relation.inverseEntityMetadata;
 
@@ -450,7 +530,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         return Promise.all<any>(promises.filter(result => !!result)).then(() => {
             if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
-                const entityWithId = new OperateEntity(metadata, entity);
+                const entityWithId = new Subject(metadata, entity);
                 entityWithIds.push(entityWithId);
             }
 

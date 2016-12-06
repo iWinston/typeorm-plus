@@ -10,6 +10,7 @@ describe.skip("relations > relation with primary key", () => {
     before(async () => connections = await setupTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
+        // dropSchemaOnConnection: true
     }));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));

@@ -51,7 +51,7 @@ createConnection(options).then(connection => {
                 .leftJoin("post.categories", "categories")
                 .leftJoin("categories.author", "author")
                 .where("post.id=1")
-                .getSingleResult();
+                .getOne();
         })
         .then(loadedPost => {
             console.log("loadedPosts: ", loadedPost);
@@ -71,7 +71,7 @@ createConnection(options).then(connection => {
                 .leftJoinAndSelect("post.author", "author")
                 .leftJoinAndSelect("post.categories", "categories")
                 .where("post.id=:id", { id: post.id })
-                .getSingleResult();
+                .getOne();
         })
         .then(loadedPost => {
             console.log(loadedPost);
@@ -88,7 +88,7 @@ createConnection(options).then(connection => {
                 .leftJoinAndSelect("post.author", "author")
                 .leftJoinAndSelect("post.categories", "categories")
                 .where("post.id=:id", { id: post.id })
-                .getSingleResult();
+                .getOne();
         })
         .then(loadedPost => {
             console.log(loadedPost);
@@ -102,7 +102,7 @@ createConnection(options).then(connection => {
                 .leftJoinAndSelect("post.author", "author")
                 .leftJoinAndSelect("post.categories", "categories")
                 .where("post.id=:id", { id: post.id })
-                .getSingleResult();
+                .getOne();
         })
         .then(loadedPost => {
             console.log(loadedPost);
@@ -116,7 +116,7 @@ createConnection(options).then(connection => {
                 .leftJoinAndSelect("post.author", "author")
                 .leftJoinAndSelect("post.categories", "categories")
                 .where("post.id=:id", { id: post.id })
-                .getSingleResult();
+                .getOne();
         })
         .then(loadedPost => {
             console.log(loadedPost);

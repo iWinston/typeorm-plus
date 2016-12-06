@@ -1,4 +1,3 @@
-
 /**
  * Arguments for IndexMetadata class.
  */
@@ -23,5 +22,5 @@ export interface IndexMetadataArgs {
      * Indicates if index must be unique or not.
      */
     readonly unique: boolean;
-    
+
 }

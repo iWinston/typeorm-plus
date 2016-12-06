@@ -34,7 +34,7 @@ export class JoinColumnMetadata {
      * Join column name.
      */
     private readonly _name: string|undefined;
-    
+
     /**
      * Join column referenced column name.
      */
@@ -77,5 +77,5 @@ export class JoinColumnMetadata {
 
         return this.relation.inverseEntityMetadata.firstPrimaryColumn;
     }
-    
+
 }

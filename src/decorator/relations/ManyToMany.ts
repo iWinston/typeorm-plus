@@ -37,7 +37,7 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
 
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
-        
+
         const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
         const isLazy = reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise";
 

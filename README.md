@@ -9,9 +9,11 @@ Share this library with friends on twitter and everywhere else you can.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
+> 0.0.3 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
+
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
-Typescript that can be used with Typescript or Javascript (ES5, ES6, ES7).
-Its goal to always support latest Javascript features and provide features
+TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
+Its goal to always support latest JavaScript features and provide features
 that help you to develop any kind of applications that use database - from
 small applications with a few tables to large scale enterprise applications.
 TypeORM helps you to:
@@ -31,7 +33,8 @@ maintainable applications with less problems.
 The benefit of using TypeORM for the programmer is the ability to focus on
 the business logic and worry about persistence only as a secondary problem.
 
-TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/) and [Doctrine](http://www.doctrine-project.org/).
+TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
+ [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
 ## Installation
 
@@ -65,12 +68,35 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
     
         `npm install mssql --save`
     
-    * for **Oracle**
+    * for **Oracle** (experimental)
     
         `npm install oracledb --save`
     
     Install only one of them, depend on which database you use.
     
+    To make oracle driver to work you need to follow installation instructions from 
+    [their](https://github.com/oracle/node-oracledb) site.
+
+#### TypeScript configuration
+
+Also make sure you are using TypeScript compiler version > **2.1** and you have enabled following settings in `tsconfig.json`:
+
+```json
+"emitDecoratorMetadata": true,
+"experimentalDecorators": true,
+```
+
+#### Node.js version
+
+TypeORM was tested with Node.JS version 6 and above. 
+If you have errors during app bootstrap, try to upgrade your node.js version to the latest version.
+
+## Usage in the browser with WebSQL
+
+TypeORM works in the browser and has experimental support of WebSQL.
+If you want to use TypeORM in the browser then you need to `npm i typeorm-browser` instead of `typeorm`.
+More information about it in [this page](https://typeorm.github.io/usage-in-browser.html). 
+Also take a look on [this sample](https://github.com/typeorm/browser-example).
 
 ## Quick Start
 
@@ -297,7 +323,7 @@ createConnection({
     autoSchemaSync: true,
 }).then(connection => {
     // here you can start to work with your entities
-});
+}).catch(error => console.log(error));
 ```
 
 We are using mysql in this example, but you can use any other database. 
@@ -334,7 +360,7 @@ createConnection({
     autoSchemaSync: true,
 }).then(connection => {
     // here you can start to work with your entities
-});
+}).catch(error => console.log(error));
 ```
 
 ### Run the application
@@ -379,7 +405,7 @@ createConnection(/*...*/).then(connection => {
                 console.log("Photo has been saved");
             });
 
-});
+}).catch(error => console.log(error));
 ```
   
 ### Using async/await syntax
@@ -402,7 +428,7 @@ createConnection(/*...*/).then(async connection => {
     await connection.entityManager.persist(photo);
     console.log("Photo has been saved");
 
-});
+}).catch(error => console.log(error));
 ```
 
 ### Using Entity Manager
@@ -422,7 +448,7 @@ createConnection(/*...*/).then(async connection => {
     let savedPhotos = await connection.entityManager.find(Photo);
     console.log("All photos from the db: ", savedPhotos);
 
-});
+}).catch(error => console.log(error));
 ```
    
 savedPhotos will be an array of Photo objects with the data loaded from the database.
@@ -455,7 +481,7 @@ createConnection(/*...*/).then(async connection => {
     let savedPhotos = await photoRepository.find();
     console.log("All photos from the db: ", savedPhotos);
 
-});
+}).catch(error => console.log(error));
 ```
  
 ### Loading photos from the database
@@ -488,7 +514,7 @@ createConnection(/*...*/).then(async connection => {
     console.log("All photos: ", allPublishedPhotos);
     console.log("Photos count: ", allPublishedPhotos);
 
-});
+}).catch(error => console.log(error));
 ```
 
 ### Updating photo in the database
@@ -506,7 +532,7 @@ createConnection(/*...*/).then(async connection => {
     photoToUpdate.name = "Me, my friends and polar bears";
     await photoRepository.persist(photoToUpdate);
 
-});
+}).catch(error => console.log(error));
 ```
 
 Now photo with `id = 1` will be updated in the database.
@@ -526,7 +552,7 @@ createConnection(/*...*/).then(async connection => {
     let photoToRemove = await photoRepository.findOneById(1);
     await photoRepository.remove(photoToRemove);
 
-});
+}).catch(error => console.log(error));
 ``` 
 
 Now photo with `id = 1` will be removed from the database.
@@ -633,7 +659,8 @@ createConnection(/*...*/).then(async connection => {
 
     // done
     console.log("metadata is saved, and relation between metadata and photo is created in the database too");
-});
+
+}).catch(error => console.log(error));
 ```
  
 ### Adding inverse side of a relation
@@ -707,7 +734,8 @@ createConnection(/*...*/).then(async connection => {
         }
     });
 
-});
+
+}).catch(error => console.log(error));
 ```
         
 Here photos will contain array of photos from the database, and each photo will contain its photo metadata.
@@ -731,10 +759,11 @@ createConnection(/*...*/).then(async connection => {
     /*...*/
     let photoRepository = connection.getRepository(Photo);
     let photos = await photoRepository.createQueryBuilder("photo")
-            .innerJoinAndSelect("photo.metadata")
-            .getResults();
+            .innerJoinAndSelect("photo.metadata", "metadata")
+            .getMany();
 
-});
+
+}).catch(error => console.log(error));
 ```
 
 ### using cascade options to automatically save related objects
@@ -780,7 +809,8 @@ createConnection(options).then(async connection => {
     metadata.compressed = true;
     metadata.comment = "cybershoot";
     metadata.orientation = "portait";
-    metadata.photo = photo; // this way we connect them
+    
+    photo.metadata = metadata; // this way we connect them
 
     // get repository
     let photoRepository = connection.getRepository(Photo);
@@ -789,7 +819,8 @@ createConnection(options).then(async connection => {
     await photoRepository.persist(photo);
 
     console.log("Photo is saved, photo metadata is saved too.")
-});
+
+}).catch(error => console.log(error));
 ```     
 
 ### creating a many-to-one / one-to-many relation
@@ -931,7 +962,7 @@ const options: CreateConnectionOptions = {
 };
 ```
         
-Now lets insert author and photo to our database:
+Now lets insert albums and photos to our database:
 
 ```typescript
 let connection = await createConnection(options);
@@ -947,18 +978,20 @@ album2.name = "Me";
 let photo1 = new Photo();
 photo1.name = "Me and Bears";
 photo1.description = "I am near polar bears";
-photo1.filename = "photo-with-bears.jpg"
+photo1.filename = "photo-with-bears.jpg";
+photo1.albums.push(album1);
 
 let photo2 = new Photo();
 photo2.name = "Me and Bears";
 photo2.description = "I am near polar bears";
-photo2.filename = "photo-with-bears.jpg"
+photo2.filename = "photo-with-bears.jpg";
+photo2.albums.push(album2);
 
 // get entity repository
 let photoRepository = connection.getRepository(Photo);
 
 // first save a first photo
-// we only save a photos, albums are persisted
+// we only save the photos, albums are persisted
 // automatically because of cascade options
 await photoRepository.persist(photo1);
 
@@ -976,15 +1009,15 @@ You can use QueryBuilder to build even more complex queries. For example you can
 let photoRepository = connection.getRepository(Photo);
 let photos = await photoRepository
     .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
-    .innerJoinAndSelect("photo.metadata")
-    .leftJoinAndSelect("photo.albums")
+    .innerJoinAndSelect("photo.metadata", "metadata")
+    .leftJoinAndSelect("photo.albums", "albums")
     .where("photo.isPublished=true")
     .andWhere("(photo.name=:photoName OR photo.name=:bearName)")
     .orderBy("photo.id", "DESC")
     .setFirstResult(5)
     .setMaxResults(10)
     .setParameters({ photoName: "My", bearName: "Mishka" })
-    .getResults();
+    .getMany();
 ```
 
 This query builder will select you all photos that are published and whose name is "My" or "Mishka", 
@@ -1010,6 +1043,7 @@ You'll use query builder in your application a lot. Learn more about QueryBuilde
 * [Subscribers and entity listeners](https://typeorm.github.io/subscribers-and-entity-listeners.html)
 * [Using service container](https://typeorm.github.io/using-service-container.html)
 * [Decorators Reference](https://typeorm.github.io/decorators-reference.html)
+* [Usage in the browser](https://typeorm.github.io/usage-in-browser.html)
 
 ## Samples
 

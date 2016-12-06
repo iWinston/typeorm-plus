@@ -4,7 +4,6 @@ import {createTestingConnectionOptions} from "../../utils/test-utils";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {ConnectionNotFoundError} from "../../../src/connection/error/ConnectionNotFoundError";
 import {PrimaryGeneratedColumn} from "../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../src/decorator/columns/Column";
@@ -104,7 +103,7 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.driver.should.be.instanceOf(MysqlDriver);
-            expect(() => connectionManager.get("myPostgresConnection")).to.throw(ConnectionNotFoundError);
+            expect(() => connectionManager.get("myPostgresConnection")).to.throw(Error);
         });
 
     });
@@ -127,7 +126,7 @@ describe("ConnectionManager", () => {
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            const loadedPost = (await connection.entityManager.findOneById(Post, 1))!;
             loadedPost.should.be.instanceof(Post);
             loadedPost.should.be.eql({ id: 1, title: "Hello post" });
             await connection.close();

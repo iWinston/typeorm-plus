@@ -23,12 +23,12 @@ export interface JunctionEntityMetadataBuilderArgs {
  * Helps to create EntityMetadatas for junction tables.
  */
 export class JunctionEntityMetadataBuilder {
-    
+
     build(driver: Driver, lazyRelationsWrapper: LazyRelationsWrapper, args: JunctionEntityMetadataBuilderArgs) {
 
         const column1 = args.joinTable.referencedColumn;
         const column2 = args.joinTable.inverseReferencedColumn;
-        
+
         const tableMetadata = new TableMetadata({
             target: "",
             name: args.joinTable.name,
@@ -61,14 +61,15 @@ export class JunctionEntityMetadataBuilder {
                 primary: true
             }
         });
-        
+
         const entityMetadata = new EntityMetadata({
+            junction: true,
             target: "__virtual__",
             tablesPrefix: driver.options.tablesPrefix,
             namingStrategy: args.namingStrategy,
             tableMetadata: tableMetadata,
             columnMetadatas: [
-                junctionColumn1, 
+                junctionColumn1,
                 junctionColumn2
             ],
             foreignKeyMetadatas: [
@@ -86,5 +87,5 @@ export class JunctionEntityMetadataBuilder {
 
         return entityMetadata;
     }
-    
+
 }

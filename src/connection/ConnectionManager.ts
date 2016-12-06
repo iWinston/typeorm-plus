@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import {Connection} from "./Connection";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
@@ -14,6 +13,8 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OrmUtils} from "../util/OrmUtils";
 import {CannotDetermineConnectionOptionsError} from "./error/CannotDetermineConnectionOptionsError";
+import {PlatformTools} from "../platform/PlatformTools";
+import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
 
 /**
  * ConnectionManager is used to store and manage all these different connections.
@@ -29,7 +30,7 @@ export class ConnectionManager {
      * List of connections registered in this connection manager.
      */
     protected connections: Connection[] = [];
-    
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -118,7 +119,7 @@ export class ConnectionManager {
      * it will try to create connection from environment variables.
      * There are several environment variables you can set:
      *
-     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
      * - TYPEORM_URL - database connection url. Should be a string.
      * - TYPEORM_HOST - database host. Should be a string.
      * - TYPEORM_PORT - database access port. Should be a number.
@@ -186,7 +187,7 @@ export class ConnectionManager {
      * it will try to create connection from environment variables.
      * There are several environment variables you can set:
      *
-     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "mysql2", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
+     * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
      * - TYPEORM_URL - database connection url. Should be a string.
      * - TYPEORM_HOST - database host. Should be a string.
      * - TYPEORM_PORT - database access port. Should be a number.
@@ -254,18 +255,18 @@ export class ConnectionManager {
      * Checks if ormconfig.json exists.
      */
     protected hasOrmConfigurationFile(): boolean {
-        const path = require("app-root-path").path + "/ormconfig.json";
-        if (!fs.existsSync(path))
+        const path = PlatformTools.load("app-root-path").path + "/ormconfig.json";
+        if (!PlatformTools.fileExist(path))
             return false;
 
-        const configuration: ConnectionOptions[]|ConnectionOptions = require(path);
+        const configuration: ConnectionOptions[]|ConnectionOptions = PlatformTools.load(path);
         if (configuration instanceof Array) {
             return configuration
-                    .filter(options => !options.environment || options.environment === process.env.NODE_ENV)
+                    .filter(options => !options.environment || options.environment === PlatformTools.getEnvVariable("NODE_ENV"))
                     .length > 0;
 
         } else if (configuration instanceof Object) {
-            if (configuration.environment && configuration.environment !== process.env.NODE_ENV)
+            if (configuration.environment && configuration.environment !== PlatformTools.getEnvVariable("NODE_ENV"))
                 return false;
 
             return Object.keys(configuration).length > 0;
@@ -278,14 +279,14 @@ export class ConnectionManager {
      * Checks if there is a default connection in the ormconfig.json file.
      */
     protected hasDefaultConfigurationInConfigurationFile(): boolean {
-        const path = require("app-root-path").path + "/ormconfig.json";
-        if (!fs.existsSync(path))
+        const path = PlatformTools.load("app-root-path").path + "/ormconfig.json";
+        if (!PlatformTools.fileExist(path))
             return false;
 
-        const configuration: ConnectionOptions[]|ConnectionOptions = require(path);
+        const configuration: ConnectionOptions[]|ConnectionOptions = PlatformTools.load(path);
         if (configuration instanceof Array) {
             return !!configuration
-                .filter(options => !options.environment || options.environment === process.env.NODE_ENV)
+                .filter(options => !options.environment || options.environment === PlatformTools.getEnvVariable("NODE_ENV"))
                 .find(config => !!config.name || config.name === "default");
 
         } else if (configuration instanceof Object) {
@@ -293,7 +294,7 @@ export class ConnectionManager {
                 configuration.name !== "default")
                 return false;
 
-            if (configuration.environment && configuration.environment !== process.env.NODE_ENV)
+            if (configuration.environment && configuration.environment !== PlatformTools.getEnvVariable("NODE_ENV"))
                 return false;
 
             return true;
@@ -306,7 +307,7 @@ export class ConnectionManager {
      * Checks if environment variables contains connection options.
      */
     protected hasDefaultConfigurationInEnvironmentVariables(): boolean {
-        return !!process.env.TYPEORM_DRIVER_TYPE;
+        return !!PlatformTools.getEnvVariable("TYPEORM_DRIVER_TYPE");
     }
 
     /**
@@ -315,28 +316,28 @@ export class ConnectionManager {
     protected async createFromEnvAndConnect(): Promise<Connection> {
         return this.createAndConnectByConnectionOptions({
             driver: {
-                type: process.env.TYPEORM_DRIVER_TYPE,
-                url: process.env.TYPEORM_URL,
-                host: process.env.TYPEORM_HOST,
-                port: process.env.TYPEORM_PORT,
-                username: process.env.TYPEORM_USERNAME,
-                password: process.env.TYPEORM_PASSWORD,
-                database: process.env.TYPEORM_DATABASE,
-                sid: process.env.TYPEORM_SID,
-                storage: process.env.TYPEORM_STORAGE,
-                usePool: process.env.TYPEORM_USE_POOL !== undefined ? OrmUtils.toBoolean(process.env.TYPEORM_USE_POOL) : undefined, // special check for defined is required here
-                extra: process.env.TYPEORM_DRIVER_EXTRA ? JSON.parse(process.env.TYPEORM_DRIVER_EXTRA) : undefined
+                type: PlatformTools.getEnvVariable("TYPEORM_DRIVER_TYPE"),
+                url: PlatformTools.getEnvVariable("TYPEORM_URL"),
+                host: PlatformTools.getEnvVariable("TYPEORM_HOST"),
+                port: PlatformTools.getEnvVariable("TYPEORM_PORT"),
+                username: PlatformTools.getEnvVariable("TYPEORM_USERNAME"),
+                password: PlatformTools.getEnvVariable("TYPEORM_PASSWORD"),
+                database: PlatformTools.getEnvVariable("TYPEORM_DATABASE"),
+                sid: PlatformTools.getEnvVariable("TYPEORM_SID"),
+                storage: PlatformTools.getEnvVariable("TYPEORM_STORAGE"),
+                usePool: PlatformTools.getEnvVariable("TYPEORM_USE_POOL") !== undefined ? OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_USE_POOL")) : undefined, // special check for defined is required here
+                extra: PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA")) : undefined
             },
-            autoSchemaSync: OrmUtils.toBoolean(process.env.TYPEORM_AUTO_SCHEMA_SYNC),
-            entities: process.env.TYPEORM_ENTITIES ? process.env.TYPEORM_ENTITIES.split(",") : [],
-            subscribers: process.env.TYPEORM_SUBSCRIBERS ? process.env.TYPEORM_SUBSCRIBERS.split(",") : [],
-            entitySchemas: process.env.TYPEORM_ENTITY_SCHEMAS ? process.env.TYPEORM_ENTITY_SCHEMAS.split(",") : [],
-            namingStrategies: process.env.TYPEORM_NAMING_STRATEGIES ? process.env.TYPEORM_NAMING_STRATEGIES.split(",") : [],
-            usedNamingStrategy: process.env.TYPEORM_USED_NAMING_STRATEGY,
+            autoSchemaSync: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_AUTO_SCHEMA_SYNC")),
+            entities: PlatformTools.getEnvVariable("TYPEORM_ENTITIES") ? PlatformTools.getEnvVariable("TYPEORM_ENTITIES").split(",") : [],
+            subscribers: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS") ? PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS").split(",") : [],
+            entitySchemas: PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS") ? PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS").split(",") : [],
+            namingStrategies: PlatformTools.getEnvVariable("TYPEORM_NAMING_STRATEGIES") ? PlatformTools.getEnvVariable("TYPEORM_NAMING_STRATEGIES").split(",") : [],
+            usedNamingStrategy: PlatformTools.getEnvVariable("TYPEORM_USED_NAMING_STRATEGY"),
             logging: {
-                logQueries: OrmUtils.toBoolean(process.env.TYPEORM_LOGGING_QUERIES),
-                logFailedQueryError: OrmUtils.toBoolean(process.env.TYPEORM_LOGGING_FAILED_QUERIES),
-                logOnlyFailedQueries: OrmUtils.toBoolean(process.env.TYPEORM_LOGGING_ONLY_FAILED_QUERIES),
+                logQueries: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_QUERIES")),
+                logFailedQueryError: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_FAILED_QUERIES")),
+                logOnlyFailedQueries: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_ONLY_FAILED_QUERIES")),
             }
         });
     }
@@ -349,12 +350,12 @@ export class ConnectionManager {
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
     protected async createFromConfigAndConnectToAll(path?: string): Promise<Connection[]> {
-        const optionsArray: ConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
+        const optionsArray: ConnectionOptions[] = PlatformTools.load(path || (PlatformTools.load("app-root-path").path + "/ormconfig.json"));
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
 
         const promises = optionsArray
-            .filter(options => !options.environment || options.environment === process.env.NODE_ENV) // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
+            .filter(options => !options.environment || options.environment === PlatformTools.getEnvVariable("NODE_ENV")) // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
             .map(options => this.createAndConnectByConnectionOptions(options));
 
         return Promise.all(promises);
@@ -367,15 +368,15 @@ export class ConnectionManager {
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
     protected async createFromConfigAndConnect(connectionName: string, path?: string): Promise<Connection> {
-        const optionsArray: ConnectionOptions[] = require(path || (require("app-root-path").path + "/ormconfig.json"));
+        const optionsArray: ConnectionOptions[] = PlatformTools.load(path || (PlatformTools.load("app-root-path").path + "/ormconfig.json"));
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
 
         const environmentLessOptions = optionsArray.filter(options => (options.name || "default") === connectionName);
-        const options = environmentLessOptions.filter(options => !options.environment || options.environment === process.env.NODE_ENV); // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
+        const options = environmentLessOptions.filter(options => !options.environment || options.environment === PlatformTools.getEnvVariable("NODE_ENV")); // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
 
         if (!options.length)
-            throw new Error(`Connection "${connectionName}" ${process.env.NODE_ENV ? "for the environment " + process.env.NODE_ENV + " " : ""}was not found in the json configuration file.` +
+            throw new Error(`Connection "${connectionName}" ${PlatformTools.getEnvVariable("NODE_ENV") ? "for the environment " + PlatformTools.getEnvVariable("NODE_ENV") + " " : ""}was not found in the json configuration file.` +
                 (environmentLessOptions.length ? ` However there are such configurations for other environments: ${environmentLessOptions.map(options => options.environment).join(", ")}.` : ""));
 
         return this.createAndConnectByConnectionOptions(options[0]);
@@ -391,11 +392,11 @@ export class ConnectionManager {
         await connection.connect();
 
         // if option is set - drop schema once connection is done
-        if (options.dropSchemaOnConnection && !process.env.SKIP_SCHEMA_CREATION)
+        if (options.dropSchemaOnConnection && !PlatformTools.getEnvVariable("SKIP_SCHEMA_CREATION"))
             await connection.dropDatabase();
 
         // if option is set - automatically synchronize a schema
-        if (options.autoSchemaSync && !process.env.SKIP_SCHEMA_CREATION)
+        if (options.autoSchemaSync && !PlatformTools.getEnvVariable("SKIP_SCHEMA_CREATION"))
             await connection.syncSchema();
 
         return connection;
@@ -417,9 +418,7 @@ export class ConnectionManager {
     protected createDriver(options: DriverOptions, logger: Logger): Driver {
         switch (options.type) {
             case "mysql":
-                return new MysqlDriver(options, logger, undefined, "mysql");
-            case "mysql2":
-                return new MysqlDriver(options, logger, undefined, "mysql2");
+                return new MysqlDriver(options, logger, undefined);
             case "postgres":
                 return new PostgresDriver(options, logger);
             case "mariadb":
@@ -430,6 +429,8 @@ export class ConnectionManager {
                 return new OracleDriver(options, logger);
             case "mssql":
                 return new SqlServerDriver(options, logger);
+            case "websql":
+                return new WebsqlDriver(options, logger);
             default:
                 throw new MissingDriverError(options.type);
         }

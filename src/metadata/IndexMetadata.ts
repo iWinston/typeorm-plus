@@ -28,7 +28,7 @@ export class IndexMetadata {
      * Target class to which metadata is applied.
      */
     readonly target?: Function|string;
-    
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -76,7 +76,7 @@ export class IndexMetadata {
      * Gets the column names which are in this index.
      */
     get columns(): string[] {
-        
+
         // if columns already an array of string then simply return it
         let columnPropertyNames: string[] = [];
         if (this._columns instanceof Array) {
@@ -96,5 +96,5 @@ export class IndexMetadata {
 
         return columns.map(column => column.name);
     }
-    
+
 }

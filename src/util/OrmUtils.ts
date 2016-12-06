@@ -1,5 +1,7 @@
+import {ObjectLiteral} from "../common/ObjectLiteral";
+
 export class OrmUtils {
-    
+
     static groupBy<T, R>(array: T[], propertyCallback: (item: T) => R): { id: R, items: T[] }[] {
         return array.reduce((groupedArray, value) => {
             const key = propertyCallback(value);
@@ -28,5 +30,15 @@ export class OrmUtils {
 
         return false;
     }
-    
+
+    /**
+     * Composes an object from the given array of keys and values.
+     */
+    static zipObject(keys: any[], values: any[]): ObjectLiteral {
+        return keys.reduce((object, column, index) => {
+            object[column] = values[index];
+            return object;
+        }, {} as ObjectLiteral);
+    }
+
 }

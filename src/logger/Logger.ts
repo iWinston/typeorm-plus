@@ -1,4 +1,5 @@
 import {LoggerOptions} from "./LoggerOptions";
+import {PlatformTools} from "../platform/PlatformTools";
 
 /**
  * Performs logging of the events in TypeORM.
@@ -21,8 +22,8 @@ export class Logger {
      */
     logQuery(query: string, parameters?: any[]) {
         if (this.options.logQueries ||
-            process.env.LOGGER_CLI_SCHEMA_SYNC)
-            this.log("log", `executing query: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + JSON.stringify(parameters) : ""}`);
+            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
+            this.log("log", `executing query: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`);
     }
 
     /**
@@ -31,8 +32,8 @@ export class Logger {
     logFailedQuery(query: string, parameters?: any[]) {
         if (this.options.logQueries ||
             this.options.logOnlyFailedQueries ||
-            process.env.LOGGER_CLI_SCHEMA_SYNC)
-            this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + JSON.stringify(parameters) : ""}`);
+            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
+            this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`);
     }
 
     /**
@@ -40,7 +41,7 @@ export class Logger {
      */
     logQueryError(error: any) {
         if (this.options.logFailedQueryError ||
-            process.env.LOGGER_CLI_SCHEMA_SYNC)
+            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
             this.log("error", "error during executing query:" + error);
     }
 
@@ -49,7 +50,7 @@ export class Logger {
      */
     logSchemaBuild(message: string) {
         if (this.options.logSchemaCreation ||
-            process.env.LOGGER_CLI_SCHEMA_SYNC)
+            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
             this.log("info", message);
     }
 
@@ -77,6 +78,23 @@ export class Logger {
                     console.error(message);
                     break;
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Converts parameters to a string.
+     * Sometimes parameters can have circular objects and therefor we are handle this case too.
+     */
+    protected stringifyParams(parameters: any[]) {
+        try {
+            return JSON.stringify(parameters);
+
+        } catch (error) { // most probably circular objects in parameters
+            return parameters;
         }
     }
 

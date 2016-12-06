@@ -34,7 +34,7 @@ export class EntityMetadataBuilder {
     // todo: check if multiple tree parent metadatas in validator
     // todo: tree decorators can be used only on closure table (validation)
     // todo: throw error if parent tree metadata was not specified in a closure table
-    
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -47,7 +47,7 @@ export class EntityMetadataBuilder {
 
         // extract into separate class?
         schemas.forEach(schema => {
-            
+
             // add table metadata args from the schema
             const tableSchema = schema.table || {} as any;
             const table: TableMetadataArgs = {
@@ -58,7 +58,7 @@ export class EntityMetadataBuilder {
                 orderBy: tableSchema.orderBy
             };
             metadataArgsStorage.tables.add(table);
-            
+
             // add columns metadata args from the schema
             Object.keys(schema.columns).forEach(columnName => {
                 const columnSchema = schema.columns[columnName];
@@ -73,7 +73,7 @@ export class EntityMetadataBuilder {
                     mode = "treeChildrenCount";
                 if (columnSchema.treeLevel)
                     mode = "treeLevel";
-                
+
                 const column: ColumnMetadataArgs = {
                     target: schema.target || schema.name,
                     mode: mode,
@@ -93,10 +93,10 @@ export class EntityMetadataBuilder {
                         scale: columnSchema.scale
                     }
                 };
-                
+
                 metadataArgsStorage.columns.add(column);
             });
-            
+
             // add relation metadata args from the schema
             if (schema.relations) {
                 Object.keys(schema.relations).forEach(relationName => {
@@ -129,7 +129,7 @@ export class EntityMetadataBuilder {
                                 target: schema.target || schema.name,
                                 propertyName: relationName
                             };
-                            metadataArgsStorage.joinColumns.push(joinColumn);
+                            metadataArgsStorage.joinColumns.add(joinColumn);
                         } else {
                             const joinColumn: JoinColumnMetadataArgs = {
                                 target: schema.target || schema.name,
@@ -137,7 +137,7 @@ export class EntityMetadataBuilder {
                                 name: relationSchema.joinColumn.name,
                                 referencedColumnName: relationSchema.joinColumn.referencedColumnName
                             };
-                            metadataArgsStorage.joinColumns.push(joinColumn);
+                            metadataArgsStorage.joinColumns.add(joinColumn);
                         }
                     }
 
@@ -148,7 +148,7 @@ export class EntityMetadataBuilder {
                                 target: schema.target || schema.name,
                                 propertyName: relationName
                             };
-                            metadataArgsStorage.joinTables.push(joinTable);
+                            metadataArgsStorage.joinTables.add(joinTable);
                         } else {
                             const joinTable: JoinTableMetadataArgs = {
                                 target: schema.target || schema.name,
@@ -157,13 +157,13 @@ export class EntityMetadataBuilder {
                                 joinColumn: relationSchema.joinTable.joinColumn,
                                 inverseJoinColumn: relationSchema.joinTable.inverseJoinColumn
                             };
-                            metadataArgsStorage.joinTables.push(joinTable);
+                            metadataArgsStorage.joinTables.add(joinTable);
                         }
                     }
                 });
             }
         });
-        
+
         return this.build(driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy);
     }
 
@@ -191,43 +191,43 @@ export class EntityMetadataBuilder {
         const allMergedArgs = metadataArgsStorage.getMergedTableMetadatas(entityClasses);
         allMergedArgs.forEach(mergedArgs => {
 
-        
+
             const tables = [mergedArgs.table].concat(mergedArgs.children);
             tables.forEach(tableArgs => {
 
                 // find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
                 const embeddeds: EmbeddedMetadata[] = [];
-                mergedArgs.embeddeds.forEach(embedded => {
+                mergedArgs.embeddeds.toArray().forEach(embedded => {
                     const embeddableTable = embeddableMergedArgs.find(embeddedMergedArgs => embeddedMergedArgs.table.target === embedded.type());
                     if (embeddableTable) {
                         const table = new TableMetadata(embeddableTable.table);
-                        const columns = embeddableTable.columns.map(args => new ColumnMetadata(args));
+                        const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
                         embeddeds.push(new EmbeddedMetadata(embedded.type(), embedded.propertyName, table, columns));
                     }
                 });
 
                 // create metadatas from args
                 const argsForTable = mergedArgs.inheritance && mergedArgs.inheritance.type === "single-table" ? mergedArgs.table : tableArgs;
-                
+
                 const table = new TableMetadata(argsForTable);
-                const columns = mergedArgs.columns.map(args => {
+                const columns = mergedArgs.columns.toArray().map(args => {
 
                     // if column's target is a child table then this column should have all nullable columns
                     if (mergedArgs.inheritance &&
                         mergedArgs.inheritance.type === "single-table" &&
-                        args.target !== mergedArgs.table.target &&
-                        !!mergedArgs.children.find(childTable => childTable.target === args.target)) {
+                        args.target !== mergedArgs.table.target && !!mergedArgs.children.find(childTable => childTable.target === args.target)) {
                         args.options.nullable = true;
                     }
                     return new ColumnMetadata(args);
                 });
-                const relations = mergedArgs.relations.map(args => new RelationMetadata(args));
-                const indices = mergedArgs.indices.map(args => new IndexMetadata(args));
+                const relations = mergedArgs.relations.toArray().map(args => new RelationMetadata(args));
+                const indices = mergedArgs.indices.toArray().map(args => new IndexMetadata(args));
                 const discriminatorValueArgs = mergedArgs.discriminatorValues.find(discriminatorValueArgs => {
                     return discriminatorValueArgs.target === tableArgs.target;
                 });
                 // create a new entity metadata
                 const entityMetadata = new EntityMetadata({
+                    junction: false,
                     target: tableArgs.target,
                     tablesPrefix: driver.options.tablesPrefix,
                     namingStrategy: namingStrategy,
@@ -274,7 +274,7 @@ export class EntityMetadataBuilder {
 
                 // save relation id-s data
                 entityMetadata.relations.forEach(relation => {
-                    const relationIdMetadata = mergedArgs.relationIds.find(relationId => {
+                    const relationIdMetadata = mergedArgs.relationIds.toArray().find(relationId => {
                         if (relationId.relation instanceof Function)
                             return relation.propertyName === relationId.relation(entityMetadata.createPropertiesMap());
 
@@ -290,7 +290,7 @@ export class EntityMetadataBuilder {
 
                 // save relation counter-s data
                 entityMetadata.relations.forEach(relation => {
-                    const relationCountMetadata = mergedArgs.relationCounts.find(relationCount => {
+                    const relationCountMetadata = mergedArgs.relationCounts.toArray().find(relationCount => {
                         if (relationCount.relation instanceof Function)
                             return relation.propertyName === relationCount.relation(entityMetadata.createPropertiesMap());
 
@@ -318,7 +318,7 @@ export class EntityMetadataBuilder {
                 const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type || (typeof relation.type === "string" && m.targetName === relation.type));
                 if (!inverseEntityMetadata)
                     throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyName + " was not found.");
-                
+
                 relation.inverseEntityMetadata = inverseEntityMetadata;
             });
         });
@@ -334,9 +334,6 @@ export class EntityMetadataBuilder {
                     entityMetadata.parentEntityMetadata = parentEntityMetadata;
             }
         });
-
-        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
-        getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
 
         // generate columns and foreign keys for tables with relations
         entityMetadatas.forEach(metadata => {
@@ -357,6 +354,7 @@ export class EntityMetadataBuilder {
                             primary: relation.isPrimary
                         }
                     });
+                    relationalColumn.relationMetadata = relation;
                     metadata.addColumn(relationalColumn);
                 }
 
@@ -379,7 +377,7 @@ export class EntityMetadataBuilder {
 
             if (metadata.primaryColumns.length > 1)
                 throw new Error(`Cannot use given entity ${metadata.name} as a closure table, because it have multiple primary keys. Entities with multiple primary keys are not supported in closure tables.`);
-            
+
             const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(driver, lazyRelationsWrapper, {
                 namingStrategy: namingStrategy,
                 table: metadata.table,
@@ -389,7 +387,7 @@ export class EntityMetadataBuilder {
             metadata.closureJunctionTable = closureJunctionEntityMetadata;
             entityMetadatas.push(closureJunctionEntityMetadata);
         });
-        
+
         // generate junction tables for all many-to-many tables
         entityMetadatas.forEach(metadata => {
             metadata.ownerManyToManyRelations.forEach(relation => {
@@ -461,7 +459,10 @@ export class EntityMetadataBuilder {
                 metadata.foreignKeys.push(foreignKey);
             });
 
+        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
+        getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
+
         return entityMetadatas;
     }
-    
+
 }

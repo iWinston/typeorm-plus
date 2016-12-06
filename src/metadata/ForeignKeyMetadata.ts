@@ -49,8 +49,8 @@ export class ForeignKeyMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(columns: ColumnMetadata[], 
-                referencedTable: TableMetadata, 
+    constructor(columns: ColumnMetadata[],
+                referencedTable: TableMetadata,
                 referencedColumns: ColumnMetadata[],
                 onDelete?: OnDeleteType) {
         this.columns = columns;

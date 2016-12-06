@@ -66,9 +66,22 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const selectDropsQuery = `select 'drop table ' || name || ';' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        await Promise.all(dropQueries.map(q => this.query(q["query"])));
+        await this.query(`PRAGMA foreign_keys = OFF;`);
+        await this.beginTransaction();
+        try {
+            const selectDropsQuery = `select 'drop table ' || name || ';' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
+            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+            await this.query(`PRAGMA foreign_keys = ON;`);
+        }
     }
 
     /**
@@ -153,11 +166,11 @@ export class SqliteQueryRunner implements QueryRunner {
 
         this.logger.logQuery(sql, parameters);
         return new Promise<any[]>((ok, fail) => {
-            const _this = this;
+            const __this = this;
             this.databaseConnection.connection.run(sql, parameters, function (err: any): void {
                 if (err) {
-                    _this.logger.logFailedQuery(sql, parameters);
-                    _this.logger.logQueryError(err);
+                    __this.logger.logFailedQuery(sql, parameters);
+                    __this.logger.logQueryError(err);
                     fail(err);
                 } else {
                     if (generatedColumn)
@@ -188,14 +201,25 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const conditionString = this.parametrize(conditions).join(" AND ");
-        const parameters = Object.keys(conditions).map(key => conditions[key]);
-        const query = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(query, parameters);
+        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
+        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
+
+        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        await this.query(sql, parameters);
     }
 
     /**
@@ -303,7 +327,7 @@ export class SqliteQueryRunner implements QueryRunner {
             // create index schemas from the loaded indices
             const indicesPromises = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["origin"] !== "pk" &&
+                    return dbIndex["origin"] !== "pk" &&
                         (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
                         (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
                 })
@@ -533,6 +557,8 @@ export class SqliteQueryRunner implements QueryRunner {
             c += " UNIQUE";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " PRIMARY KEY AUTOINCREMENT";
+        if (column.default)
+            c += " DEFAULT '" + column.default + "'";
 
         return c;
     }
@@ -549,6 +575,7 @@ export class SqliteQueryRunner implements QueryRunner {
             const columnNames = foreignKey.columnNames.map(name => `"${name}"`).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
+            if (foreignKey.onDelete) sql1 += " ON DELETE " + foreignKey.onDelete;
         });
 
         const primaryKeyColumns = tableSchema.columns.filter(column => column.isPrimary && !column.isGenerated);

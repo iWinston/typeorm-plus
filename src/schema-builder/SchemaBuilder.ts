@@ -1,5 +1,4 @@
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {TableSchema} from "./schema/TableSchema";
 import {ColumnSchema} from "./schema/ColumnSchema";
 import {ForeignKeySchema} from "./schema/ForeignKeySchema";
@@ -11,6 +10,7 @@ import {Logger} from "../logger/Logger";
 import {PrimaryKeySchema} from "./schema/PrimaryKeySchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -41,7 +41,7 @@ export class SchemaBuilder {
      * All synchronized tables in the database.
      */
     protected tableSchemas: TableSchema[];
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -54,7 +54,7 @@ export class SchemaBuilder {
      */
     constructor(protected driver: Driver,
                 protected logger: Logger,
-                protected entityMetadatas: EntityMetadataCollection,
+                protected entityMetadatas: EntityMetadata[],
                 protected namingStrategy: NamingStrategyInterface) {
     }
 
@@ -95,7 +95,7 @@ export class SchemaBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    protected get entityToSyncMetadatas(): EntityMetadataCollection {
+    protected get entityToSyncMetadatas(): EntityMetadata[] {
         return this.entityMetadatas.filter(metadata => !metadata.table.skipSchemaSync);
     }
 

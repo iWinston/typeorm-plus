@@ -16,7 +16,7 @@ export interface EntitySchema {
      * Target bind to this entity schema. Optional.
      */
     target?: Function;
-    
+
     /**
      * Entity name.
      */
@@ -143,7 +143,7 @@ export interface EntitySchema {
              * Column collation. Note that not all databases support it.
              */
             collation?: string; // todo: looks like this is not used
-            
+
         };
     };
 
@@ -188,12 +188,12 @@ export interface EntitySchema {
                  * First column of the join table.
                  */
                 joinColumn?: JoinColumnOptions;
-                
+
                 /**
                  * Second (inverse) column of the join table.
                  */
                 inverseJoinColumn?: JoinColumnOptions;
-                
+
             };
 
             /**
@@ -257,7 +257,7 @@ export interface EntitySchema {
              * Database cascade action on delete.
              */
             onDelete?: OnDeleteType;
-            
+
         };
     };
 

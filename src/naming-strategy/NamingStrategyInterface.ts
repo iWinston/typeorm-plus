@@ -42,11 +42,11 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the join table used in the many-to-many relations.
      */
-    joinTableName(firstTableName: string, 
+    joinTableName(firstTableName: string,
                   secondTableName: string,
                   firstPropertyName: string,
-                  secondPropertyName: string, 
-                  firstColumnName: string, 
+                  secondPropertyName: string,
+                  firstColumnName: string,
                   secondColumnName: string): string;
 
     /**

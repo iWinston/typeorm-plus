@@ -64,20 +64,32 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const allTablesSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
-        const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
-        const tableNames = allTablesResults.map(result => result["TABLE_NAME"]);
-        await Promise.all(tableNames.map(async tableName => {
-            const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM sys.foreign_keys WHERE referenced_object_id = object_id('${tableName}')`;
-            const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
-            return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
-                return this.query(dropQuery);
+        await this.beginTransaction();
+        try {
+            const allTablesSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
+            const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
+            const tableNames = allTablesResults.map(result => result["TABLE_NAME"]);
+            await Promise.all(tableNames.map(async tableName => {
+                const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM sys.foreign_keys WHERE referenced_object_id = object_id('${tableName}')`;
+                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
+                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
+                    return this.query(dropQuery);
+                }));
             }));
-        }));
-        await Promise.all(tableNames.map(tableName => {
-            const dropTableSql = `DROP TABLE "${tableName}"`;
-            return this.query(dropTableSql);
-        }));
+            await Promise.all(tableNames.map(tableName => {
+                const dropTableSql = `DROP TABLE "${tableName}"`;
+                return this.query(dropTableSql);
+            }));
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+        }
 
         // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '"' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
         // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
@@ -212,7 +224,11 @@ export class SqlServerQueryRunner implements QueryRunner {
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "@" + index).join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES (${values})`;
+
+        const sql = columns.length > 0
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES (${values})`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES`;
+
         const result = await this.query(sql, parameters);
         return generatedColumn ? result instanceof Array ? result[0][generatedColumn.name] : result[generatedColumn.name] : undefined;
     }
@@ -236,13 +252,24 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const conditionString = this.parametrize(conditions).join(" AND ");
+        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
+        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
+
         const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
-        const parameters = Object.keys(conditions).map(key => conditions[key]);
         await this.query(sql, parameters);
     }
 
@@ -491,7 +518,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         const promises = foreignKeys.map(foreignKey => {
             const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
-            let sql =   `ALTER TABLE "${dbTable.name}" ADD CONSTRAINT "${foreignKey.name}" ` +
+            let sql = `ALTER TABLE "${dbTable.name}" ADD CONSTRAINT "${foreignKey.name}" ` +
                 `FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
@@ -621,6 +648,8 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         //     c += " PRIMARY KEY";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
+        if (column.default)
+            c += " DEFAULT '" + column.default + "'";
         return c;
     }
 

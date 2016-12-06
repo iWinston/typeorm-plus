@@ -50,7 +50,7 @@ export class Post {
         cascadeRemove: true
     })
     @JoinColumn()
-    metadata: PostMetadata|undefined;
+    metadata: PostMetadata|null;
 
     // post has relation with details. full cascades here
     @OneToOne(type => PostInformation, information => information.post, {

@@ -10,9 +10,9 @@ export class Alias {
     constructor(name: string) {
         this.name = name;
     }
-    
+
     get selection() {
         return this.parentAliasName + "." + this.parentPropertyName;
     }
-    
+
 }

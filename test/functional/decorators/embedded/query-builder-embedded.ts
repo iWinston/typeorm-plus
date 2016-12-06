@@ -27,7 +27,7 @@ describe("decorators > embedded", () => {
             await postRepository.persist(post);
 
             // now load it
-            const loadedPost = await postRepository.findOneById(1);
+            const loadedPost = (await postRepository.findOneById(1))!;
             loadedPost.id.should.be.equal(1);
             loadedPost.title.should.be.equal("Hello post");
             loadedPost.text.should.be.equal("This is text about the post");
@@ -66,7 +66,7 @@ describe("decorators > embedded", () => {
             const sortedPosts1 = await postRepository
                 .createQueryBuilder("post")
                 .orderBy("post.counters.comments", "DESC")
-                .getResults();
+                .getMany();
 
             sortedPosts1.should.be.eql([{
                 id: 2,
@@ -92,7 +92,7 @@ describe("decorators > embedded", () => {
             const sortedPosts2 = await postRepository
                 .createQueryBuilder("post")
                 .orderBy("post.counters.favorites", "DESC")
-                .getResults();
+                .getMany();
 
             sortedPosts2.should.be.eql([{
                 id: 1,

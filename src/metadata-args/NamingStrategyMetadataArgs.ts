@@ -12,5 +12,5 @@ export interface NamingStrategyMetadataArgs {
      * Strategy name.
      */
     readonly name: string;
-    
+
 }

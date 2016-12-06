@@ -19,8 +19,11 @@ describe("many-to-one", function() {
     // -------------------------------------------------------------------------
 
     const options: ConnectionOptions = {
-        driver: createTestingConnectionOptions("postgres"),
-        entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
+        driver: createTestingConnectionOptions("mysql"),
+        entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor],
+        // logging: {
+        //     logQueries: true
+        // }
     };
 
     // connect to db
@@ -121,7 +124,7 @@ describe("many-to-one", function() {
                 .leftJoinAndSelect("post.details", "details")
                 .where("post.id=:id")
                 .setParameter("id", savedPost.id)
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -138,6 +141,7 @@ describe("many-to-one", function() {
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
             
+            expectedDetails.posts = [];
             expectedDetails.posts.push(expectedPost);
             
             return postDetailsRepository
@@ -145,7 +149,7 @@ describe("many-to-one", function() {
                 .leftJoinAndSelect("details.posts", "posts")
                 .where("details.id=:id")
                 .setParameter("id", savedPost.id)
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 
@@ -158,7 +162,7 @@ describe("many-to-one", function() {
             return postRepository
                 .createQueryBuilder("post")
                 .where("post.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -172,7 +176,7 @@ describe("many-to-one", function() {
             return postDetailsRepository
                 .createQueryBuilder("details")
                 .where("details.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 
@@ -236,7 +240,7 @@ describe("many-to-one", function() {
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.category", "category")
                 .where("post.id=:id", { id: savedPost.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
@@ -283,7 +287,7 @@ describe("many-to-one", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult();
+                    .getOne();
             }).then(updatedPostReloaded => {
                 updatedPostReloaded.details.comment.should.be.equal("this is post");
             });
@@ -320,7 +324,7 @@ describe("many-to-one", function() {
                     .leftJoinAndSelect("post.details", "details")
                     .where("post.id=:id")
                     .setParameter("id", updatedPost.id)
-                    .getSingleResult();
+                    .getOne();
             }).then(updatedPostReloaded => {
                 updatedPostReloaded.details.comment.should.be.equal("this is post");
             });
@@ -355,7 +359,7 @@ describe("many-to-one", function() {
                         .leftJoinAndSelect("post.image", "image")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(loadedPost => {
                     loadedPost.image.url = "new-logo.png";
@@ -367,7 +371,7 @@ describe("many-to-one", function() {
                         .leftJoinAndSelect("post.image", "image")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
-                        .getSingleResult();
+                        .getOne();
                     
                 }).then(reloadedPost => {
                     reloadedPost.image.url.should.be.equal("new-logo.png");
@@ -404,10 +408,10 @@ describe("many-to-one", function() {
                         .leftJoinAndSelect("post.metadata", "metadata")
                         .where("post.id=:id")
                         .setParameter("id", post.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(loadedPost => {
-                    loadedPost.metadata = undefined;
+                    loadedPost.metadata = null;
                     return postRepository.persist(loadedPost);
 
                 }).then(() => {
@@ -416,7 +420,7 @@ describe("many-to-one", function() {
                         .leftJoinAndSelect("post.metadata", "metadata")
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
-                        .getSingleResult();
+                        .getOne();
 
                 }).then(reloadedPost => {
                     expect(reloadedPost.metadata).to.be.empty;
@@ -437,6 +441,7 @@ describe("many-to-one", function() {
 
             details = new PostDetails();
             details.comment = "post details comment";
+            details.posts = [];
             details.posts.push(newPost);
 
             return postDetailsRepository.persist(details).then(details => savedDetails = details);
@@ -474,6 +479,7 @@ describe("many-to-one", function() {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedDetails.id;
             expectedDetails.comment = savedDetails.comment;
+            expectedDetails.posts = [];
             expectedDetails.posts.push(new Post());
             expectedDetails.posts[0].id = newPost.id;
             expectedDetails.posts[0].text = newPost.text;
@@ -483,7 +489,7 @@ describe("many-to-one", function() {
                 .createQueryBuilder("details")
                 .leftJoinAndSelect("details.posts", "posts")
                 .where("details.id=:id", { id: savedDetails.id })
-                .getSingleResult()
+                .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 

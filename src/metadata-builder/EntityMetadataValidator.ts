@@ -6,6 +6,8 @@ import {MissingJoinColumnError} from "./error/MissingJoinColumnError";
 import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
+import {CircularRelationsError} from "./error/CircularRelationsError";
+import {DepGraph} from "../util/DepGraph";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -24,6 +26,7 @@ export class EntityMetadataValidator {
      */
     validateMany(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas));
+        this.validateDependencies(entityMetadatas);
     }
 
     /**
@@ -32,7 +35,7 @@ export class EntityMetadataValidator {
     validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[]) {
 
         // check if table metadata has an id
-        if (!entityMetadata.table.isClassTableChild && !entityMetadata.primaryColumns.length)
+        if (!entityMetadata.table.isClassTableChild && !entityMetadata.primaryColumns.length && !entityMetadata.junction)
             throw new MissingPrimaryColumnError(entityMetadata);
 
         // validate if table is using inheritance it has a discriminator
@@ -78,6 +81,10 @@ export class EntityMetadataValidator {
                 if (relation.hasInverseSide && relation.inverseRelation.joinColumn && relation.isOneToOne)
                     throw new UsingJoinColumnOnlyOnOneSideAllowedError(entityMetadata, relation);
 
+                // check if join column really has referenced column
+                if (relation.joinColumn && !relation.joinColumn.referencedColumn)
+                    throw new Error(`Join column does not have referenced column set`);
+
             }
 
             // if its a one-to-one relation and JoinColumn is missing on both sides of the relation
@@ -89,13 +96,40 @@ export class EntityMetadataValidator {
             // or its one-side relation without JoinTable we should give an error
             if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
                 throw new MissingJoinTableError(entityMetadata, relation);
-            
-            
+
+
             // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
             // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
             // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
             // todo: with message like: "Inverse side is specified only on one side of the relationship. Specify on other side too to prevent confusion".
-            
+            // todo: add validation if there two entities with the same target, and show error message with description of the problem (maybe file was renamed/moved but left in output directory)
+            // todo: check if there are multiple columns on the same column applied.
+
         });
     }
+
+    /**
+     * Validates dependencies of the entity metadatas.
+     */
+    protected validateDependencies(entityMetadatas: EntityMetadata[]) {
+
+        const graph = new DepGraph();
+        entityMetadatas.forEach(entityMetadata => {
+            graph.addNode(entityMetadata.name);
+        });
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.relationsWithJoinColumns
+                .filter(relation => !relation.isNullable)
+                .forEach(relation => {
+                    graph.addDependency(entityMetadata.name, relation.inverseEntityMetadata.name);
+                });
+        });
+        try {
+            graph.overallOrder();
+
+        } catch (err) {
+            throw new CircularRelationsError(err.toString().replace("Error: Dependency Cycle Found: ", ""));
+        }
+    }
+
 }

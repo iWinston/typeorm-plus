@@ -64,14 +64,26 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-        const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
-        const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+        await this.beginTransaction();
+        try {
+            const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
+            const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
-        await this.query(disableForeignKeysCheckQuery);
-        const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
-        await Promise.all(dropQueries.map(query => this.query(query["query"])));
-        await this.query(enableForeignKeysCheckQuery);
+            await this.query(disableForeignKeysCheckQuery);
+            const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
+            await Promise.all(dropQueries.map(query => this.query(query["query"])));
+            await this.query(enableForeignKeysCheckQuery);
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            await this.rollbackTransaction();
+            throw error;
+
+        } finally {
+            await this.release();
+        }
     }
 
     /**
@@ -179,13 +191,24 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void> {
+    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
+
+    /**
+     * Deletes from the given table by a given conditions.
+     */
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const conditionString = this.parametrize(conditions).join(" AND ");
+        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
+        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
+
         const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
-        const parameters = Object.keys(conditions).map(key => conditions[key]);
         await this.query(sql, parameters);
     }
 
@@ -272,7 +295,7 @@ export class MysqlQueryRunner implements QueryRunner {
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["TABLE_NAME"] === tableSchema.name &&
+                    return dbIndex["TABLE_NAME"] === tableSchema.name &&
                         (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
                         (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
                 })
@@ -388,7 +411,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const promises = foreignKeys.map(foreignKey => {
             const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-            let sql =   `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+            let sql = `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
                 `FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
@@ -522,7 +545,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
         if (column.default)
-            c += " DEFAULT " + column.default + "";
+            c += " DEFAULT '" + column.default + "'";
         return c;
     }
 

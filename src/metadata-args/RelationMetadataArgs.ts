@@ -30,7 +30,7 @@ export interface RelationMetadataArgs {
 
     /**
      * Original (reflected) class's property type.
-     * 
+     *
      * todo: this can be empty for relations from entity schemas.
      */
     readonly propertyType?: any;
@@ -65,5 +65,5 @@ export interface RelationMetadataArgs {
      * Indicates if this is a children (can be only one-to-many relation) relation in the tree tables.
      */
     readonly isTreeChildren?: boolean;
-    
+
 }

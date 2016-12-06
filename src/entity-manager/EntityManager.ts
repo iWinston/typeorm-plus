@@ -70,6 +70,9 @@ export class EntityManager extends BaseEntityManager {
             return this.getRepository<Entity|Entity[]>(target).persist(entity);
         } else {
             if (target instanceof Array) {
+                if (target.length === 0)
+                    return Promise.resolve(target);
+
                 return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
             } else {
                 return this.getRepository<Entity>(target.constructor).persist(entity as Entity);
@@ -124,7 +127,7 @@ export class EntityManager extends BaseEntityManager {
         }
     }
 
-    
+
     /**
      * Finds entities that match given conditions.
      */
@@ -151,10 +154,10 @@ export class EntityManager extends BaseEntityManager {
     find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity[]> {
         if (conditionsOrFindOptions && options) {
             return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
-            
+
         } else if (conditionsOrFindOptions) {
             return this.getRepository(entityClass).find(conditionsOrFindOptions);
-            
+
         } else {
             return this.getRepository(entityClass).find();
         }
@@ -208,27 +211,27 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity> {
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity|undefined> {
         if (conditionsOrFindOptions && options) {
             return this.getRepository(entityClass).findOne(conditionsOrFindOptions, options);
 
@@ -241,9 +244,17 @@ export class EntityManager extends BaseEntityManager {
     }
 
     /**
+     * Finds entities with ids.
+     * Optionally find options can be applied.
+     */
+    findByIds<Entity>(entityClass: ObjectType<Entity>, ids: any[], options?: FindOptions): Promise<Entity[]> {
+        return this.getRepository(entityClass).findByIds(ids, options);
+    }
+
+    /**
      * Finds entity with given id.
      */
-    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, options?: FindOptions): Promise<Entity> {
+    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, options?: FindOptions): Promise<Entity|undefined> {
         return this.getRepository(entityClass).findOneById(id, options);
     }
 

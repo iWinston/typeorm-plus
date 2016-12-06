@@ -162,8 +162,8 @@ export abstract class BaseEntityManager {
     /**
      * Creates a new query builder that can be used to build an sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>, alias: string): QueryBuilder<Entity> {
-        return this.getRepository(entityClass).createQueryBuilder(alias);
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string): QueryBuilder<Entity> {
+        return this.getRepository(entityClass as any).createQueryBuilder(alias);
     }
 
     /**
@@ -239,7 +239,7 @@ export abstract class BaseEntityManager {
         if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const metadata = this.connection.entityMetadatas.findByTarget(entityClassOrName);
+        const metadata = this.connection.getMetadata(entityClassOrName);
         let repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
         if (!repositoryAggregator) {
             repositoryAggregator = new RepositoryAggregator(

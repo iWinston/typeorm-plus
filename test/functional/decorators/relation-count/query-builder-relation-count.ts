@@ -10,7 +10,11 @@ describe("QueryBuilder > relation-count", () => {
     // const resourceDir = __dirname + "/../../../../../../test/functional/query-builder/join-relation-ids/";
 
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true }).then(all => connections = all));
+    before(() => setupTestingConnections({
+        entities: [Post, Category, Tag],
+        schemaCreate: true,
+        dropSchemaOnConnection: true
+    }).then(all => connections = all));
     beforeEach(() => reloadDatabases(connections));
     after(() => closeConnections(connections));
 
@@ -56,7 +60,7 @@ describe("QueryBuilder > relation-count", () => {
                 .leftJoinAndSelect("post.tag", "tag")
                 .countRelation("post.categories")
                 .countRelation("tag.posts")
-                .getResults();
+                .getMany();
 
             loadedPosts[0].categoriesCount.should.be.equal(2);
             loadedPosts[1].categoriesCount.should.be.equal(1);
@@ -65,9 +69,9 @@ describe("QueryBuilder > relation-count", () => {
             loadedPosts = await postRepository
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.tag", "tag")
-                .countRelationAndMap("post.secondCategoriesCount", "post.categories", "ON", "tag IS NOT NULL")
+                .countRelationAndMap("post.secondCategoriesCount", "post.categories", "tag IS NOT NULL")
                 .countRelationAndMap("post.secondTagsCount", "tag.posts")
-                .getResults();
+                .getMany();
 
             loadedPosts[0].secondCategoriesCount.should.be.equal(2);
             loadedPosts[1].secondCategoriesCount.should.be.equal(0);

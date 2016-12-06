@@ -5,8 +5,14 @@ export interface RemoveEvent<Entity> {
 
     /**
      * Entity that is being removed.
+     * This may absent if entity is removed without being loaded (for examples by cascades).
      */
-    entity: Entity;
+    entity?: Entity;
+
+    /**
+     * Database representation of entity that is being removed.
+     */
+    databaseEntity: Entity;
 
     /**
      * Id or ids of the entity that is being removed.

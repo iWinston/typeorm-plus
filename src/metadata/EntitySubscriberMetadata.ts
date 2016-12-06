@@ -13,5 +13,5 @@ export class EntitySubscriberMetadata {
     constructor(args: EntitySubscriberMetadataArgs) {
         this.target = args.target;
     }
-    
+
 }

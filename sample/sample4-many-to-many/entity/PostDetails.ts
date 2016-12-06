@@ -27,6 +27,6 @@ export class PostDetails {
         cascadeUpdate: true,
         cascadeRemove: true
     })
-    posts: Post[] = [];
+    posts: Post[];
 
 }

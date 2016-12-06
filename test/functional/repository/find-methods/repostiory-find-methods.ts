@@ -235,7 +235,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = await userRepository.findOne({ alias: "user", orderBy: { "user.id": "ASC" }});
+            const loadedUser = (await userRepository.findOne({ alias: "user", orderBy: { "user.id": "ASC" }}))!;
             loadedUser.id.should.be.equal(0);
             loadedUser.firstName.should.be.equal("name #0");
             loadedUser.secondName.should.be.equal("Doe");
@@ -256,7 +256,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = await userRepository.findOne({ firstName: "name #1" }, { alias: "user", orderBy: { "user.id": "ASC" }});
+            const loadedUser = (await userRepository.findOne({ firstName: "name #1" }, { alias: "user", orderBy: { "user.id": "ASC" }}))!;
             loadedUser.id.should.be.equal(1);
             loadedUser.firstName.should.be.equal("name #1");
             loadedUser.secondName.should.be.equal("Doe");
@@ -285,7 +285,7 @@ describe("repository > find methods", () => {
                     secondName: "Doe"
                 }
             };
-            const loadedUser = await userRepository.findOne(findOptions, { alias: "user", orderBy: { "user.id": "ASC" }});
+            const loadedUser = (await userRepository.findOne(findOptions, { alias: "user", orderBy: { "user.id": "ASC" }}))!;
             loadedUser.id.should.be.equal(99);
             loadedUser.firstName.should.be.equal("name #99");
             loadedUser.secondName.should.be.equal("Doe");
@@ -310,17 +310,17 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            let loadedUser = await userRepository.findOneById(0);
+            let loadedUser = (await userRepository.findOneById(0))!;
             loadedUser.id.should.be.equal(0);
             loadedUser.firstName.should.be.equal("name #0");
             loadedUser.secondName.should.be.equal("Doe");
 
-            loadedUser = await userRepository.findOneById(1);
+            loadedUser = (await userRepository.findOneById(1))!;
             loadedUser.id.should.be.equal(1);
             loadedUser.firstName.should.be.equal("name #1");
             loadedUser.secondName.should.be.equal("Doe");
 
-            loadedUser = await userRepository.findOneById(99);
+            loadedUser = (await userRepository.findOneById(99))!;
             loadedUser.id.should.be.equal(99);
             loadedUser.firstName.should.be.equal("name #99");
             loadedUser.secondName.should.be.equal("Doe");
@@ -356,9 +356,9 @@ describe("repository > find methods", () => {
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
             let loadedUser = await userRepository.findOneById(0, findOptions1);
-            loadedUser.id.should.be.equal(0);
-            loadedUser.firstName.should.be.equal("name #0");
-            loadedUser.secondName.should.be.equal("Doe");
+            loadedUser!.id.should.be.equal(0);
+            loadedUser!.firstName.should.be.equal("name #0");
+            loadedUser!.secondName.should.be.equal("Doe");
 
             loadedUser = await userRepository.findOneById(1, findOptions2);
             expect(loadedUser).to.be.undefined;

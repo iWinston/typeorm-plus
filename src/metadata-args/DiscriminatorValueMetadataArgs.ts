@@ -12,5 +12,5 @@ export interface DiscriminatorValueMetadataArgs {
      * Discriminator value.
      */
     readonly value: any;
-    
+
 }

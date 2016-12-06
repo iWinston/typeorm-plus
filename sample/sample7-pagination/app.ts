@@ -52,7 +52,7 @@ createConnection(options).then(connection => {
     Promise.all(posts.map(post => postRepository.persist(post)))
         .then(savedPosts => {
             console.log("Posts has been saved. Lets try to load some posts");
-            return qb.getResults();
+            return qb.getMany();
         })
         .then(loadedPost => {
             console.log("post loaded: ", loadedPost);
