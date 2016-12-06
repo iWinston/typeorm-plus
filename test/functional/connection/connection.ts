@@ -204,7 +204,7 @@ describe("Connection", () => {
         }));
         
         it("should not be able to close already closed connection", () => connections.forEach(connection => {
-            return connection.close().should.be.rejectedWith(CannotCloseNotConnectedError);
+            return connection.close().should.be.rejected; // CannotCloseNotConnectedError
         }));
 
         it("connection.isConnected should be false", () => connections.forEach(connection => {
