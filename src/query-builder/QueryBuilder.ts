@@ -909,7 +909,10 @@ export class QueryBuilder<Entity> {
         const mainAliasName = this.fromTableName ? this.fromTableName : this.aliasMap.mainAlias.name;
         let scalarResults: any[];
         if (this.firstResult || this.maxResults) {
-            const [sql, parameters] = this.getSqlWithParameters(); // todo: fix for sql server. We cant skip order by here! // { skipOrderBy: true }
+            // we are skipping order by here because its not working in subqueries anyway
+            // to make order by working we need to apply it on a distinct query
+            const [sql, parameters] = this.getSqlWithParameters({ skipOrderBy: true });
+            const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
 
             const distinctAlias = this.connection.driver.escapeTableName("distinctAlias");
             const metadata = this.connection.getMetadata(this.fromEntity.alias.target);
@@ -922,12 +925,21 @@ export class QueryBuilder<Entity> {
                     return `${distinctAlias}.${propertyName}) as ids_${primaryColumn.name}`;
                 }
             }).join(", ");
+            if (selects.length > 0)
+                idsQuery += ", " + selects;
+
             idsQuery += ` FROM (${sql}) ${distinctAlias}`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
+
+            if (orderBys.length > 0) {
+                idsQuery += " ORDER BY " + orderBys;
+            } else {
+                idsQuery += ` ORDER BY "ids_${metadata.firstPrimaryColumn.name}"`; // this is required for mssql driver if firstResult is used. Other drivers don't care about it
+            }
 
             if (this.connection.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
 
-                if (this.firstResult)
-                    idsQuery += ` ORDER BY "ids_${metadata.firstPrimaryColumn.name}" OFFSET ${this.firstResult} ROWS`;
+                if (this.firstResult) // todo: order by already is set above
+                    idsQuery += ` OFFSET ${this.firstResult} ROWS`;
                 if (this.maxResults)
                     idsQuery += " FETCH NEXT " + this.maxResults + " ROWS ONLY";
             } else {
@@ -1659,21 +1671,49 @@ export class QueryBuilder<Entity> {
             }).join(" ");
     }
 
-    protected createOrderByExpression() {
-
-        // if user specified a custom order then apply it
-        if (Object.keys(this.orderBys).length > 0)
-            return " ORDER BY " + Object.keys(this.orderBys).map(columnName => this.replacePropertyNames(columnName) + " " + this.orderBys[columnName]).join(", ");
+    protected createOrderByCombinedWithSelectExpression(parentAlias: string) {
 
         // if table has a default order then apply it
-        if (!this.fromTableName) {
+        let orderBys = this.orderBys;
+        if (!Object.keys(orderBys).length && !this.fromTableName) {
             const metadata = this.connection.getMetadata(this.aliasMap.mainAlias.target);
-            if (metadata.table.orderBy)
-                return " ORDER BY " + Object
-                        .keys(metadata.table.orderBy)
-                        .map(key => this.replacePropertyNames(key) + " " + metadata.table.orderBy![key])
-                        .join(", ");
+            orderBys = metadata.table.orderBy || {};
         }
+
+        const selectString = Object.keys(orderBys)
+            .map(columnName => {
+                const [alias, column] = columnName.split(".");
+                return this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(alias + "_" + column);
+            })
+            .join(", ");
+
+        const orderByString = Object.keys(orderBys)
+            .map(columnName => {
+                const [alias, column] = columnName.split(".");
+                return this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(alias + "_" + column) + " " + this.orderBys[columnName];
+            })
+            .join(", ");
+
+        return [selectString, orderByString];
+    }
+
+    protected createOrderByExpression() {
+
+        let orderBys = this.orderBys;
+
+        // if table has a default order then apply it
+        if (!Object.keys(orderBys).length && !this.fromTableName) {
+            const metadata = this.connection.getMetadata(this.aliasMap.mainAlias.target);
+            orderBys = metadata.table.orderBy || {};
+        }
+
+        // if user specified a custom order then apply it
+        if (Object.keys(orderBys).length > 0)
+            return " ORDER BY " + Object.keys(orderBys)
+                    .map(columnName => {
+                        return this.replacePropertyNames(columnName) + " " + this.orderBys[columnName];
+                    })
+                    .join(", ");
 
         return "";
     }

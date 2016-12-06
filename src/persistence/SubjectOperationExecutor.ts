@@ -794,7 +794,7 @@ export class SubjectOperationExecutor {
 
             // if relation id still does not exist - we arise an error
             if (!relationId)
-                throw new Error(`Cannot insert object of ${relation.inverseRelation.entityTarget} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
+                throw new Error(`Cannot insert object of ${(newBindEntity.constructor as any).name} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
 
             const columns = relation.junctionEntityMetadata.columns.map(column => column.name);
             const values = relation.isOwning ? [ownId, relationId] : [relationId, ownId];

@@ -309,7 +309,9 @@ export class Gulpfile {
         chai.use(require("chai-as-promised"));
 
         return gulp.src(["./build/compiled/test/**/*.js"])
-            .pipe(mocha())
+            .pipe(mocha({
+                timeout: 5000
+            }))
             .pipe(istanbul.writeReports());
     }
 
