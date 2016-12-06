@@ -1,24 +1,37 @@
 import {MetadataAlreadyExistsError} from "../../metadata-builder/error/MetadataAlreadyExistsError";
 
-export class TargetMetadataArgsCollection<T extends { target?: Function|string }> extends Array<T> {
-    
+export class TargetMetadataArgsCollection<T extends { target?: Function|string }> {
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    protected items: T[] = [];
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    get length() {
+        return this.items.length;
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
     filter(callbackfn: (value: T, index: number, array: T[]) => boolean, thisArg?: any): this {
         const collection = new (<any> this.constructor)();
-        super.filter(callbackfn)
-            .forEach(metadata => collection.add(metadata));
+        this.items.filter(callbackfn).forEach(metadata => collection.add(metadata));
         return collection;
     }
 
     filterByTarget(cls?: Function|string): this {
-        
+
         // if no class specified then simply return empty collection
         if (!cls)
             return new (<any> this.constructor)();
-            
+
         return this.filterByTargets([cls]);
     }
 
@@ -38,15 +51,19 @@ export class TargetMetadataArgsCollection<T extends { target?: Function|string }
                 throw new MetadataAlreadyExistsError((<any> metadata.constructor).name, metadata.target);
         }
 
-        this.push(metadata);
+        this.items.push(metadata);
     }
-    
+
+    toArray() {
+        return this.items.map(item => item);
+    }
+
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
 
     private hasWithTarget(constructor: Function): boolean {
-        return !!this.find(metadata => metadata.target === constructor);
+        return !!this.items.find(metadata => metadata.target === constructor);
     }
 
 }

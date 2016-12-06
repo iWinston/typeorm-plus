@@ -1,22 +1,22 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Alias} from "./Alias";
-import {EntityMetadataCollection} from "../../metadata-args/collection/EntityMetadataCollection";
+import {Connection} from "../../connection/Connection";
 
 /**
  */
 export class AliasMap {
-    
+
     // -------------------------------------------------------------------------
     // Properties
     // -------------------------------------------------------------------------
 
     aliases: Alias[] = [];
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private entityMetadatas: EntityMetadataCollection) {
+    constructor(private connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -34,7 +34,7 @@ export class AliasMap {
     addAlias(alias: Alias) {
         this.aliases.push(alias);
     }
-    
+
     get hasMainAlias() {
         return !!this.aliases.find(alias => alias.isMain);
     }
@@ -43,7 +43,7 @@ export class AliasMap {
         const alias = this.aliases.find(alias => alias.isMain);
         if (!alias)
             throw new Error(`Main alias is not set.`);
-        
+
         return alias;
     }
 
@@ -59,18 +59,19 @@ export class AliasMap {
 
     getEntityMetadataByAlias(alias: Alias): EntityMetadata|undefined {
         if (alias.target) {
-            return this.entityMetadatas.findByTarget(alias.target);
+            // todo: use connection.getMetadata instead?
+            return this.connection.getMetadata(alias.target);
 
         } else if (alias.parentAliasName && alias.parentPropertyName) {
 
             const parentAlias = this.findAliasByName(alias.parentAliasName);
             if (!parentAlias)
                 throw new Error(`Alias "${alias.parentAliasName}" was not found`);
-            
+
             const parentEntityMetadata = this.getEntityMetadataByAlias(parentAlias);
             if (!parentEntityMetadata)
                 throw new Error("Cannot get entity metadata for the given alias " + alias.name);
-            
+
             if (!parentEntityMetadata.hasRelationWithPropertyName(alias.parentPropertyName))
                 throw new Error("Relation metadata for " + alias.parentAliasName + "#" + alias.parentPropertyName + " was not found.");
 
@@ -80,9 +81,9 @@ export class AliasMap {
 
         return undefined;
     }
-    
+
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
-    
+
 }

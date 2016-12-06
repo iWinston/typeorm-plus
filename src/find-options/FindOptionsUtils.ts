@@ -1,4 +1,3 @@
-
 import {FindOptions} from "./FindOptions";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 
@@ -36,7 +35,7 @@ export class FindOptionsUtils {
      * Applies give find options to the given query builder.
      */
     static applyOptionsToQueryBuilder(qb: QueryBuilder<any>, options: FindOptions): QueryBuilder<any> {
-        
+
         if (options.limit)
             qb.setLimit(options.limit);
         if (options.offset)
@@ -49,7 +48,7 @@ export class FindOptionsUtils {
             qb.where(options.where);
         if (options.having)
             qb.having(options.having);
-        
+
         if (options.whereConditions) {
             Object.keys(options.whereConditions).forEach(key => {
                 const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
@@ -57,7 +56,7 @@ export class FindOptionsUtils {
             });
             qb.addParameters(options.whereConditions);
         }
-        
+
         if (options.havingConditions) {
             Object.keys(options.havingConditions).forEach(key => {
                 const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
@@ -65,31 +64,31 @@ export class FindOptionsUtils {
             });
             qb.addParameters(options.havingConditions);
         }
-        
+
         if (options.orderBy)
             Object.keys(options.orderBy).forEach(columnName => qb.addOrderBy(columnName, options.orderBy![columnName]));
 
         if (options.groupBy)
             options.groupBy.forEach(groupBy => qb.addGroupBy(groupBy));
-        
+
         if (options.leftJoin)
             Object.keys(options.leftJoin).forEach(key => {
                 if (options.leftJoin) // this check because of tsc bug
                     qb.leftJoin(options.leftJoin[key], key);
             });
-        
+
         if (options.innerJoin)
             Object.keys(options.innerJoin).forEach(key => {
                 if (options.innerJoin) // this check because of tsc bug
                     qb.innerJoin(options.innerJoin[key], key);
             });
-        
+
         if (options.leftJoinAndSelect)
             Object.keys(options.leftJoinAndSelect).forEach(key => {
                 if (options.leftJoinAndSelect) // this check because of tsc bug
                     qb.leftJoinAndSelect(options.leftJoinAndSelect[key], key);
             });
-        
+
         if (options.innerJoinAndSelect)
             Object.keys(options.innerJoinAndSelect).forEach(key => {
                 if (options.innerJoinAndSelect) // this check because of tsc bug
@@ -104,8 +103,8 @@ export class FindOptionsUtils {
                 qb.enableOption(option);
             });
         }
-        
+
         return qb;
     }
-    
+
 }

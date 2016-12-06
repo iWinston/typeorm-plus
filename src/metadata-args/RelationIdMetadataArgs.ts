@@ -17,5 +17,5 @@ export interface RelationIdMetadataArgs {
      * Target's relation which it should count.
      */
     readonly relation: string|((object: any) => any);
-    
+
 }

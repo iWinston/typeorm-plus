@@ -30,5 +30,5 @@ export interface JoinTableMetadataArgs {
      * Second (inverse) column of the join table.
      */
     readonly inverseJoinColumn?: JoinColumnOptions;
-    
+
 }

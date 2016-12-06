@@ -295,7 +295,7 @@ export class MysqlQueryRunner implements QueryRunner {
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["TABLE_NAME"] === tableSchema.name &&
+                    return dbIndex["TABLE_NAME"] === tableSchema.name &&
                         (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
                         (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
                 })
@@ -411,7 +411,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const promises = foreignKeys.map(foreignKey => {
             const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-            let sql =   `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+            let sql = `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
                 `FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;

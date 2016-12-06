@@ -9,7 +9,6 @@ import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/
 import {getMetadataArgsStorage, getFromContainer} from "../index";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
-import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
 import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
@@ -28,6 +27,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {Logger} from "../logger/Logger";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFound";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -57,7 +57,7 @@ export class Connection {
     /**
      * All entity metadatas that are registered for this connection.
      */
-    public readonly entityMetadatas = new EntityMetadataCollection();
+    public readonly entityMetadatas: EntityMetadata[] = [];
 
     /**
      * Used to broadcast connection events.
@@ -147,7 +147,7 @@ export class Connection {
     get entityManager() {
         // if (!this.isConnected)
         //     throw new CannotGetEntityManagerNotConnectedError(this.name);
-        
+
         return this._entityManager;
     }
 
@@ -179,7 +179,7 @@ export class Connection {
             await this.close();
             throw error;
         }
-        
+
         return this;
     }
 
@@ -323,23 +323,27 @@ export class Connection {
     /**
      * Gets the entity metadata of the given entity class.
      */
-    getMetadata(entity: Function): EntityMetadata;
+    getMetadata(target: Function): EntityMetadata;
 
     /**
      * Gets the entity metadata of the given entity name.
      */
-    getMetadata(entity: string): EntityMetadata;
+    getMetadata(target: string): EntityMetadata;
 
     /**
      * Gets the entity metadata of the given entity class or schema name.
      */
-    getMetadata(entity: Function|string): EntityMetadata;
+    getMetadata(target: Function|string): EntityMetadata;
 
     /**
      Gets entity metadata for the given entity class or schema name.
      */
-    getMetadata(entity: Function|string): EntityMetadata {
-        return this.entityMetadatas.findByTarget(entity);
+    getMetadata(target: Function|string): EntityMetadata {
+        const metadata = this.entityMetadatas.find(metadata => metadata.target === target || (typeof target === "string" && metadata.targetName === target));
+        if (!metadata)
+            throw new EntityMetadataNotFound(target);
+
+        return metadata;
     }
 
     /**
@@ -437,10 +441,10 @@ export class Connection {
         // if (!this.isConnected)
         //     throw new NoConnectionForRepositoryError(this.name);
 
-        if (!this.entityMetadatas.hasTarget(entityClassOrName))
+        if (!this.entityMetadatas.find(metadata => metadata.target === entityClassOrName || (typeof entityClassOrName === "string" && metadata.targetName === entityClassOrName)))
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
-        const metadata = this.entityMetadatas.findByTarget(entityClassOrName);
+        const metadata = this.getMetadata(entityClassOrName);
         const repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
         if (!repositoryAggregator)
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
@@ -466,6 +470,7 @@ export class Connection {
             getMetadataArgsStorage()
                 .entitySubscribers
                 .filterByTargets(this.subscriberClasses)
+                .toArray()
                 .map(metadata => getFromContainer(metadata.target))
                 .forEach(subscriber => this.entitySubscribers.push(subscriber));
         }
@@ -475,9 +480,10 @@ export class Connection {
             getMetadataArgsStorage()
                 .entityListeners
                 .filterByTargets(this.entityClasses)
+                .toArray()
                 .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
         }
-        
+
         // build entity metadatas from metadata args storage (collected from decorators)
         if (this.entityClasses && this.entityClasses.length) {
             getFromContainer(EntityMetadataBuilder)
@@ -503,15 +509,16 @@ export class Connection {
      * Creates a naming strategy to be used for this connection.
      */
     protected createNamingStrategy(): NamingStrategyInterface {
-        
+
         // if naming strategies are not loaded, or used naming strategy is not set then use default naming strategy
         if (!this.namingStrategyClasses || !this.namingStrategyClasses.length || !this.usedNamingStrategy)
             return getFromContainer(DefaultNamingStrategy);
-            
+
         // try to find used naming strategy in the list of loaded naming strategies
         const namingMetadata = getMetadataArgsStorage()
             .namingStrategies
             .filterByTargets(this.namingStrategyClasses)
+            .toArray()
             .find(strategy => {
                 if (typeof this.usedNamingStrategy === "string") {
                     return strategy.name === this.usedNamingStrategy;
@@ -519,7 +526,7 @@ export class Connection {
                     return strategy.target === this.usedNamingStrategy;
                 }
             });
-        
+
         // throw an error if not found
         if (!namingMetadata)
             throw new NamingStrategyNotFoundError(this.usedNamingStrategy, this.name);
@@ -539,7 +546,7 @@ export class Connection {
      * Creates a new entity broadcaster using in this connection.
      */
     protected createBroadcaster() {
-        return new Broadcaster(this.entityMetadatas, this.entitySubscribers, this.entityListeners);
+        return new Broadcaster(this, this.entitySubscribers, this.entityListeners);
     }
 
     /**

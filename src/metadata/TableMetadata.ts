@@ -71,7 +71,7 @@ export class TableMetadata {
         this.engine = args.engine;
         this.skipSchemaSync = args.skipSchemaSync;
     }
-    
+
     // ---------------------------------------------------------------------
     // Accessors
     // ---------------------------------------------------------------------
@@ -201,5 +201,5 @@ export class TableMetadata {
     get isClassTableChild() {
         return this.tableType === TableTypes.CLASS_TABLE_CHILD;
     }
-    
+
 }

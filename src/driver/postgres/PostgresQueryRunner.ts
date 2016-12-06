@@ -312,7 +312,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             // create index schemas from the loaded indices
             tableSchema.indices = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["table_name"] === tableSchema.name &&
+                    return dbIndex["table_name"] === tableSchema.name &&
                         (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
                         (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["index_name"])) &&
                         (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"]));

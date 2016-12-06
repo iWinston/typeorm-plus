@@ -12,5 +12,5 @@ export interface InheritanceMetadataArgs {
      * Inheritance type.
      */
     readonly type: "single-table"|"class-table";
-    
+
 }

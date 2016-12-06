@@ -30,7 +30,7 @@ export class EntityMetadata {
      * Parent's entity metadata. Used in inheritance patterns.
      */
     parentEntityMetadata: EntityMetadata;
-    
+
     // -------------------------------------------------------------------------
     // Public Readonly Properties
     // -------------------------------------------------------------------------
@@ -142,7 +142,7 @@ export class EntityMetadata {
     get name(): string {
         if (!this.table)
             throw new Error("No table target set to the entity metadata.");
-        
+
         return this.targetName ? this.targetName : this.table.name;
     }
 
@@ -189,7 +189,7 @@ export class EntityMetadata {
 
         if (this.target instanceof Function)
             return (<any> this.target).name;
-        
+
         return "";
     }
 
@@ -250,13 +250,6 @@ export class EntityMetadata {
     }
 
     /**
-     * Checks if entity has any primary columns.
-
-    get hasPrimaryColumns(): ColumnMetadata[] {
-
-    }*/
-
-    /**
      * Gets the primary columns.
      */
     get primaryColumns(): ColumnMetadata[] {
@@ -309,7 +302,7 @@ export class EntityMetadata {
         const column = this._columns.find(column => column.mode === "createDate");
         if (!column)
             throw new Error(`CreateDateColumn was not found in entity ${this.name}`);
-        
+
         return column;
     }
 
@@ -345,7 +338,7 @@ export class EntityMetadata {
         const column = this._columns.find(column => column.mode === "version");
         if (!column)
             throw new Error(`VersionColumn was not found in entity ${this.name}`);
-        
+
         return column;
     }
 
@@ -688,7 +681,7 @@ export class EntityMetadata {
     }
 
     /**
-     * Same as `getEntityIdMap` but the key of the map will be the column names instead of the property names. 
+     * Same as `getEntityIdMap` but the key of the map will be the column names instead of the property names.
      */
     getEntityIdColumnMap(entity: any): ObjectLiteral|undefined {
         return this.transformIdMapToColumnNames(this.getEntityIdMap(entity));
@@ -711,7 +704,7 @@ export class EntityMetadata {
     getColumnByPropertyName(propertyName: string) {
         return this._columns.find(column => column.propertyName === propertyName);
     }
-    
+
     /**
      * Checks if column with the given property name exist.
      */
@@ -740,7 +733,7 @@ export class EntityMetadata {
         const relation = this.relations.find(relation => relation.propertyName === propertyName);
         if (!relation)
             throw new Error(`Relation with property name ${propertyName} in ${this.name} entity was not found.`);
-        
+
         return relation;
     }
 
@@ -761,7 +754,7 @@ export class EntityMetadata {
 
         return relation;
     }
-    
+
     addColumn(column: ColumnMetadata) {
         this._columns.push(column);
         column.entityMetadata = this;

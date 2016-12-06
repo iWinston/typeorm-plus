@@ -6,7 +6,7 @@ import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
- * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this 
+ * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
  * decorator will be persisted to the database when entity be saved.
  */
 export function Column(): Function;
@@ -41,7 +41,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
         options = <ColumnOptions> typeOrOptions;
     }
     return function (object: Object, propertyName: string) {
-        
+
         // todo: need to store not string type, but original type instead? (like in relation metadata)
         const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
@@ -51,7 +51,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
-        
+
         // check if there is no type in column options then set type from first function argument, or guessed one
         if (!options.type)
             options = Object.assign({ type: type } as ColumnOptions, options);

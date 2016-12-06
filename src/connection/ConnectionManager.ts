@@ -30,7 +30,7 @@ export class ConnectionManager {
      * List of connections registered in this connection manager.
      */
     protected connections: Connection[] = [];
-    
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------

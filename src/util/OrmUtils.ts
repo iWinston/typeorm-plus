@@ -1,7 +1,7 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export class OrmUtils {
-    
+
     static groupBy<T, R>(array: T[], propertyCallback: (item: T) => R): { id: R, items: T[] }[] {
         return array.reduce((groupedArray, value) => {
             const key = propertyCallback(value);

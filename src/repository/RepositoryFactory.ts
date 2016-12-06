@@ -9,7 +9,7 @@ import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
  * Factory used to create different types of repositories.
  */
 export class RepositoryFactory {
-    
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------

@@ -86,5 +86,5 @@ export interface ColumnOptions {
      * Works only with "datetime" columns.
      */
     readonly loadInLocalTimezone?: boolean;
-    
+
 }

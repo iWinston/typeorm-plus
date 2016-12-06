@@ -19,5 +19,5 @@ export interface EntityListenerMetadataArgs {
      * The type of the listener.
      */
     readonly type: EventListenerType;
-    
+
 }

@@ -103,7 +103,7 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.driver.should.be.instanceOf(MysqlDriver);
-            expect(() => connectionManager.get("myPostgresConnection")).to.throw(ConnectionNotFoundError);
+            expect(() => connectionManager.get("myPostgresConnection")).to.throw(Error);
         });
 
     });

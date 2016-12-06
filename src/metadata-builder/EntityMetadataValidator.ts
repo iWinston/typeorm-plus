@@ -96,8 +96,8 @@ export class EntityMetadataValidator {
             // or its one-side relation without JoinTable we should give an error
             if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
                 throw new MissingJoinTableError(entityMetadata, relation);
-            
-            
+
+
             // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
             // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
             // todo: if there is a relation, and inverse side is specified only on one side, shall we give error

@@ -1,6 +1,6 @@
 import {TargetMetadataArgsCollection} from "./TargetMetadataArgsCollection";
 
-export class PropertyMetadataArgsCollection<T extends { target?: Function|string, propertyName?: string }> extends TargetMetadataArgsCollection<T>  {
+export class PropertyMetadataArgsCollection<T extends { target?: Function|string, propertyName?: string }> extends TargetMetadataArgsCollection<T> {
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -13,7 +13,7 @@ export class PropertyMetadataArgsCollection<T extends { target?: Function|string
     }
 
     findByProperty(propertyName: string) {
-        return this.find(item => item.propertyName === propertyName);
+        return this.items.find(item => item.propertyName === propertyName);
     }
 
     hasWithProperty(propertyName: string) {

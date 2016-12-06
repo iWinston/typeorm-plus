@@ -38,7 +38,7 @@ export class PlainObjectToNewEntityTransformer {
                 const relationMetadata = relation.inverseEntityMetadata;
                 if (!relationMetadata)
                     throw new Error("Relation metadata for the relation " + metadata.name + "#" + relation.propertyName + " is missing");
-                
+
                 if (relation.isManyToMany || relation.isOneToMany) {
                     if (object[relation.propertyName] instanceof Array) {
                         entity[relation.propertyName] = object[relation.propertyName].map((subObject: any) => {
@@ -51,7 +51,7 @@ export class PlainObjectToNewEntityTransformer {
                                 if (existRelation)
                                     this.groupAndTransform(subEntity, existRelation, relationMetadata);
                             }
-                            
+
                             this.groupAndTransform(subEntity, subObject, relationMetadata);
                             return subEntity;
                         });
@@ -63,7 +63,7 @@ export class PlainObjectToNewEntityTransformer {
                         const subEntity = relationMetadata.create();
                         if (entity[relation.propertyName])
                             this.groupAndTransform(subEntity, entity[relation.propertyName], relationMetadata);
-                        
+
                         this.groupAndTransform(subEntity, object[relation.propertyName], relationMetadata);
                         entity[relation.propertyName] = subEntity;
                     } else {

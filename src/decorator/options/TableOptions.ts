@@ -21,5 +21,5 @@ export interface TableOptions {
      * Specifies if this table will be skipped during schema synchronization.
      */
     readonly skipSchemaSync?: boolean;
-    
+
 }

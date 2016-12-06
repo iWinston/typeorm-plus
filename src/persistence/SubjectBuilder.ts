@@ -547,7 +547,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider)
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName)  + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.name) +
+                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.name) +
                             " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName) + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
@@ -618,7 +618,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             }
 
                             if (loadedSubject)
-                                loadedSubject.relationUpdates.push({ relation: relation.inverseRelation, value: subject.entity });
+                                loadedSubject.relationUpdates.push({
+                                    relation: relation.inverseRelation,
+                                    value: subject.entity
+                                });
                         }
                     });
 
@@ -659,7 +662,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         // reference to this entity from inverse side (from loaded database entity)
                         // this applies only on one-to-many relationship
                         } else if (relation.isOneToMany && relation.inverseRelation) {
-                            relatedEntitySubject.relationUpdates.push({ relation: relation.inverseRelation, value: null });  // todo: implement same for one-to-one
+                            relatedEntitySubject.relationUpdates.push({
+                                relation: relation.inverseRelation,
+                                value: null
+                            }); // todo: implement same for one-to-one
                         }
 
                     }

@@ -6,7 +6,7 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 /**
  * Many-to-one relation allows to create type of relation when Entity1 can have single instance of Entity2, but
- * Entity2 can have a multiple instances of Entity1. Entity1 is an owner of the relationship, and storages Entity2 id 
+ * Entity2 can have a multiple instances of Entity1. Entity1 is an owner of the relationship, and storages Entity2 id
  * on its own side.
  */
 export function ManyToOne<T>(typeFunction: (type?: any) => ObjectType<T>, options?: RelationOptions): Function;
@@ -26,8 +26,8 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
  * on its own side.
  */
 export function ManyToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
-                              inverseSideOrOptions?: string|((object: T) => any)|RelationOptions,
-                              options?: RelationOptions): Function {
+                             inverseSideOrOptions?: string|((object: T) => any)|RelationOptions,
+                             options?: RelationOptions): Function {
     let inverseSideProperty: string|((object: T) => any);
     if (typeof inverseSideOrOptions === "object") {
         options = <RelationOptions> inverseSideOrOptions;

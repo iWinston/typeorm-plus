@@ -26,7 +26,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     indexName(customName: string|undefined, tableName: string, columns: string[]): string {
         if (customName)
             return customName;
-        
+
         const key = "ind_" + tableName + "_" + columns.join("_");
         return "ind_" + RandomGenerator.sha1(key).substr(0, 27);
     }
@@ -34,7 +34,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     joinColumnInverseSideName(joinColumnName: string, propertyName: string): string {
         if (joinColumnName)
             return joinColumnName;
-        
+
         return propertyName;
     }
 
@@ -78,5 +78,5 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     prefixTableName(prefix: string, originalTableName: string): string {
         return prefix + originalTableName;
     }
-    
+
 }

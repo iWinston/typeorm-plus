@@ -1,9 +1,9 @@
 import {EntitySubscriberInterface} from "./EntitySubscriberInterface";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
-import {EntityMetadataCollection} from "../metadata-args/collection/EntityMetadataCollection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Subject} from "../persistence/Subject";
+import {Connection} from "../connection/Connection";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -14,7 +14,7 @@ export class Broadcaster {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private entityMetadatas: EntityMetadataCollection,
+    constructor(private connection: Connection,
                 private subscriberMetadatas: EntitySubscriberInterface<any>[],
                 private entityListeners: EntityListenerMetadata[]) {
     }
@@ -200,7 +200,7 @@ export class Broadcaster {
             return;
 
         // collect load events for all children entities that were loaded with the main entity
-        const children = this.entityMetadatas.findByTarget(target).relations.reduce((promises, relation) => {
+        const children = this.connection.getMetadata(target).relations.reduce((promises, relation) => {
             if (!entity.hasOwnProperty(relation.propertyName))
                 return promises;
 

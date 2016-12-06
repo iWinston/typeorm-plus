@@ -253,7 +253,7 @@ export class PostgresDriver implements Driver {
 
         const builtParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string  => {
+        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
             const value = parameters[key.substr(1)];
             if (value instanceof Array) {
                 return value.map((v: any) => {

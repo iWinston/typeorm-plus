@@ -70,7 +70,7 @@ export class JoinTableMetadata {
             if (args.joinColumn.referencedColumnName)
                 this._joinColumnReferencedColumnName = args.joinColumn.referencedColumnName;
         }
-        
+
         if (args.inverseJoinColumn) {
             if (args.inverseJoinColumn.name)
                 this._inverseJoinColumnName = args.inverseJoinColumn.name;
@@ -89,7 +89,7 @@ export class JoinTableMetadata {
     get name() {
         if (this._name)
             return this._name;
-        
+
         return this.relation.entityMetadata.namingStrategy.joinTableName(
             this.relation.entityMetadata.table.nameWithoutPrefix,
             this.relation.inverseEntityMetadata.table.nameWithoutPrefix,
@@ -106,7 +106,7 @@ export class JoinTableMetadata {
     get joinColumnName() {
         if (this._joinColumnName)
             return this._joinColumnName;
-        
+
         return this.relation
             .entityMetadata
             .namingStrategy
@@ -124,7 +124,7 @@ export class JoinTableMetadata {
     get inverseJoinColumnName() {
         if (this._inverseJoinColumnName)
             return this._inverseJoinColumnName;
-        
+
         return this.relation
             .entityMetadata
             .namingStrategy
@@ -144,7 +144,7 @@ export class JoinTableMetadata {
             const referencedColumn = this.relation.entityMetadata.columns.find(column => column.name === this._joinColumnReferencedColumnName);
             if (!referencedColumn)
                 throw new Error(`Referenced column ${this._joinColumnReferencedColumnName} was not found in entity ${this.name}`);
-            
+
             return referencedColumn;
         }
 

@@ -13,7 +13,7 @@ describe("persistence > order of persistence execution operations", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchemaOnConnection: true,
-        }).should.be.rejectedWith(CircularRelationsError));
+        }).should.be.rejected); // CircularRelationsError
 
     });
 

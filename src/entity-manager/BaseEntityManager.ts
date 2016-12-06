@@ -239,7 +239,7 @@ export abstract class BaseEntityManager {
         if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const metadata = this.connection.entityMetadatas.findByTarget(entityClassOrName);
+        const metadata = this.connection.getMetadata(entityClassOrName);
         let repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
         if (!repositoryAggregator) {
             repositoryAggregator = new RepositoryAggregator(

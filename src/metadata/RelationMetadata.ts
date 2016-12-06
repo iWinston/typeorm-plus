@@ -65,7 +65,7 @@ export class RelationMetadata {
      * The name of the field that will contain count of the rows of the relation.
      */
     countField: string|undefined;
-    
+
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
@@ -201,7 +201,7 @@ export class RelationMetadata {
     }
 
     /**
-     * Gets the name of column in the database. 
+     * Gets the name of column in the database.
      * //Cannot be used with many-to-many relations since they don't have a column in the database.
      * //Also only owning sides of the relations have this property.
      */
@@ -214,8 +214,8 @@ export class RelationMetadata {
             } else if (this.joinColumn) {
                 return this.joinColumn.name;
             }
-            
-        } else if (this.hasInverseSide) { 
+
+        } else if (this.hasInverseSide) {
             if (this.inverseRelation.joinTable) {
                 return this.inverseRelation.joinTable.inverseJoinColumnName;
             } else if (this.inverseRelation.joinColumn && this.inverseRelation.joinColumn.referencedColumn) {
@@ -227,18 +227,18 @@ export class RelationMetadata {
     }
 
     /**
-     * Gets the name of column to which this relation is referenced. 
+     * Gets the name of column to which this relation is referenced.
      * //Cannot be used with many-to-many relations since all referenced are in the junction table.
      * //Also only owning sides of the relations have this property.
      */
     get referencedColumnName(): string {
         // if (!this.isOwning)
         //     throw new Error(`Only owning side of the relations can have information about referenced column names.`);
-        
+
         // for many-to-one and owner one-to-one relations we get referenced column from join column
         /*if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
             return this.joinColumn.referencedColumn.name;
-        
+
         // for many-to-many relation we give referenced column depend of owner side
         if (this.joinTable) { // need to check if this algorithm works correctly
             if (this.isOwning) {
@@ -251,7 +251,7 @@ export class RelationMetadata {
         if (this.isOwning) {
             if (this.joinTable) {
                 return this.joinTable.referencedColumn.name;
-                
+
             } else if (this.joinColumn) {
                 return this.joinColumn.referencedColumn.name;
             }
@@ -263,7 +263,7 @@ export class RelationMetadata {
                 return this.inverseRelation.joinColumn.name; // todo: didn't get this logic here
             }
         }
-        
+
         // this should not be possible, but anyway throw error
         throw new Error(`Cannot get referenced column name of the relation ${this.entityMetadata.name}#${this.name}`);
     }
@@ -304,8 +304,8 @@ export class RelationMetadata {
      */
     get isOwning() {
         return  !!(this.isManyToOne ||
-            (this.isManyToMany && this.joinTable) ||
-            (this.isOneToOne && this.joinColumn));
+                (this.isManyToMany && this.joinTable) ||
+                (this.isOneToOne && this.joinColumn));
     }
 
     /**

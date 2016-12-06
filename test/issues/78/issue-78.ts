@@ -31,8 +31,8 @@ describe("github issues > #78 repository 'create' is skipping inherited fields",
 
         expect(deliveryNoteEntity).not.to.be.empty;
         deliveryNoteEntity.should.be.instanceof(DeliveryNote);
-        deliveryNoteEntity.should.be.eql({
-            id: 1,
+        const simpleObject = Object.assign({}, deliveryNoteEntity);
+        simpleObject.should.be.eql({
             dollarRate: 0.5,
             orderBy: "money",
             comments: "this is comment",
@@ -40,7 +40,8 @@ describe("github issues > #78 repository 'create' is skipping inherited fields",
             vat: 50,
             total: 60,
             createdBy: "Amir",
-            invoice: "Total Invoice: 60"
+            invoice: "Total Invoice: 60",
+            id: 1
         });
 
     })));

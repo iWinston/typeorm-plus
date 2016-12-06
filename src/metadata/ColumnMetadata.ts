@@ -6,7 +6,7 @@ import {RelationMetadata} from "./RelationMetadata";
 
 /**
  * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
- * we are working with. 
+ * we are working with.
  * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
  * date column.
  */
@@ -83,7 +83,7 @@ export class ColumnMetadata {
     /**
      * Indicates if value in the database should be unique or not.
      */
-    readonly isUnique: boolean= false;
+    readonly isUnique: boolean = false;
 
     /**
      * Indicates if column can contain nulls or not.
@@ -203,7 +203,7 @@ export class ColumnMetadata {
      * Column name in the database.
      */
     get name(): string {
-        
+
         // if this column is embedded's column then apply different entity
         if (this.embeddedMetadata)
             return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.propertyName, this.propertyName, this._name);
@@ -211,7 +211,7 @@ export class ColumnMetadata {
         // if there is a naming strategy then use it to normalize propertyName as column name
         if (this.entityMetadata)
             return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
-        
+
         throw new Error(`Column ${this._name ? this._name + " " : ""}is not attached to any entity or embedded.`);
     }
 
@@ -270,10 +270,10 @@ export class ColumnMetadata {
     get embeddedProperty() {
         if (!this.embeddedMetadata)
             throw new Error(`This column${ this._name ? this._name + " " : "" } is not in embedded entity.`);
-        
+
         return this.embeddedMetadata.propertyName;
     }
-    
+
     // ---------------------------------------------------------------------
     // Public Methods
     // ---------------------------------------------------------------------
@@ -281,13 +281,13 @@ export class ColumnMetadata {
     hasEntityValue(entity: any) {
         if (!entity)
             return false;
-        
+
         if (this.isInEmbedded) {
-            return  entity[this.embeddedProperty] !== undefined && 
-                    entity[this.embeddedProperty] !== null && 
-                    entity[this.embeddedProperty][this.propertyName] !== undefined && 
+            return  entity[this.embeddedProperty] !== undefined &&
+                    entity[this.embeddedProperty] !== null &&
+                    entity[this.embeddedProperty][this.propertyName] !== undefined &&
                     entity[this.embeddedProperty][this.propertyName] !== null;
-            
+
         } else {
             return  entity[this.propertyName] !== undefined &&
                     entity[this.propertyName] !== null;

@@ -518,7 +518,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         const promises = foreignKeys.map(foreignKey => {
             const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
-            let sql =   `ALTER TABLE "${dbTable.name}" ADD CONSTRAINT "${foreignKey.name}" ` +
+            let sql = `ALTER TABLE "${dbTable.name}" ADD CONSTRAINT "${foreignKey.name}" ` +
                 `FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;

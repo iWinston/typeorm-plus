@@ -159,7 +159,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const queryRunner = await this.queryRunnerProvider.provide();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
-            const values: any = { };
+            const values: any = {};
             if (relation.isOwning) {
                 values[relation.junctionEntityMetadata.columns[0].name] = entityId;
                 values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
@@ -205,7 +205,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const queryRunner = await this.queryRunnerProvider.provide();
         try {
             const insertPromises = entityIds.map(entityId => {
-                const values: any = { };
+                const values: any = {};
                 if (relation.isOwning) {
                     values[relation.junctionEntityMetadata.columns[0].name] = entityId;
                     values[relation.junctionEntityMetadata.columns[1].name] = relatedEntityId;
@@ -457,13 +457,13 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
                 .select(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " AS id")
                 .fromTable(relation.junctionEntityMetadata.table.name, "junction")
-                .andWhere(escapeAlias("junction") + "." + escapeColumn(ownerEntityColumn.name) + "=:entityId", { entityId: entityId });
+                .andWhere(escapeAlias("junction") + "." + escapeColumn(ownerEntityColumn.name) + "=:entityId", {entityId: entityId});
 
             if (inIds && inIds.length > 0)
-                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " IN (:inIds)", { inIds: inIds });
+                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " IN (:inIds)", {inIds: inIds});
 
             if (notInIds && notInIds.length > 0)
-                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " NOT IN (:notInIds)", { notInIds: notInIds });
+                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " NOT IN (:notInIds)", {notInIds: notInIds});
 
             return qb.getScalarMany()
                 .then((results: { id: any }[]) => {

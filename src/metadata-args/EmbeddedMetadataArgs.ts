@@ -17,5 +17,5 @@ export interface EmbeddedMetadataArgs {
      * Type of the class to be embedded.
      */
     readonly type: ((type?: any) => Function);
-    
+
 }

@@ -317,7 +317,7 @@ export class SubjectOperationExecutor {
                     if (!Object.keys(conditions).length)
                         return;
 
-                    const updateOptions: ObjectLiteral = { };
+                    const updateOptions: ObjectLiteral = {};
                     const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === referencedColumn.propertyName);
                     if (columnRelation) {
                         let id = subject.entity[referencedColumn.propertyName][columnRelation.propertyName];
@@ -584,7 +584,7 @@ export class SubjectOperationExecutor {
 
         subject.diffColumns.forEach(column => {
             if (!column.entityTarget) return; // todo: how this can be possible?
-            const metadata = this.connection.entityMetadatas.findByTarget(column.entityTarget);
+            const metadata = this.connection.getMetadata(column.entityTarget);
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
             if (!valueMap) {
                 valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
@@ -595,7 +595,7 @@ export class SubjectOperationExecutor {
         });
 
         subject.diffRelations.forEach(relation => {
-            const metadata = this.connection.entityMetadatas.findByTarget(relation.entityTarget);
+            const metadata = this.connection.getMetadata(relation.entityTarget);
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.table.name);
             if (!valueMap) {
                 valueMap = { tableName: metadata.table.name, metadata: metadata, values: {} };
@@ -634,7 +634,11 @@ export class SubjectOperationExecutor {
             if (subject.metadata.parentEntityMetadata.hasUpdateDateColumn) {
                 let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
                 if (!valueMap) {
-                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
+                    valueMap = {
+                        tableName: subject.metadata.parentEntityMetadata.table.name,
+                        metadata: subject.metadata.parentEntityMetadata,
+                        values: {}
+                    };
                     valueMaps.push(valueMap);
                 }
 
@@ -644,7 +648,11 @@ export class SubjectOperationExecutor {
             if (subject.metadata.parentEntityMetadata.hasVersionColumn) {
                 let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.table.name);
                 if (!valueMap) {
-                    valueMap = { tableName: subject.metadata.parentEntityMetadata.table.name, metadata: subject.metadata.parentEntityMetadata, values: {} };
+                    valueMap = {
+                        tableName: subject.metadata.parentEntityMetadata.table.name,
+                        metadata: subject.metadata.parentEntityMetadata,
+                        values: {}
+                    };
                     valueMaps.push(valueMap);
                 }
 
@@ -825,7 +833,10 @@ export class SubjectOperationExecutor {
         const ownColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
         const relateColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[1] : junctionMetadata.columns[0];
         const removePromises = junctionRemove.junctionRelationIds.map(relationId => {
-            return this.queryRunner.delete(junctionMetadata.table.name, { [ownColumn.name]: ownId, [relateColumn.name]: relationId });
+            return this.queryRunner.delete(junctionMetadata.table.name, {
+                [ownColumn.name]: ownId,
+                [relateColumn.name]: relationId
+            });
         });
 
         await Promise.all(removePromises);

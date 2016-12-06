@@ -38,5 +38,5 @@ export interface TableMetadataArgs {
      * Whether table must be synced during schema build or not
      */
     readonly skipSchemaSync?: boolean;
-    
+
 }

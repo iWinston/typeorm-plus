@@ -20,7 +20,7 @@ export function PrimaryGeneratedColumn(options?: ColumnOptions): Function {
 
         // check if there is no type in column options then set the int type - by default for auto generated column
         if (!options.type)
-            options = Object.assign({ type: "int" } as ColumnOptions, options);
+            options = Object.assign({type: "int"} as ColumnOptions, options);
 
         // check if column is not nullable, because we cannot allow a primary key to be nullable
         if (options.nullable)

@@ -3,7 +3,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Options to be passed to find methods.
- * 
+ *
  * Example:
  *  const options: FindOptions = {
  *     alias: "photo",
@@ -90,7 +90,7 @@ export interface FindOptions {
     having?: string;
 
     /**
-     * WHERE conditions. Key-value object pair, where each key is a column name and value is a column value. 
+     * WHERE conditions. Key-value object pair, where each key is a column name and value is a column value.
      * "AND" is applied between all parameters.
      */
     whereConditions?: ObjectLiteral;
@@ -115,7 +115,7 @@ export interface FindOptions {
      * Array of columns to LEFT JOIN.
      */
     leftJoinAndSelect?: { [key: string]: string };
-    
+
     /**
      * Array of columns to INNER JOIN.
      */
@@ -140,5 +140,5 @@ export interface FindOptions {
      * Indicates if query builder should add virtual columns to the entity too.
      */
     enabledOptions?: ("RELATION_ID_VALUES")[];
-    
+
 }

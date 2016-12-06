@@ -23,5 +23,5 @@ export interface EntityMetadataArgs {
     readonly indexMetadatas?: IndexMetadata[];
     readonly foreignKeyMetadatas?: ForeignKeyMetadata[];
     readonly embeddedMetadatas?: EmbeddedMetadata[];
-    
+
 }

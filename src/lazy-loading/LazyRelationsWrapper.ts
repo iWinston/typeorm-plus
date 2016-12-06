@@ -23,7 +23,7 @@ export class LazyRelationsWrapper {
         const index = "__" + relation.propertyName + "__";
         const promiseIndex = "__promise__" + relation.propertyName + "__";
         const resolveIndex = "__has__" + relation.propertyName + "__";
-        
+
         Object.defineProperty(object, relation.propertyName, {
             get: function() {
                 if (this[resolveIndex] === true)
@@ -118,5 +118,5 @@ export class LazyRelationsWrapper {
             configurable: true
         });
     }
-    
+
 }

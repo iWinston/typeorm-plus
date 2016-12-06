@@ -127,7 +127,7 @@ export class EntityManager extends BaseEntityManager {
         }
     }
 
-    
+
     /**
      * Finds entities that match given conditions.
      */
@@ -154,10 +154,10 @@ export class EntityManager extends BaseEntityManager {
     find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity[]> {
         if (conditionsOrFindOptions && options) {
             return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
-            
+
         } else if (conditionsOrFindOptions) {
             return this.getRepository(entityClass).find(conditionsOrFindOptions);
-            
+
         } else {
             return this.getRepository(entityClass).find();
         }

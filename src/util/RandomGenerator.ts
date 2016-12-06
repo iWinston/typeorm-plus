@@ -45,7 +45,7 @@ export class RandomGenerator {
         // utf8_encode
         str = /*unescape*/(encodeURIComponent(str));
         let strLen = str.length;
-    
+
         let wordArray = [];
         for (i = 0; i < strLen - 3; i += 4) {
             j = str.charCodeAt(i) << 24 |
@@ -54,7 +54,7 @@ export class RandomGenerator {
                 str.charCodeAt(i + 3);
             wordArray.push(j);
         }
-    
+
         switch (strLen % 4) {
             case 0:
                 i = 0x080000000;
@@ -72,16 +72,16 @@ export class RandomGenerator {
                     8 | 0x80;
                 break;
         }
-    
+
         wordArray.push(i);
-    
+
         while ((wordArray.length % 16) !== 14) {
             wordArray.push(0);
         }
-    
+
         wordArray.push(strLen >>> 29);
         wordArray.push((strLen << 3) & 0x0ffffffff);
-    
+
         for (blockstart = 0; blockstart < wordArray.length; blockstart += 16) {
             for (i = 0; i < 16; i++) {
                 W[i] = wordArray[blockstart + i];
@@ -89,13 +89,13 @@ export class RandomGenerator {
             for (i = 16; i <= 79; i++) {
                 W[i] = _rotLeft(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
             }
-    
+
             A = H0;
             B = H1;
             C = H2;
             D = H3;
             E = H4;
-    
+
             for (i = 0; i <= 19; i++) {
                 temp = (_rotLeft(A, 5) + ((B & C) | (~B & D)) + E + W[i] + 0x5A827999) & 0x0ffffffff;
                 E = D;
@@ -104,7 +104,7 @@ export class RandomGenerator {
                 B = A;
                 A = temp;
             }
-    
+
             for (i = 20; i <= 39; i++) {
                 temp = (_rotLeft(A, 5) + (B ^ C ^ D) + E + W[i] + 0x6ED9EBA1) & 0x0ffffffff;
                 E = D;
@@ -113,7 +113,7 @@ export class RandomGenerator {
                 B = A;
                 A = temp;
             }
-    
+
             for (i = 40; i <= 59; i++) {
                 temp = (_rotLeft(A, 5) + ((B & C) | (B & D) | (C & D)) + E + W[i] + 0x8F1BBCDC) & 0x0ffffffff;
                 E = D;
@@ -122,7 +122,7 @@ export class RandomGenerator {
                 B = A;
                 A = temp;
             }
-    
+
             for (i = 60; i <= 79; i++) {
                 temp = (_rotLeft(A, 5) + (B ^ C ^ D) + E + W[i] + 0xCA62C1D6) & 0x0ffffffff;
                 E = D;
@@ -131,16 +131,16 @@ export class RandomGenerator {
                 B = A;
                 A = temp;
             }
-    
+
             H0 = (H0 + A) & 0x0ffffffff;
             H1 = (H1 + B) & 0x0ffffffff;
             H2 = (H2 + C) & 0x0ffffffff;
             H3 = (H3 + D) & 0x0ffffffff;
             H4 = (H4 + E) & 0x0ffffffff;
         }
-    
+
         temp = _cvtHex(H0) + _cvtHex(H1) + _cvtHex(H2) + _cvtHex(H3) + _cvtHex(H4);
         return temp.toLowerCase();
     }
-    
+
 }

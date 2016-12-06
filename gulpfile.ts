@@ -183,17 +183,6 @@ export class Gulpfile {
     }
 
     /**
-     * This task will replace all typescript code blocks in the README (since npm does not support typescript syntax
-     * highlighting) and copy this README file into the package folder.
-     */
-    @Task()
-    packageReadmeFile() {
-        return gulp.src("./README.md")
-            // .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
-            .pipe(gulp.dest("./build/package"));
-    }
-
-    /**
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
@@ -202,8 +191,7 @@ export class Gulpfile {
             "clean",
             "packageCompile",
             "packageMoveCompiledFiles",
-            ["packageClearCompileDirectory", "packageReplaceReferences"],
-            ["packagePreparePackageFile", "packageReadmeFile"]
+            ["packageClearCompileDirectory", "packageReplaceReferences", "packagePreparePackageFile"],
         ];
     }
 

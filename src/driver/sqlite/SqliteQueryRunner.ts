@@ -327,7 +327,7 @@ export class SqliteQueryRunner implements QueryRunner {
             // create index schemas from the loaded indices
             const indicesPromises = dbIndices
                 .filter(dbIndex => {
-                    return  dbIndex["origin"] !== "pk" &&
+                    return dbIndex["origin"] !== "pk" &&
                         (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
                         (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
                 })

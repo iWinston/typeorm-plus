@@ -10,7 +10,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     // todo: implement moving
     // todo: implement removing
-    
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -73,7 +73,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
             .getCount();
     }
-    
+
     /**
      * Creates a query builder used to get ancestors of the entities in the tree.
      */
@@ -141,7 +141,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             };
         });
     }
-    
+
     protected buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const childProperty = this.metadata.treeChildrenRelation.propertyName;
         const parentEntityId = entity[this.metadata.firstPrimaryColumn.propertyName];
@@ -152,7 +152,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             this.buildChildrenEntityTree(childEntity, entities, relationMaps);
         });
     }
-    
+
     protected buildParentEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const parentProperty = this.metadata.treeParentRelation.propertyName;
         const entityId = entity[this.metadata.firstPrimaryColumn.propertyName];
@@ -160,7 +160,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const parentEntity = entities.find(entity => {
             if (!parentRelationMap)
                 return false;
-                
+
             return entity[this.metadata.firstPrimaryColumn.propertyName] === parentRelationMap.parentId;
         });
         if (parentEntity) {
@@ -168,5 +168,5 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             this.buildParentEntityTree(entity[parentProperty], entities, relationMaps);
         }
     }
-    
+
 }
