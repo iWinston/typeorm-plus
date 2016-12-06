@@ -718,7 +718,7 @@ createConnection(/*...*/).then(async connection => {
     let photoRepository = connection.getRepository(Photo);
     let photos = await photoRepository.createQueryBuilder("photo")
             .innerJoinAndSelect("photo.metadata", "metadata")
-            .getResults();
+            .getMany();
 
 
 }).catch(error => console.log(error));
@@ -975,7 +975,7 @@ let photos = await photoRepository
     .setFirstResult(5)
     .setMaxResults(10)
     .setParameters({ photoName: "My", bearName: "Mishka" })
-    .getResults();
+    .getMany();
 ```
 
 This query builder will select you all photos that are published and whose name is "My" or "Mishka", 
@@ -1001,6 +1001,7 @@ You'll use query builder in your application a lot. Learn more about QueryBuilde
 * [Subscribers and entity listeners](https://typeorm.github.io/subscribers-and-entity-listeners.html)
 * [Using service container](https://typeorm.github.io/using-service-container.html)
 * [Decorators Reference](https://typeorm.github.io/decorators-reference.html)
+* [Usage in the browser](https://typeorm.github.io/usage-in-browser.html)
 
 ## Examples
 

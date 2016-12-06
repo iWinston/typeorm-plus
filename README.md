@@ -87,7 +87,14 @@ Also make sure you are using TypeScript compiler version > **2.1** and you have 
 
 TypeORM was tested with Node.JS version 6 and above. 
 If you have errors during app bootstrap, try to upgrade your node.js version to the latest version.
-    
+
+## Usage in the browser with WebSQL
+
+TypeORM works in the browser and has experimental support of WebSQL.
+If you want to use TypeORM in the browser then you need to `npm i typeorm-browser` instead of `typeorm`.
+More information about it in [this page](https://typeorm.github.io/usage-in-browser.html). 
+Also take a look on [this sample](https://github.com/typeorm/browser-example).
+
 ## Quick Start
 
 In TypeORM tables are created from Entities. 
@@ -1033,6 +1040,7 @@ You'll use query builder in your application a lot. Learn more about QueryBuilde
 * [Subscribers and entity listeners](https://typeorm.github.io/subscribers-and-entity-listeners.html)
 * [Using service container](https://typeorm.github.io/using-service-container.html)
 * [Decorators Reference](https://typeorm.github.io/decorators-reference.html)
+* [Usage in the browser](https://typeorm.github.io/usage-in-browser.html)
 
 ## Samples
 
