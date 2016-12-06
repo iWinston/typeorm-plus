@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.0.2-alpha.70",
+  "version": "0.0.2",
   "description": "Data-mapper ORM for Typescript",
   "license": "MIT",
   "readmeFilename": "README.md",
