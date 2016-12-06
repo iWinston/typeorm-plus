@@ -152,7 +152,7 @@ export class Gulpfile {
      */
     @Task()
     browserPublish() {
-        return gulp.src("*.js", { read: false })
+        return gulp.src("package.json", { read: false })
             .pipe(shell([
                 "cd ./build/browser-package && npm publish"
             ]));
@@ -167,7 +167,7 @@ export class Gulpfile {
      */
     @Task()
     nodePublish() {
-        return gulp.src("*.js", { read: false })
+        return gulp.src("package.json", { read: false })
             .pipe(shell([
                 "cd ./build/package && npm publish"
             ]));
