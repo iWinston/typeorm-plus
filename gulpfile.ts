@@ -232,6 +232,15 @@ export class Gulpfile {
     }
 
     /**
+     * Copies package_browser.json into package.json for the typeorm-browser package.
+     */
+    @Task()
+    packageCopyReadme() {
+        return gulp.src("./README.md")
+            .pipe(gulp.dest("./build/package"));
+    }
+
+    /**
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
@@ -239,7 +248,7 @@ export class Gulpfile {
         return [
             "packageCompile",
             "packageMoveCompiledFiles",
-            ["packageClearCompileDirectory", "packageReplaceReferences", "packagePreparePackageFile"],
+            ["packageClearCompileDirectory", "packageReplaceReferences", "packagePreparePackageFile", "packageCopyReadme"],
         ];
     }
 
