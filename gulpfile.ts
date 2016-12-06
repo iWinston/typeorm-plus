@@ -40,7 +40,12 @@ export class Gulpfile {
             .pipe(shell(["tsc"]));
     }
 
+    // -------------------------------------------------------------------------
+    // Build and packaging for browser
+    // -------------------------------------------------------------------------
+
     /**
+     * Copies all source files into destination folder in a correct structure.
      */
     @Task()
     browserCopySources() {
@@ -56,6 +61,9 @@ export class Gulpfile {
             .pipe(gulp.dest("./build/browser/typeorm"));
     }
 
+    /**
+     * Creates special main file for browser build.
+     */
     @Task()
     browserCopyMainBrowserFile() {
         return gulp.src("./package.json", { read: false })
@@ -63,6 +71,9 @@ export class Gulpfile {
             .pipe(gulp.dest("./build/browser"));
     }
 
+    /**
+     * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
+     */
     @Task()
     browserCopyPlatformTools() {
         return gulp.src("./src/platform/BrowserPlatformTools.ts")
@@ -71,14 +82,13 @@ export class Gulpfile {
     }
 
     /**
-     * Runs typescript files compilation.
+     * Runs files compilation of browser-specific source code.
      */
     @MergedTask()
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
             outFile: "typeorm-browser.js",
             module: "system",
-            target: "es6",
             typescript: require("typescript")
         });
         const tsResult = gulp.src(["./build/browser/**/*.ts", "./node_modules/@types/**/*.ts"])
@@ -86,7 +96,7 @@ export class Gulpfile {
             .pipe(tsProject());
 
         return [
-            tsResult.dts.pipe(gulp.dest("./build/package")),
+            tsResult.dts.pipe(gulp.dest("./build/browser-package")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
                 .pipe(gulp.dest("./build/browser-package"))
@@ -94,30 +104,69 @@ export class Gulpfile {
     }
 
     /**
-     */
-    @SequenceTask()
-    browser() {
-        return [["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"], "browserCompile", "uglify"];
-    }
-
-    /**
+     * Uglifys all code.
      */
     @Task()
-    uglify() {
+    browserUglify() {
         return gulp.src("./build/browser-package/*.js")
             .pipe(uglify())
+            .pipe(rename("typeorm-browser.min.js"))
             .pipe(gulp.dest("./build/browser-package"));
     }
 
+    /**
+     * Copies README_BROWSER.md into README.md for the typeorm-browser package.
+     */
+    @Task()
+    browserCopyReadmeFile() {
+        return gulp.src("./README_BROWSER.md")
+            .pipe(rename("README.md"))
+            .pipe(gulp.dest("./build/browser-package"));
+    }
+
+    /**
+     * Copies package_browser.json into package.json for the typeorm-browser package.
+     */
+    @Task()
+    browserCopyPackageJsonFile() {
+        return gulp.src("./package_browser.json")
+            .pipe(rename("package.json"))
+            .pipe(replace("\"private\": true,", "\"private\": false,"))
+            .pipe(gulp.dest("./build/browser-package"));
+    }
+
+    /**
+     * Runs all tasks for the browser build and package.
+     */
+    @SequenceTask()
+    browserPackage() {
+        return [
+            ["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"],
+            "browserCompile",
+            ["browserCopyReadmeFile", "browserUglify", "browserCopyPackageJsonFile"]
+        ];
+    }
+
+    /**
+     * Publishes a browser package.
+     */
+    @Task()
+    browserPublish() {
+        return gulp.src("*.js", { read: false })
+            .pipe(shell([
+                "cd ./build/browser-package && npm publish"
+            ]));
+    }
+
     // -------------------------------------------------------------------------
-    // Packaging and Publishing tasks
+    // Main Packaging and Publishing tasks
     // -------------------------------------------------------------------------
 
     /**
      * Publishes a package to npm from ./build/package directory.
      */
     @Task()
-    npmPublish() {
+    nodePublish() {
         return gulp.src("*.js", { read: false })
             .pipe(shell([
                 "cd ./build/package && npm publish"
@@ -186,12 +235,22 @@ export class Gulpfile {
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
-    package() {
+    nodePackage() {
         return [
-            "clean",
             "packageCompile",
             "packageMoveCompiledFiles",
             ["packageClearCompileDirectory", "packageReplaceReferences", "packagePreparePackageFile"],
+        ];
+    }
+
+    /**
+     * Creates a package that can be published to npm.
+     */
+    @SequenceTask()
+    package() {
+        return [
+            "clean",
+            ["nodePackage", "browserPackage"]
         ];
     }
 
@@ -200,7 +259,7 @@ export class Gulpfile {
      */
     @SequenceTask()
     publish() {
-        return ["package", "npmPublish"];
+        return ["package", "nodePublish", "browserPublish"];
     }
 
     // -------------------------------------------------------------------------

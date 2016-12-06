@@ -64,7 +64,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        await this.query(`PRAGMA foreign_keys = OFF;`);
+        // await this.query(`PRAGMA foreign_keys = OFF;`);
         await this.beginTransaction();
         try {
             const selectDropsQuery = `select 'drop table ' || name || ';' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
@@ -78,7 +78,7 @@ export class WebsqlQueryRunner implements QueryRunner {
 
         } finally {
             await this.release();
-            await this.query(`PRAGMA foreign_keys = ON;`);
+            // await this.query(`PRAGMA foreign_keys = ON;`);
         }
     }
 
@@ -279,7 +279,7 @@ export class WebsqlQueryRunner implements QueryRunner {
             const tableSchema = new TableSchema(dbTable["name"]);
 
             // load columns and indices
-            const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
+            /*const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
                 this.query(`PRAGMA table_info("${dbTable["name"]}")`),
                 this.query(`PRAGMA index_list("${dbTable["name"]}")`),
                 this.query(`PRAGMA foreign_key_list("${dbTable["name"]}")`),
@@ -368,7 +368,7 @@ export class WebsqlQueryRunner implements QueryRunner {
                 });
 
             const indices = await Promise.all(indicesPromises);
-            tableSchema.indices = indices.filter(index => !!index) as IndexSchema[];
+            tableSchema.indices = indices.filter(index => !!index) as IndexSchema[];*/
 
             return tableSchema;
         }));

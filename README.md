@@ -10,8 +10,8 @@ If you notice bug or have something not working please report an issue, we'll tr
 More documentation and features expected to be soon. Feel free to contribute.
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
-Typescript that can be used with Typescript or Javascript (ES5, ES6, ES7).
-Its goal to always support latest Javascript features and provide features
+TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
+Its goal to always support latest JavaScript features and provide features
 that help you to develop any kind of applications that use database - from
 small applications with a few tables to large scale enterprise applications.
 TypeORM helps you to:
