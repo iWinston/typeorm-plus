@@ -627,7 +627,7 @@ export class QueryBuilder<Entity> {
      */
     where(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "simple", condition: where });
-        if (parameters) this.addParameters(parameters);
+        if (parameters) this.setParameters(parameters);
         return this;
     }
 
@@ -637,7 +637,7 @@ export class QueryBuilder<Entity> {
      */
     andWhere(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "and", condition: where });
-        if (parameters) this.addParameters(parameters);
+        if (parameters) this.setParameters(parameters);
         return this;
     }
 
@@ -658,7 +658,7 @@ export class QueryBuilder<Entity> {
      */
     orWhere(where: string, parameters?: ObjectLiteral): this {
         this.wheres.push({ type: "or", condition: where });
-        if (parameters) this.addParameters(parameters);
+        if (parameters) this.setParameters(parameters);
         return this;
     }
 
@@ -681,7 +681,7 @@ export class QueryBuilder<Entity> {
      */
     having(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "simple", condition: having });
-        if (parameters) this.addParameters(parameters);
+        if (parameters) this.setParameters(parameters);
         return this;
     }
 
@@ -691,7 +691,7 @@ export class QueryBuilder<Entity> {
      */
     andHaving(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "and", condition: having });
-        if (parameters) this.addParameters(parameters);
+        if (parameters) this.setParameters(parameters);
         return this;
     }
 
@@ -701,7 +701,7 @@ export class QueryBuilder<Entity> {
      */
     orHaving(having: string, parameters?: ObjectLiteral): this {
         this.havings.push({ type: "or", condition: having });
-        if (parameters) this.addParameters(parameters);
+        if (parameters) this.setParameters(parameters);
         return this;
     }
 
@@ -788,20 +788,21 @@ export class QueryBuilder<Entity> {
     }
 
     /**
-     * Sets given object literal as parameters.
-     * Note, that it clears all previously set parameters.
-
+     * Adds all parameters from the given object.
+     * Unlike setParameters method it does not clear all previously set parameters.
+     */
     setParameters(parameters: ObjectLiteral): this {
-        this.parameters = {};
         Object.keys(parameters).forEach(key => {
             this.parameters[key] = parameters[key];
         });
         return this;
     }
-*/
+
     /**
      * Adds all parameters from the given object.
      * Unlike setParameters method it does not clear all previously set parameters.
+     *
+     * @deprecated use setParameters instead
      */
     addParameters(parameters: ObjectLiteral): this {
         Object.keys(parameters).forEach(key => {
@@ -1287,7 +1288,7 @@ export class QueryBuilder<Entity> {
                 .addSelect(`COUNT(${ this.connection.driver.escapeAliasName(relation.propertyName) + "." + this.connection.driver.escapeColumnName(relation.inverseEntityMetadata.primaryColumn.name) }) as cnt`)
                 .from(parentMetadata.target, parentMetadata.name)
                 .leftJoin(parentMetadata.name + "." + relation.propertyName, relation.propertyName, relationCountMeta.condition)
-                .addParameters(this.parameters)
+                .setParameters(this.parameters)
                 .where(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} IN (:relationCountIds)`, {relationCountIds: ids})
                 .groupBy(parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName)
                 .getScalarMany()
@@ -1439,7 +1440,7 @@ export class QueryBuilder<Entity> {
                     (<any> object)["updateQuerySet_" + key] = (<any> this.updateQuerySet)[key];
                     return object;
                 }, {});
-                this.addParameters(params);
+                this.setParameters(params);
                 return "UPDATE " + tableName + " " + (alias ? this.connection.driver.escapeAliasName(alias) : "") + " SET " + updateSet;
         }
 

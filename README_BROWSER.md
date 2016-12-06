@@ -717,7 +717,7 @@ createConnection(/*...*/).then(async connection => {
     /*...*/
     let photoRepository = connection.getRepository(Photo);
     let photos = await photoRepository.createQueryBuilder("photo")
-            .innerJoinAndSelect("photo.metadata")
+            .innerJoinAndSelect("photo.metadata", "metadata")
             .getResults();
 
 
@@ -767,8 +767,9 @@ createConnection(options).then(async connection => {
     metadata.compressed = true;
     metadata.comment = "cybershoot";
     metadata.orientation = "portait";
-    metadata.photo = photo; // this way we connect them
-
+    
+    photo.metadata = metadata; // this way we connect them
+    
     // get repository
     let photoRepository = connection.getRepository(Photo);
 
@@ -919,7 +920,7 @@ const options: CreateConnectionOptions = {
 };
 ```
         
-Now lets insert author and photo to our database:
+Now lets insert albums and photos to our database:
 
 ```typescript
 let connection = await createConnection(options);
@@ -935,18 +936,20 @@ album2.name = "Me";
 let photo1 = new Photo();
 photo1.name = "Me and Bears";
 photo1.description = "I am near polar bears";
-photo1.filename = "photo-with-bears.jpg"
+photo1.filename = "photo-with-bears.jpg";
+photo1.albums.push(album1);
 
 let photo2 = new Photo();
 photo2.name = "Me and Bears";
 photo2.description = "I am near polar bears";
-photo2.filename = "photo-with-bears.jpg"
+photo2.filename = "photo-with-bears.jpg";
+photo2.albums.push(album2);
 
 // get entity repository
 let photoRepository = connection.getRepository(Photo);
 
 // first save a first photo
-// we only save a photos, albums are persisted
+// we only save the photos, albums are persisted
 // automatically because of cascade options
 await photoRepository.persist(photo1);
 

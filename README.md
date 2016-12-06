@@ -9,6 +9,8 @@ Share this library with friends on twitter and everywhere else you can.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
+> 0.0.3 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
+
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
 TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
 Its goal to always support latest JavaScript features and provide features
@@ -31,7 +33,8 @@ maintainable applications with less problems.
 The benefit of using TypeORM for the programmer is the ability to focus on
 the business logic and worry about persistence only as a secondary problem.
 
-TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/) and [Doctrine](http://www.doctrine-project.org/).
+TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
+ [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
 ## Installation
 
@@ -746,8 +749,8 @@ createConnection(/*...*/).then(async connection => {
     /*...*/
     let photoRepository = connection.getRepository(Photo);
     let photos = await photoRepository.createQueryBuilder("photo")
-            .innerJoinAndSelect("photo.metadata")
-            .getResults();
+            .innerJoinAndSelect("photo.metadata", "metadata")
+            .getMany();
 
 
 }).catch(error => console.log(error));
@@ -796,7 +799,8 @@ createConnection(options).then(async connection => {
     metadata.compressed = true;
     metadata.comment = "cybershoot";
     metadata.orientation = "portait";
-    metadata.photo = photo; // this way we connect them
+    
+    photo.metadata = metadata; // this way we connect them
 
     // get repository
     let photoRepository = connection.getRepository(Photo);
@@ -948,7 +952,7 @@ const options: CreateConnectionOptions = {
 };
 ```
         
-Now lets insert author and photo to our database:
+Now lets insert albums and photos to our database:
 
 ```typescript
 let connection = await createConnection(options);
@@ -964,18 +968,20 @@ album2.name = "Me";
 let photo1 = new Photo();
 photo1.name = "Me and Bears";
 photo1.description = "I am near polar bears";
-photo1.filename = "photo-with-bears.jpg"
+photo1.filename = "photo-with-bears.jpg";
+photo1.albums.push(album1);
 
 let photo2 = new Photo();
 photo2.name = "Me and Bears";
 photo2.description = "I am near polar bears";
-photo2.filename = "photo-with-bears.jpg"
+photo2.filename = "photo-with-bears.jpg";
+photo2.albums.push(album2);
 
 // get entity repository
 let photoRepository = connection.getRepository(Photo);
 
 // first save a first photo
-// we only save a photos, albums are persisted
+// we only save the photos, albums are persisted
 // automatically because of cascade options
 await photoRepository.persist(photo1);
 
@@ -993,15 +999,15 @@ You can use QueryBuilder to build even more complex queries. For example you can
 let photoRepository = connection.getRepository(Photo);
 let photos = await photoRepository
     .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
-    .innerJoinAndSelect("photo.metadata")
-    .leftJoinAndSelect("photo.albums")
+    .innerJoinAndSelect("photo.metadata", "metadata")
+    .leftJoinAndSelect("photo.albums", "albums")
     .where("photo.isPublished=true")
     .andWhere("(photo.name=:photoName OR photo.name=:bearName)")
     .orderBy("photo.id", "DESC")
     .setFirstResult(5)
     .setMaxResults(10)
     .setParameters({ photoName: "My", bearName: "Mishka" })
-    .getResults();
+    .getMany();
 ```
 
 This query builder will select you all photos that are published and whose name is "My" or "Mishka", 

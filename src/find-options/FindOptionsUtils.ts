@@ -54,7 +54,7 @@ export class FindOptionsUtils {
                 const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
                 qb.andWhere(name + "=:" + key);
             });
-            qb.addParameters(options.whereConditions);
+            qb.setParameters(options.whereConditions);
         }
 
         if (options.havingConditions) {
@@ -62,7 +62,7 @@ export class FindOptionsUtils {
                 const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
                 qb.andHaving(name + "=:" + key);
             });
-            qb.addParameters(options.havingConditions);
+            qb.setParameters(options.havingConditions);
         }
 
         if (options.orderBy)
@@ -96,7 +96,7 @@ export class FindOptionsUtils {
             });
 
         if (options.parameters)
-            qb.addParameters(options.parameters);
+            qb.setParameters(options.parameters);
 
         if (options.enabledOptions) {
             options.enabledOptions.forEach(option => {
