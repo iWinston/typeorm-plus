@@ -120,6 +120,7 @@ export class Gulpfile {
     @Task()
     browserCopyReadmeFile() {
         return gulp.src("./README_BROWSER.md")
+            .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
             .pipe(rename("README.md"))
             .pipe(gulp.dest("./build/browser-package"));
     }
@@ -237,6 +238,7 @@ export class Gulpfile {
     @Task()
     packageCopyReadme() {
         return gulp.src("./README.md")
+            .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
             .pipe(gulp.dest("./build/package"));
     }
 
