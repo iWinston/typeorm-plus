@@ -1,6 +1,7 @@
 [
   {
-    "name": "default",
+    "skip": false,
+    "name": "mysql",
     "driver": {
       "type": "mysql",
       "host": "localhost",
@@ -8,7 +9,61 @@
       "username": "root",
       "password": "admin",
       "database": "test"
-    },
-    "autoSchemaSync": true
+    }
+  },
+  {
+    "skip": false,
+    "name": "mariadb",
+    "driver": {
+      "type": "mariadb",
+      "host": "localhost",
+      "port": 3307,
+      "username": "root",
+      "password": "admin",
+      "database": "test"
+    }
+  },
+  {
+    "skip": false,
+    "name": "sqlite",
+    "driver": {
+      "type": "sqlite",
+      "storage": "temp/sqlitedb.db"
+    }
+  },
+  {
+    "skip": false,
+    "name": "postgres",
+    "driver": {
+      "type": "postgres",
+      "host": "localhost",
+      "port": 5432,
+      "username": "root",
+      "password": "admin",
+      "database": "test"
+    }
+  },
+  {
+    "skip": false,
+    "name": "mssql",
+    "driver": {
+      "type": "mssql",
+      "host": "localhost",
+      "username": "sa",
+      "password": "admin",
+      "database": "test"
+    }
+  },
+  {
+    "skip": true,
+    "name": "oracle",
+    "driver": {
+      "type": "oracle",
+      "host": "localhost",
+      "username": "system",
+      "password": "oracle",
+      "port": 1521,
+      "sid": "xe.oracle.docker"
+    }
   }
 ]
