@@ -12,12 +12,17 @@ As a contributor, here are the guidelines we would like you to follow:
 
 There are several ways how you can ask your question:
 
-* You can create a question on [StackOverflow](stackoverflow.com/questions/tagged/typeorm) where the questions should be tagged with tag `typeorm`.
+* You can create a question on [StackOverflow](https://stackoverflow.com/questions/tagged/typeorm) where the questions should be tagged with tag `typeorm`.
 * You can create issue on [github](https://github.com/typeorm/typeorm/issues)
 * You can write your questions in our [gitter channel](https://gitter.im/pleerock/typeorm)
 * If you have a Skype then try to find me there (`Umed Khudoiberdiev`)
 
-Prefered way if you create your question on StackOverflow, or create a github issue.
+Preferred way if you create your question on StackOverflow, or create a github issue.
+
+## <a name="issue"></a> Found a security vulnerability?
+
+If you find a security vulnerability or something that should be discussed personally, 
+please contact me within my [email](https://github.com/typeorm/typeorm/blob/master/package.json#L10).
 
 ## <a name="issue"></a> Found a Bug?
 
