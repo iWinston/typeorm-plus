@@ -9,6 +9,9 @@
       "username": "test",
       "password": "test",
       "database": "test"
+    },
+    "logging": {
+      "logQueries": false
     }
   },
   {
@@ -21,6 +24,9 @@
       "username": "test",
       "password": "test",
       "database": "test"
+    },
+    "logging": {
+      "logQueries": false
     }
   },
   {
@@ -29,6 +35,9 @@
     "driver": {
       "type": "sqlite",
       "storage": "temp/sqlitedb.db"
+    },
+    "logging": {
+      "logQueries": false
     }
   },
   {
@@ -41,6 +50,9 @@
       "username": "root",
       "password": "test",
       "database": "test"
+    },
+    "logging": {
+      "logQueries": false
     }
   },
   {
@@ -52,6 +64,9 @@
       "username": "sa",
       "password": "admin",
       "database": "test"
+    },
+    "logging": {
+      "logQueries": false
     }
   },
   {
@@ -64,6 +79,9 @@
       "password": "oracle",
       "port": 1521,
       "sid": "xe.oracle.docker"
+    },
+    "logging": {
+      "logQueries": false
     }
   }
 ]
