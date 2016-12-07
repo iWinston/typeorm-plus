@@ -938,10 +938,11 @@ export class QueryBuilder<Entity> {
 
             if (this.connection.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
 
-                if (this.firstResult) // todo: order by already is set above
-                    idsQuery += ` OFFSET ${this.firstResult} ROWS`;
-                if (this.maxResults)
-                    idsQuery += " FETCH NEXT " + this.maxResults + " ROWS ONLY";
+                if (this.firstResult || this.maxResults) {
+                    idsQuery += ` OFFSET ${this.firstResult || 0} ROWS`;
+                    if (this.maxResults)
+                        idsQuery += " FETCH NEXT " + this.maxResults + " ROWS ONLY";
+                }
             } else {
 
                 if (this.maxResults)

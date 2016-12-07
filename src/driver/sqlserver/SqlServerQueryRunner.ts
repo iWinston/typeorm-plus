@@ -227,7 +227,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         const sql = columns.length > 0
             ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES (${values})`
-            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }VALUES`;
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.name + " " : "" }DEFAULT VALUES `;
 
         const result = await this.query(sql, parameters);
         return generatedColumn ? result instanceof Array ? result[0][generatedColumn.name] : result[generatedColumn.name] : undefined;
@@ -240,12 +240,14 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions).join(" AND ");
-        const sql = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
+
+        const updateValues = this.parametrize(valuesMap).join(", ");
+        const conditionString = this.parametrize(conditions, updateParams.length).join(" AND ");
+        const sql = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+
         await this.query(sql, allParameters);
     }
 
@@ -631,8 +633,10 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Parametrizes given object of values. Used to create column=value queries.
      */
-    protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=@" + index);
+    protected parametrize(objectLiteral: ObjectLiteral, startFrom: number = 0): string[] {
+        return Object.keys(objectLiteral).map((key, index) => {
+            return this.driver.escapeColumnName(key) + "=@" + (startFrom + index);
+        });
     }
 
     /**
