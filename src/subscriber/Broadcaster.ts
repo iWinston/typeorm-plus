@@ -103,7 +103,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove!({
-                entity: subject.entity,
+                entity: subject.hasEntity ? subject.entity : undefined,
                 databaseEntity: subject.databaseEntity,
                 entityId: subject.metadata.getEntityIdMixedMap(subject.databaseEntity)
             }));
