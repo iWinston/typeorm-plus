@@ -7,11 +7,11 @@
 > Please support a project by simply putting a github star. 
 Share this library with friends on twitter and everywhere else you can.
 
-> ORM is in active development. Don't be frustrated with bugs if you face them.
+> ORM is in active development, but main API is pretty stable.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
-> 0.0.3 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
+> 0.0.4 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
 TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).

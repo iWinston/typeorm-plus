@@ -2,6 +2,7 @@
 
 * fixed problem when `order by` is used with `limit`
 * fixed problem when `decorators-shim.d.ts` exist and does not allow to import decorators (treats like they exist in global)
+* fixed Sql Server driver bugs
 
 # 0.0.3
 
