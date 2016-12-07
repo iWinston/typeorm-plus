@@ -100,10 +100,13 @@ describe("closure-table", () => {
         const c12 = new Category();
         c12.name = "c12";
 
-        c1.childCategories = [c11, c12];
+        c1.childCategories = [c11];
 
         await categoryRepository.persist(a1);
         await categoryRepository.persist(b1);
+        await categoryRepository.persist(c1);
+
+        c1.childCategories.push(c12);
         await categoryRepository.persist(c1);
         // await categoryRepository.persist(c11);
         // await categoryRepository.persist(c12);
