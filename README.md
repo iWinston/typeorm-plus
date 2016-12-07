@@ -90,6 +90,8 @@ Also make sure you are using TypeScript compiler version > **2.1** and you have 
 "experimentalDecorators": true,
 ```
 
+You'll also need to enable `es6` in the `lib` section of compiler options, or install `es6-shim` from `@typings`.
+
 #### Node.js version
 
 TypeORM was tested with Node.JS version 4 and above. 
