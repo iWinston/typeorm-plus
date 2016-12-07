@@ -12,6 +12,8 @@ services:
   - docker
 
 before_script:
+  - sudo service mysql stop
+  - sudo service postgresql stop
   - docker-compose up -d
   - gulp createTravisOrmConfig
 
