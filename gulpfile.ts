@@ -241,6 +241,15 @@ export class Gulpfile {
     }
 
     /**
+     * Copies "decorators-shim.js" file into package.
+     */
+    @Task()
+    packageCopyDecoratorsShim() {
+        return gulp.src("./extra/decorators-shim.js")
+            .pipe(gulp.dest("./build/package"));
+    }
+
+    /**
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
@@ -248,7 +257,13 @@ export class Gulpfile {
         return [
             "packageCompile",
             "packageMoveCompiledFiles",
-            ["packageClearCompileDirectory", "packageReplaceReferences", "packagePreparePackageFile", "packageCopyReadme"],
+            [
+                "packageClearCompileDirectory",
+                "packageReplaceReferences",
+                "packagePreparePackageFile",
+                "packageCopyReadme",
+                "packageCopyDecoratorsShim"
+            ],
         ];
     }
 

@@ -1,3 +1,8 @@
+# 0.0.4
+
+* fixed problem when `order by` is used with `limit`
+* fixed problem when `decorators-shim.d.ts` exist and does not allow to import decorators (treats like they exist in global)
+
 # 0.0.3
 
 * completely refactored persistence mechanism:
