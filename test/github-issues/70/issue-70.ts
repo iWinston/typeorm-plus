@@ -52,13 +52,8 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         loadedPost!.categories.length.should.be.equal(2);
 
         expect(loadedCategories).not.to.be.empty;
-        loadedCategories.should.be.eql([{
-            id: 1,
-            name: "category #1"
-        }, {
-            id: 2,
-            name: "category #2"
-        }]);
+        loadedCategories[0].id.should.be.equal(1);
+        loadedCategories[1].id.should.be.equal(2);
 
         // now remove post. categories should be removed too
         await connection.entityManager.remove(post);
