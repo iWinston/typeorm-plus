@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {FindOptions} from "../../../../src/find-options/FindOptions";
@@ -11,14 +11,14 @@ describe("repository > find methods", () => {
     const userSchema = require(resourceDir + "schema/user.json");
     
     let connections: Connection[];
-    before(async () => connections = await setupTestingConnections({
+    before(async () => connections = await createTestingConnections({
         entities: [Post],
         entitySchemas: [userSchema],
         schemaCreate: true,
         dropSchemaOnConnection: true
     }));
-    beforeEach(() => reloadDatabases(connections));
-    after(() => closeConnections(connections));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
     describe("find and findAndCount", function() {
 

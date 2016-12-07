@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {setupTestingConnections, closeConnections, reloadDatabases} from "../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {expect} from "chai";
@@ -8,13 +8,13 @@ import {AccessToken} from "./entity/AccessToken";
 describe("github issues > #57 cascade insert not working with OneToOne relationship", () => {
 
     let connections: Connection[];
-    before(async () => connections = await setupTestingConnections({
+    before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchemaOnConnection: true,
     }));
-    beforeEach(() => reloadDatabases(connections));
-    after(() => closeConnections(connections));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
     it("should persist successfully from owner side", () => Promise.all(connections.map(async connection => {
 

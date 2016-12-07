@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
@@ -7,9 +7,11 @@ import {Counters} from "./entity/Counters";
 describe("decorators > embedded", () => {
 
     let connections: Connection[];
-    beforeEach(() => setupTestingConnections({ entities: [Post, Counters], reloadAndCreateSchema: true }).then(all => connections = all));
-    beforeEach(() => reloadDatabases(connections));
-    afterEach(() => closeConnections(connections));
+    beforeEach(() => createTestingConnections({
+        entities: [Post, Counters]
+    }).then(all => connections = all));
+    beforeEach(() => reloadTestingDatabases(connections));
+    afterEach(() => closeTestingConnections(connections));
 
     describe("basic functionality", function() {
 

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -10,13 +10,13 @@ describe("QueryBuilder > relation-count", () => {
     // const resourceDir = __dirname + "/../../../../../../test/functional/query-builder/join-relation-ids/";
 
     let connections: Connection[];
-    before(() => setupTestingConnections({
+    before(() => createTestingConnections({
         entities: [Post, Category, Tag],
         schemaCreate: true,
         dropSchemaOnConnection: true
     }).then(all => connections = all));
-    beforeEach(() => reloadDatabases(connections));
-    after(() => closeConnections(connections));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
     describe("basic functionality", function() {
 

@@ -1,4 +1,9 @@
 /**
+ * Driver type.
+ */
+export type DriverType = "mysql"|"postgres"|"mariadb"|"sqlite"|"oracle"|"mssql"|"websql";
+
+/**
  * Connectivity options used to connect to the database, and other database-driver-specific options.
  */
 export interface DriverOptions {
@@ -6,7 +11,7 @@ export interface DriverOptions {
     /**
      * Database type. This value is required.
      */
-    readonly type: "mysql"|"postgres"|"mariadb"|"sqlite"|"oracle"|"mssql"|"websql";
+    readonly type: DriverType;
 
     /**
      * Connection url to where perform connection to.

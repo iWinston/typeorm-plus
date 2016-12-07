@@ -1,16 +1,16 @@
 import "reflect-metadata";
 import {Category} from "./entity/Category";
 import {Connection} from "../../../../src/connection/Connection";
-import {setupTestingConnections, reloadDatabases, closeConnections} from "../../../utils/test-utils";
+import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../utils/test-utils";
 
 describe("closure-table", () => {
 
     let connections: Connection[];
-    before(async () => connections = await setupTestingConnections({
+    before(async () => connections = await createTestingConnections({
         entities: [Category],
     }));
-    beforeEach(() => reloadDatabases(connections));
-    after(() => closeConnections(connections));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
     it("should work correctly when saving using parent category", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getTreeRepository(Category);

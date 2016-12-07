@@ -1,14 +1,14 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {ConnectionOptions, createConnection} from "../../src/index";
+import {getConnectionManager, createConnection} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {PostDetails} from "../../sample/sample4-many-to-many/entity/PostDetails";
 import {Post} from "../../sample/sample4-many-to-many/entity/Post";
 import {PostCategory} from "../../sample/sample4-many-to-many/entity/PostCategory";
 import {PostMetadata} from "../../sample/sample4-many-to-many/entity/PostMetadata";
 import {PostImage} from "../../sample/sample4-many-to-many/entity/PostImage";
-import {createTestingConnectionOptions} from "../utils/test-utils";
+import {setupSingleTestingConnection} from "../utils/test-utils";
 
 describe("many-to-many", function() {
 
@@ -16,21 +16,12 @@ describe("many-to-many", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const options: ConnectionOptions = {
-        driver: createTestingConnectionOptions("mysql"),
-        entities: [__dirname + "/../../sample/sample4-many-to-many/entity/*"],
-        // logging: {
-        //     logQueries: true,
-        //     logSchemaCreation: true
-        // }
-    };
-
     // connect to db
     let connection: Connection;
-    before(function() {
-        return createConnection(options)
-            .then(con => connection = con)
-            .catch(e => console.log("Error during connection to db: " + e, e.stack));
+    before(async function() {
+        connection = await createConnection(setupSingleTestingConnection("mysql", {
+            entities: [__dirname + "/../../sample/sample4-many-to-many/entity/*"],
+        }));
     });
 
     after(() => connection.close());

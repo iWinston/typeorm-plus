@@ -3,24 +3,15 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {setupTestingConnections, closeConnections, createTestingConnectionOptions} from "../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import {CannotConnectAlreadyConnectedError} from "../../../src/connection/error/CannotConnectAlreadyConnectedError";
-import {CannotCloseNotConnectedError} from "../../../src/connection/error/CannotCloseNotConnectedError";
-import {CannotImportAlreadyConnectedError} from "../../../src/connection/error/CannotImportAlreadyConnectedError";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
-import {getConnectionManager} from "../../../src/index";
-import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
-import {CannotSyncNotConnectedError} from "../../../src/connection/error/CannotSyncNotConnectedError";
+import {getConnectionManager, createConnection} from "../../../src/index";
 import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
-import {RepositoryNotFoundError} from "../../../src/connection/error/RepositoryNotFoundError";
 import {DefaultNamingStrategy} from "../../../src/naming-strategy/DefaultNamingStrategy";
 import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStrategy";
 import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
-import {CannotUseNamingStrategyNotConnectedError} from "../../../src/connection/error/CannotUseNamingStrategyNotConnectedError";
-import {NamingStrategyNotFoundError} from "../../../src/connection/error/NamingStrategyNotFoundError";
-import {RepositoryNotTreeError} from "../../../src/connection/error/RepositoryNotTreeError";
 import {EntityManager} from "../../../src/entity-manager/EntityManager";
 import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/error/CannotGetEntityManagerNotConnectedError";
 import {Blog} from "./modules/blog/entity/Blog";
@@ -34,11 +25,10 @@ describe("Connection", () => {
 
         let connection: Connection;
         before(async () => {
-            const options: ConnectionOptions = {
-                driver: createTestingConnectionOptions("mysql"),
+            connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
+                name: "default",
                 entities: []
-            };
-            connection = await getConnectionManager().create(options);
+            }));
         });
         after(() => {
             if (connection.isConnected)
@@ -94,8 +84,8 @@ describe("Connection", () => {
     describe("after connection is established successfully", function() {
 
         let connections: Connection[];
-        beforeEach(() => setupTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
-        afterEach(() => closeConnections(connections));
+        beforeEach(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
+        afterEach(() => closeTestingConnections(connections));
 
         it("connection.isConnected should be true", () => connections.forEach(connection => {
             connection.isConnected.should.be.true;
@@ -135,8 +125,8 @@ describe("Connection", () => {
     describe("working with repositories after connection is established successfully", function() {
 
         let connections: Connection[];
-        before(() => setupTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
-        after(() => closeConnections(connections));
+        before(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
+        after(() => closeTestingConnections(connections));
 
         it("should be able to get simple entity repository", () => connections.forEach(connection => {
             connection.getRepository(Post).should.be.instanceOf(Repository);
@@ -177,8 +167,8 @@ describe("Connection", () => {
     describe("generate a schema when connection.syncSchema is called", function() {
 
         let connections: Connection[];
-        beforeEach(() => setupTestingConnections({ entities: [Post], schemaCreate: true }).then(all => connections = all));
-        afterEach(() => closeConnections(connections));
+        beforeEach(() => createTestingConnections({ entities: [Post], schemaCreate: true }).then(all => connections = all));
+        afterEach(() => closeTestingConnections(connections));
 
         it("database should be empty after schema is synced with dropDatabase flag", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
@@ -198,7 +188,7 @@ describe("Connection", () => {
 
         // open a close connections
         let connections: Connection[] = [];
-        before(() => setupTestingConnections({ entities: [Post], schemaCreate: true }).then(all => {
+        before(() => createTestingConnections({ entities: [Post], schemaCreate: true }).then(all => {
             connections = all;
             return Promise.all(connections.map(connection => connection.close()));
         }));
@@ -217,14 +207,14 @@ describe("Connection", () => {
 
         let firstConnection: Connection, secondConnection: Connection;
         beforeEach(async () => {
-            firstConnection = await getConnectionManager().create({
-                driver: createTestingConnectionOptions("mysql"),
-                name: "firstConnection"
-            });
-            secondConnection = await getConnectionManager().create({
-                driver: createTestingConnectionOptions("mysql"),
-                name: "secondConnection"
-            });
+            firstConnection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
+                name: "firstConnection",
+                entities: []
+            }));
+            secondConnection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
+                name: "secondConnection",
+                entities: []
+            }));
         });
 
         it("should import first connection's entities only", async () => {
@@ -269,9 +259,10 @@ describe("Connection", () => {
 
         let connection: Connection;
         beforeEach(async () => {
-            connection = await getConnectionManager().create({
-                driver: createTestingConnectionOptions("mysql")
-            });
+            connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
+                name: "default",
+                entities: []
+            }));
         });
         afterEach(() => connection.isConnected ? connection.close() : {});
 
@@ -316,9 +307,10 @@ describe("Connection", () => {
 
         let connection: Connection;
         beforeEach(async () => {
-            connection = await getConnectionManager().create({
-                driver: createTestingConnectionOptions("mysql")
-            });
+            connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
+                name: "default",
+                entities: []
+            }));
         });
         afterEach(() => connection.isConnected ? connection.close() : {});
 
@@ -357,8 +349,8 @@ describe("Connection", () => {
     describe("skip schema generation when skipSchemaSync option is used", function() {
 
         let connections: Connection[];
-        beforeEach(() => setupTestingConnections({ entities: [View] }).then(all => connections = all));
-        afterEach(() => closeConnections(connections));
+        beforeEach(() => createTestingConnections({ entities: [View] }).then(all => connections = all));
+        afterEach(() => closeTestingConnections(connections));
         it("database should be empty after schema sync", () => Promise.all(connections.map(async connection => {
             await connection.syncSchema(true);
             const queryRunner = await connection.driver.createQueryRunner();

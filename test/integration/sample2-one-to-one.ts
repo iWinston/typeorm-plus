@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {getConnectionManager, createConnection} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {PostDetails} from "../../sample/sample2-one-to-one/entity/PostDetails";
 import {Post} from "../../sample/sample2-one-to-one/entity/Post";
@@ -10,7 +10,7 @@ import {PostAuthor} from "../../sample/sample2-one-to-one/entity/PostAuthor";
 import {PostMetadata} from "../../sample/sample2-one-to-one/entity/PostMetadata";
 import {PostImage} from "../../sample/sample2-one-to-one/entity/PostImage";
 import {PostInformation} from "../../sample/sample2-one-to-one/entity/PostInformation";
-import {createTestingConnectionOptions} from "../utils/test-utils";
+import {setupSingleTestingConnection} from "../utils/test-utils";
 
 describe("one-to-one", function() {
 
@@ -18,20 +18,12 @@ describe("one-to-one", function() {
     // Configuration
     // -------------------------------------------------------------------------
 
-    const options: ConnectionOptions = {
-        driver: createTestingConnectionOptions("mysql"),
-        entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor],
-        // logging: {
-        //     logQueries: true
-        // }
-    };
-
     // connect to db
     let connection: Connection;
-    before(function() {
-        return createConnection(options)
-            .then(con => connection = con)
-            .catch(e => console.log("Error during connection to db: " + e, e.stack));
+    before(async function() {
+        connection = await createConnection(setupSingleTestingConnection("mysql", {
+            entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor],
+        }));
     });
 
     after(() => connection.close());

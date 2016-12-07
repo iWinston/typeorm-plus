@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {FindOptions} from "../../../../src/find-options/FindOptions";
-import {closeConnections, reloadDatabases, setupTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, reloadTestingDatabases, createTestingConnections} from "../../../utils/test-utils";
 
 describe("persistence > one-to-many", function() {
 
@@ -14,15 +14,14 @@ describe("persistence > one-to-many", function() {
 
     let connections: Connection[];
     before(() => {
-        return setupTestingConnections({
+        return createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
             dropSchemaOnConnection: true,
-            skipPostgres: true // TODO: fix it, right now postgres is failing for some reason when pooling enabled
         }).then(all => connections = all);
     });
-    after(() => closeConnections(connections));
-    beforeEach(() => reloadDatabases(connections));
+    after(() => closeTestingConnections(connections));
+    beforeEach(() => reloadTestingDatabases(connections));
 
     // -------------------------------------------------------------------------
     // Specifications

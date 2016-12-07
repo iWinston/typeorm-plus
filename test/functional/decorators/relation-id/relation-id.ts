@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {setupTestingConnections, closeConnections, reloadDatabases} from "../../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -16,9 +16,9 @@ describe("QueryBuilder > relation-id", () => {
     // todo: also make sure all new qb features to work with FindOptions
     
     let connections: Connection[];
-    before(() => setupTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
-    beforeEach(() => reloadDatabases(connections));
-    after(() => closeConnections(connections));
+    before(() => createTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
     describe("basic functionality", function() {
 

@@ -3,7 +3,6 @@ import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn"
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Post} from "./Post";
 import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 
 
 @Table()

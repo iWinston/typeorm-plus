@@ -1,302 +1,149 @@
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
-import {createConnection} from "../../src/index";
+import {createConnection, createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
-import {DriverOptions} from "../../src/driver/DriverOptions";
+import {DriverType} from "../../src/driver/DriverOptions";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 
-export interface TestingConnectionOptions {
-    entitySchemas?: EntitySchema[];
-    entities?: string[]|Function[];
-    secondaryConnections?: boolean;
-    schemaCreate?: boolean;
-    dropSchemaOnConnection?: boolean;
-    reloadAndCreateSchema?: boolean;
-    skipMysql?: boolean;
-    skipMariadb?: boolean;
-    skipPostgres?: boolean;
-    skipSqlite?: boolean;
-    skipSqlserver?: boolean;
-    skipOracle?: boolean;
-    skipSqlServer?: boolean;
-}
+/**
+ * Interface in which data is stored in ormconfig.json of the project.
+ */
+interface TestingConnectionOptions extends ConnectionOptions {
 
-export function closeConnections(connections: Connection[]) {
-    return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
-}
+    /**
+     * Indicates if this connection should be skipped.
+     */
+    skip: boolean;
 
-export function createTestingConnectionOptions(type: "mysql"|"mysqlSecondary"|"mariadb"|"mariadbSecondary"|"postgres"|"postgresSecondary"|"sqlite"|"sqliteSecondary"|"mssql"|"mssqlSecondary"): DriverOptions {
-    const parameters = require(__dirname + "/../../../../config/parameters.json"); // path is relative to compile directory
-    // const parameters = require(__dirname + "/../../config/parameters.json");
-
-    let driverType: "mysql"|"mariadb"|"postgres"|"sqlite"|"mssql" = "mysql"; // = type === "mysql" || type === "mysqlSecondary" ? "mysql" : "postgres";
-    if (type === "mysql" || type === "mysqlSecondary") {
-        driverType = "mysql";
-    } else if (type === "mariadb" || type === "mariadbSecondary") {
-        driverType = "mariadb";
-    } else if (type === "postgres" || type === "postgresSecondary") {
-        driverType = "postgres";
-    } else if (type === "sqlite" || type === "sqliteSecondary") {
-        driverType = "sqlite";
-    } else if (type === "mssql" || type === "mssqlSecondary") {
-        driverType = "mssql";
-    }
-
-    return {
-        type: driverType,
-        host: parameters.connections[type].host,
-        port: parameters.connections[type].port,
-        username: parameters.connections[type].username,
-        password: parameters.connections[type].password,
-        database: parameters.connections[type].database,
-        storage: parameters.connections[type].storage
-    };
-}
-
-/*export async function setupTestingConnections(options?: TestingConnectionOptions) {
-    const parameters: ConnectionOptions = {
-        driver: createTestingConnectionOptions(process.env["connection_setup_name"]),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        entities: options && options.entities ? options.entities : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const connection = await createConnection(parameters);
-    if (options && options.reloadAndCreateSchema)
-        await connection.syncSchema(true);
-
-    return [connection];
-}*/
-
-export async function setupTestingConnections(options?: TestingConnectionOptions): Promise<Connection[]> {
-    
-    const mysqlParameters: ConnectionOptions = {
-        name: "mysqlPrimaryConnection",
-        driver: createTestingConnectionOptions("mysql"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-    
-    const mysqlSecondaryParameters: ConnectionOptions = {
-        name: "mysqlSecondaryConnection",
-        driver: createTestingConnectionOptions("mysqlSecondary"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const mariadbParameters: ConnectionOptions = {
-        name: "mariadbPrimaryConnection",
-        driver: createTestingConnectionOptions("mariadb"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const mariadbSecondaryParameters: ConnectionOptions = {
-        name: "mariadbSecondaryConnection",
-        driver: createTestingConnectionOptions("mariadbSecondary"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const postgresParameters: ConnectionOptions = {
-        name: "postgresPrimaryConnection",
-        driver: createTestingConnectionOptions("postgres"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const postgresSecondaryParameters: ConnectionOptions = {
-        name: "postgresSecondaryConnection",
-        driver: createTestingConnectionOptions("postgresSecondary"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const sqliteParameters: ConnectionOptions = {
-        name: "sqlitePrimaryConnection",
-        driver: createTestingConnectionOptions("sqlite"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const sqliteSecondaryParameters: ConnectionOptions = {
-        name: "sqliteSecondaryConnection",
-        driver: createTestingConnectionOptions("sqliteSecondary"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const mssqlParameters: ConnectionOptions = {
-        name: "mssqlPrimaryConnection",
-        driver: createTestingConnectionOptions("mssql"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const mssqlSecondaryParameters: ConnectionOptions = {
-        name: "mssqlSecondaryConnection",
-        driver: createTestingConnectionOptions("mssqlSecondary"),
-        autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-        dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-        entities: options && options.entities ? options.entities : [],
-        entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-        logging: {
-            // logQueries: true, // uncomment for debugging
-            logOnlyFailedQueries: true,
-            logFailedQueryError: true
-        },
-    };
-
-    const mysql = true; // !options || !options.skipMysql;
-    const mariadb = true; // !options || !options.skipMariadb;
-    const postgres = true; // !options || !options.skipPostgres;
-    const sqlite = true; // !options || !options.skipSqlite;
-    const mssql = false; // !options || !options.skipSqlserver;
-
-    const allParameters: ConnectionOptions[] = [];
-    if (mysql)
-        allParameters.push(mysqlParameters);
-    if (mariadb)
-        allParameters.push(mariadbParameters);
-    if (postgres)
-        allParameters.push(postgresParameters);
-    if (sqlite)
-        allParameters.push(sqliteParameters);
-    if (mssql)
-        allParameters.push(mssqlParameters);
-    if (mysql && options && options.secondaryConnections)
-        allParameters.push(mysqlSecondaryParameters);
-    if (mariadb && options && options.secondaryConnections)
-        allParameters.push(mariadbSecondaryParameters);
-    if (postgres && options && options.secondaryConnections)
-        allParameters.push(postgresSecondaryParameters);
-    if (sqlite && options && options.secondaryConnections)
-        allParameters.push(sqliteSecondaryParameters);
-    if (mssql && options && options.secondaryConnections)
-        allParameters.push(mssqlSecondaryParameters);
-
-    return Promise.all(allParameters.map(async parameters => {
-        const connection = await createConnection(parameters);
-        if (options && options.reloadAndCreateSchema)
-            await connection.syncSchema(true);
-
-        return connection;
-    }));
 }
 
 /**
- * @deprecated
+ * Options used to create a connection for testing purposes.
  */
-export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
+export interface TestingOptions {
+    /**
+     * Connection name to be overridden.
+     * This can be used to create multiple connections with single connection configuration.
+     */
+    name?: string;
 
-    const parameters: ConnectionOptions = {
-        driver: {
-            type: "mysql",
-            host: "localhost",
-            port: 3306,
-            username: "root",
-            password: "admin",
-            database: "test"
-        },
-        // logging: {
-        //     logQueries: true
-        // },
-        autoSchemaSync: true,
-        entities: entities
-    };
+    /**
+     * List of enabled drivers for the given test suite.
+     */
+    enabledDrivers?: DriverType[];
 
-    return function() {
-        return createConnection(parameters)
-            .then(connection => {
-                if (callback)
-                    callback(connection);
-                return connection;
-            })
-            .catch(e => {
-                console.log("Error during connection to db: " + e);
-                throw e;
-            });
-    };
+    /**
+     * Entities needs to be included in the connection for the given test suite.
+     */
+    entities?: string[]|Function[];
+
+    /**
+     * Entity schemas needs to be included in the connection for the given test suite.
+     */
+    entitySchemas?: EntitySchema[];
+
+    /**
+     * Indicates if schema sync should be performed or not.
+     */
+    schemaCreate?: boolean;
+
+    /**
+     * Indicates if schema should be dropped on connection setup.
+     */
+    dropSchemaOnConnection?: boolean;
+
 }
 
-export function reloadDatabases(connections: Connection[]) {
+/**
+ * Creates a testing connection options for the given driver type based on the configuration in the ormconfig.json
+ * and given options that can override some of its configuration for the test-specific use case.
+ */
+export function setupSingleTestingConnection(driverType: DriverType, options: TestingOptions) {
+
+    const testingConnections = setupTestingConnections({
+        name: options.name ? options.name : undefined,
+        entities: options.entities ? options.entities : [],
+        entitySchemas: options.entitySchemas ? options.entitySchemas : [],
+        dropSchemaOnConnection: options.dropSchemaOnConnection ? options.dropSchemaOnConnection : false,
+        schemaCreate: options.schemaCreate ? options.schemaCreate : false,
+        enabledDrivers: [driverType]
+    });
+    if (!testingConnections.length)
+        throw new Error(`Unable to run tests because connection options for "${driverType}" are not set.`);
+
+    return testingConnections[0];
+}
+
+/**
+ * Creates a testing connections options based on the configuration in the ormconfig.json
+ * and given options that can override some of its configuration for the test-specific use case.
+ */
+export function setupTestingConnections(options?: TestingOptions) {
+    let ormConfigConnectionOptionsArray: TestingConnectionOptions[] = [];
+
+    try {
+        ormConfigConnectionOptionsArray = require(__dirname + "/../../../../ormconfig.json");
+
+    } catch (err) {
+        throw new Error(`Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
+            ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
+            ` and change all database settings to match your local environment settings).`);
+    }
+
+    if (!ormConfigConnectionOptionsArray.length)
+        throw new Error(`No connections setup in ormconfig.json file. Please create configurations for each database type to run tests.`);
+
+    return ormConfigConnectionOptionsArray
+        .filter(connectionOptions => {
+            if (options && options.enabledDrivers && options.enabledDrivers.length)
+                return options.enabledDrivers.indexOf(connectionOptions.driver.type) !== -1;
+
+            return !connectionOptions.skip;
+        })
+        .map(connectionOptions => {
+            return Object.assign({}, connectionOptions as ConnectionOptions, {
+                name: options && options.name ? options.name : connectionOptions.name,
+                entities: options && options.entities ? options.entities : [],
+                entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+                autoSchemaSync: options && options.entities ? options.schemaCreate : false,
+                dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
+            });
+        });
+}
+
+/**
+ * Creates a testing connections based on the configuration in the ormconfig.json
+ * and given options that can override some of its configuration for the test-specific use case.
+ */
+export async function createTestingConnections(options?: TestingOptions): Promise<Connection[]> {
+    return createConnections(setupTestingConnections(options));
+}
+
+/**
+ * Closes testing connections if they are connected.
+ */
+export function closeTestingConnections(connections: Connection[]) {
+    return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
+}
+
+/**
+ * Reloads all databases for all given connections.
+ */
+export function reloadTestingDatabases(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.syncSchema(true)));
 }
 
 /**
+ * Setups connection.
+ *
+ * @deprecated Old method of creating connection. Don't use it anymore. Use createTestingConnections instead.
  */
-export function reloadDatabase(connection: Connection) {
-    return function () {
-        return connection.syncSchema(true)
-            .catch(e => console.log("Error during schema re-creation: ", e));
+export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
+    return function() {
+        return createConnection(setupSingleTestingConnection("mysql", { entities: entities }))
+            .then(connection => {
+                if (callback)
+                    callback(connection);
+                return connection;
+            });
     };
 }
