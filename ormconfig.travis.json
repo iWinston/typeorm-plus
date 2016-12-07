@@ -38,7 +38,7 @@
       "type": "postgres",
       "host": "localhost",
       "port": 5432,
-      "username": "root",
+      "username": "test",
       "password": "test",
       "database": "test"
     }
@@ -48,9 +48,9 @@
     "name": "mssql",
     "driver": {
       "type": "mssql",
-      "host": "localhost",
+      "host": "192.168.1.10",
       "username": "sa",
-      "password": "admin",
+      "password": "admin12345",
       "database": "test"
     }
   },

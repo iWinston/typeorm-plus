@@ -345,4 +345,15 @@ export class Gulpfile {
         return ["compile", "tslint", "coveragePost", "coverageRemap"];
     }
 
+    // -------------------------------------------------------------------------
+    // CI tasks
+    // -------------------------------------------------------------------------
+
+    @Task()
+    createTravisOrmConfig() {
+        return gulp.src("./ormconfig.travis.json")
+            .pipe(rename("ormconfig.json"))
+            .pipe(gulp.dest("./"));
+    }
+
 }
