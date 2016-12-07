@@ -13,6 +13,11 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 
 /**
+ * Declare a global function that is only available in browsers that support WebSQL.
+ */
+declare function openDatabase(...params: any[]): any;
+
+/**
  * Organizes communication with WebSQL in the browser.
  */
 export class WebsqlDriver implements Driver {
@@ -76,7 +81,7 @@ export class WebsqlDriver implements Driver {
         }, this.options.extra || {});
 
         return new Promise<void>((ok, fail) => {
-            const connection = (window as any).openDatabase(
+            const connection = openDatabase(
                 options.database,
                 options.version,
                 options.description,
