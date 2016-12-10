@@ -104,7 +104,7 @@ export class SchemaBuilder {
      */
     protected loadTableSchemas(): Promise<TableSchema[]> {
         const tableNames = this.entityToSyncMetadatas.map(metadata => metadata.table.name);
-        return this.queryRunner.loadSchemaTables(tableNames, this.namingStrategy);
+        return this.queryRunner.loadTableSchemas(tableNames, this.namingStrategy);
     }
 
     /**
@@ -214,7 +214,7 @@ export class SchemaBuilder {
             // create columns in the database
             const newColumnSchemas = this.metadataColumnsToColumnSchemas(newColumnMetadatas);
             tableSchema.addColumns(newColumnSchemas);
-            await this.queryRunner.createColumns(tableSchema, newColumnSchemas);
+            await this.queryRunner.addColumns(tableSchema, newColumnSchemas);
         }));
     }
 

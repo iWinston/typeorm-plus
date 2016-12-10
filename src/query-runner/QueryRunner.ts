@@ -19,6 +19,8 @@ export interface QueryRunner {
 
     /**
      * Removes all tables from the currently connected database.
+     * Be careful with using this method and avoid using it in production or migrations
+     * (because it can clear all your database).
      */
     clearDatabase(): Promise<void>;
 
@@ -80,7 +82,17 @@ export interface QueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]>;
+    loadTableSchema(tableName: string, namingStrategy: NamingStrategyInterface): Promise<TableSchema|undefined>;
+
+    /**
+     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     */
+    loadTableSchemas(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]>;
+
+    /**
+     * Checks if table with the given name exist in the database.
+     */
+    hasTable(table: TableSchema): Promise<boolean>;
 
     /**
      * Creates a new table from the given table metadata and column metadatas.
@@ -88,14 +100,36 @@ export interface QueryRunner {
     createTable(table: TableSchema): Promise<void>;
 
     /**
+     * Checks if column with the given name exist in the given table.
+     */
+    hasColumn(table: TableSchema, columnName: string): Promise<boolean>;
+
+    /**
+     * Creates a new column in the table.
+     */
+    addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
+
+    /**
      * Creates new columns in the table.
      */
-    createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
+    addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
+
+    // todo: renameColumn ?
+
+    /**
+     * Changes a column in the table.
+     */
+    changeColumn(tableSchema: TableSchema, newColumn: ColumnSchema, oldColumn: ColumnSchema): Promise<void>;
 
     /**
      * Changes a columns in the table.
      */
     changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void>;
+
+    /**
+     * Drops the column in the table.
+     */
+    dropColumn(dbTable: TableSchema, column: ColumnSchema): Promise<void>;
 
     /**
      * Drops the columns in the table.
@@ -108,9 +142,19 @@ export interface QueryRunner {
     updatePrimaryKeys(dbTable: TableSchema): Promise<void>;
 
     /**
+     * Creates a new foreign key.
+     */
+    createForeignKey(dbTable: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
+
+    /**
      * Creates a new foreign keys.
      */
     createForeignKeys(dbTable: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
+
+    /**
+     * Drops a foreign keys from the table.
+     */
+    dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.

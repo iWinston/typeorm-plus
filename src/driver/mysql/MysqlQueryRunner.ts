@@ -14,6 +14,7 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {toASCII} from "punycode";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -59,6 +60,8 @@ export class MysqlQueryRunner implements QueryRunner {
 
     /**
      * Removes all tables from the currently connected database.
+     * Be careful with using this method and avoid using it in production or migrations
+     * (because it can clear all your database).
      */
     async clearDatabase(): Promise<void> {
         if (this.isReleased)
@@ -235,9 +238,17 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Loads given table's data from the database.
+     */
+    async loadTableSchema(tableName: string, namingStrategy: NamingStrategyInterface): Promise<TableSchema|undefined> {
+        const tableSchemas = await this.loadTableSchemas([tableName], namingStrategy);
+        return tableSchemas.length > 0 ? tableSchemas[0] : undefined;
+    }
+
+    /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
+    async loadTableSchemas(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -323,7 +334,16 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new table from the given table metadata and column metadatas.
+     * Checks if table with the given name exist in the database.
+     */
+    async hasTable(table: TableSchema): Promise<boolean> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME = '${table.name}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
+     * Creates a new table from the given table schema and column schemas inside it.
      */
     async createTable(table: TableSchema): Promise<void> {
         if (this.isReleased)
@@ -340,17 +360,47 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new column from the column metadata in the table.
+     * Checks if column with the given name exist in the given table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> {
+    async hasColumn(table: TableSchema, columnName: string): Promise<boolean> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME = '${table.name}' AND COLUMN_NAME = '${columnName}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
+     * Creates a new column from the column schema in the table.
+     */
+    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const queries = columns.map(column => {
-            const sql = `ALTER TABLE \`${tableSchema.name}\` ADD ${this.buildCreateColumnSql(column, false)}`;
-            return this.query(sql);
-        });
+        const sql = `ALTER TABLE \`${tableSchema.name}\` ADD ${this.buildCreateColumnSql(column, false)}`;
+        return this.query(sql);
+    }
+
+    /**
+     * Creates a new columns from the column schema in the table.
+     */
+    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const queries = columns.map(column => this.addColumn(tableSchema, column));
         await Promise.all(queries);
+    }
+
+    /**
+     * Changes a column in the table.
+     */
+    async changeColumn(tableSchema: TableSchema, newColumn: ColumnSchema, oldColumn: ColumnSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        if (newColumn.isUnique === false && oldColumn.isUnique === true)
+            await this.query(`ALTER TABLE \`${tableSchema.name}\` DROP INDEX \`${oldColumn.name}\``);
+
+        return this.query(`ALTER TABLE \`${tableSchema.name}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`);
     }
 
     /**
@@ -361,15 +411,17 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const updatePromises = changedColumns.map(async changedColumn => {
-            const sql = `ALTER TABLE \`${tableSchema.name}\` CHANGE \`${changedColumn.oldColumn.name}\` ${this.buildCreateColumnSql(changedColumn.newColumn, changedColumn.oldColumn.isPrimary)}`; // todo: CHANGE OR MODIFY COLUMN ????
-
-            if (changedColumn.newColumn.isUnique === false && changedColumn.oldColumn.isUnique === true)
-                await this.query(`ALTER TABLE \`${tableSchema.name}\` DROP INDEX \`${changedColumn.oldColumn.name}\``);
-
-            return this.query(sql);
+            return this.changeColumn(tableSchema, changedColumn.newColumn, changedColumn.oldColumn);
         });
 
         await Promise.all(updatePromises);
+    }
+
+    /**
+     * Drops column in the table.
+     */
+    async dropColumn(dbTable: TableSchema, column: ColumnSchema): Promise<void> {
+        return this.query(`ALTER TABLE \`${dbTable.name}\` DROP \`${column.name}\``);
     }
 
     /**
@@ -379,10 +431,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const dropPromises = columns.map(column => {
-            return this.query(`ALTER TABLE \`${dbTable.name}\` DROP \`${column.name}\``);
-        });
-
+        const dropPromises = columns.map(column => this.dropColumn(dbTable, column));
         await Promise.all(dropPromises);
     }
 
@@ -402,23 +451,40 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a new foreign key.
+     */
+    async createForeignKey(dbTable: TableSchema, foreignKey: ForeignKeySchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
+        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
+        let sql = `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+            `FOREIGN KEY (${columnNames}) ` +
+            `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
+        if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
+        return this.query(sql);
+    }
+
+    /**
      * Creates a new foreign keys.
      */
     async createForeignKeys(dbTable: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const promises = foreignKeys.map(foreignKey => {
-            const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
-            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-            let sql = `ALTER TABLE ${dbTable.name} ADD CONSTRAINT \`${foreignKey.name}\` ` +
-                `FOREIGN KEY (${columnNames}) ` +
-                `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
-            if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
-            return this.query(sql);
-        });
-
+        const promises = foreignKeys.map(foreignKey => this.createForeignKey(dbTable, foreignKey));
         await Promise.all(promises);
+    }
+
+    /**
+     * Drops a foreign key from the table.
+     */
+    async dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        return this.query(`ALTER TABLE \`${tableSchema.name}\` DROP FOREIGN KEY \`${foreignKey.name}\``);
     }
 
     /**
@@ -428,11 +494,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const promises = foreignKeys.map(foreignKey => {
-            const sql = `ALTER TABLE \`${tableSchema.name}\` DROP FOREIGN KEY \`${foreignKey.name}\``;
-            return this.query(sql);
-        });
-
+        const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableSchema, foreignKey));
         await Promise.all(promises);
     }
 

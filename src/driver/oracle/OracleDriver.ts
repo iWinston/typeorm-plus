@@ -16,6 +16,8 @@ import {PlatformTools} from "../../platform/PlatformTools";
 
 /**
  * Organizes communication with Oracle DBMS.
+ *
+ * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
 export class OracleDriver implements Driver {
 

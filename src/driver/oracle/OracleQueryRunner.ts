@@ -17,6 +17,8 @@ import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInter
 
 /**
  * Runs queries on a single mysql database connection.
+ *
+ * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
 export class OracleQueryRunner implements QueryRunner {
 
@@ -253,7 +255,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
+    async loadTableSchemas(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -373,7 +375,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new column from the column metadata in the table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> {
+    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 

@@ -258,7 +258,7 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
+    async loadTableSchemas(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -394,7 +394,7 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column metadata in the table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> { // todo: remove column metadata returning
+    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> { // todo: remove column metadata returning
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
