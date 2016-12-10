@@ -92,7 +92,7 @@ export interface QueryRunner {
     /**
      * Checks if table with the given name exist in the database.
      */
-    hasTable(table: TableSchema): Promise<boolean>;
+    hasTable(tableName: string): Promise<boolean>;
 
     /**
      * Creates a new table from the given table metadata and column metadatas.

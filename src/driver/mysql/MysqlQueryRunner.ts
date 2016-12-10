@@ -336,8 +336,8 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Checks if table with the given name exist in the database.
      */
-    async hasTable(table: TableSchema): Promise<boolean> {
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME = '${table.name}'`;
+    async hasTable(tableName: string): Promise<boolean> {
+        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME = '${tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
