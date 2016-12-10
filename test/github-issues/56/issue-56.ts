@@ -5,7 +5,7 @@ import {User} from "./entity/User";
 import {expect} from "chai";
 import {AccessToken} from "./entity/AccessToken";
 
-describe("github issues > #56 relationships only work when both primary keys have the same name", () => {
+describe.skip("github issues > #56 relationships only work when both primary keys have the same name", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
