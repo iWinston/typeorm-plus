@@ -2,11 +2,17 @@ import {DriverOptions} from "./DriverOptions";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
  */
 export interface Driver {
+
+    /**
+     * Naming strategy used in the connection where this driver is used.
+     */
+    namingStrategy: NamingStrategyInterface;
 
     /**
      * Driver options contains connectivity options used to connection to the database.

@@ -13,6 +13,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
+import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
 /**
  * Organizes communication with Oracle DBMS.
@@ -24,6 +25,11 @@ export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Naming strategy used in the connection where this driver is used.
+     */
+    namingStrategy: NamingStrategyInterface;
 
     /**
      * Driver connection options.

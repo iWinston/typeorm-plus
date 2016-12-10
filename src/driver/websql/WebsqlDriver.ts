@@ -11,6 +11,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
+import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -25,6 +26,11 @@ export class WebsqlDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Naming strategy used in the connection where this driver is used.
+     */
+    namingStrategy: NamingStrategyInterface;
 
     /**
      * Driver connection options.

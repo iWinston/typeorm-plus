@@ -1683,15 +1683,15 @@ export class QueryBuilder<Entity> {
 
         const selectString = Object.keys(orderBys)
             .map(columnName => {
-                const [alias, column] = columnName.split(".");
-                return this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(alias + "_" + column);
+                const [alias, column, ...embeddedProperties] = columnName.split(".");
+                return this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(alias + "_" + column + embeddedProperties.join("_"));
             })
             .join(", ");
 
         const orderByString = Object.keys(orderBys)
             .map(columnName => {
-                const [alias, column] = columnName.split(".");
-                return this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(alias + "_" + column) + " " + this.orderBys[columnName];
+                const [alias, column, ...embeddedProperties] = columnName.split(".");
+                return this.connection.driver.escapeAliasName(parentAlias) + "." + this.connection.driver.escapeColumnName(alias + "_" + column + embeddedProperties.join("_")) + " " + this.orderBys[columnName];
             })
             .join(", ");
 

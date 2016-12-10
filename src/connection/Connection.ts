@@ -463,6 +463,7 @@ export class Connection {
         this.entityMetadatas.length = 0;
 
         const namingStrategy = this.createNamingStrategy();
+        this.driver.namingStrategy = namingStrategy;
         const lazyRelationsWrapper = this.createLazyRelationsWrapper();
 
         // take imported event subscribers
@@ -553,7 +554,7 @@ export class Connection {
      * Creates a schema builder used to build a database schema for the entities of the current connection.
      */
     protected createSchemaBuilder() {
-        return new SchemaBuilder(this.driver, this.logger, this.entityMetadatas, this.createNamingStrategy());
+        return new SchemaBuilder(this.driver, this.logger, this.entityMetadatas);
     }
 
     /**
