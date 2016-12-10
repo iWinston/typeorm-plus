@@ -288,7 +288,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                     // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
                     columnSchema.isGenerated = isGenerated;
                     columnSchema.comment = ""; // dbColumn["COLUMN_COMMENT"];
-                    columnSchema.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] === "uk_" + dbColumn["column_name"]);
+                    columnSchema.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] ===  `uk_${dbColumn["table_name"]}_${dbColumn["column_name"]}`);
                     return columnSchema;
                 });
 
@@ -342,7 +342,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
-            .map(column => `, CONSTRAINT "uk_${column.name}" UNIQUE ("${column.name}")`)
+            .map(column => `, CONSTRAINT "uk_${table.name}_${column.name}" UNIQUE ("${column.name}")`)
             .join(" ");
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
         if (primaryKeyColumns.length > 0)
