@@ -417,7 +417,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
-            .map(column => `, CONSTRAINT "uk_${column.name}" UNIQUE ("${column.name}")`)
+            .map(column => `, CONSTRAINT "uk_${table.name}_${column.name}" UNIQUE ("${column.name}")`)
             .join(" ");
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
         if (primaryKeyColumns.length > 0)
