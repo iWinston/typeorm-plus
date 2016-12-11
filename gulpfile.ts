@@ -1,7 +1,5 @@
 import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
 
-declare function require(module: string): any;
-
 const gulp = require("gulp");
 const del = require("del");
 const shell = require("gulp-shell");
