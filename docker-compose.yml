@@ -35,3 +35,15 @@ services:
       POSTGRES_USER: "test"
       POSTGRES_PASSWORD: "test"
       POSTGRES_DB: "test"
+
+  # mssql
+  # mssql:
+  #   image: "microsoft/mssql-server-linux"
+  #   container_name: "mssql"
+  #   ports:
+  #     - "1433:1433"
+  #   environment:
+  #     ACCEPT_EULA: "Y"
+  #     SA_PASSWORD: "thisIs@V3ryh&rdP@55w0rd"
+  #   volumes:
+  #     - "./temp/mssql:/var/opt/mssql"

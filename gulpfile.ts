@@ -1,4 +1,4 @@
-import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
+import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
 
 const gulp = require("gulp");
 const del = require("del");
