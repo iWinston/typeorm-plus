@@ -229,7 +229,7 @@ export class MigrationExecutor {
         });
 
         // sort them by timestamp
-        return migrations.sort((a, b) => (a.timestamp - b.timestamp) * -1);
+        return migrations.sort((a, b) => a.timestamp - b.timestamp);
     }
 
     /**
