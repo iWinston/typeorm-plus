@@ -54,6 +54,13 @@ export interface ConnectionOptions {
     readonly entitySchemas?: EntitySchema[]|string[];
 
     /**
+     * Migrations to be loaded for this connection.
+     * Accepts both migration classes and directories where from migrations need to be loaded.
+     * Directories support glob patterns.
+     */
+    readonly migrations?: Function[]|string[];
+
+    /**
      * Logging options.
      */
     readonly logging?: LoggerOptions;

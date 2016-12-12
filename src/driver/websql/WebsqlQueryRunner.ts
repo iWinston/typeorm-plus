@@ -12,6 +12,7 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {WebsqlDriver} from "./WebsqlDriver";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single websql database connection.
@@ -659,10 +660,10 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata) {
-        switch (column.normalizedDataType) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+        switch (typeOptions.type) {
             case "string":
-                return "character varying(" + (column.length ? column.length : 255) + ")";
+                return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
             case "text":
                 return "text";
             case "boolean":
@@ -680,14 +681,14 @@ export class WebsqlQueryRunner implements QueryRunner {
             case "number":
                 return "double precision";
             case "decimal":
-                if (column.precision && column.scale) {
-                    return `decimal(${column.precision},${column.scale})`;
+                if (typeOptions.precision && typeOptions.scale) {
+                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
 
-                } else if (column.scale) {
-                    return `decimal(${column.scale})`;
+                } else if (typeOptions.scale) {
+                    return `decimal(${typeOptions.scale})`;
 
-                } else if (column.precision) {
-                    return `decimal(${column.precision})`;
+                } else if (typeOptions.precision) {
+                    return `decimal(${typeOptions.precision})`;
 
                 } else {
                     return "decimal";
@@ -696,13 +697,13 @@ export class WebsqlQueryRunner implements QueryRunner {
             case "date":
                 return "date";
             case "time":
-                if (column.timezone) {
+                if (typeOptions.timezone) {
                     return "time with time zone";
                 } else {
                     return "time without time zone";
                 }
             case "datetime":
-                if (column.timezone) {
+                if (typeOptions.timezone) {
                     return "timestamp with time zone";
                 } else {
                     return "timestamp without time zone";
@@ -710,10 +711,10 @@ export class WebsqlQueryRunner implements QueryRunner {
             case "json":
                 return "json";
             case "simple_array":
-                return column.length ? "character varying(" + column.length + ")" : "text";
+                return typeOptions.length ? "character varying(" + typeOptions.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(column.type, "SQLite");
+        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "WebSQL");
     }
 
     // -------------------------------------------------------------------------

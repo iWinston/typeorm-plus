@@ -14,6 +14,7 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -713,10 +714,10 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata) {
-        switch (column.normalizedDataType) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+        switch (typeOptions.type) {
             case "string":
-                return "nvarchar(" + (column.length ? column.length : 255) + ")";
+                return "nvarchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
             case "text":
                 return "ntext";
             case "boolean":
@@ -755,10 +756,10 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
             case "json":
                 return "text";
             case "simple_array":
-                return column.length ? "nvarchar(" + column.length + ")" : "text";
+                return typeOptions.length ? "nvarchar(" + typeOptions.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(column.type, "MySQL");
+        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "SQLServer");
     }
 
     // -------------------------------------------------------------------------

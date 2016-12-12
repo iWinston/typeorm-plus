@@ -3,6 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableSchema} from "../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../schema-builder/schema/IndexSchema";
+import {ColumnType} from "../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single database connection.
@@ -76,7 +77,7 @@ export interface QueryRunner {
     /**
      * Converts a column type of the metadata to the database column's type.
      */
-    normalizeType(column: ColumnMetadata): any;
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }): any;
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.

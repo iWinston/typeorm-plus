@@ -14,6 +14,7 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -664,10 +665,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata) {
-        switch (column.normalizedDataType) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+        switch (typeOptions.type) {
             case "string":
-                return "varchar2(" + (column.length ? column.length : 255) + ")";
+                return "varchar2(" + (typeOptions.length ? typeOptions.length : 255) + ")";
             case "text":
                 return "clob";
             case "boolean":
@@ -676,12 +677,12 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             case "int":
                 // if (column.isGenerated)
                 //     return `number(22)`;
-                if (column.precision && column.scale)
-                    return `number(${column.precision},${column.scale})`;
-                if (column.precision)
-                    return `number(${column.precision},0)`;
-                if (column.scale)
-                    return `number(0,${column.scale})`;
+                if (typeOptions.precision && typeOptions.scale)
+                    return `number(${typeOptions.precision},${typeOptions.scale})`;
+                if (typeOptions.precision)
+                    return `number(${typeOptions.precision},0)`;
+                if (typeOptions.scale)
+                    return `number(0,${typeOptions.scale})`;
 
                 return "number(10,0)";
             case "smallint":
@@ -689,26 +690,26 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             case "bigint":
                 return "number(20)";
             case "float":
-                if (column.precision && column.scale)
-                    return `float(${column.precision},${column.scale})`;
-                if (column.precision)
-                    return `float(${column.precision},0)`;
-                if (column.scale)
-                    return `float(0,${column.scale})`;
+                if (typeOptions.precision && typeOptions.scale)
+                    return `float(${typeOptions.precision},${typeOptions.scale})`;
+                if (typeOptions.precision)
+                    return `float(${typeOptions.precision},0)`;
+                if (typeOptions.scale)
+                    return `float(0,${typeOptions.scale})`;
 
                 return `float(126)`;
             case "double":
             case "number":
                 return "float(126)";
             case "decimal":
-                if (column.precision && column.scale) {
-                    return `decimal(${column.precision},${column.scale})`;
+                if (typeOptions.precision && typeOptions.scale) {
+                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
 
-                } else if (column.scale) {
-                    return `decimal(0,${column.scale})`;
+                } else if (typeOptions.scale) {
+                    return `decimal(0,${typeOptions.scale})`;
 
-                } else if (column.precision) {
-                    return `decimal(${column.precision})`;
+                } else if (typeOptions.precision) {
+                    return `decimal(${typeOptions.precision})`;
 
                 } else {
                     return "decimal";
@@ -722,10 +723,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             case "json":
                 return "clob";
             case "simple_array":
-                return column.length ? "varchar2(" + column.length + ")" : "text";
+                return typeOptions.length ? "varchar2(" + typeOptions.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(column.type, "Oracle");
+        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "Oracle");
     }
 
     // -------------------------------------------------------------------------

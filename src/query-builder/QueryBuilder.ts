@@ -1095,14 +1095,14 @@ export class QueryBuilder<Entity> {
     /**
      * Gets all scalar results returned by execution of generated query builder sql.
      */
-    getScalarMany<T>(): Promise<T[]> {
+    getScalarMany<T>(): Promise<T[]> { // todo: rename to getRawMany
         return this.execute();
     }
 
     /**
      * Gets first scalar result returned by execution of generated query builder sql.
      */
-    getScalarOne<T>(): Promise<T> {
+    getScalarOne<T>(): Promise<T> { // todo: rename to getRawOne
         return this.getScalarMany().then(results => results[0]);
 
     }

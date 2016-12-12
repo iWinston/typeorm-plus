@@ -28,6 +28,7 @@ import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {Logger} from "../logger/Logger";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFound";
+import {MigrationInterface} from "../migration/MigrationInterface";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -107,6 +108,11 @@ export class Connection {
      * Registered naming strategy classes to be used for this connection.
      */
     private readonly namingStrategyClasses: Function[] = [];
+
+    /**
+     * Registered migration classes to be used for this connection.
+     */
+    private readonly migrationClasses: Function[] = [];
 
     /**
      * Naming strategy to be used in this connection.
@@ -253,6 +259,14 @@ export class Connection {
     }
 
     /**
+     * Imports migrations from the given paths (directories) and registers them in the current connection.
+     */
+    importMigrationsFromDirectories(paths: string[]): this {
+        this.importMigrations(importClassesFromDirectories(paths));
+        return this;
+    }
+
+    /**
      * Imports entities and registers them in the current connection.
      */
     importEntities(entities: Function[]): this {
@@ -293,6 +307,17 @@ export class Connection {
             throw new CannotImportAlreadyConnectedError("naming strategies", this.name);
 
         strategies.forEach(cls => this.namingStrategyClasses.push(cls));
+        return this;
+    }
+
+    /**
+     * Imports migrations and registers them in the current connection.
+     */
+    importMigrations(migrations: Function[]): this {
+        if (this.isConnected)
+            throw new CannotImportAlreadyConnectedError("migrations", this.name);
+
+        migrations.forEach(cls => this.migrationClasses.push(cls));
         return this;
     }
 
@@ -428,6 +453,19 @@ export class Connection {
     createEntityManagerWithSingleDatabaseConnection(): EntityManager {
         const queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
         return new EntityManager(this, queryRunnerProvider);
+    }
+
+    /**
+     * Gets migration instances that are registered for this connection.
+     */
+    getMigrations(): MigrationInterface[] {
+        if (this.migrationClasses && this.migrationClasses.length) {
+            return this.migrationClasses.map(migrationClass => {
+                return getFromContainer<MigrationInterface>(migrationClass);
+            });
+        }
+
+        return [];
     }
 
     // -------------------------------------------------------------------------

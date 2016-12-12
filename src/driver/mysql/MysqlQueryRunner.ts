@@ -14,6 +14,7 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -608,35 +609,36 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata) {
-        switch (column.normalizedDataType) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+
+        switch (typeOptions.type) {
             case "string":
-                return "varchar(" + (column.length ? column.length : 255) + ")";
+                return "varchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
             case "text":
                 return "text";
             case "boolean":
                 return "tinyint(1)";
             case "integer":
             case "int":
-                return "int(" + (column.length ? column.length : 11) + ")";
+                return "int(" + (typeOptions.length ? typeOptions.length : 11) + ")";
             case "smallint":
-                return "smallint(" + (column.length ? column.length : 11) + ")";
+                return "smallint(" + (typeOptions.length ? typeOptions.length : 11) + ")";
             case "bigint":
-                return "bigint(" + (column.length ? column.length : 11) + ")";
+                return "bigint(" + (typeOptions.length ? typeOptions.length : 11) + ")";
             case "float":
                 return "float";
             case "double":
             case "number":
                 return "double";
             case "decimal":
-                if (column.precision && column.scale) {
-                    return `decimal(${column.precision},${column.scale})`;
+                if (typeOptions.precision && typeOptions.scale) {
+                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
 
-                } else if (column.scale) {
-                    return `decimal(${column.scale})`;
+                } else if (typeOptions.scale) {
+                    return `decimal(${typeOptions.scale})`;
 
-                } else if (column.precision) {
-                    return `decimal(${column.precision})`;
+                } else if (typeOptions.precision) {
+                    return `decimal(${typeOptions.precision})`;
 
                 } else {
                     return "decimal";
@@ -651,10 +653,10 @@ export class MysqlQueryRunner implements QueryRunner {
             case "json":
                 return "text";
             case "simple_array":
-                return column.length ? "varchar(" + column.length + ")" : "text";
+                return typeOptions.length ? "varchar(" + typeOptions.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(column.type, "MySQL");
+        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "MySQL");
     }
 
     // -------------------------------------------------------------------------

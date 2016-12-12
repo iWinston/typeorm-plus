@@ -14,6 +14,7 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -663,10 +664,10 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata): string {
-        switch (column.normalizedDataType) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }): string {
+        switch (typeOptions.type) {
             case "string":
-                return "character varying(" + (column.length ? column.length : 255) + ")";
+                return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
             case "text":
                 return "text";
             case "boolean":
@@ -684,14 +685,14 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             case "number":
                 return "double precision";
             case "decimal":
-                if (column.precision && column.scale) {
-                    return `decimal(${column.precision},${column.scale})`;
+                if (typeOptions.precision && typeOptions.scale) {
+                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
 
-                } else if (column.scale) {
-                    return `decimal(${column.scale})`;
+                } else if (typeOptions.scale) {
+                    return `decimal(${typeOptions.scale})`;
 
-                } else if (column.precision) {
-                    return `decimal(${column.precision})`;
+                } else if (typeOptions.precision) {
+                    return `decimal(${typeOptions.precision})`;
 
                 } else {
                     return "decimal";
@@ -700,13 +701,13 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             case "date":
                 return "date";
             case "time":
-                if (column.timezone) {
+                if (typeOptions.timezone) {
                     return "time with time zone";
                 } else {
                     return "time without time zone";
                 }
             case "datetime":
-                if (column.timezone) {
+                if (typeOptions.timezone) {
                     return "timestamp with time zone";
                 } else {
                     return "timestamp without time zone";
@@ -714,10 +715,10 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             case "json":
                 return "json";
             case "simple_array":
-                return column.length ? "character varying(" + column.length + ")" : "text";
+                return typeOptions.length ? "character varying(" + typeOptions.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(column.type, "Postgres");
+        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "Postgres");
     }
 
     // -------------------------------------------------------------------------

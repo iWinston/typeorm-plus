@@ -2,14 +2,14 @@ import {MigrationInterface} from "../../../src/migration/MigrationInterface";
 import {Connection} from "../../../src/connection/Connection";
 import {QueryRunner} from "../../../src/query-runner/QueryRunner";
 
-export class FirstReleaseMigration1481283582 implements MigrationInterface {
+export class SecondReleaseMigration1481521933 implements MigrationInterface {
 
     async up(queryRunner: QueryRunner, connection: Connection): Promise<any> {
-        await queryRunner.query("ALTER TABLE `post` CHANGE `title` `name` VARCHAR(255)");
+        await queryRunner.query("ALTER TABLE `post` CHANGE `name` `title` VARCHAR(500)");
     }
 
     async down(queryRunner: QueryRunner, connection: Connection): Promise<any> {
-        await queryRunner.query("ALTER TABLE `post` CHANGE `name` `title` VARCHAR(255)");
+        await queryRunner.query("ALTER TABLE `post` CHANGE `title` `name` VARCHAR(255)");
     }
 
 }
