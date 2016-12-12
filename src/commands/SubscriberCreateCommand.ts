@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import {ConnectionOptions} from "../connection/ConnectionOptions";
 
 /**
  * Generates a new subscriber.
@@ -9,11 +10,11 @@ export class SubscriberCreateCommand {
 
     builder(yargs: any) {
         return yargs
-            // .option("c", {
-            //     alias: "connection",
-            //     default: "default",
-            //     describe: "Name of the connection on which to run a query"
-            // })
+            .option("c", {
+                alias: "connection",
+                default: "default",
+                describe: "Name of the connection on which to run a query"
+            })
             .option("n", {
                 alias: "name",
                 describe: "Name of the subscriber class.",
@@ -38,9 +39,15 @@ export class SubscriberCreateCommand {
         // if directory is not set then try to open tsconfig and find default path there
         if (!directory) {
             try {
-                const config = require(process.cwd() + "/" + argv.config);
-                if (config && config.cli)
-                    directory = config.cli.subscribersDir;
+                const connections: ConnectionOptions[] = require(process.cwd() + "/" + argv.config);
+                if (connections) {
+                    const connection = connections.find(connection => {
+                        return connection.name === argv.connection || ((argv.connection === "default" || !argv.connection) && !connection.name);
+                    });
+                    if (connection && connection.cli) {
+                        directory = connection.cli.subscribersDir;
+                    }
+                }
             } catch (err) { }
         }
 
