@@ -21,7 +21,7 @@ export class MigrationCreateCommand {
             })
             .option("d", {
                 alias: "dir",
-                describe: "Directory where migrations should be created."
+                describe: "Directory where migration should be created."
             });
     }
 
@@ -31,7 +31,7 @@ export class MigrationCreateCommand {
         const directory     = argv.dir; // || "./migrations";
         const filename      = timestamp + "-" + argv.name;
 
-        this.createFile(directory + "/" + filename, fileContent);
+        await this.createFile(directory + "/" + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------
@@ -61,7 +61,8 @@ export class ${name}${timestamp} implements MigrationInterface {
     async down(queryRunner: QueryRunner, connection: Connection): Promise<any> {
     }
 
-}`;
+}
+`;
     }
 
 }
