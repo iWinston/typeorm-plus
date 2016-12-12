@@ -1047,9 +1047,11 @@ You'll use query builder in your application a lot. Learn more about QueryBuilde
 * [Query Builder](https://typeorm.github.io/query-builder.html)
 * [Entity Manager](https://typeorm.github.io/entity-manager.html)
 * [Subscribers and entity listeners](https://typeorm.github.io/subscribers-and-entity-listeners.html)
+* [Migrations](https://typeorm.github.io/migrations.html)
 * [Using service container](https://typeorm.github.io/using-service-container.html)
 * [Decorators Reference](https://typeorm.github.io/decorators-reference.html)
 * [Usage in the browser](https://typeorm.github.io/usage-in-browser.html)
+* [Using with JavaScript](https://typeorm.github.io/usage-with-javascript.html)
 
 ## Samples
 

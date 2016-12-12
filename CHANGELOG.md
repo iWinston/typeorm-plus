@@ -1,3 +1,9 @@
+# 0.0.5
+
+* changed `getScalarMany` to `getRawMany` in `QueryBuilder`
+* changed `getScalarOne` to `getRawOne` in `QueryBuilder`
+* added migrations support
+
 # 0.0.4
 
 * fixed problem when `order by` is used with `limit`

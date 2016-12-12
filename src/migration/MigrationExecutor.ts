@@ -208,7 +208,7 @@ export class MigrationExecutor {
         const migrationsRaw = await new QueryBuilder(this.connection, this.queryRunnerProvider)
             .select()
             .fromTable("migrations", "migrations")
-            .getScalarMany<ObjectLiteral>();
+            .getRawMany<ObjectLiteral>();
 
         return migrationsRaw.map(migrationRaw => {
             return new Migration(parseInt(migrationRaw["timestamp"]), migrationRaw["name"]);

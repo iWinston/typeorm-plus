@@ -57,9 +57,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getEntitiesAndScalarResults()
+            .getEntitiesAndRawResults()
             .then(entitiesAndScalars => {
-                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.scalarResults);
+                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.rawResults);
                 this.buildChildrenEntityTree(entity, entitiesAndScalars.entities, relationMaps);
                 return entity;
             });
@@ -105,9 +105,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createAncestorsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getEntitiesAndScalarResults()
+            .getEntitiesAndRawResults()
             .then(entitiesAndScalars => {
-                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.scalarResults);
+                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.rawResults);
                 this.buildParentEntityTree(entity, entitiesAndScalars.entities, relationMaps);
                 return entity;
             });
@@ -133,11 +133,11 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected createRelationMaps(alias: string, scalarResults: any[]): { id: any, parentId: any }[] {
-        return scalarResults.map(scalarResult => {
+    protected createRelationMaps(alias: string, rawResults: any[]): { id: any, parentId: any }[] {
+        return rawResults.map(rawResult => {
             return {
-                id: scalarResult[alias + "_" + this.metadata.firstPrimaryColumn.name],
-                parentId: scalarResult[alias + "_" + this.metadata.treeParentRelation.name]
+                id: rawResult[alias + "_" + this.metadata.firstPrimaryColumn.name],
+                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation.name]
             };
         });
     }

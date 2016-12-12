@@ -41,7 +41,7 @@ export class EntityCreateCommand {
             try {
                 const connections: ConnectionOptions[] = require(process.cwd() + "/" + argv.config);
                 if (connections) {
-                    const connection = connections.find(connection => {
+                    const connection = connections.find(connection => { // todo: need to implement "environment" support in the ormconfig too
                         return connection.name === argv.connection || ((argv.connection === "default" || !argv.connection) && !connection.name);
                     });
                     if (connection && connection.cli) {
