@@ -25,8 +25,7 @@ export class MigrationRevertCommand {
         try {
             process.env.SKIP_SCHEMA_CREATION = true;
             connection = await createConnection("default" || argv.connection);
-            const migrationExecutor = new MigrationExecutor(connection);
-            await migrationExecutor.undoLastMigration();
+            await connection.undoLastMigration();
 
         } catch (err) {
             console.error(err);

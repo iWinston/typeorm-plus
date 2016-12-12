@@ -81,6 +81,12 @@ export interface ConnectionOptions {
     readonly autoSchemaSync?: boolean;
 
     /**
+     * Indicates if migrations should be auto run on every application launch.
+     * Alternative to it, you can use CLI and run migration:create command.
+     */
+    readonly autoMigrationsRun?: boolean;
+
+    /**
      * Environment in which connection will run.
      * Current environment is determined from the environment NODE_ENV variable's value.
      * For example, if NODE_ENV is "test" and this property is set to "test",

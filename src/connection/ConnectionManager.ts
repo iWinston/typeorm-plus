@@ -407,6 +407,10 @@ export class ConnectionManager {
         if (options.autoSchemaSync && !PlatformTools.getEnvVariable("SKIP_SCHEMA_CREATION"))
             await connection.syncSchema();
 
+        // if option is set - automatically synchronize a schema
+        if (options.autoMigrationsRun && !PlatformTools.getEnvVariable("SKIP_MIGRATIONS_RUN"))
+            await connection.runMigrations();
+
         return connection;
     }
 

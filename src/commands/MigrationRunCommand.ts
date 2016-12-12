@@ -25,8 +25,7 @@ export class MigrationRunCommand {
         try {
             process.env.SKIP_SCHEMA_CREATION = true;
             connection = await createConnection("default" || argv.connection);
-            const migrationExecutor = new MigrationExecutor(connection);
-            await migrationExecutor.executePendingMigrations();
+            await connection.runMigrations();
 
         } catch (err) {
             console.error(err);

@@ -29,6 +29,8 @@ import {Logger} from "../logger/Logger";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFound";
 import {MigrationInterface} from "../migration/MigrationInterface";
+import {MigrationExecutor} from "../migration/MigrationExecutor";
+import {CannotRunMigrationNotConnectedError} from "./error/CannotRunMigrationNotConnectedError";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -224,6 +226,30 @@ export class Connection {
             await this.dropDatabase();
 
         await this.createSchemaBuilder().build();
+    }
+
+    /**
+     * Runs all pending migrations.
+     */
+    async runMigrations(): Promise<void> {
+
+        if (!this.isConnected)
+            return Promise.reject(new CannotRunMigrationNotConnectedError(this.name));
+
+        const migrationExecutor = new MigrationExecutor(this);
+        await migrationExecutor.executePendingMigrations();
+    }
+
+    /**
+     * Reverts last executed migration.
+     */
+    async undoLastMigration(): Promise<void> {
+
+        if (!this.isConnected)
+            return Promise.reject(new CannotRunMigrationNotConnectedError(this.name));
+
+        const migrationExecutor = new MigrationExecutor(this);
+        await migrationExecutor.undoLastMigration();
     }
 
     /**
@@ -601,5 +627,4 @@ export class Connection {
     protected createLazyRelationsWrapper() {
         return new LazyRelationsWrapper(this);
     }
-
 }

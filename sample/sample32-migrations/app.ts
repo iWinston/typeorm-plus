@@ -63,12 +63,11 @@ createConnection(options).then(async connection => {
     });
 
     // run all migrations
-    const migrationExecutor = new MigrationExecutor(connection);
-    await migrationExecutor.executePendingMigrations();
+    await connection.runMigrations();
 
     // and undo migrations two times (because we have two migrations)
-    await migrationExecutor.undoLastMigration();
-    await migrationExecutor.undoLastMigration();
+    await connection.undoLastMigration();
+    await connection.undoLastMigration();
 
     console.log("Done. We run two migrations then reverted them.");
 
