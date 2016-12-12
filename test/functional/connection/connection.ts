@@ -354,7 +354,7 @@ describe("Connection", () => {
         it("database should be empty after schema sync", () => Promise.all(connections.map(async connection => {
             await connection.syncSchema(true);
             const queryRunner = await connection.driver.createQueryRunner();
-            let schema = await queryRunner.loadSchemaTables(["view"], new DefaultNamingStrategy());
+            let schema = await queryRunner.loadTableSchemas(["view"]);
             expect(schema.some(table => table.name === "view")).to.be.false;
         })));
 

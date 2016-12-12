@@ -99,6 +99,14 @@ export class ConnectionManager {
                 .importNamingStrategiesFromDirectories(directories);
         }
 
+        // import migrations
+        if (options.migrations) {
+            const [directories, classes] = this.splitStringsAndClasses(options.migrations);
+            connection
+                .importMigrations(classes)
+                .importMigrationsFromDirectories(directories);
+        }
+
         // set naming strategy to be used for this connection
         if (options.usedNamingStrategy)
             connection.useNamingStrategy(options.usedNamingStrategy as any);
@@ -398,6 +406,10 @@ export class ConnectionManager {
         // if option is set - automatically synchronize a schema
         if (options.autoSchemaSync && !PlatformTools.getEnvVariable("SKIP_SCHEMA_CREATION"))
             await connection.syncSchema();
+
+        // if option is set - automatically synchronize a schema
+        if (options.autoMigrationsRun && !PlatformTools.getEnvVariable("SKIP_MIGRATIONS_RUN"))
+            await connection.runMigrations();
 
         return connection;
     }

@@ -54,6 +54,13 @@ export interface ConnectionOptions {
     readonly entitySchemas?: EntitySchema[]|string[];
 
     /**
+     * Migrations to be loaded for this connection.
+     * Accepts both migration classes and directories where from migrations need to be loaded.
+     * Directories support glob patterns.
+     */
+    readonly migrations?: Function[]|string[];
+
+    /**
      * Logging options.
      */
     readonly logging?: LoggerOptions;
@@ -74,6 +81,12 @@ export interface ConnectionOptions {
     readonly autoSchemaSync?: boolean;
 
     /**
+     * Indicates if migrations should be auto run on every application launch.
+     * Alternative to it, you can use CLI and run migration:create command.
+     */
+    readonly autoMigrationsRun?: boolean;
+
+    /**
      * Environment in which connection will run.
      * Current environment is determined from the environment NODE_ENV variable's value.
      * For example, if NODE_ENV is "test" and this property is set to "test",
@@ -81,5 +94,27 @@ export interface ConnectionOptions {
      * This option is specific to the configuration in the ormconfig.json file.
      */
     readonly environment?: string;
+
+    /**
+     * CLI settings.
+     */
+    readonly cli?: {
+
+        /**
+         * Directory where entities should be created by default.
+         */
+        readonly entitiesDir?: string;
+
+        /**
+         * Directory where migrations should be created by default.
+         */
+        readonly migrationsDir?: string;
+
+        /**
+         * Directory where subscribers should be created by default.
+         */
+        readonly subscribersDir?: string;
+
+    };
 
 }

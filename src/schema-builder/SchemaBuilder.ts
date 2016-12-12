@@ -50,12 +50,10 @@ export class SchemaBuilder {
      * @param driver Driver needs to create a query runner
      * @param logger Used to log schema creation events
      * @param entityMetadatas All entities to create schema for
-     * @param namingStrategy Naming strategy used to generate special names
      */
     constructor(protected driver: Driver,
                 protected logger: Logger,
-                protected entityMetadatas: EntityMetadata[],
-                protected namingStrategy: NamingStrategyInterface) {
+                protected entityMetadatas: EntityMetadata[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -104,7 +102,7 @@ export class SchemaBuilder {
      */
     protected loadTableSchemas(): Promise<TableSchema[]> {
         const tableNames = this.entityToSyncMetadatas.map(metadata => metadata.table.name);
-        return this.queryRunner.loadSchemaTables(tableNames, this.namingStrategy);
+        return this.queryRunner.loadTableSchemas(tableNames);
     }
 
     /**
@@ -213,8 +211,8 @@ export class SchemaBuilder {
 
             // create columns in the database
             const newColumnSchemas = this.metadataColumnsToColumnSchemas(newColumnMetadatas);
+            await this.queryRunner.addColumns(tableSchema, newColumnSchemas);
             tableSchema.addColumns(newColumnSchemas);
-            await this.queryRunner.createColumns(tableSchema, newColumnSchemas);
         }));
     }
 
@@ -345,7 +343,7 @@ export class SchemaBuilder {
                     const indexSchema = IndexSchema.create(indexMetadata);
                     tableSchema.indices.push(indexSchema);
                     this.logger.logSchemaBuild(`adding new index: ${indexSchema.name}`);
-                    await this.queryRunner.createIndex(indexSchema);
+                    await this.queryRunner.createIndex(indexSchema.tableName, indexSchema);
                 });
 
             await Promise.all(dropQueries.concat(addQueries));

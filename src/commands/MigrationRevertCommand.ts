@@ -1,19 +1,19 @@
 import {createConnection} from "../index";
-import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
- * Executes an sql query on the given connection.
+ * Reverts last migration command.
  */
-export class QueryCommand {
-    command = "query";
-    describe = "Executes given SQL query on a default connection. Specify connection name to run query on a specific connection.";
+export class MigrationRevertCommand {
+
+    command = "migrations:revert";
+    describe = "Reverts last executed migration.";
 
     builder(yargs: any) {
         return yargs
             .option("c", {
                 alias: "connection",
                 default: "default",
-                describe: "Name of the connection on which to run a query."
+                describe: "Name of the connection on which run a query."
             })
             .option("cf", {
                 alias: "config",
@@ -25,21 +25,17 @@ export class QueryCommand {
     async handler(argv: any) {
         process.env.SKIP_SCHEMA_CREATION = true;
         const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
-        let queryRunner: QueryRunner|undefined = undefined;
+
         try {
-            queryRunner = await connection.driver.createQueryRunner();
-            const queryResult = await queryRunner.query(argv._[1]);
-            connection.logger.log("info", "Query executed. Result: " + JSON.stringify(queryResult));
+            await connection.undoLastMigration();
 
         } catch (err) {
             connection.logger.log("error", err);
             throw err;
 
         } finally {
-            if (queryRunner)
-                await queryRunner.release();
-
             await connection.close();
         }
     }
+
 }

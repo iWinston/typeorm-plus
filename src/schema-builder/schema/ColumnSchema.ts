@@ -50,6 +50,32 @@ export class ColumnSchema {
     comment: string|undefined;
 
     // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(options?: {
+        name?: string,
+        type?: string,
+        default?: string,
+        isNullable?: boolean,
+        isGenerated?: boolean,
+        isPrimary?: boolean,
+        isUnique?: boolean,
+        comment?: string
+    }) {
+        if (options) {
+            this.name = options.name || "";
+            this.type = options.type || "";
+            this.default = options.default || "";
+            this.isNullable = options.isNullable || false;
+            this.isGenerated = options.isGenerated || false;
+            this.isPrimary = options.isPrimary || false;
+            this.isUnique = options.isUnique || false;
+            this.comment = options.comment;
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 

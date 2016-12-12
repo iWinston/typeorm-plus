@@ -9,11 +9,10 @@ import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
-import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {WebsqlDriver} from "./WebsqlDriver";
+import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single websql database connection.
@@ -256,9 +255,17 @@ export class WebsqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Loads given table's data from the database.
+     */
+    async loadTableSchema(tableName: string): Promise<TableSchema|undefined> {
+        const tableSchemas = await this.loadTableSchemas([tableName]);
+        return tableSchemas.length > 0 ? tableSchemas[0] : undefined;
+    }
+
+    /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadSchemaTables(tableNames: string[], namingStrategy: NamingStrategyInterface): Promise<TableSchema[]> {
+    async loadTableSchemas(tableNames: string[]): Promise<TableSchema[]> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -267,8 +274,10 @@ export class WebsqlQueryRunner implements QueryRunner {
         if (!tableNames || !tableNames.length)
             return [];
 
+        const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
+
         // load tables, columns, indices and foreign keys
-        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM sqlite_master WHERE type = 'table' AND name != 'sqlite_sequence'`);
+        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM sqlite_master WHERE type = 'table' AND name IN (${tableNamesString})`);
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
@@ -375,6 +384,15 @@ export class WebsqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if table with the given name exist in the database.
+     */
+    async hasTable(tableName: string): Promise<boolean> {
+        const sql = `SELECT * FROM sqlite_master WHERE type = 'table' AND name = ${tableName}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {
@@ -392,13 +410,145 @@ export class WebsqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new column from the column metadata in the table.
+     * Checks if column with the given name exist in the given table.
      */
-    async createColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> { // todo: remove column metadata returning
+    async hasColumn(tableName: string, columnName: string): Promise<boolean> {
+        const sql = `PRAGMA table_info("${tableName}")`;
+        const columns: ObjectLiteral[] = await this.query(sql);
+        return !!columns.find(column => column["name"] === columnName);
+    }
+
+    /**
+     * Creates a new column from the column schema in the table.
+     */
+    async addColumn(tableName: string, column: ColumnSchema): Promise<void>;
+
+    /**
+     * Creates a new column from the column schema in the table.
+     */
+    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
+
+    /**
+     * Creates a new column from the column schema in the table.
+     */
+    async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
+        const tableSchema = await this.getTableSchema(tableSchemaOrName);
+        const newTableSchema = tableSchema.clone();
+        newTableSchema.addColumns([column]);
         await this.recreateTable(tableSchema);
+    }
+
+    /**
+     * Creates a new columns from the column schema in the table.
+     */
+    async addColumns(tableName: string, columns: ColumnSchema[]): Promise<void>;
+
+    /**
+     * Creates a new columns from the column schema in the table.
+     */
+    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
+
+    /**
+     * Creates a new columns from the column schema in the table.
+     */
+    async addColumns(tableSchemaOrName: TableSchema|string, columns: ColumnSchema[]): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const tableSchema = await this.getTableSchema(tableSchemaOrName);
+        const newTableSchema = tableSchema.clone();
+        newTableSchema.addColumns(columns);
+        await this.recreateTable(tableSchema);
+    }
+
+    /**
+     * Renames column in the given table.
+     */
+    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Renames column in the given table.
+     */
+    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
+
+    /**
+     * Renames column in the given table.
+     */
+    async renameColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
+
+        let tableSchema: TableSchema|undefined = undefined;
+        if (tableSchemaOrName instanceof TableSchema) {
+            tableSchema = tableSchemaOrName;
+        } else {
+            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+        }
+
+        if (!tableSchema)
+            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+
+        let oldColumn: ColumnSchema|undefined = undefined;
+        if (oldColumnSchemaOrName instanceof ColumnSchema) {
+            oldColumn = oldColumnSchemaOrName;
+        } else {
+            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+        }
+
+        if (!oldColumn)
+            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
+
+        let newColumn: ColumnSchema|undefined = undefined;
+        if (newColumnSchemaOrName instanceof ColumnSchema) {
+            newColumn = newColumnSchemaOrName;
+        } else {
+            newColumn = oldColumn.clone();
+            newColumn.name = newColumnSchemaOrName;
+        }
+
+        return this.changeColumn(tableSchema, oldColumn, newColumn);
+    }
+
+    /**
+     * Changes a column in the table.
+     */
+    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
+    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
+    async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        let tableSchema: TableSchema|undefined = undefined;
+        if (tableSchemaOrName instanceof TableSchema) {
+            tableSchema = tableSchemaOrName;
+        } else {
+            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+        }
+
+        if (!tableSchema)
+            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+
+        let oldColumn: ColumnSchema|undefined = undefined;
+        if (oldColumnSchemaOrName instanceof ColumnSchema) {
+            oldColumn = oldColumnSchemaOrName;
+        } else {
+            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+        }
+
+        if (!oldColumn)
+            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
+
+        // todo: fix it. it should not depend on tableSchema
+        return this.recreateTable(tableSchema);
     }
 
     /**
@@ -409,19 +559,60 @@ export class WebsqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
+        // todo: fix it. it should not depend on tableSchema
         return this.recreateTable(tableSchema);
+    }
+
+    /**
+     * Drops column in the table.
+     */
+    async dropColumn(tableName: string, columnName: string): Promise<void>;
+
+    /**
+     * Drops column in the table.
+     */
+    async dropColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
+
+    /**
+     * Drops column in the table.
+     */
+    async dropColumn(tableSchemaOrName: TableSchema|string, columnSchemaOrName: ColumnSchema|string): Promise<void> {
+        return this.dropColumns(tableSchemaOrName as any, [columnSchemaOrName as any]);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void> {
+    async dropColumns(tableName: string, columnNames: string[]): Promise<void>;
+
+    /**
+     * Drops the columns in the table.
+     */
+    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
+
+    /**
+     * Drops the columns in the table.
+     */
+    async dropColumns(tableSchemaOrName: TableSchema|string, columnSchemasOrNames: ColumnSchema[]|string[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const newTable = tableSchema.clone();
-        newTable.removeColumns(columns);
-        return this.recreateTable(newTable);
+        const tableSchema = await this.getTableSchema(tableSchemaOrName);
+        const updatingTableSchema = tableSchema.clone();
+        const columns = (columnSchemasOrNames as any[]).map(columnSchemasOrName => {
+            if (typeof columnSchemasOrName === "string") {
+                const column = tableSchema.columns.find(column => column.name === columnSchemasOrName);
+                if (!column)
+                    throw new Error(`Cannot drop a column - column "${columnSchemasOrName}" was not found in the "${tableSchema.name}" table.`);
+
+                return column;
+
+            } else {
+                return columnSchemasOrName as ColumnSchema;
+            }
+        });
+        updatingTableSchema.removeColumns(columns);
+        return this.recreateTable(updatingTableSchema);
     }
 
     /**
@@ -435,45 +626,107 @@ export class WebsqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new foreign keys.
+     * Creates a new foreign key.
      */
-    async createForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void> {
+    async createForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
+
+    /**
+     * Creates a new foreign key.
+     */
+    async createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
+
+    /**
+     * Creates a new foreign key.
+     */
+    async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const newTable = tableSchema.clone();
-        newTable.addForeignKeys(foreignKeys);
-        return this.recreateTable(newTable);
+        return this.createForeignKeys(tableSchemaOrName as any, [foreignKey]);
+    }
+
+    /**
+     * Creates a new foreign keys.
+     */
+    async createForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
+
+    /**
+     * Creates a new foreign keys.
+     */
+    async createForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
+
+    /**
+     * Creates a new foreign keys.
+     */
+    async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        const tableSchema = await this.getTableSchema(tableSchemaOrName);
+        const changedTableSchema = tableSchema.clone();
+        changedTableSchema.addForeignKeys(foreignKeys);
+        return this.recreateTable(changedTableSchema);
+    }
+
+    /**
+     * Drops a foreign key from the table.
+     */
+    async dropForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
+
+    /**
+     * Drops a foreign key from the table.
+     */
+    async dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
+
+    /**
+     * Drops a foreign key from the table.
+     */
+    async dropForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        return this.dropForeignKeys(tableSchemaOrName as any, [foreignKey]);
     }
 
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void> {
+    async dropForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
+
+    /**
+     * Drops a foreign keys from the table.
+     */
+    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
+
+    /**
+     * Drops a foreign keys from the table.
+     */
+    async dropForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const newTable = tableSchema.clone();
-        newTable.removeForeignKeys(foreignKeys);
-        return this.recreateTable(newTable);
+        const tableSchema = await this.getTableSchema(tableSchemaOrName);
+        const changedTableSchema = tableSchema.clone();
+        changedTableSchema.removeForeignKeys(foreignKeys);
+        return this.recreateTable(changedTableSchema);
     }
 
     /**
      * Creates a new index.
      */
-    async createIndex(index: IndexSchema): Promise<void> {
+    async createIndex(tableName: string, index: IndexSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${index.tableName}"(${columnNames})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${tableName}"(${columnNames})`;
         await this.query(sql);
     }
 
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableName: string, indexName: string, isGenerated: boolean = false): Promise<void> {
+    async dropIndex(tableName: string, indexName: string): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -484,10 +737,10 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata) {
-        switch (column.normalizedDataType) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+        switch (typeOptions.type) {
             case "string":
-                return "character varying(" + (column.length ? column.length : 255) + ")";
+                return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
             case "text":
                 return "text";
             case "boolean":
@@ -505,14 +758,14 @@ export class WebsqlQueryRunner implements QueryRunner {
             case "number":
                 return "double precision";
             case "decimal":
-                if (column.precision && column.scale) {
-                    return `decimal(${column.precision},${column.scale})`;
+                if (typeOptions.precision && typeOptions.scale) {
+                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
 
-                } else if (column.scale) {
-                    return `decimal(${column.scale})`;
+                } else if (typeOptions.scale) {
+                    return `decimal(${typeOptions.scale})`;
 
-                } else if (column.precision) {
-                    return `decimal(${column.precision})`;
+                } else if (typeOptions.precision) {
+                    return `decimal(${typeOptions.precision})`;
 
                 } else {
                     return "decimal";
@@ -521,13 +774,13 @@ export class WebsqlQueryRunner implements QueryRunner {
             case "date":
                 return "date";
             case "time":
-                if (column.timezone) {
+                if (typeOptions.timezone) {
                     return "time with time zone";
                 } else {
                     return "time without time zone";
                 }
             case "datetime":
-                if (column.timezone) {
+                if (typeOptions.timezone) {
                     return "timestamp with time zone";
                 } else {
                     return "timestamp without time zone";
@@ -535,10 +788,10 @@ export class WebsqlQueryRunner implements QueryRunner {
             case "json":
                 return "json";
             case "simple_array":
-                return column.length ? "character varying(" + column.length + ")" : "text";
+                return typeOptions.length ? "character varying(" + typeOptions.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(column.type, "SQLite");
+        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "WebSQL");
     }
 
     // -------------------------------------------------------------------------
@@ -613,10 +866,24 @@ export class WebsqlQueryRunner implements QueryRunner {
         await this.query(sql4);
 
         // also re-create indices
-        const indexPromises = tableSchema.indices.map(index => this.createIndex(index));
+        const indexPromises = tableSchema.indices.map(index => this.createIndex(tableSchema.name, index));
         // const uniquePromises = tableSchema.uniqueKeys.map(key => this.createIndex(key));
         await Promise.all(indexPromises/*.concat(uniquePromises)*/);
     }
 
+    /**
+     * If given value is a table name then it loads its table schema representation from the database.
+     */
+    protected async getTableSchema(tableSchemaOrName: TableSchema|string): Promise<TableSchema> {
+        if (tableSchemaOrName instanceof TableSchema) {
+            return tableSchemaOrName;
+        } else {
+            const tableSchema = await this.loadTableSchema(tableSchemaOrName);
+            if (!tableSchema)
+                throw new Error(`Table named ${tableSchemaOrName} was not found in the database.`);
+
+            return tableSchema;
+        }
+    }
 
 }

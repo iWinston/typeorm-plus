@@ -28,6 +28,9 @@ import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {Logger} from "../logger/Logger";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFound";
+import {MigrationInterface} from "../migration/MigrationInterface";
+import {MigrationExecutor} from "../migration/MigrationExecutor";
+import {CannotRunMigrationNotConnectedError} from "./error/CannotRunMigrationNotConnectedError";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -107,6 +110,11 @@ export class Connection {
      * Registered naming strategy classes to be used for this connection.
      */
     private readonly namingStrategyClasses: Function[] = [];
+
+    /**
+     * Registered migration classes to be used for this connection.
+     */
+    private readonly migrationClasses: Function[] = [];
 
     /**
      * Naming strategy to be used in this connection.
@@ -221,6 +229,30 @@ export class Connection {
     }
 
     /**
+     * Runs all pending migrations.
+     */
+    async runMigrations(): Promise<void> {
+
+        if (!this.isConnected)
+            return Promise.reject(new CannotRunMigrationNotConnectedError(this.name));
+
+        const migrationExecutor = new MigrationExecutor(this);
+        await migrationExecutor.executePendingMigrations();
+    }
+
+    /**
+     * Reverts last executed migration.
+     */
+    async undoLastMigration(): Promise<void> {
+
+        if (!this.isConnected)
+            return Promise.reject(new CannotRunMigrationNotConnectedError(this.name));
+
+        const migrationExecutor = new MigrationExecutor(this);
+        await migrationExecutor.undoLastMigration();
+    }
+
+    /**
      * Imports entities from the given paths (directories) and registers them in the current connection.
      */
     importEntitiesFromDirectories(paths: string[]): this {
@@ -249,6 +281,14 @@ export class Connection {
      */
     importNamingStrategiesFromDirectories(paths: string[]): this {
         this.importEntities(importClassesFromDirectories(paths));
+        return this;
+    }
+
+    /**
+     * Imports migrations from the given paths (directories) and registers them in the current connection.
+     */
+    importMigrationsFromDirectories(paths: string[]): this {
+        this.importMigrations(importClassesFromDirectories(paths));
         return this;
     }
 
@@ -293,6 +333,17 @@ export class Connection {
             throw new CannotImportAlreadyConnectedError("naming strategies", this.name);
 
         strategies.forEach(cls => this.namingStrategyClasses.push(cls));
+        return this;
+    }
+
+    /**
+     * Imports migrations and registers them in the current connection.
+     */
+    importMigrations(migrations: Function[]): this {
+        if (this.isConnected)
+            throw new CannotImportAlreadyConnectedError("migrations", this.name);
+
+        migrations.forEach(cls => this.migrationClasses.push(cls));
         return this;
     }
 
@@ -430,6 +481,19 @@ export class Connection {
         return new EntityManager(this, queryRunnerProvider);
     }
 
+    /**
+     * Gets migration instances that are registered for this connection.
+     */
+    getMigrations(): MigrationInterface[] {
+        if (this.migrationClasses && this.migrationClasses.length) {
+            return this.migrationClasses.map(migrationClass => {
+                return getFromContainer<MigrationInterface>(migrationClass);
+            });
+        }
+
+        return [];
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -463,6 +527,7 @@ export class Connection {
         this.entityMetadatas.length = 0;
 
         const namingStrategy = this.createNamingStrategy();
+        this.driver.namingStrategy = namingStrategy;
         const lazyRelationsWrapper = this.createLazyRelationsWrapper();
 
         // take imported event subscribers
@@ -553,7 +618,7 @@ export class Connection {
      * Creates a schema builder used to build a database schema for the entities of the current connection.
      */
     protected createSchemaBuilder() {
-        return new SchemaBuilder(this.driver, this.logger, this.entityMetadatas, this.createNamingStrategy());
+        return new SchemaBuilder(this.driver, this.logger, this.entityMetadatas);
     }
 
     /**
@@ -562,5 +627,4 @@ export class Connection {
     protected createLazyRelationsWrapper() {
         return new LazyRelationsWrapper(this);
     }
-
 }

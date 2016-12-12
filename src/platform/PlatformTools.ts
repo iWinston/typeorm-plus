@@ -16,7 +16,21 @@ export class PlatformTools {
      * This operation only supports on node platform
      */
     static load(name: string): any {
-        return require(name);
+
+        // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currenly in
+        // this is useful when we are using typeorm package globally installed and it accesses drivers
+        // that are not installed globally
+
+        try {
+            return require(name);
+
+        } catch (err) {
+            if (name.substr(0, 1) !== "/" && name.substr(0, 2) !== "./" && name.substr(0, 3) !== "../") {
+                return require(process.cwd() + "/node_modules/" + name);
+            }
+
+            throw err;
+        }
     }
 
     /**

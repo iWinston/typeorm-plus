@@ -306,17 +306,4 @@ export class ColumnMetadata {
         }
     }
 
-    get normalizedDataType() {
-        if (typeof this.type === "string") {
-            return this.type.toLowerCase();
-
-        } else if (typeof this.type === "object" &&
-            (this.type as any).name &&
-            typeof (this.type as any).name === "string") {
-            return (this.type as any).toLowerCase(); // todo: shouldnt be a .name here?
-        }
-
-        throw new Error(`Column data type cannot be normalized. Make sure you have supplied a correct column type.`);
-    }
-
 }

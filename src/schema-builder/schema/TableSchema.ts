@@ -4,6 +4,7 @@ import {ForeignKeySchema} from "./ForeignKeySchema";
 import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {QueryRunner} from "../../query-runner/QueryRunner";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  * Table schema in the database represented in this class.
@@ -50,10 +51,17 @@ export class TableSchema {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columns?: ColumnSchema[], justCreated?: boolean) {
+    constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean) {
         this.name = name;
-        if (columns)
-            this.columns = columns;
+        if (columns) {
+            this.columns = columns.map(column => {
+                if (column instanceof ColumnSchema) {
+                    return column;
+                } else {
+                    return new ColumnSchema(column);
+                }
+            });
+        }
 
         if (justCreated !== undefined)
             this.justCreated = justCreated;

@@ -10,11 +10,17 @@ export class SchemaSyncCommand {
         "To run update queries on a concrete connection use -c option.";
 
     builder(yargs: any) {
-        return yargs.option("c", {
-            alias: "connection",
-            default: "default",
-            describe: "Name of the connection on which schema synchronization needs to to run"
-        });
+        return yargs
+            .option("c", {
+                alias: "connection",
+                default: "default",
+                describe: "Name of the connection on which schema synchronization needs to to run."
+            })
+            .option("cf", {
+                alias: "config",
+                default: "ormconfig.json",
+                describe: "Name of the file with connection configuration."
+            });
     }
 
     async handler(argv: any) {
@@ -24,7 +30,7 @@ export class SchemaSyncCommand {
             process.env.LOGGER_CLI_SCHEMA_SYNC = true;
             process.env.SKIP_SCHEMA_CREATION = true;
             if (argv.connection) {
-                connection = await createConnection(argv.connection);
+                connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
                 await connection.syncSchema(false);
                 await connection.close();
             } else {
@@ -33,7 +39,8 @@ export class SchemaSyncCommand {
             }
 
         } catch (err) {
-            console.error(err);
+            if (connection)
+                (connection as Connection).logger.log("error", err);
             throw err;
 
         } finally {

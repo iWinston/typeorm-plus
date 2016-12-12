@@ -465,7 +465,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             if (notInIds && notInIds.length > 0)
                 qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.name) + " NOT IN (:notInIds)", {notInIds: notInIds});
 
-            return qb.getScalarMany()
+            return qb.getRawMany()
                 .then((results: { id: any }[]) => {
                     results.forEach(result => ids.push(result.id)); // todo: prepare result?
                 });
