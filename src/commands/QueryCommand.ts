@@ -1,6 +1,5 @@
 import {createConnection} from "../index";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {Connection} from "../connection/Connection";
 
 /**
  * Executes an sql query on the given connection.
@@ -14,29 +13,33 @@ export class QueryCommand {
             .option("c", {
                 alias: "connection",
                 default: "default",
-                describe: "Name of the connection on which to run a query"
+                describe: "Name of the connection on which to run a query."
+            })
+            .option("cf", {
+                alias: "config",
+                default: "ormconfig.json",
+                describe: "Name of the file with connection configuration."
             });
     }
 
     async handler(argv: any) {
-        let connection: Connection|undefined = undefined,
-            queryRunner: QueryRunner|undefined = undefined;
+        process.env.SKIP_SCHEMA_CREATION = true;
+        const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
+        let queryRunner: QueryRunner|undefined = undefined;
         try {
-            process.env.SKIP_SCHEMA_CREATION = true;
-            connection = await createConnection("default" || argv.connection);
             queryRunner = await connection.driver.createQueryRunner();
             const queryResult = await queryRunner.query(argv._[1]);
-            console.log("Query executed. Result: ", queryResult);
+            connection.logger.log("info", "Query executed. Result: " + JSON.stringify(queryResult));
 
         } catch (err) {
-            console.error(err);
+            connection.logger.log("error", err);
             throw err;
 
         } finally {
             if (queryRunner)
                 await queryRunner.release();
-            if (connection)
-                await connection.close();
+
+            await connection.close();
         }
     }
 }
