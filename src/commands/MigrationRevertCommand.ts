@@ -3,12 +3,12 @@ import {createConnection} from "../index";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
 
 /**
- * Runs migration command.
+ * Reverts last migration command.
  */
-export class MigrationRunCommand {
+export class MigrationRevertCommand {
 
-    command = "migration:run";
-    describe = "Runs all pending migrations.";
+    command = "migration:revert";
+    describe = "Reverts last executed migration.";
 
     builder(yargs: any) {
         return yargs
@@ -26,7 +26,7 @@ export class MigrationRunCommand {
             process.env.SKIP_SCHEMA_CREATION = true;
             connection = await createConnection("default" || argv.connection);
             const migrationExecutor = new MigrationExecutor(connection);
-            await migrationExecutor.executePendingMigrations();
+            await migrationExecutor.undoLastMigration();
 
         } catch (err) {
             console.error(err);
