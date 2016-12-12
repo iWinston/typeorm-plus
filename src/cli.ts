@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import "reflect-metadata";
 import {SchemaSyncCommand} from "./commands/SchemaSyncCommand";
 import {SchemaDropCommand} from "./commands/SchemaDropCommand";
 import {QueryCommand} from "./commands/QueryCommand";

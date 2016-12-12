@@ -21,17 +21,30 @@ export class EntityCreateCommand {
             })
             .option("d", {
                 alias: "dir",
-                describe: "Directory where entity should be created.",
-                demand: true
+                describe: "Directory where entity should be created."
+            })
+            .option("cf", {
+                alias: "config",
+                default: "ormconfig.json",
+                describe: "Name of the file with connection configuration."
             });
     }
 
     async handler(argv: any) {
         const fileContent = EntityCreateCommand.getTemplate(argv.name);
-        const directory = argv.dir;
         const filename = argv.name + ".ts";
+        let directory = argv.dir;
 
-        await EntityCreateCommand.createFile(process.cwd() + "/" + directory + "/" + filename, fileContent);
+        // if directory is not set then try to open tsconfig and find default path there
+        if (!directory) {
+            try {
+                const config = require(process.cwd() + "/" + argv.config);
+                if (config && config.cli)
+                    directory = config.cli.entitiesDir;
+            } catch (err) { }
+        }
+
+        await EntityCreateCommand.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------

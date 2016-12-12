@@ -22,18 +22,31 @@ export class MigrationCreateCommand {
             })
             .option("d", {
                 alias: "dir",
-                describe: "Directory where migration should be created.",
-                demand: true
+                describe: "Directory where migration should be created."
+            })
+            .option("cf", {
+                alias: "config",
+                default: "ormconfig.json",
+                describe: "Name of the file with connection configuration."
             });
     }
 
     async handler(argv: any) {
-        const timestamp     = new Date().getTime();
-        const fileContent   = MigrationCreateCommand.getTemplate(argv.name, timestamp);
-        const directory     = argv.dir; // || "./migrations";
-        const filename      = timestamp + "-" + argv.name + ".ts";
+        const timestamp = new Date().getTime();
+        const fileContent = MigrationCreateCommand.getTemplate(argv.name, timestamp);
+        const filename = timestamp + "-" + argv.name + ".ts";
+        let directory = argv.dir;
 
-        await MigrationCreateCommand.createFile(process.cwd() + "/" + directory + "/" + filename, fileContent);
+        // if directory is not set then try to open tsconfig and find default path there
+        if (!directory) {
+            try {
+                const config = require(process.cwd() + "/" + argv.config);
+                if (config && config.cli)
+                    directory = config.cli.migrationsDir;
+            } catch (err) { }
+        }
+
+        await MigrationCreateCommand.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------
