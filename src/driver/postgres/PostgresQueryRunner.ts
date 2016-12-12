@@ -254,7 +254,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
         // load tables, columns, indices and foreign keys
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
-        const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
+        const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public' AND table_name IN (${tableNamesString})`;
         const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
         const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name  FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
 WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
@@ -422,11 +422,87 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
     }
 
     /**
+     * Renames column in the given table.
+     */
+    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Renames column in the given table.
+     */
+    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
+
+    /**
+     * Renames column in the given table.
+     */
+    async renameColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
+
+        let tableSchema: TableSchema|undefined = undefined;
+        if (tableSchemaOrName instanceof TableSchema) {
+            tableSchema = tableSchemaOrName;
+        } else {
+            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+        }
+
+        if (!tableSchema)
+            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+
+        let oldColumn: ColumnSchema|undefined = undefined;
+        if (oldColumnSchemaOrName instanceof ColumnSchema) {
+            oldColumn = oldColumnSchemaOrName;
+        } else {
+            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+        }
+
+        if (!oldColumn)
+            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
+
+        let newColumn: ColumnSchema|undefined = undefined;
+        if (newColumnSchemaOrName instanceof ColumnSchema) {
+            newColumn = newColumnSchemaOrName;
+        } else {
+            newColumn = oldColumn.clone();
+            newColumn.name = newColumnSchemaOrName;
+        }
+
+        return this.changeColumn(tableSchema, newColumn, oldColumn);
+    }
+
+    /**
      * Changes a column in the table.
      */
-    async changeColumn(tableSchema: TableSchema, newColumn: ColumnSchema, oldColumn: ColumnSchema): Promise<void> {
+    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
+    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
+    async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
+
+        let tableSchema: TableSchema|undefined = undefined;
+        if (tableSchemaOrName instanceof TableSchema) {
+            tableSchema = tableSchemaOrName;
+        } else {
+            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+        }
+
+        if (!tableSchema)
+            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+
+        let oldColumn: ColumnSchema|undefined = undefined;
+        if (oldColumnSchemaOrName instanceof ColumnSchema) {
+            oldColumn = oldColumnSchemaOrName;
+        } else {
+            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+        }
+
+        if (!oldColumn)
+            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
 
         if (oldColumn.type !== newColumn.type ||
             oldColumn.name !== newColumn.name) {
@@ -485,7 +561,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             throw new QueryRunnerAlreadyReleasedError();
 
         const updatePromises = changedColumns.map(async changedColumn => {
-            return this.changeColumn(tableSchema, changedColumn.newColumn, changedColumn.oldColumn);
+            return this.changeColumn(tableSchema, changedColumn.oldColumn, changedColumn.newColumn);
         });
 
         await Promise.all(updatePromises);

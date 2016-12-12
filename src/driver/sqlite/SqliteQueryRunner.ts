@@ -168,7 +168,7 @@ export class SqliteQueryRunner implements QueryRunner {
         this.logger.logQuery(sql, parameters);
         return new Promise<any[]>((ok, fail) => {
             const __this = this;
-            this.databaseConnection.connection.executePendingMigrations(sql, parameters, function (err: any): void {
+            this.databaseConnection.connection.run(sql, parameters, function (err: any): void {
                 if (err) {
                     __this.logger.logFailedQuery(sql, parameters);
                     __this.logger.logQueryError(err);
@@ -265,8 +265,10 @@ export class SqliteQueryRunner implements QueryRunner {
         if (!tableNames || !tableNames.length)
             return [];
 
+        const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
+
         // load tables, columns, indices and foreign keys
-        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM sqlite_master WHERE type = 'table' AND name != 'sqlite_sequence'`);
+        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM sqlite_master WHERE type = 'table' AND name IN (${tableNamesString})`);
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
@@ -454,12 +456,87 @@ export class SqliteQueryRunner implements QueryRunner {
     }
 
     /**
-     * Changes a column in the table.
-     * Changed column looses all its keys in the db.
+     * Renames column in the given table.
      */
-    async changeColumn(tableSchema: TableSchema, newColumn: ColumnSchema, oldColumn: ColumnSchema): Promise<void> {
+    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Renames column in the given table.
+     */
+    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
+
+    /**
+     * Renames column in the given table.
+     */
+    async renameColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
+
+        let tableSchema: TableSchema|undefined = undefined;
+        if (tableSchemaOrName instanceof TableSchema) {
+            tableSchema = tableSchemaOrName;
+        } else {
+            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+        }
+
+        if (!tableSchema)
+            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+
+        let oldColumn: ColumnSchema|undefined = undefined;
+        if (oldColumnSchemaOrName instanceof ColumnSchema) {
+            oldColumn = oldColumnSchemaOrName;
+        } else {
+            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+        }
+
+        if (!oldColumn)
+            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
+
+        let newColumn: ColumnSchema|undefined = undefined;
+        if (newColumnSchemaOrName instanceof ColumnSchema) {
+            newColumn = newColumnSchemaOrName;
+        } else {
+            newColumn = oldColumn.clone();
+            newColumn.name = newColumnSchemaOrName;
+        }
+
+        return this.changeColumn(tableSchema, newColumn, oldColumn);
+    }
+
+    /**
+     * Changes a column in the table.
+     */
+    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
+    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
+    async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
+
+        let tableSchema: TableSchema|undefined = undefined;
+        if (tableSchemaOrName instanceof TableSchema) {
+            tableSchema = tableSchemaOrName;
+        } else {
+            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+        }
+
+        if (!tableSchema)
+            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+
+        let oldColumn: ColumnSchema|undefined = undefined;
+        if (oldColumnSchemaOrName instanceof ColumnSchema) {
+            oldColumn = oldColumnSchemaOrName;
+        } else {
+            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+        }
+
+        if (!oldColumn)
+            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
 
         // todo: fix it. it should not depend on tableSchema
         return this.recreateTable(tableSchema);

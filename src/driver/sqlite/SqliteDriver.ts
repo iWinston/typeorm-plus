@@ -92,7 +92,7 @@ export class SqliteDriver implements Driver {
 
                 // we need to enable foreign keys in sqlite to make sure all foreign key related features
                 // working properly. this also makes onDelete to work with sqlite.
-                connection.executePendingMigrations(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
+                connection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
                     ok();
                 });
             });

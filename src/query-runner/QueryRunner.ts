@@ -124,17 +124,30 @@ export interface QueryRunner {
      */
     addColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void>;
 
-    // todo: renameColumn ?
+    /**
+     * Renames column in the given table.
+     */
+    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Renames column in the given table.
+     */
+    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
 
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: TableSchema, newColumn: ColumnSchema, oldColumn: ColumnSchema): Promise<void>;
+    changeColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+
+    /**
+     * Changes a column in the table.
+     */
+    changeColumn(table: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
 
     /**
      * Changes a columns in the table.
      */
-    changeColumns(table: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void>;
+    changeColumns(table: TableSchema, changedColumns: { oldColumn: ColumnSchema, newColumn: ColumnSchema }[]): Promise<void>;
 
     /**
      * Drops the column in the table.
