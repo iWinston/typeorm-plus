@@ -485,7 +485,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             newColumn.name = newColumnSchemaOrName;
         }
 
-        return this.changeColumn(tableSchema, newColumn, oldColumn);
+        return this.changeColumn(tableSchema, oldColumn, newColumn);
     }
 
     /**
@@ -565,7 +565,9 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const updatePromises = changedColumns.map(async changedColumn => this.changeColumn(tableSchema, changedColumn.oldColumn, changedColumn.newColumn));
+        const updatePromises = changedColumns.map(async changedColumn => {
+            return this.changeColumn(tableSchema, changedColumn.oldColumn, changedColumn.newColumn);
+        });
         await Promise.all(updatePromises);
     }
 

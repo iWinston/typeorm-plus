@@ -540,7 +540,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             newColumn.name = newColumnSchemaOrName;
         }
 
-        return this.changeColumn(tableSchema, newColumn, oldColumn);
+        return this.changeColumn(tableSchema, oldColumn, newColumn);
     }
 
     /**

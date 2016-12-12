@@ -464,7 +464,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             newColumn.name = newColumnSchemaOrName;
         }
 
-        return this.changeColumn(tableSchema, newColumn, oldColumn);
+        return this.changeColumn(tableSchema, oldColumn, newColumn);
     }
 
     /**

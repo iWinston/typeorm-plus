@@ -219,7 +219,7 @@ export class MigrationExecutor {
      * Gets all migrations that setup for this connection.
      */
     protected getMigrations(): Migration[] {
-        return this.connection.getMigrations().map(migration => {
+        const migrations = this.connection.getMigrations().map(migration => {
             const migrationClassName = (migration.constructor as any).name;
             const migrationTimestamp = parseInt(migrationClassName.substr(-10));
             if (!migrationTimestamp)
@@ -227,6 +227,9 @@ export class MigrationExecutor {
 
             return new Migration(migrationTimestamp, migrationClassName, migration);
         });
+
+        // sort them by timestamp
+        return migrations.sort((a, b) => (a.timestamp - b.timestamp) * -1);
     }
 
     /**
