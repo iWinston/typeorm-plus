@@ -1,11 +1,11 @@
 import * as fs from "fs";
 
 /**
- * Generates a new entity.
+ * Generates a new subscriber.
  */
-export class EntityGenerateCommand {
-    command = "entity:generate";
-    describe = "Generates a new entity.";
+export class SubscriberCreateCommand {
+    command = "subscriber:create";
+    describe = "Generates a new subscriber.";
 
     builder(yargs: any) {
         return yargs
@@ -16,26 +16,26 @@ export class EntityGenerateCommand {
             // })
             .option("n", {
                 alias: "name",
-                describe: "Name of the entity class.",
+                describe: "Name of the subscriber class.",
                 demand: true
             })
             .option("d", {
                 alias: "dir",
-                describe: "Directory where entity should be created.",
+                describe: "Directory where subscriber should be created.",
                 demand: true
             });
     }
 
     async handler(argv: any) {
-        const fileContent = EntityGenerateCommand.getTemplate(argv.name);
+        const fileContent = SubscriberCreateCommand.getTemplate(argv.name);
         const directory = argv.dir;
         const filename = argv.name + ".ts";
 
-        await EntityGenerateCommand.createFile(process.cwd() + "/" + directory + "/" + filename, fileContent);
+        await SubscriberCreateCommand.createFile(process.cwd() + "/" + directory + "/" + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------
-    // Protected Methods
+    // Protected Static Methods
     // -------------------------------------------------------------------------
 
     /**
@@ -51,10 +51,10 @@ export class EntityGenerateCommand {
      * Gets contents of the entity file.
      */
     protected static getTemplate(name: string): string {
-        return `import {Table} from "typeorm";
+        return `import {EventSubscriber, EntitySubscriberInterface} from "typeorm";
 
-@Table()
-export class ${name} {
+@EventSubscriber()
+export class ${name} implements EntitySubscriberInterface<any> {
 
 }
 `;

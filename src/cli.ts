@@ -2,10 +2,11 @@
 import {SchemaSyncCommand} from "./commands/SchemaSyncCommand";
 import {SchemaDropCommand} from "./commands/SchemaDropCommand";
 import {QueryCommand} from "./commands/QueryCommand";
-import {EntityGenerateCommand} from "./commands/EntityGenerateCommand";
+import {EntityCreateCommand} from "./commands/EntityCreateCommand";
 import {MigrationCreateCommand} from "./commands/MigrationCreateCommand";
 import {MigrationRunCommand} from "./commands/MigrationRunCommand";
 import {MigrationRevertCommand} from "./commands/MigrationRevertCommand";
+import {SubscriberCreateCommand} from "./commands/SubscriberCreateCommand";
 
 require("yargonaut")
     .style("blue")
@@ -18,7 +19,8 @@ require("yargs")
     .command(new SchemaSyncCommand())
     .command(new SchemaDropCommand())
     .command(new QueryCommand())
-    .command(new EntityGenerateCommand())
+    .command(new EntityCreateCommand())
+    .command(new SubscriberCreateCommand())
     .command(new MigrationCreateCommand())
     .command(new MigrationRunCommand())
     .command(new MigrationRevertCommand())
