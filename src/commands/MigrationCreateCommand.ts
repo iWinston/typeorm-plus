@@ -73,7 +73,7 @@ export class MigrationCreateCommand {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import {MigrationInterface} from "typeorm";
+        return `import {MigrationInterface, QueryRunner, Connection} from "typeorm";
 
 export class ${name}${timestamp} implements MigrationInterface {
 
