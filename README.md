@@ -1057,6 +1057,19 @@ You'll use query builder in your application a lot. Learn more about QueryBuilde
 
 Take a look on samples in [./sample](sample) for examples of usage.
 
+There are few repositories which you can clone and start with:
+
+* [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
+* [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
+* [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
+
+## Extensions
+
+There are several extensions that simplify TypeORM integration with other modules:
+
+* [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
+* [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
+
 ## Contributing 
 
 Learn about contribution [here](CONTRIBUTING.md) and how to setup your development environment [here](DEVELOPER.md).
