@@ -790,6 +790,8 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                 }
             case "json":
                 return "json";
+            case "jsonb":
+                return "jsonb";
             case "simple_array":
                 return typeOptions.length ? "character varying(" + typeOptions.length + ")" : "text";
         }

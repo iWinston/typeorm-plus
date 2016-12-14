@@ -2,7 +2,7 @@
  * All data types that column can be.
  */
 export type ColumnType = "string"|"text"|"number"|"integer"|"int"|"smallint"|"bigint"|"float"|"double"|
-                         "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"simple_array";
+                         "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"jsonb"|"simple_array";
 
 /**
  * All data types that column can be.
@@ -83,6 +83,11 @@ export class ColumnTypes {
      * SQL CLOB type. Your class's property type should be any Object.
      */
     static JSON: ColumnType = "json";
+
+    /**
+     * Postgres jsonb type. Your class's property type should be any Object.
+     */
+    static JSONB: ColumnType = "jsonb";
 
     /**
      * SQL CLOB type. Your class's property type should be array of string. Note: value in this column should not contain
