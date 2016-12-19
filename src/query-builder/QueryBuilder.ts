@@ -1476,7 +1476,7 @@ export class QueryBuilder<Entity> {
         if (!this.fromTableName) {
             const mainMetadata = this.connection.getMetadata(this.aliasMap.mainAlias.target);
             if (mainMetadata.hasDiscriminatorColumn)
-                return ` WHERE ${ conditions.length ? "(" + conditions + ")" : "" } AND ${mainMetadata.discriminatorColumn.name}=:discriminatorColumnValue`;
+                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${mainMetadata.discriminatorColumn.name}=:discriminatorColumnValue`;
 
         }
 
