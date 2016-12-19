@@ -14,7 +14,7 @@ export class DataTransformationUtils {
     }
 
     /**
-     * Converts given value into time string in a "HH-mm-ss" format.
+     * Converts given value into time string in a "HH:mm:ss" format.
      */
     static mixedDateToTimeString(value: Date|any): string|any {
         if (value instanceof Date)
