@@ -18,7 +18,7 @@ export class DataTransformationUtils {
      */
     static mixedDateToTimeString(value: Date|any): string|any {
         if (value instanceof Date)
-            return value.getHours() + "-" + value.getMinutes() + "-" + value.getSeconds();
+            return value.getHours() + ":" + value.getMinutes() + ":" + value.getSeconds();
 
         return value;
     }
