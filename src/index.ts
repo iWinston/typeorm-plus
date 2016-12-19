@@ -59,6 +59,11 @@ export * from "./decorator/NamingStrategy";
 export * from "./decorator/tables/TableInheritance";
 export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
+export * from "./schema-builder/schema/ColumnSchema";
+export * from "./schema-builder/schema/ForeignKeySchema";
+export * from "./schema-builder/schema/IndexSchema";
+export * from "./schema-builder/schema/PrimaryKeySchema";
+export * from "./schema-builder/schema/TableSchema";
 
 export {Connection} from "./connection/Connection";
 export {ConnectionManager} from "./connection/ConnectionManager";
