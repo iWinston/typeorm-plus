@@ -368,7 +368,7 @@ export class Subject {
             // todo: what to do if there is a column with relationId? (cover this too?)
             const updatedEntityRelationId: any =
                 this.entity[relation.propertyName] instanceof Object ?
-                    this.metadata.getEntityIdMixedMap(this.entity[relation.propertyName])
+                    relation.inverseEntityMetadata.getEntityIdMixedMap(this.entity[relation.propertyName])
                     : this.entity[relation.propertyName];
 
 
