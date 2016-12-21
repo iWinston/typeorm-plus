@@ -378,7 +378,7 @@ export class SqliteQueryRunner implements QueryRunner {
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableName: string): Promise<boolean> {
-        const sql = `SELECT * FROM sqlite_master WHERE type = 'table' AND name = ${tableName}'`;
+        const sql = `SELECT * FROM sqlite_master WHERE type = 'table' AND name = '${tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
