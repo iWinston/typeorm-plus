@@ -1,4 +1,13 @@
-# 0.0.5
+# 0.0.6 (upcoming)
+
+* added `JSONB` support for Postgres in #126 (thanks @CreepGin)
+* fixed in in sqlite query runner in #141 (thanks @marcinwadon)
+* added shortcut exports for table schema classes in #135 (thanks @eduardoweiland)
+* fixed bugs with single table inheritance in #132 (thanks @eduardoweiland)
+* fixed issue with `TIME` column in #134 (thanks @cserron)
+* fixed issue with relation id in #138 (thanks @mingyang91)
+
+# 0.0.5 (current)
 
 * changed `getScalarMany` to `getRawMany` in `QueryBuilder`
 * changed `getScalarOne` to `getRawOne` in `QueryBuilder`
