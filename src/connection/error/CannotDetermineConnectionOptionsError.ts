@@ -8,7 +8,7 @@ export class CannotDetermineConnectionOptionsError extends Error {
     constructor() {
         super();
         this.message = `Cannot create connection, because connection options are missing. ` +
-            `You either need to explicitly pass connection options, either create a ormconfig.json with with connection options ` +
+            `You either need to explicitly pass connection options, either create a ormconfig.json with connection options ` +
             `and "default" connection name, either to set proper environment variables. Also, if you are using environment-specific ` +
             `configurations in your ormconfig.json make sure your are running under correct NODE_ENV.`;
         this.stack = new Error().stack;
