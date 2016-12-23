@@ -122,6 +122,7 @@ export class ColumnTypes {
             this.DATETIME,
             this.BOOLEAN,
             this.JSON,
+            this.JSONB,
             this.SIMPLE_ARRAY
         ];
     }

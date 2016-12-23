@@ -332,14 +332,21 @@ export class Subject {
                 }
             }
 
-            // if its a special column or value is not defined or values aren't changed - then do nothing
+            // if value is not defined then no need to update it
+            if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)
+                return false;
+
+            // if value is in embedded and is not defined then no need to update it
+            if (column.isInEmbedded && (this.entity[column.embeddedProperty] === undefined || this.entity[column.embeddedProperty][column.propertyName] === undefined))
+                return false;
+
+            // if its a special column or value is not changed - then do nothing
             if (column.isVirtual ||
                 column.isParentId ||
                 column.isDiscriminator ||
                 column.isUpdateDate ||
                 column.isVersion ||
                 column.isCreateDate ||
-                this.entity[column.propertyName] === undefined ||
                 entityValue === databaseValue)
                 return false;
 
