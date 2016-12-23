@@ -9,9 +9,17 @@ import {Category} from "./entity/Category";
  * So we run tests only for mysql.
  */
 describe("lazy-relations", () => {
-    const resourceDir = __dirname + "/../../../../../test/functional/lazy-relations/";
-    const userSchema = require(resourceDir + "schema/user.json");
-    const profileSchema = require(resourceDir + "schema/profile.json");
+
+    let userSchema: any, profileSchema: any;
+    try {
+        const resourceDir = __dirname + "/../../../../../test/functional/lazy-relations/";
+        userSchema = require(resourceDir + "schema/user.json");
+        profileSchema = require(resourceDir + "schema/profile.json");
+    } catch (err) {
+        const resourceDir = __dirname + "/";
+        userSchema = require(resourceDir + "schema/user.json");
+        profileSchema = require(resourceDir + "schema/profile.json");
+    }
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

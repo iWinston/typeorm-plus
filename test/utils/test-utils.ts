@@ -81,7 +81,14 @@ export function setupTestingConnections(options?: TestingOptions) {
     let ormConfigConnectionOptionsArray: TestingConnectionOptions[] = [];
 
     try {
-        ormConfigConnectionOptionsArray = require(__dirname + "/../../../../ormconfig.json");
+
+        try {
+            ormConfigConnectionOptionsArray = require(__dirname + "/../../../../ormconfig.json");
+
+        } catch (err) {
+            ormConfigConnectionOptionsArray = require(__dirname + "/../../ormconfig.json");
+            console.log(ormConfigConnectionOptionsArray);
+        }
 
     } catch (err) {
         throw new Error(`Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +

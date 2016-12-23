@@ -332,6 +332,21 @@ export class Gulpfile {
             .pipe(istanbul.writeReports());
     }
 
+    /**
+     * Runs tests the quick way.
+     */
+    @Task("ts-node-tests")
+    quickTests() {
+        chai.should();
+        chai.use(require("sinon-chai"));
+        chai.use(require("chai-as-promised"));
+
+        return gulp.src(["./test/**/*.ts"])
+            .pipe(mocha({
+                timeout: 10000
+            }));
+    }
+
     @Task()
     coverageRemap() {
         return gulp.src("./coverage/coverage-final.json")

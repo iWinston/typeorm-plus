@@ -7,9 +7,16 @@ import {FindOptions} from "../../../../src/find-options/FindOptions";
 import {User} from "./model/User";
 
 describe("repository > find methods", () => {
-    const resourceDir = __dirname + "/../../../../../../test/functional/repository/find-methods/";
-    const userSchema = require(resourceDir + "schema/user.json");
-    
+
+    let userSchema: any;
+    try {
+        const resourceDir = __dirname + "/../../../../../../test/functional/repository/find-methods/";
+        userSchema = require(resourceDir + "schema/user.json");
+    } catch (err) {
+        const resourceDir = __dirname + "/";
+        userSchema = require(resourceDir + "schema/user.json");
+    }
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Post],
