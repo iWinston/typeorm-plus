@@ -37,6 +37,7 @@ export class MigrationExecutor {
      */
     async executePendingMigrations(): Promise<void> {
         const queryRunner = await this.queryRunnerProvider.provide();
+        const entityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(this.queryRunnerProvider);
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist();
@@ -88,7 +89,7 @@ export class MigrationExecutor {
         // run all pending migrations in a sequence
         try {
             await PromiseUtils.runInSequence(pendingMigrations, migration => {
-                return migration.instance!.up(queryRunner, this.connection)
+                return migration.instance!.up(queryRunner, this.connection, entityManager)
                     .then(() => { // now when migration is executed we need to insert record about it into the database
                         return this.insertExecutedMigration(migration);
                     })
@@ -115,6 +116,7 @@ export class MigrationExecutor {
      */
     async undoLastMigration(): Promise<void> {
         const queryRunner = await this.queryRunnerProvider.provide();
+        const entityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(this.queryRunnerProvider);
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist();
@@ -154,7 +156,7 @@ export class MigrationExecutor {
         }
 
         try {
-            await migrationToRevert.instance!.down(queryRunner, this.connection);
+            await migrationToRevert.instance!.down(queryRunner, this.connection, entityManager);
             await this.deleteExecutedMigration(migrationToRevert);
             this.connection.logger.log("info", `Migration ${migrationToRevert.name} has been reverted successfully.`);
 

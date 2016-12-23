@@ -23,18 +23,25 @@ export class MigrationRevertCommand {
     }
 
     async handler(argv: any) {
-        process.env.SKIP_SCHEMA_CREATION = true;
-        const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
 
         try {
-            await connection.undoLastMigration();
+            process.env.SKIP_SCHEMA_CREATION = true;
+            process.env.SKIP_SUBSCRIBERS_LOADING = true;
+            const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
+
+            try {
+                await connection.undoLastMigration();
+
+            } catch (err) {
+                connection.logger.log("error", err);
+
+            } finally {
+                await connection.close();
+            }
 
         } catch (err) {
-            connection.logger.log("error", err);
+            console.error(err);
             throw err;
-
-        } finally {
-            await connection.close();
         }
     }
 

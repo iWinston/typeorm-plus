@@ -24,17 +24,23 @@ export class MigrationRunCommand {
 
     async handler(argv: any) {
 
-        process.env.SKIP_SCHEMA_CREATION = true;
-        const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
         try {
-            await connection.runMigrations();
+            process.env.SKIP_SCHEMA_CREATION = true;
+            process.env.SKIP_SUBSCRIBERS_LOADING = true;
+            const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
+            try {
+                await connection.runMigrations();
+
+            } catch (err) {
+                connection.logger.log("error", err);
+
+            } finally {
+                await connection.close();
+            }
 
         } catch (err) {
-            connection.logger.log("error", err);
+            console.error(err);
             throw err;
-
-        } finally {
-            await connection.close();
         }
     }
 

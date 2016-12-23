@@ -6,6 +6,11 @@
 * fixed bugs with single table inheritance in #132 (thanks @eduardoweiland)
 * fixed issue with `TIME` column in #134 (thanks @cserron)
 * fixed issue with relation id in #138 (thanks @mingyang91)
+* fixed bug when embedded is not being updated
+* metadata storage now in global variable
+* entities are being loaded in migrations and can be used throw the entity manager or their repositories
+* migrations now accept `EntityMetadata` which can be used within one transaction
+* fixed issue with migration running on windows #140
 
 # 0.0.5 (current)
 

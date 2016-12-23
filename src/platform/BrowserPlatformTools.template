@@ -13,6 +13,13 @@ export class PlatformTools {
     static type: "browser"|"node" = "browser";
 
     /**
+     * Gets global variable where global stuff can be stored.
+     */
+    static getGlobalVariable(): any {
+        return window;
+    }
+
+    /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */

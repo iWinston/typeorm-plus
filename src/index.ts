@@ -9,6 +9,7 @@ import {getFromContainer, defaultContainer} from "./container";
 import {ObjectType} from "./common/ObjectType";
 import {Repository} from "./repository/Repository";
 import {EntityManager} from "./entity-manager/EntityManager";
+import {PlatformTools} from "./platform/PlatformTools";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -91,12 +92,19 @@ export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface"
  * Gets metadata args storage.
  */
 export function getMetadataArgsStorage(): MetadataArgsStorage {
-    // we should not get MetadataArgsStorage from the consumer's container because it brings too much problems
-    // the main problem is that if any entity (or any other) will be imported before consumer will call
+    // we should store metadata storage in a global variable otherwise it brings too much problems
+    // one of the problem is that if any entity (or any other) will be imported before consumer will call
     // useContainer method with his own container implementation, that entity will be registered in the
     // old old container (default one post probably) and consumer will his entity.
     // calling useContainer before he imports any entity (or any other) is not always convenient.
-    return defaultContainer.get(MetadataArgsStorage);
+    // another reason is that when we run migrations typeorm is being called from a global package
+    // and it may load entities which register decorators in typeorm of local package
+    // this leads to impossibility of usage of entities in migrations and cli related operations
+    const globalScope = PlatformTools.getGlobalVariable();
+    if (!globalScope.typeormMetadataArgsStorage)
+        globalScope.typeormMetadataArgsStorage = new MetadataArgsStorage();
+
+    return globalScope.typeormMetadataArgsStorage;
 }
 
 /**

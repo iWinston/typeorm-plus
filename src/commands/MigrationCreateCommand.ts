@@ -77,10 +77,10 @@ export class MigrationCreateCommand {
 
 export class ${name}${timestamp} implements MigrationInterface {
 
-    async up(queryRunner: QueryRunner, connection: Connection): Promise<any> {
+    async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
     }
 
-    async down(queryRunner: QueryRunner, connection: Connection): Promise<any> {
+    async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
     }
 
 }

@@ -5,7 +5,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../utils/test-utils";
 
-describe.only("embedded > basic functionality", () => {
+describe("embedded > basic functionality", () => {
 
     let connections: Connection[];
     beforeEach(() => createTestingConnections({

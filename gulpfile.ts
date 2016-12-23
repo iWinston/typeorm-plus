@@ -55,8 +55,7 @@ export class Gulpfile {
             "!./src/cli.ts",
             "!./src/typeorm.ts",
             "!./src/decorators-shim.ts",
-            "!./src/platform/PlatformTools.ts",
-            "!./src/platform/BrowserPlatformTools.ts"
+            "!./src/platform/PlatformTools.ts"
         ])
             .pipe(gulp.dest("./build/browser/typeorm"));
     }
@@ -76,7 +75,7 @@ export class Gulpfile {
      */
     @Task()
     browserCopyPlatformTools() {
-        return gulp.src("./src/platform/BrowserPlatformTools.ts")
+        return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
             .pipe(gulp.dest("./build/browser/typeorm/platform"));
     }
@@ -89,6 +88,7 @@ export class Gulpfile {
         const tsProject = ts.createProject("tsconfig.json", {
             outFile: "typeorm-browser.js",
             module: "system",
+            "lib": ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
         const tsResult = gulp.src(["./build/browser/**/*.ts", "./node_modules/@types/**/*.ts"])

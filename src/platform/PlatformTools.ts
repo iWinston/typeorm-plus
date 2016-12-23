@@ -12,6 +12,13 @@ export class PlatformTools {
     static type: "browser"|"node" = "node";
 
     /**
+     * Gets global variable where global stuff can be stored.
+     */
+    static getGlobalVariable(): any {
+        return global;
+    }
+
+    /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */
@@ -25,8 +32,8 @@ export class PlatformTools {
             return require(name);
 
         } catch (err) {
-            if (name.substr(0, 1) !== "/" && name.substr(0, 2) !== "./" && name.substr(0, 3) !== "../") {
-                return require(process.cwd() + "/node_modules/" + name);
+            if (!path.isAbsolute(name) && name.substr(0, 2) !== "./" && name.substr(0, 3) !== "../") {
+                return require(path.resolve(process.cwd() + "/node_modules/" + name));
             }
 
             throw err;

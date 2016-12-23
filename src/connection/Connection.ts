@@ -31,6 +31,7 @@ import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFo
 import {MigrationInterface} from "../migration/MigrationInterface";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
 import {CannotRunMigrationNotConnectedError} from "./error/CannotRunMigrationNotConnectedError";
+import {PlatformTools} from "../platform/PlatformTools";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -476,8 +477,10 @@ export class Connection {
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it, to release connection back to pool.
      */
-    createEntityManagerWithSingleDatabaseConnection(): EntityManager {
-        const queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+    createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider?: QueryRunnerProvider): EntityManager {
+        if (!queryRunnerProvider)
+            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+
         return new EntityManager(this, queryRunnerProvider);
     }
 
@@ -531,7 +534,7 @@ export class Connection {
         const lazyRelationsWrapper = this.createLazyRelationsWrapper();
 
         // take imported event subscribers
-        if (this.subscriberClasses && this.subscriberClasses.length) {
+        if (this.subscriberClasses && this.subscriberClasses.length && !PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
             getMetadataArgsStorage()
                 .entitySubscribers
                 .filterByTargets(this.subscriberClasses)
