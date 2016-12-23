@@ -363,11 +363,12 @@ export class SubjectOperationExecutor {
             newlyGeneratedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
 
             // second insert entity values into child class table
-            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, subject.newlyGeneratedId, undefined, alreadyInsertedSubjects);
+            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, newlyGeneratedId, undefined, alreadyInsertedSubjects);
             const secondGeneratedId = await this.queryRunner.insert(metadata.table.name, childValuesMap, metadata.generatedColumnIfExist);
             if (!newlyGeneratedId && secondGeneratedId) newlyGeneratedId = secondGeneratedId;
 
         } else { // in the case when class table inheritance is not used
+
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
             newlyGeneratedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
         }

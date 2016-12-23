@@ -673,11 +673,15 @@ export class EntityMetadata {
         if (!entity)
             return undefined;
 
+        const idMap = this.getEntityIdMap(entity);
         if (this.hasMultiplePrimaryKeys) {
-            return this.getEntityIdMap(entity);
-        } else {
-            return entity[this.firstPrimaryColumn.propertyName]; // todo: what about parent primary column?
+            return idMap;
+
+        } else if (idMap) {
+            return idMap[this.firstPrimaryColumn.propertyName]; // todo: what about parent primary column?
         }
+
+        return idMap;
     }
 
     /**
