@@ -11,6 +11,7 @@
 * entities are being loaded in migrations and can be used throw the entity manager or their repositories
 * migrations now accept `EntityMetadata` which can be used within one transaction
 * fixed issue with migration running on windows #140
+* fixed bug with with Class Table Inheritance #144
 
 # 0.0.5 (current)
 
