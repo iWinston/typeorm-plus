@@ -17,13 +17,26 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
 
 
     it("should successfully persist the post with creationDate in HH:mm and return persisted entity", () => Promise.all(connections.map(async connection => {
-        const post = new Post();
-        post.title = "Hello Post #1";
-        post.creationDate = new Date();
-        const returnedPost = await connection.entityManager.persist(post);
 
-        expect(returnedPost).not.to.be.empty;
-        returnedPost.should.be.equal(post);
+        const postRepository = connection.getRepository(Post);
+        const post = new Post();
+        const currentDate = new Date();
+        post.title = "Hello Post #1";
+        post.creationDate = currentDate;
+
+
+        const savedPost = await postRepository.persist(post);
+        const loadedPost = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .where("post.id=:id", { id: savedPost.id })
+            .getOne();
+
+
+        expect(post).not.to.be.empty;
+        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).to.be.eql(savedPost);
+
+
     })));
 
 
