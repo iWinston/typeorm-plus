@@ -12,8 +12,8 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
         schemaCreate: true,
         dropSchemaOnConnection: true,
     }));
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
-
 
 
     it("should successfully persist the post with creationDate in HH:mm and return persisted entity", () => Promise.all(connections.map(async connection => {
