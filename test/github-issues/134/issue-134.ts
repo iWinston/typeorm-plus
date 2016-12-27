@@ -31,7 +31,7 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
             .getOne();
 
         expect(loadedPost).not.to.be.empty;
-        loadedPost!.creationDate.should.be.equal(currentDate.getHours() + "-" + currentDate.getMinutes() + "-" + currentDate.getMilliseconds());
+        loadedPost!.creationDate.should.be.equal(currentDate.getHours() + "-" + currentDate.getMinutes() + "-" + currentDate.getSeconds());
 
     })));
 
