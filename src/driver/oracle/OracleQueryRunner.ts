@@ -529,7 +529,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
 
             if (newColumn.isGenerated) {
                 if (tableSchema.primaryKeys.length > 0 && oldColumn.isPrimary) {
-                    console.log(tableSchema.primaryKeys);
+                    // console.log(tableSchema.primaryKeys);
                     const dropPrimarySql = `ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "${tableSchema.primaryKeys[0].name}"`;
                     await this.query(dropPrimarySql);
                 }
@@ -619,7 +619,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             throw new QueryRunnerAlreadyReleasedError();
 
         const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "\"" + primaryKey.columnName + "\"");
-        console.log(dbTable.primaryKeys);
+        // console.log(dbTable.primaryKeys);
         if (dbTable.primaryKeys.length > 0 && dbTable.primaryKeys[0].name)
             await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKeys[0].name}"`);
         if (primaryColumnNames.length > 0)

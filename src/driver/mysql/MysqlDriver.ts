@@ -261,6 +261,9 @@ export class MysqlDriver implements Driver {
             //         return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
             //     }
 
+            case ColumnTypes.TIME:
+                return DataTransformationUtils.mixedTimeToString(value);
+
             case ColumnTypes.JSON:
                 return JSON.parse(value);
 

@@ -236,6 +236,9 @@ export class PostgresDriver implements Driver {
             //         return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
             //     }
 
+            case ColumnTypes.TIME:
+                return DataTransformationUtils.mixedTimeToString(value);
+
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
                 if (typeof value === "string") {

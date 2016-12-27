@@ -24,6 +24,19 @@ export class DataTransformationUtils {
     }
 
     /**
+     * Converts given string value with "-" separator into a "HH:mm:ss" format.
+     */
+    static mixedTimeToString(value: string|any): string|any {
+        if (typeof value === "string") {
+            return value.split(":")
+                .map(v => v.length === 1 ? "0" + v : v) // append zero at beginning if we have a first-zero-less number
+                .join(":");
+        }
+
+        return value;
+    }
+
+    /**
      * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
      */
     static mixedDateToDatetimeString(value: Date|any): string|any {

@@ -87,7 +87,6 @@ export function setupTestingConnections(options?: TestingOptions) {
 
         } catch (err) {
             ormConfigConnectionOptionsArray = require(__dirname + "/../../ormconfig.json");
-            console.log(ormConfigConnectionOptionsArray);
         }
 
     } catch (err) {
