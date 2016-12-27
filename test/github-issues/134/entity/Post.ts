@@ -13,6 +13,6 @@ export class Post {
     title: string;
 
     @Column(ColumnTypes.TIME, { nullable: false })
-    creationDate: Date;
+    creationDate: Date|string;
 
 }
