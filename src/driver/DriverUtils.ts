@@ -54,7 +54,7 @@ export class DriverUtils {
         const preBase = url.substr(firstSlashes + 2);
         const secondSlash = preBase.indexOf("/");
         const base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
-        const afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash) + 1 : undefined;
+        const afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
         const [usernameAndPassword, hostAndPort] = base.split("@");
         const [username, password] = usernameAndPassword.split(":");
         const [host, port] = hostAndPort.split(":");
@@ -64,7 +64,7 @@ export class DriverUtils {
             username: username,
             password: password,
             port: port ? parseInt(port) : undefined,
-            database: afterBase ? afterBase.split("/")[0] : undefined
+            database: afterBase || undefined
         };
     }
 
