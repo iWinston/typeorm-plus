@@ -438,7 +438,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         const tableSchema = await this.getTableSchema(tableSchemaOrName);
         const newTableSchema = tableSchema.clone();
         newTableSchema.addColumns([column]);
-        await this.recreateTable(tableSchema);
+        await this.recreateTable(newTableSchema, tableSchema);
     }
 
     /**
@@ -461,7 +461,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         const tableSchema = await this.getTableSchema(tableSchemaOrName);
         const newTableSchema = tableSchema.clone();
         newTableSchema.addColumns(columns);
-        await this.recreateTable(tableSchema);
+        await this.recreateTable(newTableSchema, tableSchema);
     }
 
     /**
@@ -827,7 +827,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         return c;
     }
 
-    protected async recreateTable(tableSchema: TableSchema): Promise<void> {
+    protected async recreateTable(tableSchema: TableSchema, oldTableSchema?: TableSchema): Promise<void> {
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
         // const createForeignKeys = options && options.createForeignKeys;
         const columnDefinitions = tableSchema.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
@@ -853,8 +853,11 @@ export class WebsqlQueryRunner implements QueryRunner {
         // recreate a table with a temporary name
         await this.query(sql1);
 
+        // we need only select data from old columns
+        const oldColumnNames = oldTableSchema ? oldTableSchema.columns.map(column => `"${column.name}"`).join(", ") : columnNames;
+
         // migrate all data from the table into temporary table
-        const sql2 = `INSERT INTO "temporary_${tableSchema.name}" SELECT ${columnNames} FROM "${tableSchema.name}"`;
+        const sql2 = `INSERT INTO "temporary_${tableSchema.name}"${oldColumnNames} SELECT ${oldColumnNames} FROM "${tableSchema.name}"`;
         await this.query(sql2);
 
         // drop old table

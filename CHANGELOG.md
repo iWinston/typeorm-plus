@@ -1,5 +1,9 @@
 # 0.0.6 (latest)
 
+* fixed bug when new column was'nt added properly in sqlite #157
+
+# 0.0.6 (latest)
+
 * added `JSONB` support for Postgres in #126 (thanks @CreepGin)
 * fixed in in sqlite query runner in #141 (thanks @marcinwadon)
 * added shortcut exports for table schema classes in #135 (thanks @eduardoweiland)
