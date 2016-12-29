@@ -44,6 +44,12 @@ export interface DriverOptions {
     readonly database?: string;
 
     /**
+     * Schema name. (Only used in Postgres)
+     * default: "public"
+     */
+    readonly schemaName?: string;
+    
+    /**
      * Connection SID (used for Oracle databases).
      */
     readonly sid?: string;

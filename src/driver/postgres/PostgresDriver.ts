@@ -68,6 +68,13 @@ export class PostgresDriver implements Driver {
      */
     protected logger: Logger;
 
+    /**
+     * Schema name. (Only used in Postgres)
+     * default: "public"
+     */
+    public schemaName?: string;
+    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -77,6 +84,7 @@ export class PostgresDriver implements Driver {
         this.options = DriverUtils.buildDriverOptions(connectionOptions);
         this.logger = logger;
         this.postgres = postgres;
+        this.schemaName = connectionOptions.schemaName || "public";
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -124,7 +132,21 @@ export class PostgresDriver implements Driver {
                     connection: new this.postgres.Client(options),
                     isTransactionActive: false
                 };
-                this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
+                this.databaseConnection.connection.connect((err: any) => {
+                    if (err) {
+                        fail(err);
+                    } else {
+                        this.databaseConnection && this.databaseConnection.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any, result: any) => {
+                            if (err) {
+                                this.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
+                                this.logger.logQueryError(err);
+                                fail(err);
+                            } else {
+                                ok();
+                            }
+                        });
+                    }
+                });
             });
         }
     }
@@ -334,7 +356,15 @@ export class PostgresDriver implements Driver {
                         release();
                         return Promise.resolve();
                     };
-                    ok(dbConnection);
+                    dbConnection.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
+                        if (err) {
+                            this.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
+                            this.logger.logQueryError(err);
+                            fail(err);
+                        } else {
+                            ok(dbConnection);
+                        }
+                    });
                 });
             });
         }

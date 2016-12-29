@@ -359,5 +359,31 @@ describe("Connection", () => {
         })));
 
     });
+
+    describe("Can change postgres default schema name", () => {
+        let connection: Connection;
+        afterEach(() => connection.isConnected ? connection.close() : {});        
+        it("schema name can be set", async () => {
+            const testSchema = "test-schema";
+            const testOption = setupSingleTestingConnection("postgres", {
+                name: "default",
+                entities: [Post]
+            });
+            // Only for testing
+            (testOption.driver as any).schemaName = testSchema;
+            connection = await getConnectionManager().createAndConnect(testOption);
+            await connection.syncSchema(true);
+
+            const post = new Post();
+            post.title = "ChangeSchemaName";
+
+            const PostRepo = connection.getRepository(Post);
+            await PostRepo.persist(post);
+
+            const query = await connection.driver.createQueryRunner();
+            const rows = await query.query(`select * from "${testSchema}"."post" where id = $1`, [post.id]);
+            expect(rows[0]["title"]).to.be.eq(post.title);
+        });
+    });
     
 });
