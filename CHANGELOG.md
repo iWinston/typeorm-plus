@@ -1,4 +1,4 @@
-# 0.0.6 (latest)
+# 0.0.7 (upcoming)
 
 * fixed bug when new column was'nt added properly in sqlite #157
 
