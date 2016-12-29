@@ -1,4 +1,4 @@
-# 0.0.6 (upcoming)
+# 0.0.6 (latest)
 
 * added `JSONB` support for Postgres in #126 (thanks @CreepGin)
 * fixed in in sqlite query runner in #141 (thanks @marcinwadon)
@@ -6,6 +6,7 @@
 * fixed bugs with single table inheritance in #132 (thanks @eduardoweiland)
 * fixed issue with `TIME` column in #134 (thanks @cserron)
 * fixed issue with relation id in #138 (thanks @mingyang91)
+* fixed bug when URL for pg was parsed incorrectly (thanks @mingyang91)
 * fixed bug when embedded is not being updated
 * metadata storage now in global variable
 * entities are being loaded in migrations and can be used throw the entity manager or their repositories
@@ -13,7 +14,7 @@
 * fixed issue with migration running on windows #140
 * fixed bug with with Class Table Inheritance #144
 
-# 0.0.5 (current)
+# 0.0.5
 
 * changed `getScalarMany` to `getRawMany` in `QueryBuilder`
 * changed `getScalarOne` to `getRawOne` in `QueryBuilder`

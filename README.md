@@ -13,7 +13,7 @@ Share this library with friends on twitter and everywhere else you can.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
-> 0.0.5 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
+> 0.0.6 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
 TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
@@ -97,7 +97,7 @@ You'll also need to enable `es6` in the `lib` section of compiler options, or in
 TypeORM was tested with Node.JS version 4 and above. 
 If you have errors during app bootstrap, try to upgrade your node.js version to the latest version.
 
-#### Usage in the browser with WebSQL
+#### Usage in the browser with WebSQL (experimental)
 
 TypeORM works in the browser and has experimental support of WebSQL.
 If you want to use TypeORM in the browser then you need to `npm i typeorm-browser` instead of `typeorm`.
