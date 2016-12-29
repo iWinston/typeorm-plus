@@ -6,7 +6,7 @@
 * fixed bugs with single table inheritance in #132 (thanks @eduardoweiland)
 * fixed issue with `TIME` column in #134 (thanks @cserron)
 * fixed issue with relation id in #138 (thanks @mingyang91)
-* fixed bug when URL for pg was parsed incorrectly (thanks @mingyang91)
+* fixed bug when URL for pg was parsed incorrectly #114 (thanks @mingyang91)
 * fixed bug when embedded is not being updated
 * metadata storage now in global variable
 * entities are being loaded in migrations and can be used throw the entity manager or their repositories
