@@ -56,6 +56,19 @@
     }
   },
   {
+    "skip": false,
+    "name": "postgres-schema",
+    "driver": {
+      "type": "postgres",
+      "host": "localhost",
+      "port": 5432,
+      "username": "test",
+      "password": "test",
+      "database": "test",
+      "schemaName": "test-schema"
+    }
+  },
+  {
     "skip": true,
     "name": "mssql",
     "driver": {

@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection, setupTestingConnections} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
@@ -361,28 +361,30 @@ describe("Connection", () => {
     });
 
     describe("Can change postgres default schema name", () => {
-        let connection: Connection;
-        afterEach(() => connection.isConnected ? connection.close() : {});        
-        it("schema name can be set", async () => {
-            const testSchema = "test-schema";
-            const testOption = setupSingleTestingConnection("postgres", {
-                name: "default",
+        let connections: Connection[];
+        beforeEach(async () => {
+            connections = await createTestingConnections({ 
+                enabledDrivers: ["postgres"],
                 entities: [Post]
             });
-            // Only for testing
-            (testOption.driver as any).schemaName = testSchema;
-            connection = await getConnectionManager().createAndConnect(testOption);
-            await connection.syncSchema(true);
+        });
+        afterEach(() => closeTestingConnections(connections));        
+        it("schema name can be set", () => {
+            return Promise.all(connections.map(async connection => {
+                await connection.syncSchema(true);
 
-            const post = new Post();
-            post.title = "ChangeSchemaName";
+                const post = new Post();
+                post.title = "ChangeSchemaName";
 
-            const PostRepo = connection.getRepository(Post);
-            await PostRepo.persist(post);
+                const PostRepo = connection.getRepository(Post);
+                await PostRepo.persist(post);
 
-            const query = await connection.driver.createQueryRunner();
-            const rows = await query.query(`select * from "${testSchema}"."post" where id = $1`, [post.id]);
-            expect(rows[0]["title"]).to.be.eq(post.title);
+                const query = await connection.driver.createQueryRunner();
+                const schemaName = connection.driver.options.schemaName || "public";
+                const rows = await query.query(`select * from "${schemaName}"."post" where id = $1`, [post.id]);
+                expect(rows[0]["title"]).to.be.eq(post.title);
+            }));
+            
         });
     });
     
