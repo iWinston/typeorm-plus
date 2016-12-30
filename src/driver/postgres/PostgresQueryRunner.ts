@@ -31,6 +31,8 @@ export class PostgresQueryRunner implements QueryRunner {
      */
     protected isReleased = false;
 
+    private schemaName: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -38,6 +40,7 @@ export class PostgresQueryRunner implements QueryRunner {
     constructor(protected databaseConnection: DatabaseConnection,
                 protected driver: PostgresDriver,
                 protected logger: Logger) {
+        this.schemaName = driver.schemaName || "public";
     }
 
     // -------------------------------------------------------------------------
@@ -66,7 +69,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
         await this.beginTransaction();
         try {
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = 'public'`;
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = '${this.schemaName}'`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
 
@@ -254,8 +257,8 @@ export class PostgresQueryRunner implements QueryRunner {
 
         // load tables, columns, indices and foreign keys
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
-        const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public' AND table_name IN (${tableNamesString})`;
-        const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = 'public'`;
+        const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}' AND table_name IN (${tableNamesString})`;
+        const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}'`;
         const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name  FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
 WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
 AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString}) ORDER BY t.relname, i.relname`;
@@ -344,7 +347,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableName: string): Promise<boolean> {
-        const sql = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public' AND table_name = '${tableName}'`;
+        const sql = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}' AND table_name = '${tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -357,7 +360,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        let sql = `CREATE SCHEMA IF NOT EXISTS "${this.schemaName}";CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
             .map(column => `, CONSTRAINT "uk_${table.name}_${column.name}" UNIQUE ("${column.name}")`)
@@ -373,7 +376,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableName: string, columnName: string): Promise<boolean> {
-        const sql = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = 'public' AND table_name = '${tableName}' AND column_name = '${columnName}'`;
+        const sql = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}' AND table_name = '${tableName}' AND column_name = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }

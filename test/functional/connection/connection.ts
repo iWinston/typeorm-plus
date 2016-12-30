@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection, setupTestingConnections} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
@@ -358,6 +358,34 @@ describe("Connection", () => {
             expect(schema.some(table => table.name === "view")).to.be.false;
         })));
 
+    });
+
+    describe("Can change postgres default schema name", () => {
+        let connections: Connection[];
+        beforeEach(async () => {
+            connections = await createTestingConnections({ 
+                enabledDrivers: ["postgres"],
+                entities: [Post]
+            });
+        });
+        afterEach(() => closeTestingConnections(connections));        
+        it("schema name can be set", () => {
+            return Promise.all(connections.map(async connection => {
+                await connection.syncSchema(true);
+
+                const post = new Post();
+                post.title = "ChangeSchemaName";
+
+                const PostRepo = connection.getRepository(Post);
+                await PostRepo.persist(post);
+
+                const query = await connection.driver.createQueryRunner();
+                const schemaName = connection.driver.options.schemaName || "public";
+                const rows = await query.query(`select * from "${schemaName}"."post" where id = $1`, [post.id]);
+                expect(rows[0]["title"]).to.be.eq(post.title);
+            }));
+            
+        });
     });
     
 });
