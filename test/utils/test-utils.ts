@@ -20,6 +20,7 @@ interface TestingConnectionOptions extends ConnectionOptions {
  * Options used to create a connection for testing purposes.
  */
 export interface TestingOptions {
+
     /**
      * Connection name to be overridden.
      * This can be used to create multiple connections with single connection configuration.
@@ -51,6 +52,11 @@ export interface TestingOptions {
      */
     dropSchemaOnConnection?: boolean;
 
+    /**
+     * Schema name used for postgres driver.
+     */
+    schemaName?: string;
+
 }
 
 /**
@@ -65,7 +71,8 @@ export function setupSingleTestingConnection(driverType: DriverType, options: Te
         entitySchemas: options.entitySchemas ? options.entitySchemas : [],
         dropSchemaOnConnection: options.dropSchemaOnConnection ? options.dropSchemaOnConnection : false,
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
-        enabledDrivers: [driverType]
+        enabledDrivers: [driverType],
+        schemaName: options.schemaName ? options.schemaName : undefined
     });
     if (!testingConnections.length)
         throw new Error(`Unable to run tests because connection options for "${driverType}" are not set.`);
@@ -106,13 +113,21 @@ export function setupTestingConnections(options?: TestingOptions) {
             return !connectionOptions.skip;
         })
         .map(connectionOptions => {
-            return Object.assign({}, connectionOptions as ConnectionOptions, {
+            const newConnectionOptions = Object.assign({}, connectionOptions as ConnectionOptions, {
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
                 autoSchemaSync: options && options.entities ? options.schemaCreate : false,
                 dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
             });
+
+
+            if (options && options.schemaName && newConnectionOptions.driver) {
+                // todo: we use any because driver.schemaName is readonly. Need to find better solution here
+                (newConnectionOptions.driver as any).schemaName = options.schemaName;
+            }
+
+            return newConnectionOptions;
         });
 }
 

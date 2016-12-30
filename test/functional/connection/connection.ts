@@ -360,12 +360,13 @@ describe("Connection", () => {
 
     });
 
-    describe("Can change postgres default schema name", () => {
+    describe.only("Can change postgres default schema name", () => {
         let connections: Connection[];
         beforeEach(async () => {
             connections = await createTestingConnections({ 
                 enabledDrivers: ["postgres"],
-                entities: [Post]
+                entities: [Post],
+                schemaName: "test-schema"
             });
         });
         afterEach(() => closeTestingConnections(connections));        
@@ -380,8 +381,7 @@ describe("Connection", () => {
                 await PostRepo.persist(post);
 
                 const query = await connection.driver.createQueryRunner();
-                const schemaName = connection.driver.options.schemaName || "public";
-                const rows = await query.query(`select * from "${schemaName}"."post" where id = $1`, [post.id]);
+                const rows = await query.query(`select * from "test-schema"."post" where id = $1`, [post.id]);
                 expect(rows[0]["title"]).to.be.eq(post.title);
             }));
             
