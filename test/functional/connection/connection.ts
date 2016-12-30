@@ -360,7 +360,7 @@ describe("Connection", () => {
 
     });
 
-    describe.only("Can change postgres default schema name", () => {
+    describe("Can change postgres default schema name", () => {
         let connections: Connection[];
         beforeEach(async () => {
             connections = await createTestingConnections({ 
