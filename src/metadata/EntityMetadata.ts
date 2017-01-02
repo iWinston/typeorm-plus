@@ -266,7 +266,10 @@ export class EntityMetadata {
         return this.primaryColumns.concat(this.parentIdColumns);
     }
 
-    get primaryColumnsWithParentPrimaryColumns(): ColumnMetadata[] {
+    /**
+     * Gets all primary columns including columns from the parent entities.
+     */
+    get allPrimaryColumns(): ColumnMetadata[] {
         return this.primaryColumns.concat(this.parentPrimaryColumns);
     }
 

@@ -144,9 +144,13 @@ export class Subject {
     /**
      * When subject is newly persisted it may have a generated entity id.
      * In this case it should be written here.
-     *
      */
     newlyGeneratedId?: any;
+
+    /**
+     * Generated id of the parent entity. Used in the class-table-inheritance.
+     */
+    parentGeneratedId?: any;
 
     /**
      * Used in newly persisted entities which are tree tables.

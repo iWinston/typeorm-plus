@@ -265,6 +265,18 @@ export class ColumnMetadata {
     }
 
     /**
+     * If this column references some column, it gets the first referenced column of this column.
+     */
+    get referencedColumn(): ColumnMetadata|undefined {
+        const foreignKey = this.entityMetadata.foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this) !== -1);
+        if (foreignKey) {
+            return foreignKey.referencedColumns[0];
+        }
+
+        return undefined;
+    }
+
+    /**
      * Gets embedded property in which column is.
      */
     get embeddedProperty() {

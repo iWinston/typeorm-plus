@@ -335,6 +335,61 @@ export class EntityMetadataBuilder {
             }
         });
 
+        // generate keys for tables with single-table inheritance
+        entityMetadatas
+            .filter(metadata => metadata.inheritanceType === "single-table" && metadata.hasDiscriminatorColumn)
+            .forEach(metadata => {
+                const indexForKey = new IndexMetadata({
+                    target: metadata.target,
+                    columns: [metadata.discriminatorColumn.name],
+                    unique: false
+                });
+                indexForKey.entityMetadata = metadata;
+                metadata.indices.push(indexForKey);
+
+                const indexForKeyWithPrimary = new IndexMetadata({
+                    target: metadata.target,
+                    columns: [metadata.firstPrimaryColumn.propertyName, metadata.discriminatorColumn.propertyName],
+                    unique: false
+                });
+                indexForKeyWithPrimary.entityMetadata = metadata;
+                metadata.indices.push(indexForKeyWithPrimary);
+            });
+
+        // generate virtual column with foreign key for class-table inheritance
+        entityMetadatas
+            .filter(metadata => !!metadata.parentEntityMetadata)
+            .forEach(metadata => {
+                const parentEntityMetadataPrimaryColumn = metadata.parentEntityMetadata.firstPrimaryColumn; // todo: make sure to create columns for all its primary columns
+                const columnName = namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.table.name, parentEntityMetadataPrimaryColumn.propertyName);
+                const parentRelationColumn = new ColumnMetadata({
+                    target: metadata.parentEntityMetadata.table.target,
+                    propertyName: parentEntityMetadataPrimaryColumn.propertyName,
+                    propertyType: parentEntityMetadataPrimaryColumn.propertyType,
+                    mode: "parentId",
+                    options: <ColumnOptions> {
+                        name: columnName,
+                        type: parentEntityMetadataPrimaryColumn.type,
+                        unique: true,
+                        nullable: false,
+                        primary: false
+                    }
+                });
+
+                // add column
+                metadata.addColumn(parentRelationColumn);
+
+                // add foreign key
+                const foreignKey = new ForeignKeyMetadata(
+                    [parentRelationColumn],
+                    metadata.parentEntityMetadata.table,
+                    [parentEntityMetadataPrimaryColumn],
+                    "CASCADE"
+                );
+                foreignKey.entityMetadata = metadata;
+                metadata.foreignKeys.push(foreignKey);
+            });
+
         // generate columns and foreign keys for tables with relations
         entityMetadatas.forEach(metadata => {
             metadata.relationsWithJoinColumns.forEach(relation => {
@@ -404,60 +459,6 @@ export class EntityMetadataBuilder {
                 entityMetadatas.push(junctionEntityMetadata);
             });
         });
-
-        // generate keys for tables with single-table inheritance
-        entityMetadatas
-            .filter(metadata => metadata.inheritanceType === "single-table" && metadata.hasDiscriminatorColumn)
-            .forEach(metadata => {
-                const indexForKey = new IndexMetadata({
-                    target: metadata.target,
-                    columns: [metadata.discriminatorColumn.name],
-                    unique: false
-                });
-                indexForKey.entityMetadata = metadata;
-                metadata.indices.push(indexForKey);
-
-                const indexForKeyWithPrimary = new IndexMetadata({
-                    target: metadata.target,
-                    columns: [metadata.firstPrimaryColumn.propertyName, metadata.discriminatorColumn.propertyName],
-                    unique: false
-                });
-                indexForKeyWithPrimary.entityMetadata = metadata;
-                metadata.indices.push(indexForKeyWithPrimary);
-            });
-
-        // generate virtual column with foreign key for class-table inheritance
-        entityMetadatas
-            .filter(metadata => !!metadata.parentEntityMetadata)
-            .forEach(metadata => {
-                const parentEntityMetadataPrimaryColumn = metadata.parentEntityMetadata.firstPrimaryColumn; // todo: make sure to create columns for all its primary columns
-                const columnName = namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.table.name, parentEntityMetadataPrimaryColumn.propertyName);
-                const parentRelationColumn = new ColumnMetadata({
-                    target: metadata.parentEntityMetadata.table.target,
-                    propertyName: parentEntityMetadataPrimaryColumn.propertyName,
-                    propertyType: parentEntityMetadataPrimaryColumn.propertyType,
-                    mode: "parentId",
-                    options: <ColumnOptions> {
-                        name: columnName,
-                        type: parentEntityMetadataPrimaryColumn.type,
-                        nullable: false,
-                        primary: false
-                    }
-                });
-
-                // add column
-                metadata.addColumn(parentRelationColumn);
-
-                // add foreign key
-                const foreignKey = new ForeignKeyMetadata(
-                    [parentRelationColumn],
-                    metadata.parentEntityMetadata.table,
-                    [parentEntityMetadataPrimaryColumn],
-                    "CASCADE"
-                );
-                foreignKey.entityMetadata = metadata;
-                metadata.foreignKeys.push(foreignKey);
-            });
 
         // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
         getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);

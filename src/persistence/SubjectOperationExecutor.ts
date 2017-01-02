@@ -353,14 +353,14 @@ export class SubjectOperationExecutor {
         const parentEntityMetadata = subject.metadata.parentEntityMetadata;
         const metadata = subject.metadata;
         const entity = subject.entity;
-        let newlyGeneratedId: any;
+        let newlyGeneratedId: any, parentGeneratedId: any;
 
         // if entity uses class table inheritance then we need to separate entity into sub values that will be inserted into multiple tables
         if (metadata.table.isClassTableChild) { // todo: with current implementation inheritance of multiple class table children will not work
 
             // first insert entity values into parent class table
             const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects);
-            newlyGeneratedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
+            newlyGeneratedId = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.table.name, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
 
             // second insert entity values into child class table
             const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, newlyGeneratedId, undefined, alreadyInsertedSubjects);
@@ -372,6 +372,9 @@ export class SubjectOperationExecutor {
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
             newlyGeneratedId = await this.queryRunner.insert(metadata.table.name, valuesMap, metadata.generatedColumnIfExist);
         }
+
+        if (parentGeneratedId)
+            subject.parentGeneratedId = parentGeneratedId;
 
         if (newlyGeneratedId && metadata.hasGeneratedColumn)
             subject.newlyGeneratedId = newlyGeneratedId;
@@ -400,6 +403,7 @@ export class SubjectOperationExecutor {
                 if (relationId) {
                     relationValue = relationId;
                 }
+
                 // otherwise try to find relational value from just inserted subjects
                 const alreadyInsertedSubject = alreadyInsertedSubjects.find(insertedSubject => {
                     return insertedSubject.entity === value;
@@ -407,6 +411,14 @@ export class SubjectOperationExecutor {
                 if (alreadyInsertedSubject) {
                     const referencedColumn = relation.joinColumn.referencedColumn;
                     // if join column references to the primary generated column then seek in the newEntityId of the insertedSubject
+                    if (referencedColumn.referencedColumn && referencedColumn.referencedColumn.isGenerated) {
+                        if (referencedColumn.isParentId) {
+                            relationValue = alreadyInsertedSubject.parentGeneratedId;
+                        }
+                        // todo: what if reference column is not generated?
+                        // todo: what if reference column is not related to table inheritance?
+                    }
+
                     if (referencedColumn.isGenerated)
                         relationValue = alreadyInsertedSubject.newlyGeneratedId;
                     // if it references to create or update date columns

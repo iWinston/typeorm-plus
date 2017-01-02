@@ -1,0 +1,34 @@
+import "reflect-metadata";
+import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src/connection/Connection";
+import {Department} from "./entity/Department";
+import {Employee} from "./entity/Employee";
+
+describe("github issues > #159 Referencing ClassTableChild build table error", () => {
+
+    let connections: Connection[];
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,        
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
+
+    it("entity should be successfully referenced to class-table entity", () => Promise.all(connections.map(async connection => {
+
+        let department = new Department();
+        department.name = "Software";
+
+        let employee = new Employee();
+        employee.firstName = "Hello";
+        employee.lastName = "World";
+        employee.salary = 1;
+
+        department.manager = employee;
+
+        await connection.entityManager.persist(department);
+
+    })));
+
+});
