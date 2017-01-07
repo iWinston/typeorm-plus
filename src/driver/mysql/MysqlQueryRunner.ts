@@ -733,7 +733,7 @@ export class MysqlQueryRunner implements QueryRunner {
                 return typeOptions.length ? "varchar(" + typeOptions.length + ")" : "text";
         }
 
-        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "MySQL");
+        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "MySQL/MariaDB");
     }
 
     // -------------------------------------------------------------------------

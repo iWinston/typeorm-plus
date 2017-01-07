@@ -54,7 +54,7 @@ export class Gulpfile {
             "!./src/commands/*.ts",
             "!./src/cli.ts",
             "!./src/typeorm.ts",
-            "!./src/decorators-shim.ts",
+            "!./src/browser-shim.ts",
             "!./src/platform/PlatformTools.ts"
         ])
             .pipe(gulp.dest("./build/browser/typeorm"));
@@ -243,11 +243,11 @@ export class Gulpfile {
     }
 
     /**
-     * Copies "decorators-shim.js" file into package.
+     * Copies "browser-shim.js" file into package.
      */
     @Task()
-    packageCopyDecoratorsShim() {
-        return gulp.src("./extra/decorators-shim.js")
+    packageCopyBrowserShim() {
+        return gulp.src("./extra/browser-shim.js")
             .pipe(gulp.dest("./build/package"));
     }
 
@@ -264,7 +264,7 @@ export class Gulpfile {
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
                 "packageCopyReadme",
-                "packageCopyDecoratorsShim"
+                "packageCopyBrowserShim"
             ],
         ];
     }
