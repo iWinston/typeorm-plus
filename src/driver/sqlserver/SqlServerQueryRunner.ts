@@ -872,7 +872,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         //     c += " PRIMARY KEY";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
-        if (column.default)
+        if (column.default !== undefined && column.default !== null)
             c += " DEFAULT '" + column.default + "'";
         return c;
     }

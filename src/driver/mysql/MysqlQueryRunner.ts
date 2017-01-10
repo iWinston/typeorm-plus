@@ -769,7 +769,7 @@ export class MysqlQueryRunner implements QueryRunner {
             c += " AUTO_INCREMENT";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
-        if (column.default)
+        if (column.default !== undefined && column.default !== null)
             c += " DEFAULT '" + column.default + "'";
         return c;
     }
