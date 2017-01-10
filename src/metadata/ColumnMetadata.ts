@@ -171,7 +171,7 @@ export class ColumnMetadata {
             this.isNullable = args.options.nullable;
         if (args.options.comment)
             this.comment = args.options.comment;
-        if (args.options.default)
+        if (args.options.default !== undefined && args.options.default !== null)
             this.default = args.options.default;
         if (args.options.scale)
             this.scale = args.options.scale;
