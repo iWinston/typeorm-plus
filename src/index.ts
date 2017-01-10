@@ -76,6 +76,8 @@ export {QueryBuilder} from "./query-builder/QueryBuilder";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {MigrationInterface} from "./migration/MigrationInterface";
+export {DefaultNamingStrategy} from "./naming-strategy/DefaultNamingStrategy";
+export {NamingStrategyInterface} from "./naming-strategy/NamingStrategyInterface";
 export {Repository} from "./repository/Repository";
 export {TreeRepository} from "./repository/TreeRepository";
 export {SpecificRepository} from "./repository/SpecificRepository";
