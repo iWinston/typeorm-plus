@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {expect} from "chai";
 import {PostStatus} from "./model/PostStatus";
 
-describe.only("github issues > #182 enums are not saved properly", () => {
+describe("github issues > #182 enums are not saved properly", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
