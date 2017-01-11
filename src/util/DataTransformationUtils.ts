@@ -4,6 +4,27 @@
 export class DataTransformationUtils {
 
     /**
+     * Normalizes date object hydrated from the database.
+     */
+    static normalizeHydratedDate(mixedDate: Date|string|undefined, storedInLocal: boolean): Date|string|undefined {
+        if (!mixedDate)
+            return mixedDate;
+
+        const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
+        if (!storedInLocal) {
+
+            // else if it was not stored in local timezone, means it was stored in UTC
+            // because driver hydrates it with timezone applied why we need to add timezone hours to match a local timezone
+
+            const correctedDate = new Date();
+            correctedDate.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+            correctedDate.setUTCHours(date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
+            return correctedDate;
+        }
+        return date;
+    }
+
+    /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
     static mixedDateToDateString(value: Date|any): string|any {

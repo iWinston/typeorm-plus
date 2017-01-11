@@ -1095,14 +1095,14 @@ export class QueryBuilder<Entity> {
     /**
      * Gets all raw results returned by execution of generated query builder sql.
      */
-    getRawMany<T>(): Promise<T[]> { // todo: rename to getRawMany
+    getRawMany(): Promise<any[]> { // todo: rename to getRawMany
         return this.execute();
     }
 
     /**
      * Gets first raw result returned by execution of generated query builder sql.
      */
-    getRawOne<T>(): Promise<T> { // todo: rename to getRawOne
+    getRawOne(): Promise<any> { // todo: rename to getRawOne
         return this.getRawMany().then(results => results[0]);
 
     }

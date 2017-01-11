@@ -191,7 +191,7 @@ export class WebsqlDriver implements Driver {
                 return DataTransformationUtils.mixedDateToTimeString(value);
 
             case ColumnTypes.DATETIME:
-                if (columnMetadata.storeInLocalTimezone) {
+                if (columnMetadata.localTimezone) {
                     return DataTransformationUtils.mixedDateToDatetimeString(value);
                 } else {
                     return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
@@ -215,15 +215,8 @@ export class WebsqlDriver implements Driver {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 
-            // case ColumnTypes.DATETIME:
-            //     if (value instanceof Date)
-            //         return value;
-            //
-            //     if (columnMetadata.loadInLocalTimezone) {
-            //         return DataTransformationUtils.mixedDateToDatetimeString(value);
-            //     } else {
-            //         return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-            //     }
+            case ColumnTypes.DATETIME:
+                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
             case ColumnTypes.TIME:
                 return DataTransformationUtils.mixedTimeToString(value);

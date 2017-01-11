@@ -317,13 +317,13 @@ export class Subject {
                     entityValue = DataTransformationUtils.mixedDateToTimeString(entityValue);
 
                 } else if (column.type === ColumnTypes.DATETIME) {
-                    if (column.loadInLocalTimezone) {
-                        entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
-                        databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
-                    } else {
+                    // if (column.loadInLocalTimezone) {
+                    //     entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
+                    //     databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
+                    // } else {
                         entityValue = DataTransformationUtils.mixedDateToUtcDatetimeString(entityValue);
                         databaseValue = DataTransformationUtils.mixedDateToUtcDatetimeString(databaseValue);
-                    }
+                    // }
 
                 } else if (column.type === ColumnTypes.JSON) {
                     entityValue = JSON.stringify(entityValue);
