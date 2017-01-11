@@ -1445,7 +1445,8 @@ export class QueryBuilder<Entity> {
             case "select":
                 return "SELECT " + allSelects.join(", ") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + this.connection.driver.escapeAliasName(alias);
             case "delete":
-                return "DELETE " + (alias ? this.connection.driver.escapeAliasName(alias) : "") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + (alias ? this.connection.driver.escapeAliasName(alias) : "");
+                return "DELETE FROM " + this.connection.driver.escapeTableName(tableName);
+                // return "DELETE " + (alias ? this.connection.driver.escapeAliasName(alias) : "") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + (alias ? this.connection.driver.escapeAliasName(alias) : ""); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names
             case "update":
                 const updateSet = Object.keys(this.updateQuerySet).map(key => key + "=:updateQuerySet_" + key);
                 const params = Object.keys(this.updateQuerySet).reduce((object, key) => {
