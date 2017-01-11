@@ -736,7 +736,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             await this.query(`ALTER SEQUENCE "${tableName}_id_seq" OWNED BY NONE`);
         }
 
-        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${indexName}"`; // todo: make sure DROP INDEX should not be used here
+        const sql = `DROP INDEX "${indexName}"`; // todo: make sure DROP INDEX should not be used here
         await this.query(sql);
     }
 
