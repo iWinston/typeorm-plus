@@ -871,8 +871,8 @@ export class SubjectOperationExecutor {
                     subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
             });
             subject.metadata.parentPrimaryColumns.forEach(primaryColumn => {
-                if (subject.newlyGeneratedId)
-                    subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
+                if (subject.parentGeneratedId)
+                    subject.entity[primaryColumn.propertyName] = subject.parentGeneratedId;
             });
 
             if (subject.metadata.hasUpdateDateColumn)
