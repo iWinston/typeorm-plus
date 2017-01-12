@@ -78,7 +78,9 @@ export class SubjectOperationExecutor {
         if (!this.insertSubjects.length &&
             !this.updateSubjects.length &&
             !this.removeSubjects.length &&
-            !this.relationUpdateSubjects.length)
+            !this.relationUpdateSubjects.length &&
+            !subjects.some(subject => !subject.junctionInserts.length) &&
+            !subjects.some(subject => !subject.junctionRemoves.length))
             return;
 
         // start execute queries in a transaction
