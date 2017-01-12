@@ -807,6 +807,21 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         throw new DataTypeNotSupportedByDriverError(typeOptions.type, "Oracle");
     }
 
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     */
+    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
+
+        if (typeof columnMetadataValue === "number")
+            return columnMetadataValue === parseInt(databaseValue);
+        if (typeof columnMetadataValue === "boolean")
+            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
+        if (typeof columnMetadataValue === "function")
+            return columnMetadataValue() === databaseValue;
+
+        return columnMetadataValue === databaseValue;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

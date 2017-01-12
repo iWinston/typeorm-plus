@@ -802,6 +802,21 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
         throw new DataTypeNotSupportedByDriverError(typeOptions.type, "Postgres");
     }
 
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     */
+    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
+
+        if (typeof columnMetadataValue === "number")
+            return columnMetadataValue === parseInt(databaseValue);
+        if (typeof columnMetadataValue === "boolean")
+            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
+        if (typeof columnMetadataValue === "function")
+            return columnMetadataValue() === databaseValue;
+
+        return columnMetadataValue === databaseValue;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
