@@ -13,8 +13,10 @@ export class Post {
     @Column()
     title: string;
 
+    @Column({ default: false })
+    active: boolean;
+
     @BeforeUpdate()
-    @BeforeInsert()
     beforeUpdate() {
         this.title += "!";
     }

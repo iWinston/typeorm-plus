@@ -62,7 +62,7 @@ export class SubjectOperationExecutor {
      * Executes all operations over given array of subjects.
      * Executes queries using given query runner.
      */
-    async execute(subjects: Subject[]) {
+    async execute(subjects: Subject[]): Promise<void> {
 
         // validate all subjects first
         subjects.forEach(subject => subject.validate());
@@ -74,6 +74,13 @@ export class SubjectOperationExecutor {
         this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
         this.relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
 
+        // if there are no operations to execute then don't need to do something including opening a transaction
+        if (!this.insertSubjects.length &&
+            !this.updateSubjects.length &&
+            !this.removeSubjects.length &&
+            !this.relationUpdateSubjects.length)
+            return;
+
         // start execute queries in a transaction
         // if transaction is already opened in this query runner then we don't touch it
         // if its not opened yet then we open it here, and once we finish - we close it
@@ -82,6 +89,9 @@ export class SubjectOperationExecutor {
 
             // broadcast "before" events before we start updating
             await this.connection.broadcaster.broadcastBeforeEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
+
+            // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
+            this.updateSubjects.forEach(subject => subject.recompute());
 
             this.queryRunner = await this.queryRunnerProvider.provide();
             // open transaction if its not opened yet

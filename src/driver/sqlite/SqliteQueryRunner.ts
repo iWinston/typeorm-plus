@@ -816,7 +816,7 @@ export class SqliteQueryRunner implements QueryRunner {
             if (typeof column.default === "number") {
                 c += " DEFAULT " + column.default + "";
             } else if (typeof column.default === "boolean") {
-                c += " DEFAULT " + (column.default === true ? "TRUE" : "FALSE") + "";
+                c += " DEFAULT " + (column.default === true ? "1" : "0") + "";
             } else if (typeof column.default === "function") {
                 c += " DEFAULT " + column.default() + "";
             } else if (typeof column.default === "string") {
