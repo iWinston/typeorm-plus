@@ -968,8 +968,15 @@ export class QueryBuilder<Entity> {
                                 }).join(" AND ");
                             }).join(" OR ");
                         } else {
-                            parameters["ids"] = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
-                            condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+                            const ids = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
+                            const areAllNumbers = ids.map((id: any) => typeof id === "number");
+                            if (areAllNumbers) {
+                                // fixes #190. if all numbers then its safe to perform query without parameter
+                                condition = `${mainAliasName}.${metadata.firstPrimaryColumn.propertyName} IN (${ids.join(", ")})`;
+                            } else {
+                                parameters["ids"] = ids;
+                                condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+                            }
                         }
                         const [queryWithIdsSql, queryWithIdsParameters] = this.clone({queryRunnerProvider: this.queryRunnerProvider})
                             .andWhere(condition, parameters)
