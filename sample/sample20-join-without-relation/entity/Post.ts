@@ -1,10 +1,10 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Author} from "./Author";
 import {Category} from "./Category";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
-@Table("sample20_post")
+@Entity("sample20_post")
 export class Post {
 
     @PrimaryGeneratedColumn()

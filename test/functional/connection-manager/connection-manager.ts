@@ -6,11 +6,11 @@ import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {PrimaryGeneratedColumn} from "../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../src/decorator/columns/Column";
-import {Table} from "../../../src/decorator/tables/Table";
+import {Entity} from "../../../src/decorator/entity/Entity";
 
 describe("ConnectionManager", () => {
 
-    @Table()
+    @Entity()
     class Post {
 
         @PrimaryGeneratedColumn()

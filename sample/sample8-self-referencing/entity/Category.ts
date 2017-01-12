@@ -1,11 +1,11 @@
-import {PrimaryGeneratedColumn, Column, Table, ManyToMany} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, ManyToMany} from "../../../src/index";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {OneToOne} from "../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
-@Table("sample8_category")
+@Entity("sample8_category")
 export class Category {
 
     @PrimaryGeneratedColumn()

@@ -1,7 +1,7 @@
 import {Column} from "../../../src/index";
-import {EmbeddableTable} from "../../../src/decorator/tables/EmbeddableTable";
+import {EmbeddableEntity} from "../../../src/decorator/entity/EmbeddableEntity";
 
-@EmbeddableTable()
+@EmbeddableEntity()
 export class Counters {
 
     @Column()

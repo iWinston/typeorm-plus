@@ -1,8 +1,8 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Author} from "./Author";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 
-@Table("sample25_post")
+@Entity("sample25_post")
 export class Post {
 
     @PrimaryGeneratedColumn()

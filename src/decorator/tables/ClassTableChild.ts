@@ -1,11 +1,13 @@
 import {getMetadataArgsStorage} from "../../index";
 import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
-import {TableOptions} from "../options/TableOptions";
+import {EntityOptions} from "../options/EntityOptions";
 
 /**
  * Special type of the table used in the class-table inherited tables.
+ *
+ * @deprecated
  */
-export function ClassTableChild(tableName?: string, options?: TableOptions) {
+export function ClassTableChild(tableName?: string, options?: EntityOptions) {
     return function (target: Function) {
         const args: TableMetadataArgs = {
             target: target,

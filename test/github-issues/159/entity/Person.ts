@@ -1,10 +1,10 @@
-import {Table} from "../../../../src/decorator/tables/Table";
-import {TableInheritance} from "../../../../src/decorator/tables/TableInheritance";
+import {Entity} from "../../../../src/decorator/entity/Entity";
+import {TableInheritance} from "../../../../src/decorator/entity/TableInheritance";
 import {DiscriminatorColumn} from "../../../../src/decorator/columns/DiscriminatorColumn";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 
-@Table()
+@Entity()
 @TableInheritance("class-table")
 @DiscriminatorColumn({ name: "type", type: "string" })
 export class Person {

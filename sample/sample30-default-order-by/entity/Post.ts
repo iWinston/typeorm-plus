@@ -1,9 +1,9 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 import {Category} from "./Category";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
-@Table("sample30_post", {
+@Entity("sample30_post", {
     orderBy: {
         title: "ASC",
         id: "DESC"

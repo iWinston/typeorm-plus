@@ -1,6 +1,6 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 
-@Table("sample23_author")
+@Entity("sample23_author")
 export class Author {
 
     @PrimaryGeneratedColumn()

@@ -1,7 +1,7 @@
 import {PrimaryGeneratedColumn, Column} from "../../../src/index";
-import {AbstractTable} from "../../../src/decorator/tables/AbstractTable";
+import {AbstractEntity} from "../../../src/decorator/entity/AbstractEntity";
 
-@AbstractTable()
+@AbstractEntity()
 export class BasePost {
 
     @PrimaryGeneratedColumn()

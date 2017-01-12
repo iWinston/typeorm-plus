@@ -1,8 +1,8 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 import {Post} from "./Post";
 
-@Table("sample18_category")
+@Entity("sample18_category")
 export class Category {
 
     @PrimaryGeneratedColumn()

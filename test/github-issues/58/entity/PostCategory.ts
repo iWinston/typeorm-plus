@@ -1,10 +1,10 @@
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {Post} from "./Post";
 import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {Category} from "./Category";
 
-@Table()
+@Entity()
 export class PostCategory {
 
     @ManyToOne(type => Post, post => post.categories, {

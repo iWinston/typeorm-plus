@@ -1,11 +1,11 @@
-import {PrimaryGeneratedColumn, Column, Table, OneToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, OneToOne} from "../../../src/index";
 import {PostAuthor} from "./PostAuthor";
 import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 
-@Table("sample14_post")
+@Entity("sample14_post")
 export class Post {
 
     @PrimaryGeneratedColumn()

@@ -1,7 +1,7 @@
-import {PrimaryGeneratedColumn, Column, Table, OneToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, OneToOne} from "../../../src/index";
 import {Image} from "./Image";
 
-@Table("sample10_image_details")
+@Entity("sample10_image_details")
 export class ImageDetails {
 
     @PrimaryGeneratedColumn()

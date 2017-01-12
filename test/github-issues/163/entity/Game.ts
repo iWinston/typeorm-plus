@@ -1,4 +1,4 @@
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 import {Index} from "../../../../src/decorator/Index";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
@@ -6,7 +6,7 @@ import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
 import {Platform} from "./Platform";
 
-@Table("games")
+@Entity("games")
 @Index("game_name_idx", ["name"], { unique: true })
 export class Game {
 

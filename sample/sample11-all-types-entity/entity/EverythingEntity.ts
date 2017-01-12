@@ -1,8 +1,8 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {CreateDateColumn} from "../../../src/decorator/columns/CreateDateColumn";
 import {UpdateDateColumn} from "../../../src/decorator/columns/UpdateDateColumn";
 
-@Table("sample11_everything_entity")
+@Entity("sample11_everything_entity")
 export class EverythingEntity {
 
     @PrimaryGeneratedColumn()

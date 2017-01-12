@@ -1,7 +1,7 @@
-import {PrimaryGeneratedColumn, Column, Table, ManyToMany} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, ManyToMany} from "../../../src/index";
 import {Post} from "./Post";
 
-@Table("sample4_post_metadata")
+@Entity("sample4_post_metadata")
 export class PostMetadata {
 
     @PrimaryGeneratedColumn()

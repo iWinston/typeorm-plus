@@ -2,6 +2,10 @@
 
 * fixed bug when new column was'nt added properly in sqlite [#157](https://github.com/typeorm/typeorm/issues/157)
 * added ability to set different types of values for DEFAULT value of the column [#150](https://github.com/typeorm/typeorm/issues/150)
+* all table decorators are renamed to `Entity` (`Table` => `Entity`, `AbstractTable` => `AbstractEntity`, 
+`ClassTableChild` => `ClassEntityChild`, `ClosureTable` => `ClosureEntity`, `EmbeddableTable` => `EmbeddableEntity`, 
+`SingleTableChild` => `SingleEntityChild`). This change is required because upcoming versions of orm will work
+not only with tables, but also with documents and other database-specific "tables".
 
 # 0.0.6 (latest)
 

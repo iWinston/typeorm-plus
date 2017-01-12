@@ -1,7 +1,7 @@
-import {PrimaryGeneratedColumn, Column, Table, ManyToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, ManyToOne} from "../../../src/index";
 import {Author} from "./Author";
 
-@Table()
+@Entity()
 export class Post {
 
     @PrimaryGeneratedColumn()

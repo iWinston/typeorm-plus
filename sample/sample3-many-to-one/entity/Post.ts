@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Table, ManyToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, ManyToOne} from "../../../src/index";
 import {PostDetails} from "./PostDetails";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
@@ -6,7 +6,7 @@ import {PostInformation} from "./PostInformation";
 import {PostImage} from "./PostImage";
 import {PostMetadata} from "./PostMetadata";
 
-@Table("sample3_post")
+@Entity("sample3_post")
 export class Post {
 
     @PrimaryGeneratedColumn()

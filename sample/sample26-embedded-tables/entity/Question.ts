@@ -1,8 +1,8 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Counters} from "./Counters";
 import {Embedded} from "../../../src/decorator/Embedded";
 
-@Table("sample26_question")
+@Entity("sample26_question")
 export class Question {
 
     @PrimaryGeneratedColumn()

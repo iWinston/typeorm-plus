@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Author} from "./Author";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {Category} from "./Category";
@@ -8,7 +8,7 @@ import {OneToOne} from "../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 import {PostMetadata} from "./PostMetadata";
 
-@Table("sample19_post")
+@Entity("sample19_post")
 export class Post {
 
     @PrimaryGeneratedColumn()

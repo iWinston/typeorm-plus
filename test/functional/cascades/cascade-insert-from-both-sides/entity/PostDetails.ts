@@ -1,9 +1,9 @@
-import {Table} from "../../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 import {Post} from "./Post";
 import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
 
-@Table()
+@Entity()
 export class PostDetails {
 
     @PrimaryColumn()

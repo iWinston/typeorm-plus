@@ -1,7 +1,7 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Index} from "../../../src/decorator/Index";
 
-@Table("sample16_post")
+@Entity("sample16_post")
 @Index("my_index_with_id_and_text", ["id", "text"])
 @Index("my_index_with_id_and_title", (post: Post) => [post.id, post.title])
 export class Post {
