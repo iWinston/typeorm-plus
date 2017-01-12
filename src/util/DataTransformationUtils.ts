@@ -3,6 +3,10 @@
  */
 export class DataTransformationUtils {
 
+    // -------------------------------------------------------------------------
+    // Public Static Methods
+    // -------------------------------------------------------------------------
+
     /**
      * Normalizes date object hydrated from the database.
      */
@@ -29,7 +33,7 @@ export class DataTransformationUtils {
      */
     static mixedDateToDateString(value: Date|any): string|any {
         if (value instanceof Date)
-            return value.getFullYear() + "-" + (value.getMonth() + 1) + "-" + value.getDate();
+            return this.formatZerolessValue(value.getFullYear()) + "-" + this.formatZerolessValue(value.getMonth() + 1) + "-" + this.formatZerolessValue(value.getDate());
 
         return value;
     }
@@ -39,7 +43,7 @@ export class DataTransformationUtils {
      */
     static mixedDateToTimeString(value: Date|any): string|any {
         if (value instanceof Date)
-            return value.getHours() + ":" + value.getMinutes() + ":" + value.getSeconds();
+            return this.formatZerolessValue(value.getHours()) + ":" + this.formatZerolessValue(value.getMinutes()) + ":" + this.formatZerolessValue(value.getSeconds());
 
         return value;
     }
@@ -65,12 +69,12 @@ export class DataTransformationUtils {
             value = new Date(value);
         }
         if (value instanceof Date) {
-            return value.getFullYear() + "-" +
-                (value.getMonth() + 1) + "-" +
-                value.getDate() + " " +
-                value.getHours() + ":" +
-                value.getMinutes() + ":" +
-                value.getSeconds();
+            return this.formatZerolessValue(value.getFullYear()) + "-" +
+                this.formatZerolessValue(value.getMonth() + 1) + "-" +
+                this.formatZerolessValue(value.getDate()) + " " +
+                this.formatZerolessValue(value.getHours()) + ":" +
+                this.formatZerolessValue(value.getMinutes()) + ":" +
+                this.formatZerolessValue(value.getSeconds());
         }
 
         return value;
@@ -84,12 +88,12 @@ export class DataTransformationUtils {
             value = new Date(value);
         }
         if (value instanceof Date) {
-            return value.getUTCFullYear() + "-" +
-                (value.getUTCMonth() + 1) + "-" +
-                value.getUTCDate() + " " +
-                value.getUTCHours() + ":" +
-                value.getUTCMinutes() + ":" +
-                value.getUTCSeconds();
+            return this.formatZerolessValue(value.getUTCFullYear()) + "-" +
+                this.formatZerolessValue(value.getUTCMonth() + 1) + "-" +
+                this.formatZerolessValue(value.getUTCDate()) + " " +
+                this.formatZerolessValue(value.getUTCHours()) + ":" +
+                this.formatZerolessValue(value.getUTCMinutes()) + ":" +
+                this.formatZerolessValue(value.getUTCSeconds());
         }
 
         return value;
@@ -117,6 +121,20 @@ export class DataTransformationUtils {
         }
 
         return value;
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
+     */
+    private static formatZerolessValue(value: number): string {
+        if (value < 10)
+            return "0" + value;
+
+        return String(value);
     }
 
 }
