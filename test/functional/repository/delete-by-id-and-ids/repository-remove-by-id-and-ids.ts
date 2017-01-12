@@ -22,7 +22,7 @@ describe("repository > removeById and removeByIds methods", function() {
     // -------------------------------------------------------------------------
     // Specifications
     // -------------------------------------------------------------------------
-    
+
     it("remove using removeById method should delete successfully", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
         const specificPostRepository = connection.getSpecificRepository(Post);
