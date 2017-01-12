@@ -22,9 +22,6 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
         post1.date = new Date(1484069886663);
         post1.localDate = new Date(1484069886663);
 
-        // console.log(new Date());
-        // console.log(new Date().getTime());
-
         // persist
         await connection.entityManager.persist(post1);
 
@@ -41,10 +38,10 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
             .where("post.title = :title", { title: "Hello Post #1" })
             .getRawOne();
 
-        const date = !(rawPost["post_date"] instanceof Date) ? new Date(rawPost["post_date"]) : rawPost["post_date"];
-        const localDate = !(rawPost["post_localDate"] instanceof Date) ? new Date(rawPost["post_localDate"]) : rawPost["post_localDate"];
+        // const date = !(rawPost["post_date"] instanceof Date) ? new Date(rawPost["post_date"]) : rawPost["post_date"];
+        // date.toISOString().should.be.equal("2017-01-10T12:38:06.000Z");
 
-        date.toISOString().should.be.equal("2017-01-10T12:38:06.000Z");
+        const localDate = !(rawPost["post_localDate"] instanceof Date) ? new Date(rawPost["post_localDate"]) : rawPost["post_localDate"];
         localDate.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");
     })));
 
