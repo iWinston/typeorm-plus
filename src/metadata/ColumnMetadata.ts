@@ -98,7 +98,7 @@ export class ColumnMetadata {
     /**
      * Default database value.
      */
-    readonly default: string;
+    readonly default: any;
 
     /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum

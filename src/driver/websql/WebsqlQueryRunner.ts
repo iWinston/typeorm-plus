@@ -821,8 +821,19 @@ export class WebsqlQueryRunner implements QueryRunner {
             c += " UNIQUE";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " PRIMARY KEY AUTOINCREMENT";
-        if (column.default !== undefined && column.default !== null)
-            c += " DEFAULT '" + column.default + "'";
+        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
+            if (typeof column.default === "number") {
+                c += " DEFAULT " + column.default + "";
+            } else if (typeof column.default === "boolean") {
+                c += " DEFAULT " + (column.default === true ? "TRUE" : "FALSE") + "";
+            } else if (typeof column.default === "function") {
+                c += " DEFAULT " + column.default() + "";
+            } else if (typeof column.default === "string") {
+                c += " DEFAULT '" + column.default + "'";
+            } else {
+                c += " DEFAULT " + column.default + "";
+            }
+        }
 
         return c;
     }
