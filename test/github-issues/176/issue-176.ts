@@ -15,7 +15,7 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("should return dates in utc", () => Promise.all(connections.map(async connection => {
+    it("should return dates in utc", () => Promise.all(connections.map(async connection => {
 
         const post1 = new Post();
         post1.title = "Hello Post #1";
