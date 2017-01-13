@@ -15,6 +15,7 @@ import {RelationIdMetadataArgs} from "./RelationIdMetadataArgs";
 import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
 import {DiscriminatorValueMetadataArgs} from "./DiscriminatorValueMetadataArgs";
 import {EntityRepositoryMetadataArgs} from "./EntityRepositoryMetadataArgs";
+import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -33,6 +34,7 @@ export class MetadataArgsStorage {
 
     readonly tables = new TargetMetadataArgsCollection<TableMetadataArgs>();
     readonly entityRepositories = new TargetMetadataArgsCollection<EntityRepositoryMetadataArgs>();
+    readonly transactionEntityManagers = new TargetMetadataArgsCollection<TransactionEntityMetadataArgs>();
     readonly namingStrategies = new TargetMetadataArgsCollection<NamingStrategyMetadataArgs>();
     readonly entitySubscribers = new TargetMetadataArgsCollection<EntitySubscriberMetadataArgs>();
     readonly indices = new TargetMetadataArgsCollection<IndexMetadataArgs>();

@@ -4,18 +4,33 @@ import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
     driver: {
-        type: "sqlite",
-        storage: "temp/sqlitedb.db"
+        // type: "postgres",
+        // host: "localhost",
+        // port: 5432,
+        // username: "root",
+        // password: "admin",
+        // database: "test"
+        type: "oracle",
+        host: "localhost",
+        username: "system",
+        password: "oracle",
+        port: 1521,
+        sid: "xe.oracle.docker",
+        // type: "mssql",
+        // host: "192.168.1.10",
+        // username: "sa",
+        // password: "admin12345",
+        // database: "test",
+        // port: 1521
+        // type: "sqlite",
+        // storage: "temp/sqlitedb.db"
     },
     logging: {
         logQueries: true,
         logSchemaCreation: true
     },
     autoSchemaSync: true,
-    dropSchemaOnConnection: true,
-    entities: [
-        Post
-    ]
+    entities: [Post]
 };
 
 createConnection(options).then(connection => {

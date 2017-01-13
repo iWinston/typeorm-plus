@@ -9,7 +9,6 @@ export class Post {
     id: number;
 
     @Column()
-    @Index({ unique: true })
     title: string;
 
     @Column()
