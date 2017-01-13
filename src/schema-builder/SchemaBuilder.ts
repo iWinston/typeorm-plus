@@ -342,7 +342,6 @@ export class SchemaBuilder {
                     const indexSchema = IndexSchema.create(indexMetadata);
                     tableSchema.indices.push(indexSchema);
                     this.logger.logSchemaBuild(`adding new index: ${indexSchema.name}`);
-                    console.log(indexMetadata);
                     await this.queryRunner.createIndex(indexSchema.tableName, indexSchema);
                 });
 
