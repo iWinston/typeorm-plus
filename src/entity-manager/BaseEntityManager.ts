@@ -141,6 +141,13 @@ export abstract class BaseEntityManager {
     }
 
     /**
+     * Gets custom entity repository marked with @EntityRepository decorator.
+     */
+    getCustomRepository<T>(customRepository: ObjectType<T>): T {
+        return this.connection.getCustomRepository<T>(customRepository);
+    }
+
+    /**
      * Checks if entity has an id.
      */
     hasId(entity: Object): boolean;

@@ -32,6 +32,10 @@ import {MigrationInterface} from "../migration/MigrationInterface";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
 import {CannotRunMigrationNotConnectedError} from "./error/CannotRunMigrationNotConnectedError";
 import {PlatformTools} from "../platform/PlatformTools";
+import {AbstractRepository} from "../repository/AbstractRepository";
+import {CustomRepositoryNotFoundError} from "../repository/error/CustomRepositoryNotFoundError";
+import {CustomRepositoryReusedError} from "../repository/error/CustomRepositoryReusedError";
+import {CustomRepositoryCannotInheritRepositoryError} from "../repository/error/CustomRepositoryCannotInheritRepositoryError";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -81,6 +85,11 @@ export class Connection {
      * Stores all registered repositories.
      */
     private readonly repositoryAggregators: RepositoryAggregator[] = [];
+
+    /**
+     * Stores all entity repository instances.
+     */
+    private readonly entityRepositories: Object[] = [];
 
     /**
      * Entity listeners that are registered for this connection.
@@ -432,6 +441,13 @@ export class Connection {
      * Only tree-type entities can have a TreeRepository,
      * like ones decorated with @ClosureTable decorator.
      */
+    getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity>;
+
+    /**
+     * Gets tree repository for the given entity class.
+     * Only tree-type entities can have a TreeRepository,
+     * like ones decorated with @ClosureTable decorator.
+     */
     getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
@@ -495,6 +511,73 @@ export class Connection {
         }
 
         return [];
+    }
+
+    /**
+     * Gets custom entity repository marked with @EntityRepository decorator.
+     */
+    getCustomRepository<T>(customRepository: ObjectType<T>): T {
+        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.toArray().find(repository => {
+            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
+        });
+        if (!entityRepositoryMetadataArgs)
+            throw new CustomRepositoryNotFoundError(customRepository);
+
+        let entityRepositoryInstance: any = this.entityRepositories.find(entityRepository => entityRepository.constructor === customRepository);
+        if (!entityRepositoryInstance) {
+            if (entityRepositoryMetadataArgs.useContainer) {
+                entityRepositoryInstance = getFromContainer(entityRepositoryMetadataArgs.target);
+
+                // if we get custom entity repository from container then there is a risk that it already was used
+                // in some different connection. If it was used there then we check it and throw an exception
+                // because we cant override its connection there again
+
+                if (entityRepositoryInstance instanceof AbstractRepository || entityRepositoryInstance instanceof Repository) {
+                    // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+                    // however we need these properties for internal work of the class
+                    if ((entityRepositoryInstance as any)["connection"] && (entityRepositoryInstance as any)["connection"] !== this)
+                        throw new CustomRepositoryReusedError(customRepository);
+                }
+
+            } else {
+                entityRepositoryInstance = new (entityRepositoryMetadataArgs.target as any)();
+            }
+
+            if (entityRepositoryInstance instanceof AbstractRepository) {
+                // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+                // however we need these properties for internal work of the class
+                if (!(entityRepositoryInstance as any)["connection"])
+                    (entityRepositoryInstance as any)["connection"] = this;
+            }
+            if (entityRepositoryInstance instanceof Repository) {
+                if (!entityRepositoryMetadataArgs.entity)
+                    throw new CustomRepositoryCannotInheritRepositoryError(customRepository);
+
+                // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+                // however we need these properties for internal work of the class
+                (entityRepositoryInstance as any)["connection"] = this;
+                (entityRepositoryInstance as any)["metadata"] = this.getMetadata(entityRepositoryMetadataArgs.entity);
+            }
+
+            // register entity repository
+            this.entityRepositories.push(entityRepositoryInstance);
+        }
+
+        return entityRepositoryInstance;
+    }
+
+    /**
+     * Gets custom repository's managed entity.
+     * If given custom repository does not manage any entity then undefined will be returned.
+     */
+    getCustomRepositoryTarget<T>(customRepository: any): Function|string|undefined {
+        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.toArray().find(repository => {
+            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
+        });
+        if (!entityRepositoryMetadataArgs)
+            throw new CustomRepositoryNotFoundError(customRepository);
+
+        return entityRepositoryMetadataArgs.entity;
     }
 
     // -------------------------------------------------------------------------
@@ -630,4 +713,5 @@ export class Connection {
     protected createLazyRelationsWrapper() {
         return new LazyRelationsWrapper(this);
     }
+
 }

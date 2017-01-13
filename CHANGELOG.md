@@ -5,7 +5,9 @@
 * all table decorators are renamed to `Entity` (`Table` => `Entity`, `AbstractTable` => `AbstractEntity`, 
 `ClassTableChild` => `ClassEntityChild`, `ClosureTable` => `ClosureEntity`, `EmbeddableTable` => `EmbeddableEntity`, 
 `SingleTableChild` => `SingleEntityChild`). This change is required because upcoming versions of orm will work
-not only with tables, but also with documents and other database-specific "tables".
+not only with tables, but also with documents and other database-specific "tables". 
+Previous decorator names are deprecated and will be removed in the future.
+* added custom repositories support. Example in samples directory.
 
 # 0.0.6 (latest)
 

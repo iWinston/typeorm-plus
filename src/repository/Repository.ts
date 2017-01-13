@@ -16,13 +16,23 @@ import {SubjectBuilder} from "../persistence/SubjectBuilder";
 export class Repository<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
-    // Constructor
+    // Protected Methods Set Dynamically
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected metadata: EntityMetadata,
-                protected queryRunnerProvider?: QueryRunnerProvider) {
-    }
+    /**
+     * Connection used by this repository.
+     */
+    protected connection: Connection;
+
+    /**
+     * Entity metadata of the entity current repository manages.
+     */
+    protected metadata: EntityMetadata;
+
+    /**
+     * Query runner provider used for this repository.
+     */
+    protected queryRunnerProvider?: QueryRunnerProvider;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -317,7 +327,14 @@ export class Repository<Entity extends ObjectLiteral> {
     async transaction(runInTransaction: (repository: Repository<Entity>) => Promise<any>|any): Promise<any> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         const queryRunner = await queryRunnerProvider.provide();
-        const transactionRepository = new Repository<Entity>(this.connection, this.metadata, queryRunnerProvider);
+
+        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+        // however we need these properties for internal work of the class
+        const transactionRepository = new Repository<any>();
+        (transactionRepository as any)["connection"] = this.connection;
+        (transactionRepository as any)["metadata"] = this.metadata;
+        (transactionRepository as any)["queryRunnerProvider"] = queryRunnerProvider;
+        // todo: same code in the repository factory. probably better to use repository factory here too
 
         try {
             await queryRunner.beginTransaction();
