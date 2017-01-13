@@ -6,6 +6,7 @@ import {Subject, JunctionInsert, JunctionRemove} from "./Subject";
 import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {EntityManager} from "../entity-manager/EntityManager";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -51,7 +52,9 @@ export class SubjectOperationExecutor {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection, protected queryRunnerProvider: QueryRunnerProvider) {
+    constructor(protected connection: Connection,
+                protected transactionEntityManager: EntityManager,
+                protected queryRunnerProvider: QueryRunnerProvider) {
     }
 
     // -------------------------------------------------------------------------
@@ -90,12 +93,13 @@ export class SubjectOperationExecutor {
         try {
 
             // broadcast "before" events before we start updating
-            await this.connection.broadcaster.broadcastBeforeEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
+            await this.connection.broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
             // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
             this.updateSubjects.forEach(subject => subject.recompute());
 
             this.queryRunner = await this.queryRunnerProvider.provide();
+
             // open transaction if its not opened yet
             if (!this.queryRunner.isTransactionActive()) {
                 isTransactionStartedByItself = true;
@@ -133,7 +137,7 @@ export class SubjectOperationExecutor {
 
         // finally broadcast "after" events
         // note that we are broadcasting events after we release connection to make sure its free if someone reuse connection inside listeners
-        await this.connection.broadcaster.broadcastAfterEventsForAll(this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.connection.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
     }
 

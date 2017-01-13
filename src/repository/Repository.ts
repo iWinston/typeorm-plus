@@ -143,11 +143,12 @@ export class Repository<Entity extends ObjectLiteral> {
 
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
+            const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
             await databaseEntityLoader.persist(entityOrEntities, this.metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection, queryRunnerProvider);
+            const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunnerProvider);
             await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities;
@@ -179,11 +180,12 @@ export class Repository<Entity extends ObjectLiteral> {
 
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
+            const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
             await databaseEntityLoader.remove(entityOrEntities, this.metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection, queryRunnerProvider);
+            const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunnerProvider);
             await executor.execute(databaseEntityLoader.operateSubjects);
 
             return entityOrEntities;
