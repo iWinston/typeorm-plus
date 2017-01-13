@@ -5,7 +5,6 @@ import {ForeignKeySchema} from "./schema/ForeignKeySchema";
 import {IndexSchema} from "./schema/IndexSchema";
 import {Driver} from "../driver/Driver";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {Logger} from "../logger/Logger";
 import {PrimaryKeySchema} from "./schema/PrimaryKeySchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
@@ -343,6 +342,7 @@ export class SchemaBuilder {
                     const indexSchema = IndexSchema.create(indexMetadata);
                     tableSchema.indices.push(indexSchema);
                     this.logger.logSchemaBuild(`adding new index: ${indexSchema.name}`);
+                    console.log(indexMetadata);
                     await this.queryRunner.createIndex(indexSchema.tableName, indexSchema);
                 });
 
