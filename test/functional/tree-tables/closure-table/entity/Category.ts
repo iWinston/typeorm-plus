@@ -14,10 +14,10 @@ export class Category {
     @Column()
     name: string;
     
-    @TreeParent({ cascadeAll: true })
+    @TreeParent({ cascadeInsert: true, cascadeUpdate: true })
     parentCategory: Category;
 
-    @TreeChildren({ cascadeAll: true })
+    @TreeChildren({ cascadeInsert: true, cascadeUpdate: true })
     childCategories: Category[];
 
     @TreeLevelColumn()

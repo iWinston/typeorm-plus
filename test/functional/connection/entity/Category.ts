@@ -17,7 +17,7 @@ export class Category {
     @TreeParent()
     parentCategory: Category;
 
-    @TreeChildren({ cascadeAll: true })
+    @TreeChildren({ cascadeInsert: true, cascadeUpdate: true })
     childCategories: Category[];
 
     @TreeLevelColumn()

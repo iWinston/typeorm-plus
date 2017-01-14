@@ -33,8 +33,7 @@ export class Post {
 
     @OneToOne(type => Category, category => category.onePost, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     oneCategory: Category;
 
