@@ -21,8 +21,7 @@ export class Request {
 
     @OneToOne(type => Ticket, ticket => ticket.request, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     ticket: Ticket;
 

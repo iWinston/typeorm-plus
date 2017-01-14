@@ -27,7 +27,8 @@ export class Post {
     author: Author;
 
     @ManyToMany(type => Category, category => category.posts, {
-        cascadeAll: true
+        cascadeInsert: true,
+        cascadeUpdate: true
     })
     @JoinTable({
         name: "_post_categories"

@@ -28,8 +28,7 @@ export class Post {
 
     @OneToMany(type => PostAuthor, author => author.editedPost, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     // @JoinColumn() // uncomment this and you'll get an error, because JoinColumn is not allowed here (only many-to-one/one-to-one)
     // @JoinTable() // uncomment this and you'll get an error because JoinTable is not allowed here (only many-to-many)

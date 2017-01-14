@@ -21,15 +21,13 @@ export class Category {
 
     @OneToMany(type => Post, post => post.manyToOneCategory, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true,
+        cascadeUpdate: true
     })
     oneToManyPosts: Post[];
 
     @OneToMany(type => Post, post => post.noCascadeManyToOneCategory, {
         cascadeInsert: false,
-        cascadeUpdate: false,
-        cascadeRemove: false,
+        cascadeUpdate: false
     })
     noCascadeOneToManyPosts: Post[];
 
@@ -52,7 +50,6 @@ export class Category {
     @ManyToMany(type => Post, post => post.manyToManyOwnerCategories, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true,
     })
     @JoinTable()
     manyToManyPosts: Post[];
@@ -60,15 +57,13 @@ export class Category {
     @ManyToMany(type => Post, post => post.noCascadeManyToManyOwnerCategories, {
         cascadeInsert: false,
         cascadeUpdate: false,
-        cascadeRemove: false,
     })
     @JoinTable()
     noCascadeManyToManyPosts: Post[];
 
     @ManyToMany(type => Photo, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     photos: Photo[];

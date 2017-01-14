@@ -8,6 +8,8 @@
 not only with tables, but also with documents and other database-specific "tables". 
 Previous decorator names are deprecated and will be removed in the future.
 * added custom repositories support. Example in samples directory.
+* cascade remove options has been removed from `@ManyToMany`, `@OneToMany` decorators. Also cascade remove is not possible
+from two sides of `@OneToOne` relationship now.
 
 # 0.0.6 (latest)
 

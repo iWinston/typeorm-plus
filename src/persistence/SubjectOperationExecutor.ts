@@ -67,6 +67,13 @@ export class SubjectOperationExecutor {
      */
     async execute(subjects: Subject[]): Promise<void> {
 
+        /*subjects.forEach(subject => {
+            console.log(subject.entity);
+            console.log("mustBeInserted: ", subject.mustBeInserted);
+            console.log("mustBeUpdated: ", subject.mustBeUpdated);
+            console.log("mustBeRemoved: ", subject.mustBeRemoved);
+        });*/
+
         // validate all subjects first
         subjects.forEach(subject => subject.validate());
 
@@ -114,16 +121,16 @@ export class SubjectOperationExecutor {
             await this.executeUpdateRelations();
             await this.executeRemoveOperations();
 
-            // finally broadcast "after" events
-            // note that we are broadcasting events after we release connection to make sure its free if someone reuse connection inside listeners
-            await this.connection.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
-
             // commit transaction if it was started by us
             if (isTransactionStartedByItself === true)
                 await this.queryRunner.commitTransaction();
 
             // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
             await this.updateSpecialColumnsInPersistedEntities();
+
+            // finally broadcast "after" events
+            // note that we are broadcasting events after commit because we want to have ids of the entities inside them to be available in subscribers
+            await this.connection.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         } catch (error) {
 

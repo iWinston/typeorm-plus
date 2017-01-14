@@ -48,7 +48,6 @@ export class Post {
     @ManyToMany(type => Category, category => category.manyToManyPosts, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true,
     })
     @JoinTable()
     manyToManyOwnerCategories: Category[];
@@ -56,7 +55,6 @@ export class Post {
     @ManyToMany(type => Category, category => category.noCascadeManyToManyPosts, {
         cascadeInsert: false,
         cascadeUpdate: false,
-        cascadeRemove: false,
     })
     @JoinTable()
     noCascadeManyToManyOwnerCategories: Category[];
@@ -64,7 +62,6 @@ export class Post {
     @ManyToMany(type => Photo, photo => photo.posts, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true,
     })
     @JoinTable()
     photos: Photo[];
@@ -72,7 +69,6 @@ export class Post {
     @ManyToMany(type => Photo, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true,
     })
     @JoinTable()
     noInversePhotos: Photo[];

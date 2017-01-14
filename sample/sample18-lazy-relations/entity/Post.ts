@@ -25,7 +25,8 @@ export class Post {
     author: Promise<Author|null>;
 
     @ManyToMany(type => Category, category => category.posts, {
-        cascadeAll: true
+        cascadeInsert: true,
+        cascadeUpdate: true
     })
     @JoinTable()
     categories: Promise<Category[]>;

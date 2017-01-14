@@ -32,7 +32,6 @@ export class Game {
     @ManyToMany(type => Platform, platform => platform.games, {
         cascadeInsert: true, // allow to insert a new platform on game save
         cascadeUpdate: true, // allow to update a platform on game save
-        cascadeRemove: true  // allow to remove a platform on game remove
     })
     @JoinTable()
     platforms: Platform[];

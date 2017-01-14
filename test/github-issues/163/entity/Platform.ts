@@ -25,7 +25,6 @@ export class Platform {
     @ManyToMany(type => Game, game => game.platforms, {
         cascadeInsert: true, // allow to insert a new game on platform save
         cascadeUpdate: true, // allow to update an game on platform save
-        cascadeRemove: true  // allow to remove an game on platform remove
     })
     games: Game[];
 

@@ -29,15 +29,13 @@ export class Category {
 
     @OneToMany(type => Post, post => post.category, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     posts: Post[];
 
     @ManyToMany(type => Photo, photo => photo.categories, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     photos: Photo[];

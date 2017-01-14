@@ -26,8 +26,7 @@ export class Post {
 
     @ManyToMany(type => Photo, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     photos: Photo[];

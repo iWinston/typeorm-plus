@@ -31,8 +31,7 @@ export class Post {
 
     @ManyToMany(type => PostCategory, category => category.posts, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     categories: PostCategory[] = [];

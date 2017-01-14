@@ -32,8 +32,7 @@ export class Post {
 
     @OneToMany(type => Image, image => image.post, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     images: Image[] = [];
 
@@ -54,8 +53,7 @@ export class Post {
 
     @ManyToMany(type => Category, category => category.posts, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     categories: Category[];

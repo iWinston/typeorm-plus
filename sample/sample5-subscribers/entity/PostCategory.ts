@@ -13,8 +13,7 @@ export class PostCategory {
 
     @ManyToMany(type => Post, post => post.categories, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     posts: Post[] = [];
 

@@ -25,7 +25,6 @@ export class Photo {
     @ManyToMany(type => Post, photo => photo.photos, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true,
     })
     posts: Post[];
 
