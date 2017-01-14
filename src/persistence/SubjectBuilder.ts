@@ -382,7 +382,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     if (alreadyLoadedRelatedDatabaseSubject.mustBeRemoved)
                         return;
 
-                    console.log("marked as removed: ", alreadyLoadedRelatedDatabaseSubject);
                     alreadyLoadedRelatedDatabaseSubject.mustBeRemoved = true;
                     await this.buildCascadeRemovedAndRelationUpdateOperateSubjects(alreadyLoadedRelatedDatabaseSubject);
                 }
