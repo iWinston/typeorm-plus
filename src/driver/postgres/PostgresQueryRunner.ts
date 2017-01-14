@@ -376,7 +376,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableName: string, columnName: string): Promise<boolean> {
-        const sql = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}' AND table_name = '${tableName}' AND column_name = '${columnName}'`;
+        const sql = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}' AND table_name = '${tableName}' AND column_name = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
