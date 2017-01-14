@@ -92,12 +92,6 @@ export class SubjectOperationExecutor {
         let isTransactionStartedByItself = false;
         try {
 
-            // broadcast "before" events before we start updating
-            await this.connection.broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
-
-            // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
-            this.updateSubjects.forEach(subject => subject.recompute());
-
             this.queryRunner = await this.queryRunnerProvider.provide();
 
             // open transaction if its not opened yet
@@ -106,6 +100,12 @@ export class SubjectOperationExecutor {
                 await this.queryRunner.beginTransaction();
             }
 
+            // broadcast "before" events before we start updating
+            await this.connection.broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+
+            // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
+            this.updateSubjects.forEach(subject => subject.recompute());
+
             await this.executeInsertOperations();
             await this.executeInsertClosureTableOperations();
             await this.executeInsertJunctionsOperations();
@@ -113,6 +113,10 @@ export class SubjectOperationExecutor {
             await this.executeUpdateOperations();
             await this.executeUpdateRelations();
             await this.executeRemoveOperations();
+
+            // finally broadcast "after" events
+            // note that we are broadcasting events after we release connection to make sure its free if someone reuse connection inside listeners
+            await this.connection.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
             // commit transaction if it was started by us
             if (isTransactionStartedByItself === true)
@@ -134,10 +138,6 @@ export class SubjectOperationExecutor {
 
             throw error;
         }
-
-        // finally broadcast "after" events
-        // note that we are broadcasting events after we release connection to make sure its free if someone reuse connection inside listeners
-        await this.connection.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
     }
 
