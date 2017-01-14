@@ -13,6 +13,12 @@ export class Request {
     @Column()
     owner: string;
 
+    @Column()
+    type: string;
+
+    @Column()
+    success: boolean;
+
     @OneToOne(type => Ticket, ticket => ticket.request, {
         cascadeInsert: true,
         cascadeUpdate: true,
