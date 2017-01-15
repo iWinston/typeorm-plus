@@ -19,8 +19,8 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
 
         const post1 = new Post();
         post1.title = "Hello Post #1";
-        post1.date = new Date(1484069886663);
-        post1.localDate = new Date(1484069886663);
+        post1.date = new Date(1484069886663); // stores "2017-01-10 17:38:06.000" into the database
+        post1.localDate = new Date(1484069886663); // stores "2017-01-10 22:38:06.000" into the database
 
         // persist
         await connection.entityManager.persist(post1);

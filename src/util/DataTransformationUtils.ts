@@ -52,6 +52,7 @@ export class DataTransformationUtils {
      * Converts given string value with "-" separator into a "HH:mm:ss" format.
      */
     static mixedTimeToString(value: string|any): string|any {
+        value = value instanceof Date ? (value.getHours() + ":" + value.getMinutes() + ":" + value.getSeconds()) : value;
         if (typeof value === "string") {
             return value.split(":")
                 .map(v => v.length === 1 ? "0" + v : v) // append zero at beginning if we have a first-zero-less number

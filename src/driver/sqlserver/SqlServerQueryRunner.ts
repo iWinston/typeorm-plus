@@ -13,7 +13,6 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**
@@ -131,6 +130,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         return new Promise<void>((ok, fail) => {
             this.databaseConnection.isTransactionActive = true;
+            this.databaseConnection.transaction = this.databaseConnection.connection.transaction();
             this.databaseConnection.transaction.begin((err: any) => {
                 if (err) {
                     this.databaseConnection.isTransactionActive = false;
@@ -891,7 +891,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
             if (typeof column.default === "number") {
                 c += " DEFAULT " + column.default + "";
             } else if (typeof column.default === "boolean") {
-                c += " DEFAULT " + (column.default === true ? "TRUE" : "FALSE") + "";
+                c += " DEFAULT " + (column.default === true ? "1" : "0") + "";
             } else if (typeof column.default === "function") {
                 c += " DEFAULT " + column.default() + "";
             } else if (typeof column.default === "string") {

@@ -106,6 +106,8 @@ export class SqlServerDriver implements Driver {
             port: this.options.port
         }, this.options.extra || {});
 
+        options.options = { useUTC: false };
+
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<void>((ok, fail) => {
@@ -297,7 +299,6 @@ export class SqlServerDriver implements Driver {
             let dbConnection: DatabaseConnection = {
                 id: this.databaseConnectionPool.length,
                 connection: this.connection,
-                transaction: this.connection.transaction(),
                 isTransactionActive: false
             };
             dbConnection.releaseCallback = () => {

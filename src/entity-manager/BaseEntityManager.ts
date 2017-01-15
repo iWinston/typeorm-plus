@@ -254,7 +254,7 @@ export abstract class BaseEntityManager {
                 this.connection.getMetadata(entityClassOrName as any),
                 this.queryRunnerProvider
             );
-            this.repositoryAggregators.push(repositoryAggregator);
+            this.repositoryAggregators.push(repositoryAggregator); // todo: check isnt memory leak here?
         }
 
         return repositoryAggregator;
