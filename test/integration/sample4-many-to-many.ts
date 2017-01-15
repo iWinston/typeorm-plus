@@ -248,22 +248,6 @@ describe("many-to-many", function() {
                 .getSingleResult()
                 .should.be.rejectedWith(Error);*/ // not working, find fix
         });
-
-        it("should remove category from post ", function() {
-            return postRepository
-                .createQueryBuilder("p")
-                .leftJoinAndSelect("p.categories", "categories")
-                .where("p.id=:id", { id: savedPost.id })
-                .getOne()
-                .then(loadedPost => {
-                    loadedPost!.categories.splice(0, 1);
-                    return postRepository.persist(loadedPost!);
-                }).then(updatedPost => {
-                    return postCategoryRepository.find({ name : "technology" });
-                }).then(foundCategory => {
-                    expect(foundCategory).to.be.empty;
-                });
-        });
         
     });
 
@@ -570,61 +554,6 @@ describe("many-to-many", function() {
             details.id = savedDetailsId;
             details.comment = "post details comment";
             return postDetailsRepository.findOneById(savedDetailsId).should.eventually.eql(details);
-        });
-
-    });
-
-    describe("remove post should remove it and its categories", function() {
-        let newPost: Post, category1: PostCategory, category2: PostCategory, savedPostId: number, 
-            savedCategory1Id: number, savedCategory2Id: number;
-
-        before(reloadDatabase);
-
-        before(function() {
-            category1 = new PostCategory();
-            category1.name = "post category #1";
-            
-            category2 = new PostCategory();
-            category2.name = "post category #2";
-            
-            newPost = new Post();
-            newPost.text = "Hello post";
-            newPost.title = "this is post title";
-            newPost.categories = [];
-            newPost.categories.push(category1, category2);
-
-            return postRepository
-                .persist(newPost) // first save
-                .then(savedPost => {
-                    savedPostId = savedPost.id;
-                    savedCategory1Id = category1.id;
-                    savedCategory2Id = category2.id;
-                    return postRepository.remove(newPost);
-                }); // now remove newly saved
-        });
-
-        it("should have a savedPostId and savedCategory1Id and savedCategory2Id because it was persisted before removal", function () {
-            expect(savedPostId).not.to.be.empty;
-            expect(savedCategory1Id).not.to.be.empty;
-            expect(savedCategory2Id).not.to.be.empty;
-        });
-
-        it("should not have a post and category ids since object was removed from the db", function () {
-            expect(newPost.id).to.be.empty;
-            expect(category1.id).to.be.empty;
-            expect(category2.id).to.be.empty;
-        });
-
-        it("should not have post in the database", function() {
-            return postRepository.findOneById(savedPostId).should.eventually.eql(undefined);
-        });
-
-        it("should not have category1 in the database", function() {
-            return postCategoryRepository.findOneById(savedCategory1Id).should.eventually.eql(undefined);
-        });
-
-        it("should not have category2 in the database", function() {
-            return postCategoryRepository.findOneById(savedCategory2Id).should.eventually.eql(undefined);
         });
 
     });

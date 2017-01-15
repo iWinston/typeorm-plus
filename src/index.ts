@@ -5,7 +5,7 @@ import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
 import {ConnectionOptions} from "./connection/ConnectionOptions";
-import {getFromContainer, defaultContainer} from "./container";
+import {getFromContainer} from "./container";
 import {ObjectType} from "./common/ObjectType";
 import {Repository} from "./repository/Repository";
 import {EntityManager} from "./entity-manager/EntityManager";
@@ -36,7 +36,7 @@ export * from "./decorator/options/IndexOptions";
 export * from "./decorator/options/JoinColumnOptions";
 export * from "./decorator/options/JoinTableOptions";
 export * from "./decorator/options/RelationOptions";
-export * from "./decorator/options/TableOptions";
+export * from "./decorator/options/EntityOptions";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/JoinColumn";
 export * from "./decorator/relations/JoinTable";
@@ -46,19 +46,21 @@ export * from "./decorator/relations/OneToMany";
 export * from "./decorator/relations/OneToOne";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/RelationId";
-export * from "./decorator/tables/Table";
-export * from "./decorator/tables/AbstractTable";
-export * from "./decorator/tables/ClassTableChild";
-export * from "./decorator/tables/ClosureTable";
-export * from "./decorator/tables/EmbeddableTable";
-export * from "./decorator/tables/SingleTableChild";
-export * from "./decorator/tables/Table";
+export * from "./decorator/entity/Entity";
+export * from "./decorator/entity/AbstractEntity";
+export * from "./decorator/entity/ClassEntityChild";
+export * from "./decorator/entity/ClosureEntity";
+export * from "./decorator/entity/EmbeddableEntity";
+export * from "./decorator/entity/SingleEntityChild";
+export * from "./decorator/entity/Entity";
+export * from "./decorator/entity/TableInheritance";
+export * from "./decorator/transaction/Transaction";
+export * from "./decorator/transaction/TransactionEntityManager";
 export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/Index";
 export * from "./decorator/NamingStrategy";
-export * from "./decorator/tables/TableInheritance";
 export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
 export * from "./schema-builder/schema/ColumnSchema";
@@ -86,6 +88,18 @@ export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
+
+// -------------------------------------------------------------------------
+// Deprecated
+// -------------------------------------------------------------------------
+
+export * from "./decorator/tables/Table";
+export * from "./decorator/tables/AbstractTable";
+export * from "./decorator/tables/ClassTableChild";
+export * from "./decorator/tables/ClosureTable";
+export * from "./decorator/tables/EmbeddableTable";
+export * from "./decorator/tables/SingleTableChild";
+export * from "./decorator/tables/Table";
 
 // -------------------------------------------------------------------------
 // Commonly used functionality

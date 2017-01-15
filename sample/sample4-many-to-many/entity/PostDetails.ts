@@ -1,7 +1,7 @@
-import {PrimaryGeneratedColumn, Column, Table, ManyToMany} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, ManyToMany} from "../../../src/index";
 import {Post} from "./Post";
 
-@Table("sample4_post_details")
+@Entity("sample4_post_details")
 export class PostDetails {
 
     @PrimaryGeneratedColumn()
@@ -24,8 +24,7 @@ export class PostDetails {
     
     @ManyToMany(type => Post, post => post.details, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     posts: Post[];
 

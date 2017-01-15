@@ -1,9 +1,9 @@
 import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
 import {User} from "./User";
 
-@Table()
+@Entity()
 export class AccessToken {
 
     @PrimaryColumn("int", { generated: true })

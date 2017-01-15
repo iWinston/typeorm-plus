@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Post} from "./Post";
 import {OneToMany} from "../../../src/decorator/relations/OneToMany";
 import {AfterRemove} from "../../../src/decorator/listeners/AfterRemove";
@@ -8,7 +8,7 @@ import {BeforeUpdate} from "../../../src/decorator/listeners/BeforeUpdate";
 import {AfterInsert} from "../../../src/decorator/listeners/AfterInsert";
 import {BeforeInsert} from "../../../src/decorator/listeners/BeforeInsert";
 
-@Table("sample9_post_author")
+@Entity("sample9_post_author")
 export class PostAuthor {
 
     @PrimaryGeneratedColumn()

@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Table, ManyToMany} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, ManyToMany} from "../../../src/index";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
@@ -11,7 +11,7 @@ import {BeforeRemove} from "../../../src/decorator/listeners/BeforeRemove";
 import {AfterRemove} from "../../../src/decorator/listeners/AfterRemove";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
-@Table("sample9_post")
+@Entity("sample9_post")
 export class Post {
 
     @PrimaryGeneratedColumn()
@@ -31,8 +31,7 @@ export class Post {
 
     @ManyToMany(type => PostCategory, category => category.posts, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     categories: PostCategory[] = [];

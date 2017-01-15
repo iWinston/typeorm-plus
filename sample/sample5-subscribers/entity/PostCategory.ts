@@ -1,8 +1,8 @@
-import {PrimaryGeneratedColumn, Column, Table} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Post} from "./Post";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 
-@Table("sample5_post_category")
+@Entity("sample5_post_category")
 export class PostCategory {
 
     @PrimaryGeneratedColumn()
@@ -13,8 +13,7 @@ export class PostCategory {
 
     @ManyToMany(type => Post, post => post.categories, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     posts: Post[] = [];
 

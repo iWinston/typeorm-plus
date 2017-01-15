@@ -1,9 +1,9 @@
 import {OrderByCondition} from "../../find-options/OrderByCondition";
 
 /**
- * Describes all column's options.
+ * Describes all entity's options.
  */
-export interface TableOptions {
+export interface EntityOptions {
 
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.

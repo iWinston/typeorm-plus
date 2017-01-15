@@ -1,7 +1,7 @@
-import {Column, Table} from "../../../src/index";
+import {Column, Entity} from "../../../src/index";
 import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 
-@Table("sample27_composite_primary_keys")
+@Entity("sample27_composite_primary_keys")
 export class Post {
 
     @PrimaryColumn("int")

@@ -145,7 +145,51 @@ exports.RelationCount = RelationCount;
 }
 exports.RelationId = RelationId;
 
-// tables
+// entities
+
+/* export */ function AbstractEntity() {
+    return function (object) {
+    };
+}
+exports.AbstractEntity = AbstractEntity;
+
+/* export */ function ClassEntityChild(tableName, options) {
+    return function (object) {
+    };
+}
+exports.ClassEntityChild = ClassEntityChild;
+
+/* export */ function ClosureEntity(name, options) {
+    return function (object) {
+    };
+}
+exports.ClosureEntity = ClosureEntity;
+
+/* export */ function EmbeddableEntity() {
+    return function (object) {
+    };
+}
+exports.EmbeddableEntity = EmbeddableEntity;
+
+/* export */ function SingleEntityChild() {
+    return function (object) {
+    };
+}
+exports.SingleEntityChild = SingleEntityChild;
+
+/* export */ function Entity(name, options) {
+    return function (object) {
+    };
+}
+exports.Entity = Entity;
+
+/* export */ function TableInheritance(type) {
+    return function (object) {
+    };
+}
+exports.TableInheritance = TableInheritance;
+
+// tables (deprecated)
 
 /* export */ function AbstractTable() {
     return function (object) {
@@ -182,12 +226,6 @@ exports.SingleTableChild = SingleTableChild;
     };
 }
 exports.Table = Table;
-
-/* export */ function TableInheritance(type) {
-    return function (object) {
-    };
-}
-exports.TableInheritance = TableInheritance;
 
 // tree
 

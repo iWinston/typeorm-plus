@@ -1,4 +1,4 @@
-import {Column, Table} from "../../../src/index";
+import {Column, Entity} from "../../../src/index";
 import {BasePost} from "./BasePost";
 import {PostCategory} from "./PostCategory";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
@@ -6,7 +6,7 @@ import {PostAuthor} from "./PostAuthor";
 import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
-@Table("sample6_post")
+@Entity("sample6_post")
 export class Post extends BasePost {
 
     @Column()
@@ -21,8 +21,7 @@ export class Post extends BasePost {
 
     @ManyToMany(type => PostCategory, category => category.posts, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     categories: PostCategory[] = [];

@@ -1,4 +1,4 @@
-import {Table} from "../../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Post} from "./Post";
@@ -10,7 +10,7 @@ import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 
-@Table()
+@Entity()
 export class Category {
 
     @PrimaryGeneratedColumn()
@@ -21,15 +21,13 @@ export class Category {
 
     @OneToMany(type => Post, post => post.manyToOneCategory, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true,
+        cascadeUpdate: true
     })
     oneToManyPosts: Post[];
 
     @OneToMany(type => Post, post => post.noCascadeManyToOneCategory, {
         cascadeInsert: false,
-        cascadeUpdate: false,
-        cascadeRemove: false,
+        cascadeUpdate: false
     })
     noCascadeOneToManyPosts: Post[];
 
@@ -52,7 +50,6 @@ export class Category {
     @ManyToMany(type => Post, post => post.manyToManyOwnerCategories, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true,
     })
     @JoinTable()
     manyToManyPosts: Post[];
@@ -60,15 +57,13 @@ export class Category {
     @ManyToMany(type => Post, post => post.noCascadeManyToManyOwnerCategories, {
         cascadeInsert: false,
         cascadeUpdate: false,
-        cascadeRemove: false,
     })
     @JoinTable()
     noCascadeManyToManyPosts: Post[];
 
     @ManyToMany(type => Photo, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     photos: Photo[];

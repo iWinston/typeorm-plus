@@ -1,11 +1,11 @@
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {Kollektion} from "./Kollektion";
 import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
 
-@Table("artikel")
+@Entity("artikel")
 export class Artikel {
 
     @PrimaryColumn("int", { generated: true, name: "artikel_id" })

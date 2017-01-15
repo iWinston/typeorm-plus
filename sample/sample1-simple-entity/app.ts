@@ -32,21 +32,6 @@ const options: ConnectionOptions = {
     autoSchemaSync: true,
     entities: [Post]
 };
-/*const options: CreateConnectionOptions = {
-    driver: "postgres",
-    driverOptions: {
-        host: "localhost",
-        port: 5432,
-        username: "test",
-        password: "admin",
-        database: "test",
-        autoSchemaSync: true,
-        logging: {
-            logQueries: true
-        }
-    },
-    entities: [Post]
-};*/
 
 createConnection(options).then(connection => {
 

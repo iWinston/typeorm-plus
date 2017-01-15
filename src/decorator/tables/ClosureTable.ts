@@ -1,11 +1,13 @@
 import {getMetadataArgsStorage} from "../../index";
 import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
-import {TableOptions} from "../options/TableOptions";
+import {EntityOptions} from "../options/EntityOptions";
 
 /**
  * Used on a tables that stores its children in a tree using closure deisgn pattern.
+ *
+ * @deprecated
  */
-export function ClosureTable(name?: string, options?: TableOptions) {
+export function ClosureTable(name?: string, options?: EntityOptions) {
     return function (target: Function) {
         const args: TableMetadataArgs = {
             target: target,

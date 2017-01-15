@@ -1,10 +1,10 @@
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {Category} from "./Category";
 import {OneToMany} from "../../../../src/decorator/relations/OneToMany";
 
-@Table()
+@Entity()
 export class Post {
 
     @PrimaryGeneratedColumn()

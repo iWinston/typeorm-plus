@@ -1,11 +1,11 @@
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
 import {Request} from "./Request";
 import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 
-@Table()
+@Entity()
 export class Ticket {
 
     @PrimaryGeneratedColumn()

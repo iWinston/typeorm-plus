@@ -1,8 +1,8 @@
 import {Column} from "../../../../src/decorator/columns/Column";
 import {Document} from "./Document";
-import {ClassTableChild} from "../../../../src/decorator/tables/ClassTableChild";
+import {ClassEntityChild} from "../../../../src/decorator/entity/ClassEntityChild";
 
-@ClassTableChild()
+@ClassEntityChild()
 export class DeliveryNote extends Document {
 
     @Column()

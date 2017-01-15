@@ -1,8 +1,8 @@
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 
-@Table("view", {skipSchemaSync: true})
+@Entity("view", {skipSchemaSync: true})
 export class View {
 
     @PrimaryColumn()

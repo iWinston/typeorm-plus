@@ -3,6 +3,8 @@ import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 
 /**
  * This decorators is used on the entities that must be embedded into the tables.
+ *
+ * @deprecated
  */
 export function EmbeddableTable(): Function {
     return function (target: Function) {

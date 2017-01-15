@@ -1,7 +1,7 @@
 import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Table} from "../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../src/decorator/entity/Entity";
 
-@Table()
+@Entity()
 export class AccessToken {
 
     @PrimaryColumn()

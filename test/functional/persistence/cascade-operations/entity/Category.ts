@@ -1,4 +1,4 @@
-import {Table} from "../../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Post} from "./Post";
@@ -10,7 +10,7 @@ import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 
-@Table()
+@Entity()
 export class Category {
 
     @PrimaryGeneratedColumn()
@@ -29,15 +29,13 @@ export class Category {
 
     @OneToMany(type => Post, post => post.category, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     posts: Post[];
 
     @ManyToMany(type => Photo, photo => photo.categories, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     photos: Photo[];

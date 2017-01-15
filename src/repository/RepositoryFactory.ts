@@ -18,14 +18,28 @@ export class RepositoryFactory {
      * Creates a regular repository.
      */
     createRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): Repository<any> {
-        return new Repository<any>(connection, metadata, queryRunnerProvider);
+
+        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+        // however we need these properties for internal work of the class
+        const repository = new Repository<any>();
+        (repository as any)["connection"] = connection;
+        (repository as any)["metadata"] = metadata;
+        (repository as any)["queryRunnerProvider"] = queryRunnerProvider;
+        return repository;
     }
 
     /**
      * Creates a tree repository.
      */
     createTreeRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): TreeRepository<any> {
-        return new TreeRepository<any>(connection, metadata, queryRunnerProvider);
+
+        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+        // however we need these properties for internal work of the class
+        const repository = new TreeRepository<any>();
+        (repository as any)["connection"] = connection;
+        (repository as any)["metadata"] = metadata;
+        (repository as any)["queryRunnerProvider"] = queryRunnerProvider;
+        return repository;
     }
 
     /**

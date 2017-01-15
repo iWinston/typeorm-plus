@@ -1,9 +1,9 @@
-import {PrimaryGeneratedColumn, Column, Table, OneToOne, OneToMany, ManyToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, OneToOne, OneToMany, ManyToOne} from "../../../src/index";
 import {Post} from "./Post";
 import {Chapter} from "./Chapter";
 import {Category} from "./Category";
 
-@Table("sample10_post_details")
+@Entity("sample10_post_details")
 export class PostDetails {
 
     @PrimaryGeneratedColumn()
@@ -19,8 +19,7 @@ export class PostDetails {
     post: Post;
 
     @OneToMany(type => Category, category => category.details, {
-        cascadeInsert: true,
-        cascadeRemove: true
+        cascadeInsert: true
     })
     categories: Category[];
 

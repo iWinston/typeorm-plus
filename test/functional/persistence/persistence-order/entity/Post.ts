@@ -1,4 +1,4 @@
-import {Table} from "../../../../../src/decorator/tables/Table";
+import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Category} from "./Category";
@@ -7,7 +7,7 @@ import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 import {Details} from "./Details";
 import {Photo} from "./Photo";
 
-@Table()
+@Entity()
 export class Post {
 
     @PrimaryGeneratedColumn()

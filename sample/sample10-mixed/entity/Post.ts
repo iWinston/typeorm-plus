@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Table, OneToMany, ManyToOne, ManyToMany, OneToOne} from "../../../src/index";
+import {PrimaryGeneratedColumn, Column, Entity, OneToMany, ManyToOne, ManyToMany, OneToOne} from "../../../src/index";
 import {Image} from "./Image";
 import {Cover} from "./Cover";
 import {Category} from "./Category";
@@ -6,7 +6,7 @@ import {PostDetails} from "./PostDetails";
 import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";
 
-@Table("sample10_post")
+@Entity("sample10_post")
 export class Post {
 
     @PrimaryGeneratedColumn()
@@ -32,8 +32,7 @@ export class Post {
 
     @OneToMany(type => Image, image => image.post, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     images: Image[] = [];
 
@@ -54,8 +53,7 @@ export class Post {
 
     @ManyToMany(type => Category, category => category.posts, {
         cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeUpdate: true
     })
     @JoinTable()
     categories: Category[];

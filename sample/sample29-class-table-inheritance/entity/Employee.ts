@@ -1,8 +1,8 @@
 import {Column} from "../../../src/decorator/columns/Column";
 import {Person} from "./Person";
-import {ClassTableChild} from "../../../src/decorator/tables/ClassTableChild";
+import {ClassEntityChild} from "../../../src/decorator/entity/ClassEntityChild";
 
-@ClassTableChild("sample29_employee")
+@ClassEntityChild("sample29_employee")
 export class Employee extends Person {
 
     @Column()

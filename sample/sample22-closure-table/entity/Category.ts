@@ -1,10 +1,10 @@
 import {PrimaryGeneratedColumn, Column} from "../../../src/index";
 import {TreeLevelColumn} from "../../../src/decorator/tree/TreeLevelColumn";
-import {ClosureTable} from "../../../src/decorator/tables/ClosureTable";
+import {ClosureEntity} from "../../../src/decorator/entity/ClosureEntity";
 import {TreeParent} from "../../../src/decorator/tree/TreeParent";
 import {TreeChildren} from "../../../src/decorator/tree/TreeChildren";
 
-@ClosureTable("sample22_category")
+@ClosureEntity("sample22_category")
 export class Category {
 
     @PrimaryGeneratedColumn()
@@ -16,7 +16,7 @@ export class Category {
     @TreeParent()
     parentCategory: Category;
 
-    @TreeChildren({ cascadeAll: true })
+    @TreeChildren({ cascadeInsert: true, cascadeUpdate: true })
     childCategories: Category[];
 
     @TreeLevelColumn()

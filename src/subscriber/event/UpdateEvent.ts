@@ -1,10 +1,17 @@
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {EntityManager} from "../../entity-manager/EntityManager";
 
 /**
  * UpdateEvent is an object that broadcaster sends to the entity subscriber when entity is being updated in the database.
  */
 export interface UpdateEvent<Entity> {
+
+    /**
+     * Entity managed with connection used for original event.
+     * All database operations in the subscribed event listener should be performed using this entity manager instance.
+     */
+    entityManager: EntityManager;
 
     /**
      * Updating entity.

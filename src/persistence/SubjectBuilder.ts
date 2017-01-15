@@ -335,6 +335,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let persistValueRelationId: any = undefined;
                 if (subject.hasEntity) {
                     const persistValue = relation.getEntityValue(subject.entity);
+                    if (persistValue === null) persistValueRelationId = null;
                     if (persistValue) persistValueRelationId = persistValue[relation.joinColumn.referencedColumn.propertyName];
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
