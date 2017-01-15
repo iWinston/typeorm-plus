@@ -12,7 +12,7 @@ describe("transaction > transaction with entity manager", () => {
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchemaOnConnection: true,
-        enabledDrivers: ["mysql", "sqlite", "postgres", "mssql"] // todo: for some reasons mariadb tests are not passing here
+        enabledDrivers: ["mysql", "sqlite", "postgres"] // todo: for some reasons mariadb tests are not passing here
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
