@@ -54,7 +54,7 @@ export class Gulpfile {
             "!./src/commands/*.ts",
             "!./src/cli.ts",
             "!./src/typeorm.ts",
-            "!./src/browser-shim.ts",
+            "!./src/typeorm-model-shim.ts",
             "!./src/platform/PlatformTools.ts"
         ])
             .pipe(gulp.dest("./build/browser/typeorm"));
@@ -243,11 +243,11 @@ export class Gulpfile {
     }
 
     /**
-     * Copies "browser-shim.js" file into package.
+     * Copies "typeorm-model-shim.js" file into package.
      */
     @Task()
-    packageCopyBrowserShim() {
-        return gulp.src("./extra/browser-shim.js")
+    packageCopyModelShim() {
+        return gulp.src("./extra/typeorm-model-shim.js")
             .pipe(gulp.dest("./build/package"));
     }
 
@@ -264,7 +264,7 @@ export class Gulpfile {
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
                 "packageCopyReadme",
-                "packageCopyBrowserShim"
+                "packageCopyModelShim"
             ],
         ];
     }
