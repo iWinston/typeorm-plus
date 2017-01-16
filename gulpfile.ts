@@ -1,4 +1,4 @@
-import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
+import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
 
 const gulp = require("gulp");
 const del = require("del");
@@ -96,10 +96,10 @@ export class Gulpfile {
             .pipe(tsProject());
 
         return [
-            tsResult.dts.pipe(gulp.dest("./build/browser-package")),
+            // tsResult.dts.pipe(gulp.dest("./build/package")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/browser-package"))
+                .pipe(gulp.dest("./build/package"))
         ];
     }
 
@@ -108,55 +108,10 @@ export class Gulpfile {
      */
     @Task()
     browserUglify() {
-        return gulp.src("./build/browser-package/*.js")
+        return gulp.src("./build/package/typeorm-browser.js")
             .pipe(uglify())
             .pipe(rename("typeorm-browser.min.js"))
-            .pipe(gulp.dest("./build/browser-package"));
-    }
-
-    /**
-     * Copies README_BROWSER.md into README.md for the typeorm-browser package.
-     */
-    @Task()
-    browserCopyReadmeFile() {
-        return gulp.src("./README_BROWSER.md")
-            .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
-            .pipe(rename("README.md"))
-            .pipe(gulp.dest("./build/browser-package"));
-    }
-
-    /**
-     * Copies package_browser.json into package.json for the typeorm-browser package.
-     */
-    @Task()
-    browserCopyPackageJsonFile() {
-        return gulp.src("./package_browser.json")
-            .pipe(rename("package.json"))
-            .pipe(replace("\"private\": true,", "\"private\": false,"))
-            .pipe(gulp.dest("./build/browser-package"));
-    }
-
-    /**
-     * Runs all tasks for the browser build and package.
-     */
-    @SequenceTask()
-    browserPackage() {
-        return [
-            ["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"],
-            "browserCompile",
-            ["browserCopyReadmeFile", "browserUglify", "browserCopyPackageJsonFile"]
-        ];
-    }
-
-    /**
-     * Publishes a browser package.
-     */
-    @Task()
-    browserPublish() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/browser-package && npm publish"
-            ]));
+            .pipe(gulp.dest("./build/package"));
     }
 
     // -------------------------------------------------------------------------
@@ -167,10 +122,21 @@ export class Gulpfile {
      * Publishes a package to npm from ./build/package directory.
      */
     @Task()
-    nodePublish() {
+    packagePublish() {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
                 "cd ./build/package && npm publish"
+            ]));
+    }
+
+    /**
+     * Publishes a package to npm from ./build/package directory with @next tag.
+     */
+    @Task()
+    packagePublishNext() {
+        return gulp.src("package.json", { read: false })
+            .pipe(shell([
+                "cd ./build/package && npm publish --tag next"
             ]));
     }
 
@@ -216,7 +182,7 @@ export class Gulpfile {
      * Moves all compiled files to the final package directory.
      */
     @Task()
-    packageClearCompileDirectory(cb: Function) {
+    packageClearPackageDirectory(cb: Function) {
         return del([
             "build/package/src/**"
         ], cb);
@@ -233,7 +199,7 @@ export class Gulpfile {
     }
 
     /**
-     * Copies package_browser.json into package.json for the typeorm-browser package.
+     * Copies README.md into the package.
      */
     @Task()
     packageCopyReadme() {
@@ -243,30 +209,12 @@ export class Gulpfile {
     }
 
     /**
-     * Copies "typeorm-model-shim.js" file into package.
+     * Copies shims to use typeorm in different environment and conditions file into package.
      */
     @Task()
-    packageCopyModelShim() {
-        return gulp.src("./extra/typeorm-model-shim.js")
+    packageCopyShims() {
+        return gulp.src(["./extra/typeorm-model-shim.js", "./extra/typeorm-class-transformer-shim.js"])
             .pipe(gulp.dest("./build/package"));
-    }
-
-    /**
-     * Creates a package that can be published to npm.
-     */
-    @SequenceTask()
-    nodePackage() {
-        return [
-            "packageCompile",
-            "packageMoveCompiledFiles",
-            [
-                "packageClearCompileDirectory",
-                "packageReplaceReferences",
-                "packagePreparePackageFile",
-                "packageCopyReadme",
-                "packageCopyModelShim"
-            ],
-        ];
     }
 
     /**
@@ -276,7 +224,16 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["nodePackage", "browserPackage"]
+            ["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"],
+            ["packageCompile", "browserCompile"],
+            ["packageMoveCompiledFiles", "browserUglify"],
+            [
+                "packageClearPackageDirectory",
+                "packageReplaceReferences",
+                "packagePreparePackageFile",
+                "packageCopyReadme",
+                "packageCopyShims"
+            ],
         ];
     }
 
@@ -285,7 +242,15 @@ export class Gulpfile {
      */
     @SequenceTask()
     publish() {
-        return ["package", "nodePublish", "browserPublish"];
+        return ["package", "packagePublish"];
+    }
+
+    /**
+     * Creates a package and publishes it to npm with @next tag.
+     */
+    @SequenceTask("publish-next")
+    publishNext() {
+        return ["package", "packagePublishNext"];
     }
 
     // -------------------------------------------------------------------------
