@@ -1,5 +1,6 @@
-// this "shim" can be used on the frontend to prevent from errors on undefined
-// decorators in the models, when you are sharing same models across backend and frontend.
+// this "shim" can be used on the frontend to make class-transformer to work with typeorm models automatically
+// without having to put @Type decorator on properties that already have type information inside relational decorators.
+// using this shim you can share same models across backend and frontend more easily.
 // to use this shim simply configure your systemjs/webpack configuration to use this file instead of typeorm module.
 
 // for system.js this resolved this way:
@@ -7,7 +8,7 @@
 //     ...
 //     packages: {
 //         "typeorm": {
-//             main: "typeorm-model-shim.js",
+//             main: "typeorm-class-transformer-shim.js",
 //             defaultExtension: "js"
 //         }
 //     }
@@ -16,14 +17,16 @@
 // for webpack this is resolved this way:
 // resolve: { // see: http://webpack.github.io/docs/configuration.html#resolve
 //     alias: {
-//         typeorm: path.resolve(__dirname, "../node_modules/typeorm/typeorm-model-shim")
+//         typeorm: path.resolve(__dirname, "../node_modules/typeorm/typeorm-class-transformer-shim")
 //     }
 // }
 
+const class_transformer_1 = require("class-transformer"); // import {Type} from "class-transformer";
 
 // columns
 
-/* export */ function Column(typeOrOptions, options) {
+/* export */
+function Column(typeOrOptions, options) {
     return function (object, propertyName) {
     };
 }
@@ -131,24 +134,28 @@ exports.JoinTable = JoinTable;
 
 /* export */ function ManyToMany(typeFunction, inverseSideOrOptions, options) {
     return function (object, propertyName) {
+        class_transformer_1.Type(typeFunction)(object, propertyName);
     };
 }
 exports.ManyToMany = ManyToMany;
 
 /* export */ function ManyToOne(typeFunction, inverseSideOrOptions, options) {
     return function (object, propertyName) {
+        class_transformer_1.Type(typeFunction)(object, propertyName);
     };
 }
 exports.ManyToOne = ManyToOne;
 
 /* export */ function OneToMany(typeFunction, inverseSideOrOptions, options) {
     return function (object, propertyName) {
+        class_transformer_1.Type(typeFunction)(object, propertyName);
     };
 }
 exports.OneToMany = OneToMany;
 
 /* export */ function OneToOne(typeFunction, inverseSideOrOptions, options) {
     return function (object, propertyName) {
+        class_transformer_1.Type(typeFunction)(object, propertyName);
     };
 }
 exports.OneToOne = OneToOne;
@@ -251,6 +258,7 @@ exports.Table = Table;
 
 /* export */ function TreeChildren(options) {
     return function (object, propertyName) {
+        class_transformer_1.Type(typeFunction)(object, propertyName);
     };
 }
 exports.TreeChildren = TreeChildren;
@@ -263,6 +271,7 @@ exports.TreeLevelColumn = TreeLevelColumn;
 
 /* export */ function TreeParent(options) {
     return function (object, propertyName) {
+        class_transformer_1.Type(typeFunction)(object, propertyName);
     };
 }
 exports.TreeParent = TreeParent;
