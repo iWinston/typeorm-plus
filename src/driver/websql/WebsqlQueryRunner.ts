@@ -883,7 +883,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         const oldColumnNames = oldTableSchema ? oldTableSchema.columns.map(column => `"${column.name}"`).join(", ") : columnNames;
 
         // migrate all data from the table into temporary table
-        const sql2 = `INSERT INTO "temporary_${tableSchema.name}"${oldColumnNames} SELECT ${oldColumnNames} FROM "${tableSchema.name}"`;
+        const sql2 = `INSERT INTO "temporary_${tableSchema.name}"(${oldColumnNames}) SELECT ${oldColumnNames} FROM "${tableSchema.name}"`;
         await this.query(sql2);
 
         // drop old table
