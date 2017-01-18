@@ -4,6 +4,19 @@
     "name": "mysql",
     "driver": {
       "type": "mysql",
+      "username": "test",
+      "password": "test",
+      "database": "test",
+      "extra": {
+        "socketPath": "/tmp/mysql.sock"
+      }
+    }
+  },
+  {
+    "skip": false,
+    "name": "mysql",
+    "driver": {
+      "type": "mysql",
       "host": "localhost",
       "port": 3306,
       "username": "test",
