@@ -8,7 +8,7 @@
       "password": "test",
       "database": "test",
       "extra": {
-        "socketPath": "/tmp/mysql.sock"
+        "socketPath": "./mysql.sock"
       }
     }
   },
