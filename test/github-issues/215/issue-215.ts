@@ -17,16 +17,30 @@ describe("github issues > #215 invalid replacements of join conditions", () => {
     after(() => closeTestingConnections(connections));
 
     it("should not do invalid replacements of join conditions", () => Promise.all(connections.map(async connection => {
-        const sql = connection.entityManager
+
+        const author = new Author();
+        author.name = "John Doe";
+        connection.entityManager.persist(author);
+
+        const abbrev = new Abbreviation();
+        abbrev.name = "test";
+        connection.entityManager.persist(abbrev);
+
+        const post = new Post();
+        post.author = author;
+        post.abbreviation = abbrev;
+        connection.entityManager.persist(post);
+
+        // generated query should end with "ON p.abbreviation_id = ab.id"
+        // not with ON p.abbreviation.id = ab.id (notice the dot) which would
+        // produce an error.
+        const loadedPosts = await connection.entityManager
             .createQueryBuilder(Post, "p")
             .leftJoinAndMapOne("p.author", Author, "n", "p.author_id = n.id")
             .leftJoinAndMapOne("p.abbreviation", Abbreviation, "ab", "p.abbreviation_id = ab.id")
-            .getGeneratedQuery();
+            .getMany();
 
-        sql.should.be.equal("SELECT p.id AS p_id, p.author AS p_author, p.abbreviation AS " +
-            "p_abbreviation, n.id AS n_id, n.name AS n_name, ab.id AS ab_id, ab.name AS " +
-            "ab_name FROM post p LEFT JOIN author n ON p.author_id = n.id  LEFT JOIN " +
-            "abbreviation ab ON p.abbreviation_id = ab.id");
+        loadedPosts.length.should.be.equal(1);
     })));
 
 });
