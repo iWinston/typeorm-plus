@@ -1,17 +1,5 @@
+
 [
-  {
-    "skip": false,
-    "name": "mysql",
-    "driver": {
-      "type": "mysql",
-      "username": "test",
-      "password": "test",
-      "database": "test",
-      "extra": {
-        "socketPath": "/var/run/mysqld/mysqld.sock"
-      }
-    }
-  },
   {
     "skip": false,
     "name": "mysql",
