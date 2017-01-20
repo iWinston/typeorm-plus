@@ -156,7 +156,9 @@ export class RawSqlResultsToEntityTransformer {
                     } else {
                         entity[propertyName] = result;
                     }
-                    hasData = true;
+
+                    if (!isResultArray || result.length > 0)
+                        hasData = true;
                 }
             }
 
