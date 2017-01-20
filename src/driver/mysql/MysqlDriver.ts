@@ -74,7 +74,9 @@ export class MysqlDriver implements Driver {
         this.mysql = mysql;
 
         // validate options to make sure everything is set
-        if (!this.options.host)
+        if (!this.options.host && this.options.extra && !this.options.extra.socketPath)
+            throw new DriverOptionNotSetError("socketPath (or host)");
+        else if (!this.options.extra && !this.options.host)
             throw new DriverOptionNotSetError("host");
         if (!this.options.username)
             throw new DriverOptionNotSetError("username");
