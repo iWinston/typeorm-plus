@@ -34,4 +34,27 @@ describe("jsonb type", () => {
         expect(foundRecord!.data.foo).to.eq("bar");
     })));
 
+    it("should persist jsonb string correctly", () => Promise.all(connections.map(async connection => {
+        await connection.syncSchema(true);
+        let recordRepo = connection.getRepository(Record);
+        let record = new Record();
+        record.data = JSON.stringify({ foo: "bar" });
+        let persistedRecord = await recordRepo.persist(record);
+        let foundRecord = await recordRepo.findOneById(persistedRecord.id);
+        expect(foundRecord).to.be.not.undefined;
+        expect(foundRecord!.data).to.be.a("string");
+        expect(JSON.parse(foundRecord!.data)!.foo).to.eq("bar");
+    })));
+
+    it("should persist jsonb array correctly", () => Promise.all(connections.map(async connection => {
+        await connection.syncSchema(true);
+        let recordRepo = connection.getRepository(Record);
+        let record = new Record();
+        record.data = [1, "2", { a: 3 }];
+        let persistedRecord = await recordRepo.persist(record);
+        let foundRecord = await recordRepo.findOneById(persistedRecord.id);
+        console.log("array", foundRecord!.data);        
+        expect(foundRecord).to.be.not.undefined;
+        expect(foundRecord!.data).to.deep.include.members([1, "2", { a: 3 }]);
+    })));
 });
