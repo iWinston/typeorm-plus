@@ -20,16 +20,16 @@ describe("github issues > #215 invalid replacements of join conditions", () => {
 
         const author = new Author();
         author.name = "John Doe";
-        connection.entityManager.persist(author);
+        await connection.entityManager.persist(author);
 
         const abbrev = new Abbreviation();
         abbrev.name = "test";
-        connection.entityManager.persist(abbrev);
+        await connection.entityManager.persist(abbrev);
 
         const post = new Post();
         post.author = author;
         post.abbreviation = abbrev;
-        connection.entityManager.persist(post);
+        await connection.entityManager.persist(post);
 
         // generated query should end with "ON p.abbreviation_id = ab.id"
         // not with ON p.abbreviation.id = ab.id (notice the dot) which would
