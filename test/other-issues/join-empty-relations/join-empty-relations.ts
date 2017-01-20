@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe.only("other issues > joining empty relations", () => {
+describe("other issues > joining empty relations", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
