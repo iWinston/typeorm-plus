@@ -12,11 +12,11 @@ export class Post {
     id: number;
 
     @OneToOne(type => Author)
-    @JoinColumn()
+    @JoinColumn({name: "author_id"})
     author: Author;
 
     @OneToOne(type => Abbreviation)
-    @JoinColumn()
+    @JoinColumn({name: "abbreviation_id"})
     abbreviation: Abbreviation;
 
 }
