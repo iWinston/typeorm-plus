@@ -89,8 +89,8 @@ export class SubjectOperationExecutor {
             !this.updateSubjects.length &&
             !this.removeSubjects.length &&
             !this.relationUpdateSubjects.length &&
-            !subjects.some(subject => !!subject.junctionInserts.length) &&
-            !subjects.some(subject => !!subject.junctionRemoves.length))
+            subjects.every(subject => !subject.junctionInserts.length) &&
+            subjects.every(subject => !subject.junctionRemoves.length))
             return;
 
         // start execute queries in a transaction
