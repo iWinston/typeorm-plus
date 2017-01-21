@@ -229,9 +229,7 @@ export class PostgresDriver implements Driver {
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
-                // pg(pg-types) have done JSON.parse conversion
-                // https://github.com/brianc/node-pg-types/blob/ed2d0e36e33217b34530727a98d20b325389e73a/lib/textParsers.js#L170
-                return value;
+                return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
                 return DataTransformationUtils.simpleArrayToString(value);
@@ -256,11 +254,9 @@ export class PostgresDriver implements Driver {
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
-                if (typeof value === "string") {
-                    return JSON.parse(value);
-                } else {
-                    return value;
-                }
+                // pg(pg-types) have done JSON.parse conversion
+                // https://github.com/brianc/node-pg-types/blob/ed2d0e36e33217b34530727a98d20b325389e73a/lib/textParsers.js#L170
+                return value;
 
             case ColumnTypes.SIMPLE_ARRAY:
                 return DataTransformationUtils.stringToSimpleArray(value);
