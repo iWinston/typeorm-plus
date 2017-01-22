@@ -91,7 +91,7 @@ describe("Connection", () => {
             return Promise.resolve();
         });
 
-        it("should throw DriverOptionNotSetError when extra.socketPath is missing", function() {
+        it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
             let didThrow = false;
             try {
                 connection = getConnectionManager().create(<ConnectionOptions>{
