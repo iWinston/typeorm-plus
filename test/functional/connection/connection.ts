@@ -84,13 +84,6 @@ describe("Connection", () => {
 
     describe("establishing connection", function() {
         let connection: Connection;
-        after(() => {
-            if (connection && connection.isConnected)
-                return connection.close();
-
-            return Promise.resolve();
-        });
-
         it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
             let didThrow = false;
             try {
