@@ -166,7 +166,7 @@ export class PostgresDriver implements Driver {
                 this.databaseConnection = undefined;
             }
 
-            if (this.databaseConnectionPool) {
+            if (this.pool) {
                 this.databaseConnectionPool.forEach(dbConnection => {
                     if (dbConnection && dbConnection.releaseCallback) {
                         dbConnection.releaseCallback();
