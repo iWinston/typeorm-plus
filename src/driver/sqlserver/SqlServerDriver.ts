@@ -106,7 +106,9 @@ export class SqlServerDriver implements Driver {
             port: this.options.port
         }, this.options.extra || {});
 
-        options.options = { useUTC: false };
+        // set default useUTC option if it hasn't been set
+        if (!options.options) options.options = { useUTC: false };
+        else if (!options.options.useUTC) options.options.useUTC = false; 
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
