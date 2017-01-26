@@ -377,7 +377,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Creates a query builder from the given conditions or find options.
      * Used to create a query builder for find* methods.
      */
-    protected createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): QueryBuilder<Entity> {
+    protected createFindQueryBuilder(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): QueryBuilder<Entity> {
         const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : options as FindOptions;
         const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
 
@@ -392,7 +392,12 @@ export class Repository<Entity extends ObjectLiteral> {
         if (conditions) {
             Object.keys(conditions).forEach(key => {
                 const name = key.indexOf(".") === -1 ? alias + "." + key : key;
-                qb.andWhere(name + "=:" + key);
+                if (conditions![key] === null) {
+                    qb.andWhere(name + " IS NULL");
+
+                } else {
+                    qb.andWhere(name + "=:" + key);
+                }
             });
             qb.setParameters(conditions);
         }
