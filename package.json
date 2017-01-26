@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.0.8-alpha.1",
+  "version": "0.0.8-alpha.2",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, WebSQL databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -38,8 +38,8 @@
   "devDependencies": {
     "@types/chai": "^3.4.30",
     "@types/chai-as-promised": "0.0.29",
-    "@types/mocha": "^2.2.37",
-    "@types/node": "^7.0.0",
+    "@types/mocha": "^2.2.38",
+    "@types/node": "^7.0.4",
     "@types/promises-a-plus": "0.0.27",
     "@types/sinon": "^1.16.34",
     "chai": "^3.4.1",
@@ -52,10 +52,10 @@
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.5.4",
     "gulp-shell": "^0.5.1",
-    "gulp-sourcemaps": "^2.3.1",
+    "gulp-sourcemaps": "^2.4.0",
     "gulp-tslint": "^7.0.1",
     "gulp-typescript": "^3.1.4",
-    "gulp-uglify": "^2.0.0",
+    "gulp-uglify": "^2.0.1",
     "gulpclass": "0.1.1",
     "mocha": "^3.2.0",
     "mssql": "^3.3.0",
@@ -67,9 +67,9 @@
     "sinon-chai": "^2.8.0",
     "sqlite3": "^3.1.8",
     "ts-node": "^2.0.0",
-    "tslint": "^4.3.1",
+    "tslint": "^4.4.1",
     "tslint-stylish": "^2.1.0-beta",
-    "typescript": "^2.1.1"
+    "typescript": "^2.1.5"
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
