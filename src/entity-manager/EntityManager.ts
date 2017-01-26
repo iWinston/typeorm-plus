@@ -66,18 +66,20 @@ export class EntityManager extends BaseEntityManager {
     persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[]): Promise<Entity|Entity[]> {
         const target = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Function|string;
         const entity = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
-        if (typeof target === "string") {
-            return this.getRepository<Entity|Entity[]>(target).persist(entity);
-        } else {
-            if (target instanceof Array) {
-                if (target.length === 0)
-                    return Promise.resolve(target);
-
-                return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
+        return Promise.resolve().then(() => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
+            if (typeof target === "string") {
+                return this.getRepository<Entity|Entity[]>(target).persist(entity);
             } else {
-                return this.getRepository<Entity>(target.constructor).persist(entity as Entity);
+                if (target instanceof Array) {
+                    if (target.length === 0)
+                        return Promise.resolve(target);
+
+                    return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
+                } else {
+                    return this.getRepository<Entity>(target.constructor).persist(entity as Entity);
+                }
             }
-        }
+        });
     }
 
     /**

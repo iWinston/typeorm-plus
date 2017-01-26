@@ -38,11 +38,22 @@ export class LazyRelationsWrapper {
                 const qb = new QueryBuilder(connection);
                 if (relation.isManyToMany) {
 
-                    qb.select(relation.propertyName)
-                        .from(relation.type, relation.propertyName)
-                        .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name,
-                            `${escapeAlias(relation.junctionEntityMetadata.name)}.${escapeColumn(relation.name)}=:${relation.propertyName}Id`)
-                        .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
+                    if (relation.isManyToManyOwner) {
+                        qb.select(relation.propertyName)
+                            .from(relation.type, relation.propertyName)
+                            .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.table.name,
+                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.joinTable.joinColumnName)}=:${relation.propertyName}Id AND ` +
+                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.joinTable.inverseJoinColumnName)}=${escapeAlias(relation.propertyName)}.${escapeColumn(relation.joinTable.referencedColumn.propertyName)}`)
+                            .setParameter(relation.propertyName + "Id", this[relation.referencedColumn.propertyName]);
+
+                    } else { // non-owner
+                        qb.select(relation.propertyName)
+                            .from(relation.type, relation.propertyName)
+                            .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.table.name,
+                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName)}=:${relation.propertyName}Id AND ` +
+                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.inverseRelation.joinTable.joinColumnName)}=${escapeAlias(relation.propertyName)}.${escapeColumn(relation.inverseRelation.joinTable.referencedColumn.propertyName)}`)
+                            .setParameter(relation.propertyName + "Id", this[relation.inverseRelation.referencedColumn.propertyName]);
+                    }
 
                     this[promiseIndex] = qb.getMany().then(results => {
                         this[index] = results;
@@ -59,7 +70,7 @@ export class LazyRelationsWrapper {
                     qb.select(relation.propertyName)
                         .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
                         .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
-                        .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
+                        .where(relation.entityMetadata.targetName + "." + relation.inverseEntityMetadata.firstPrimaryColumn.propertyName + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) });
 
                     this[promiseIndex] = qb.getMany().then(results => {
                         this[index] = results;
