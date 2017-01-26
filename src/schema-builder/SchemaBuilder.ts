@@ -10,7 +10,6 @@ import {PrimaryKeySchema} from "./schema/PrimaryKeySchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -109,7 +108,7 @@ export class SchemaBuilder {
      * Drops all (old) foreign keys that exist in the table schemas, but do not exist in the entity metadata.
      */
     protected async dropOldForeignKeys(): Promise<void> {
-        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        await Promise.all(this.entityToSyncMetadatas.map(async metadata => {
 
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
@@ -129,7 +128,7 @@ export class SchemaBuilder {
 
             // drop foreign keys from the database
             await this.queryRunner.dropForeignKeys(tableSchema, foreignKeySchemasToDrop);
-        });
+        }));
     }
 
     /**
@@ -138,7 +137,7 @@ export class SchemaBuilder {
      * Primary key only can be created in conclusion with auto generated column.
      */
     protected async createNewTables(): Promise<void> {
-        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        await Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             // check if table does not exist yet
             const existTableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (existTableSchema)
@@ -150,7 +149,7 @@ export class SchemaBuilder {
             const tableSchema = new TableSchema(metadata.table.name, this.metadataColumnsToColumnSchemas(metadata.columns), true);
             this.tableSchemas.push(tableSchema);
             await this.queryRunner.createTable(tableSchema);
-        });
+        }));
     }
 
     /**
@@ -158,7 +157,7 @@ export class SchemaBuilder {
      * We drop their keys too, since it should be safe.
      */
     protected dropRemovedColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema) return;
 
@@ -187,7 +186,7 @@ export class SchemaBuilder {
 
             // drop columns from the database
             await this.queryRunner.dropColumns(tableSchema, droppedColumnSchemas);
-        });
+        }));
     }
 
     /**
@@ -195,7 +194,7 @@ export class SchemaBuilder {
      * Columns are created without keys.
      */
     protected addNewColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;
@@ -213,7 +212,7 @@ export class SchemaBuilder {
             const newColumnSchemas = this.metadataColumnsToColumnSchemas(newColumnMetadatas);
             await this.queryRunner.addColumns(tableSchema, newColumnSchemas);
             tableSchema.addColumns(newColumnSchemas);
-        });
+        }));
     }
 
     /**
@@ -221,7 +220,7 @@ export class SchemaBuilder {
      * Still don't create keys. Also we don't touch foreign keys of the changed columns.
      */
     protected updateExistColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;
@@ -261,14 +260,14 @@ export class SchemaBuilder {
             });
 
             return this.queryRunner.changeColumns(tableSchema, newAndOldColumnSchemas);
-        });
+        }));
     }
 
     /**
      * Creates primary keys which does not exist in the table yet.
      */
     protected updatePrimaryKeys() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name && !table.justCreated);
             if (!tableSchema)
                 return;
@@ -291,14 +290,14 @@ export class SchemaBuilder {
             tableSchema.addPrimaryKeys(addedKeys);
             tableSchema.removePrimaryKeys(droppedKeys);
             await this.queryRunner.updatePrimaryKeys(tableSchema);
-        });
+        }));
     }
 
     /**
      * Creates foreign keys which does not exist in the table yet.
      */
     protected createForeignKeys() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;
@@ -313,7 +312,7 @@ export class SchemaBuilder {
             this.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
             await this.queryRunner.createForeignKeys(tableSchema, dbForeignKeys);
             tableSchema.addForeignKeys(dbForeignKeys);
-        });
+        }));
     }
 
     /**
@@ -322,7 +321,7 @@ export class SchemaBuilder {
      */
     protected createIndices() {
         // return Promise.all(this.entityMetadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        return Promise.all(this.entityToSyncMetadatas.map(async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.table.name);
             if (!tableSchema)
                 return;
@@ -347,7 +346,7 @@ export class SchemaBuilder {
                 });
 
             await Promise.all(dropQueries.concat(addQueries));
-        });
+        }));
     }
 
     /**
