@@ -73,14 +73,16 @@ export class MigrationCreateCommand {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import {MigrationInterface, QueryRunner, Connection} from "typeorm";
+        return `import {Connection, EntityManager, MigrationInterface, QueryRunner} from "typeorm";
 
 export class ${name}${timestamp} implements MigrationInterface {
 
-    async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+    public async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+        ;
     }
 
-    async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+    public async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+        ;
     }
 
 }
