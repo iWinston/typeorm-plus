@@ -78,11 +78,9 @@ export class MigrationCreateCommand {
 export class ${name}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
-        ;
     }
 
     public async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
-        ;
     }
 
 }
