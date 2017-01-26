@@ -355,6 +355,20 @@ export class Repository<Entity extends ObjectLiteral> {
         }
     }
 
+    /**
+     * Clears all the data from the given table (truncates/drops it).
+     */
+    async clear(): Promise<void> {
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
+        try {
+            return await queryRunner.truncate(this.metadata.table.name); // await is needed here because we are using finally
+
+        } finally {
+            await queryRunnerProvider.release(queryRunner);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

@@ -822,6 +822,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         return columnMetadataValue === databaseValue;
     }
 
+    /**
+     * Truncates table.
+     */
+    async truncate(tableName: string): Promise<void> {
+        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

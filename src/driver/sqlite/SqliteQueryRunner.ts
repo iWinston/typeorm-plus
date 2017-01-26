@@ -799,6 +799,13 @@ export class SqliteQueryRunner implements QueryRunner {
         return columnMetadataValue === databaseValue;
     }
 
+    /**
+     * Truncates table.
+     */
+    async truncate(tableName: string): Promise<void> {
+        await this.query(`DELETE FROM ${this.driver.escapeTableName(tableName)}`);
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -843,7 +850,7 @@ export class SqliteQueryRunner implements QueryRunner {
         return c;
     }
 
-    protected async recreateTable(tableSchema: TableSchema, oldTableSchema?: TableSchema): Promise<void> {
+    protected async recreateTable(tableSchema: TableSchema, oldTableSchema?: TableSchema, migrateData = true): Promise<void> {
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
         // const createForeignKeys = options && options.createForeignKeys;
         const columnDefinitions = tableSchema.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
@@ -873,8 +880,10 @@ export class SqliteQueryRunner implements QueryRunner {
         const oldColumnNames = oldTableSchema ? oldTableSchema.columns.map(column => `"${column.name}"`).join(", ") : columnNames;
 
         // migrate all data from the table into temporary table
-        const sql2 = `INSERT INTO "temporary_${tableSchema.name}"(${oldColumnNames}) SELECT ${oldColumnNames} FROM "${tableSchema.name}"`;
-        await this.query(sql2);
+        if (migrateData) {
+            const sql2 = `INSERT INTO "temporary_${tableSchema.name}"(${oldColumnNames}) SELECT ${oldColumnNames} FROM "${tableSchema.name}"`;
+            await this.query(sql2);
+        }
 
         // drop old table
         const sql3 = `DROP TABLE "${tableSchema.name}"`;

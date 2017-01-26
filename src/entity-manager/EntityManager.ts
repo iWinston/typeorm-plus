@@ -307,4 +307,11 @@ export class EntityManager extends BaseEntityManager {
         }
     }
 
+    /**
+     * Clears all the data from the given table (truncates/drops it).
+     */
+    clear<Entity>(entityClass: ObjectType<Entity>): Promise<void> {
+        return this.getRepository(entityClass).clear();
+    }
+
 }
