@@ -426,7 +426,7 @@ export class SchemaBuilder {
             return;
 
         this.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
-        const foreignKeySchemas = dependForeignKeyInTable.map(foreignKeyMetadata => ForeignKeySchema.create(foreignKeyMetadata)); // todo: why created again, when exist in the tableSchema.foreignKeys ?!
+        const foreignKeySchemas = dependForeignKeyInTable.map(foreignKeyMetadata => ForeignKeySchema.create(foreignKeyMetadata));
         tableSchema.removeForeignKeys(foreignKeySchemas);
         await this.queryRunner.dropForeignKeys(tableSchema, foreignKeySchemas);
     }

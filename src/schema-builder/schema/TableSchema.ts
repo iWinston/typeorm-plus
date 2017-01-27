@@ -169,10 +169,10 @@ export class TableSchema {
     /**
      * Removes foreign key from this table schema.
      */
-    removeForeignKey(foreignKey: ForeignKeySchema) {
-        const index = this.foreignKeys.indexOf(foreignKey);
-        if (index !== -1)
-            this.foreignKeys.splice(index, 1);
+    removeForeignKey(removedForeignKey: ForeignKeySchema) {
+        const fk = this.foreignKeys.find(foreignKey => foreignKey.name === removedForeignKey.name); // this must be by name
+        if (fk)
+            this.foreignKeys.splice(this.foreignKeys.indexOf(fk), 1);
     }
 
     /**
@@ -186,9 +186,9 @@ export class TableSchema {
      * Removes index schema from this table schema.
      */
     removeIndex(indexSchema: IndexSchema) {
-        const index = this.indices.indexOf(indexSchema);
-        if (index !== -1)
-            this.indices.splice(index, 1);
+        const index = this.indices.find(index => index.name === indexSchema.name);
+        if (index)
+            this.indices.splice(this.indices.indexOf(index), 1);
     }
 
     /**
