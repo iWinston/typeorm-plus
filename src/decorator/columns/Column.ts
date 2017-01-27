@@ -34,11 +34,13 @@ export function Column(type: ColumnType, options: ColumnOptions): Function;
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
-    let type: ColumnType;
+    let type: ColumnType|undefined;
     if (typeof typeOrOptions === "string") {
         type = <ColumnType> typeOrOptions;
-    } else {
+
+    } else if (typeOrOptions) {
         options = <ColumnOptions> typeOrOptions;
+        type = typeOrOptions.type;
     }
     return function (object: Object, propertyName: string) {
 
