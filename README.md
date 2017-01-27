@@ -105,7 +105,7 @@ Also take a look on [this sample](https://github.com/typeorm/browser-example).
 ## Quick Start
 
 In TypeORM tables are created from Entities. 
-*Entity* is your model decorated by a `@Table` decorator. 
+*Entity* is your model decorated by a `@Entity` decorator. 
 You can get entities from the database and insert/update/remove them from there. 
 Let's say we have a model `entity/Photo.ts`:
 
@@ -124,9 +124,9 @@ export class Photo {
 Now lets make it entity:
 
 ```typescript
-import {Table} from "typeorm";
+import {Entity} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
     id: number;
     name: string;
@@ -144,9 +144,9 @@ Let's add some columns.
 You can make any property of your model a column by using a `@Column` decorator:
 
 ```typescript
-import {Table, Column} from "typeorm";
+import {Entity, Column} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @Column()
@@ -179,9 +179,9 @@ This is requirement and you can't avoid it.
 To make a column a primary you need to use `@PrimaryColumn` decorator.
 
 ```typescript
-import {Table, Column, PrimaryColumn} from "typeorm";
+import {Entity, Column, PrimaryColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryColumn()
@@ -210,9 +210,9 @@ Now, lets say you want to make your id column to be auto-generated (this is know
 To do that you need to change your column's type to integer and set a `{ generated: true }` in your primary column's options:
 
 ```typescript
-import {Table, Column, PrimaryColumn} from "typeorm";
+import {Entity, Column, PrimaryColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryColumn("int", { generated: true })
@@ -243,9 +243,9 @@ there is a special decorator called `@PrimaryGeneratedColumn` to do the same.
 Let's use it instead:
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryGeneratedColumn()
@@ -276,9 +276,9 @@ We don't want all our columns to be limited varchars or excessive floats.
 Lets setup correct data types:
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryGeneratedColumn()
@@ -567,10 +567,10 @@ Lets create a one-to-one relation with another class.
 Lets create a new class called PhotoMetadata.ts which will contain a PhotoMetadata class which supposed to contain our photo's additional meta-information:
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
 import {Photo} from "./Photo";
 
-@Table()
+@Entity()
 export class PhotoMetadata {
 
     @PrimaryGeneratedColumn()
@@ -677,10 +677,10 @@ To fix it we should add inverse relation and make relations between PhotoMetadat
 Let's modify our entities:
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
 import {Photo} from "./Photo";
 
-@Table()
+@Entity()
 export class PhotoMetadata {
 
     /* ... other columns */
@@ -692,10 +692,10 @@ export class PhotoMetadata {
 ```   
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToOne} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToOne} from "typeorm";
 import {PhotoMetadata} from "./PhotoMetadata";
 
-@Table()
+@Entity()
 export class Photo {
 
     /* ... other columns */
@@ -834,10 +834,10 @@ Lets say a photo has one author, and each author can have many photos.
 First, lets create Author class:
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn} from "typeorm";
 import {Photo} from "./Photo";
 
-@Table()
+@Entity()
 export class Author {
 
     @PrimaryGeneratedColumn()
@@ -857,11 +857,11 @@ OneToMany is always an inverse side of relation, and it can't exist without Many
 Now lets add owner side of relationship into the Photo entity:
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
 import {PhotoMetadata} from "./PhotoMetadata";
 import {Author} from "./Author";
 
-@Table()
+@Entity()
 export class Photo {
 
     /* ... other columns */
@@ -908,9 +908,9 @@ Lets say a photo can be in many albums, and multiple can have many photos.
 Lets create an `Album` class:
 
 ```typescript
-import {Table, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
 
-@Table()
+@Entity()
 export class Album {
 
     @PrimaryGeneratedColumn()

@@ -80,7 +80,7 @@ TypeORM可以在浏览器环境中工作，并且试验性的支持WebSQL
 ## 快速开始
 
 在TypeORM中，数据库table都是从实体中创建。
-所谓*实体*其实就是用装饰器`@Table`装饰的一个model。 
+所谓*实体*其实就是用装饰器`@Entity`装饰的一个model。 
 可以直接从数据库中得到包含数据的实体对象，并且可以通过实体进行数据库表的insert/update/remove。
 来看看这个model `entity/Photo.ts`:
 
@@ -99,9 +99,9 @@ export class Photo {
 现在把Model变成实体:
 
 ```typescript
-import {Table} from "typeorm";
+import {Entity} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
     id: number;
     name: string;
@@ -119,9 +119,9 @@ export class Photo {
 可以使用装饰器`@Column`来把model的属性变成列：
 
 ```typescript
-import {Table, Column} from "typeorm";
+import {Entity, Column} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @Column()
@@ -150,9 +150,9 @@ export class Photo {
 可以用`@PrimaryColumn`装饰器来标记一个主键列。
 
 ```typescript
-import {Table, Column, PrimaryColumn} from "typeorm";
+import {Entity, Column, PrimaryColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryColumn()
@@ -180,9 +180,9 @@ export class Photo {
 如果你想创建自增长/自生成/顺序化的列，需要把column的type改成integer并且给主键列加上一个属性`{ generated: true }`
 
 ```typescript
-import {Table, Column, PrimaryColumn} from "typeorm";
+import {Entity, Column, PrimaryColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryColumn("int", { generated: true })
@@ -210,9 +210,9 @@ export class Photo {
 现在photo表的id可能自动生成自动增长，不过还是有点麻烦，这个一个很常见的功能，所以有一个专门的装饰器`@PrimaryGeneratedColumn`来实现相同的功能。
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryGeneratedColumn()
@@ -241,9 +241,9 @@ export class Photo {
 但是我们不想所有的列被限制在varchar或float之类，下面来改进：
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
 
-@Table()
+@Entity()
 export class Photo {
 
     @PrimaryGeneratedColumn()
@@ -521,10 +521,10 @@ createConnection(/*...*/).then(async connection => {
 新建PhotoMetadata.ts用来存photo的元信息。
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
 import {Photo} from "./Photo";
 
-@Table()
+@Entity()
 export class PhotoMetadata {
 
     @PrimaryGeneratedColumn()
@@ -625,10 +625,10 @@ createConnection(/*...*/).then(async connection => {
 现在来改变一下，把单向改成双向：
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
 import {Photo} from "./Photo";
 
-@Table()
+@Entity()
 export class PhotoMetadata {
 
     /* ... 其他列 */
@@ -640,10 +640,10 @@ export class PhotoMetadata {
 ```   
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToOne} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToOne} from "typeorm";
 import {PhotoMetadata} from "./PhotoMetadata";
 
-@Table()
+@Entity()
 export class Photo {
 
     /* ... 其他列 */
@@ -774,10 +774,10 @@ createConnection(options).then(async connection => {
 先创建Author实体：
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn} from "typeorm";
 import {Photo} from "./Photo";
 
-@Table()
+@Entity()
 export class Author {
 
     @PrimaryGeneratedColumn()
@@ -796,11 +796,11 @@ Author包含一个反向的关系，`OneToMany`总是反向的，并且总是与
 现在来为Photo加上关系拥有者。
 
 ```typescript
-import {Table, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
 import {PhotoMetadata} from "./PhotoMetadata";
 import {Author} from "./Author";
 
-@Table()
+@Entity()
 export class Photo {
 
     /* ... 其他列 */
@@ -846,9 +846,9 @@ export class Photo {
 先创建一个`Album`类 
 
 ```typescript
-import {Table, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
 
-@Table()
+@Entity()
 export class Album {
 
     @PrimaryGeneratedColumn()
