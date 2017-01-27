@@ -11,7 +11,7 @@ Share this library with friends on twitter and everywhere else you can.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
-> 0.0.6 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
+> 0.0.8 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
 TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
@@ -52,7 +52,11 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
     * `require("reflect-metadata")` in your app's entry point (for example `app.ts`)
 
-3. Install database driver:
+3. You may need to install node typings:
+
+    `npm install @types/node --save`
+
+4. Install database driver:
 
     * for **MySQL** or **MariaDB**
     
