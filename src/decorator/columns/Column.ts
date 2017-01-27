@@ -45,17 +45,20 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
     return function (object: Object, propertyName: string) {
 
         // todo: need to store not string type, but original type instead? (like in relation metadata)
-        const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
+        // const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // if type is not given implicitly then try to guess it
-        if (!type)
-            type = ColumnTypes.determineTypeFromFunction((Reflect as any).getMetadata("design:type", object, propertyName));
+        if (!type) {
+            const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
+            if (reflectMetadataType)
+                type = ColumnTypes.determineTypeFromFunction(reflectMetadataType);
+        }
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
 
         // check if there is no type in column options then set type from first function argument, or guessed one
-        if (!options.type)
+        if (!options.type && type)
             options = Object.assign({ type: type } as ColumnOptions, options);
 
         // if we still don't have a type then we need to give error to user that type is required
@@ -70,7 +73,7 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            propertyType: reflectedType,
+            // propertyType: reflectedType,
             mode: "regular",
             options: options
         };

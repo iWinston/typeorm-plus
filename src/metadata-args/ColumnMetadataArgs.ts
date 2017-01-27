@@ -21,7 +21,7 @@ export interface ColumnMetadataArgs {
      *
      * todo: check when this is not set, because for the entity schemas we don't set it.
      */
-    readonly propertyType?: string;
+    // readonly propertyType?: string;
 
     /**
      * Column mode in which column will work.

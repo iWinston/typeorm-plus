@@ -37,7 +37,7 @@ export class JunctionEntityMetadataBuilder {
 
         const junctionColumn1 = new ColumnMetadata({
             target: "__virtual__",
-            propertyType: column1.type,
+            // propertyType: column1.type,
             propertyName: args.joinTable.joinColumnName,
             mode: "virtual",
             options: <ColumnOptions> {
@@ -50,7 +50,7 @@ export class JunctionEntityMetadataBuilder {
         });
         const junctionColumn2 = new ColumnMetadata({
             target: "__virtual__",
-            propertyType: column2.type,
+            // propertyType: column2.type,
             propertyName: args.joinTable.inverseJoinColumnName,
             mode: "virtual",
             options: <ColumnOptions> {

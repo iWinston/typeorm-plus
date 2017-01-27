@@ -44,4 +44,10 @@ export interface RelationOptions {
      */
     readonly primary?: boolean;
 
+    /**
+     * Set this relation to be lazy. Note: lazy relations are promises. When you call them they return promise
+     * which resolve relation result then. If your property's type is Promise then this relation is set to lazy automatically.
+     */
+    readonly lazy?: boolean;
+
 }

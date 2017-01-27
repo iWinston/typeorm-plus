@@ -134,7 +134,7 @@ export class RelationMetadata {
     /**
      * The real reflected property type.
      */
-    readonly propertyType: any;
+    // readonly propertyType: any;
 
     // ---------------------------------------------------------------------
     // Private Properties
@@ -161,8 +161,8 @@ export class RelationMetadata {
 
         if (args.inverseSideProperty)
             this._inverseSideProperty = args.inverseSideProperty;
-        if (args.propertyType)
-            this.propertyType = args.propertyType;
+        // if (args.propertyType)
+        //     this.propertyType = args.propertyType;
         if (args.isLazy !== undefined)
             this.isLazy = args.isLazy;
         if (args.options.cascadeInsert || args.options.cascadeAll)

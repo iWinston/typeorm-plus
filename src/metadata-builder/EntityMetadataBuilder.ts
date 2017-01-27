@@ -364,7 +364,7 @@ export class EntityMetadataBuilder {
                 const parentRelationColumn = new ColumnMetadata({
                     target: metadata.parentEntityMetadata.table.target,
                     propertyName: parentEntityMetadataPrimaryColumn.propertyName,
-                    propertyType: parentEntityMetadataPrimaryColumn.propertyType,
+                    // propertyType: parentEntityMetadataPrimaryColumn.propertyType,
                     mode: "parentId",
                     options: <ColumnOptions> {
                         name: columnName,
@@ -400,7 +400,7 @@ export class EntityMetadataBuilder {
                     relationalColumn = new ColumnMetadata({
                         target: metadata.target,
                         propertyName: relation.name,
-                        propertyType: inverseSideColumn.propertyType,
+                        // propertyType: inverseSideColumn.propertyType,
                         mode: "virtual",
                         options: <ColumnOptions> {
                             type: inverseSideColumn.type,

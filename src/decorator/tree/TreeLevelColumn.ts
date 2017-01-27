@@ -9,7 +9,7 @@ import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 export function TreeLevelColumn(): Function {
     return function (object: Object, propertyName: string) {
 
-        const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
+        // const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // implicitly set a type, because this column's type cannot be anything else except number
         const options: ColumnOptions = { type: ColumnTypes.INTEGER };
@@ -18,7 +18,7 @@ export function TreeLevelColumn(): Function {
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            propertyType: reflectedType,
+            // propertyType: reflectedType,
             mode: "treeLevel",
             options: options
         };
