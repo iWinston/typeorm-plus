@@ -1,22 +1,16 @@
 import "reflect-metadata";
 import {createConnection, ConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
+import {BasePost} from "./entity/BasePost";
 
 const options: ConnectionOptions = {
     driver: {
-        // type: "postgres",
-        // host: "localhost",
-        // port: 5432,
-        // username: "root",
-        // password: "admin",
-        // database: "test"
-        // type: "sqlite",
-        // storage: "temp/sqlitedb.db"
-        type: "mssql",
-        host: "192.168.1.10",
-        username: "sa",
-        password: "admin12345",
-        database: "test",
+        "type": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "username": "test",
+        "password": "test",
+        "database": "test"
     },
     logging: {
         logQueries: true,
@@ -25,7 +19,7 @@ const options: ConnectionOptions = {
         logSchemaCreation: true
     },
     autoSchemaSync: true,
-    entities: [Post]
+    entities: [Post, BasePost]
 };
 
 createConnection(options).then(connection => {

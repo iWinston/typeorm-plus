@@ -1,10 +1,10 @@
 import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
 import {Index} from "../../../src/decorator/Index";
+import {BasePost} from "./BasePost";
 
 @Entity("sample16_post")
-@Index("my_index_with_id_and_text", ["id", "text"])
 @Index("my_index_with_id_and_title", (post: Post) => [post.id, post.title])
-export class Post {
+export class Post extends BasePost {
 
     @PrimaryGeneratedColumn()
     id: number;

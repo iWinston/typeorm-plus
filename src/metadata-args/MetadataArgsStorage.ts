@@ -37,7 +37,7 @@ export class MetadataArgsStorage {
     readonly transactionEntityManagers = new TargetMetadataArgsCollection<TransactionEntityMetadataArgs>();
     readonly namingStrategies = new TargetMetadataArgsCollection<NamingStrategyMetadataArgs>();
     readonly entitySubscribers = new TargetMetadataArgsCollection<EntitySubscriberMetadataArgs>();
-    readonly indices = new TargetMetadataArgsCollection<IndexMetadataArgs>();
+    readonly indices = new PropertyMetadataArgsCollection<IndexMetadataArgs>();
     readonly columns = new PropertyMetadataArgsCollection<ColumnMetadataArgs>();
     readonly relations = new PropertyMetadataArgsCollection<RelationMetadataArgs>();
     readonly joinColumns = new PropertyMetadataArgsCollection<JoinColumnMetadataArgs>();
@@ -117,6 +117,13 @@ export class MetadataArgsStorage {
 
             const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, inheritedTable);
 
+            metadatasFromAbstract.indices
+                .toArray()
+                .filter(index => { // make sure we don't have index with such name already
+                    return !indices.toArray().find(existIndex => existIndex.name === index.name);
+                })
+                .forEach(index => indices.add(index));
+
             metadatasFromAbstract.columns
                 .filterRepeatedMetadatas(columns.toArray())
                 .toArray()
@@ -178,6 +185,13 @@ export class MetadataArgsStorage {
                 // for single table inheritance we also merge all columns, relation, etc. into same table
                 if (inheritance.type === "single-table") { // todo: remove?
                     const metadatasFromAbstract = this.mergeWithAbstract(allTableMetadatas, childTable);
+
+                    metadatasFromAbstract.indices
+                        .toArray()
+                        .filter(index => { // make sure we don't have index with such name already
+                            return !indices.toArray().find(existIndex => existIndex.name === index.name);
+                        })
+                        .forEach(index => indices.add(index));
 
                     metadatasFromAbstract.columns
                         .filterRepeatedMetadatas(columns.toArray())

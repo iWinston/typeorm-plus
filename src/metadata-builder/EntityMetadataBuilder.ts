@@ -191,7 +191,6 @@ export class EntityMetadataBuilder {
         const allMergedArgs = metadataArgsStorage.getMergedTableMetadatas(entityClasses);
         allMergedArgs.forEach(mergedArgs => {
 
-
             const tables = [mergedArgs.table].concat(mergedArgs.children);
             tables.forEach(tableArgs => {
 
