@@ -16,7 +16,6 @@
 [#233](https://github.com/typeorm/typeorm/issues/233),
 [#234](https://github.com/typeorm/typeorm/issues/234)
 
-
 # 0.0.7
 
 * added custom entity repositories support
@@ -62,13 +61,13 @@ from two sides of `@OneToOne` relationship now.
 
 # 0.0.6
 
-* added `JSONB` support for Postgres in #126 (thanks @CreepGin)
-* fixed in in sqlite query runner in #141 (thanks @marcinwadon)
-* added shortcut exports for table schema classes in #135 (thanks @eduardoweiland)
-* fixed bugs with single table inheritance in #132 (thanks @eduardoweiland)
-* fixed issue with `TIME` column in #134 (thanks @cserron)
-* fixed issue with relation id in #138 (thanks @mingyang91)
-* fixed bug when URL for pg was parsed incorrectly #114 (thanks @mingyang91)
+* added `JSONB` support for Postgres in #126 (thanks [@CreepGin](https://github.com/CreepGin)@CreepGin)
+* fixed in in sqlite query runner in #141 (thanks [@marcinwadon](https://github.com/marcinwadon))
+* added shortcut exports for table schema classes in #135 (thanks [@eduardoweiland](https://github.com/eduardoweiland))
+* fixed bugs with single table inheritance in #132 (thanks [@eduardoweiland](https://github.com/eduardoweiland))
+* fixed issue with `TIME` column in #134 (thanks [@cserron](https://github.com/cserron))
+* fixed issue with relation id in #138 (thanks [@mingyang91](https://github.com/mingyang91))
+* fixed bug when URL for pg was parsed incorrectly #114 (thanks [@mingyang91](https://github.com/mingyang91))
 * fixed bug when embedded is not being updated
 * metadata storage now in global variable
 * entities are being loaded in migrations and can be used throw the entity manager or their repositories
