@@ -1,5 +1,7 @@
 # 0.0.9 (next)
 
+* fixed bug with indices from columns are not being inherited from parent entity [#242](https://github.com/typeorm/typeorm/issues/242)
+
 # 0.0.8 (latest)
 
 * added complete babel support

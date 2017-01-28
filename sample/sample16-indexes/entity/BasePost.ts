@@ -12,4 +12,8 @@ export class BasePost {
     @Column({ unique: true })
     text: string;
 
+    @Index()
+    @Column()
+    extra: string;
+
 }

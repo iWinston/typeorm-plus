@@ -120,7 +120,7 @@ export class MetadataArgsStorage {
             metadatasFromAbstract.indices
                 .toArray()
                 .filter(index => { // make sure we don't have index with such name already
-                    return !indices.toArray().find(existIndex => existIndex.name === index.name);
+                    return !index.name || !indices.toArray().find(existIndex => existIndex.name === index.name);
                 })
                 .forEach(index => indices.add(index));
 
