@@ -71,9 +71,9 @@ export class EntityCreateCommand {
      * Gets contents of the entity file.
      */
     protected static getTemplate(name: string): string {
-        return `import {Table} from "typeorm";
+        return `import {Entity} from "typeorm";
 
-@Table()
+@Entity()
 export class ${name} {
 
 }
