@@ -263,7 +263,7 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string): Promise<any> {
+    async query(query: string, parameters?: any[]): Promise<any> {
         if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
@@ -271,7 +271,7 @@ export class EntityManager extends BaseEntityManager {
         const queryRunner = await queryRunnerProvider.provide();
 
         try {
-            return await queryRunner.query(query);  // await is needed here because we are using finally
+            return await queryRunner.query(query, parameters);  // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);

@@ -311,11 +311,11 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Executes a raw SQL query and returns a raw database results.
      */
-    async query(query: string): Promise<any> {
+    async query(query: string, parameters?: any[]): Promise<any> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            return await queryRunner.query(query); // await is needed here because we are using finally
+            return await queryRunner.query(query, parameters); // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
