@@ -175,8 +175,13 @@ export class Repository<Entity extends ObjectLiteral> {
     async remove(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
 
         // if multiple entities given then go throw all of them and save them
-        if (entityOrEntities instanceof Array)
-            return Promise.all(entityOrEntities.map(entity => this.remove(entity)));
+        if (entityOrEntities instanceof Array) {
+            let result: Entity[] = [];
+            for (let entity of entityOrEntities) {
+                result.push(await this.remove(entity));
+            }
+            return result;
+        }
 
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {

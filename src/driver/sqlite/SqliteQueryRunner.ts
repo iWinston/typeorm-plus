@@ -137,8 +137,8 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        this.logger.logQuery(query, parameters);
         return new Promise<any[]>((ok, fail) => {
+            this.logger.logQuery(query, parameters);
             this.databaseConnection.connection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.logger.logFailedQuery(query, parameters);
@@ -164,8 +164,8 @@ export class SqliteQueryRunner implements QueryRunner {
         const sql = columns.length > 0 ? (`INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
 
-        this.logger.logQuery(sql, parameters);
         return new Promise<any[]>((ok, fail) => {
+            this.logger.logQuery(sql, parameters);
             const __this = this;
             this.databaseConnection.connection.run(sql, parameters, function (err: any): void {
                 if (err) {
@@ -843,7 +843,21 @@ export class SqliteQueryRunner implements QueryRunner {
         return c;
     }
 
+    protected recreateTableLocked = false;
+
+    protected async recreateTableLock() {
+        while (this.recreateTableLocked) {
+            await new Promise<void>((resolve) => setTimeout(resolve, 10));
+        }
+        this.recreateTableLocked = true;
+    }
+
+    protected async recreateTableRelease() {
+        this.recreateTableLocked = false;
+    }
+
     protected async recreateTable(tableSchema: TableSchema, oldTableSchema?: TableSchema): Promise<void> {
+        await this.recreateTableLock();
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
         // const createForeignKeys = options && options.createForeignKeys;
         const columnDefinitions = tableSchema.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
@@ -888,6 +902,7 @@ export class SqliteQueryRunner implements QueryRunner {
         const indexPromises = tableSchema.indices.map(index => this.createIndex(tableSchema.name, index));
         // const uniquePromises = tableSchema.uniqueKeys.map(key => this.createIndex(key));
         await Promise.all(indexPromises/*.concat(uniquePromises)*/);
+        this.recreateTableRelease();
     }
 
     /**

@@ -53,8 +53,8 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-                protected transactionEntityManager: EntityManager,
-                protected queryRunnerProvider: QueryRunnerProvider) {
+        protected transactionEntityManager: EntityManager,
+        protected queryRunnerProvider: QueryRunnerProvider) {
     }
 
     // -------------------------------------------------------------------------
@@ -741,7 +741,9 @@ export class SubjectOperationExecutor {
      * Removes all given subjects from the database.
      */
     private async executeRemoveOperations(): Promise<void> {
-        await Promise.all(this.removeSubjects.map(subject => this.remove(subject)));
+        for (const subject of this.removeSubjects) {
+            await this.remove(subject);
+        }
     }
 
     /**
@@ -849,14 +851,11 @@ export class SubjectOperationExecutor {
      * Removes from database junction tables all given array of subjects removal junction data.
      */
     private async executeRemoveJunctionsOperations(): Promise<void> {
-        const promises: Promise<any>[] = [];
-        this.allSubjects.forEach(subject => {
-            subject.junctionRemoves.forEach(junctionRemove => {
-                promises.push(this.removeJunctions(subject, junctionRemove));
-            });
-        });
-
-        await Promise.all(promises);
+        for (const subject of this.allSubjects) {
+            for (const junctionRemove of subject.junctionRemoves) {
+                await this.removeJunctions(subject, junctionRemove);
+            }
+        }
     }
 
     /**
@@ -868,15 +867,15 @@ export class SubjectOperationExecutor {
         const ownId = junctionRemove.relation.getOwnEntityRelationId(entity);
         const ownColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
         const relateColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[1] : junctionMetadata.columns[0];
-        const removePromises = junctionRemove.junctionRelationIds.map(relationId => {
-            return this.queryRunner.delete(junctionMetadata.table.name, {
+
+        for (const relationId of junctionRemove.junctionRelationIds) {
+            await this.queryRunner.delete(junctionMetadata.table.name, {
                 [ownColumn.name]: ownId,
                 [relateColumn.name]: relationId
             });
-        });
-
-        await Promise.all(removePromises);
+        }
     }
+
 
     // -------------------------------------------------------------------------
     // Private Methods: Refresh entity values after persistence
@@ -887,49 +886,49 @@ export class SubjectOperationExecutor {
      */
     private updateSpecialColumnsInPersistedEntities() {
 
-        // update entity columns that gets updated on each entity insert
-        this.insertSubjects.forEach(subject => {
+    // update entity columns that gets updated on each entity insert
+    this.insertSubjects.forEach(subject => {
+        subject.metadata.primaryColumns.forEach(primaryColumn => {
+            if (subject.newlyGeneratedId)
+                subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
+        });
+        subject.metadata.parentPrimaryColumns.forEach(primaryColumn => {
+            if (subject.parentGeneratedId)
+                subject.entity[primaryColumn.propertyName] = subject.parentGeneratedId;
+        });
+
+        if (subject.metadata.hasUpdateDateColumn)
+            subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
+        if (subject.metadata.hasCreateDateColumn)
+            subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
+        if (subject.metadata.hasVersionColumn)
+            subject.entity[subject.metadata.versionColumn.propertyName]++;
+        if (subject.metadata.hasTreeLevelColumn) {
+            // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
+            // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
+            subject.entity[subject.metadata.treeLevelColumn.propertyName] = subject.treeLevel;
+        }
+        /*if (subject.metadata.hasTreeChildrenCountColumn) {
+             subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
+        }*/
+    });
+
+    // update special columns that gets updated on each entity update
+    this.updateSubjects.forEach(subject => {
+        if (subject.metadata.hasUpdateDateColumn)
+            subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
+        if (subject.metadata.hasVersionColumn)
+            subject.entity[subject.metadata.versionColumn.propertyName]++;
+    });
+
+    // remove ids from the entities that were removed
+    this.removeSubjects
+        .filter(subject => subject.hasEntity)
+        .forEach(subject => {
             subject.metadata.primaryColumns.forEach(primaryColumn => {
-                if (subject.newlyGeneratedId)
-                    subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;
+                subject.entity[primaryColumn.propertyName] = undefined;
             });
-            subject.metadata.parentPrimaryColumns.forEach(primaryColumn => {
-                if (subject.parentGeneratedId)
-                    subject.entity[primaryColumn.propertyName] = subject.parentGeneratedId;
-            });
-
-            if (subject.metadata.hasUpdateDateColumn)
-                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
-            if (subject.metadata.hasCreateDateColumn)
-                subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
-            if (subject.metadata.hasVersionColumn)
-                subject.entity[subject.metadata.versionColumn.propertyName]++;
-            if (subject.metadata.hasTreeLevelColumn) {
-                // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
-                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
-                subject.entity[subject.metadata.treeLevelColumn.propertyName] = subject.treeLevel;
-            }
-            /*if (subject.metadata.hasTreeChildrenCountColumn) {
-                 subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
-            }*/
         });
-
-        // update special columns that gets updated on each entity update
-        this.updateSubjects.forEach(subject => {
-            if (subject.metadata.hasUpdateDateColumn)
-                subject.entity[subject.metadata.updateDateColumn.propertyName] = subject.date;
-            if (subject.metadata.hasVersionColumn)
-                subject.entity[subject.metadata.versionColumn.propertyName]++;
-        });
-
-        // remove ids from the entities that were removed
-        this.removeSubjects
-            .filter(subject => subject.hasEntity)
-            .forEach(subject => {
-                subject.metadata.primaryColumns.forEach(primaryColumn => {
-                    subject.entity[primaryColumn.propertyName] = undefined;
-                });
-            });
-    }
+}
 
 }

@@ -193,9 +193,9 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        this.logger.logQuery(query, parameters);
         return new Promise((ok, fail) => {
 
+            this.logger.logQuery(query, parameters);
             const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
