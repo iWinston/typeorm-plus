@@ -99,8 +99,6 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
 
         post.metadata = null;
 
-        console.log("-------------------------------------------------");
-
         await connection.entityManager.persist(post);
 
         const loadedPostWithMetadata = await connection.entityManager.findOneById(Post, 1, {

@@ -33,7 +33,7 @@ export interface RelationMetadataArgs {
      *
      * todo: this can be empty for relations from entity schemas.
      */
-    readonly propertyType?: any;
+    // readonly propertyType?: any;
 
     /**
      * Type of relation. Can be one of the value of the RelationTypes class.

@@ -50,19 +50,29 @@ export class FindOptionsUtils {
             qb.having(options.having);
 
         if (options.whereConditions) {
-            Object.keys(options.whereConditions).forEach(key => {
+            Object.keys(options.whereConditions).forEach((key, index) => {
                 const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
-                qb.andWhere(name + "=:" + key);
+                if (options.whereConditions![key] === null) {
+                    qb.andWhere(name + " IS NULL");
+
+                } else {
+                    const parameterName = "whereConditions_" + index;
+                    qb.andWhere(name + "=:" + parameterName, { [parameterName]: options.whereConditions![key] });
+                }
             });
-            qb.setParameters(options.whereConditions);
         }
 
         if (options.havingConditions) {
-            Object.keys(options.havingConditions).forEach(key => {
+            Object.keys(options.havingConditions).forEach((key, index) => {
                 const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
-                qb.andHaving(name + "=:" + key);
+                if (options.havingConditions![key] === null) {
+                    qb.andHaving(name + " IS NULL");
+
+                } else {
+                    const parameterName = "havingConditions_" + index;
+                    qb.andHaving(name + "=:" + parameterName, { [parameterName]: options.whereConditions![key] });
+                }
             });
-            qb.setParameters(options.havingConditions);
         }
 
         if (options.orderBy)

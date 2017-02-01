@@ -817,6 +817,13 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
         return columnMetadataValue === databaseValue;
     }
 
+    /**
+     * Truncates table.
+     */
+    async truncate(tableName: string): Promise<void> {
+        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

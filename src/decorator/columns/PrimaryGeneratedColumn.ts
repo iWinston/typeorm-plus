@@ -12,8 +12,7 @@ import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
  */
 export function PrimaryGeneratedColumn(options?: ColumnOptions): Function {
     return function (object: Object, propertyName: string) {
-
-        const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
+        // const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
@@ -33,7 +32,7 @@ export function PrimaryGeneratedColumn(options?: ColumnOptions): Function {
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            propertyType: reflectedType,
+            // propertyType: reflectedType,
             mode: "regular",
             options: options
         };

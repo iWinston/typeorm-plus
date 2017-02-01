@@ -229,4 +229,9 @@ export interface QueryRunner {
      */
     dropIndex(tableName: string, indexName: string): Promise<void>;
 
+    /**
+     * Truncates table.
+     */
+    truncate(tableName: string): Promise<void>;
+
 }

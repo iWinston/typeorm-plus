@@ -432,28 +432,28 @@ export class Connection {
     /**
      * Gets tree repository for the given entity class.
      * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureTable decorator.
+     * like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class.
      * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureTable decorator.
+     * like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class.
      * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureTable decorator.
+     * like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureTable decorator.
+     * like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
         const repository = this.findRepositoryAggregator(entityClassOrName).treeRepository;

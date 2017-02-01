@@ -63,6 +63,7 @@ export * from "./decorator/Index";
 export * from "./decorator/NamingStrategy";
 export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
+export * from "./decorator/EntityRepository";
 export * from "./schema-builder/schema/ColumnSchema";
 export * from "./schema-builder/schema/ForeignKeySchema";
 export * from "./schema-builder/schema/IndexSchema";

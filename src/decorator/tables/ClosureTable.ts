@@ -5,7 +5,7 @@ import {EntityOptions} from "../options/EntityOptions";
 /**
  * Used on a tables that stores its children in a tree using closure deisgn pattern.
  *
- * @deprecated
+ * @deprecated Use @ClosureEntity decorator instead.
  */
 export function ClosureTable(name?: string, options?: EntityOptions) {
     return function (target: Function) {

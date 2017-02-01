@@ -316,11 +316,11 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Executes a raw SQL query and returns a raw database results.
      */
-    async query(query: string): Promise<any> {
+    async query(query: string, parameters?: any[]): Promise<any> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            return await queryRunner.query(query); // await is needed here because we are using finally
+            return await queryRunner.query(query, parameters); // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
@@ -360,6 +360,20 @@ export class Repository<Entity extends ObjectLiteral> {
         }
     }
 
+    /**
+     * Clears all the data from the given table (truncates/drops it).
+     */
+    async clear(): Promise<void> {
+        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
+        try {
+            return await queryRunner.truncate(this.metadata.table.name); // await is needed here because we are using finally
+
+        } finally {
+            await queryRunnerProvider.release(queryRunner);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -368,7 +382,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Creates a query builder from the given conditions or find options.
      * Used to create a query builder for find* methods.
      */
-    protected createFindQueryBuilder(conditionsOrFindOptions?: Object|FindOptions, options?: FindOptions): QueryBuilder<Entity> {
+    protected createFindQueryBuilder(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): QueryBuilder<Entity> {
         const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : options as FindOptions;
         const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
 
@@ -383,7 +397,12 @@ export class Repository<Entity extends ObjectLiteral> {
         if (conditions) {
             Object.keys(conditions).forEach(key => {
                 const name = key.indexOf(".") === -1 ? alias + "." + key : key;
-                qb.andWhere(name + "=:" + key);
+                if (conditions![key] === null) {
+                    qb.andWhere(name + " IS NULL");
+
+                } else {
+                    qb.andWhere(name + "=:" + key);
+                }
             });
             qb.setParameters(conditions);
         }

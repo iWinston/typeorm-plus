@@ -66,18 +66,20 @@ export class EntityManager extends BaseEntityManager {
     persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[]): Promise<Entity|Entity[]> {
         const target = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Function|string;
         const entity = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
-        if (typeof target === "string") {
-            return this.getRepository<Entity|Entity[]>(target).persist(entity);
-        } else {
-            if (target instanceof Array) {
-                if (target.length === 0)
-                    return Promise.resolve(target);
-
-                return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
+        return Promise.resolve().then(() => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
+            if (typeof target === "string") {
+                return this.getRepository<Entity|Entity[]>(target).persist(entity);
             } else {
-                return this.getRepository<Entity>(target.constructor).persist(entity as Entity);
+                if (target instanceof Array) {
+                    if (target.length === 0)
+                        return Promise.resolve(target);
+
+                    return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[]);
+                } else {
+                    return this.getRepository<Entity>(target.constructor).persist(entity as Entity);
+                }
             }
-        }
+        });
     }
 
     /**
@@ -261,7 +263,7 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string): Promise<any> {
+    async query(query: string, parameters?: any[]): Promise<any> {
         if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
@@ -269,7 +271,7 @@ export class EntityManager extends BaseEntityManager {
         const queryRunner = await queryRunnerProvider.provide();
 
         try {
-            return await queryRunner.query(query);  // await is needed here because we are using finally
+            return await queryRunner.query(query, parameters);  // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
@@ -303,6 +305,13 @@ export class EntityManager extends BaseEntityManager {
             if (!this.queryRunnerProvider) // if we used a new query runner provider then release it
                 await queryRunnerProvider.releaseReused();
         }
+    }
+
+    /**
+     * Clears all the data from the given table (truncates/drops it).
+     */
+    clear<Entity>(entityClass: ObjectType<Entity>): Promise<void> {
+        return this.getRepository(entityClass).clear();
     }
 
 }

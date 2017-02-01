@@ -809,6 +809,13 @@ export class WebsqlQueryRunner implements QueryRunner {
         return columnMetadataValue === databaseValue;
     }
 
+    /**
+     * Truncates table.
+     */
+    async truncate(tableName: string): Promise<void> {
+        await this.query(`DELETE FROM ${this.driver.escapeTableName(tableName)}`);
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

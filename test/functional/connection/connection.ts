@@ -16,6 +16,7 @@ import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/e
 import {Blog} from "./modules/blog/entity/Blog";
 import {Question} from "./modules/question/entity/Question";
 import {Video} from "./modules/video/entity/Video";
+import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 
 describe("Connection", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/connection/";
@@ -78,6 +79,27 @@ describe("Connection", () => {
             return connection.connect().should.be.fulfilled;
         });
 
+    });
+
+    describe("establishing connection", function() {
+        let connection: Connection;
+        it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
+            expect(() => {
+                connection = getConnectionManager().create(<ConnectionOptions>{
+                    driver: {
+                        "type": "mysql",
+                        "username": "test",
+                        "password": "test",
+                        "database": "test",
+                    },
+                    entities: [],
+                    entitySchemas: [],
+                    dropSchemaOnConnection: false,
+                    schemaCreate: false,
+                    enabledDrivers: ["mysql"],
+                });
+            }).to.throw(Error);
+        });
     });
 
     describe("after connection is established successfully", function() {

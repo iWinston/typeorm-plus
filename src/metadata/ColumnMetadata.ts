@@ -53,7 +53,7 @@ export class ColumnMetadata {
     /**
      * The real reflected property type.
      */
-    readonly propertyType: string;
+    // readonly propertyType: string;
 
     /**
      * The database type of the column.
@@ -145,8 +145,8 @@ export class ColumnMetadata {
 
         if (args.mode)
             this.mode = args.mode;
-        if (args.propertyType)
-            this.propertyType = args.propertyType.toLowerCase();
+        // if (args.propertyType)
+        //     this.propertyType = args.propertyType.toLowerCase();
         if (args.options.name)
             this._name = args.options.name;
         if (args.options.type)

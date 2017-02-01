@@ -1,7 +1,32 @@
-# 0.0.7 (upcoming)
+# 0.0.9 (next)
 
-* fixed bug when new column was'nt added properly in sqlite [#157](https://github.com/typeorm/typeorm/issues/157)
-* added ability to set different types of values for DEFAULT value of the column [#150](https://github.com/typeorm/typeorm/issues/150)
+* fixed bug with indices from columns are not being inherited from parent entity [#242](https://github.com/typeorm/typeorm/issues/242)
+
+# 0.0.8 (latest)
+
+* added complete babel support
+* added `clear` method to `Repository` and `EntityManager` which allows to truncate entity table
+* exported `EntityRepository` in `typeorm/index`
+* fixed issue with migration generation in [#239](https://github.com/typeorm/typeorm/pull/239) (thanks to [@Tobias4872](https://github.com/Tobias4872))
+* fixed issue with using extra options with SqlServer [#236](https://github.com/typeorm/typeorm/pull/236) (thanks to [@jmai00](https://github.com/jmai00))
+* fixed issue with non-pooled connections [#234](https://github.com/typeorm/typeorm/pull/234) (thanks to [@benny-medflyt](https://github.com/benny-medflyt))
+* fixed issues:
+[#242](https://github.com/typeorm/typeorm/issues/242),
+[#240](https://github.com/typeorm/typeorm/issues/240),
+[#204](https://github.com/typeorm/typeorm/issues/204),
+[#219](https://github.com/typeorm/typeorm/issues/219),
+[#233](https://github.com/typeorm/typeorm/issues/233),
+[#234](https://github.com/typeorm/typeorm/issues/234)
+
+# 0.0.7
+
+* added custom entity repositories support
+* merged typeorm-browser and typeorm libraries into single package
+* added `@Transaction` decorator
+* added exports to `typeorm/index` for naming strategies
+* added shims for browsers using typeorm in frontend models, also added shim to use typeorm
+with class-transformer library on the frontend
+* fixed issue when socketPath could not be used with mysql driver (thanks @johncoffee)
 * all table decorators are renamed to `Entity` (`Table` => `Entity`, `AbstractTable` => `AbstractEntity`, 
 `ClassTableChild` => `ClassEntityChild`, `ClosureTable` => `ClosureEntity`, `EmbeddableTable` => `EmbeddableEntity`, 
 `SingleTableChild` => `SingleEntityChild`). This change is required because upcoming versions of orm will work
@@ -10,16 +35,41 @@ Previous decorator names are deprecated and will be removed in the future.
 * added custom repositories support. Example in samples directory.
 * cascade remove options has been removed from `@ManyToMany`, `@OneToMany` decorators. Also cascade remove is not possible
 from two sides of `@OneToOne` relationship now.
+* fixed issues with subscribers and transactions
+* typeorm now has translation in chinese (thanks [@brookshi](https://github.com/brookshi))
+* added `schemaName` support for postgres database [#152](https://github.com/typeorm/typeorm/issues/152) (thanks [@mingyang91](https://github.com/mingyang91))
+* fixed bug when new column was'nt added properly in sqlite [#157](https://github.com/typeorm/typeorm/issues/157)
+* added ability to set different types of values for DEFAULT value of the column [#150](https://github.com/typeorm/typeorm/issues/150)
+* added ability to use zero, false and empty string values as DEFAULT values in [#189](https://github.com/typeorm/typeorm/pull/189) (thanks to [@Luke265](https://github.com/Luke265))
+* fixed bug with junction tables persistence (thanks [@Luke265](https://github.com/Luke265))
+* fixed bug regexp in `QueryBuilder` (thanks [@netnexus](https://github.com/netnexus))
+* fixed issues [#202](https://github.com/typeorm/typeorm/issues/202), [#203](https://github.com/typeorm/typeorm/issues/203) (thanks to [@mingyang91](https://github.com/mingyang91))
+* fixed issues 
+[#159](https://github.com/typeorm/typeorm/issues/159), 
+[#181](https://github.com/typeorm/typeorm/issues/181), 
+[#176](https://github.com/typeorm/typeorm/issues/176), 
+[#192](https://github.com/typeorm/typeorm/issues/192), 
+[#191](https://github.com/typeorm/typeorm/issues/191), 
+[#190](https://github.com/typeorm/typeorm/issues/190), 
+[#179](https://github.com/typeorm/typeorm/issues/179), 
+[#177](https://github.com/typeorm/typeorm/issues/177), 
+[#175](https://github.com/typeorm/typeorm/issues/175),
+[#174](https://github.com/typeorm/typeorm/issues/174), 
+[#150](https://github.com/typeorm/typeorm/issues/150), 
+[#159](https://github.com/typeorm/typeorm/issues/159), 
+[#173](https://github.com/typeorm/typeorm/issues/173), 
+[#195](https://github.com/typeorm/typeorm/issues/195), 
+[#151](https://github.com/typeorm/typeorm/issues/151)
 
-# 0.0.6 (latest)
+# 0.0.6
 
-* added `JSONB` support for Postgres in #126 (thanks @CreepGin)
-* fixed in in sqlite query runner in #141 (thanks @marcinwadon)
-* added shortcut exports for table schema classes in #135 (thanks @eduardoweiland)
-* fixed bugs with single table inheritance in #132 (thanks @eduardoweiland)
-* fixed issue with `TIME` column in #134 (thanks @cserron)
-* fixed issue with relation id in #138 (thanks @mingyang91)
-* fixed bug when URL for pg was parsed incorrectly #114 (thanks @mingyang91)
+* added `JSONB` support for Postgres in #126 (thanks [@CreepGin](https://github.com/CreepGin)@CreepGin)
+* fixed in in sqlite query runner in #141 (thanks [@marcinwadon](https://github.com/marcinwadon))
+* added shortcut exports for table schema classes in #135 (thanks [@eduardoweiland](https://github.com/eduardoweiland))
+* fixed bugs with single table inheritance in #132 (thanks [@eduardoweiland](https://github.com/eduardoweiland))
+* fixed issue with `TIME` column in #134 (thanks [@cserron](https://github.com/cserron))
+* fixed issue with relation id in #138 (thanks [@mingyang91](https://github.com/mingyang91))
+* fixed bug when URL for pg was parsed incorrectly #114 (thanks [@mingyang91](https://github.com/mingyang91))
 * fixed bug when embedded is not being updated
 * metadata storage now in global variable
 * entities are being loaded in migrations and can be used throw the entity manager or their repositories

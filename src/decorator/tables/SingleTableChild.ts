@@ -4,7 +4,7 @@ import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 /**
  * Special type of the table used in the single-table inherited tables.
  *
- * @deprecated
+ * @deprecated Use @SingleEntityChild decorator instead.
  */
 export function SingleTableChild() {
     return function (target: Function) {

@@ -854,6 +854,13 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         return columnMetadataValue === databaseValue;
     }
 
+    /**
+     * Truncates table.
+     */
+    async truncate(tableName: string): Promise<void> {
+        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

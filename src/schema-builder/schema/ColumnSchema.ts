@@ -66,7 +66,7 @@ export class ColumnSchema {
         if (options) {
             this.name = options.name || "";
             this.type = options.type || "";
-            this.default = options.default || "";
+            this.default = options.default;
             this.isNullable = options.isNullable || false;
             this.isGenerated = options.isGenerated || false;
             this.isPrimary = options.isPrimary || false;

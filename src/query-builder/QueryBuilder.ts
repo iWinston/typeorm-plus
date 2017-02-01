@@ -1501,17 +1501,17 @@ export class QueryBuilder<Entity> {
             if (!metadata) return;
             metadata.embeddeds.forEach(embedded => {
                 embedded.columns.forEach(column => {
-                    const expression = alias.name + "." + embedded.propertyName + "." + column.propertyName + "([ =]|.{0}$)";
+                    const expression = alias.name + "\\." + embedded.propertyName + "\\." + column.propertyName + "([ =]|.{0}$)";
                     statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + "$1");
                 });
                 // todo: what about embedded relations here?
             });
             metadata.columns.filter(column => !column.isInEmbedded).forEach(column => {
-                const expression = alias.name + "." + column.propertyName + "([ =]|.{0}$)";
+                const expression = alias.name + "\\." + column.propertyName + "([ =]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + "$1");
             });
             metadata.relationsWithJoinColumns/*.filter(relation => !relation.isInEmbedded)*/.forEach(relation => {
-                const expression = alias.name + "." + relation.propertyName + "([ =]|.{0}$)";
+                const expression = alias.name + "\\." + relation.propertyName + "([ =]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(relation.name) + "$1");
             });
         });
