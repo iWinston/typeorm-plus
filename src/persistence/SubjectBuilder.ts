@@ -286,7 +286,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     protected async buildCascadeRemovedAndRelationUpdateOperateSubjects(subject: Subject): Promise<void> {
 
         // note: we can't use extractRelationValuesFromEntity here because it does not handle empty arrays
-        for (const relation of subject.metadata.relations) {
+        const promises = subject.metadata.relations.map(async relation => {
             const valueMetadata = relation.inverseEntityMetadata;
             const qbAlias = valueMetadata.table.name;
 
@@ -587,11 +587,11 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // add new relations for newly bind entities from the one-to-many relations
                 if (relation.isOneToMany && persistValue) { // todo: implement same for one-to-one
-                    for (const value of persistValue as ObjectLiteral[]) {
+                    const promises = (persistValue as ObjectLiteral[]).map(async persistValue => {
 
                         // try to find in the database entities persistedValue (entity bind to this relation)
                         const persistedValueInDatabaseEntity = databaseEntities.find(databaseEntity => {
-                            return valueMetadata.compareEntities(value, databaseEntity);
+                            return valueMetadata.compareEntities(persistValue, databaseEntity);
                         });
 
                         // if it does not exist in the database entity - it means we need to bind it
@@ -600,9 +600,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         if (!persistedValueInDatabaseEntity) {
 
                             // now find subject with
-                            let loadedSubject = this.findByDatabaseEntityLike(valueMetadata.target, value);
+                            let loadedSubject = this.findByDatabaseEntityLike(valueMetadata.target, persistValue);
                             if (!loadedSubject) {
-                                const id = valueMetadata.getEntityIdMixedMap(value);
+                                const id = valueMetadata.getEntityIdMixedMap(persistValue);
                                 if (id) { // if there is no id (for newly inserted) then we cant load
                                     const databaseEntity = await this.connection
                                         .getRepository<ObjectLiteral>(valueMetadata.target)
@@ -624,12 +624,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                     value: subject.entity
                                 });
                         }
-                    }
+                    });
 
+                    await Promise.all(promises);
                 }
 
                 // iterate throw loaded inverse entities to find out removed entities and inverse updated entities (only for one-to-many relation)
-                for (const databaseEntity of databaseEntities) {
+                const promises = databaseEntities.map(async databaseEntity => {
 
                     // find a subject object of the related database entity
                     let relatedEntitySubject = this.findByDatabaseEntityLike(valueMetadata.target, databaseEntity);
@@ -670,10 +671,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     }
 
-                }
+                });
 
+                await Promise.all(promises);
             }
-        }
+        });
+
+        await Promise.all(promises);
     }
 
     /**
