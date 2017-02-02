@@ -7,6 +7,7 @@ import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -741,7 +742,7 @@ export class SubjectOperationExecutor {
      * Removes all given subjects from the database.
      */
     private async executeRemoveOperations(): Promise<void> {
-        await Promise.all(this.removeSubjects.map(subject => this.remove(subject)));
+        await PromiseUtils.runInSequence(this.removeSubjects, async subject => await this.remove(subject));
     }
 
     /**

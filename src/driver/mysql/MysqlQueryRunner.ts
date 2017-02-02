@@ -145,8 +145,8 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        this.logger.logQuery(query, parameters);
         return new Promise((ok, fail) => {
+            this.logger.logQuery(query, parameters);
             this.databaseConnection.connection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.logger.logFailedQuery(query, parameters);

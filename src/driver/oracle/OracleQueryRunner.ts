@@ -146,8 +146,8 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        this.logger.logQuery(query, parameters);
         return new Promise((ok, fail) => {
+            this.logger.logQuery(query, parameters);
             const handler = (err: any, result: any) => {
                 if (err) {
                     this.logger.logFailedQuery(query, parameters);
