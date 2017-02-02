@@ -850,21 +850,7 @@ export class SqliteQueryRunner implements QueryRunner {
         return c;
     }
 
-    protected recreateTableLocked = false;
-
-    protected async recreateTableLock() {
-        while (this.recreateTableLocked) {
-            await new Promise<void>((resolve) => setTimeout(resolve, 10));
-        }
-        this.recreateTableLocked = true;
-    }
-
-    protected async recreateTableRelease() {
-        this.recreateTableLocked = false;
-    }
-
     protected async recreateTable(tableSchema: TableSchema, oldTableSchema?: TableSchema, migrateData = true): Promise<void> {
-        await this.recreateTableLock();
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
         // const createForeignKeys = options && options.createForeignKeys;
         const columnDefinitions = tableSchema.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
@@ -911,7 +897,6 @@ export class SqliteQueryRunner implements QueryRunner {
         const indexPromises = tableSchema.indices.map(index => this.createIndex(tableSchema.name, index));
         // const uniquePromises = tableSchema.uniqueKeys.map(key => this.createIndex(key));
         await Promise.all(indexPromises/*.concat(uniquePromises)*/);
-        this.recreateTableRelease();
     }
 
     /**
