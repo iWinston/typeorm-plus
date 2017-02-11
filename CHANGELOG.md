@@ -1,3 +1,40 @@
+# 0.1.0 (future)
+
+### BREAKING CHANGES
+
+* changed `find*` repository methods. Now conditions are `Partial<Entity>` which makes them type-safe. 
+However now `FindOptions` cannot be used with `findOne`, `findAndCount`, `find` and other methods. 
+Use `fineOneByOptions`, `findAndCountByOptions`, `findByOptions` methods instead
+* removed `FindOptions` interface and introduced two new interfaces: `FindOneOptions` and `FindManyOptions` - 
+each for its own `findOne*` or `find*` methods
+* dropped out some of options of `FindOptions`. Use `QueryBuilder` instead.
+* deprecated method `addParameters` has been removed from `QueryBuilder`. Use `setParameters` instead.
+* table decorators were not removed in the release, however they will be removed in next. Be sure to replace them before that.
+* `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#from`
+* `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
+
+### NEW FEATURES
+
+* added `mongodb` support
+* entity now can be saved partially within `persist` method
+
+### TODOs
+
+* mongodb index sync
+* make sure array column works in both relational and mongodb
+* implement true relations and joins in mongo
+* reorganize docs to cover both relational and mongo databases
+* try to add more document storage databases
+* make all naming things logically correct
+* create mongo version of entity manager
+* note that mongo indices has its own special properties
+* what to do with string version of object id? do we really need that?
+* need test organization and exclude mongodb where its usage is not possible
+* make sure lazy loading is working with mongo once mongo relations are setup
+* check if subscribers aren't broke
+* make sure create date / update date are working properly with mongo
+* make sure embedded works properly and nested embeddeds are supported
+
 # 0.0.9 (next)
 
 * fixed bug with indices from columns are not being inherited from parent entity [#242](https://github.com/typeorm/typeorm/issues/242)

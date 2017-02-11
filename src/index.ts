@@ -84,7 +84,7 @@ export {NamingStrategyInterface} from "./naming-strategy/NamingStrategyInterface
 export {Repository} from "./repository/Repository";
 export {TreeRepository} from "./repository/TreeRepository";
 export {SpecificRepository} from "./repository/SpecificRepository";
-export {FindOptions} from "./find-options/FindOptions";
+export {FindManyOptions} from "./find-options/FindManyOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";

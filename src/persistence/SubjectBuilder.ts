@@ -250,7 +250,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // load database entities for all given ids
             const entities = await this.connection
                 .getRepository<ObjectLiteral>(subjectGroup.target)
-                .createQueryBuilder("operateSubject", this.queryRunnerProvider)
+                .createQueryBuilder("operateSubject", this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                 .andWhereInIds(allIds)
                 .enableOption("RELATION_ID_VALUES")
                 .getMany();
@@ -363,7 +363,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) we need to load a details where details.id = post.details
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.joinColumn.referencedColumn.propertyName + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
                         .enableOption("RELATION_ID_VALUES")
@@ -440,7 +440,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) we need to load a post where post.detailsId = details.id
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
                         .enableOption("RELATION_ID_VALUES")
@@ -527,7 +527,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
                             escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.inverseJoinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.inverseReferencedColumn.name) +
                             " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=:id")
@@ -546,7 +546,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
                             escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.name) +
                             " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName) + "=:id")
@@ -565,7 +565,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
@@ -606,7 +606,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                 if (id) { // if there is no id (for newly inserted) then we cant load
                                     const databaseEntity = await this.connection
                                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                                        .createQueryBuilder(qbAlias, this.queryRunnerProvider)
+                                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                                         .andWhereInIds([id])
                                         .enableOption("RELATION_ID_VALUES")
                                         .getOne();

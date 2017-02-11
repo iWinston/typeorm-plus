@@ -5,6 +5,7 @@ import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Table schema in the database represented in this class.
@@ -210,6 +211,24 @@ export class TableSchema {
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||
                     columnSchema.isGenerated !== columnMetadata.isGenerated;
         });
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates table schema from a given entity metadata.
+     *
+     * todo: need deeper implementation
+     */
+    static create(entityMetadata: EntityMetadata, queryRunner: QueryRunner) {
+        const tableSchema = new TableSchema(entityMetadata.table.name);
+        entityMetadata.columns.forEach(column => {
+            tableSchema.columns.push(ColumnSchema.create(column, queryRunner.normalizeType(column)));
+        });
+
+        return tableSchema;
     }
 
 }

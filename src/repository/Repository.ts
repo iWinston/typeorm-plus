@@ -3,12 +3,13 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {FindOptions} from "../find-options/FindOptions";
+import {FindManyOptions} from "../find-options/FindManyOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
 import {SubjectBuilder} from "../persistence/SubjectBuilder";
+import {FindOneOptions} from "../find-options/FindOneOptions";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -134,6 +135,8 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Persists one or many given entities.
+     *
+     * todo: use Partial<Entity> instead, and make sure it works properly
      */
     async persist(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
 
@@ -197,119 +200,114 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds all entities.
+     * Finds entities that match given options.
      */
-    async find(): Promise<Entity[]>;
+    find(options?: FindManyOptions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    async find(conditions: ObjectLiteral): Promise<Entity[]>;
+    find(conditions?: Partial<Entity>): Promise<Entity[]>;
 
     /**
-     * Finds entities with given find options.
+     * Finds entities that match given find options or conditions.
      */
-    async find(options: FindOptions): Promise<Entity[]>;
+    find(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
+    }
 
     /**
-     * Finds entities that match given conditions and find options.
+     * Finds entities that match given find options.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (from and take options).
      */
-    async find(conditions: ObjectLiteral, options: FindOptions): Promise<Entity[]>;
+    findAndCount(options?: FindManyOptions<Entity>): Promise<[ Entity[], number ]>;
 
     /**
-     * Finds entities that match given conditions and/or find options.
+     * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (from and take options).
      */
-    async find(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity[]> {
-        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
+    findAndCount(conditions?: Partial<Entity>): Promise<[ Entity[], number ]>;
+
+    /**
+     * Finds entities that match given find options or conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (from and take options).
+     */
+    findAndCount(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[ Entity[], number ]> {
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
+    }
+
+    /**
+     * Finds entities by ids.
+     * Optionally find options can be applied.
+     */
+    findByIds(ids: any[], options?: FindManyOptions<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities by ids.
+     * Optionally conditions can be applied.
+     */
+    findByIds(ids: any[], conditions?: Partial<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities by ids.
+     * Optionally find options can be applied.
+     */
+    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
+            .andWhereInIds(ids)
             .getMany();
     }
 
     /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
+     * Finds first entity that matches given options.
      */
-    async findAndCount(): Promise<[ Entity[], number ]>;
+    findOne(options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
+     * Finds first entity that matches given conditions.
      */
-    async findAndCount(conditions: ObjectLiteral): Promise<[ Entity[], number ]>;
+    findOne(conditions?: Partial<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
+     * Finds first entity that matches given conditions.
      */
-    async findAndCount(options: FindOptions): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
-     */
-    async findAndCount(conditions: ObjectLiteral, options: FindOptions): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
-     */
-    async findAndCount(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<[ Entity[], number ]> {
-        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
-            .getManyAndCount();
+    findOne(optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
     }
 
     /**
-     * Finds first entity that matches given conditions.
+     * Finds entity by given id.
+     * Optionally find options can be applied.
      */
-    async findOne(): Promise<Entity|undefined>;
+    findOneById(id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Finds first entity that matches given conditions.
+     * Finds entity by given id.
+     * Optionally conditions can be applied.
      */
-    async findOne(conditions: ObjectLiteral): Promise<Entity|undefined>;
+    findOneById(id: any, conditions?: Partial<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Finds first entity that matches given find options.
+     * Finds entity by given id.
+     * Optionally find options or conditions can be applied.
      */
-    async findOne(options: FindOptions): Promise<Entity|undefined>;
-
-    /**
-     * Finds first entity that matches given conditions and find options.
-     */
-    async findOne(conditions: ObjectLiteral, options: FindOptions): Promise<Entity|undefined>;
-
-    /**
-     * Finds first entity that matches given conditions and/or find options.
-     */
-    async findOne(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity|undefined> {
-        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
+    findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
+            .andWhereInIds([id])
             .getOne();
     }
 
     /**
-     * Finds entities with ids.
-     * Optionally find options can be applied.
-     */
-    async findByIds(ids: any[], options?: FindOptions): Promise<Entity[]> {
-        const qb = this.createFindQueryBuilder(undefined, options);
-        return qb.andWhereInIds(ids).getMany();
-    }
-
-    /**
-     * Finds entity with given id.
-     * Optionally find options can be applied.
-     */
-    async findOneById(id: any, options?: FindOptions): Promise<Entity|undefined> {
-        const qb = this.createFindQueryBuilder(undefined, options);
-        return qb.andWhereInIds([id]).getOne();
-    }
-
-    /**
      * Executes a raw SQL query and returns a raw database results.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
      */
     async query(query: string, parameters?: any[]): Promise<any> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
@@ -325,6 +323,13 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      * All database operations must be executed using provided repository.
+     *
+     * Most important, you should execute all your database operations using provided repository instance,
+     * all other operations would not be included in the transaction.
+     * If you want to execute transaction and persist multiple different entity types, then
+     * use EntityManager.transaction method instead.
+     *
+     * Transactions are supported only by relational databases (MongoDB is not supported).
      */
     async transaction(runInTransaction: (repository: Repository<Entity>) => Promise<any>|any): Promise<any> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
@@ -356,7 +361,7 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Clears all the data from the given table (truncates/drops it).
+     * Clears all the data from the given table/collection (truncates/drops it).
      */
     async clear(): Promise<void> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
@@ -367,42 +372,6 @@ export class Repository<Entity extends ObjectLiteral> {
         } finally {
             await queryRunnerProvider.release(queryRunner);
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Creates a query builder from the given conditions or find options.
-     * Used to create a query builder for find* methods.
-     */
-    protected createFindQueryBuilder(conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): QueryBuilder<Entity> {
-        const findOptions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? conditionsOrFindOptions : options as FindOptions;
-        const conditions = FindOptionsUtils.isFindOptions(conditionsOrFindOptions) ? undefined : conditionsOrFindOptions;
-
-        const alias = findOptions ? findOptions.alias : this.metadata.table.name;
-        const qb = this.createQueryBuilder(alias);
-
-        // if find options are given then apply them to query builder
-        if (findOptions)
-            FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
-
-        // if conditions are given then apply them to query builder
-        if (conditions) {
-            Object.keys(conditions).forEach(key => {
-                const name = key.indexOf(".") === -1 ? alias + "." + key : key;
-                if (conditions![key] === null) {
-                    qb.andWhere(name + " IS NULL");
-
-                } else {
-                    qb.andWhere(name + "=:" + key);
-                }
-            });
-            qb.setParameters(conditions);
-        }
-
-        return qb;
     }
 
 }

@@ -398,6 +398,24 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if entity has an object id column.
+     */
+    get hasObjectIdColumn(): boolean {
+        return !!this._columns.find(column => column.mode === "objectId");
+    }
+
+    /**
+     * Gets the object id column used with mongodb database.
+     */
+    get objectIdColumn(): ColumnMetadata {
+        const column = this._columns.find(column => column.mode === "objectId");
+        if (!column)
+            throw new Error(`ObjectId was not found in entity ${this.name}`);
+
+        return column;
+    }
+
+    /**
      * Gets single (values of which does not contain arrays) relations.
      */
     get singleValueRelations(): RelationMetadata[] {

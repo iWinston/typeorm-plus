@@ -227,6 +227,10 @@ export class SubjectOperationExecutor {
                             // if we don't have relation id then use special values
                             if (referencedColumn.isGenerated) {
                                 relationId = insertSubject.newlyGeneratedId;
+
+                            } else if (referencedColumn.isObjectId) {
+                                relationId = insertSubject.generatedObjectId;
+
                             }
                             // todo: handle other special types too
                         }
@@ -245,6 +249,9 @@ export class SubjectOperationExecutor {
                             // if we don't have relation id then use special values
                             if (referencedColumn.isGenerated) {
                                 relationId = insertSubject.newlyGeneratedId;
+
+                            } else if (referencedColumn.isObjectId) {
+                                relationId = insertSubject.generatedObjectId;
                             }
                             // todo: handle other special types too
                         }
@@ -275,8 +282,14 @@ export class SubjectOperationExecutor {
                         let relationIdOfEntityValue = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
                         if (!relationIdOfEntityValue) {
                             const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
-                            if (entityValueInsertSubject && columnRelation.joinColumn.referencedColumn.isGenerated) {
-                                relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                            if (entityValueInsertSubject) {
+                                if (columnRelation.joinColumn.referencedColumn.isGenerated) {
+                                    relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+
+                                } else if (columnRelation.joinColumn.referencedColumn.isObjectId) {
+                                    relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
+
+                                }
                             }
                         }
                         if (relationIdOfEntityValue) {
@@ -289,6 +302,9 @@ export class SubjectOperationExecutor {
                         } else {
                             if (subject.newlyGeneratedId) {
                                 conditions[column.name] = subject.newlyGeneratedId;
+
+                            } else if (subject.generatedObjectId) {
+                                conditions[column.name] = subject.generatedObjectId;
                             }
                         }
                     }
@@ -319,8 +335,13 @@ export class SubjectOperationExecutor {
                             let relationIdOfEntityValue = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
                             if (!relationIdOfEntityValue) {
                                 const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
-                                if (entityValueInsertSubject && columnRelation.joinColumn.referencedColumn.isGenerated) {
-                                    relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                                if (entityValueInsertSubject) {
+                                    if (columnRelation.joinColumn.referencedColumn.isGenerated) {
+                                        relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+
+                                    } else if (columnRelation.joinColumn.referencedColumn.isObjectId) {
+                                        relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
+                                    }
                                 }
                             }
                             if (relationIdOfEntityValue) {
@@ -334,6 +355,10 @@ export class SubjectOperationExecutor {
                             } else {
                                 if (entityValueInsertSubject && entityValueInsertSubject.newlyGeneratedId) {
                                     conditions[column.name] = entityValueInsertSubject.newlyGeneratedId;
+
+                                } else if (entityValueInsertSubject && entityValueInsertSubject.generatedObjectId) {
+                                    conditions[column.name] = entityValueInsertSubject.generatedObjectId;
+
                                 }
                             }
                         }
@@ -348,12 +373,17 @@ export class SubjectOperationExecutor {
                         if (!id) {
                             const insertSubject = this.insertSubjects.find(subject => subject.entity === subject.entity[referencedColumn.propertyName]);
                             if (insertSubject) {
-                                id = insertSubject.newlyGeneratedId;
+                                if (insertSubject.newlyGeneratedId) {
+                                    id = insertSubject.newlyGeneratedId;
+
+                                } else if (insertSubject.generatedObjectId) {
+                                    id = insertSubject.generatedObjectId;
+                                }
                             }
                         }
                         updateOptions[relation.inverseRelation.joinColumn.name] = id;
                     } else {
-                        updateOptions[relation.inverseRelation.joinColumn.name] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId;
+                        updateOptions[relation.inverseRelation.joinColumn.name] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
                     }
 
                     const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.table.name, updateOptions, conditions);
@@ -400,8 +430,16 @@ export class SubjectOperationExecutor {
         if (parentGeneratedId)
             subject.parentGeneratedId = parentGeneratedId;
 
-        if (newlyGeneratedId && metadata.hasGeneratedColumn)
-            subject.newlyGeneratedId = newlyGeneratedId;
+        // todo: better if insert method will return object with all generated ids, object id, etc.
+        if (newlyGeneratedId) {
+            if (metadata.hasGeneratedColumn) {
+                subject.newlyGeneratedId = newlyGeneratedId;
+
+            } else if (metadata.hasObjectIdColumn) {
+                subject.generatedObjectId = newlyGeneratedId;
+
+            }
+        }
     }
 
     /**
@@ -445,6 +483,8 @@ export class SubjectOperationExecutor {
 
                     if (referencedColumn.isGenerated)
                         relationValue = alreadyInsertedSubject.newlyGeneratedId;
+                    if (referencedColumn.isObjectId)
+                        relationValue = alreadyInsertedSubject.generatedObjectId;
                     // if it references to create or update date columns
                     if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
                         relationValue = this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
@@ -559,6 +599,7 @@ export class SubjectOperationExecutor {
         let newEntityId = subject.entity[referencedColumn.propertyName];
         if (!newEntityId && referencedColumn.isGenerated) {
             newEntityId = subject.newlyGeneratedId;
+            // we should not handle object id here because closure tables are not supported by mongodb driver.
         } // todo: implement other special column types too
 
         const parentEntity = subject.entity[subject.metadata.treeParentRelation.propertyName];
@@ -799,6 +840,10 @@ export class SubjectOperationExecutor {
         if (!ownId) {
             if (firstColumn.isGenerated) {
                 ownId = subject.newlyGeneratedId;
+
+            } else if (firstColumn.isObjectId) {
+                ownId = subject.generatedObjectId;
+
             }
             // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
         }
@@ -824,6 +869,10 @@ export class SubjectOperationExecutor {
                 if (insertSubject) {
                     if (secondColumn.isGenerated) {
                         relationId = insertSubject.newlyGeneratedId;
+
+                    } else if (secondColumn.isObjectId) {
+                        relationId = insertSubject.generatedObjectId;
+
                     }
                     // todo: implement other special values too
                 }
@@ -890,6 +939,9 @@ export class SubjectOperationExecutor {
 
         // update entity columns that gets updated on each entity insert
         this.insertSubjects.forEach(subject => {
+            if (subject.generatedObjectId && subject.metadata.hasObjectIdColumn)
+                subject.entity[subject.metadata.objectIdColumn.propertyName] = subject.generatedObjectId;
+
             subject.metadata.primaryColumns.forEach(primaryColumn => {
                 if (subject.newlyGeneratedId)
                     subject.entity[primaryColumn.propertyName] = subject.newlyGeneratedId;

@@ -10,7 +10,7 @@ import {RelationMetadata} from "./RelationMetadata";
  * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
  * date column.
  */
-export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId";
+export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId"|"objectId";
 
 /**
  * This metadata contains all information about entity's column.
@@ -253,6 +253,13 @@ export class ColumnMetadata {
      */
     get isVersion() {
         return this.mode === "version";
+    }
+
+    /**
+     * Indicates if this column contains an object id.
+     */
+    get isObjectId() {
+        return this.mode === "objectId";
     }
 
     /**
