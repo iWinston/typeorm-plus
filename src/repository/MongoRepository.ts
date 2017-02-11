@@ -38,7 +38,6 @@ import {
     UpdateWriteOpResult,
     CollStats, MongoCallback, MongoError, CursorResult
 } from "mongodb";
-import {EntityCursor} from "../driver/mongodb/EntityCursor";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
