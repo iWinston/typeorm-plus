@@ -129,6 +129,43 @@ export class EntityManager extends BaseEntityManager {
         }
     }
 
+    /**
+     * Counts entities that match given conditions.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>): Promise<Entity[]>;
+
+    /**
+     * Counts entities that match given conditions.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity[]>;
+
+    /**
+     * Counts entities that match given conditions.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity[]>;
+
+    /**
+     * Counts entities that match given conditions.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity[]>;
+
+    /**
+     * Counts entities that match given conditions.
+     */
+    count<Entity>(
+        entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral | FindOptions,
+        options?: FindOptions
+    ): Promise<number> {
+        if (conditionsOrFindOptions && options) {
+            return this.getRepository(entityClass).count(conditionsOrFindOptions, options);
+
+        } else if (conditionsOrFindOptions) {
+            return this.getRepository(entityClass).count(conditionsOrFindOptions);
+
+        } else {
+            return this.getRepository(entityClass).count();
+        }
+    }
 
     /**
      * Finds entities that match given conditions.

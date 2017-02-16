@@ -47,7 +47,7 @@ describe("repository > find methods", () => {
             count.should.be.equal(100);
         })));
 
-        it("should return posts that match given criteria", () => Promise.all(connections.map(async connection => {
+        it("should return a count of posts that match given criteria", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
@@ -69,7 +69,7 @@ describe("repository > find methods", () => {
             count.should.be.equal(50);
         })));
 
-        it("should return posts that match given multiple criteria", () => Promise.all(connections.map(async connection => {
+        it("should return a count of posts that match given multiple criteria", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
@@ -92,7 +92,7 @@ describe("repository > find methods", () => {
             count.should.be.equal(5);
         })));
 
-        it("should return posts that match given find options", () => Promise.all(connections.map(async connection => {
+        it("should return a count of posts that match given find options", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
@@ -124,7 +124,7 @@ describe("repository > find methods", () => {
             count.should.be.equal(5);
         })));
 
-        it("should return posts that match both criteria and find options", () => Promise.all(connections.map(async connection => {
+        it("should return a count of posts that match both criteria and find options", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
@@ -153,7 +153,7 @@ describe("repository > find methods", () => {
                 {categoryName: "even", isNew: true},
                 findOptions
             );
-            count.should.be.equal(2);
+            count.should.be.equal(5);
         })));
         
     });
