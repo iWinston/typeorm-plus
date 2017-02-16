@@ -132,22 +132,22 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Counts entities that match given conditions.
      */
-    count<Entity>(entityClass: ObjectType<Entity>): Promise<Entity[]>;
+    count<Entity>(entityClass: ObjectType<Entity>): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
      */
-    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity[]>;
+    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
      */
-    count<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity[]>;
+    count<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
      */
-    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity[]>;
+    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
