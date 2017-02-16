@@ -197,6 +197,34 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Counts all entities.
+     */
+    async count(): Promise<number>;
+
+    /**
+     * Counts entities that match given conditions.
+     */
+    async count(conditions: ObjectLiteral): Promise<number>;
+
+    /**
+     * Counts entities with given find options.
+     */
+    async count(options: FindOptions): Promise<number>;
+
+    /**
+     * Counts entities that match given conditions and find options.
+     */
+    async count(conditions: ObjectLiteral, options: FindOptions): Promise<number>;
+
+    /**
+     * Counts entities that match given conditions and/or find options.
+     */
+    async count(conditionsOrFindOptions?: ObjectLiteral | FindOptions, options?: FindOptions): Promise<number> {
+        return this.createFindQueryBuilder(conditionsOrFindOptions, options)
+                   .getCount();
+    }
+
+    /**
      * Finds all entities.
      */
     async find(): Promise<Entity[]>;
