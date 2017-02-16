@@ -152,10 +152,7 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Counts entities that match given conditions.
      */
-    count<Entity>(
-        entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral | FindOptions,
-        options?: FindOptions
-    ): Promise<number> {
+    count<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral | FindOptions, options?: FindOptions): Promise<number> {
         if (conditionsOrFindOptions && options) {
             return this.getRepository(entityClass).count(conditionsOrFindOptions, options);
 
