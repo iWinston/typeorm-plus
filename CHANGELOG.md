@@ -2,6 +2,10 @@
 
 ### BREAKING CHANGES
 
+* `EntityManager#create` and `Repository#create`, `EntityManager#preload` and `Repository#preload` methods now accept 
+`DeepPartial<Entity>` instead of `Object`
+* `EntityManager#merge` and `Repository#merge` methods now accepts `DeepPartial<Entity>` instead of `Object`,
+also their first argument is an entity where to need to merge all given entity-like objects.
 * changed `find*` repository methods. Now conditions are `Partial<Entity>` which makes them type-safe. 
 However now `FindOptions` cannot be used with `findOne`, `findAndCount`, `find` and other methods. 
 Use `fineOneByOptions`, `findAndCountByOptions`, `findByOptions` methods instead
@@ -10,7 +14,7 @@ each for its own `findOne*` or `find*` methods
 * dropped out some of options of `FindOptions`. Use `QueryBuilder` instead.
 * deprecated method `addParameters` has been removed from `QueryBuilder`. Use `setParameters` instead.
 * table decorators were not removed in the release, however they will be removed in next. Be sure to replace them before that.
-* `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#from`
+* `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#skip`
 * `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
 
 ### NEW FEATURES
@@ -26,7 +30,6 @@ each for its own `findOne*` or `find*` methods
 * reorganize docs to cover both relational and mongo databases
 * try to add more document storage databases
 * make all naming things logically correct
-* create mongo version of entity manager
 * note that mongo indices has its own special properties
 * what to do with string version of object id? do we really need that?
 * need test organization and exclude mongodb where its usage is not possible

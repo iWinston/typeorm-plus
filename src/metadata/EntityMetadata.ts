@@ -834,6 +834,9 @@ export class EntityMetadata {
             return false;
 
         return Object.keys(firstId).every(key => {
+            if (firstId[key] instanceof Object && secondId[key] instanceof Object)
+                return firstId[key].equals(secondId[key]);
+
             return firstId[key] === secondId[key];
         });
     }

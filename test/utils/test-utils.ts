@@ -12,7 +12,12 @@ export interface TestingConnectionOptions extends ConnectionOptions {
     /**
      * Indicates if this connection should be skipped.
      */
-    skip: boolean;
+    skip?: boolean;
+
+    /**
+     * If set to true then tests for this driver wont run until implicitly defined "enabledDrivers" section.
+     */
+    disabledIfNotEnabledImplicitly?: boolean;
 
 }
 
@@ -113,10 +118,16 @@ export function setupTestingConnections(options?: TestingOptions) {
 
     return ormConfigConnectionOptionsArray
         .filter(connectionOptions => {
+            if (connectionOptions.skip === true)
+                return false;
+
             if (options && options.enabledDrivers && options.enabledDrivers.length)
                 return options.enabledDrivers.indexOf(connectionOptions.driver.type) !== -1;
 
-            return !connectionOptions.skip;
+            if (connectionOptions.disabledIfNotEnabledImplicitly === true)
+                return false;
+
+            return true;
         })
         .map(connectionOptions => {
             const newConnectionOptions = Object.assign({}, connectionOptions as ConnectionOptions, {

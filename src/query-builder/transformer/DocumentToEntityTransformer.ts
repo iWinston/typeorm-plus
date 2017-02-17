@@ -33,11 +33,11 @@ export class DocumentToEntityTransformer {
         let hasData = false;
 
         // handle _id property the special way
-        if (metadata.hasObjectIdColumn && document["_id"]) {
+        if (metadata.hasObjectIdColumn && document[metadata.objectIdColumn.name]) {
             // todo: we can't use driver in this class
             // do we really need prepare hydrated value here? If no then no problem. If yes then think maybe prepareHydratedValue process should be extracted out of driver class?
-            // entity[metadata.objectIdColumn.name] = this.driver.prepareHydratedValue(document["_id"], metadata.objectIdColumn);
-            entity[metadata.objectIdColumn.name] = document["_id"];
+            // entity[metadata.objectIdColumn.propertyName] = this.driver.prepareHydratedValue(document[metadata.objectIdColumn.name"], metadata.objectIdColumn);
+            entity[metadata.objectIdColumn.propertyName] = document[metadata.objectIdColumn.name];
             hasData = true;
         }
 

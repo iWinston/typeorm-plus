@@ -7,6 +7,9 @@ export interface FindManyOptions<Entity> extends FindOneOptions<Entity> {
 
     /**
      * Offset (paginated) where from entities should be taken.
+     *
+     * todo: this should be renamed. maybe startFrom ?
+     * or just rename limit/offset to rawLimit, rawOffset
      */
     from?: number;
 

@@ -38,6 +38,7 @@ import {
     UpdateWriteOpResult,
     CollStats, MongoCallback, MongoError, CursorResult
 } from "mongodb";
+import {DeepPartial} from "../common/DeepPartial";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -79,11 +80,10 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
-     */
-    async preload(object: Object): Promise<Entity> {
+    async preload(object: DeepPartial<Entity>): Promise<Entity> {
         // todo: implement
         return {} as any;
-    }
+    }*/
 
     /**
      * Finds entities that match given find options or conditions.
@@ -93,7 +93,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.from)
-                cursor.min(optionsOrConditions.from);
+                cursor.skip(optionsOrConditions.from);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
@@ -112,7 +112,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.from)
-                cursor.min(optionsOrConditions.from);
+                cursor.skip(optionsOrConditions.from);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
@@ -136,7 +136,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.from)
-                cursor.min(optionsOrConditions.from);
+                cursor.skip(optionsOrConditions.from);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)

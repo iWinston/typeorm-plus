@@ -11,7 +11,10 @@ export function ObjectIdColumn<T>(options?: ColumnOptions): Function {
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
-        options = Object.assign(options, { primary: true });
+        options = Object.assign(options, {
+            primary: true,
+            name: options.name ? options.name : "_id"
+        });
 
         // create and register a new column metadata
         const args: ColumnMetadataArgs = {

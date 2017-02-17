@@ -10,6 +10,7 @@ import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
 import {SubjectBuilder} from "../persistence/SubjectBuilder";
 import {FindOneOptions} from "../find-options/FindOneOptions";
+import {DeepPartial} from "../common/DeepPartial";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -74,29 +75,36 @@ export class Repository<Entity extends ObjectLiteral> {
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create(plainObjects: Object[]): Entity[];
+    create(entityLikeArray: DeepPartial<Entity>[]): Entity[];
 
     /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create(plainObject: Object): Entity;
+    create(entityLike: DeepPartial<Entity>): Entity;
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create(plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
-        if (plainObjectOrObjects instanceof Array)
-            return plainObjectOrObjects.map(object => this.create(object as Object));
+    create(plainEntityLikeOrPlainEntityLikes?: DeepPartial<Entity>|Partial<Entity>[]): Entity|Entity[] {
 
-        const newEntity: Entity = this.metadata.create();
-        if (plainObjectOrObjects) {
-            const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
-            plainObjectToEntityTransformer.transform(newEntity, plainObjectOrObjects, this.metadata);
-        }
+        if (!plainEntityLikeOrPlainEntityLikes)
+            return this.metadata.create();
 
-        return newEntity;
+        if (plainEntityLikeOrPlainEntityLikes instanceof Array)
+            return plainEntityLikeOrPlainEntityLikes.map(plainEntityLike => this.create(plainEntityLike));
+
+        return this.merge(this.metadata.create(), plainEntityLikeOrPlainEntityLikes);
+    }
+
+    /**
+     * Merges multiple entities (or entity-like objects) into a given entity.
+     */
+    merge(mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity {
+        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
+        entityLikes.forEach(object => plainObjectToEntityTransformer.transform(mergeIntoEntity, object, this.metadata));
+        return mergeIntoEntity;
     }
 
     /**
@@ -104,21 +112,17 @@ export class Repository<Entity extends ObjectLiteral> {
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
+     *
+     * Note that given entity-like object must have an entity id / primary key to find entity by.
+     * Returns undefined if entity with given id was not found.
      */
-    preload(object: Object): Promise<Entity> {
-        const queryBuilder = this.createQueryBuilder(this.metadata.table.name);
-        const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer();
-        return plainObjectToDatabaseEntityTransformer.transform(object, this.metadata, queryBuilder);
-    }
+    async preload(entityLike: DeepPartial<Entity>): Promise<Entity|undefined> {
+        const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer(this.connection.entityManager);
+        const transformedEntity = await plainObjectToDatabaseEntityTransformer.transform(entityLike, this.metadata);
+        if (transformedEntity)
+            return this.merge(transformedEntity as Entity, entityLike);
 
-    /**
-     * Merges multiple entities (or entity-like objects) into a one new entity.
-     */
-    merge(...objects: ObjectLiteral[]): Entity {
-        const newEntity: Entity = this.metadata.create();
-        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
-        objects.forEach(object => plainObjectToEntityTransformer.transform(newEntity, object, this.metadata));
-        return newEntity;
+        return undefined;
     }
 
     /**
@@ -139,6 +143,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * todo: use Partial<Entity> instead, and make sure it works properly
      */
     async persist(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
+
+        // if for some reason non empty entity was passed then return it back without having to do anything
+        if (!entityOrEntities)
+            return entityOrEntities;
 
         // if multiple entities given then go throw all of them and save them
         if (entityOrEntities instanceof Array)
@@ -176,6 +184,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * Removes one or many given entities.
      */
     async remove(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
+
+        // if for some reason non empty entity was passed then return it back without having to do anything
+        if (!entityOrEntities)
+            return entityOrEntities;
 
         // if multiple entities given then go throw all of them and save them
         if (entityOrEntities instanceof Array)

@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {SpecificRepository} from "../repository/SpecificRepository";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -248,12 +249,23 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 return;
 
             // load database entities for all given ids
-            const entities = await this.connection
-                .getRepository<ObjectLiteral>(subjectGroup.target)
-                .createQueryBuilder("operateSubject", this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                .andWhereInIds(allIds)
-                .enableOption("RELATION_ID_VALUES")
-                .getMany();
+            // todo: such implementation is temporary, need to create a good abstraction there
+            // todo: its already possible to do that with repository.findByIds method however setting "RELATION_ID_VALUES" option is an issue
+            // todo: also custom queryRunnerProvider is an issue
+            let entities: any[];
+            if (this.connection.driver instanceof MongoDriver) {
+                entities = await this.connection
+                    .getMongoRepository<ObjectLiteral>(subjectGroup.target)
+                    .findByIds(allIds);
+
+            } else {
+                entities = await this.connection
+                    .getRepository<ObjectLiteral>(subjectGroup.target)
+                    .createQueryBuilder("operateSubject", this.queryRunnerProvider)
+                    .andWhereInIds(allIds)
+                    .enableOption("RELATION_ID_VALUES")
+                    .getMany();
+            }
 
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject

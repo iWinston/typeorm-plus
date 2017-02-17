@@ -52,11 +52,6 @@ export class MongoDriver implements Driver {
     protected pool: any;
 
     /**
-     * Pool of database connections.
-     */
-    protected databaseConnectionPool: DatabaseConnection[] = [];
-
-    /**
      * Logger used to log queries and errors.
      */
     protected logger: Logger;
@@ -112,9 +107,7 @@ export class MongoDriver implements Driver {
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
-
-            // if single connection is opened, then close it
-            this.pool.end(handler);
+            this.pool.close(handler);
             this.pool = undefined;
         });
     }
@@ -232,8 +225,6 @@ export class MongoDriver implements Driver {
      */
     protected validateOptions(options: DriverOptions) {
         if (!options.url) {
-            if (!options.host)
-                throw new DriverOptionNotSetError("host");
             if (!options.database)
                 throw new DriverOptionNotSetError("database");
         }
