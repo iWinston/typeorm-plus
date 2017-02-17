@@ -129,7 +129,7 @@ describe("mongodb > basic repository actions", () => {
 
         // assert find method
         const loadedPosts1 = await postRepository.find({
-            from: 10,
+            skip: 10,
             take: 10
         });
         loadedPosts1.length.should.be.equal(10);
@@ -142,7 +142,7 @@ describe("mongodb > basic repository actions", () => {
 
         // assert find method
         const [loadedPosts2, loadedPosts2Count] = await postRepository.findAndCount({
-            from: 5,
+            skip: 5,
             take: 5
         });
         loadedPosts2.length.should.be.equal(5);

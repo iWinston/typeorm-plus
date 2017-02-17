@@ -214,7 +214,7 @@ describe("repository > find methods", () => {
                     categoryName: "even",
                     isNew: true
                 },
-                from: 1,
+                skip: 1,
                 take: 2,
                 order: {
                     id: "ASC"
@@ -233,7 +233,7 @@ describe("repository > find methods", () => {
                     categoryName: "even",
                     isNew: true
                 },
-                from: 1,
+                skip: 1,
                 take: 2,
                 order: {
                     id: "ASC"

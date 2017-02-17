@@ -31,7 +31,7 @@ export class FindOptionsUtils {
                     possibleOptions.where instanceof Object ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
-                    typeof possibleOptions.from === "number" ||
+                    typeof possibleOptions.skip === "number" ||
                     typeof possibleOptions.take === "number"
                 );
     }
@@ -95,11 +95,11 @@ export class FindOptionsUtils {
         if (options.where)
             this.applyConditions(qb, options.where);
 
-        if ((options as FindManyOptions<T>).from)
-            qb.setFirstResult((options as FindManyOptions<T>).from!);
+        if ((options as FindManyOptions<T>).skip)
+            qb.skip((options as FindManyOptions<T>).skip!);
 
         if ((options as FindManyOptions<T>).take)
-            qb.setMaxResults((options as FindManyOptions<T>).take!);
+            qb.take((options as FindManyOptions<T>).take!);
 
         if (options.order)
             Object.keys(options.order).forEach(key => {

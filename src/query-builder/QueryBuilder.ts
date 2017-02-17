@@ -76,8 +76,8 @@ export class QueryBuilder<Entity> {
     protected parameters: ObjectLiteral = {};
     protected limit: number;
     protected offset: number;
-    protected firstResult: number;
-    protected maxResults: number;
+    protected skipNumber: number;
+    protected takeNumber: number;
     protected ignoreParentTablesJoins: boolean = false;
 
     /**
@@ -764,18 +764,18 @@ export class QueryBuilder<Entity> {
     }
 
     /**
-     * Set's maximum number of entities to be selected.
+     * Sets maximal number of entities to take.
      */
-    setMaxResults(maxResults: number): this {
-        this.maxResults = maxResults;
+    take(take: number): this {
+        this.takeNumber = take;
         return this;
     }
 
     /**
-     * Set's offset of entities to be selected.
+     * Sets number of entities to skip
      */
-    setFirstResult(firstResult: number): this {
-        this.firstResult = firstResult;
+    skip(skip: number): this {
+        this.skipNumber = skip;
         return this;
     }
 
@@ -908,7 +908,7 @@ export class QueryBuilder<Entity> {
 
         const mainAliasName = this.fromTableName ? this.fromTableName : this.aliasMap.mainAlias.name;
         let rawResults: any[];
-        if (this.firstResult || this.maxResults) {
+        if (this.skipNumber || this.takeNumber) {
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
             const [sql, parameters] = this.getSqlWithParameters({ skipOrderBy: true });
@@ -938,17 +938,17 @@ export class QueryBuilder<Entity> {
 
             if (this.connection.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
 
-                if (this.firstResult || this.maxResults) {
-                    idsQuery += ` OFFSET ${this.firstResult || 0} ROWS`;
-                    if (this.maxResults)
-                        idsQuery += " FETCH NEXT " + this.maxResults + " ROWS ONLY";
+                if (this.skipNumber || this.takeNumber) {
+                    idsQuery += ` OFFSET ${this.skipNumber || 0} ROWS`;
+                    if (this.takeNumber)
+                        idsQuery += " FETCH NEXT " + this.takeNumber + " ROWS ONLY";
                 }
             } else {
 
-                if (this.maxResults)
-                    idsQuery += " LIMIT " + this.maxResults;
-                if (this.firstResult)
-                    idsQuery += " OFFSET " + this.firstResult;
+                if (this.takeNumber)
+                    idsQuery += " LIMIT " + this.takeNumber;
+                if (this.skipNumber)
+                    idsQuery += " OFFSET " + this.skipNumber;
             }
 
             try {
@@ -1214,8 +1214,8 @@ export class QueryBuilder<Entity> {
         if (!options || !options.skipOffset)
             qb.setOffset(this.offset);
 
-        qb.setFirstResult(this.firstResult)
-            .setMaxResults(this.maxResults);
+        qb.skip(this.skipNumber)
+            .take(this.takeNumber);
 
         return qb;
     }

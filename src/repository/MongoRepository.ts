@@ -76,24 +76,14 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     }
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
-     * it loads it (and everything related to it), replaces all values with the new ones from the given object
-     * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
-     * replaced from the new object.
-    async preload(object: DeepPartial<Entity>): Promise<Entity> {
-        // todo: implement
-        return {} as any;
-    }*/
-
-    /**
      * Finds entities that match given find options or conditions.
      */
     async find(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.from)
-                cursor.skip(optionsOrConditions.from);
+            if (optionsOrConditions.skip)
+                cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
@@ -111,8 +101,8 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.from)
-                cursor.skip(optionsOrConditions.from);
+            if (optionsOrConditions.skip)
+                cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
@@ -135,8 +125,8 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
 
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.from)
-                cursor.skip(optionsOrConditions.from);
+            if (optionsOrConditions.skip)
+                cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
