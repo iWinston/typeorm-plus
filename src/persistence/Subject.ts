@@ -348,6 +348,7 @@ export class Subject {
                     databaseValue = DataTransformationUtils.simpleArrayToString(databaseValue);
                 }
             }
+            // todo: this mechanism does not get in count embeddeds in embeddeds
 
             // if value is not defined then no need to update it
             if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)

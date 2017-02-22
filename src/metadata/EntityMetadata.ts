@@ -126,10 +126,15 @@ export class EntityMetadata {
         this.relations.forEach(relation => relation.entityMetadata = this);
         this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
         this.indices.forEach(index => index.entityMetadata = this);
-        this.embeddeds.forEach(embedded => {
-            embedded.entityMetadata = this;
-            embedded.columns.forEach(column => column.entityMetadata = this);
-        });
+
+        const setEmbeddedEntityMetadataRecursively = (embeddeds: EmbeddedMetadata[]) => {
+            embeddeds.forEach(embedded => {
+                embedded.entityMetadata = this;
+                embedded.columns.forEach(column => column.entityMetadata = this);
+                setEmbeddedEntityMetadataRecursively(embedded.embeddeds);
+            });
+        };
+        setEmbeddedEntityMetadataRecursively(this.embeddeds);
     }
 
     // -------------------------------------------------------------------------
@@ -148,6 +153,7 @@ export class EntityMetadata {
 
     /**
      * Columns of the entity, including columns that are coming from the embeddeds of this entity.
+     * @deprecated
      */
     get columns(): ColumnMetadata[] {
         let allColumns: ColumnMetadata[] = ([] as ColumnMetadata[]).concat(this._columns);
@@ -155,6 +161,13 @@ export class EntityMetadata {
             allColumns = allColumns.concat(embedded.columns);
         });
         return allColumns;
+    }
+
+    /**
+     * Gets columns without embedded columns.
+     */
+    get columnsWithoutEmbeddeds(): ColumnMetadata[] {
+        return this._columns;
     }
 
     /**
@@ -619,11 +632,11 @@ export class EntityMetadata {
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
                 if (columnRelation && columnRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.fullName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
                 } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.fullName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
                 } else {
-                    map[column.name] = entityValue;
+                    map[column.fullName] = entityValue;
                 }
             });
 
@@ -637,11 +650,11 @@ export class EntityMetadata {
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
                 if (columnRelation && columnRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.fullName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
                 } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                    map[column.fullName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
                 } else {
-                    map[column.name] = entityValue;
+                    map[column.fullName] = entityValue;
                 }
             });
         }
@@ -720,7 +733,7 @@ export class EntityMetadata {
         Object.keys(idMap).forEach(propertyName => {
             const column = this.getColumnByPropertyName(propertyName);
             if (column) {
-                map[column.name] = idMap[propertyName];
+                map[column.fullName] = idMap[propertyName];
             }
         });
         return map;
@@ -741,7 +754,7 @@ export class EntityMetadata {
      * Checks if column with the given database name exist.
      */
     hasColumnWithDbName(name: string): boolean {
-        return !!this._columns.find(column => column.name === name);
+        return !!this._columns.find(column => column.fullName === name);
     }
 
     /**

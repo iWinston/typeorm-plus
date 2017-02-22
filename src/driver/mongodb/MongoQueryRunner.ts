@@ -373,7 +373,7 @@ export class MongoQueryRunner implements QueryRunner {
         await this.databaseConnection
             .connection
             .collection(collectionName)
-            .replaceOne(conditions, valuesMap);
+            .updateOne(conditions, valuesMap);
     }
 
     /**

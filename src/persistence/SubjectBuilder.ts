@@ -541,7 +541,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.inverseJoinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.inverseReferencedColumn.name) +
+                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.inverseJoinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.inverseReferencedColumn.fullName) +
                             " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")
@@ -560,7 +560,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.name) +
+                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.fullName) +
                             " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName) + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableOption("RELATION_ID_VALUES")

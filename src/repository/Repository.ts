@@ -117,6 +117,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Returns undefined if entity with given id was not found.
      */
     async preload(entityLike: DeepPartial<Entity>): Promise<Entity|undefined> {
+        // todo: right now sending this.connection.entityManager is not correct because its out of query runner of this repository
         const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer(this.connection.entityManager);
         const transformedEntity = await plainObjectToDatabaseEntityTransformer.transform(entityLike, this.metadata);
         if (transformedEntity)

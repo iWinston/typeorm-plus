@@ -94,7 +94,7 @@ export class IndexMetadata {
             throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
         }
 
-        return columns.map(column => column.name);
+        return columns.map(column => column.fullName);
     }
 
 }

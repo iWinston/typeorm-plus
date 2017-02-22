@@ -2,6 +2,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
 import {MongoDriver} from "../../driver/mongodb/MongoDriver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 
 /**
  * Transforms raw document into entity object.
@@ -68,7 +69,7 @@ export class DocumentToEntityTransformer {
             });*/
 
         // get value from columns selections and put them into object
-        metadata.columns.forEach(column => {
+        metadata.columnsWithoutEmbeddeds.forEach(column => {
             const valueInObject = document[column.name];
             if (valueInObject !== undefined &&
                 valueInObject !== null &&
@@ -78,17 +79,27 @@ export class DocumentToEntityTransformer {
                 !column.isDiscriminator) {
                 // const value = this.driver.prepareHydratedValue(valueInObject, column);
 
-                if (column.isInEmbedded) {
-                    if (!entity[column.embeddedProperty])
-                        entity[column.embeddedProperty] = column.embeddedMetadata.create();
-
-                    entity[column.embeddedProperty][column.propertyName] = valueInObject;
-                } else {
-                    entity[column.propertyName] = valueInObject;
-                }
+                entity[column.propertyName] = valueInObject;
                 hasData = true;
             }
         });
+
+        const addEmbeddedValuesRecursively = (entity: any, document: any, embeddeds: EmbeddedMetadata[]) => {
+            embeddeds.forEach(embedded => {
+                embedded.columns.forEach(column => {
+                    const value = document[embedded.prefix][column.propertyName];
+                    if (!value) return;
+
+                    if (!entity[embedded.propertyName])
+                        entity[embedded.propertyName] = embedded.create();
+
+                    entity[embedded.propertyName][column.name] = value;
+                });
+                addEmbeddedValuesRecursively(entity[embedded.propertyName], document[embedded.prefix], embedded.embeddeds);
+            });
+        };
+
+        addEmbeddedValuesRecursively(entity, document, metadata.embeddeds);
 
         // if relation is loaded then go into it recursively and transform its values too
         /*metadata.relations.forEach(relation => {

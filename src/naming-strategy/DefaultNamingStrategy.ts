@@ -16,6 +16,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string, columnCustomName?: string): string {
+        // todo: need snake case property name but only if its a property name and not a custom embedded prefix
         return camelCase(embeddedPropertyName + "_" + (columnCustomName ? columnCustomName : columnPropertyName));
     }
 

@@ -192,12 +192,35 @@ export class ColumnMetadata {
 
     /**
      * Column name in the database.
+     *
+     * todo: rename to originalName
      */
     get name(): string {
+        return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
+    }
+
+    /**
+     * Column name in the database including its embedded prefixes.
+     *
+     * todo: rename to databaseName
+     */
+    get fullName(): string {
 
         // if this column is embedded's column then apply different entity
-        if (this.embeddedMetadata)
-            return this.embeddedMetadata.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.propertyName, this.propertyName, this._name);
+        if (this.embeddedMetadata) {
+
+            // because embedded can be inside other embedded we need to go recursively and collect all prefix name
+            const prefixes: string[] = [];
+            const buildPrefixRecursively = (embeddedMetadata: EmbeddedMetadata) => {
+                if (embeddedMetadata.parentEmbeddedMetadata)
+                    buildPrefixRecursively(embeddedMetadata.parentEmbeddedMetadata);
+
+                prefixes.push(embeddedMetadata.prefix);
+            };
+            buildPrefixRecursively(this.embeddedMetadata);
+
+            return this.entityMetadata.namingStrategy.embeddedColumnName(prefixes.join("_"), this.propertyName, this._name); // todo: this .join("_") logic should be part of naming strategy
+        }
 
         // if there is a naming strategy then use it to normalize propertyName as column name
         if (this.entityMetadata)

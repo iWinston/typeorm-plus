@@ -16,6 +16,11 @@ export class EmbeddedMetadata {
      */
     entityMetadata: EntityMetadata;
 
+    /**
+     * Parent embedded in the case if this embedded inside other embedded.
+     */
+    parentEmbeddedMetadata: EmbeddedMetadata;
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -36,6 +41,11 @@ export class EmbeddedMetadata {
     readonly columns: ColumnMetadata[];
 
     /**
+     * Nested embeddable in this embeddable.
+     */
+    readonly embeddeds: EmbeddedMetadata[];
+
+    /**
      * Embedded type.
      */
     readonly type: Function;
@@ -44,11 +54,15 @@ export class EmbeddedMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(type: Function, propertyName: string, table: TableMetadata, columns: ColumnMetadata[]) {
+    constructor(type: Function, propertyName: string, table: TableMetadata, columns: ColumnMetadata[], embeddeds: EmbeddedMetadata[]) {
         this.type = type;
         this.propertyName = propertyName;
         this.table = table;
         this.columns = columns;
+        this.embeddeds = embeddeds;
+        this.embeddeds.forEach(embedded => {
+            embedded.parentEmbeddedMetadata = this;
+        });
         this.columns.forEach(column => {
             column.embeddedMetadata = this;
         });
@@ -63,6 +77,11 @@ export class EmbeddedMetadata {
      */
     create() {
         return new (this.type as any);
+    }
+
+    get prefix() {
+        // todo: implement custom prefix later
+        return this.propertyName;
     }
 
 }
