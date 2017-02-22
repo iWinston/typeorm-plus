@@ -26,7 +26,6 @@ export * from "./decorator/columns/PrimaryColumn";
 export * from "./decorator/columns/UpdateDateColumn";
 export * from "./decorator/columns/VersionColumn";
 export * from "./decorator/columns/ObjectIdColumn";
-export * from "./decorator/columns/ArrayColumn";
 export * from "./decorator/listeners/AfterInsert";
 export * from "./decorator/listeners/AfterLoad";
 export * from "./decorator/listeners/AfterRemove";

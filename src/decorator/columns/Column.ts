@@ -62,8 +62,8 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             options = Object.assign({ type: type } as ColumnOptions, options);
 
         // if we still don't have a type then we need to give error to user that type is required
-        if (!options.type)
-            throw new ColumnTypeUndefinedError(object, propertyName);
+        // if (!options.type)
+        //     throw new ColumnTypeUndefinedError(object, propertyName);
 
         // check if auto increment is not set for simple column
         if (options.generated)

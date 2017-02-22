@@ -10,7 +10,7 @@ import {RelationMetadata} from "./RelationMetadata";
  * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
  * date column.
  */
-export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId"|"objectId";
+export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId"|"objectId"|"array";
 
 /**
  * This metadata contains all information about entity's column.
@@ -241,6 +241,16 @@ export class ColumnMetadata {
      */
     get isVirtual() {
         return this.mode === "virtual";
+    }
+
+    /**
+     * Indicates if column is array.
+     * Array columns are now only supported by Mongodb driver.
+     *
+     * todo: implement array serialization functionality for relational databases as well
+     */
+    get isArray() {
+        return this.mode === "array";
     }
 
     /**

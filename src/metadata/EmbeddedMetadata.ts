@@ -48,15 +48,26 @@ export class EmbeddedMetadata {
     /**
      * Embedded type.
      */
-    readonly type: Function;
+    readonly type?: Function;
+
+    /**
+     * Indicates if this embedded is in array mode.
+     */
+    readonly isArray: boolean;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(type: Function, propertyName: string, table: TableMetadata, columns: ColumnMetadata[], embeddeds: EmbeddedMetadata[]) {
+    constructor(type: Function|undefined,
+                propertyName: string,
+                isArray: boolean,
+                table: TableMetadata,
+                columns: ColumnMetadata[],
+                embeddeds: EmbeddedMetadata[]) {
         this.type = type;
         this.propertyName = propertyName;
+        this.isArray = isArray;
         this.table = table;
         this.columns = columns;
         this.embeddeds = embeddeds;
@@ -76,6 +87,9 @@ export class EmbeddedMetadata {
      * Creates a new embedded object.
      */
     create() {
+        if (!this.type)
+            throw new Error(`Embedded cannot be created because it does not have a type set.`);
+
         return new (this.type as any);
     }
 

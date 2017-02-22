@@ -86,15 +86,29 @@ export class DocumentToEntityTransformer {
 
         const addEmbeddedValuesRecursively = (entity: any, document: any, embeddeds: EmbeddedMetadata[]) => {
             embeddeds.forEach(embedded => {
-                embedded.columns.forEach(column => {
-                    const value = document[embedded.prefix][column.propertyName];
-                    if (!value) return;
+                if (!document[embedded.prefix])
+                    return;
 
-                    if (!entity[embedded.propertyName])
-                        entity[embedded.propertyName] = embedded.create();
+                if (embedded.isArray) {
+                    entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map(subValue => {
+                        const newItem = embedded.create();
+                        embedded.columns.forEach(column => {
+                            newItem[column.propertyName] = subValue[column.name];
+                        });
+                        return newItem;
+                    });
 
-                    entity[embedded.propertyName][column.name] = value;
-                });
+                } else {
+                    embedded.columns.forEach(column => {
+                        const value = document[embedded.prefix][column.name];
+                        if (!value) return;
+
+                        if (!entity[embedded.propertyName])
+                            entity[embedded.propertyName] = embedded.create();
+
+                        entity[embedded.propertyName][column.propertyName] = value;
+                    });
+                }
                 addEmbeddedValuesRecursively(entity[embedded.propertyName], document[embedded.prefix], embedded.embeddeds);
             });
         };

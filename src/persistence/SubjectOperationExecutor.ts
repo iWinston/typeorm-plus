@@ -470,13 +470,27 @@ export class SubjectOperationExecutor {
                 if (!entity[embedded.propertyName])
                     return;
 
-                columnsAndValues[embedded.propertyName] = {};
-                embedded.columns.forEach(column => {
-                    const value = this.connection.driver.preparePersistentValue(entity[embedded.propertyName][column.propertyName], column);
-                    columnNames.push(column.fullName);
-                    columnValues.push(value);
-                    columnsAndValues[embedded.propertyName][column.propertyName] = value;
-                });
+                if (embedded.isArray) {
+                    columnsAndValues[embedded.propertyName] = (entity[embedded.propertyName] as any[]).map(subValue => {
+                        const newItem: ObjectLiteral = {};
+                        embedded.columns.forEach(column => {
+                            const value = this.connection.driver.preparePersistentValue(subValue[column.propertyName], column);
+                            columnNames.push(column.fullName); // todo: probably we dont need it right now because relational databases dont support array embeddedables yet
+                            columnValues.push(value);
+                            newItem[column.propertyName] = value;
+                        });
+                        return newItem;
+                    });
+
+                } else {
+                    columnsAndValues[embedded.propertyName] = {};
+                    embedded.columns.forEach(column => {
+                        const value = this.connection.driver.preparePersistentValue(entity[embedded.propertyName][column.propertyName], column);
+                        columnNames.push(column.fullName);
+                        columnValues.push(value);
+                        columnsAndValues[embedded.propertyName][column.propertyName] = value;
+                    });
+                }
                 collectFromEmbeddeds(entity[embedded.propertyName], columnsAndValues[embedded.propertyName], embedded.embeddeds);
             });
         };
@@ -699,12 +713,23 @@ export class SubjectOperationExecutor {
                 embeddeds.forEach(embedded => {
                     if (!entity[embedded.propertyName])
                         return;
-                    embedded.columns.forEach(column => {
-                        if (!value[embedded.prefix])
-                            value[embedded.prefix] = {};
+                    if (embedded.isArray) {
+                        value[embedded.prefix] = (entity[embedded.propertyName] as any[]).map(subValue => {
+                            const newItem: ObjectLiteral = {};
+                            embedded.columns.forEach(column => {
+                                newItem[column.name] = subValue[column.propertyName];
+                            });
+                            return newItem;
+                        });
 
-                        value[embedded.prefix][column.name] = entity[embedded.propertyName][column.propertyName];
-                    });
+                    } else {
+                        embedded.columns.forEach(column => {
+                            if (!value[embedded.prefix])
+                                value[embedded.prefix] = {};
+
+                            value[embedded.prefix][column.name] = entity[embedded.propertyName][column.propertyName];
+                        });
+                    }
                     addEmbeddedValuesRecursively(entity[embedded.propertyName], value[embedded.prefix], embedded.embeddeds);
                 });
             };
