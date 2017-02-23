@@ -99,14 +99,6 @@ export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface"
 // Deprecated
 // -------------------------------------------------------------------------
 
-export * from "./decorator/tables/Table";
-export * from "./decorator/tables/AbstractTable";
-export * from "./decorator/tables/ClassTableChild";
-export * from "./decorator/tables/ClosureTable";
-export * from "./decorator/tables/EmbeddableTable";
-export * from "./decorator/tables/SingleTableChild";
-export * from "./decorator/tables/Table";
-
 // -------------------------------------------------------------------------
 // Commonly used functionality
 // -------------------------------------------------------------------------

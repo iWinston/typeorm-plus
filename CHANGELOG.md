@@ -2,6 +2,8 @@
 
 ### BREAKING CHANGES
 
+* `Table`, `AbstractTable`, `ClassTableChild`, `ClosureTable`, `EmbeddableTable`, `SingleTableChild` deprecated decorators has been removed.
+Use `Entity`, `AbstractEntity`, `ClassEntityChild`, `ClosureEntity`, `EmbeddableEntity`, `SingleEntityChild` decorators instead.
 * `EntityManager#create` and `Repository#create`, `EntityManager#preload` and `Repository#preload` methods now accept 
 `DeepPartial<Entity>` instead of `Object`
 * `EntityManager#merge` and `Repository#merge` methods now accepts `DeepPartial<Entity>` instead of `Object`,
@@ -21,22 +23,6 @@ each for its own `findOne*` or `find*` methods
 
 * added `mongodb` support
 * entity now can be saved partially within `persist` method
-
-### TODOs
-
-* mongodb index sync
-* make sure array column works in both relational and mongodb
-* implement true relations and joins in mongo
-* reorganize docs to cover both relational and mongo databases
-* try to add more document storage databases
-* make all naming things logically correct
-* note that mongo indices has its own special properties
-* what to do with string version of object id? do we really need that?
-* need test organization and exclude mongodb where its usage is not possible
-* make sure lazy loading is working with mongo once mongo relations are setup
-* check if subscribers aren't broke
-* make sure create date / update date are working properly with mongo
-* make sure embedded works properly and nested embeddeds are supported
 
 # 0.0.9 (next)
 
