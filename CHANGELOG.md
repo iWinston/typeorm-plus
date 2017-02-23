@@ -23,6 +23,7 @@ each for its own `findOne*` or `find*` methods
 
 * added `mongodb` support
 * entity now can be saved partially within `persist` method
+* added prefix support to embeddeds
 
 ### BUG FIXES
 

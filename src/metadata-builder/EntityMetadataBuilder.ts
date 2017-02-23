@@ -204,7 +204,7 @@ export class EntityMetadataBuilder {
                             const table = new TableMetadata(embeddableTable.table);
                             const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
                             const subEmbeddeds = findEmbeddedsRecursively(embeddableTable.embeddeds.toArray());
-                            embeddeds.push(new EmbeddedMetadata(embedded.type(), embedded.propertyName, embedded.isArray, table, columns, subEmbeddeds));
+                            embeddeds.push(new EmbeddedMetadata(table, columns, subEmbeddeds, embedded));
                         }
                     });
                     return embeddeds;

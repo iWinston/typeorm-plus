@@ -219,7 +219,7 @@ export class ColumnMetadata {
             };
             buildPrefixRecursively(this.embeddedMetadata);
 
-            return this.entityMetadata.namingStrategy.embeddedColumnName(prefixes.join("_"), this.propertyName, this._name); // todo: this .join("_") logic should be part of naming strategy
+            return this.entityMetadata.namingStrategy.embeddedColumnName(prefixes, this.propertyName, this._name);
         }
 
         // if there is a naming strategy then use it to normalize propertyName as column name

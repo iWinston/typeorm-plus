@@ -7,7 +7,7 @@ import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
  * single table of the entity where Embedded is used. And on hydration all columns which supposed to be in the
  * embedded will be mapped to it from the single table.
  */
-export function Embedded<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { /*prefix: string, */ array?: boolean }) {
+export function Embedded<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { prefix?: string, array?: boolean }) {
     return function (object: Object, propertyName: string) {
 
         const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
@@ -17,6 +17,7 @@ export function Embedded<T>(typeFunction: (type?: any) => ObjectType<T>, options
             target: object.constructor,
             propertyName: propertyName,
             isArray: isArray,
+            prefix: options && options.prefix !== undefined ? options.prefix : undefined,
             type: typeFunction
         };
         getMetadataArgsStorage().embeddeds.add(args);

@@ -1,6 +1,7 @@
 import {EntityMetadata} from "./EntityMetadata";
 import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 
 /**
  * Contains all information about entity's embedded property.
@@ -55,19 +56,24 @@ export class EmbeddedMetadata {
      */
     readonly isArray: boolean;
 
+    /**
+     * Prefix of the embedded, used instead of propertyName.
+     * If set to empty string, then prefix is not set at all.
+     */
+    readonly customPrefix: string|undefined;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(type: Function|undefined,
-                propertyName: string,
-                isArray: boolean,
-                table: TableMetadata,
+    constructor(table: TableMetadata,
                 columns: ColumnMetadata[],
-                embeddeds: EmbeddedMetadata[]) {
-        this.type = type;
-        this.propertyName = propertyName;
-        this.isArray = isArray;
+                embeddeds: EmbeddedMetadata[],
+                args: EmbeddedMetadataArgs) {
+        this.type = args.type ? args.type() : undefined;
+        this.propertyName = args.propertyName;
+        this.isArray = args.isArray;
+        this.customPrefix = args.prefix;
         this.table = table;
         this.columns = columns;
         this.embeddeds = embeddeds;
@@ -93,8 +99,16 @@ export class EmbeddedMetadata {
         return new (this.type as any);
     }
 
+    /**
+     * Gets the prefix of the columns.
+     * By default its a property name of the class where this prefix is.
+     * But if custom prefix is set then it takes its value as a prefix.
+     * However if custom prefix is set to empty string prefix to column is not applied at all.
+     */
     get prefix() {
-        // todo: implement custom prefix later
+        if (this.customPrefix !== undefined)
+            return this.customPrefix;
+
         return this.propertyName;
     }
 
