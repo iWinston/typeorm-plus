@@ -213,6 +213,24 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Counts entities that match given options.
+     */
+    count(options?: FindManyOptions<Entity>): Promise<number>;
+
+    /**
+     * Counts entities that match given conditions.
+     */
+    count(conditions?: Partial<Entity>): Promise<number>;
+
+    /**
+     * Counts entities that match given find options or conditions.
+     */
+    count(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
+    }
+
+    /**
      * Finds entities that match given options.
      */
     find(options?: FindManyOptions<Entity>): Promise<Entity[]>;

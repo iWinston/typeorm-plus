@@ -131,6 +131,23 @@ export class EntityManager extends BaseEntityManager {
     }
 
     /**
+     * Counts entities that match given options.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>, options?: FindManyOptions<Entity>): Promise<number>;
+
+    /**
+     * Counts entities that match given conditions.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>, conditions?: Partial<Entity>): Promise<number>;
+
+    /**
+     * Counts entities that match given find options or conditions.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
+        return this.getRepository(entityClass).count(optionsOrConditions as ObjectLiteral);
+    }
+
+    /**
      * Finds entities that match given options.
      */
     find<Entity>(entityClass: ObjectType<Entity>, options?: FindManyOptions<Entity>): Promise<Entity[]>;
@@ -141,7 +158,7 @@ export class EntityManager extends BaseEntityManager {
     find<Entity>(entityClass: ObjectType<Entity>, conditions?: Partial<Entity>): Promise<Entity[]>;
 
     /**
-     * Finds entities that match given find options ir conditions.
+     * Finds entities that match given find options or conditions.
      */
     find<Entity>(entityClass: ObjectType<Entity>, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         return this.getRepository(entityClass).find(optionsOrConditions as ObjectLiteral);

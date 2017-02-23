@@ -27,6 +27,118 @@ describe("repository > find methods", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
+    describe("count", function () {
+        it("should return a full count when no criteria given", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 0; i < 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.title        = "post #" + i;
+                post.categoryName = "other";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({ order: { id: "ASC" }});
+            count.should.be.equal(100);
+        })));
+
+        it("should return a count of posts that match given criteria", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.title        = "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({
+                where: { categoryName: "odd" },
+                order: { id: "ASC" }
+            });
+            count.should.be.equal(50);
+        })));
+
+        it("should return a count of posts that match given multiple criteria", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.title        = "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                post.isNew        = i > 90;
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({
+                where: { categoryName: "odd", isNew: true },
+                order: { id: "ASC" }
+            });
+            count.should.be.equal(5);
+        })));
+
+        it("should return a count of posts that match given find options", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.isNew        = i > 90;
+                post.title        = post.isNew ? "new post #" + i : "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count();
+            count.should.be.equal(100);
+        })));
+
+        it("should return a count of posts that match both criteria and find options", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.isNew        = i > 90;
+                post.title        = post.isNew ? "new post #" + i : "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({
+                where: { categoryName: "even", isNew: true },
+                skip: 1,
+                take:  2,
+                order: { id: "ASC" }
+            });
+            count.should.be.equal(5);
+        })));
+        
+    });
+
     describe("find and findAndCount", function() {
 
         it("should return everything when no criteria given", () => Promise.all(connections.map(async connection => {

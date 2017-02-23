@@ -289,7 +289,9 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                 .filter(dbColumn => dbColumn["table_name"] === tableSchema.name)
                 .map(dbColumn => {
                     const columnType = dbColumn["data_type"].toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
-                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)` || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)`;
+                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)` 
+                        || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)` 
+                        || /^uuid\_generate\_v\d\(\)/.test(dbColumn["column_default"]);
 
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["column_name"];
@@ -531,7 +533,7 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
 
         // update sequence generation
         if (oldColumn.isGenerated !== newColumn.isGenerated) {
-            if (!oldColumn.isGenerated) {
+            if (!oldColumn.isGenerated && newColumn.type !== "uuid") {
                 await this.query(`CREATE SEQUENCE "${tableSchema.name}_id_seq" OWNED BY "${tableSchema.name}"."${oldColumn.name}"`);
                 await this.query(`ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableSchema.name}_id_seq"')`);
             } else {
@@ -848,9 +850,9 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
         let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true && column.type !== "uuid") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " SERIAL";
-        if (!column.isGenerated)
+        if (!column.isGenerated || column.type === "uuid")
             c += " " + column.type;
         if (column.isNullable !== true)
             c += " NOT NULL";
@@ -869,6 +871,8 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                 c += " DEFAULT " + column.default + "";
             }
         }
+        if (column.isGenerated && column.type === "uuid" && !column.default)
+            c += " DEFAULT uuid_generate_v4()";
         return c;
     }
 
