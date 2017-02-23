@@ -249,8 +249,12 @@ export class Connection {
         if (dropBeforeSync)
             await this.dropDatabase();
 
-        if (!(this.driver instanceof MongoDriver)) // todo: temporary
+        if (this.driver instanceof MongoDriver) { // todo: temporary
+            await this.driver.syncSchema(this.entityMetadatas);
+
+        } else {
             await this.createSchemaBuilder().build();
+        }
     }
 
     /**

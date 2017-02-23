@@ -11,6 +11,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Organizes communication with MongoDB.
@@ -214,6 +215,20 @@ export class MongoDriver implements Driver {
         //     return new ObjectID(value);
 
         return value;
+    }
+
+    // todo: make better abstraction
+    async syncSchema(entityMetadatas: EntityMetadata[]): Promise<void> {
+        const queryRunner = await this.createQueryRunner() as MongoQueryRunner;
+        const promises: Promise<any>[] = [];
+        await Promise.all(entityMetadatas.map(metadata => {
+            metadata.indices.forEach(index => {
+                const columns = index.buildColumnsAsMap(1);
+                const options = { name: index.name };
+                promises.push(queryRunner.createCollectionIndex(metadata.table.name, columns, options));
+            });
+        }));
+        await Promise.all(promises);
     }
 
     // -------------------------------------------------------------------------
