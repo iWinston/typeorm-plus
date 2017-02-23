@@ -27,6 +27,7 @@ each for its own `findOne*` or `find*` methods
 
 ### BUG FIXES
 
+* fixes [#285](https://github.com/typeorm/typeorm/issues/285) - issue when cli commands rise `CannotCloseNotConnectedError`
 
 # 0.0.9 (latest)
 
