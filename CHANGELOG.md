@@ -24,11 +24,16 @@ each for its own `findOne*` or `find*` methods
 * added `mongodb` support
 * entity now can be saved partially within `persist` method
 
-# 0.0.9 (next)
+### BUG FIXES
+
+
+# 0.0.9 (latest)
 
 * fixed bug with indices from columns are not being inherited from parent entity [#242](https://github.com/typeorm/typeorm/issues/242)
+* added support of UUID primary columns (thanks [@seanski](https://github.com/seanski))
+* added `count` method to repository and entity manager (thanks [@aequasi](https://github.com/aequasi))
 
-# 0.0.8 (latest)
+# 0.0.8
 
 * added complete babel support
 * added `clear` method to `Repository` and `EntityManager` which allows to truncate entity table
