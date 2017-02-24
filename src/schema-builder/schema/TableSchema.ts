@@ -55,7 +55,7 @@ export class TableSchema {
     constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean) {
         this.name = name;
         if (columns) {
-            this.columns = columns.map(column => {
+            this.columns = (columns as any[]).map(column => { // as any[] is a temporary fix (some weird compiler error)
                 if (column instanceof ColumnSchema) {
                     return column;
                 } else {
