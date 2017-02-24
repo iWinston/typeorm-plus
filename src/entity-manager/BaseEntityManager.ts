@@ -10,6 +10,8 @@ import {RepositoryNotTreeError} from "../connection/error/RepositoryNotTreeError
 import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
 import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
 import {SpecificRepository} from "../repository/SpecificRepository";
+import {MongoRepository} from "../repository/MongoRepository";
+import {DeepPartial} from "../common/DeepPartial";
 
 /**
  * Common functions shared between different entity manager types.
@@ -110,6 +112,28 @@ export abstract class BaseEntityManager {
     }
 
     /**
+     * Gets mongodb repository for the given entity class.
+     */
+    getMongoRepository<Entity>(entityClass: ObjectType<Entity>): MongoRepository<Entity>;
+
+    /**
+     * Gets mongodb repository for the given entity name.
+     */
+    getMongoRepository<Entity>(entityName: string): MongoRepository<Entity>;
+
+    /**
+     * Gets mongodb repository for the given entity class or name.
+     */
+    getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.queryRunnerProvider)
+            return this.obtainRepositoryAggregator(entityClassOrName as any).repository as MongoRepository<Entity>;
+
+        return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
+    }
+
+    /**
      * Gets specific repository for the given entity class.
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
@@ -182,19 +206,19 @@ export abstract class BaseEntityManager {
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(entityClass: ObjectType<Entity>, plainObject: Object): Entity;
+    create<Entity>(entityClass: ObjectType<Entity>, plainObject: DeepPartial<Entity>): Entity;
 
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(entityClass: ObjectType<Entity>, plainObjects: Object[]): Entity[];
+    create<Entity>(entityClass: ObjectType<Entity>, plainObjects: DeepPartial<Entity>[]): Entity[];
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create<Entity>(entityClass: ObjectType<Entity>, plainObjectOrObjects?: Object|Object[]): Entity|Entity[] {
+    create<Entity>(entityClass: ObjectType<Entity>, plainObjectOrObjects?: DeepPartial<Entity>|DeepPartial<Entity>[]): Entity|Entity[] {
         if (plainObjectOrObjects instanceof Array) {
             return this.getRepository(entityClass).create(plainObjectOrObjects);
 
@@ -212,15 +236,15 @@ export abstract class BaseEntityManager {
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
      */
-    preload<Entity>(entityClass: ObjectType<Entity>, object: Object): Promise<Entity> {
+    preload<Entity>(entityClass: ObjectType<Entity>, object: DeepPartial<Entity>): Promise<Entity> {
         return this.getRepository(entityClass).preload(object);
     }
 
     /**
      * Merges two entities into one new entity.
      */
-    merge<Entity>(entityClass: ObjectType<Entity>, ...objects: ObjectLiteral[]): Entity { // todo: throw exception ie tntity manager is released
-        return <Entity> this.getRepository(entityClass).merge(...objects);
+    merge<Entity>(entityClass: ObjectType<Entity>, mergeIntoEntity: Entity, ...objects: DeepPartial<Entity>[]): Entity { // todo: throw exception ie tntity manager is released
+        return <Entity> this.getRepository(entityClass).merge(mergeIntoEntity, ...objects);
     }
 
     /**

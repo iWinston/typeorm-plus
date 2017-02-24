@@ -1,10 +1,11 @@
 import {Connection} from "../connection/Connection";
-import {FindOptions} from "../find-options/FindOptions";
+import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectType} from "../common/ObjectType";
 import {BaseEntityManager} from "./BaseEntityManager";
 import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {FindOneOptions} from "../find-options/FindOneOptions";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -130,168 +131,117 @@ export class EntityManager extends BaseEntityManager {
     }
 
     /**
-     * Counts entities that match given conditions.
+     * Counts entities that match given options.
      */
-    count<Entity>(entityClass: ObjectType<Entity>): Promise<number>;
+    count<Entity>(entityClass: ObjectType<Entity>, options?: FindManyOptions<Entity>): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
      */
-    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<number>;
+    count<Entity>(entityClass: ObjectType<Entity>, conditions?: Partial<Entity>): Promise<number>;
 
     /**
-     * Counts entities that match given conditions.
+     * Counts entities that match given find options or conditions.
      */
-    count<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<number>;
-
-    /**
-     * Counts entities that match given conditions.
-     */
-    count<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<number>;
-
-    /**
-     * Counts entities that match given conditions.
-     */
-    count<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral | FindOptions, options?: FindOptions): Promise<number> {
-        if (conditionsOrFindOptions && options) {
-            return this.getRepository(entityClass).count(conditionsOrFindOptions, options);
-
-        } else if (conditionsOrFindOptions) {
-            return this.getRepository(entityClass).count(conditionsOrFindOptions);
-
-        } else {
-            return this.getRepository(entityClass).count();
-        }
+    count<Entity>(entityClass: ObjectType<Entity>, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
+        return this.getRepository(entityClass).count(optionsOrConditions as ObjectLiteral);
     }
 
     /**
-     * Finds entities that match given conditions.
+     * Finds entities that match given options.
      */
-    find<Entity>(entityClass: ObjectType<Entity>): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, options?: FindManyOptions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>, conditions?: Partial<Entity>): Promise<Entity[]>;
 
     /**
-     * Finds entities that match given conditions.
+     * Finds entities that match given find options or conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity[]>;
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    find<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity[]>;
-
-    /**
-     * Finds entities that match given conditions.
-     */
-    find<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity[]> {
-        if (conditionsOrFindOptions && options) {
-            return this.getRepository(entityClass).find(conditionsOrFindOptions, options);
-
-        } else if (conditionsOrFindOptions) {
-            return this.getRepository(entityClass).find(conditionsOrFindOptions);
-
-        } else {
-            return this.getRepository(entityClass).find();
-        }
+    find<Entity>(entityClass: ObjectType<Entity>, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+        return this.getRepository(entityClass).find(optionsOrConditions as ObjectLiteral);
     }
 
     /**
-     * Finds entities that match given conditions.
+     * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
+     * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, options?: FindManyOptions<Entity>): Promise<[Entity[], number]>;
 
     /**
      * Finds entities that match given conditions.
      * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
+     * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<[ Entity[], number ]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions?: Partial<Entity>): Promise<[Entity[], number]>;
 
     /**
-     * Finds entities that match given conditions.
+     * Finds entities that match given find options and conditions.
      * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
+     * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
-     */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<[ Entity[], number ]>;
-
-    /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (maxResults, firstResult) options.
-     */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<[Entity[], number]> {
-        if (conditionsOrFindOptions && options) {
-            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions, options);
-
-        } else if (conditionsOrFindOptions) {
-            return this.getRepository(entityClass).findAndCount(conditionsOrFindOptions);
-
-        } else {
-            return this.getRepository(entityClass).findAndCount();
-        }
+    findAndCount<Entity>(entityClass: ObjectType<Entity>, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[Entity[], number]> {
+        return this.getRepository(entityClass).findAndCount(optionsOrConditions as ObjectLiteral);
     }
 
     /**
-     * Finds first entity that matches given conditions.
+     * Finds first entity that matches given find options.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, conditions?: Partial<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, options: FindOptions): Promise<Entity|undefined>;
-
-    /**
-     * Finds first entity that matches given conditions.
-     */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditions: ObjectLiteral, options: FindOptions): Promise<Entity|undefined>;
-
-    /**
-     * Finds first entity that matches given conditions.
-     */
-    findOne<Entity>(entityClass: ObjectType<Entity>, conditionsOrFindOptions?: ObjectLiteral|FindOptions, options?: FindOptions): Promise<Entity|undefined> {
-        if (conditionsOrFindOptions && options) {
-            return this.getRepository(entityClass).findOne(conditionsOrFindOptions, options);
-
-        } else if (conditionsOrFindOptions) {
-            return this.getRepository(entityClass).findOne(conditionsOrFindOptions);
-
-        } else {
-            return this.getRepository(entityClass).findOne();
-        }
+    findOne<Entity>(entityClass: ObjectType<Entity>, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+        return this.getRepository(entityClass).findOne(optionsOrConditions as ObjectLiteral);
     }
 
     /**
      * Finds entities with ids.
      * Optionally find options can be applied.
      */
-    findByIds<Entity>(entityClass: ObjectType<Entity>, ids: any[], options?: FindOptions): Promise<Entity[]> {
-        return this.getRepository(entityClass).findByIds(ids, options);
+    findByIds<Entity>(entityClass: ObjectType<Entity>, ids: any[], options?: FindManyOptions<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities with ids.
+     * Optionally conditions can be applied.
+     */
+    findByIds<Entity>(entityClass: ObjectType<Entity>, ids: any[], conditions?: Partial<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities with ids.
+     * Optionally find options or conditions can be applied.
+     */
+    findByIds<Entity>(entityClass: ObjectType<Entity>, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+        return this.getRepository(entityClass).findByIds(ids, optionsOrConditions as ObjectLiteral);
     }
 
     /**
      * Finds entity with given id.
+     * Optionally find options can be applied.
      */
-    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, options?: FindOptions): Promise<Entity|undefined> {
-        return this.getRepository(entityClass).findOneById(id, options);
+    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds entity with given id.
+     * Optionally conditions can be applied.
+     */
+    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, conditions?: Partial<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds entity with given id.
+     * Optionally find options or conditions can be applied.
+     */
+    findOneById<Entity>(entityClass: ObjectType<Entity>, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+        return this.getRepository(entityClass).findOneById(id, optionsOrConditions as ObjectLiteral);
     }
 
     /**
