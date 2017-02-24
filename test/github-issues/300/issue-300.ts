@@ -15,7 +15,7 @@ describe("github issues > support of embeddeds that are not set", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("embedded with custom column name should persist and load without errors", () => Promise.all(connections.map(async connection => {
+    it("embedded with custom column name should persist and load without errors", () => Promise.all(connections.map(async connection => {
 
         const race = new Race();
         race.name = "National Race";

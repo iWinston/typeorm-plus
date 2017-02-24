@@ -1468,6 +1468,23 @@ export class QueryBuilder<Entity> {
         throw new Error("No query builder type is specified.");
     }
 
+    protected createHavingExpression() {
+        if (!this.havings || !this.havings.length) return "";
+        const conditions = this.havings.map((having, index) => {
+                switch (having.type) {
+                    case "and":
+                        return (index > 0 ? "AND " : "") + this.replacePropertyNames(having.condition);
+                    case "or":
+                        return (index > 0 ? "OR " : "") + this.replacePropertyNames(having.condition);
+                    default:
+                        return this.replacePropertyNames(having.condition);
+                }
+            }).join(" ");
+
+        if (!conditions.length) return "";
+        return " HAVING " + conditions;
+    }
+
     protected createWhereExpression() {
 
         const conditions = this.wheres.map((where, index) => {
@@ -1485,7 +1502,6 @@ export class QueryBuilder<Entity> {
             const mainMetadata = this.connection.getMetadata(this.aliasMap.mainAlias.target);
             if (mainMetadata.hasDiscriminatorColumn)
                 return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${mainMetadata.discriminatorColumn.fullName}=:discriminatorColumnValue`;
-
         }
 
         if (!conditions.length) return "";
@@ -1665,20 +1681,6 @@ export class QueryBuilder<Entity> {
     protected createGroupByExpression() {
         if (!this.groupBys || !this.groupBys.length) return "";
         return " GROUP BY " + this.replacePropertyNames(this.groupBys.join(", "));
-    }
-
-    protected createHavingExpression() {
-        if (!this.havings || !this.havings.length) return "";
-        return " HAVING " + this.havings.map(having => {
-                switch (having.type) {
-                    case "and":
-                        return " AND " + this.replacePropertyNames(having.condition);
-                    case "or":
-                        return " OR " + this.replacePropertyNames(having.condition);
-                    default:
-                        return " " + this.replacePropertyNames(having.condition);
-                }
-            }).join(" ");
     }
 
     protected createOrderByCombinedWithSelectExpression(parentAlias: string) {
