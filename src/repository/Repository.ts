@@ -11,6 +11,8 @@ import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor"
 import {SubjectBuilder} from "../persistence/SubjectBuilder";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
+import {PersistOptions} from "./PersistOptions";
+import {RemoveOptions} from "./RemoveOptions";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -58,6 +60,13 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Gets entity mixed id.
+     */
+    getId(entity: Entity): any {
+        return this.metadata.getEntityIdMixedMap(entity);
+    }
+
+    /**
      * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder(alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
@@ -87,7 +96,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create(plainEntityLikeOrPlainEntityLikes?: DeepPartial<Entity>|Partial<Entity>[]): Entity|Entity[] {
+    create(plainEntityLikeOrPlainEntityLikes?: DeepPartial<Entity>|DeepPartial<Entity>[]): Entity|Entity[] {
 
         if (!plainEntityLikeOrPlainEntityLikes)
             return this.metadata.create();
@@ -130,20 +139,18 @@ export class Repository<Entity extends ObjectLiteral> {
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    async persist(entities: Entity[]): Promise<Entity[]>;
+    async persist(entities: Entity[], options?: PersistOptions): Promise<Entity[]>;
 
     /**
      * Persists (saves) a given entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
-    async persist(entity: Entity): Promise<Entity>;
+    async persist(entity: Entity, options?: PersistOptions): Promise<Entity>;
 
     /**
      * Persists one or many given entities.
-     *
-     * todo: use Partial<Entity> instead, and make sure it works properly
      */
-    async persist(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
+    async persist(entityOrEntities: Entity|Entity[], options?: PersistOptions): Promise<Entity|Entity[]> {
 
         // if for some reason non empty entity was passed then return it back without having to do anything
         if (!entityOrEntities)
@@ -172,19 +179,53 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Updates entity partially. Entity can be found by a given conditions.
+     */
+    async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void>;
+
+    /**
+     * Updates entity partially. Entity can be found by a given find options.
+     */
+    async update(findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void>;
+
+    /**
+     * Updates entity partially. Entity can be found by a given conditions.
+     */
+    async update(conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void> {
+        const entity = await this.findOne(conditionsOrFindOptions as any); // this is temporary, in the future can be refactored to perform better
+        if (!entity)
+            throw new Error(`Cannot find entity to update by a given criteria`);
+
+        Object.assign(entity, partialEntity);
+        await this.persist(entity, options);
+    }
+
+    /**
+     * Updates entity partially. Entity will be found by a given id.
+     */
+    async updateById(id: any, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void> {
+        const entity = await this.findOneById(id as any); // this is temporary, in the future can be refactored to perform better
+        if (!entity)
+            throw new Error(`Cannot find entity to update by a id`);
+
+        Object.assign(entity, partialEntity);
+        await this.persist(entity, options);
+    }
+
+    /**
      * Removes a given entities from the database.
      */
-    async remove(entities: Entity[]): Promise<Entity[]>;
+    async remove(entities: Entity[], options?: RemoveOptions): Promise<Entity[]>;
 
     /**
      * Removes a given entity from the database.
      */
-    async remove(entity: Entity): Promise<Entity>;
+    async remove(entity: Entity, options?: RemoveOptions): Promise<Entity>;
 
     /**
      * Removes one or many given entities.
      */
-    async remove(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
+    async remove(entityOrEntities: Entity|Entity[], options?: RemoveOptions): Promise<Entity|Entity[]> {
 
         // if for some reason non empty entity was passed then return it back without having to do anything
         if (!entityOrEntities)
@@ -213,6 +254,17 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Removes entity by a given entity id.
+     */
+    async removeById(id: any, options?: RemoveOptions): Promise<void> {
+        const entity = await this.findOneById(id); // this is temporary, in the future can be refactored to perform better
+        if (!entity)
+            throw new Error(`Cannot find entity to remove by a given id`);
+
+        await this.remove(entity, options);
+    }
+
+    /**
      * Counts entities that match given options.
      */
     count(options?: FindManyOptions<Entity>): Promise<number>;
@@ -220,12 +272,12 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Counts entities that match given conditions.
      */
-    count(conditions?: Partial<Entity>): Promise<number>;
+    count(conditions?: DeepPartial<Entity>): Promise<number>;
 
     /**
      * Counts entities that match given find options or conditions.
      */
-    count(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
+    count(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<number> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
     }
@@ -238,12 +290,12 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities that match given conditions.
      */
-    find(conditions?: Partial<Entity>): Promise<Entity[]>;
+    find(conditions?: DeepPartial<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given find options or conditions.
      */
-    find(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    find(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
@@ -260,14 +312,14 @@ export class Repository<Entity extends ObjectLiteral> {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount(conditions?: Partial<Entity>): Promise<[ Entity[], number ]>;
+    findAndCount(conditions?: DeepPartial<Entity>): Promise<[ Entity[], number ]>;
 
     /**
      * Finds entities that match given find options or conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[ Entity[], number ]> {
+    findAndCount(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[ Entity[], number ]> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
@@ -282,13 +334,13 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities by ids.
      * Optionally conditions can be applied.
      */
-    findByIds(ids: any[], conditions?: Partial<Entity>): Promise<Entity[]>;
+    findByIds(ids: any[], conditions?: DeepPartial<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
             .andWhereInIds(ids)
@@ -303,12 +355,12 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(conditions?: Partial<Entity>): Promise<Entity|undefined>;
+    findOne(conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+    findOne(optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.table.name);
         return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
     }
@@ -323,13 +375,13 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entity by given id.
      * Optionally conditions can be applied.
      */
-    findOneById(id: any, conditions?: Partial<Entity>): Promise<Entity|undefined>;
+    findOneById(id: any, conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds entity by given id.
      * Optionally find options or conditions can be applied.
      */
-    findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+    findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.table.name);
         return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
             .andWhereInIds([id])

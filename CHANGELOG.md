@@ -22,12 +22,13 @@ each for its own `findOne*` or `find*` methods
 ### NEW FEATURES
 
 * added `mongodb` support
-* entity now can be saved partially within `persist` method
+* entity now can be saved partially within `update` method
 * added prefix support to embeddeds
 
 ### BUG FIXES
 
 * fixes [#285](https://github.com/typeorm/typeorm/issues/285) - issue when cli commands rise `CannotCloseNotConnectedError`
+* fixes [#309](https://github.com/typeorm/typeorm/issues/309) - issue when `andHaving` didn't work without calling `having` on `QueryBuilder`
 
 # 0.0.9 (latest)
 

@@ -49,12 +49,12 @@ createConnection(options).then(connection => {
             
             return authorRepository.persist(author);
         })
-        .then(author => {
+        .then((author: any) => { // temporary
             console.log("Author with a new post has been saved. Lets try to update post in the author");
-        
-            return author.posts.then(posts => {
-                posts[0].title = "should be updated second post";
-                return authorRepository.persist(author);
+
+            return author.posts!.then((posts: any) => {  // temporary
+                posts![0]!.title = "should be updated second post";
+                return authorRepository.persist(author!);
             });
         })
         .then(updatedAuthor => {
@@ -97,8 +97,8 @@ createConnection(options).then(connection => {
         .then(posts => {
             console.log("Post with categories are loaded: ", posts);
             console.log("Lets remove one of the categories: ");
-            return posts[0].categories.then(categories => {
-                categories.splice(0, 1);
+            return posts[0].categories.then((categories: any) => {  // temporary
+                categories!.splice(0, 1);
                 // console.log(posts[0]);
                 return postRepository.persist(posts[0]);
             });

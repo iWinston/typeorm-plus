@@ -35,11 +35,11 @@ describe("persistence > one-to-many", function() {
 
             let newCategory = categoryRepository.create();
             newCategory.name = "Animals";
-            newCategory = await categoryRepository.persist(newCategory);
+            await categoryRepository.persist(newCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
-            newPost = await postRepository.persist(newPost);
+            await postRepository.persist(newPost);
 
             newPost.categories = [newCategory];
             await postRepository.persist(newPost);
@@ -67,7 +67,7 @@ describe("persistence > one-to-many", function() {
 
             let newCategory = categoryRepository.create();
             newCategory.name = "Animals";
-            newCategory = await categoryRepository.persist(newCategory);
+            await categoryRepository.persist(newCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
@@ -97,11 +97,11 @@ describe("persistence > one-to-many", function() {
 
             let firstNewCategory = categoryRepository.create();
             firstNewCategory.name = "Animals";
-            firstNewCategory = await categoryRepository.persist(firstNewCategory);
+            await categoryRepository.persist(firstNewCategory);
 
             let secondNewCategory = categoryRepository.create();
             secondNewCategory.name = "Insects";
-            secondNewCategory = await categoryRepository.persist(secondNewCategory);
+            await categoryRepository.persist(secondNewCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
@@ -137,11 +137,11 @@ describe("persistence > one-to-many", function() {
 
             let firstNewCategory = categoryRepository.create();
             firstNewCategory.name = "Animals";
-            firstNewCategory = await categoryRepository.persist(firstNewCategory);
+            await categoryRepository.persist(firstNewCategory);
 
             let secondNewCategory = categoryRepository.create();
             secondNewCategory.name = "Insects";
-            secondNewCategory = await categoryRepository.persist(secondNewCategory);
+            await categoryRepository.persist(secondNewCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
@@ -175,11 +175,11 @@ describe("persistence > one-to-many", function() {
 
             let firstNewCategory = categoryRepository.create();
             firstNewCategory.name = "Animals";
-            firstNewCategory = await categoryRepository.persist(firstNewCategory);
+            await categoryRepository.persist(firstNewCategory);
 
             let secondNewCategory = categoryRepository.create();
             secondNewCategory.name = "Insects";
-            secondNewCategory = await categoryRepository.persist(secondNewCategory);
+            await categoryRepository.persist(secondNewCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";

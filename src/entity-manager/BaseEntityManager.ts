@@ -174,20 +174,39 @@ export abstract class BaseEntityManager {
     /**
      * Checks if entity has an id.
      */
-    hasId(entity: Object): boolean;
+    hasId(entity: any): boolean;
 
     /**
      * Checks if entity of given schema name has an id.
      */
-    hasId(target: string, entity: Object): boolean;
+    hasId(target: string, entity: any): boolean;
 
     /**
      * Checks if entity has an id by its Function type or schema name.
      */
-    hasId(targetOrEntity: Object|string, maybeEntity?: Object): boolean {
+    hasId(targetOrEntity: any|string, maybeEntity?: any): boolean {
         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? <Object> maybeEntity : <Object> targetOrEntity;
+        const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;
         return this.getRepository(target as any).hasId(entity);
+    }
+
+    /**
+     * Gets entity mixed id.
+     */
+    getId(entity: any): any;
+
+    /**
+     * Gets entity mixed id.
+     */
+    getId(target: string, entity: any): any;
+
+    /**
+     * Gets entity mixed id.
+     */
+    getId(targetOrEntity: any|string, maybeEntity?: any): any {
+        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+        const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;
+        return this.getRepository(target as any).getId(entity);
     }
 
     /**
