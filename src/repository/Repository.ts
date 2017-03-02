@@ -163,6 +163,7 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
             const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
+            // transactionEntityManager.data =
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
             await databaseEntityLoader.persist(entityOrEntities, this.metadata);
