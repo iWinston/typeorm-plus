@@ -17,6 +17,16 @@ import {PersistOptions} from "../repository/PersistOptions";
 export class EntityManager extends BaseEntityManager {
 
     // -------------------------------------------------------------------------
+    // Private properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Stores temporarily user data.
+     * Useful for sharing data with subscribers.
+     */
+    private data: ObjectLiteral = {};
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
@@ -27,6 +37,20 @@ export class EntityManager extends BaseEntityManager {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Gets user data by a given key.
+     */
+    getData(key: string): any {
+        return this.data[key];
+    }
+
+    /**
+     * Sets value for the given key in user data.
+     */
+    setData(key: string, value: any) {
+        this.data[key] = value;
+    }
 
     /**
      * Persists (saves) all given entities in the database.

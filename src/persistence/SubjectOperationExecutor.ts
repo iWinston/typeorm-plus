@@ -5,11 +5,9 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject, JunctionInsert, JunctionRemove} from "./Subject";
 import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {RelationMetadata} from "../metadata/RelationMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 
 /**
@@ -581,7 +579,7 @@ export class SubjectOperationExecutor {
             const value = this.connection.driver.preparePersistentValue(1, metadata.versionColumn);
             columnNames.push(metadata.versionColumn.fullName);
             columnValues.push(value);
-            columnsAndValuesMap[metadata.updateDateColumn.fullName] = value;
+            columnsAndValuesMap[metadata.versionColumn.fullName] = value;
         }
 
         // add special column and value - discriminator value (for tables using table inheritance)
@@ -1053,7 +1051,7 @@ export class SubjectOperationExecutor {
             if (subject.metadata.hasCreateDateColumn)
                 subject.entity[subject.metadata.createDateColumn.propertyName] = subject.date;
             if (subject.metadata.hasVersionColumn)
-                subject.entity[subject.metadata.versionColumn.propertyName]++;
+                subject.entity[subject.metadata.versionColumn.propertyName] = 1;
             if (subject.metadata.hasTreeLevelColumn) {
                 // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
                 // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;

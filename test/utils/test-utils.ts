@@ -43,6 +43,11 @@ export interface TestingOptions {
     entities?: string[]|Function[];
 
     /**
+     * Subscribers needs to be included in the connection for the given test suite.
+     */
+    subscribers?: string[]|Function[];
+
+    /**
      * Entity schemas needs to be included in the connection for the given test suite.
      */
     entitySchemas?: EntitySchema[];
@@ -73,6 +78,7 @@ export function setupSingleTestingConnection(driverType: DriverType, options: Te
     const testingConnections = setupTestingConnections({
         name: options.name ? options.name : undefined,
         entities: options.entities ? options.entities : [],
+        subscribers: options.subscribers ? options.subscribers : [],
         entitySchemas: options.entitySchemas ? options.entitySchemas : [],
         dropSchemaOnConnection: options.dropSchemaOnConnection ? options.dropSchemaOnConnection : false,
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
@@ -133,6 +139,7 @@ export function setupTestingConnections(options?: TestingOptions) {
             const newConnectionOptions = Object.assign({}, connectionOptions as ConnectionOptions, {
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
+                subscribers: options && options.subscribers ? options.subscribers : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
                 autoSchemaSync: options && options.entities ? options.schemaCreate : false,
                 dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
