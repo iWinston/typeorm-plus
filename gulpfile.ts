@@ -341,7 +341,7 @@ export class Gulpfile {
         chai.use(require("sinon-chai"));
         chai.use(require("chai-as-promised"));
 
-        return gulp.src(["./test/**/*.ts"])
+        return gulp.src(["./test/github-issues/184/*.ts"])
             .pipe(mocha({
                 timeout: 10000
             }));
