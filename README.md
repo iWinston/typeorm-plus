@@ -1,5 +1,3 @@
-[![TypeORM Logo](./resources/logo_big.png)](https://typeorm.github.io/)
-
 # TypeORM
 
 [![Build Status](https://travis-ci.org/typeorm/typeorm.svg?branch=master)](https://travis-ci.org/typeorm/typeorm)
@@ -7,6 +5,8 @@
 [![Dependency Status](https://david-dm.org/typeorm/typeorm.svg)](https://david-dm.org/typeorm/typeorm)
 [![devDependency Status](https://david-dm.org/typeorm/typeorm/dev-status.svg)](https://david-dm.org/typeorm/typeorm#info=devDependencies)
 [![Join the chat at https://gitter.im/typeorm/typeorm](https://badges.gitter.im/typeorm/typeorm.svg)](https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+[![TypeORM Logo](./resources/logo_big.png)](https://typeorm.github.io/)
 
 > Please support a project by simply putting a github star. 
 Share this library with friends on twitter and everywhere else you can.
