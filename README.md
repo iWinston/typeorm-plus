@@ -1,3 +1,5 @@
+[![TypeORM Logo](./resources/logo_big.png)](https://typeorm.github.io/)
+
 # TypeORM
 
 [![Build Status](https://travis-ci.org/typeorm/typeorm.svg?branch=master)](https://travis-ci.org/typeorm/typeorm)
