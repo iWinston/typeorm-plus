@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {getConnectionManager, createConnection} from "../../src/index";
+import {createConnection} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {PostDetails} from "../../sample/sample2-one-to-one/entity/PostDetails";
 import {Post} from "../../sample/sample2-one-to-one/entity/Post";
@@ -100,7 +100,7 @@ describe("one-to-one", function() {
             return postDetailsRepository.findOneById(savedPost.details.id).should.eventually.eql(expectedDetails);
         });
 
-        it("should load post and its details if left join used", function() {
+        it("should load post and its details if left join used", async function() {
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
@@ -111,13 +111,15 @@ describe("one-to-one", function() {
             expectedPost.details.comment = savedPost.details.comment;
             expectedPost.details.metadata = savedPost.details.metadata;
             
-            return postRepository
+            const post = await postRepository
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.details", "details")
                 .where("post.id=:id")
                 .setParameter("id", savedPost.id)
-                .getOne()
-                .should.eventually.eql(expectedPost);
+                .getOne();
+
+            expect(post).not.to.be.empty;
+            post!.should.eql(expectedPost);
         });
 
         it("should load details and its post if left join used (from reverse side)", function() {

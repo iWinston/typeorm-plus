@@ -4,8 +4,9 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Tag} from "./entity/Tag";
+import {expect} from "chai";
 
-describe("QueryBuilder > relation-count", () => {
+describe.skip("QueryBuilder > relation-count", () => {
 
     // const resourceDir = __dirname + "/../../../../../../test/functional/query-builder/join-relation-ids/";
 
@@ -73,6 +74,7 @@ describe("QueryBuilder > relation-count", () => {
                 .countRelationAndMap("post.secondTagsCount", "tag.posts")
                 .getMany();
 
+            expect(loadedPosts[0].secondCategoriesCount).not.to.be.empty;
             loadedPosts[0].secondCategoriesCount.should.be.equal(2);
             loadedPosts[1].secondCategoriesCount.should.be.equal(0);
             loadedPosts[0].tag.secondTagsCount.should.be.equal(1);

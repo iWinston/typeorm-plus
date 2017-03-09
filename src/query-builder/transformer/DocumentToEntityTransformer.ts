@@ -1,6 +1,4 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {Driver} from "../../driver/Driver";
-import {MongoDriver} from "../../driver/mongodb/MongoDriver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 
@@ -14,9 +12,9 @@ export class DocumentToEntityTransformer {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(// private aliasMap: AliasMap,
+    constructor(// private selectionMap: AliasMap,
                 // private joinMappings: JoinMapping[],
-                // private relationCountMetas: RelationCountMeta[],
+                // private relationCountMetas: RelationCountAttribute[],
                 private enableRelationIdValues: boolean = false
     ) {
     }
@@ -56,7 +54,7 @@ export class DocumentToEntityTransformer {
         }
 
         /*this.joinMappings
-            .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.parentAliasName && joinMapping.alias.target)
+            .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.relationOwnerSelection && joinMapping.alias.target)
             .map(joinMapping => {
                 const relatedEntities = this.transformIntoSingleResult(rawSqlResults, joinMapping.alias);
                 const isResultArray = joinMapping.isMany;
@@ -117,7 +115,7 @@ export class DocumentToEntityTransformer {
 
         // if relation is loaded then go into it recursively and transform its values too
         /*metadata.relations.forEach(relation => {
-            const relationAlias = this.aliasMap.findAliasByParent(alias.name, relation.propertyName);
+            const relationAlias = this.selectionMap.findSelectionByParent(alias.name, relation.propertyName);
             if (relationAlias) {
                 const joinMapping = this.joinMappings.find(joinMapping => joinMapping.type === "join" && joinMapping.alias === relationAlias);
                 const relatedEntities = this.transformIntoSingleResult(rawSqlResults, relationAlias);
