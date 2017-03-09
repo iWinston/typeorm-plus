@@ -3,6 +3,7 @@
     <img src="./resources/logo_big.png" width="492" height="228">
   </a>
   <br>
+  <br>
 	<a href="https://travis-ci.org/typeorm/typeorm">
 		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
 	</a>
@@ -18,6 +19,8 @@
 	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
 		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
 	</a>
+  <br>
+  <br>
 </div>
 
 > Please support a project by simply putting a github star. 
