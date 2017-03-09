@@ -1,5 +1,7 @@
 <div align="center">
-    [![TypeORM Logo](./resources/logo_big.png)](https://typeorm.github.io/)
+  <a href="https://typeorm.github.io/">
+    <img src="./resources/logo_big.png">
+  </a>
 </div>
 
 [![Build Status](https://travis-ci.org/typeorm/typeorm.svg?branch=master)](https://travis-ci.org/typeorm/typeorm)
