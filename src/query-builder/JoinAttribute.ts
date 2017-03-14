@@ -17,12 +17,17 @@ export class JoinAttribute {
     /**
      * Join type.
      */
-    type: "LEFT"|"INNER";
+    type: "join"|"relationId";
+
+    /**
+     * Join direction.
+     */
+    direction: "LEFT"|"INNER";
 
     /**
      * Alias of the joined (destination) table.
      */
-    alias: string;
+    alias?: string;
 
     /**
      * Joined table, entity target, or relation in "post.category" format.
@@ -99,6 +104,7 @@ export class JoinAttribute {
      * Relation of the parent.
      * This is used to understand what is joined.
      * This is available when join was made using "post.category" syntax.
+     * Relation can be undefined if entityOrProperty is regular entity or custom table.
      */
     get relation(): RelationMetadata|undefined {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
@@ -136,6 +142,33 @@ export class JoinAttribute {
         }
 
         return undefined;
+    }
+
+    /**
+     * Generates alias of junction table, whose ids we get.
+     */
+    get junctionAlias(): string {
+        if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
+            throw new Error(`Given value must be a string representation of alias property`);
+
+        const [parentAlias, relationProperty] = this.entityOrProperty.split(".");
+
+        if (this.type === "relationId") {
+            return parentAlias + "_" + relationProperty + "_relation_id";
+        } else {
+            if (!this.relation)
+                throw new Error(`Cannot get junction table for join without relation.`);
+
+            return this.relation.isOwning ? parentAlias + "_" + this.alias : this.alias + "_" + parentAlias;
+        }
+    }
+
+    get mapToPropertyParentAlias(): string {
+        return this.mapToProperty!.split(".")[0];
+    }
+
+    get mapToPropertyPropertyName(): string {
+        return this.mapToProperty!.split(".")[1];
     }
 
 }

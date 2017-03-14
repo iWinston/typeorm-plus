@@ -6,107 +6,176 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Tag} from "./entity/Tag";
+import {PostWithoutDecorators} from "./entity/PostWithoutDecorators";
 
 const should = chai.should();
 
-describe("QueryBuilder > relation-id", () => {
+describe.only("QueryBuilder > relation-id", () => {
     
-    // const resourceDir = __dirname + "/../../../../../../test/functional/query-builder/join-relation-ids/";
     // todo: make this feature to work with FindOptions
     // todo: also make sure all new qb features to work with FindOptions
     
     let connections: Connection[];
-    before(() => createTestingConnections({ entities: [Post, Category, Tag], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,
+    }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     describe("basic functionality", function() {
 
-        it("should load ids probably in all cases", () => Promise.all(connections.map(async connection => {
-            const postRepository = connection.getRepository(Post);
-            const categoryRepository = connection.getRepository(Category);
-            const tagRepository = connection.getRepository(Tag);
+        it("should load id when RelationId decorator used with ManyToOne relation", () => Promise.all(connections.map(async connection => {
+
+            const tag = new Tag();
+            tag.name = "kids";
+            await connection.entityManager.persist(tag);
             
+            const post = new Post();
+            post.title = "about kids";
+            post.tag = tag;
+            await connection.entityManager.persist(post);
+
+            let loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: post.id })
+                .getOne();
+
+            expect(loadedPost!.tagId).to.not.be.empty;
+            expect(loadedPost!.tagId).to.be.equal(1);
+        })));
+
+        it.skip("should load id when RelationId decorator used with ManyToMany relation", () => Promise.all(connections.map(async connection => {
+
+            const category1 = new Category();
+            category1.name = "kids";
+
+            const category2 = new Category();
+            category2.name = "future";
+
+            await Promise.all([
+                connection.entityManager.persist(category1),
+                connection.entityManager.persist(category2)
+            ]);
+
+            const post = new Post();
+            post.title = "about kids";
+            await connection.entityManager.persist(post);
+
+            let loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: post.id })
+                .getOne();
+
+            expect(loadedPost!.categoryIds).to.not.be.empty;
+            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
+            expect(loadedPost!.categoryIds[1]).to.be.equal(2);
+        })));
+
+        it("should not load id when RelationId decorator is not specified", () => Promise.all(connections.map(async connection => {
+
             const tag = new Tag();
             tag.name = "kids";
 
             const category1 = new Category();
             category1.name = "kids";
-            
+
             const category2 = new Category();
             category2.name = "future";
-            
-            const post = new Post();
+
+            await Promise.all([
+                connection.entityManager.persist(tag),
+                connection.entityManager.persist(category1),
+                connection.entityManager.persist(category2)
+            ]);
+
+            const post = new PostWithoutDecorators();
             post.title = "about kids";
             post.tag = tag;
             post.categories = [category1, category2];
+            await connection.entityManager.persist(post);
 
-            const emptyPost = new Post();
-            emptyPost.title = "second post";
-            
+            let loadedPost = await connection.entityManager
+                .createQueryBuilder(PostWithoutDecorators, "post")
+                .leftJoinAndSelect("post.tag", "tag")
+                .leftJoinAndSelect("post.categories", "categories")
+                .where("post.id = :id", { id: post.id })
+                .getOne();
+
+            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tagId).to.be.empty;
+            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categoryIds).to.be.empty;
+
+        })));
+
+        it("should load ids when RelationId decorator is not specified and JoinAndMap used", () => Promise.all(connections.map(async connection => {
+
+            const tag = new Tag();
+            tag.name = "kids";
+
+            const category1 = new Category();
+            category1.name = "kids";
+
+            const category2 = new Category();
+            category2.name = "future";
+
             await Promise.all([
-                postRepository.persist(emptyPost),
-                tagRepository.persist(tag),
-                categoryRepository.persist(category1),
-                categoryRepository.persist(category2)
+                connection.entityManager.persist(tag),
+                connection.entityManager.persist(category1),
+                connection.entityManager.persist(category2)
             ]);
-            await postRepository.persist(post);
-            
-            post.title.should.be.equal("about kids");
-            expect(post.tag.id).to.not.be.empty;
-            expect(post.categories[0].id).to.not.be.empty;
-            expect(post.categories[1].id).to.not.be.empty;
 
-            /*let loadedPost = (await postRepository
-                .createQueryBuilder("post")
-                .leftJoinRelationId("post.categories")
+            const post = new PostWithoutDecorators();
+            post.title = "about kids";
+            post.tag = tag;
+            post.categories = [category1, category2];
+            await connection.entityManager.persist(post);
+
+            let loadedPost = await connection.entityManager
+                .createQueryBuilder(PostWithoutDecorators, "post")
+                .leftJoinRelationIdAndMap("post.tagId", "post.tag")
+                .leftJoinRelationIdAndMap("post.categoryIds", "post.categories")
                 .where("post.id = :id", { id: post.id })
-                .getOne())!;
+                .getOne();
 
-            expect(loadedPost.tagId).to.not.be.empty;
-            expect(loadedPost.tagId).to.be.equal(1);
-            expect(loadedPost.categoryIds).to.not.be.empty;
-            expect(loadedPost.categoryIds).to.contain(1);
-            expect(loadedPost.categoryIds).to.contain(2);*/
+            expect(loadedPost!.tagId).to.not.be.empty;
+            expect(loadedPost!.tagId).to.be.equal(1);
+            expect(loadedPost!.categoryIds).to.not.be.empty;
+            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
+            expect(loadedPost!.categoryIds[1]).to.be.equal(2);
 
-            /*loadedPost = (await postRepository
-                .createQueryBuilder("post")
-                .leftJoinRelationId("post.categories", "categories", "categories.id = :categoryId")
-                .where("post.id = :id", { id: post.id })
-                .setParameter("categoryId", 1)
-                .getOne())!;
+        })));
 
-            expect(loadedPost.tagId).to.not.be.empty;
-            expect(loadedPost.tagId).to.be.equal(1);
-            expect(loadedPost.categoryIds).to.not.be.empty;
-            expect(loadedPost.categoryIds.length).to.equal(1);
-            expect(loadedPost.categoryIds).to.contain(1);
+        it("should load ids when JoinAndMap used with additional condition", () => Promise.all(connections.map(async connection => {
 
-            let loadedEmptyPost = (await postRepository
-                .createQueryBuilder("post")
-                .leftJoinRelationId("post.categories")
-                .where("post.id = :id", { id: emptyPost.id })
-                .getOne())!;
+            const category1 = new Category();
+            category1.name = "kids";
 
-            should.not.exist(loadedEmptyPost.tagId);
-            should.not.exist(loadedEmptyPost.categoryIds);
+            const category2 = new Category();
+            category2.name = "future";
 
-            loadedEmptyPost = (await postRepository
-                .createQueryBuilder("post")
-                .innerJoinRelationId("post.categories")
-                .where("post.id = :id", { id: emptyPost.id })
-                .getOne())!;
+            await Promise.all([
+                connection.entityManager.persist(category1),
+                connection.entityManager.persist(category2)
+            ]);
 
-            should.not.exist(loadedEmptyPost);
+            const post = new PostWithoutDecorators();
+            post.title = "about kids";
+            post.categories = [category1, category2];
+            await connection.entityManager.persist(post);
 
-            loadedPost = (await postRepository
-                .createQueryBuilder("post")
-                .leftJoinRelationIdAndMap("post.allCategoryIds", "post.categories")
-                .where("post.id = :id", { id: post.id })
-                .getOne())!;
+            let loadedPost = await connection.entityManager
+                .createQueryBuilder(PostWithoutDecorators, "post")
+                .leftJoinAndSelect("post.categories", "categories")
+                .leftJoinRelationIdAndMap("post.categoryIds", "post.categories")
+                .getOne();
 
-            loadedPost.allCategoryIds.should.contain(1);
-            loadedPost.allCategoryIds.should.contain(2);*/
+            expect(loadedPost!.categoryIds).to.not.be.empty;
+            expect(loadedPost!.categoryIds.length).to.be.equal(1);
+            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
+
         })));
 
     });

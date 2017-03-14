@@ -1,3 +1,6 @@
+/**
+ * Helper utility functions for QueryBuilder.
+ */
 export class QueryBuilderUtils {
 
     /**

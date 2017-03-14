@@ -4,7 +4,6 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {Driver} from "../../driver/Driver";
 import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 import {JoinAttribute} from "../JoinAttribute";
-import {JoinRelationAttribute} from "../JoinRelationAttribute";
 import {RelationCountAttribute} from "../RelationCountAttribute";
 
 /**
@@ -20,7 +19,6 @@ export class RawSqlResultsToEntityTransformer {
     constructor(private driver: Driver,
                 private aliasMap: SelectionMap,
                 private joinAttributes: JoinAttribute[],
-                private joinRelationIds: JoinRelationAttribute[],
                 private relationCountMetas: RelationCountAttribute[],
                 private enableRelationIdValues: boolean) {
     }
@@ -48,10 +46,10 @@ export class RawSqlResultsToEntityTransformer {
         // if (!metadata)
         //     throw new Error("Cannot get entity metadata for the given alias " + alias.alias);
 
+        // console.log("metadata", metadata.primaryColumnsWithParentIdColumns);
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => {
             return metadata.primaryColumnsWithParentIdColumns.map(column => result[alias + "_" + column.fullName]).join("_"); // todo: check it
         });
-        // console.log("groupedResults: ", groupedResults);
         return groupedResults
             .map(group => {
                 return this.transformIntoSingleResult(group.items, alias, metadata);
@@ -83,41 +81,62 @@ export class RawSqlResultsToEntityTransformer {
                 });
         } // */
 
-        this.joinAttributes.forEach(join => {
-            if (!join.mapToProperty)
-                return;
+        this.joinAttributes
+            .filter(join => join.type === "join")
+            .forEach(join => {
+                if (!join.mapToProperty)
+                    return;
 
-            const [parentName, propertyName] = (join.mapToProperty as string).split(".");
-            if (parentName !== alias/*  || join.parentAlias|| !join.destinationSelection.target*/)
-                return;
+                const [parentName, propertyName] = (join.mapToProperty as string).split(".");
+                if (parentName !== alias/*  || join.parentAlias|| !join.destinationSelection.target*/)
+                    return;
 
-            if (!join.metadata)
-                return;
+                if (!join.metadata)
+                    return;
 
-            const relatedEntities = this.groupAndTransform(rawSqlResults, join.alias, join.metadata);
-            const isResultArray = join.isMappingMany;
-            const result = !isResultArray ? relatedEntities[0] : relatedEntities;
+                const relatedEntities = this.groupAndTransform(rawSqlResults, join.alias!, join.metadata);
+                const isResultArray = join.isMappingMany;
+                const result = !isResultArray ? relatedEntities[0] : relatedEntities;
 
-            if (result && (!isResultArray || result.length > 0)) {
-                entity[propertyName] = result;
-                hasData = true;
-            }
-        });
+                if (result && (!isResultArray || result.length > 0)) {
+                    entity[propertyName] = result;
+                    hasData = true;
+                }
+            });
 
-        this.joinRelationIds.forEach(joinRelationId => {
-            const [parentName, propertyName] = (joinRelationId.mapToProperty as string).split(".");
-            if (parentName !== alias || joinRelationId.relationOwnerSelection/* || !join.junctionSelection.target*/)
-                return;
+        this.joinAttributes
+            .filter(join => join.type === "relationId")
+            .forEach(relationIdAttr => {
+                if (relationIdAttr.mapToPropertyParentAlias !== alias)
+                    return;
 
-            const relatedEntities = this.groupAndTransform(rawSqlResults, joinRelationId.junctionSelection.alias, joinRelationId.junctionSelection.metadata);
-            const isResultArray = false;
-            const result = !isResultArray ? relatedEntities[0] : relatedEntities;
+                if (relationIdAttr.relation!.isManyToMany) {
+                    entity[relationIdAttr.mapToPropertyPropertyName] = rawSqlResults.map(raw => {
+                        const [firstColumn, secondColumn] = relationIdAttr.relation!.junctionEntityMetadata.columns;
+                        const column = relationIdAttr.relation!.isOwning ? secondColumn : firstColumn;
+                        return raw[relationIdAttr.junctionAlias + "_" + column.fullName];
+                    });
+                    hasData = true;
 
-            if (result && (!isResultArray || result.length > 0)) {
-                entity[propertyName] = result;
-                hasData = true;
-            }
-        });
+                } else if (relationIdAttr.relation!.isManyToOne || relationIdAttr.relation!.isOneToOneOwner) {
+                    const relationIds = rawSqlResults.map(raw => {
+                        return raw[relationIdAttr.parentAlias + "_" + relationIdAttr.relation!.name];
+                    });
+                    if (relationIds.length) {
+                        entity[relationIdAttr.mapToPropertyPropertyName] = relationIds[0];
+                        hasData = true;
+                    }
+                }
+
+                /*const relatedEntities = this.groupAndTransform(rawSqlResults, relationIdAttr.junctionAlias, relationIdAttr.junctionMetadata); // todo: find out what metadata should be passed
+                console.log("relatedEntities", relatedEntities);
+                const result = relatedEntities[0];
+
+                if (result && result.length > 0) {
+                    entity[relationIdAttr.mapToPropertyPropertyName] = result;
+                    hasData = true;
+                }*/
+            });
 
         // get value from columns selections and put them into object
         metadata.columnsWithoutEmbeddeds.forEach(column => {
@@ -183,18 +202,18 @@ export class RawSqlResultsToEntityTransformer {
 
         // if relation is loaded then go into it recursively and transform its values too
         metadata.relations.forEach(relation => {
-            const joinMapping = this.joinAttributes.find(joinMapping => {
-                return joinMapping.parentAlias === alias && joinMapping.relationProperty === relation.propertyName;
+            const join = this.joinAttributes.find(join => {
+                return join.type === "join" && join.parentAlias === alias && join.relationProperty === relation.propertyName;
             });
-            if (joinMapping && joinMapping.metadata) {
-                const relatedEntities = this.groupAndTransform(rawSqlResults, joinMapping.alias, joinMapping.metadata);
+            if (join && join.metadata) {
+                const relatedEntities = this.groupAndTransform(rawSqlResults, join.alias!, join.metadata);
                 const isResultArray = relation.isManyToMany || relation.isOneToMany;
                 const result = !isResultArray ? relatedEntities[0] : relatedEntities;
 
                 if (result) {
                     let propertyName = relation.propertyName;
-                    if (/*joinMapping && */joinMapping.mapToProperty) {
-                        propertyName = joinMapping.mapToProperty.split(".")[1];
+                    if (/*joinMapping && */join.mapToProperty) {
+                        propertyName = join.mapToProperty.split(".")[1];
                     }
 
                     if (relation.isLazy) {
@@ -210,9 +229,9 @@ export class RawSqlResultsToEntityTransformer {
 
             // if relation has id field then relation id/ids to that field.
             if (relation.isManyToMany) {
-                if (joinMapping) {
+                if (join) {
                     const ids: any[] = [];
-                    const joinRelationId = this.joinRelationIds.find(join => join.junctionSelection.alias === joinMapping.alias);
+                    const joinRelationId = this.joinAttributes.find(join => join.junctionAlias === join.alias);
 
                     if (relation.idField || joinRelationId) {
                         let propertyName: string = "";
@@ -225,8 +244,8 @@ export class RawSqlResultsToEntityTransformer {
                         const columnName = relation.isOwning ? junctionMetadata.columns[1].fullName : junctionMetadata.columns[0].fullName;
 
                         rawSqlResults.forEach(results => {
-                            if (joinMapping) {
-                                const resultsKey = joinMapping.alias + "_" + columnName;
+                            if (join) {
+                                const resultsKey = join.alias + "_" + columnName;
                                 const value = this.driver.prepareHydratedValue(results[resultsKey], relation.referencedColumn);
                                 if (value !== undefined && value !== null)
                                     ids.push(value);
@@ -244,7 +263,7 @@ export class RawSqlResultsToEntityTransformer {
 
             // if relation counter
             this.relationCountMetas.forEach(joinMeta => {
-                if (joinMapping && joinMeta.selection.alias === joinMapping.parentAlias) {
+                if (join && joinMeta.junctionAlias === join.parentAlias) {
                     // console.log("relation count was found for relation: ", relation);
                     // joinMeta.entity = entity;
                     joinMeta.entities.push({ entity: entity, metadata: metadata });
