@@ -589,7 +589,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-        let sql = `ALTER TABLE ${tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+        let sql = `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${foreignKey.name}\` ` +
             `FOREIGN KEY (${columnNames}) ` +
             `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
         if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
