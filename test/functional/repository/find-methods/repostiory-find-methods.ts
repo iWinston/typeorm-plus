@@ -3,7 +3,6 @@ import {expect} from "chai";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {FindManyOptions} from "../../../../src/find-options/FindManyOptions";
 import {User} from "./model/User";
 
 describe("repository > find methods", () => {
@@ -48,7 +47,7 @@ describe("repository > find methods", () => {
         })));
 
         it("should return a count of posts that match given criteria", () => Promise.all(connections.map(async connection => {
-            const postRepository            = connection.getRepository(Post);
+            const postRepository = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
                 const post        = new Post();

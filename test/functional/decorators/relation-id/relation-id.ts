@@ -10,7 +10,7 @@ import {PostWithoutDecorators} from "./entity/PostWithoutDecorators";
 
 const should = chai.should();
 
-describe.only("QueryBuilder > relation-id", () => {
+describe("QueryBuilder > relation-id", () => {
     
     // todo: make this feature to work with FindOptions
     // todo: also make sure all new qb features to work with FindOptions
@@ -110,7 +110,7 @@ describe.only("QueryBuilder > relation-id", () => {
 
         })));
 
-        it("should load ids when RelationId decorator is not specified and JoinAndMap used", () => Promise.all(connections.map(async connection => {
+        it.skip("should load ids when RelationId decorator is not specified and JoinAndMap used", () => Promise.all(connections.map(async connection => {
 
             const tag = new Tag();
             tag.name = "kids";
@@ -135,8 +135,8 @@ describe.only("QueryBuilder > relation-id", () => {
 
             let loadedPost = await connection.entityManager
                 .createQueryBuilder(PostWithoutDecorators, "post")
-                .leftJoinRelationIdAndMap("post.tagId", "post.tag")
-                .leftJoinRelationIdAndMap("post.categoryIds", "post.categories")
+                .loadRelationIdAndMap("post.tagId", "post.tag")
+                .loadRelationIdAndMap("post.categoryIds", "post.categories")
                 .where("post.id = :id", { id: post.id })
                 .getOne();
 
@@ -168,10 +168,10 @@ describe.only("QueryBuilder > relation-id", () => {
 
             let loadedPost = await connection.entityManager
                 .createQueryBuilder(PostWithoutDecorators, "post")
-                .leftJoinAndSelect("post.categories", "categories")
-                .leftJoinRelationIdAndMap("post.categoryIds", "post.categories")
+                .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.where("categories.id = :categoryId", { categoryId: 1 }))
                 .getOne();
-
+            console.log("post", loadedPost);
+            console.log("driver", connection.driver.constructor.name);
             expect(loadedPost!.categoryIds).to.not.be.empty;
             expect(loadedPost!.categoryIds.length).to.be.equal(1);
             expect(loadedPost!.categoryIds[0]).to.be.equal(1);

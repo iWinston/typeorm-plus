@@ -1,9 +1,9 @@
-import {SelectionMap} from "./alias/SelectionMap";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 import {JoinOptions} from "./JoinOptions";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
+import {QueryExpressionMap} from "./QueryExpressionMap";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -15,11 +15,6 @@ export class JoinAttribute {
     // -------------------------------------------------------------------------
 
     /**
-     * Join type.
-     */
-    type: "join"|"relationId";
-
-    /**
      * Join direction.
      */
     direction: "LEFT"|"INNER";
@@ -27,7 +22,7 @@ export class JoinAttribute {
     /**
      * Alias of the joined (destination) table.
      */
-    alias?: string;
+    alias: string;
 
     /**
      * Joined table, entity target, or relation in "post.category" format.
@@ -59,7 +54,9 @@ export class JoinAttribute {
     // -------------------------------------------------------------------------
 
     constructor(private connection: Connection,
-                private selectionMap: SelectionMap) {
+                private queryExpressionMap: QueryExpressionMap,
+                private joinAttribute?: JoinAttribute) {
+        Object.assign(this, joinAttribute || {});
     }
 
     // -------------------------------------------------------------------------
@@ -111,7 +108,7 @@ export class JoinAttribute {
             return undefined;
 
         const [parentAlias, relationProperty] = this.entityOrProperty.split(".");
-        const relationOwnerSelection = this.selectionMap.findSelectionByAlias(parentAlias);
+        const relationOwnerSelection = this.queryExpressionMap.findAliasByName(parentAlias);
         return relationOwnerSelection.metadata.findRelationWithPropertyName(relationProperty);
     }
 
@@ -148,19 +145,10 @@ export class JoinAttribute {
      * Generates alias of junction table, whose ids we get.
      */
     get junctionAlias(): string {
-        if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
-            throw new Error(`Given value must be a string representation of alias property`);
+        if (!this.relation)
+            throw new Error(`Cannot get junction table for join without relation.`);
 
-        const [parentAlias, relationProperty] = this.entityOrProperty.split(".");
-
-        if (this.type === "relationId") {
-            return parentAlias + "_" + relationProperty + "_relation_id";
-        } else {
-            if (!this.relation)
-                throw new Error(`Cannot get junction table for join without relation.`);
-
-            return this.relation.isOwning ? parentAlias + "_" + this.alias : this.alias + "_" + parentAlias;
-        }
+        return this.relation.isOwning ? this.parentAlias + "_" + this.alias : this.alias + "_" + this.parentAlias;
     }
 
     get mapToPropertyParentAlias(): string {

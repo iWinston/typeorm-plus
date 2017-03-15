@@ -1,7 +1,7 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
-import {SelectionMap} from "./alias/SelectionMap";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {QueryExpressionMap} from "./QueryExpressionMap";
 
 export class RelationCountAttribute {
 
@@ -26,7 +26,9 @@ export class RelationCountAttribute {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private selectionMap: SelectionMap) {
+    constructor(private expressionMap: QueryExpressionMap,
+                private relationCountAttribute?: RelationCountAttribute) {
+        Object.assign(this, relationCountAttribute || {});
     }
 
     /**
@@ -58,7 +60,7 @@ export class RelationCountAttribute {
             throw new Error(`Given value is a string representation of alias property`);
 
         const [parentAlias, relationProperty] = this.relationName.split(".");
-        const relationOwnerSelection = this.selectionMap.findSelectionByAlias(parentAlias);
+        const relationOwnerSelection = this.expressionMap.findAliasByName(parentAlias);
         return relationOwnerSelection.metadata.findRelationWithPropertyName(relationProperty);
     }
 
@@ -71,7 +73,7 @@ export class RelationCountAttribute {
             throw new Error(`Given value is a string representation of alias property`);
 
         const parentAlias = this.relationName.split(".")[0];
-        const selection = this.selectionMap.findSelectionByAlias(parentAlias);
+        const selection = this.expressionMap.findAliasByName(parentAlias);
         return selection.metadata;
     }
 

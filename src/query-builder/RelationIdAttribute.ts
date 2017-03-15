@@ -1,8 +1,8 @@
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {Selection} from "./alias/Selection";
-import {SelectionMap} from "./alias/SelectionMap";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {QueryBuilder} from "./QueryBuilder";
+import {QueryExpressionMap} from "./QueryExpressionMap";
 
 /**
  * Stores all join relation id attributes which will be used to build a JOIN query.
@@ -14,14 +14,9 @@ export class RelationIdAttribute {
     // -------------------------------------------------------------------------
 
     /**
-     * Join type.
-     */
-    type: "LEFT"|"INNER";
-
-    /**
      * Alias of the joined (destination) table.
      */
-    // alias?: string;
+    alias?: string;
 
     /**
      * Name of relation.
@@ -34,9 +29,9 @@ export class RelationIdAttribute {
     mapToProperty: string;
 
     /**
-     * Selection of inverse side, in the case if relation id with condition is applied.
+     * Extra condition applied to "ON" section of join.
      */
-    joinInverseSideSelection?: Selection;
+    queryBuilderAppender?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
     /**
      * Alias to be used for inverse side table, in the case if relation id with condition is applied.
@@ -48,11 +43,15 @@ export class RelationIdAttribute {
      */
     joinInverseSideCondition?: string;
 
+    entities: { entity: any, metadata: EntityMetadata }[] = [];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private selectionMap: SelectionMap) {
+    constructor(private expressionMap: QueryExpressionMap,
+                private relationIdAttribute?: RelationIdAttribute) {
+        Object.assign(this, relationIdAttribute || {});
     }
 
     // -------------------------------------------------------------------------
@@ -61,14 +60,6 @@ export class RelationIdAttribute {
 
     get joinInverseSideMetadata(): EntityMetadata {
         return this.relation.inverseEntityMetadata;
-    }
-
-    get mapToPropertyParentAlias(): string {
-        return this.mapToProperty.split(".")[0];
-    }
-
-    get mapToPropertyPropertyName(): string {
-        return this.mapToProperty.split(".")[1];
     }
 
     /**
@@ -85,6 +76,20 @@ export class RelationIdAttribute {
     }
 
     /**
+     * Relation property name of the parent.
+     * This is used to understand what is joined.
+     * For example, if we join ("post.category", "categoryAlias") then "category" is a relation property.
+     * This value is extracted from entityOrProperty value.
+     * This is available when join was made using "post.category" syntax.
+     */
+    get relationProperty(): string {
+        if (!QueryBuilderUtils.isAliasProperty(this.relationName))
+            throw new Error(`Given value must be a string representation of alias property`);
+
+        return this.relationName.split(".")[1];
+    }
+
+    /**
      * Relation of the parent.
      * This is used to understand what is joined.
      * This is available when join was made using "post.category" syntax.
@@ -94,7 +99,7 @@ export class RelationIdAttribute {
             throw new Error(`Given value must be a string representation of alias property`);
 
         const [parentAlias, relationProperty] = this.relationName.split(".");
-        const relationOwnerSelection = this.selectionMap.findSelectionByAlias(parentAlias);
+        const relationOwnerSelection = this.expressionMap.findAliasByName(parentAlias);
         return relationOwnerSelection.metadata.findRelationWithPropertyName(relationProperty);
     }
 
@@ -112,6 +117,14 @@ export class RelationIdAttribute {
      */
     get junctionMetadata(): EntityMetadata {
         return this.relation.junctionEntityMetadata;
+    }
+
+    get mapToPropertyParentAlias(): string {
+        return this.mapToProperty!.split(".")[0];
+    }
+
+    get mapToPropertyPropertyName(): string {
+        return this.mapToProperty!.split(".")[1];
     }
 
 }

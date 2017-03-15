@@ -17,7 +17,7 @@ describe("query builder > select", () => {
 
     it("should append all entity mapped columns from main selection to select statement", () => Promise.all(connections.map(async connection => {
         const sql = connection.entityManager.createQueryBuilder(Post, "post")
-            .disableQuoting()
+            .disableEscaping()
             .getSql();
 
         expect(sql).to.equal("SELECT post.id AS post_id, " +
@@ -30,7 +30,7 @@ describe("query builder > select", () => {
     it("should append all entity mapped columns from both main selection and join selections to select statement", () => Promise.all(connections.map(async connection => {
         const sql = connection.entityManager.createQueryBuilder(Post, "post")
             .leftJoinAndSelect("category", "category")
-            .disableQuoting()
+            .disableEscaping()
             .getSql();
 
         expect(sql).to.equal("SELECT post.id AS post_id, " +
@@ -51,7 +51,7 @@ describe("query builder > select", () => {
             .select("post.id")
             .addSelect("category.name")
             .leftJoin("category", "category")
-            .disableQuoting()
+            .disableEscaping()
             .getSql();
 
         expect(sql).to.equal("SELECT post.id AS post_id, " +
@@ -62,7 +62,7 @@ describe("query builder > select", () => {
     it("should append entity mapped columns to select statement, if they passed as array", () => Promise.all(connections.map(async connection => {
         const sql = connection.entityManager.createQueryBuilder(Post, "post")
             .select(["post.id", "post.title"])
-            .disableQuoting()
+            .disableEscaping()
             .getSql();
 
         expect(sql).to.equal("SELECT post.id AS post_id, post.title AS post_title FROM post post");
@@ -71,7 +71,7 @@ describe("query builder > select", () => {
     it("should append raw sql to select statement", () => Promise.all(connections.map(async connection => {
         const sql = connection.entityManager.createQueryBuilder(Post, "post")
             .select("COUNT(*) as cnt")
-            .disableQuoting()
+            .disableEscaping()
             .getSql();
 
         expect(sql).to.equal("SELECT COUNT(*) as cnt FROM post post");
@@ -80,7 +80,7 @@ describe("query builder > select", () => {
     it("should append raw sql and entity mapped column to select statement", () => Promise.all(connections.map(async connection => {
         const sql = connection.entityManager.createQueryBuilder(Post, "post")
             .select(["COUNT(*) as cnt", "post.title"])
-            .disableQuoting()
+            .disableEscaping()
             .getSql();
 
         expect(sql).to.equal("SELECT post.title AS post_title, COUNT(*) as cnt FROM post post");
@@ -89,7 +89,7 @@ describe("query builder > select", () => {
     it("should not create alias for selection, which is not entity mapped column", () => Promise.all(connections.map(async connection => {
         const sql = connection.entityManager.createQueryBuilder(Post, "post")
             .select("post.name")
-            .disableQuoting()
+            .disableEscaping()
             .getSql();
 
         expect(sql).to.equal("SELECT post.name FROM post post");
