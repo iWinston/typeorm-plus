@@ -31,17 +31,7 @@ export class RelationIdAttribute {
     /**
      * Extra condition applied to "ON" section of join.
      */
-    queryBuilderAppender?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
-
-    /**
-     * Alias to be used for inverse side table, in the case if relation id with condition is applied.
-     */
-    joinInverseSideAlias?: string;
-
-    /**
-     * Extra condition for inverse side table can be applied for relation id join.
-     */
-    joinInverseSideCondition?: string;
+    queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
     entities: { entity: any, metadata: EntityMetadata }[] = [];
 

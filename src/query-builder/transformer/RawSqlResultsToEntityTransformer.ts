@@ -62,18 +62,32 @@ export class RawSqlResultsToEntityTransformer {
         this.rawRelationIdResults
             .filter(rawRelationIdResult => rawRelationIdResult.relationIdAttribute.parentAlias === alias)
             .forEach(rawRelationIdResult => {
-                const owningSideReferenceColumnName = rawRelationIdResult.relationIdAttribute.relation.joinTable.referencedColumn.fullName;
-                const owningSideReferenceColumnValue = rawSqlResults[0][alias + "_" + owningSideReferenceColumnName]; // we use zero index since its grouped data
+                const relation = rawRelationIdResult.relationIdAttribute.relation;
+                let referenceColumnName: string;
 
-                if (owningSideReferenceColumnValue !== undefined && owningSideReferenceColumnValue !== null) {
+                if (relation.isManyToOne || relation.isOneToOneOwner) {
+                    referenceColumnName = "";
+
+                } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {
+                    referenceColumnName = relation.referencedColumn.fullName;
+                } else {
+                    referenceColumnName = relation.isOwning ? relation.joinTable.referencedColumn.fullName : relation.inverseRelation.joinTable.referencedColumn.fullName;
+                }
+
+                const referenceColumnValue = rawSqlResults[0][alias + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
+
+                if (referenceColumnValue !== undefined && referenceColumnValue !== null) {
                     rawRelationIdResult.results
-                        .filter(result => result["parentId"] === owningSideReferenceColumnValue)
+                        .filter(result => result["parentId"] === referenceColumnValue)
                         .forEach(result => {
                             if (!entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName])
                                 entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName] = [];
 
-                            entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName].push(result["id"]);
-                            console.log(entity);
+                            if (relation.isOneToOne && !relation.isOwning) {
+                                entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName] = result["id"];
+                            } else {
+                                entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName].push(result["id"]);
+                            }
                             hasData = true;
                         });
                 }

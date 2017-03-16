@@ -6,6 +6,7 @@ import {RelationIdAttribute} from "./RelationIdAttribute";
 import {RelationCountAttribute} from "./RelationCountAttribute";
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {SelectQuery} from "./SelectQuery";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -34,7 +35,7 @@ export class QueryExpressionMap {
     /**
      * Data needs to be SELECT-ed.
      */
-    selects: string[] = [];
+    selects: SelectQuery[] = [];
 
     /**
      * If update query was used, it needs "update set" - properties which will be updated by this query.

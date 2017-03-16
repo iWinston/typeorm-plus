@@ -18,6 +18,7 @@ import {JoinAttribute} from "./JoinAttribute";
 import {RelationIdAttribute} from "./RelationIdAttribute";
 import {RelationCountAttribute} from "./RelationCountAttribute";
 import {QueryExpressionMap} from "./QueryExpressionMap";
+import {SelectQuery} from "./SelectQuery";
 
 
 // todo: fix problem with long aliases eg getMaxIdentifierLength
@@ -39,6 +40,7 @@ import {QueryExpressionMap} from "./QueryExpressionMap";
 
 // todo: SUBSELECT IMPLEMENTATION
 // .whereSubselect(qb => qb.select().from().where())
+// todo: also create qb.createSubQueryBuilder()
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -91,7 +93,7 @@ export class QueryBuilder<Entity> {
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
      */
-    select(selection: string): this;
+    select(selection: string, selectionAliasName?: string): this;
 
     /**
      * Creates SELECT query and selects given data.
@@ -103,12 +105,12 @@ export class QueryBuilder<Entity> {
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
      */
-    select(selection?: string|string[]): this {
+    select(selection?: string|string[], selectionAliasName?: string): this {
         this.expressionMap.queryType = "select";
         if (selection instanceof Array) {
-            this.expressionMap.selects = selection;
+            this.expressionMap.selects = selection.map(selection => ({ selection: selection }));
         } else if (selection) {
-            this.expressionMap.selects = [selection];
+            this.expressionMap.selects = [{ selection: selection, aliasName: selectionAliasName }];
         }
         return this;
     }
@@ -116,7 +118,7 @@ export class QueryBuilder<Entity> {
     /**
      * Adds new selection to the SELECT query.
      */
-    addSelect(selection: string): this;
+    addSelect(selection: string, selectionAliasName?: string): this;
 
     /**
      * Adds new selection to the SELECT query.
@@ -126,11 +128,11 @@ export class QueryBuilder<Entity> {
     /**
      * Adds new selection to the SELECT query.
      */
-    addSelect(selection: string|string[]): this {
+    addSelect(selection: string|string[], selectionAliasName?: string): this {
         if (selection instanceof Array) {
-            this.expressionMap.selects = this.expressionMap.selects.concat(selection);
+            this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(selection => ({ selection: selection })));
         } else {
-            this.expressionMap.selects.push(selection);
+            this.expressionMap.selects.push({ selection: selection, aliasName: selectionAliasName });
         }
 
         return this;
@@ -198,10 +200,21 @@ export class QueryBuilder<Entity> {
      * Also sets a main string alias of the selection data.
      */
     fromTable(tableName: string, aliasName: string) {
-        this.expressionMap.createMainAlias({
-            name: aliasName,
-            tableName: tableName
-        });
+
+        // if table has a metadata then find it to properly escape its properties
+        const metadata = this.connection.entityMetadatas.find(metadata => metadata.table.name === tableName);
+        if (metadata) {
+            this.expressionMap.createMainAlias({
+                name: aliasName,
+                metadata: metadata,
+            });
+
+        } else {
+            this.expressionMap.createMainAlias({
+                name: aliasName,
+                tableName: tableName,
+            });
+        }
         return this;
     }
 
@@ -1162,7 +1175,7 @@ export class QueryBuilder<Entity> {
         relationIdAttribute.mapToProperty = mapToProperty;
         relationIdAttribute.relationName = relationName;
         relationIdAttribute.alias = alias;
-        relationIdAttribute.queryBuilderAppender = queryBuilderAppender;
+        relationIdAttribute.queryBuilderFactory = queryBuilderAppender;
         this.expressionMap.relationIdAttributes.push(relationIdAttribute);
     }
 
@@ -1173,40 +1186,96 @@ export class QueryBuilder<Entity> {
         const ec = (aliasName: string) => this.escapeColumn(aliasName);
 
         const promises = this.expressionMap.relationIdAttributes.map(async relationIdAttr => {
+            if (relationIdAttr.relation.isManyToOne || relationIdAttr.relation.isOneToOneOwner) {
 
-            const owningSideReferenceColumnName = relationIdAttr.relation.joinTable.referencedColumn.fullName;
-            const inverseSideReferenceColumnName = relationIdAttr.relation.joinTable.inverseReferencedColumn.fullName;
+                return {
+                    relationIdAttribute: relationIdAttr,
+                    results: []
+                };
 
-            const owningSideReferenceColumnValues = rawEntities
-                .map(rawEntity => rawEntity[relationIdAttr.parentAlias + "_" + owningSideReferenceColumnName])
-                .filter(value => value !== undefined);
+            } else if (relationIdAttr.relation.isOneToMany || relationIdAttr.relation.isOneToOneNotOwner) {
+                // example: Post and Category
+                // loadRelationIdAndMap("category.postIds", "category.posts")
+                // we expect it to load array of post ids
 
-            const relation = relationIdAttr.relation;
-            const junctionAlias = relationIdAttr.junctionAlias;
-            const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.table.name;
-            const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
-            const junctionTableName = relation.junctionEntityMetadata.table.name;
-            const [firstJunctionColumn, secondJunctionColumn] = relation.junctionEntityMetadata.columnsWithoutEmbeddeds;
-            let junctionCondition = "", destinationCondition = "";
+                // todo: take post ids - they can be multiple
+                // todo: create test with multiple primary columns usage
 
-            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
-                .select(ea(inverseSideTableAlias) + "." + ec(inverseSideReferenceColumnName) + " AS " + ea("id"))
-                .addSelect(ea(junctionAlias) + "." + ec(firstJunctionColumn.fullName) + " AS " + ea("parentId"))
-                .fromTable(inverseSideTableName, inverseSideTableAlias)
-                .innerJoin(junctionTableName, junctionAlias,
-                    ea(junctionAlias) + "." + ec(firstJunctionColumn.fullName) + " IN (" + owningSideReferenceColumnValues + ")" +
-                    " AND " + ea(junctionAlias) + "." + ec(secondJunctionColumn.fullName) + "=" + ea(inverseSideTableAlias) + "." + ec(inverseSideReferenceColumnName));
+                const relation = relationIdAttr.relation; // "category.posts"
+                const inverseRelation = relationIdAttr.relation.inverseRelation; // "post.category"
+                const referenceColumnName = inverseRelation.joinColumn.referencedColumn.propertyName; // post id
+                const tableName = relation.entityMetadata.table.name; // category
+                const inverseSideTable = relation.inverseEntityMetadata.table.target; // Post
+                const inverseSideTableName = relation.inverseEntityMetadata.table.name; // post
+                const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
+                const inverseSidePropertyName = inverseRelation.propertyName; // "category" from "post.category"
 
-            if (relationIdAttr.queryBuilderAppender)
-                relationIdAttr.queryBuilderAppender(qb);
+                // generate query:
+                // SELECT post.id AS id, category.id AS parentId FROM post post INNER JOIN category category ON category.id=post.category
+                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+                    .select(inverseSideTableAlias + "." + referenceColumnName, "id") // todo: referenceColumnName is wrong here
+                    .addSelect(tableName + "." + referenceColumnName, "parentId")
+                    .from(inverseSideTable, inverseSideTableAlias)
+                    .innerJoin(inverseSideTableAlias + "." + inverseSidePropertyName, inverseSidePropertyName);
 
-            const results: { id: any, parentId: any }[] = await qb.getRawMany();
-            console.log("results", results);
+                // apply condition (custom query builder factory)
+                if (relationIdAttr.queryBuilderFactory)
+                    relationIdAttr.queryBuilderFactory(qb);
 
-            return {
-                relationIdAttribute: relationIdAttr,
-                results: results
-            };
+                return {
+                    relationIdAttribute: relationIdAttr,
+                    results: await qb.getRawMany()
+                };
+
+            } else {
+                // example: Post and Category
+                // owner side: loadRelationIdAndMap("category.postIds", "category.posts")
+                // inverse side: loadRelationIdAndMap("category.postIds", "category.posts")
+                // we expect it to load array of post ids
+
+                let joinTableColumnName: string;
+                let inverseJoinColumnName: string;
+                let firstJunctionColumn: ColumnMetadata;
+                let secondJunctionColumn: ColumnMetadata;
+
+                if (relationIdAttr.relation.isOwning) {
+                    joinTableColumnName = relationIdAttr.relation.joinTable.referencedColumn.fullName;
+                    inverseJoinColumnName = relationIdAttr.relation.joinTable.inverseReferencedColumn.fullName;
+                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
+                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
+
+                } else {
+                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinTable.inverseReferencedColumn.fullName;
+                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinTable.referencedColumn.fullName;
+                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
+                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
+                }
+
+                const owningSideReferenceColumnValues = rawEntities
+                    .map(rawEntity => rawEntity[relationIdAttr.parentAlias + "_" + joinTableColumnName]) // todo: custom alias for column wont work here
+                    .filter(value => value !== undefined);
+                const junctionAlias = relationIdAttr.junctionAlias;
+                const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.table.name;
+                const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
+                const junctionTableName = relationIdAttr.relation.junctionEntityMetadata.table.name;
+                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + owningSideReferenceColumnValues + ")" +
+                    " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
+
+                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+                    .select(inverseSideTableAlias + "." + inverseJoinColumnName, "id")
+                    .addSelect(junctionAlias + "." + firstJunctionColumn.propertyName, "parentId")
+                    .fromTable(inverseSideTableName, inverseSideTableAlias)
+                    .innerJoin(junctionTableName, junctionAlias, condition);
+
+                // apply condition (custom query builder factory)
+                if (relationIdAttr.queryBuilderFactory)
+                    relationIdAttr.queryBuilderFactory(qb);
+
+                return {
+                    relationIdAttribute: relationIdAttr,
+                    results: await qb.getRawMany()
+                };
+            }
         });
 
         return Promise.all(promises);
@@ -1266,26 +1335,32 @@ export class QueryBuilder<Entity> {
         return transformer.transform(results, rawRelationIdResults);
     }
 
-    protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): string[] {
-        const hasMainAlias = this.expressionMap.selects.some(select => select === aliasName);
+    protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
+        const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
 
         const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns : metadata.columns.filter(column => {
-            return this.expressionMap.selects.some(select => select === aliasName + "." + column.propertyName);
+            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
         });
 
         return columns.map(column => {
-            return this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName) +
-                " AS " + this.escapeAlias(aliasName + "_" + column.fullName);
+            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
+            return {
+                selection: this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName),
+                aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.fullName,
+                // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
+            };
+            // return this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName) +
+            //     " AS " + this.escapeAlias(aliasName + "_" + column.fullName);
         });
     };
 
-    protected findEntityColumnSelects(aliasName: string, metadata: EntityMetadata): string[] {
-        const mainSelect = this.expressionMap.selects.find(select => select === aliasName);
+    protected findEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
+        const mainSelect = this.expressionMap.selects.find(select => select.selection === aliasName);
         if (mainSelect)
             return [mainSelect];
 
         return this.expressionMap.selects.filter(select => {
-            return metadata.columns.some(column => select === aliasName + "." + column.propertyName);
+            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyName);
         });
     }
 
@@ -1321,8 +1396,8 @@ export class QueryBuilder<Entity> {
         // todo throw exception if selects or from is missing
 
         let tableName: string;
-        const allSelects: string[] = [];
-        const excludedSelects: string[] = [];
+        const allSelects: SelectQuery[] = [];
+        const excludedSelects: SelectQuery[] = [];
 
         const aliasName = this.expressionMap.mainAlias.name;
 
@@ -1343,10 +1418,10 @@ export class QueryBuilder<Entity> {
                     allSelects.push(...this.buildEscapedEntityColumnSelects(join.alias!, join.metadata));
                     excludedSelects.push(...this.findEntityColumnSelects(join.alias!, join.metadata));
                 } else {
-                    const hasMainAlias = this.expressionMap.selects.some(select => select === join.alias);
+                    const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias);
                     if (hasMainAlias) {
-                        allSelects.push(ea(join.alias!) + ".*");
-                        excludedSelects.push(join.alias!);
+                        allSelects.push({ selection: ea(join.alias!) + ".*" });
+                        excludedSelects.push({ selection: ea(join.alias!) });
                     }
                 }
             });
@@ -1356,7 +1431,8 @@ export class QueryBuilder<Entity> {
                 const alias = "parentIdColumn_" + ea(this.expressionMap.mainAlias!.metadata.parentEntityMetadata.table.name);
                 this.expressionMap.mainAlias!.metadata.parentEntityMetadata.columns.forEach(column => {
                     // TODO implement partial select
-                    allSelects.push(alias + "." + ec(column.fullName) + " AS " + alias + "_" + ea(column.fullName));
+                    allSelects.push({ selection: ea(alias + "." + column.fullName), aliasName: alias + "_" + column.fullName });
+                    // allSelects.push(alias + "." + ec(column.fullName) + " AS " + alias + "_" + ea(column.fullName));
                 });
             }
         }
@@ -1386,11 +1462,11 @@ export class QueryBuilder<Entity> {
         // add all other selects
         this.expressionMap.selects
             .filter(select => excludedSelects.indexOf(select) === -1)
-            .forEach(select => allSelects.push(this.replacePropertyNames(select)));
+            .forEach(select => allSelects.push({ selection: this.replacePropertyNames(select.selection), aliasName: select.aliasName }));
 
         // if still selection is empty, then simply set it to all (*)
         if (allSelects.length === 0)
-            allSelects.push("*");
+            allSelects.push({ selection: "*" });
 
         let lock: string = "";
         if (this.connection.driver instanceof SqlServerDriver) {
@@ -1407,9 +1483,10 @@ export class QueryBuilder<Entity> {
         // create a selection query
         switch (this.expressionMap.queryType) {
             case "select":
-                return "SELECT " + allSelects.join(", ") + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
+                const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + ea(select.aliasName) : "")).join(", ");
+                return "SELECT " + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
             case "delete":
-                return "DELETE FROM " + this.escapeTable(tableName);
+                return "DELETE FROM " + et(tableName);
                 // return "DELETE " + (alias ? ea(alias) : "") + " FROM " + this.escapeTable(tableName) + " " + (alias ? ea(alias) : ""); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names
             case "update":
                 const updateSet = Object.keys(this.expressionMap.updateSet).map(key => key + "=:updateSet__" + key);
@@ -1527,7 +1604,7 @@ export class QueryBuilder<Entity> {
                 const condition = ea(destinationTableAlias) + "." + ec(destinationTableReferencedColumn.fullName) + "=" + ea(parentAlias) + "." + ec(relation.name);
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
 
-            } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {
+            } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                 const relationOwnerReferencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`

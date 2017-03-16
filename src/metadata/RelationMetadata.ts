@@ -230,6 +230,8 @@ export class RelationMetadata {
      * Gets the name of column to which this relation is referenced.
      * //Cannot be used with many-to-many relations since all referenced are in the junction table.
      * //Also only owning sides of the relations have this property.
+     *
+     * @deprecated Use joinTable or joinColumn directly where needed, because this method it too much confusing
      */
     get referencedColumnName(): string {
         // if (!this.isOwning)
@@ -270,6 +272,8 @@ export class RelationMetadata {
 
     /**
      * Gets the column to which this relation is referenced.
+     *
+     * @deprecated Use joinTable or joinColumn directly where needed, because this method it too much confusing
      */
     get referencedColumn(): ColumnMetadata {
         if (this.isOwning) {
