@@ -1084,6 +1084,8 @@ There are few repositories which you can clone and start with:
 * [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
 * [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
 * [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
+* [Example how to use Express and TypeORM with TypeScript](https://github.com/typeorm/typescript-express-example)
+* [Example how to use Koa and TypeORM with TypeScript](https://github.com/typeorm/typescript-koa-example)
 
 ## Extensions
 
