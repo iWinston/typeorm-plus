@@ -80,12 +80,16 @@ export interface ConnectionOptions {
      *
      * Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
      * Instead, it syncs just by creating indices.
+     *
+     * todo: rename it simply to synchronize: boolean ?
      */
     readonly autoSchemaSync?: boolean;
 
     /**
      * Indicates if migrations should be auto run on every application launch.
      * Alternative to it, you can use CLI and run migration:create command.
+     *
+     * todo: rename it simply to runMigrations: boolean ?
      */
     readonly autoMigrationsRun?: boolean;
 
