@@ -1203,6 +1203,11 @@ export class QueryBuilder<Entity> {
         return results.entities;
     }
 
+    // logSql(): this {
+    //     console.log(this.getSql());
+    //     return this;
+    // }
+
     /**
      * Gets single entity returned by execution of generated query builder sql.
      */
@@ -1731,9 +1736,9 @@ export class QueryBuilder<Entity> {
                 const junctionTable = junctionMetadata.table.name;
                 const junctionAlias = join.alias.parentAliasName + "_" + join.alias.name;
                 const joinAlias = join.alias.name;
-                const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable; // not sure if this is correct
-                const joinTableColumn = joinTable.referencedColumn.fullName; // not sure if this is correct
-                const inverseJoinColumnName = joinTable.inverseReferencedColumn.fullName; // not sure if this is correct
+                const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable;
+                const joinTableColumn = relation.isOwning ? joinTable.referencedColumn.fullName : joinTable.inverseReferencedColumn.fullName;
+                const inverseJoinColumnName = relation.isOwning ? joinTable.inverseReferencedColumn.fullName : joinTable.referencedColumn.fullName;
 
                 let condition1 = "", condition2 = "";
                 if (relation.isOwning) {
