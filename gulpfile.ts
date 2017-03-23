@@ -19,6 +19,7 @@ const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
 const ts = require("gulp-typescript");
+const args = require('yargs').argv;
 
 @Gulpclass()
 export class Gulpfile {
@@ -297,6 +298,7 @@ export class Gulpfile {
         return gulp.src(["./build/compiled/test/**/*.js"])
             .pipe(mocha({
                 bail: true,
+                grep: !!args.grep ? new RegExp(args.grep) : undefined,
                 timeout: 15000
             }))
             .pipe(istanbul.writeReports());
