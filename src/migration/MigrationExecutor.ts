@@ -223,7 +223,7 @@ export class MigrationExecutor {
     protected getMigrations(): Migration[] {
         const migrations = this.connection.getMigrations().map(migration => {
             const migrationClassName = (migration.constructor as any).name;
-            const migrationTimestamp = parseInt(migrationClassName.substr(-10));
+            const migrationTimestamp = parseInt(migrationClassName.substr(-13));
             if (!migrationTimestamp)
                 throw new Error(`Migration class name should contain a class name at the end of the file. ${migrationClassName} migration name is wrong.`);
 
