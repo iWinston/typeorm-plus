@@ -791,10 +791,14 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }) {
         switch (typeOptions.type) {
             case "string":
-                return "nvarchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                if (typeOptions.fixedLength) {
+                    return "nchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                } else {
+                    return "nvarchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                }
             case "text":
                 return "ntext";
             case "boolean":

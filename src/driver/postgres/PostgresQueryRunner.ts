@@ -744,10 +744,14 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }): string {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
         switch (typeOptions.type) {
             case "string":
-                return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                if (typeOptions.fixedLength) {
+                    return "character(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                } else {
+                    return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                }
             case "text":
                 return "text";
             case "boolean":

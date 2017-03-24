@@ -79,7 +79,7 @@ export interface QueryRunner {
     /**
      * Converts a column type of the metadata to the database column's type.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }): any;
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): any;
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.

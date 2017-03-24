@@ -737,7 +737,7 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }) {
         switch (typeOptions.type) {
             case "string":
                 return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
