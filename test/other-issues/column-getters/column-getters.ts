@@ -2,10 +2,9 @@ import "reflect-metadata";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
 import {expect} from "chai";
 
-describe("github issues > Join query on ManyToMany relations not working", () => {
+describe("other issues > column with getter / setter should work", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -16,29 +15,24 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("embedded with custom column name should persist and load without errors", () => Promise.all(connections.map(async connection => {
-
-        for (let i = 0; i < 20; i++) {
-            const category = new Category();
-            category.name = "Category #" + i;
-            await connection.entityManager.persist(category);
-        }
+    it("getters and setters should work correctly", () => Promise.all(connections.map(async connection => {
 
         const post = new Post();
-        post.title = "SuperRace";
-        post.categories = [new Category()];
-        post.categories[0].name = "SuperCategory";
+        post.title = "Super title";
+        post.text = "About this post";
         await connection.entityManager.persist(post);
 
         const loadedPost = await connection
             .entityManager
             .createQueryBuilder(Post, "post")
-            .leftJoinAndSelect("post.categories", "category")
-            .where("category.category_id IN (:ids)", { ids: [21] })
+            .where("post.id = :id", { id: 1 })
             .getOne();
 
         expect(loadedPost).not.to.be.empty;
-        expect(loadedPost!.categories).not.to.be.empty;
+        expect(loadedPost!.title).not.to.be.empty;
+        expect(loadedPost!.text).not.to.be.empty;
+        loadedPost!.title.should.be.equal("Super title");
+        loadedPost!.text.should.be.equal("About this post");
 
     })));
 
