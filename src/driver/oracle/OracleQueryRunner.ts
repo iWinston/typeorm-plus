@@ -742,7 +742,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
         switch (typeOptions.type) {
             case "string":
                 if (typeOptions.fixedLength) {
