@@ -309,7 +309,7 @@ export class Connection {
      * Imports naming strategies from the given paths (directories) and registers them in the current connection.
      */
     importNamingStrategiesFromDirectories(paths: string[]): this {
-        this.importEntities(importClassesFromDirectories(paths));
+        this.importNamingStrategies(importClassesFromDirectories(paths));
         return this;
     }
 
