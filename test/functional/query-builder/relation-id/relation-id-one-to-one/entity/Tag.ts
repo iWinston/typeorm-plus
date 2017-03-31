@@ -1,21 +1,21 @@
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
-import {Tag} from "./Tag";
+import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
+import {Post} from "./Post";
 
 @Entity()
-export class Post {
+export class Tag {
 
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column()
-    title: string;
-    
-    @ManyToOne(type => Tag, tag => tag.posts)
-    tag: Tag;
-    
-    tagId: number;
+    name: string;
+
+    @OneToOne(type => Post, post => post.tag2)
+    post: Post;
+
+    postId: number;
 
 }

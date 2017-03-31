@@ -910,6 +910,7 @@ export class QueryBuilder<Entity> {
                         .andWhere(condition, parameters)
                         .getSqlWithParameters();
                     rawResults = await queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
+                    this.createRelationIdAttributesFromDecorators(rawResults);
                     const rawRelationIdResults = await this.loadRelationIds(rawResults);
                     entities = this.rawResultsToEntities(rawResults, rawRelationIdResults);
                     await this.loadRelationCounts(queryRunner);
@@ -927,6 +928,7 @@ export class QueryBuilder<Entity> {
                 const [sql, parameters] = this.getSqlWithParameters();
 
                 const rawResults = await queryRunner.query(sql, parameters);
+                this.createRelationIdAttributesFromDecorators(rawResults);
                 const rawRelationIdResults = await this.loadRelationIds(rawResults);
                 const entities = this.rawResultsToEntities(rawResults, rawRelationIdResults);
                 await this.loadRelationCounts(queryRunner);
@@ -943,6 +945,58 @@ export class QueryBuilder<Entity> {
             if (this.hasOwnQueryRunner()) // means we created our own query runner
                 await queryRunner.release();
         }
+    }
+
+    /**
+     * Creates RelationIdAttributes from RelationIdMetadata (created by @RelationId decorators or in schemas).
+     */
+    protected createRelationIdAttributesFromDecorators(rawResults: any[]) {
+
+        // by example:
+        // post has relation id:
+        // @RelationId(post => post.categories) categoryIds
+        // category has relation id
+        // @RelationId(category => category.images) imageIds
+        // we load post and join category
+        // we expect post.categoryIds and post.category.imageIds to have relation ids
+
+        // first create relation id attributes for all relation id metadatas of the main selected object (post from example)
+        if (this.expressionMap.mainAlias) {
+            this.expressionMap.mainAlias.metadata.relations.forEach(relation => { // todo: should be metadata.relationIds
+                if (!relation.idField)
+                    return;
+
+                this.expressionMap.relationIdAttributes.push(new RelationIdAttribute(this.expressionMap, {
+                    relationName: this.expressionMap.mainAlias!.name + "." + relation.propertyName, // post.categories
+                    mapToProperty: this.expressionMap.mainAlias!.name + "." + relation.idField // post.categoryIds
+                }));
+            });
+        }
+
+        // second create relation id attributes for all relation id metadatas of all joined objects (category from example)
+        this.expressionMap.joinAttributes.forEach(join => {
+
+            // ensure this join has a metadata, because relation id can only work for real orm entities
+            if (!join.metadata || join.metadata.junction)
+                return;
+
+            // ensure we won't perform redundant queries for joined data which was not found in selection
+            // example: if post.category was not found in db then no need to execute query for category.imageIds
+            // todo: think more about this, same rules apply when using loadRelationIdAndMap without decorators but such check not present there
+            if (!rawResults.some(rawResult => !!rawResult[join.alias + "_" + join.metadata!.primaryColumns[0].fullName]))
+                return;
+
+            // todo: refactor and use join.metadata.relationIds
+            join.metadata.relations.forEach(relation => {
+                if (!relation.idField)
+                    return;
+
+                this.expressionMap.relationIdAttributes.push(new RelationIdAttribute(this.expressionMap, {
+                    relationName: join.alias + "." + relation.propertyName, // category.images
+                    mapToProperty: join.alias + "." + relation.idField // category.imageIds
+                }));
+            });
+        });
     }
 
     /**
@@ -1179,18 +1233,29 @@ export class QueryBuilder<Entity> {
         this.expressionMap.relationIdAttributes.push(relationIdAttribute);
     }
 
-    protected async loadRelationIds(rawEntities: any[]): Promise<{ relationIdAttribute: RelationIdAttribute, results: any[] }[]> {
-
-        // separate escaping functions are used to reduce code size and complexity below
-        const ea = (aliasName: string) => this.escapeAlias(aliasName);
-        const ec = (aliasName: string) => this.escapeColumn(aliasName);
+    protected async loadRelationIds(rawEntities: any[]): Promise<{ relationIdAttribute: RelationIdAttribute, results: { id: any, parentId: any }[] }[]> {
 
         const promises = this.expressionMap.relationIdAttributes.map(async relationIdAttr => {
+
             if (relationIdAttr.relation.isManyToOne || relationIdAttr.relation.isOneToOneOwner) {
+                // example: Post and Tag
+                // loadRelationIdAndMap("post.tagId", "post.tag") post_tag
+                // we expect it to load id of tag
+
+                if (relationIdAttr.queryBuilderFactory)
+                    throw new Error("");
+
+                const referenceColumnName = relationIdAttr.relation.joinColumn.referencedColumn.propertyName; // post id
+                const results = rawEntities.map(rawEntity => {
+                    return {
+                        id: rawEntity[relationIdAttr.parentAlias + "_" + relationIdAttr.relationProperty], // todo: custom alias for column wont work here
+                        parentId: rawEntity[relationIdAttr.parentAlias + "_" + referenceColumnName] // todo: custom alias for column wont work here
+                    };
+                });
 
                 return {
                     relationIdAttribute: relationIdAttr,
-                    results: []
+                    results: results
                 };
 
             } else if (relationIdAttr.relation.isOneToMany || relationIdAttr.relation.isOneToOneNotOwner) {
@@ -1202,21 +1267,23 @@ export class QueryBuilder<Entity> {
                 // todo: create test with multiple primary columns usage
 
                 const relation = relationIdAttr.relation; // "category.posts"
-                const inverseRelation = relationIdAttr.relation.inverseRelation; // "post.category"
+                const inverseRelation = relation.inverseRelation; // "post.category"
                 const referenceColumnName = inverseRelation.joinColumn.referencedColumn.propertyName; // post id
-                const tableName = relation.entityMetadata.table.name; // category
                 const inverseSideTable = relation.inverseEntityMetadata.table.target; // Post
                 const inverseSideTableName = relation.inverseEntityMetadata.table.name; // post
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
                 const inverseSidePropertyName = inverseRelation.propertyName; // "category" from "post.category"
+                const referenceColumnValues = rawEntities
+                    .map(rawEntity => rawEntity[relationIdAttr.parentAlias + "_" + referenceColumnName]) // todo: custom alias for column wont work here
+                    .filter(value => value !== undefined);
 
                 // generate query:
-                // SELECT post.id AS id, category.id AS parentId FROM post post INNER JOIN category category ON category.id=post.category
+                // SELECT post.id AS id, category.id AS parentId FROM post post INNER JOIN category category ON category.id=post.category AND category.id IN [:categoryIds]
                 const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
-                    .select(inverseSideTableAlias + "." + referenceColumnName, "id") // todo: referenceColumnName is wrong here
-                    .addSelect(tableName + "." + referenceColumnName, "parentId")
+                    .select(inverseSideTableAlias + "." + referenceColumnName, "id") // todo: referenceColumnName is wrong here, use multiple primary columns instead
+                    .addSelect(inverseSidePropertyName + "." + referenceColumnName, "parentId")
                     .from(inverseSideTable, inverseSideTableAlias)
-                    .innerJoin(inverseSideTableAlias + "." + inverseSidePropertyName, inverseSidePropertyName);
+                    .innerJoin(inverseSideTableAlias + "." + inverseSidePropertyName, inverseSidePropertyName, inverseSidePropertyName + "." + referenceColumnName + " IN (" + referenceColumnValues + ")");
 
                 // apply condition (custom query builder factory)
                 if (relationIdAttr.queryBuilderFactory)
@@ -1229,7 +1296,7 @@ export class QueryBuilder<Entity> {
 
             } else {
                 // example: Post and Category
-                // owner side: loadRelationIdAndMap("category.postIds", "category.posts")
+                // owner side: loadRelationIdAndMap("post.categoryIds", "post.categories")
                 // inverse side: loadRelationIdAndMap("category.postIds", "category.posts")
                 // we expect it to load array of post ids
 
@@ -1251,14 +1318,14 @@ export class QueryBuilder<Entity> {
                     secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
                 }
 
-                const owningSideReferenceColumnValues = rawEntities
+                const referenceColumnValues = rawEntities
                     .map(rawEntity => rawEntity[relationIdAttr.parentAlias + "_" + joinTableColumnName]) // todo: custom alias for column wont work here
                     .filter(value => value !== undefined);
                 const junctionAlias = relationIdAttr.junctionAlias;
                 const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.table.name;
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
                 const junctionTableName = relationIdAttr.relation.junctionEntityMetadata.table.name;
-                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + owningSideReferenceColumnValues + ")" +
+                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
                     " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 
                 const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)

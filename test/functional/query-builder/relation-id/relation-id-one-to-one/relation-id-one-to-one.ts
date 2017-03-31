@@ -33,6 +33,29 @@ describe("QueryBuilder > relation-id > one-to-one", () => {
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
+            .loadRelationIdAndMap("post.tagId", "post.tag")
+            .where("post.id = :id", { id: post.id })
+            .getOne();
+
+        expect(loadedPost!.tagId).to.not.be.empty;
+        expect(loadedPost!.tagId).to.be.equal(1);
+    })));
+
+
+    it.skip("should throw exception when loadRelationIdAndMap used with OneToOne relation and additional condition is specified", () => Promise.all(connections.map(async connection => {
+
+        const tag = new Tag();
+        tag.name = "kids";
+        await connection.entityManager.persist(tag);
+
+        const post = new Post();
+        post.title = "about kids";
+        post.tag = tag;
+        await connection.entityManager.persist(post);
+
+        let loadedPost = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .loadRelationIdAndMap("post.tagId", "post.tag", "tag", qb => qb.where("tag.id = :postId", { tagId: 1 }))
             .where("post.id = :id", { id: post.id })
             .getOne();
 
@@ -53,6 +76,7 @@ describe("QueryBuilder > relation-id > one-to-one", () => {
 
         let loadedTag = await connection.entityManager
             .createQueryBuilder(Tag, "tag")
+            .loadRelationIdAndMap("tag.postId", "tag.post")
             .getOne();
 
         expect(loadedTag!.postId).to.not.be.empty;

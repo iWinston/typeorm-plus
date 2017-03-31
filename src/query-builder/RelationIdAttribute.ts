@@ -33,14 +33,12 @@ export class RelationIdAttribute {
      */
     queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
-    entities: { entity: any, metadata: EntityMetadata }[] = [];
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(private expressionMap: QueryExpressionMap,
-                private relationIdAttribute?: RelationIdAttribute) {
+                private relationIdAttribute?: Partial<RelationIdAttribute>) {
         Object.assign(this, relationIdAttribute || {});
     }
 

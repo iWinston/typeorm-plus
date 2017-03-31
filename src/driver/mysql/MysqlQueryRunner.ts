@@ -562,11 +562,11 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         if (!tableSchema.hasGeneratedColumn)
-            await this.query(`ALTER TABLE ${tableSchema.name} DROP PRIMARY KEY`);
+            await this.query(`ALTER TABLE \`${tableSchema.name}\` DROP PRIMARY KEY`);
 
         const primaryColumnNames = tableSchema.columns.filter(column => column.isPrimary && !column.isGenerated).map(column => "`" + column.name + "`");
         if (primaryColumnNames.length > 0)
-            await this.query(`ALTER TABLE ${tableSchema.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+            await this.query(`ALTER TABLE \`${tableSchema.name}\` ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
 
     /**
@@ -589,7 +589,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
-        let sql = `ALTER TABLE ${tableName} ADD CONSTRAINT \`${foreignKey.name}\` ` +
+        let sql = `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${foreignKey.name}\` ` +
             `FOREIGN KEY (${columnNames}) ` +
             `REFERENCES \`${foreignKey.referencedTableName}\`(${referencedColumnNames})`;
         if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;

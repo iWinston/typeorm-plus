@@ -5,9 +5,6 @@ import {createTestingConnections, closeTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {Tag} from "./entity/Tag";
-import {PostWithoutRelationId} from "./entity/PostWithoutRelationId";
-import {CategoryWithoutRelationId} from "./entity/CategoryWithoutRelationId";
 import {Image} from "./entity/Image";
 
 const should = chai.should();
@@ -26,349 +23,137 @@ describe("QueryBuilder > relation-id > many-to-many", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    describe("with RelationId decorator", function() {
+    it("should load ids when loadRelationIdAndMap used on ManyToMany owner side", () => Promise.all(connections.map(async connection => {
 
-        it.skip("should load ids when RelationId decorator used with ManyToMany relation", () => Promise.all(connections.map(async connection => {
+        const category1 = new Category();
+        category1.name = "kids";
 
-            const category1 = new Category();
-            category1.name = "kids";
+        const category2 = new Category();
+        category2.name = "future";
 
-            const category2 = new Category();
-            category2.name = "future";
+        await Promise.all([
+            connection.entityManager.persist(category1),
+            connection.entityManager.persist(category2)
+        ]);
 
-            await Promise.all([
-                connection.entityManager.persist(category1),
-                connection.entityManager.persist(category2)
-            ]);
+        const post = new Post();
+        post.title = "about kids";
+        post.categories = [category1, category2];
+        await connection.entityManager.persist(post);
 
-            const post = new Post();
-            post.title = "about kids";
-            await connection.entityManager.persist(post);
+        let loadedPost = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .where("post.id = :id", { id: post.id })
+            .getOne();
 
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(Post, "post")
-                .where("post.id = :id", { id: post.id })
-                .getOne();
+        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categoryIds[0]).to.be.equal(1);
+        expect(loadedPost!.categoryIds[1]).to.be.equal(2);
 
-            expect(loadedPost!.categoryIds).to.not.be.empty;
-            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-            expect(loadedPost!.categoryIds[1]).to.be.equal(2);
-        })));
+    })));
 
+    it("should load ids when loadRelationIdAndMap used on ManyToMany owner side without inverse side", () => Promise.all(connections.map(async connection => {
+
+        const category1 = new Category();
+        category1.name = "kids";
 
-    });
+        const category2 = new Category();
+        category2.name = "future";
 
-    describe("without RelationId decorator", function() {
+        await Promise.all([
+            connection.entityManager.persist(category1),
+            connection.entityManager.persist(category2)
+        ]);
 
-        it("should not load ids when RelationId decorator is not specified", () => Promise.all(connections.map(async connection => {
+        const post = new Post();
+        post.title = "about kids";
+        post.subcategories = [category1, category2];
+        await connection.entityManager.persist(post);
 
-            const tag = new Tag();
-            tag.name = "kids";
+        let loadedPost = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .where("post.id = :id", { id: post.id })
+            .getOne();
 
-            const category1 = new CategoryWithoutRelationId();
-            category1.name = "kids";
+        expect(loadedPost!.subcategoryIds).to.not.be.empty;
+        expect(loadedPost!.subcategoryIds[0]).to.be.equal(1);
+        expect(loadedPost!.subcategoryIds[1]).to.be.equal(2);
 
-            const category2 = new CategoryWithoutRelationId();
-            category2.name = "future";
+    })));
 
-            await Promise.all([
-                connection.entityManager.persist(tag),
-                connection.entityManager.persist(category1),
-                connection.entityManager.persist(category2)
-            ]);
+    it("should load ids when loadRelationIdAndMap used on ManyToMany inverse side", () => Promise.all(connections.map(async connection => {
 
-            const post = new PostWithoutRelationId();
-            post.title = "about kids";
-            post.tag = tag;
-            post.categories = [category1, category2];
-            await connection.entityManager.persist(post);
+        const category = new Category();
+        category.name = "cars";
+        await connection.entityManager.persist(category);
 
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(PostWithoutRelationId, "post")
-                .leftJoinAndSelect("post.tag", "tag")
-                .leftJoinAndSelect("post.categories", "categories")
-                .where("post.id = :id", { id: post.id })
-                .getOne();
+        const post1 = new Post();
+        post1.title = "about BMW";
+        post1.categories = [category];
 
-            expect(loadedPost!.tag).to.not.be.empty;
-            expect(loadedPost!.tagId).to.be.empty;
-            expect(loadedPost!.categories).to.not.be.empty;
-            expect(loadedPost!.categoryIds).to.be.empty;
+        const post2 = new Post();
+        post2.title = "about Audi";
+        post2.categories = [category];
 
-        })));
+        await Promise.all([
+            connection.entityManager.persist(post1),
+            connection.entityManager.persist(post2)
+        ]);
 
-        it("should load ids when loadRelationIdAndMap used on ManyToMany owner side", () => Promise.all(connections.map(async connection => {
+        let loadedCategory = await connection.entityManager
+            .createQueryBuilder(Category, "category")
+            .where("category.id = :id", { id: category.id })
+            .getOne();
 
-            const category1 = new CategoryWithoutRelationId();
-            category1.name = "kids";
+        expect(loadedCategory!.postIds).to.not.be.empty;
+        expect(loadedCategory!.postIds[0]).to.be.equal(1);
+        expect(loadedCategory!.postIds[1]).to.be.equal(2);
 
-            const category2 = new CategoryWithoutRelationId();
-            category2.name = "future";
+    })));
 
-            await Promise.all([
-                connection.entityManager.persist(category1),
-                connection.entityManager.persist(category2)
-            ]);
+    it("should load ids when loadRelationIdAndMap used on inherit relation", () => Promise.all(connections.map(async connection => {
 
-            const post = new PostWithoutRelationId();
-            post.title = "about kids";
-            post.categories = [category1, category2];
-            await connection.entityManager.persist(post);
+        const image1 = new Image();
+        image1.name = "photo1";
 
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(PostWithoutRelationId, "post")
-                .loadRelationIdAndMap("post.categoryIds", "post.categories")
-                .where("post.id = :id", { id: post.id })
-                .getOne();
+        const image2 = new Image();
+        image2.name = "photo2";
 
-            expect(loadedPost!.categoryIds).to.not.be.empty;
-            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-            expect(loadedPost!.categoryIds[1]).to.be.equal(2);
+        await Promise.all([
+            connection.entityManager.persist(image1),
+            connection.entityManager.persist(image2)
+        ]);
 
-        })));
-
-        it("should load ids when loadRelationIdAndMap used on ManyToMany owner side without inverse side", () => Promise.all(connections.map(async connection => {
-
-            const category1 = new CategoryWithoutRelationId();
-            category1.name = "kids";
-
-            const category2 = new CategoryWithoutRelationId();
-            category2.name = "future";
-
-            await Promise.all([
-                connection.entityManager.persist(category1),
-                connection.entityManager.persist(category2)
-            ]);
-
-            const post = new PostWithoutRelationId();
-            post.title = "about kids";
-            post.subcategories = [category1, category2];
-            await connection.entityManager.persist(post);
-
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(PostWithoutRelationId, "post")
-                .loadRelationIdAndMap("post.categoryIds", "post.subcategories")
-                .where("post.id = :id", { id: post.id })
-                .getOne();
-
-            expect(loadedPost!.categoryIds).to.not.be.empty;
-            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-            expect(loadedPost!.categoryIds[1]).to.be.equal(2);
-
-        })));
-
-        it("should load ids when loadRelationIdAndMap used on ManyToMany inverse side", () => Promise.all(connections.map(async connection => {
-
-            const category = new CategoryWithoutRelationId();
-            category.name = "cars";
-            await connection.entityManager.persist(category);
-
-            const post1 = new PostWithoutRelationId();
-            post1.title = "about BMW";
-            post1.categories = [category];
-
-            const post2 = new PostWithoutRelationId();
-            post2.title = "about Audi";
-            post2.categories = [category];
-
-            await Promise.all([
-                connection.entityManager.persist(post1),
-                connection.entityManager.persist(post2)
-            ]);
-
-            let loadedCategory = await connection.entityManager
-                .createQueryBuilder(CategoryWithoutRelationId, "category")
-                .loadRelationIdAndMap("category.postIds", "category.posts")
-                .where("category.id = :id", { id: category.id })
-                .getOne();
-
-            expect(loadedCategory!.postIds).to.not.be.empty;
-            expect(loadedCategory!.postIds[0]).to.be.equal(1);
-            expect(loadedCategory!.postIds[1]).to.be.equal(2);
-
-        })));
-
-        it("should load ids when loadRelationIdAndMap used on ManyToMany owning side with additional condition", () => Promise.all(connections.map(async connection => {
-
-            const category1 = new CategoryWithoutRelationId();
-            category1.name = "kids";
-
-            const category2 = new CategoryWithoutRelationId();
-            category2.name = "future";
-
-            await Promise.all([
-                connection.entityManager.persist(category1),
-                connection.entityManager.persist(category2)
-            ]);
-
-            const post = new PostWithoutRelationId();
-            post.title = "about kids";
-            post.categories = [category1, category2];
-            await connection.entityManager.persist(post);
-
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(PostWithoutRelationId, "post")
-                .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.where("categories.id = :categoryId", { categoryId: 1 }))
-                .getOne();
-
-            expect(loadedPost!.categoryIds).to.not.be.empty;
-            expect(loadedPost!.categoryIds.length).to.be.equal(1);
-            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-
-        })));
-
-        it("should load ids when loadRelationIdAndMap used on ManyToMany owning side without inverse side and with additional condition", () => Promise.all(connections.map(async connection => {
-
-            const category1 = new CategoryWithoutRelationId();
-            category1.name = "kids";
-
-            const category2 = new CategoryWithoutRelationId();
-            category2.name = "future";
-
-            await Promise.all([
-                connection.entityManager.persist(category1),
-                connection.entityManager.persist(category2)
-            ]);
-
-            const post = new PostWithoutRelationId();
-            post.title = "about kids";
-            post.subcategories = [category1, category2];
-            await connection.entityManager.persist(post);
-
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(PostWithoutRelationId, "post")
-                .loadRelationIdAndMap("post.categoryIds", "post.subcategories", "subCategories", qb => qb.where("subCategories.id = :categoryId", { categoryId: 1 }))
-                .getOne();
-
-            expect(loadedPost!.categoryIds).to.not.be.empty;
-            expect(loadedPost!.categoryIds.length).to.be.equal(1);
-            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-
-        })));
-
-        it("should load ids when loadRelationIdAndMap used on ManyToMany inverse side with additional condition", () => Promise.all(connections.map(async connection => {
-
-            const category = new CategoryWithoutRelationId();
-            category.name = "cars";
-            await connection.entityManager.persist(category);
-
-            const post1 = new PostWithoutRelationId();
-            post1.title = "about BMW";
-            post1.categories = [category];
-
-            const post2 = new PostWithoutRelationId();
-            post2.title = "about Audi";
-            post2.categories = [category];
-
-            await Promise.all([
-                connection.entityManager.persist(post1),
-                connection.entityManager.persist(post2)
-            ]);
-
-            let loadedCategory = await connection.entityManager
-                .createQueryBuilder(CategoryWithoutRelationId, "category")
-                .loadRelationIdAndMap("category.postIds", "category.posts", "posts", qb => qb.where("posts.id = :postId", { postId: 1 }))
-                .where("category.id = :id", { id: category.id })
-                .getOne();
-
-            expect(loadedCategory!.postIds).to.not.be.empty;
-            expect(loadedCategory!.postIds.length).to.be.equal(1);
-            expect(loadedCategory!.postIds[0]).to.be.equal(1);
-
-        })));
-
-        it("should load ids when loadRelationIdAndMap used on inherit relation", () => Promise.all(connections.map(async connection => {
-
-            const image1 = new Image();
-            image1.name = "photo1";
-
-            const image2 = new Image();
-            image2.name = "photo2";
-
-            await Promise.all([
-                connection.entityManager.persist(image1),
-                connection.entityManager.persist(image2)
-            ]);
-
-            const category1 = new CategoryWithoutRelationId();
-            category1.name = "cars";
-            category1.images = [image1, image2];
-            await connection.entityManager.persist(category1);
-
-            const category2 = new CategoryWithoutRelationId();
-            category2.name = "BMW";
-            await connection.entityManager.persist(category2);
-
-            const post = new PostWithoutRelationId();
-            post.title = "about BMW";
-            post.categories = [category1, category2];
-            await connection.entityManager.persist(post);
-
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(PostWithoutRelationId, "post")
-                .leftJoinAndSelect("post.categories", "categories")
-                .loadRelationIdAndMap("post.categoryIds", "post.categories")
-                .loadRelationIdAndMap("categories.imageIds", "categories.images")
-                .where("post.id = :id", { id: post.id })
-                .getOne();
-
-            expect(loadedPost!.categories).to.not.be.empty;
-            expect(loadedPost!.categoryIds).to.not.be.empty;
-            expect(loadedPost!.categoryIds.length).to.be.equal(2);
-            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-            expect(loadedPost!.categoryIds[1]).to.be.equal(2);
-            expect(loadedPost!.categories[0].imageIds).to.not.be.empty;
-            expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2);
-            expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1);
-            expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2);
-
-        })));
-
-        it("should load ids when loadRelationIdAndMap used on inherit relation with additional conditions", () => Promise.all(connections.map(async connection => {
-
-            const image1 = new Image();
-            image1.name = "photo1";
-
-            const image2 = new Image();
-            image2.name = "photo2";
-
-            await Promise.all([
-                connection.entityManager.persist(image1),
-                connection.entityManager.persist(image2)
-            ]);
-
-            const category1 = new CategoryWithoutRelationId();
-            category1.name = "cars";
-            category1.images = [image1, image2];
-            await connection.entityManager.persist(category1);
-
-            const category2 = new CategoryWithoutRelationId();
-            category2.name = "BMW";
-            await connection.entityManager.persist(category2);
-
-            const post = new PostWithoutRelationId();
-            post.title = "about BMW";
-            post.categories = [category1, category2];
-            await connection.entityManager.persist(post);
-
-            let loadedPost = await connection.entityManager
-                .createQueryBuilder(PostWithoutRelationId, "post")
-                .leftJoinAndSelect("post.categories", "categories")
-                .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories2", qb => qb.where("categories2.id = :categoryId", { categoryId: 1 }))
-                .loadRelationIdAndMap("categories.imageIds", "categories.images", "images", qb => qb.where("images.id = :imageId", { imageId: 1 }))
-                .where("post.id = :id", { id: post.id })
-                .getOne();
-
-            expect(loadedPost!.categories).to.not.be.empty;
-            expect(loadedPost!.categoryIds).to.not.be.empty;
-            expect(loadedPost!.categoryIds.length).to.be.equal(1);
-            expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-            expect(loadedPost!.categories[0].imageIds).to.not.be.empty;
-            expect(loadedPost!.categories[0].imageIds.length).to.be.equal(1);
-            expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1);
-
-        })));
-
-    });
+        const category1 = new Category();
+        category1.name = "cars";
+        category1.images = [image1, image2];
+        await connection.entityManager.persist(category1);
+
+        const category2 = new Category();
+        category2.name = "BMW";
+        await connection.entityManager.persist(category2);
+
+        const post = new Post();
+        post.title = "about BMW";
+        post.categories = [category1, category2];
+        await connection.entityManager.persist(post);
+
+        let loadedPost = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .leftJoinAndSelect("post.categories", "categories")
+            .where("post.id = :id", { id: post.id })
+            .getOne();
+
+        expect(loadedPost!.categories).to.not.be.empty;
+        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categoryIds.length).to.be.equal(2);
+        expect(loadedPost!.categoryIds[0]).to.be.equal(1);
+        expect(loadedPost!.categoryIds[1]).to.be.equal(2);
+        expect(loadedPost!.categories[0].imageIds).to.not.be.empty;
+        expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2);
+        expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1);
+        expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2);
+
+    })));
 
 });

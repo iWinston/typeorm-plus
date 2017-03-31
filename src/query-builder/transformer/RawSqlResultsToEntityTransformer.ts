@@ -66,10 +66,11 @@ export class RawSqlResultsToEntityTransformer {
                 let referenceColumnName: string;
 
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
-                    referenceColumnName = "";
+                    referenceColumnName = relation.joinColumn.referencedColumn.fullName;
 
-                } else if (relation.isOneToMany || (relation.isOneToOne && !relation.isOwning)) {
-                    referenceColumnName = relation.referencedColumn.fullName;
+                } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+                    referenceColumnName = relation.inverseRelation.joinColumn.referencedColumn.fullName;
+
                 } else {
                     referenceColumnName = relation.isOwning ? relation.joinTable.referencedColumn.fullName : relation.inverseRelation.joinTable.referencedColumn.fullName;
                 }
@@ -80,12 +81,13 @@ export class RawSqlResultsToEntityTransformer {
                     rawRelationIdResult.results
                         .filter(result => result["parentId"] === referenceColumnValue)
                         .forEach(result => {
-                            if (!entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName])
-                                entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName] = [];
 
-                            if (relation.isOneToOne && !relation.isOwning) {
+                            if (relation.isOneToOne || relation.isManyToOne) {
                                 entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName] = result["id"];
                             } else {
+                                if (!entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName])
+                                    entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName] = [];
+
                                 entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName].push(result["id"]);
                             }
                             hasData = true;
@@ -249,40 +251,6 @@ export class RawSqlResultsToEntityTransformer {
                     if (!isResultArray || result.length > 0)
                         hasData = true;
                 }
-            }
-
-            // if relation has id field then relation id/ids to that field.
-            if (relation.isManyToMany) {
-                if (join) {
-                    const ids: any[] = [];
-                    const joinRelationId = this.expressionMap.joinAttributes.find(join => join.junctionAlias === join.alias);
-
-                    if (relation.idField || joinRelationId) {
-                        let propertyName: string = "";
-                        if (joinRelationId && joinRelationId.mapToProperty) {
-                            propertyName = joinRelationId.mapToProperty.split(".")[1];
-                        } else {
-                            propertyName = relation.idField as string;
-                        }
-                        const junctionMetadata = relation.junctionEntityMetadata;
-                        const columnName = relation.isOwning ? junctionMetadata.columns[1].fullName : junctionMetadata.columns[0].fullName;
-
-                        rawSqlResults.forEach(results => {
-                            if (join) {
-                                const resultsKey = join.alias + "_" + columnName;
-                                const value = this.driver.prepareHydratedValue(results[resultsKey], relation.referencedColumn);
-                                if (value !== undefined && value !== null)
-                                    ids.push(value);
-                            }
-                        });
-
-                        if (ids && ids.length)
-                            entity[propertyName] = ids;
-                    }
-                }
-            } else if (relation.idField) {
-                const relationName = relation.name;
-                entity[relation.idField] = this.driver.prepareHydratedValue(rawSqlResults[0][alias + "_" + relationName], relation.referencedColumn);
             }
 
             // if relation counter

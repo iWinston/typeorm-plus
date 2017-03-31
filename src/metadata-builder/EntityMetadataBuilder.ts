@@ -286,9 +286,6 @@ export class EntityMetadataBuilder {
                         return relation.propertyName === relationId.relation;
                     });
                     if (relationIdMetadata) {
-                        if (relation.isOneToOneNotOwner || relation.isOneToMany)
-                            throw new Error(`RelationId cannot be used for the one-to-one without join column or one-to-many relations.`);
-
                         relation.idField = relationIdMetadata.propertyName;
                     }
                 });

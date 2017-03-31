@@ -3,12 +3,15 @@ import * as chai from "chai";
 import {expect} from "chai";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
-import {Tag} from "./entity/Tag";
 import {Post} from "./entity/Post";
+import {Tag} from "./entity/Tag";
 
 const should = chai.should();
 
-describe("QueryBuilder > relation-id > one-to-one", () => {
+describe("QueryBuilder > relation-id > many-to-one", () => {
+    
+    // todo: make this feature to work with FindOptions
+    // todo: also make sure all new qb features to work with FindOptions
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -19,8 +22,7 @@ describe("QueryBuilder > relation-id > one-to-one", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-
-    it("should load ids when loadRelationIdAndMap used with OneToOne owner side relation", () => Promise.all(connections.map(async connection => {
+    it("should load ids when loadRelationIdAndMap used with ManyToOne relation", () => Promise.all(connections.map(async connection => {
 
         const tag = new Tag();
         tag.name = "kids";
@@ -33,6 +35,7 @@ describe("QueryBuilder > relation-id > one-to-one", () => {
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
+            .loadRelationIdAndMap("post.tagId", "post.tag")
             .where("post.id = :id", { id: post.id })
             .getOne();
 
@@ -40,23 +43,5 @@ describe("QueryBuilder > relation-id > one-to-one", () => {
         expect(loadedPost!.tagId).to.be.equal(1);
     })));
 
-    it("should load id when loadRelationIdAndMap used with OneToOne inverse side relation", () => Promise.all(connections.map(async connection => {
-
-        const tag = new Tag();
-        tag.name = "cars";
-        await connection.entityManager.persist(tag);
-
-        const post = new Post();
-        post.title = "about BMW";
-        post.tag2 = tag;
-        await connection.entityManager.persist(post);
-
-        let loadedTag = await connection.entityManager
-            .createQueryBuilder(Tag, "tag")
-            .getOne();
-
-        expect(loadedTag!.postId).to.not.be.empty;
-        expect(loadedTag!.postId).to.be.equal(1);
-    })));
 
 });

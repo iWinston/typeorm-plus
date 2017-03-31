@@ -1,8 +1,9 @@
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
-import {PostWithoutRelationId} from "./PostWithoutRelationId";
 import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
+import {Post} from "./Post";
+import {RelationId} from "../../../../../../src/decorator/relations/RelationId";
 
 @Entity()
 export class Tag {
@@ -13,9 +14,10 @@ export class Tag {
     @Column()
     name: string;
 
-    @OneToOne(type => PostWithoutRelationId, post => post.tag2)
-    post: PostWithoutRelationId;
+    @OneToOne(type => Post, post => post.tag2)
+    post: Post;
 
+    @RelationId((tag: Tag) => tag.post)
     postId: number;
 
 }

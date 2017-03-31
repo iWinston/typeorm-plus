@@ -3,11 +3,11 @@ import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/Pr
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
-import {PostWithoutRelationId} from "./PostWithoutRelationId";
+import {Post} from "./Post";
 import {Image} from "./Image";
 
 @Entity()
-export class CategoryWithoutRelationId {
+export class Category {
 
     @PrimaryGeneratedColumn()
     id: number;
@@ -15,8 +15,8 @@ export class CategoryWithoutRelationId {
     @Column()
     name: string;
 
-    @ManyToMany(type => PostWithoutRelationId, post => post.categories)
-    posts: PostWithoutRelationId[];
+    @ManyToMany(type => Post, post => post.categories)
+    posts: Post[];
 
     @ManyToMany(type => Image)
     @JoinTable()

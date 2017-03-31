@@ -59,7 +59,7 @@ export class RelationMetadata {
      * of the object it relates with, but don't want to load that object because of it. Also its used in the
      * cases when user wants to add / remove / load in the many-to-many junction tables.
      */
-    idField: string|undefined;
+    idField: string|undefined; // todo: CAN BE MULTIPLE!!!
 
     /**
      * The name of the field that will contain count of the rows of the relation.

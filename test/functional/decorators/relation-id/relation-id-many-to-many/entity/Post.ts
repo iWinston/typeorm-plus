@@ -3,10 +3,10 @@ import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
-import {RelationId} from "../../../../../../src/decorator/relations/RelationId";
 import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
-import {Tag} from "./Tag";
 import {Category} from "./Category";
+import {Tag} from "./Tag";
+import {RelationId} from "../../../../../../src/decorator/relations/RelationId";
 
 @Entity()
 export class Post {
@@ -20,18 +20,20 @@ export class Post {
     @ManyToOne(type => Tag)
     tag: Tag;
     
-    @RelationId((post: Post) => post.tag)
     tagId: number;
 
     @ManyToMany(type => Category, category => category.posts)
     @JoinTable()
     categories: Category[];
-    
+
+    @ManyToMany(type => Category)
+    @JoinTable()
+    subcategories: Category[];
+
     @RelationId((post: Post) => post.categories)
     categoryIds: number[];
 
-    allCategoryIds: number[];
-
-    mappedTagId: number;
+    @RelationId((post: Post) => post.subcategories)
+    subcategoryIds: number[];
 
 }
