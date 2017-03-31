@@ -635,7 +635,7 @@ export class QueryBuilder<Entity> {
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(undefined: undefined): this;
+    orderBy(sort: undefined): this;
 
     /**
      * Sets ORDER BY condition in the query builder.
