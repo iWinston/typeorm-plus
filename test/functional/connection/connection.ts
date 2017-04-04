@@ -1,11 +1,14 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
-import {Guest} from "./entity/Guest";
-import {Comment} from "./entity/Comment";
+import {Guest as GuestV1} from "./entity/v1/Guest";
+import {Comment as CommentV1} from "./entity/v1/Comment";
+import {Guest as GuestV2} from "./entity/v1/Guest";
+import {Comment as CommentV2} from "./entity/v1/Comment";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
 import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
+import {createConnection} from "../../../src/index";
 import {Connection} from "../../../src/connection/Connection";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {Repository} from "../../../src/repository/Repository";
@@ -384,19 +387,63 @@ describe("Connection", () => {
 
     });
 
-    describe("Can change postgres default schema name", () => {
+    describe.only("Different names of the same content of the schema", () => {
+
         let connections: Connection[];
         beforeEach(async () => {
             const [[connection1], [connection2]] = await Promise.all([
                 createTestingConnections({ 
                     enabledDrivers: ["postgres"],
-                    entities: [Comment, Guest],
+                    entities: [CommentV1, GuestV1],
+                    schemaName: "test-schema",
+                    dropSchemaOnConnection: true,
+                }),
+                createTestingConnections({ 
+                    enabledDrivers: ["postgres"],
+                    entities: [CommentV1, GuestV1],
+                    schemaName: "another-schema",
+                    dropSchemaOnConnection: true
+                })
+            ]);
+            connections = [connection1, connection2];
+        });
+        after(() => closeTestingConnections(connections));
+        it("should not interfere with each other", async () => {
+            await Promise.all(connections.map(c => c.syncSchema()));
+            await closeTestingConnections(connections);
+            const [[connection1], [connection2]] = await Promise.all([
+                createTestingConnections({ 
+                    enabledDrivers: ["postgres"],
+                    entities: [CommentV2, GuestV2],
+                    schemaName: "test-schema",
+                    dropSchemaOnConnection: false,
+                    schemaCreate: true
+                }),
+                createTestingConnections({ 
+                    enabledDrivers: ["postgres"],
+                    entities: [CommentV2, GuestV2],
+                    schemaName: "another-schema",
+                    dropSchemaOnConnection: false,
+                    schemaCreate: true
+                })
+            ]);
+            connections = [connection1, connection2];
+        });
+    });
+
+    describe.only("Can change postgres default schema name", () => {
+        let connections: Connection[];
+        beforeEach(async () => {
+            const [[connection1], [connection2]] = await Promise.all([
+                createTestingConnections({ 
+                    enabledDrivers: ["postgres"],
+                    entities: [CommentV1, GuestV1],
                     schemaName: "test-schema",
                     dropSchemaOnConnection: true
                 }),
                 createTestingConnections({ 
                     enabledDrivers: ["postgres"],
-                    entities: [Comment, Guest],
+                    entities: [CommentV1, GuestV1],
                     schemaName: "another-schema",
                     dropSchemaOnConnection: true
                 })
@@ -404,15 +451,16 @@ describe("Connection", () => {
             connections = [connection1, connection2];
         });
         afterEach(() => closeTestingConnections(connections));        
+
         it("schema name can be set", () => {
             return Promise.all(connections.map(async connection => {
                 await connection.syncSchema(true);
                 const schemaName = (connection.driver as PostgresDriver).schemaName;
-                const comment = new Comment();
+                const comment = new CommentV1();
                 comment.title = "Change SchemaName";
                 comment.context = `To ${schemaName}`;
 
-                const CommentRepo = connection.getRepository(Comment);
+                const CommentRepo = connection.getRepository(CommentV1);
                 await CommentRepo.persist(comment);
 
                 const query = await connection.driver.createQueryRunner();
@@ -421,6 +469,7 @@ describe("Connection", () => {
             }));
             
         });
+
     });
 
 });
