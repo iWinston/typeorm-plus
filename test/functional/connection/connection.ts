@@ -407,15 +407,16 @@ describe("Connection", () => {
         it("schema name can be set", () => {
             return Promise.all(connections.map(async connection => {
                 await connection.syncSchema(true);
-
+                const schemaName = (connection.driver as PostgresDriver).schemaName;
                 const comment = new Comment();
-                comment.context = "ChangeSchemaName";
+                comment.title = "Change SchemaName";
+                comment.context = `To ${schemaName}`;
 
                 const CommentRepo = connection.getRepository(Comment);
                 await CommentRepo.persist(comment);
 
                 const query = await connection.driver.createQueryRunner();
-                const rows = await query.query(`select * from "${(connection.driver as PostgresDriver).schemaName}"."comment" where id = $1`, [comment.id]);
+                const rows = await query.query(`select * from "${schemaName}"."comment" where id = $1`, [comment.id]);
                 expect(rows[0]["context"]).to.be.eq(comment.context);
             }));
             
