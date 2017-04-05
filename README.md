@@ -407,8 +407,7 @@ Now you if run your `app.ts`, connection with database will be initialized and d
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
 ```
-    
-Now you can run your `app.ts`, connection with database will be initialized, and database table for your Photo will be created.
+
 
 ### Creating and inserting photo into the database
 
