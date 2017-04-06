@@ -3,8 +3,8 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {Guest as GuestV1} from "./entity/v1/Guest";
 import {Comment as CommentV1} from "./entity/v1/Comment";
-import {Guest as GuestV2} from "./entity/v1/Guest";
-import {Comment as CommentV2} from "./entity/v1/Comment";
+import {Guest as GuestV2} from "./entity/v2/Guest";
+import {Comment as CommentV2} from "./entity/v2/Comment";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
 import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
@@ -391,13 +391,15 @@ describe("Connection", () => {
 
         let connections: Connection[];
         beforeEach(async () => {
-            const [connection1] = await createTestingConnections({ 
+            const [connection1] = await createTestingConnections({
+                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "test-schema",
                 dropSchemaOnConnection: true,
             });
-            const [connection2] = await createTestingConnections({ 
+            const [connection2] = await createTestingConnections({
+                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "another-schema",
@@ -409,17 +411,21 @@ describe("Connection", () => {
         it("should not interfere with each other", async () => {
             await Promise.all(connections.map(c => c.syncSchema()));
             await closeTestingConnections(connections);
-            const [connection1] = await createTestingConnections({ 
+            const [connection1] = await createTestingConnections({
+                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
                 schemaName: "test-schema",
-                dropSchemaOnConnection: true,
+                dropSchemaOnConnection: false,
+                schemaCreate: true
             });
-            const [connection2] = await createTestingConnections({ 
+            const [connection2] = await createTestingConnections({
+                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
                 schemaName: "another-schema",
-                dropSchemaOnConnection: true
+                dropSchemaOnConnection: false,
+                schemaCreate: true
             });
             connections = [connection1, connection2];
         });
@@ -428,13 +434,15 @@ describe("Connection", () => {
     describe("Can change postgres default schema name", () => {
         let connections: Connection[];
         beforeEach(async () => {
-            const [connection1] = await createTestingConnections({ 
+            const [connection1] = await createTestingConnections({
+                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "test-schema",
                 dropSchemaOnConnection: true,
             });
-            const [connection2] = await createTestingConnections({ 
+            const [connection2] = await createTestingConnections({
+                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "another-schema",
