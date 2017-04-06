@@ -633,7 +633,7 @@ If you run the app you'll see a new generated table, and it will contain a colum
 
 ```shell
 +-------------+--------------+----------------------------+
-|                         photo                           |
+|                      photometadata                      |
 +-------------+--------------+----------------------------+
 | id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
 | height      | int(11)      |                            |
