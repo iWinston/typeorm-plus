@@ -840,7 +840,7 @@ createConnection(options).then(async connection => {
     // Get repository
     let photoRepository = connection.getRepository(Photo);
 
-    // First we should persist a photo
+    // Persisting a photo also persist the metadata
     await photoRepository.persist(photo);
 
     console.log("Photo is saved, photo metadata is saved too.")
