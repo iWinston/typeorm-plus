@@ -1,8 +1,8 @@
-import {RelationMetadata} from "../metadata/RelationMetadata";
-import {QueryBuilderUtils} from "./QueryBuilderUtils";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {QueryBuilder} from "./QueryBuilder";
-import {QueryExpressionMap} from "./QueryExpressionMap";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {QueryBuilderUtils} from "../QueryBuilderUtils";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {QueryBuilder} from "../QueryBuilder";
+import {QueryExpressionMap} from "../QueryExpressionMap";
 
 /**
  * Stores all join relation id attributes which will be used to build a JOIN query.
@@ -97,6 +97,18 @@ export class RelationIdAttribute {
     get junctionAlias(): string {
         const [parentAlias, relationProperty] = this.relationName.split(".");
         return parentAlias + "_" + relationProperty + "_relation_id";
+    }
+
+    get referenceColumnName(): string {
+        if (this.relation.isManyToOne || this.relation.isOneToOneOwner) {
+            return this.relation.joinColumn.referencedColumn.fullName;
+
+        } else if (this.relation.isOneToMany || this.relation.isOneToOneNotOwner) {
+            return this.relation.inverseRelation.joinColumn.referencedColumn.fullName;
+
+        } else {
+            return this.relation.isOwning ? this.relation.joinTable.referencedColumn.fullName : this.relation.inverseRelation.joinTable.referencedColumn.fullName;
+        }
     }
 
     /**

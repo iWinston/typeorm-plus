@@ -23,6 +23,7 @@ import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {Driver} from "../driver/Driver";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
+import {RelationIdMetadata} from "../metadata/RelationIdMetadata";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -226,6 +227,7 @@ export class EntityMetadataBuilder {
                     return new ColumnMetadata(args);
                 });
                 const relations = mergedArgs.relations.toArray().map(args => new RelationMetadata(args));
+                const relationIds = mergedArgs.relationIds.toArray().map(args => new RelationIdMetadata(args));
                 const indices = mergedArgs.indices.toArray().map(args => new IndexMetadata(args));
                 const discriminatorValueArgs = mergedArgs.discriminatorValues.find(discriminatorValueArgs => {
                     return discriminatorValueArgs.target === tableArgs.target;
@@ -239,6 +241,7 @@ export class EntityMetadataBuilder {
                     tableMetadata: table,
                     columnMetadatas: columns,
                     relationMetadatas: relations,
+                    relationIdMetadatas: relationIds,
                     indexMetadatas: indices,
                     embeddedMetadatas: embeddeds,
                     inheritanceType: mergedArgs.inheritance ? mergedArgs.inheritance.type : undefined,
@@ -276,19 +279,6 @@ export class EntityMetadataBuilder {
                             joinColumn.relation = relation;
                         }
                     });
-
-                // save relation id-s data
-                entityMetadata.relations.forEach(relation => {
-                    const relationIdMetadata = mergedArgs.relationIds.toArray().find(relationId => {
-                        if (relationId.relation instanceof Function)
-                            return relation.propertyName === relationId.relation(entityMetadata.createPropertiesMap());
-
-                        return relation.propertyName === relationId.relation;
-                    });
-                    if (relationIdMetadata) {
-                        relation.idField = relationIdMetadata.propertyName;
-                    }
-                });
 
                 // save relation counter-s data
                 entityMetadata.relations.forEach(relation => {

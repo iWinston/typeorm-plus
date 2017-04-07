@@ -4,6 +4,7 @@ import {JoinOptions} from "./JoinOptions";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
+import {Alias} from "./Alias";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -22,7 +23,7 @@ export class JoinAttribute {
     /**
      * Alias of the joined (destination) table.
      */
-    alias: string;
+    alias: Alias;
 
     /**
      * Joined table, entity target, or relation in "post.category" format.
@@ -42,7 +43,7 @@ export class JoinAttribute {
     /**
      * Indicates if user maps one or many objects from the join.
      */
-    isMappingMany: boolean;
+    isMappingMany?: boolean;
 
     /**
      * Extra join options.
@@ -62,6 +63,16 @@ export class JoinAttribute {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    get isMany(): boolean {
+        if (this.isMappingMany !== undefined)
+            return this.isMappingMany;
+
+        if (this.relation)
+            return this.relation.isManyToMany || this.relation.isOneToMany;
+
+        return false;
+    }
 
     /**
      * Name of the table which we should join.
@@ -148,14 +159,20 @@ export class JoinAttribute {
         if (!this.relation)
             throw new Error(`Cannot get junction table for join without relation.`);
 
-        return this.relation.isOwning ? this.parentAlias + "_" + this.alias : this.alias + "_" + this.parentAlias;
+        return this.relation.isOwning ? this.parentAlias + "_" + this.alias.name : this.alias.name + "_" + this.parentAlias;
     }
 
-    get mapToPropertyParentAlias(): string {
+    get mapToPropertyParentAlias(): string|undefined {
+        if (!this.mapToProperty)
+            return undefined;
+
         return this.mapToProperty!.split(".")[0];
     }
 
-    get mapToPropertyPropertyName(): string {
+    get mapToPropertyPropertyName(): string|undefined {
+        if (!this.mapToProperty)
+            return undefined;
+
         return this.mapToProperty!.split(".")[1];
     }
 

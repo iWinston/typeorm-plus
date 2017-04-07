@@ -3,7 +3,7 @@ import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/Pr
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../../../../src/decorator/relations/JoinColumn";
-import {Tag} from "./Tag";
+import {Category} from "./Category";
 
 @Entity()
 export class Post {
@@ -14,14 +14,14 @@ export class Post {
     @Column()
     title: string;
     
-    @OneToOne(type => Tag)
+    @OneToOne(type => Category)
     @JoinColumn()
-    tag: Tag;
+    category: Category;
 
-    @OneToOne(type => Tag, tag => tag.post)
+    @OneToOne(type => Category, category => category.post)
     @JoinColumn()
-    tag2: Tag;
+    category2: Category;
     
-    tagId: number;
+    categoryId: number;
 
 }

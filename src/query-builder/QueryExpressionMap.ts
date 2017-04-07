@@ -2,7 +2,7 @@ import {Alias} from "./Alias";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {JoinAttribute} from "./JoinAttribute";
-import {RelationIdAttribute} from "./RelationIdAttribute";
+import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
 import {RelationCountAttribute} from "./RelationCountAttribute";
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";

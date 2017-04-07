@@ -2,7 +2,7 @@ import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
-import {Tag} from "./Tag";
+import {Category} from "./Category";
 
 @Entity()
 export class Post {
@@ -12,10 +12,13 @@ export class Post {
 
     @Column()
     title: string;
+
+    @Column()
+    isRemoved: boolean = false;
     
-    @ManyToOne(type => Tag, tag => tag.posts)
-    tag: Tag;
+    @ManyToOne(type => Category)
+    category: Category;
     
-    tagId: number;
+    categoryId: number;
 
 }

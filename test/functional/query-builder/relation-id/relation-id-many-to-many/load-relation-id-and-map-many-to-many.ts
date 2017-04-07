@@ -10,10 +10,7 @@ import {Image} from "./entity/Image";
 
 const should = chai.should();
 
-describe("QueryBuilder > relation-id > many-to-many", () => {
-    
-    // todo: make this feature to work with FindOptions
-    // todo: also make sure all new qb features to work with FindOptions
+describe("query builder > load-relation-id-and-map > many-to-many", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -28,24 +25,46 @@ describe("QueryBuilder > relation-id > many-to-many", () => {
 
         const tag = new Tag();
         tag.name = "kids";
+        await connection.entityManager.persist(tag);
 
         const category1 = new Category();
         category1.name = "kids";
+        await connection.entityManager.persist(category1);
 
         const category2 = new Category();
         category2.name = "future";
+        await connection.entityManager.persist(category2);
 
-        await Promise.all([
-            connection.entityManager.persist(tag),
-            connection.entityManager.persist(category1),
-            connection.entityManager.persist(category2)
-        ]);
+        const category3 = new Category();
+        category3.name = "cars";
+        await connection.entityManager.persist(category3);
 
         const post = new Post();
         post.title = "about kids";
-        post.tag = tag;
         post.categories = [category1, category2];
+        post.tag = tag;
         await connection.entityManager.persist(post);
+
+        const post2 = new Post();
+        post2.title = "about BMW";
+        post2.categories = [category3];
+        post2.tag = tag;
+        await connection.entityManager.persist(post2);
+
+        let loadedPosts = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .leftJoinAndSelect("post.tag", "tag")
+            .leftJoinAndSelect("post.categories", "categories")
+            .getMany();
+
+        expect(loadedPosts![0].tag).to.not.be.empty;
+        expect(loadedPosts![0].tagId).to.be.empty;
+        expect(loadedPosts![0].categories).to.not.be.empty;
+        expect(loadedPosts![0].categoryIds).to.be.empty;
+        expect(loadedPosts![1].tag).to.not.be.empty;
+        expect(loadedPosts![1].tagId).to.be.empty;
+        expect(loadedPosts![1].categories).to.not.be.empty;
+        expect(loadedPosts![1].categoryIds).to.be.empty;
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
@@ -65,19 +84,33 @@ describe("QueryBuilder > relation-id > many-to-many", () => {
 
         const category1 = new Category();
         category1.name = "kids";
+        await connection.entityManager.persist(category1);
 
         const category2 = new Category();
         category2.name = "future";
-
-        await Promise.all([
-            connection.entityManager.persist(category1),
-            connection.entityManager.persist(category2)
-        ]);
+        await connection.entityManager.persist(category2);
 
         const post = new Post();
         post.title = "about kids";
         post.categories = [category1, category2];
         await connection.entityManager.persist(post);
+
+        const post2 = new Post();
+        post2.title = "about kids";
+        post2.categories = [category1, category2];
+        await connection.entityManager.persist(post2);
+
+        let loadedPosts = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .loadRelationIdAndMap("post.categoryIds", "post.categories")
+            .getMany();
+
+        expect(loadedPosts![0].categoryIds).to.not.be.empty;
+        expect(loadedPosts![0].categoryIds[0]).to.be.equal(1);
+        expect(loadedPosts![0].categoryIds[1]).to.be.equal(2);
+        expect(loadedPosts![1].categoryIds).to.not.be.empty;
+        expect(loadedPosts![1].categoryIds[0]).to.be.equal(1);
+        expect(loadedPosts![1].categoryIds[1]).to.be.equal(2);
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
@@ -330,6 +363,41 @@ describe("QueryBuilder > relation-id > many-to-many", () => {
         expect(loadedPost!.categories[0].imageIds).to.not.be.empty;
         expect(loadedPost!.categories[0].imageIds.length).to.be.equal(1);
         expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1);
+
+    })));
+
+    it("should not load ids of inherit relations when loadRelationIdAndMap used on inherit relation and parent relation was not found", () => Promise.all(connections.map(async connection => {
+
+        const image1 = new Image();
+        image1.name = "photo1";
+
+        const image2 = new Image();
+        image2.name = "photo2";
+
+        await Promise.all([
+            connection.entityManager.persist(image1),
+            connection.entityManager.persist(image2)
+        ]);
+
+        const category1 = new Category();
+        category1.name = "cars";
+        category1.images = [image1, image2];
+        await connection.entityManager.persist(category1);
+
+        const post = new Post();
+        post.title = "about BMW";
+        post.categories = [category1];
+        await connection.entityManager.persist(post);
+
+        let loadedPost = await connection.entityManager
+            .createQueryBuilder(Post, "post")
+            .leftJoinAndSelect("post.categories", "categories", "categories.id = :categoryId")
+            .loadRelationIdAndMap("categories.imageIds", "categories.images")
+            .where("post.id = :id", { id: post.id })
+            .setParameter("categoryId", 2)
+            .getOne();
+
+        expect(loadedPost!.categories).to.be.empty;
 
     })));
 

@@ -11,4 +11,7 @@ export class Image {
     @Column()
     name: string;
 
+    @Column()
+    isRemoved: boolean = false;
+
 }

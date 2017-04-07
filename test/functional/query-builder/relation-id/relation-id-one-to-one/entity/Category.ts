@@ -5,7 +5,7 @@ import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
 import {Post} from "./Post";
 
 @Entity()
-export class Tag {
+export class Category {
 
     @PrimaryGeneratedColumn()
     id: number;
@@ -13,7 +13,7 @@ export class Tag {
     @Column()
     name: string;
 
-    @OneToOne(type => Post, post => post.tag2)
+    @OneToOne(type => Post, post => post.category2)
     post: Post;
 
     postId: number;

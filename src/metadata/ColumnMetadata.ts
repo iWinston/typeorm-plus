@@ -194,6 +194,7 @@ export class ColumnMetadata {
      * Column name in the database.
      *
      * todo: rename to originalName
+     * @deprecated
      */
     get name(): string {
         return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);

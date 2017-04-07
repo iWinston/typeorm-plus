@@ -3,7 +3,7 @@ import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/Pr
 import {Column} from "../../../../../../src/decorator/columns/Column";
 
 @Entity()
-export class Tag {
+export class Category {
 
     @PrimaryGeneratedColumn()
     id: number;

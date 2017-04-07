@@ -263,7 +263,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     .getRepository<ObjectLiteral>(subjectGroup.target)
                     .createQueryBuilder("operateSubject", this.queryRunnerProvider)
                     .andWhereInIds(allIds)
-                    .enableOption("RELATION_ID_VALUES")
+                    .enableAutoRelationIdsLoad()
                     .getMany();
             }
 
@@ -378,7 +378,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.joinColumn.referencedColumn.propertyName + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
-                        .enableOption("RELATION_ID_VALUES")
+                        .enableAutoRelationIdsLoad()
                         .getOne();
 
                     if (databaseEntity) {
@@ -455,8 +455,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
-                        .enableOption("RELATION_ID_VALUES")
+                        .enableAutoRelationIdsLoad()
                         .getOne();
+
+                    console.log(databaseEntity);
 
                     // add only if database entity exist - because in the case of inverse side of the one-to-one relation
                     // we cannot check if it was removed or not until we query the database
@@ -544,8 +546,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.inverseJoinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.inverseReferencedColumn.fullName) +
                             " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
-                        .enableOption("RELATION_ID_VALUES")
+                        .enableAutoRelationIdsLoad()
                         .getMany();
+
+                    console.log(databaseEntities);
 
                 } else if (relation.isManyToManyNotOwner) {
 
@@ -563,7 +567,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.fullName) +
                             " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName) + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
-                        .enableOption("RELATION_ID_VALUES")
+                        .enableAutoRelationIdsLoad()
                         .getMany();
 
                 } else { // this case can only be a oneToMany relation
@@ -580,7 +584,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
-                        .enableOption("RELATION_ID_VALUES")
+                        .enableAutoRelationIdsLoad()
                         .getMany();
                 }
 
@@ -620,7 +624,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                         .getRepository<ObjectLiteral>(valueMetadata.target)
                                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                                         .andWhereInIds([id])
-                                        .enableOption("RELATION_ID_VALUES")
+                                        .enableAutoRelationIdsLoad()
                                         .getOne();
 
                                     if (databaseEntity) {

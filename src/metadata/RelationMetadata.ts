@@ -415,10 +415,22 @@ export class RelationMetadata {
 
     /**
      * Gets given entity's relation's value.
-     * Using of this method helps to access value of the lazy loaded relation.
+     * Using of this method helps to access value of the lazy and non-lazy relations.
      */
     getEntityValue(entity: ObjectLiteral): any {
         return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
+    }
+
+    /**
+     * Sets given entity's relation's value.
+     * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
+     */
+    setEntityValue(entity: ObjectLiteral, value: any): void {
+        if (this.isLazy) {
+            entity["__" + this.propertyName + "__"] = value;
+        } else {
+            entity[this.propertyName] = value;
+        }
     }
 
     /**

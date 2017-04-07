@@ -1,21 +1,22 @@
 import "reflect-metadata";
+import * as chai from "chai";
+import {expect} from "chai";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Tag} from "./entity/Tag";
-import {expect} from "chai";
+
+const should = chai.should();
 
 describe.skip("QueryBuilder > relation-count", () => {
 
-    // const resourceDir = __dirname + "/../../../../../../test/functional/query-builder/join-relation-ids/";
-
     let connections: Connection[];
-    before(() => createTestingConnections({
-        entities: [Post, Category, Tag],
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true
-    }).then(all => connections = all));
+        dropSchemaOnConnection: true,
+    }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 

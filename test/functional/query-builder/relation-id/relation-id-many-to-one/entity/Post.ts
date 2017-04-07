@@ -2,8 +2,10 @@ import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
-import {Tag} from "./Tag";
 import {JoinColumn} from "../../../../../../src/decorator/relations/JoinColumn";
+import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
+import {Category} from "./Category";
+import {PostCategory} from "./PostCategory";
 
 @Entity()
 export class Post {
@@ -14,10 +16,15 @@ export class Post {
     @Column()
     title: string;
     
-    @ManyToOne(type => Tag)
-    @JoinColumn()
-    tag: Tag;
-    
-    tagId: number;
+    @ManyToOne(type => Category)
+    @JoinColumn({
+        referencedColumnName: "name"
+    })
+    category: Category;
+
+    categoryId: number;
+
+    @OneToMany(type => PostCategory, postCategoryRelation => postCategoryRelation.post)
+    categories: PostCategory[];
 
 }

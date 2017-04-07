@@ -56,7 +56,7 @@ export class DocumentToEntityTransformer {
         /*this.joinMappings
             .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.relationOwnerSelection && joinMapping.alias.target)
             .map(joinMapping => {
-                const relatedEntities = this.transformIntoSingleResult(rawSqlResults, joinMapping.alias);
+                const relatedEntities = this.transformRawResultsGroup(rawSqlResults, joinMapping.alias);
                 const isResultArray = joinMapping.isMany;
                 const result = !isResultArray ? relatedEntities[0] : relatedEntities;
 
@@ -118,7 +118,7 @@ export class DocumentToEntityTransformer {
             const relationAlias = this.selectionMap.findSelectionByParent(alias.name, relation.propertyName);
             if (relationAlias) {
                 const joinMapping = this.joinMappings.find(joinMapping => joinMapping.type === "join" && joinMapping.alias === relationAlias);
-                const relatedEntities = this.transformIntoSingleResult(rawSqlResults, relationAlias);
+                const relatedEntities = this.transformRawResultsGroup(rawSqlResults, relationAlias);
                 const isResultArray = relation.isManyToMany || relation.isOneToMany;
                 const result = !isResultArray ? relatedEntities[0] : relatedEntities;
 

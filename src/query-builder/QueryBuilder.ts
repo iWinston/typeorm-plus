@@ -15,16 +15,19 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {LockNotSupportedOnGivenDriverError} from "./error/LockNotSupportedOnGivenDriverError";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {JoinAttribute} from "./JoinAttribute";
-import {RelationIdAttribute} from "./RelationIdAttribute";
+import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
 import {RelationCountAttribute} from "./RelationCountAttribute";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {SelectQuery} from "./SelectQuery";
+import {RelationIdLoader} from "./relation-id/RelationIdLoader";
+import {RelationIdLoadResult} from "./relation-id/RelationIdLoadResult";
+import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationIdMetadataToAttributeTransformer";
 
 
 // todo: fix problem with long aliases eg getMaxIdentifierLength
 // todo: fix replacing in .select("COUNT(post.id) AS cnt") statement
 // todo: implement joinAlways in relations and relationId
-// todo: implement @Where decorator
+// todo: implement @Select decorator
 // todo: add quoting functions
 // todo: .addCount and .addCountSelect()
 // todo: add selectAndMap
@@ -37,10 +40,16 @@ import {SelectQuery} from "./SelectQuery";
 // qb.update() returns UpdateQueryBuilder
 // qb.delete() returns DeleteQueryBuilder
 // qb.select() returns SelectQueryBuilder
+// todo: tests for leftJoinAndMap...
+// todo: COMPLETELY COVER QUERY BUILDER WITH TESTS
 
 // todo: SUBSELECT IMPLEMENTATION
 // .whereSubselect(qb => qb.select().from().where())
 // todo: also create qb.createSubQueryBuilder()
+// todo: check in persistment if id exist on object and throw exception (can be in partial selection?)
+// todo: STREAMING
+// todo: switch to embedded task?
+// todo: add test for @JoinColumn({ referencedColumnName })
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -328,7 +337,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndSelect(entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs table and adds all selection properties to SELECT.
@@ -365,7 +374,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -374,7 +383,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -406,7 +415,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -415,7 +424,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -447,7 +456,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -456,7 +465,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -488,7 +497,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -497,7 +506,7 @@ export class QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -517,9 +526,24 @@ export class QueryBuilder<Entity> {
      * Optionally, you can add condition and parameters used in condition.
      */
     loadRelationIdAndMap(mapToProperty: string, relationName: string): this;
-    loadRelationIdAndMap(mapToProperty: string, relationName: string, aliasName: string, queryBuilderAppender: (qb: QueryBuilder<any>) => QueryBuilder<any>): this;
-    loadRelationIdAndMap(mapToProperty: string, relationName: string, aliasName?: string, queryBuilderAppender?: (qb: QueryBuilder<any>) => QueryBuilder<any>): this {
-        this.buildRelationAttribute(mapToProperty, relationName, aliasName, queryBuilderAppender);
+
+    /**
+     * LEFT JOINs relation id and maps it into some entity's property.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    loadRelationIdAndMap(mapToProperty: string, relationName: string, aliasName: string, queryBuilderFactory: (qb: QueryBuilder<any>) => QueryBuilder<any>): this;
+
+    /**
+     * LEFT JOINs relation id and maps it into some entity's property.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    loadRelationIdAndMap(mapToProperty: string, relationName: string, aliasName?: string, queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>): this {
+        const relationIdAttribute = new RelationIdAttribute(this.expressionMap);
+        relationIdAttribute.mapToProperty = mapToProperty;
+        relationIdAttribute.relationName = relationName;
+        relationIdAttribute.alias = aliasName;
+        relationIdAttribute.queryBuilderFactory = queryBuilderFactory;
+        this.expressionMap.relationIdAttributes.push(relationIdAttribute);
         return this;
     }
 
@@ -528,7 +552,7 @@ export class QueryBuilder<Entity> {
      * Optionally, you can add condition and parameters used in condition.
      */
     countRelation(relationName: string, condition?: string): this {
-        this.countRelationX(undefined, relationName, condition);
+        this.buildRelationCountAttributes(undefined, relationName, condition);
         return this;
     }
 
@@ -537,7 +561,7 @@ export class QueryBuilder<Entity> {
      * Optionally, you can add condition and parameters used in condition.
      */
     countRelationAndMap(mapToProperty: string, relationName: string, condition?: string): this {
-        this.countRelationX(mapToProperty, relationName, condition);
+        this.buildRelationCountAttributes(mapToProperty, relationName, condition);
         return this;
     }
 
@@ -825,6 +849,9 @@ export class QueryBuilder<Entity> {
      */
     async getEntitiesAndRawResults(): Promise<{ entities: Entity[], rawResults: any[] }> {
         const queryRunner = await this.getQueryRunner();
+        const relationIdLoader = new RelationIdLoader(this.connection, this.queryRunnerProvider, this.expressionMap.relationIdAttributes);
+        const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(this.expressionMap);
+        relationIdMetadataTransformer.transform();
 
         try {
             if (!this.expressionMap.mainAlias)
@@ -910,8 +937,7 @@ export class QueryBuilder<Entity> {
                         .andWhere(condition, parameters)
                         .getSqlWithParameters();
                     rawResults = await queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
-                    this.createRelationIdAttributesFromDecorators(rawResults);
-                    const rawRelationIdResults = await this.loadRelationIds(rawResults);
+                    const rawRelationIdResults = await relationIdLoader.load(rawResults);
                     entities = this.rawResultsToEntities(rawResults, rawRelationIdResults);
                     await this.loadRelationCounts(queryRunner);
                     if (this.expressionMap.mainAlias.hasMetadata)
@@ -928,8 +954,8 @@ export class QueryBuilder<Entity> {
                 const [sql, parameters] = this.getSqlWithParameters();
 
                 const rawResults = await queryRunner.query(sql, parameters);
-                this.createRelationIdAttributesFromDecorators(rawResults);
-                const rawRelationIdResults = await this.loadRelationIds(rawResults);
+
+                const rawRelationIdResults = await relationIdLoader.load(rawResults);
                 const entities = this.rawResultsToEntities(rawResults, rawRelationIdResults);
                 await this.loadRelationCounts(queryRunner);
                 if (this.expressionMap.mainAlias.hasMetadata)
@@ -945,58 +971,6 @@ export class QueryBuilder<Entity> {
             if (this.hasOwnQueryRunner()) // means we created our own query runner
                 await queryRunner.release();
         }
-    }
-
-    /**
-     * Creates RelationIdAttributes from RelationIdMetadata (created by @RelationId decorators or in schemas).
-     */
-    protected createRelationIdAttributesFromDecorators(rawResults: any[]) {
-
-        // by example:
-        // post has relation id:
-        // @RelationId(post => post.categories) categoryIds
-        // category has relation id
-        // @RelationId(category => category.images) imageIds
-        // we load post and join category
-        // we expect post.categoryIds and post.category.imageIds to have relation ids
-
-        // first create relation id attributes for all relation id metadatas of the main selected object (post from example)
-        if (this.expressionMap.mainAlias) {
-            this.expressionMap.mainAlias.metadata.relations.forEach(relation => { // todo: should be metadata.relationIds
-                if (!relation.idField)
-                    return;
-
-                this.expressionMap.relationIdAttributes.push(new RelationIdAttribute(this.expressionMap, {
-                    relationName: this.expressionMap.mainAlias!.name + "." + relation.propertyName, // post.categories
-                    mapToProperty: this.expressionMap.mainAlias!.name + "." + relation.idField // post.categoryIds
-                }));
-            });
-        }
-
-        // second create relation id attributes for all relation id metadatas of all joined objects (category from example)
-        this.expressionMap.joinAttributes.forEach(join => {
-
-            // ensure this join has a metadata, because relation id can only work for real orm entities
-            if (!join.metadata || join.metadata.junction)
-                return;
-
-            // ensure we won't perform redundant queries for joined data which was not found in selection
-            // example: if post.category was not found in db then no need to execute query for category.imageIds
-            // todo: think more about this, same rules apply when using loadRelationIdAndMap without decorators but such check not present there
-            if (!rawResults.some(rawResult => !!rawResult[join.alias + "_" + join.metadata!.primaryColumns[0].fullName]))
-                return;
-
-            // todo: refactor and use join.metadata.relationIds
-            join.metadata.relations.forEach(relation => {
-                if (!relation.idField)
-                    return;
-
-                this.expressionMap.relationIdAttributes.push(new RelationIdAttribute(this.expressionMap, {
-                    relationName: join.alias + "." + relation.propertyName, // category.images
-                    mapToProperty: join.alias + "." + relation.idField // category.imageIds
-                }));
-            });
-        });
     }
 
     /**
@@ -1167,12 +1141,10 @@ export class QueryBuilder<Entity> {
      *
      * @deprecated looks like enableRelationIdValues is not used anymore. What to do? Remove this method? What about persistence?
      */
-    enableOption(option: "RELATION_ID_VALUES"): this {
-        switch (option) {
-            case "RELATION_ID_VALUES":
-                this.expressionMap.enableRelationIdValues = true;
-        }
-
+    enableAutoRelationIdsLoad(): this {
+        this.expressionMap.mainAlias!.metadata.relations.forEach(relation => {
+            this.loadRelationIdAndMap(this.expressionMap.mainAlias!.name + "." + relation.propertyName, this.expressionMap.mainAlias!.name + "." + relation.propertyName);
+        });
         return this;
     }
 
@@ -1204,10 +1176,9 @@ export class QueryBuilder<Entity> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected join(direction: "INNER"|"LEFT", entityOrProperty: Function|string, aliasName: string, condition?: string, options?: JoinOptions, mapToProperty?: string, isMappingMany: boolean = false): void {
+    protected join(direction: "INNER"|"LEFT", entityOrProperty: Function|string, aliasName: string, condition?: string, options?: JoinOptions, mapToProperty?: string, isMappingMany?: boolean): void {
 
         const joinAttribute = new JoinAttribute(this.connection, this.expressionMap);
-        joinAttribute.alias = aliasName; // joinInverseSideAlias
         joinAttribute.direction = direction;
         joinAttribute.mapToProperty = mapToProperty;
         joinAttribute.options = options;
@@ -1217,135 +1188,28 @@ export class QueryBuilder<Entity> {
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute);
 
-        // todo: this is temporary, remove after selection refactoring
-        this.expressionMap.createAlias({
-            name: joinAttribute.alias,
+        // todo: find and set metadata right there?
+        joinAttribute.alias = this.expressionMap.createAlias({
+            name: aliasName,
             metadata: joinAttribute.metadata!
         });
     }
 
-    protected buildRelationAttribute(mapToProperty: string, relationName: string, alias?: string, queryBuilderAppender?: (qb: QueryBuilder<any>) => QueryBuilder<any>): void {
-        const relationIdAttribute = new RelationIdAttribute(this.expressionMap);
-        relationIdAttribute.mapToProperty = mapToProperty;
-        relationIdAttribute.relationName = relationName;
-        relationIdAttribute.alias = alias;
-        relationIdAttribute.queryBuilderFactory = queryBuilderAppender;
-        this.expressionMap.relationIdAttributes.push(relationIdAttribute);
-    }
+    /**
+     * Counts number of entities of entity's relation and maps the value into some entity's property.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    protected buildRelationCountAttributes(mapToProperty: string|undefined, relationName: string, condition?: string): void {
+        // todo: add support of entity targets and custom table names
+        const relationCountAttribute = new RelationCountAttribute(this.expressionMap);
+        relationCountAttribute.mapToProperty = mapToProperty;
+        relationCountAttribute.relationName = relationName;
+        relationCountAttribute.condition = condition;
+        this.expressionMap.relationCountAttributes.push(relationCountAttribute);
 
-    protected async loadRelationIds(rawEntities: any[]): Promise<{ relationIdAttribute: RelationIdAttribute, results: { id: any, parentId: any }[] }[]> {
-
-        const promises = this.expressionMap.relationIdAttributes.map(async relationIdAttr => {
-
-            if (relationIdAttr.relation.isManyToOne || relationIdAttr.relation.isOneToOneOwner) {
-                // example: Post and Tag
-                // loadRelationIdAndMap("post.tagId", "post.tag") post_tag
-                // we expect it to load id of tag
-
-                if (relationIdAttr.queryBuilderFactory)
-                    throw new Error("");
-
-                const referenceColumnName = relationIdAttr.relation.joinColumn.referencedColumn.propertyName; // post id
-                const results = rawEntities.map(rawEntity => {
-                    return {
-                        id: rawEntity[relationIdAttr.parentAlias + "_" + relationIdAttr.relationProperty], // todo: custom alias for column wont work here
-                        parentId: rawEntity[relationIdAttr.parentAlias + "_" + referenceColumnName] // todo: custom alias for column wont work here
-                    };
-                });
-
-                return {
-                    relationIdAttribute: relationIdAttr,
-                    results: results
-                };
-
-            } else if (relationIdAttr.relation.isOneToMany || relationIdAttr.relation.isOneToOneNotOwner) {
-                // example: Post and Category
-                // loadRelationIdAndMap("category.postIds", "category.posts")
-                // we expect it to load array of post ids
-
-                // todo: take post ids - they can be multiple
-                // todo: create test with multiple primary columns usage
-
-                const relation = relationIdAttr.relation; // "category.posts"
-                const inverseRelation = relation.inverseRelation; // "post.category"
-                const referenceColumnName = inverseRelation.joinColumn.referencedColumn.propertyName; // post id
-                const inverseSideTable = relation.inverseEntityMetadata.table.target; // Post
-                const inverseSideTableName = relation.inverseEntityMetadata.table.name; // post
-                const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
-                const inverseSidePropertyName = inverseRelation.propertyName; // "category" from "post.category"
-                const referenceColumnValues = rawEntities
-                    .map(rawEntity => rawEntity[relationIdAttr.parentAlias + "_" + referenceColumnName]) // todo: custom alias for column wont work here
-                    .filter(value => value !== undefined);
-
-                // generate query:
-                // SELECT post.id AS id, category.id AS parentId FROM post post INNER JOIN category category ON category.id=post.category AND category.id IN [:categoryIds]
-                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
-                    .select(inverseSideTableAlias + "." + referenceColumnName, "id") // todo: referenceColumnName is wrong here, use multiple primary columns instead
-                    .addSelect(inverseSidePropertyName + "." + referenceColumnName, "parentId")
-                    .from(inverseSideTable, inverseSideTableAlias)
-                    .innerJoin(inverseSideTableAlias + "." + inverseSidePropertyName, inverseSidePropertyName, inverseSidePropertyName + "." + referenceColumnName + " IN (" + referenceColumnValues + ")");
-
-                // apply condition (custom query builder factory)
-                if (relationIdAttr.queryBuilderFactory)
-                    relationIdAttr.queryBuilderFactory(qb);
-
-                return {
-                    relationIdAttribute: relationIdAttr,
-                    results: await qb.getRawMany()
-                };
-
-            } else {
-                // example: Post and Category
-                // owner side: loadRelationIdAndMap("post.categoryIds", "post.categories")
-                // inverse side: loadRelationIdAndMap("category.postIds", "category.posts")
-                // we expect it to load array of post ids
-
-                let joinTableColumnName: string;
-                let inverseJoinColumnName: string;
-                let firstJunctionColumn: ColumnMetadata;
-                let secondJunctionColumn: ColumnMetadata;
-
-                if (relationIdAttr.relation.isOwning) {
-                    joinTableColumnName = relationIdAttr.relation.joinTable.referencedColumn.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.joinTable.inverseReferencedColumn.fullName;
-                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
-                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
-
-                } else {
-                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinTable.inverseReferencedColumn.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinTable.referencedColumn.fullName;
-                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
-                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
-                }
-
-                const referenceColumnValues = rawEntities
-                    .map(rawEntity => rawEntity[relationIdAttr.parentAlias + "_" + joinTableColumnName]) // todo: custom alias for column wont work here
-                    .filter(value => value !== undefined);
-                const junctionAlias = relationIdAttr.junctionAlias;
-                const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.table.name;
-                const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
-                const junctionTableName = relationIdAttr.relation.junctionEntityMetadata.table.name;
-                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
-                    " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
-
-                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
-                    .select(inverseSideTableAlias + "." + inverseJoinColumnName, "id")
-                    .addSelect(junctionAlias + "." + firstJunctionColumn.propertyName, "parentId")
-                    .fromTable(inverseSideTableName, inverseSideTableAlias)
-                    .innerJoin(junctionTableName, junctionAlias, condition);
-
-                // apply condition (custom query builder factory)
-                if (relationIdAttr.queryBuilderFactory)
-                    relationIdAttr.queryBuilderFactory(qb);
-
-                return {
-                    relationIdAttribute: relationIdAttr,
-                    results: await qb.getRawMany()
-                };
-            }
+        this.expressionMap.createAlias({
+            name: relationCountAttribute.junctionAlias
         });
-
-        return Promise.all(promises);
     }
 
     protected async loadRelationCounts(queryRunner: QueryRunner): Promise<{}> {
@@ -1394,12 +1258,9 @@ export class QueryBuilder<Entity> {
         return Promise.all(promises);
     }
 
-    protected rawResultsToEntities(results: any[], rawRelationIdResults: any[]) {
-        const transformer = new RawSqlResultsToEntityTransformer(
-            this.connection.driver,
-            this.expressionMap
-        );
-        return transformer.transform(results, rawRelationIdResults);
+    protected rawResultsToEntities(results: any[], rawRelationIdResults: RelationIdLoadResult[]) {
+        return new RawSqlResultsToEntityTransformer(this.connection.driver, this.expressionMap.joinAttributes, rawRelationIdResults)
+            .transform(results, this.expressionMap.mainAlias!);
     }
 
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
@@ -1428,23 +1289,6 @@ export class QueryBuilder<Entity> {
 
         return this.expressionMap.selects.filter(select => {
             return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyName);
-        });
-    }
-
-    /**
-     * Counts number of entities of entity's relation and maps the value into some entity's property.
-     * Optionally, you can add condition and parameters used in condition.
-     */
-    protected countRelationX(mapToProperty: string|undefined, relationName: string, condition?: string): void {
-        // todo: add support of entity targets and custom table names
-        const relationCountAttribute = new RelationCountAttribute(this.expressionMap);
-        relationCountAttribute.mapToProperty = mapToProperty;
-        relationCountAttribute.relationName = relationName;
-        relationCountAttribute.condition = condition;
-        this.expressionMap.relationCountAttributes.push(relationCountAttribute);
-
-        this.expressionMap.createAlias({
-            name: relationCountAttribute.junctionAlias
         });
     }
 
@@ -1482,13 +1326,13 @@ export class QueryBuilder<Entity> {
         this.expressionMap.joinAttributes
             .forEach(join => {
                 if (join.metadata) {
-                    allSelects.push(...this.buildEscapedEntityColumnSelects(join.alias!, join.metadata));
-                    excludedSelects.push(...this.findEntityColumnSelects(join.alias!, join.metadata));
+                    allSelects.push(...this.buildEscapedEntityColumnSelects(join.alias.name!, join.metadata));
+                    excludedSelects.push(...this.findEntityColumnSelects(join.alias.name!, join.metadata));
                 } else {
-                    const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias);
+                    const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias.name);
                     if (hasMainAlias) {
-                        allSelects.push({ selection: ea(join.alias!) + ".*" });
-                        excludedSelects.push({ selection: ea(join.alias!) });
+                        allSelects.push({ selection: ea(join.alias.name!) + ".*" });
+                        excludedSelects.push({ selection: ea(join.alias.name!) });
                     }
                 }
             });
@@ -1617,18 +1461,18 @@ export class QueryBuilder<Entity> {
             if (!alias.hasMetadata) return;
             alias.metadata.embeddeds.forEach(embedded => {
                 embedded.columns.forEach(column => {
-                    const expression = alias.name + "\\." + embedded.propertyName + "\\." + column.propertyName + "([ =]|.{0}$)";
-                    statement = statement.replace(new RegExp(expression, "gm"), this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$1");
+                    const expression = "([ =]|^.{0})" + alias.name + "\\." + embedded.propertyName + "\\." + column.propertyName + "([ =]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$2");
                 });
                 // todo: what about embedded relations here?
             });
             alias.metadata.columns.filter(column => !column.isInEmbedded).forEach(column => {
-                const expression = alias.name + "\\." + column.propertyName + "([ =]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$1");
+                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyName + "([ =]|.{0}$)";
+                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$2");
             });
             alias.metadata.relationsWithJoinColumns/*.filter(relation => !relation.isInEmbedded)*/.forEach(relation => {
-                const expression = alias.name + "\\." + relation.propertyName + "([ =]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.name) + "$1");
+                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyName + "([ =]|.{0}$)";
+                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.name) + "$2");
             });
         });
         return statement;
@@ -1653,7 +1497,7 @@ export class QueryBuilder<Entity> {
 
             const relation = joinAttr.relation;
             const destinationTableName = joinAttr.tableName;
-            const destinationTableAlias = joinAttr.alias;
+            const destinationTableAlias = joinAttr.alias.name;
             const appendedCondition = joinAttr.condition ? " AND (" + this.replacePropertyNames(joinAttr.condition) + ")" : "";
             const parentAlias = joinAttr.parentAlias;
 

@@ -6,7 +6,7 @@ import {Post} from "./Post";
 import {RelationId} from "../../../../../../src/decorator/relations/RelationId";
 
 @Entity()
-export class Tag {
+export class Category {
 
     @PrimaryGeneratedColumn()
     id: number;
@@ -14,10 +14,10 @@ export class Tag {
     @Column()
     name: string;
 
-    @OneToOne(type => Post, post => post.tag2)
+    @OneToOne(type => Post, post => post.category2)
     post: Post;
 
-    @RelationId((tag: Tag) => tag.post)
+    @RelationId((category: Category) => category.post)
     postId: number;
 
 }

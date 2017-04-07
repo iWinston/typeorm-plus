@@ -16,6 +16,9 @@ export class Category {
     @Column()
     name: string;
 
+    @Column()
+    isRemoved: boolean = false;
+
     @ManyToMany(type => Post, post => post.categories)
     posts: Post[];
 
@@ -26,15 +29,13 @@ export class Category {
     @RelationId((category: Category) => category.images)
     imageIds: number[];
 
+    @RelationId((category: Category) => category.images, "removedImages", qb => qb.where("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
+    removedImageIds: number[];
+
     @RelationId((category: Category) => category.posts)
     postIds: number[];
 
-    // todo?:
-    // @Select(Category|(category: Category) => category.posts, "category", qb => qb.where())
-    // postIds: number[];
-
-    // todo: with condition
-    // @RelationId((category: Category) => category.posts, qb => qb.where())
-    // postIds: number[];
+    @RelationId((category: Category) => category.posts, "removedPosts", qb => qb.where("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
+    removedPostIds: number[];
 
 }
