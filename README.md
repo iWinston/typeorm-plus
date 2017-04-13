@@ -537,8 +537,8 @@ createConnection(/*...*/).then(async connection => {
     console.log("All published photos: ", allPublishedPhotos);
 
     let [allPhotos, photosCount] = await photoRepository.findAndCount();
-    console.log("All photos: ", allPublishedPhotos);
-    console.log("Photos count: ", allPublishedPhotos);
+    console.log("All photos: ", allPhotos);
+    console.log("Photos count: ", photosCount);
 
 }).catch(error => console.log(error));
 ```
