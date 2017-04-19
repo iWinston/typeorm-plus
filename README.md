@@ -67,9 +67,9 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
     `npm install reflect-metadata --save`
 
-    and use it somewhere in the global place of your app:
+    and import it somewhere in the global place of your app (for example in `app.ts`):
 
-    * `require("reflect-metadata")` in your app's entry point (for example `app.ts`)
+    `import "reflect-metadata";`
 
 3. You may need to install node typings:
 
@@ -111,7 +111,7 @@ Also make sure you are using TypeScript compiler version > **2.1** and you have 
 "experimentalDecorators": true,
 ```
 
-You'll also need to enable `es6` in the `lib` section of compiler options, or install `es6-shim` from `@typings`.
+You'll also need to enable `es6` in the `lib` section of compiler options, or install `es6-shim` from `@types`.
 
 #### Node.js version
 
