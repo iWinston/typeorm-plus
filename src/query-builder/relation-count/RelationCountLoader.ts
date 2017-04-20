@@ -24,11 +24,7 @@ export class RelationCountLoader {
 
         const promises = this.relationCountAttributes.map(async relationCountAttr => {
 
-            // TODO make that check in EntityMetadataValidator
-            if (relationCountAttr.relation.isManyToOne || relationCountAttr.relation.isOneToOne) {
-                throw new Error(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
-
-            } else if (relationCountAttr.relation.isOneToMany) {
+            if (relationCountAttr.relation.isOneToMany) {
                 // example: Post and Category
                 // loadRelationCountAndMap("post.categoryCount", "post.categories")
                 // we expect it to load array of post ids

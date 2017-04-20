@@ -201,10 +201,7 @@ export class RawSqlResultsToEntityTransformer {
                 const relation = rawRelationCountResult.relationCountAttribute.relation;
                 let referenceColumnName: string;
 
-                if (relation.isManyToOne || relation.isOneToOne) {
-                    throw new Error(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
-
-                } else if (relation.isOneToMany) {
+                if (relation.isOneToMany) {
                     referenceColumnName = relation.inverseRelation.joinColumn.referencedColumn.fullName;
 
                 } else {
@@ -212,7 +209,6 @@ export class RawSqlResultsToEntityTransformer {
                 }
 
                 const referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
-                // console.log("referenceColumnValue: ", referenceColumnValue);
                 if (referenceColumnValue !== undefined && referenceColumnValue !== null) {
                     entity[rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName] = 0;
                     rawRelationCountResult.results
@@ -222,7 +218,6 @@ export class RawSqlResultsToEntityTransformer {
                             hasData = true;
                         });
                 }
-
             });
 
         return hasData;

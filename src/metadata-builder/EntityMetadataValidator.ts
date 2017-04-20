@@ -54,6 +54,11 @@ export class EntityMetadataValidator {
                 throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} as equal discriminator values. Make sure their discriminator values are not equal using @DiscriminatorValue decorator.`);
         }
 
+        entityMetadata.relationCounts.forEach(relationCount => {
+            if (relationCount.relation.isManyToOne || relationCount.relation.isOneToOne)
+                throw new Error(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
+        });
+
         // validate relations
         entityMetadata.relations.forEach(relation => {
 

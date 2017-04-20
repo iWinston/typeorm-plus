@@ -49,9 +49,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
             .getMany();
 
-        expect(loadedPosts[0]!.categoryCount).to.not.be.empty;
         expect(loadedPosts[0]!.categoryCount).to.be.equal(2);
-        expect(loadedPosts[1]!.categoryCount).to.not.be.empty;
         expect(loadedPosts[1]!.categoryCount).to.be.equal(1);
 
         const loadedPost = await connection.entityManager
@@ -60,7 +58,6 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.categoryCount).to.not.be.empty;
         expect(loadedPost!.categoryCount).to.be.equal(2);
     })));
 
@@ -110,11 +107,9 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
             .addOrderBy("post.id, categories.id")
             .getMany();
 
-        expect(loadedPosts[0]!.categoryCount).to.not.be.empty;
         expect(loadedPosts[0]!.categoryCount).to.be.equal(2);
         expect(loadedPosts[0]!.categories[0].imageCount).to.be.equal(2);
         expect(loadedPosts[0]!.categories[1].imageCount).to.be.equal(0);
-        expect(loadedPosts[1]!.categoryCount).to.not.be.empty;
         expect(loadedPosts[1]!.categoryCount).to.be.equal(1);
         expect(loadedPosts[1]!.categories[0].imageCount).to.be.equal(1);
 
@@ -127,7 +122,6 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
             .addOrderBy("post.id, categories.id")
             .getOne();
 
-        expect(loadedPost!.categoryCount).to.not.be.empty;
         expect(loadedPost!.categoryCount).to.be.equal(2);
         expect(loadedPost!.categories[0].imageCount).to.be.equal(2);
         expect(loadedPost!.categories[1].imageCount).to.be.equal(0);
@@ -164,10 +158,8 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
             .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "removedCategories", qb => qb.andWhere("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
             .getMany();
 
-        expect(loadedPosts[0]!.categoryCount).to.not.be.empty;
         expect(loadedPosts[0]!.categoryCount).to.be.equal(2);
         expect(loadedPosts[0]!.removedCategoryCount).to.be.equal(1);
-        expect(loadedPosts[1]!.categoryCount).to.not.be.empty;
         expect(loadedPosts[1]!.categoryCount).to.be.equal(1);
 
         const loadedPost = await connection.entityManager
@@ -177,7 +169,6 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.categoryCount).to.not.be.empty;
         expect(loadedPost!.categoryCount).to.be.equal(2);
         expect(loadedPost!.removedCategoryCount).to.be.equal(1);
     })));

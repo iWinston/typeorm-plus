@@ -66,13 +66,11 @@ describe("decorators > relation-count-decorator > one-to-many", () => {
             .addOrderBy("post.id, categories.id")
             .getMany();
 
-        expect(loadedPosts![0].categoryCount).to.not.be.empty;
         expect(loadedPosts![0].categoryCount).to.be.equal(2);
         expect(loadedPosts![0].removedCategoryCount).to.be.equal(1);
         expect(loadedPosts![0].categories[0].imageCount).to.be.equal(2);
         expect(loadedPosts![0].categories[0].removedImageCount).to.be.equal(1);
-    //    expect(loadedPosts![0].categories[1].imageCount).to.be.equal(0);
-        expect(loadedPosts![1].categoryCount).to.not.be.empty;
+       expect(loadedPosts![0].categories[1].imageCount).to.be.equal(0);
         expect(loadedPosts![1].categoryCount).to.be.equal(1);
         expect(loadedPosts![1].categories[0].imageCount).to.be.equal(1);
 
@@ -83,11 +81,10 @@ describe("decorators > relation-count-decorator > one-to-many", () => {
             .addOrderBy("post.id, categories.id")
             .getOne();
 
-        expect(loadedPost!.categoryCount).to.not.be.empty;
         expect(loadedPost!.categoryCount).to.be.equal(2);
         expect(loadedPost!.categories[0].imageCount).to.be.equal(2);
         expect(loadedPost!.removedCategoryCount).to.be.equal(1);
-    //    expect(loadedPosts![0].categories[1].imageCount).to.be.equal(0);
+       expect(loadedPosts![0].categories[1].imageCount).to.be.equal(0);
         expect(loadedPost!.categories[0].removedImageCount).to.be.equal(1);
     })));
 
