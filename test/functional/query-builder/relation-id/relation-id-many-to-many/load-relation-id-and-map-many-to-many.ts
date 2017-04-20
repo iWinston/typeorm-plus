@@ -205,7 +205,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.where("categories.id = :categoryId", { categoryId: 1 }))
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.andWhere("categories.id = :categoryId", { categoryId: 1 }))
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.empty;
@@ -234,7 +234,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.subcategories", "subCategories", qb => qb.where("subCategories.id = :categoryId", { categoryId: 1 }))
+            .loadRelationIdAndMap("post.categoryIds", "post.subcategories", "subCategories", qb => qb.andWhere("subCategories.id = :categoryId", { categoryId: 1 }))
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.empty;
@@ -264,7 +264,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
 
         let loadedCategory = await connection.entityManager
             .createQueryBuilder(Category, "category")
-            .loadRelationIdAndMap("category.postIds", "category.posts", "posts", qb => qb.where("posts.id = :postId", { postId: 1 }))
+            .loadRelationIdAndMap("category.postIds", "category.posts", "posts", qb => qb.andWhere("posts.id = :postId", { postId: 1 }))
             .where("category.id = :id", { id: category.id })
             .getOne();
 
@@ -351,8 +351,8 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories2", qb => qb.where("categories2.id = :categoryId", { categoryId: 1 }))
-            .loadRelationIdAndMap("categories.imageIds", "categories.images", "images", qb => qb.where("images.id = :imageId", { imageId: 1 }))
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories2", qb => qb.andWhere("categories2.id = :categoryId", { categoryId: 1 }))
+            .loadRelationIdAndMap("categories.imageIds", "categories.images", "images", qb => qb.andWhere("images.id = :imageId", { imageId: 1 }))
             .where("post.id = :id", { id: post.id })
             .getOne();
 

@@ -11,7 +11,7 @@ export class Category {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({ unique: true })
     name: string;
 
     @OneToOne(type => Post, post => post.category2)

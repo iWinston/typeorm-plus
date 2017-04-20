@@ -3,7 +3,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {JoinAttribute} from "./JoinAttribute";
 import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
-import {RelationCountAttribute} from "./RelationCountAttribute";
+import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";

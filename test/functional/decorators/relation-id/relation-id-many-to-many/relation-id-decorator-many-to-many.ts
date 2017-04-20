@@ -20,7 +20,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should load ids when RelationId decorator used on ManyToMany owner side", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on owner side", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
         category1.name = "kids";
@@ -65,7 +65,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should load ids when RelationId decorator used on ManyToMany owner side with additional condition", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on owner side with additional condition", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
         category1.name = "kids";
@@ -112,18 +112,15 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should load ids when RelationId decorator used on ManyToMany owner side without inverse side", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on owner side without inverse side", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
         category1.name = "kids";
+        await connection.entityManager.persist(category1);
 
         const category2 = new Category();
         category2.name = "future";
-
-        await Promise.all([
-            connection.entityManager.persist(category1),
-            connection.entityManager.persist(category2)
-        ]);
+        await connection.entityManager.persist(category2);
 
         const post = new Post();
         post.title = "about kids";
@@ -141,7 +138,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should load ids when RelationId decorator used on ManyToMany owner side without inverse side and with additional condition", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on owner side without inverse side and with additional condition", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
         category1.name = "kids";
@@ -168,7 +165,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should load ids when RelationId decorator used on ManyToMany inverse side", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on inverse side", () => Promise.all(connections.map(async connection => {
 
         const category = new Category();
         category.name = "cars";
@@ -198,7 +195,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should load ids when RelationId decorator used on ManyToMany inverse side with additional condition", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on inverse side with additional condition", () => Promise.all(connections.map(async connection => {
 
         const category = new Category();
         category.name = "cars";

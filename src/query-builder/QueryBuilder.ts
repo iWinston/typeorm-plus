@@ -16,12 +16,15 @@ import {LockNotSupportedOnGivenDriverError} from "./error/LockNotSupportedOnGive
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {JoinAttribute} from "./JoinAttribute";
 import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
-import {RelationCountAttribute} from "./RelationCountAttribute";
+import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {SelectQuery} from "./SelectQuery";
 import {RelationIdLoader} from "./relation-id/RelationIdLoader";
 import {RelationIdLoadResult} from "./relation-id/RelationIdLoadResult";
 import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationIdMetadataToAttributeTransformer";
+import {RelationCountLoadResult} from "./relation-count/RelationCountLoadResult";
+import {RelationCountLoader} from "./relation-count/RelationCountLoader";
+import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
 
 
 // todo: fix problem with long aliases eg getMaxIdentifierLength
@@ -548,20 +551,20 @@ export class QueryBuilder<Entity> {
     }
 
     /**
-     * Counts number of entities of entity's relation.
-     * Optionally, you can add condition and parameters used in condition.
-     */
-    countRelation(relationName: string, condition?: string): this {
-        this.buildRelationCountAttributes(undefined, relationName, condition);
-        return this;
-    }
-
-    /**
      * Counts number of entities of entity's relation and maps the value into some entity's property.
      * Optionally, you can add condition and parameters used in condition.
      */
-    countRelationAndMap(mapToProperty: string, relationName: string, condition?: string): this {
-        this.buildRelationCountAttributes(mapToProperty, relationName, condition);
+    loadRelationCountAndMap(mapToProperty: string, relationName: string, aliasName?: string, queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>): this {
+        const relationCountAttribute = new RelationCountAttribute(this.expressionMap);
+        relationCountAttribute.mapToProperty = mapToProperty;
+        relationCountAttribute.relationName = relationName;
+        relationCountAttribute.alias = aliasName;
+        relationCountAttribute.queryBuilderFactory = queryBuilderFactory;
+        this.expressionMap.relationCountAttributes.push(relationCountAttribute);
+
+        this.expressionMap.createAlias({
+            name: relationCountAttribute.junctionAlias
+        });
         return this;
     }
 
@@ -850,8 +853,11 @@ export class QueryBuilder<Entity> {
     async getEntitiesAndRawResults(): Promise<{ entities: Entity[], rawResults: any[] }> {
         const queryRunner = await this.getQueryRunner();
         const relationIdLoader = new RelationIdLoader(this.connection, this.queryRunnerProvider, this.expressionMap.relationIdAttributes);
+        const relationCountLoader = new RelationCountLoader(this.connection, this.queryRunnerProvider, this.expressionMap.relationCountAttributes);
         const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(this.expressionMap);
         relationIdMetadataTransformer.transform();
+        const relationCountMetadataTransformer = new RelationCountMetadataToAttributeTransformer(this.expressionMap);
+        relationCountMetadataTransformer.transform();
 
         try {
             if (!this.expressionMap.mainAlias)
@@ -938,8 +944,8 @@ export class QueryBuilder<Entity> {
                         .getSqlWithParameters();
                     rawResults = await queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
                     const rawRelationIdResults = await relationIdLoader.load(rawResults);
-                    entities = this.rawResultsToEntities(rawResults, rawRelationIdResults);
-                    await this.loadRelationCounts(queryRunner);
+                    const rawRelationCountResults = await relationCountLoader.load(rawResults);
+                    entities = this.rawResultsToEntities(rawResults, rawRelationIdResults, rawRelationCountResults);
                     if (this.expressionMap.mainAlias.hasMetadata)
                         await this.connection.broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
 
@@ -956,8 +962,8 @@ export class QueryBuilder<Entity> {
                 const rawResults = await queryRunner.query(sql, parameters);
 
                 const rawRelationIdResults = await relationIdLoader.load(rawResults);
-                const entities = this.rawResultsToEntities(rawResults, rawRelationIdResults);
-                await this.loadRelationCounts(queryRunner);
+                const rawRelationCountResults = await relationCountLoader.load(rawResults);
+                const entities = this.rawResultsToEntities(rawResults, rawRelationIdResults, rawRelationCountResults);
                 if (this.expressionMap.mainAlias.hasMetadata)
                     await this.connection.broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
 
@@ -1195,71 +1201,8 @@ export class QueryBuilder<Entity> {
         });
     }
 
-    /**
-     * Counts number of entities of entity's relation and maps the value into some entity's property.
-     * Optionally, you can add condition and parameters used in condition.
-     */
-    protected buildRelationCountAttributes(mapToProperty: string|undefined, relationName: string, condition?: string): void {
-        // todo: add support of entity targets and custom table names
-        const relationCountAttribute = new RelationCountAttribute(this.expressionMap);
-        relationCountAttribute.mapToProperty = mapToProperty;
-        relationCountAttribute.relationName = relationName;
-        relationCountAttribute.condition = condition;
-        this.expressionMap.relationCountAttributes.push(relationCountAttribute);
-
-        this.expressionMap.createAlias({
-            name: relationCountAttribute.junctionAlias
-        });
-    }
-
-    protected async loadRelationCounts(queryRunner: QueryRunner): Promise<{}> {
-
-        const promises = this.expressionMap.relationCountAttributes.map(async relationCountAttr => {
-            const parentMetadata = relationCountAttr.metadata;
-            const relation = relationCountAttr.relation;
-
-            const ids = relationCountAttr.entities
-                .map(entityWithMetadata => entityWithMetadata.metadata.getEntityIdMap(entityWithMetadata.entity))
-                .filter(idMap => idMap !== undefined)
-                .map(idMap => idMap![parentMetadata.primaryColumn.propertyName]);
-
-            if (!ids || !ids.length)
-                return Promise.resolve(); // todo: need to set zero to relationCount column in this case?
-
-            const results: { id: any, cnt: any }[] = await new QueryBuilder(this.connection, this.queryRunnerProvider)
-                .select(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} AS id`)
-                .addSelect(`COUNT(${ this.escapeAlias(relation.propertyName) + "." + this.escapeColumn(relation.inverseEntityMetadata.primaryColumn.fullName) }) as cnt`)
-                .from(parentMetadata.target, parentMetadata.name)
-                .leftJoin(parentMetadata.name + "." + relation.propertyName, relation.propertyName, relationCountAttr.condition)
-                .setParameters(this.expressionMap.parameters)
-                .where(`${parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName} IN (:relationCountIds)`, {relationCountIds: ids})
-                .groupBy(parentMetadata.name + "." + parentMetadata.primaryColumn.propertyName)
-                .getRawMany();
-
-            relationCountAttr.entities.forEach(entityWithMetadata => {
-                const entityId = entityWithMetadata.entity[entityWithMetadata.metadata.primaryColumn.propertyName];
-                const entityResult = results.find(result => {
-                    return entityId === this.connection.driver.prepareHydratedValue(result.id, entityWithMetadata.metadata.primaryColumn);
-                });
-                if (entityResult) {
-                    if (relationCountAttr.mapToProperty) {
-                        const [parentName, propertyName] = (relationCountAttr.mapToProperty as string).split(".");
-                        // todo: right now mapping is working only on the currently countRelation class, but
-                        // different properties are working. make different classes to work too
-                        entityWithMetadata.entity[propertyName] = parseInt(entityResult.cnt);
-
-                    } else if (relation.countField) {
-                        entityWithMetadata.entity[relation.countField] = parseInt(entityResult.cnt);
-                    }
-                }
-            });
-        });
-
-        return Promise.all(promises);
-    }
-
-    protected rawResultsToEntities(results: any[], rawRelationIdResults: RelationIdLoadResult[]) {
-        return new RawSqlResultsToEntityTransformer(this.connection.driver, this.expressionMap.joinAttributes, rawRelationIdResults)
+    protected rawResultsToEntities(results: any[], rawRelationIdResults: RelationIdLoadResult[], rawRelationCountResults: RelationCountLoadResult[]) {
+        return new RawSqlResultsToEntityTransformer(this.connection.driver, this.expressionMap.joinAttributes, rawRelationIdResults, rawRelationCountResults)
             .transform(results, this.expressionMap.mainAlias!);
     }
 

@@ -29,13 +29,13 @@ export class Post {
     @RelationId((post: Post) => post.categories)
     categoryIds: number[];
 
-    @RelationId((post: Post) => post.categories, "removedCategories", qb => qb.where("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
+    @RelationId((post: Post) => post.categories, "removedCategories", qb => qb.andWhere("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
     removedCategoryIds: number[];
 
     @RelationId((post: Post) => post.subcategories)
     subcategoryIds: number[];
 
-    @RelationId((post: Post) => post.subcategories, "removedSubcategories", qb => qb.where("removedSubcategories.isRemoved = :isRemoved", { isRemoved: true }))
+    @RelationId((post: Post) => post.subcategories, "removedSubcategories", qb => qb.andWhere("removedSubcategories.isRemoved = :isRemoved", { isRemoved: true }))
     removedSubcategoryIds: number[];
 
 }

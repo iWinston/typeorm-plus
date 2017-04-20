@@ -5,6 +5,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Alias} from "../Alias";
 import {JoinAttribute} from "../JoinAttribute";
+import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -18,7 +19,8 @@ export class RawSqlResultsToEntityTransformer {
 
     constructor(protected driver: Driver,
                 protected joinAttributes: JoinAttribute[],
-                protected rawRelationIdResults: RelationIdLoadResult[]) {
+                protected rawRelationIdResults: RelationIdLoadResult[],
+                protected rawRelationCountResults: RelationCountLoadResult[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -63,7 +65,7 @@ export class RawSqlResultsToEntityTransformer {
      * Transforms set of data results into single entity.
      */
     protected transformRawResultsGroup(rawResults: any[], alias: Alias): ObjectLiteral|undefined {
-        let hasColumns = false, hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false, hasRelations = false, hasRelationIds = false;
+        let hasColumns = false, hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false, hasRelations = false, hasRelationIds = false, hasRelationCounts = false;
         const entity: any = alias.metadata.create();
 
         // get value from columns selections and put them into newly created entity
@@ -77,8 +79,9 @@ export class RawSqlResultsToEntityTransformer {
         }
         hasRelations = this.transformJoins(rawResults, entity, alias);
         hasRelationIds = this.transformRelationIds(rawResults, alias, entity);
+        hasRelationCounts = this.transformRelationCounts(rawResults, alias, entity);
 
-        return (hasColumns || hasEmbeddedColumns || hasParentColumns || hasParentEmbeddedColumns || hasRelations || hasRelationIds) ? entity : undefined;
+        return (hasColumns || hasEmbeddedColumns || hasParentColumns || hasParentEmbeddedColumns || hasRelations || hasRelationIds || hasRelationCounts) ? entity : undefined;
     }
 
     // get value from columns selections and put them into object
@@ -187,6 +190,41 @@ export class RawSqlResultsToEntityTransformer {
                 hasData = true;
             });
         });
+        return hasData;
+    }
+
+    protected transformRelationCounts(rawSqlResults: any[], alias: Alias, entity: ObjectLiteral): boolean {
+        let hasData = false;
+        this.rawRelationCountResults
+            .filter(rawRelationCountResult => rawRelationCountResult.relationCountAttribute.parentAlias === alias.name)
+            .forEach(rawRelationCountResult => {
+                const relation = rawRelationCountResult.relationCountAttribute.relation;
+                let referenceColumnName: string;
+
+                if (relation.isManyToOne || relation.isOneToOne) {
+                    throw new Error(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
+
+                } else if (relation.isOneToMany) {
+                    referenceColumnName = relation.inverseRelation.joinColumn.referencedColumn.fullName;
+
+                } else {
+                    referenceColumnName = relation.isOwning ? relation.joinTable.referencedColumn.fullName : relation.inverseRelation.joinTable.referencedColumn.fullName;
+                }
+
+                const referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
+                // console.log("referenceColumnValue: ", referenceColumnValue);
+                if (referenceColumnValue !== undefined && referenceColumnValue !== null) {
+                    entity[rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName] = 0;
+                    rawRelationCountResult.results
+                        .filter(result => result["parentId"] === referenceColumnValue)
+                        .forEach(result => {
+                            entity[rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName] = parseInt(result["cnt"]);
+                            hasData = true;
+                        });
+                }
+
+            });
+
         return hasData;
     }
 

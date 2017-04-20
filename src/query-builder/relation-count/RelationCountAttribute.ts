@@ -1,9 +1,15 @@
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {QueryBuilderUtils} from "./QueryBuilderUtils";
-import {RelationMetadata} from "../metadata/RelationMetadata";
-import {QueryExpressionMap} from "./QueryExpressionMap";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {QueryBuilderUtils} from "../QueryBuilderUtils";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {QueryExpressionMap} from "../QueryExpressionMap";
+import {QueryBuilder} from "../QueryBuilder";
 
 export class RelationCountAttribute {
+
+    /**
+     * Alias of the joined (destination) table.
+     */
+    alias?: string;
 
     /**
      * Name of relation.
@@ -13,22 +19,41 @@ export class RelationCountAttribute {
     /**
      * Property + alias of the object where to joined data should be mapped.
      */
-    mapToProperty?: string;
+    mapToProperty: string;
 
     /**
      * Extra condition applied to "ON" section of join.
      */
-    condition?: string;
-
-    entities: { entity: any, metadata: EntityMetadata }[] = [];
+    queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(private expressionMap: QueryExpressionMap,
-                private relationCountAttribute?: RelationCountAttribute) {
+                private relationCountAttribute?: Partial<RelationCountAttribute>) {
         Object.assign(this, relationCountAttribute || {});
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    get joinInverseSideMetadata(): EntityMetadata {
+        return this.relation.inverseEntityMetadata;
+    }
+
+    /**
+     * Alias of the parent of this join.
+     * For example, if we join ("post.category", "categoryAlias") then "post" is a parent alias.
+     * This value is extracted from entityOrProperty value.
+     * This is available when join was made using "post.category" syntax.
+     */
+    get parentAlias(): string {
+        if (!QueryBuilderUtils.isAliasProperty(this.relationName))
+            throw new Error(`Given value must be a string representation of alias property`);
+
+        return this.relationName.split(".")[0];
     }
 
     /**
@@ -75,6 +100,10 @@ export class RelationCountAttribute {
         const parentAlias = this.relationName.split(".")[0];
         const selection = this.expressionMap.findAliasByName(parentAlias);
         return selection.metadata;
+    }
+
+    get mapToPropertyPropertyName(): string {
+        return this.mapToProperty!.split(".")[1];
     }
 
 }

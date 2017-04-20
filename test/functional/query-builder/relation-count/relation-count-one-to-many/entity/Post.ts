@@ -2,18 +2,22 @@ import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
-import {PostCategory} from "./PostCategory";
+import {Category} from "./Category";
 
 @Entity()
-export class Category {
+export class Post {
 
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ unique: true })
-    name: string;
+    @Column()
+    title: string;
+    
+    @OneToMany(type => Category, category => category.post)
+    categories: Category[];
+    
+    categoryCount: number;
 
-    @OneToMany(type => PostCategory, postCategory => postCategory.category)
-    posts: PostCategory[];
+    removedCategoryCount: number;
 
 }

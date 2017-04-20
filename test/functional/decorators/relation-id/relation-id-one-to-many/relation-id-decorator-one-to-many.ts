@@ -19,7 +19,7 @@ describe("decorators > relation-id > one-to-many", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should load id when RelationId decorator used with OneToMany relation", () => Promise.all(connections.map(async connection => {
+    it("should load id when RelationId decorator used", () => Promise.all(connections.map(async connection => {
 
         const category = new Category();
         category.name = "cars";
@@ -64,7 +64,7 @@ describe("decorators > relation-id > one-to-many", () => {
         expect(loadedCategory!.postIds[1]).to.be.equal(2);
     })));
 
-    it("should load id when RelationId decorator used with OneToMany relation and with additional condition", () => Promise.all(connections.map(async connection => {
+    it("should load id when RelationId decorator used with additional condition", () => Promise.all(connections.map(async connection => {
 
         const category = new Category();
         category.name = "cars";

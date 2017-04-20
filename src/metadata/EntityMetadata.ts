@@ -10,6 +10,7 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {RelationIdMetadata} from "./RelationIdMetadata";
+import {RelationCountMetadata} from "./RelationCountMetadata";
 
 // todo: IDEA. store all entity metadata in the EntityMetadata too? (this will open more features for metadata objects + no need to access connection in lot of places)
 
@@ -68,6 +69,11 @@ export class EntityMetadata {
     readonly relationIds: RelationIdMetadata[];
 
     /**
+     * Entity's relation id metadatas.
+     */
+    readonly relationCounts: RelationCountMetadata[];
+
+    /**
      * Entity's index metadatas.
      */
     readonly indices: IndexMetadata[];
@@ -122,6 +128,7 @@ export class EntityMetadata {
         this._columns = args.columnMetadatas || [];
         this.relations = args.relationMetadatas || [];
         this.relationIds = args.relationIdMetadatas || [];
+        this.relationCounts = args.relationCountMetadatas || [];
         this.indices = args.indexMetadatas || [];
         this.foreignKeys = args.foreignKeyMetadatas || [];
         this.embeddeds = args.embeddedMetadatas || [];
@@ -132,6 +139,7 @@ export class EntityMetadata {
         this._columns.forEach(column => column.entityMetadata = this);
         this.relations.forEach(relation => relation.entityMetadata = this);
         this.relationIds.forEach(relationId => relationId.entityMetadata = this);
+        this.relationCounts.forEach(relationCount => relationCount.entityMetadata = this);
         this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
         this.indices.forEach(index => index.entityMetadata = this);
 

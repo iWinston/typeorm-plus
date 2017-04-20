@@ -17,14 +17,18 @@ export class Post {
     title: string;
     
     @ManyToOne(type => Category)
-    @JoinColumn({
-        referencedColumnName: "name"
-    })
-    category: Category;
+    @JoinColumn({ referencedColumnName: "name" })
+    categoryByName: Category;
 
-    categoryId: number;
+    @ManyToOne(type => Category)
+    @JoinColumn()
+    category: Category;
 
     @OneToMany(type => PostCategory, postCategoryRelation => postCategoryRelation.post)
     categories: PostCategory[];
+
+    categoryId: number;
+
+    categoryName: string;
 
 }

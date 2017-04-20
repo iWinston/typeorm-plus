@@ -3,9 +3,9 @@ import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/Pr
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
+import {RelationCount} from "../../../../../../src/decorator/relations/RelationCount";
 import {Post} from "./Post";
 import {Image} from "./Image";
-import {RelationId} from "../../../../../../src/decorator/relations/RelationId";
 
 @Entity()
 export class Category {
@@ -22,20 +22,20 @@ export class Category {
     @ManyToMany(type => Post, post => post.categories)
     posts: Post[];
 
-    @ManyToMany(type => Image)
+    @ManyToMany(type => Image, image => image.categories)
     @JoinTable()
     images: Image[];
 
-    @RelationId((category: Category) => category.images)
-    imageIds: number[];
+    @RelationCount((category: Category) => category.posts)
+    postCount: number;
 
-    @RelationId((category: Category) => category.images, "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
-    removedImageIds: number[];
+    @RelationCount((category: Category) => category.posts, "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
+    removedPostCount: number;
 
-    @RelationId((category: Category) => category.posts)
-    postIds: number[];
+    @RelationCount((category: Category) => category.images)
+    imageCount: number;
 
-    @RelationId((category: Category) => category.posts, "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
-    removedPostIds: number[];
+    @RelationCount((category: Category) => category.images, "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
+    removedImageCount: number;
 
 }

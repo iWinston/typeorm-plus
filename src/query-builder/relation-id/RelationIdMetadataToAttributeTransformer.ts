@@ -51,7 +51,7 @@ export class RelationIdMetadataToAttributeTransformer {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private metadataToAttribute(parentAliasName: string, relationId: RelationIdMetadata) {
+    private metadataToAttribute(parentAliasName: string, relationId: RelationIdMetadata): RelationIdAttribute {
         return new RelationIdAttribute(this.expressionMap, {
             relationName: parentAliasName + "." + relationId.relation.propertyName, // category.images
             mapToProperty: parentAliasName + "." + relationId.propertyName, // category.imageIds
