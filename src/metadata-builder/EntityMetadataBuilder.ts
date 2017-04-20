@@ -261,28 +261,6 @@ export class EntityMetadataBuilder {
                     }
                 });
 
-                // create entity's relations join columns
-                entityMetadata.oneToOneRelations
-                    .concat(entityMetadata.manyToOneRelations)
-                    .forEach(relation => {
-
-                        // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
-                        // throw all of them which don't have JoinColumn decorators and create it for them
-                        let joinColumnMetadata = mergedArgs.joinColumns.findByProperty(relation.propertyName);
-                        if (!joinColumnMetadata && relation.isManyToOne) {
-                            joinColumnMetadata = {
-                                target: relation.entityMetadata.target,
-                                propertyName: relation.propertyName
-                            };
-                        }
-
-                        if (joinColumnMetadata) {
-                            const joinColumn = new JoinColumnMetadata(joinColumnMetadata);
-                            relation.joinColumn = joinColumn;
-                            joinColumn.relation = relation;
-                        }
-                    });
-
                 // add lazy initializer for entity relations
                 if (entityMetadata.target instanceof Function) {
                     entityMetadata.relations
@@ -317,27 +295,6 @@ export class EntityMetadataBuilder {
             }
         });
 
-        // generate keys for tables with single-table inheritance
-        entityMetadatas
-            .filter(metadata => metadata.inheritanceType === "single-table" && metadata.hasDiscriminatorColumn)
-            .forEach(metadata => {
-                const indexForKey = new IndexMetadata({
-                    target: metadata.target,
-                    columns: [metadata.discriminatorColumn.fullName],
-                    unique: false
-                });
-                indexForKey.entityMetadata = metadata;
-                metadata.indices.push(indexForKey);
-
-                const indexForKeyWithPrimary = new IndexMetadata({
-                    target: metadata.target,
-                    columns: [metadata.firstPrimaryColumn.propertyName, metadata.discriminatorColumn.propertyName],
-                    unique: false
-                });
-                indexForKeyWithPrimary.entityMetadata = metadata;
-                metadata.indices.push(indexForKeyWithPrimary);
-            });
-
         // generate virtual column with foreign key for class-table inheritance
         entityMetadatas
             .filter(metadata => !!metadata.parentEntityMetadata)
@@ -370,6 +327,87 @@ export class EntityMetadataBuilder {
                 );
                 foreignKey.entityMetadata = metadata;
                 metadata.foreignKeys.push(foreignKey);
+            });
+
+        entityMetadatas.forEach(entityMetadata => {
+            const mergedArgs = allMergedArgs.find(mergedArgs => {
+                return mergedArgs.table.target === entityMetadata.target;
+            });
+            if (!mergedArgs) return;
+
+            // create entity's relations join columns
+            entityMetadata.oneToOneRelations
+                .concat(entityMetadata.manyToOneRelations)
+                .forEach(relation => {
+
+                    // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
+                    // throw all of them which don't have JoinColumn decorators and create it for them
+                    let joinColumnMetadataArgs = mergedArgs.joinColumns.findByProperty(relation.propertyName);
+                    if (!joinColumnMetadataArgs && relation.isManyToOne) {
+                        joinColumnMetadataArgs = {
+                            target: relation.entityMetadata.target,
+                            propertyName: relation.propertyName
+                        };
+                    }
+
+                    if (joinColumnMetadataArgs) {
+                        const joinColumn = new JoinColumnMetadata();
+                        joinColumn.target = joinColumnMetadataArgs.target;
+                        joinColumn.propertyName = joinColumnMetadataArgs.propertyName;
+                        joinColumn.relation = relation;
+                        relation.joinColumn = joinColumn;
+
+                        if (joinColumnMetadataArgs.name) {
+                            joinColumn.name = joinColumnMetadataArgs.name;
+
+                        } else {
+                            joinColumn.name = namingStrategy.joinColumnInverseSideName(relation.propertyName);
+                        }
+
+                        if (joinColumnMetadataArgs.referencedColumnName) {
+                            const referencedColumn = relation.inverseEntityMetadata.allColumns.find(column => {
+                                return column.fullName === joinColumnMetadataArgs!.referencedColumnName;
+                            });
+                            if (!referencedColumn)
+                                throw new Error(`Referenced column ${joinColumnMetadataArgs.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
+
+                            joinColumn.referencedColumn = referencedColumn;
+                        } else {
+
+                            const inverseEntityMetadata = relation.inverseEntityMetadata;
+                            const primaryColumns = inverseEntityMetadata.primaryColumnsWithParentIdColumns;
+
+                            if (primaryColumns.length > 1)
+                                throw new Error(`Cannot automatically determine a referenced column of the "${inverseEntityMetadata.name}", because it has multiple primary columns. Try to specify a referenced column explicitly.`);
+
+                            joinColumn.referencedColumn = primaryColumns[0];
+                        }
+
+                    }
+                });
+
+
+        });
+
+        // generate keys for tables with single-table inheritance
+        entityMetadatas
+            .filter(metadata => metadata.inheritanceType === "single-table" && metadata.hasDiscriminatorColumn)
+            .forEach(metadata => {
+                const indexForKey = new IndexMetadata({
+                    target: metadata.target,
+                    columns: [metadata.discriminatorColumn.fullName],
+                    unique: false
+                });
+                indexForKey.entityMetadata = metadata;
+                metadata.indices.push(indexForKey);
+
+                const indexForKeyWithPrimary = new IndexMetadata({
+                    target: metadata.target,
+                    columns: [metadata.firstPrimaryColumn.propertyName, metadata.discriminatorColumn.propertyName],
+                    unique: false
+                });
+                indexForKeyWithPrimary.entityMetadata = metadata;
+                metadata.indices.push(indexForKeyWithPrimary);
             });
 
         // generate columns and foreign keys for tables with relations

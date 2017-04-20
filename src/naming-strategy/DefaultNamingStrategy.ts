@@ -34,10 +34,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "ind_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    joinColumnInverseSideName(joinColumnName: string, propertyName: string): string {
-        if (joinColumnName)
-            return joinColumnName;
-
+    joinColumnInverseSideName(propertyName: string): string {
         return propertyName;
     }
 

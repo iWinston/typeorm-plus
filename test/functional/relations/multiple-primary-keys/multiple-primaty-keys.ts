@@ -23,10 +23,12 @@ describe.skip("relations > multiple-primary-keys", () => {
 
         const category1 = new Category();
         category1.name = "cars";
+        category1.type = "common-category";
         await connection.entityManager.persist(category1);
 
         const category2 = new Category();
-        category2.name = "cars";
+        category2.name = "airplanes";
+        category1.type = "common-category";
         await connection.entityManager.persist(category2);
 
         const post1 = new Post();
@@ -45,9 +47,9 @@ describe.skip("relations > multiple-primary-keys", () => {
             .getMany();
 
         expect(loadedPosts![0].category).to.not.be.empty;
-        expect(loadedPosts![0].category.id).to.be.equal(1);
+        expect(loadedPosts![0].category.type).to.be.equal("common-category");
         expect(loadedPosts![1].category).to.not.be.empty;
-        expect(loadedPosts![1].category.id).to.be.equal(2);
+        expect(loadedPosts![1].category.type).to.be.equal("common-category");
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
@@ -55,7 +57,7 @@ describe.skip("relations > multiple-primary-keys", () => {
             .getOne();
 
         expect(loadedPost!.category).to.not.be.empty;
-        expect(loadedPost!.category.id).to.be.equal(1);
+        expect(loadedPost!.category.type).to.be.equal("common-category");
 
     })));
 
