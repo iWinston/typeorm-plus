@@ -4,7 +4,6 @@ import {OnDeleteType} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {JoinColumnMetadata} from "./JoinColumnMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
-import {ColumnMetadata} from "./ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
@@ -51,8 +50,7 @@ export class RelationMetadata {
     /**
      * Relation join columns metadata.
      */
-    joinColumn: JoinColumnMetadata;
-    // joinColumns: JoinColumnMetadata[] = [];
+    joinColumns: JoinColumnMetadata[] = [];
 
     // ---------------------------------------------------------------------
     // Readonly Properties
@@ -201,15 +199,15 @@ export class RelationMetadata {
         if (this.isOwning) {
             if (this.joinTable) {
                 return this.joinTable.joinColumnName;
-            } else if (this.joinColumn) {
-                return this.joinColumn.name;
+            } else if (this.joinColumns) {
+                return this.joinColumns[0].name;
             }
 
         } else if (this.hasInverseSide) {
             if (this.inverseRelation.joinTable) {
                 return this.inverseRelation.joinTable.inverseJoinColumnName;
-            } else if (this.inverseRelation.joinColumn && this.inverseRelation.joinColumn.referencedColumn) {
-                return this.inverseRelation.joinColumn.referencedColumn.fullName;
+            } else if (this.inverseRelation.joinColumns && this.inverseRelation.joinColumns[0].referencedColumn) {
+                return this.inverseRelation.joinColumns[0].referencedColumn.fullName; // todo: [0] is temporary!!
             }
         }
 
@@ -222,23 +220,8 @@ export class RelationMetadata {
      * //Also only owning sides of the relations have this property.
      *
      * @deprecated Use joinTable or joinColumn directly where needed, because this method it too much confusing
-     */
+
     get referencedColumnName(): string {
-        // if (!this.isOwning)
-        //     throw new Error(`Only owning side of the relations can have information about referenced column names.`);
-
-        // for many-to-one and owner one-to-one relations we get referenced column from join column
-        /*if (this.joinColumn && this.joinColumn.referencedColumn && this.joinColumn.referencedColumn.name)
-            return this.joinColumn.referencedColumn.name;
-
-        // for many-to-many relation we give referenced column depend of owner side
-        if (this.joinTable) { // need to check if this algorithm works correctly
-            if (this.isOwning) {
-                return this.joinTable.referencedColumn.name;
-            } else {
-                return this.joinTable.inverseReferencedColumn.name;
-            }
-        }*/
 
         if (this.isOwning) {
             if (this.joinTable) {
@@ -258,13 +241,13 @@ export class RelationMetadata {
 
         // this should not be possible, but anyway throw error
         throw new Error(`Cannot get referenced column name of the relation ${this.entityMetadata.name}#${this.name}`);
-    }
+    } */
 
     /**
      * Gets the column to which this relation is referenced.
      *
      * @deprecated Use joinTable or joinColumn directly where needed, because this method it too much confusing
-     */
+
     get referencedColumn(): ColumnMetadata {
         if (this.isOwning) {
             if (this.joinTable) {
@@ -284,7 +267,7 @@ export class RelationMetadata {
 
         // this should not be possible, but anyway throw error
         throw new Error(`Cannot get referenced column of the relation ${this.entityMetadata.name}#${this.name}`);
-    }
+    } */
 
     /**
      * Gets the property's type to which this relation is applied.
@@ -299,7 +282,7 @@ export class RelationMetadata {
     get isOwning() {
         return  !!(this.isManyToOne ||
                 (this.isManyToMany && this.joinTable) ||
-                (this.isOneToOne && this.joinColumn));
+                (this.isOneToOne && this.joinColumns.length > 0));
     }
 
     /**
@@ -443,7 +426,9 @@ export class RelationMetadata {
      *
      *  if from Post relation we are passing Category here,
      *  it should return a post.category
-     */
+     *
+     *  @deprecated
+
     getOwnEntityRelationId(ownEntity: ObjectLiteral): any {
         if (this.isManyToManyOwner) {
             return ownEntity[this.joinTable.referencedColumn.propertyName];
@@ -457,7 +442,7 @@ export class RelationMetadata {
         } else if (this.isOneToOneNotOwner || this.isOneToMany) {
             return ownEntity[this.inverseRelation.joinColumn.referencedColumn.propertyName];
         }
-    }
+    }*/
 
     /**
      *
@@ -473,7 +458,7 @@ export class RelationMetadata {
      *  it should return a category.id
      *
      *  @deprecated Looks like this method does not make sence and does same as getOwnEntityRelationId ?
-     */
+
     getInverseEntityRelationId(inverseEntity: ObjectLiteral): any {
         if (this.isManyToManyOwner) {
             return inverseEntity[this.joinTable.inverseReferencedColumn.propertyName];
@@ -487,7 +472,7 @@ export class RelationMetadata {
         } else if (this.isOneToOneNotOwner || this.isOneToMany) {
             return inverseEntity[this.inverseRelation.joinColumn.propertyName];
         }
-    }
+    }*/
 
     // ---------------------------------------------------------------------
     // Private Methods

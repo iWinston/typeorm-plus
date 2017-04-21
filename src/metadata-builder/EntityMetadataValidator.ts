@@ -1,8 +1,5 @@
 import {UsingJoinTableIsNotAllowedError} from "./error/UsingJoinTableIsNotAllowedError";
 import {UsingJoinTableOnlyOnOneSideAllowedError} from "./error/UsingJoinTableOnlyOnOneSideAllowedError";
-import {UsingJoinColumnIsNotAllowedError} from "./error/UsingJoinColumnIsNotAllowedError";
-import {UsingJoinColumnOnlyOnOneSideAllowedError} from "./error/UsingJoinColumnOnlyOnOneSideAllowedError";
-import {MissingJoinColumnError} from "./error/MissingJoinColumnError";
 import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
@@ -76,7 +73,8 @@ export class EntityMetadataValidator {
             // check join columns:
             // using JoinColumn is possible only on one side of the relation and on one-to-one, many-to-one relation types
             // first check if relation is one-to-one or many-to-one
-            if (relation.joinColumn) {
+            // todo(dima): fix
+            /*if (relation.joinColumn) {
 
                 // join column can be applied only on one-to-one and many-to-one relations
                 if (!relation.isOneToOne && !relation.isManyToOne)
@@ -95,7 +93,7 @@ export class EntityMetadataValidator {
             // if its a one-to-one relation and JoinColumn is missing on both sides of the relation
             // or its one-side relation without JoinColumn we should give an error
             if (!relation.joinColumn && relation.isOneToOne && (!relation.hasInverseSide || !relation.inverseRelation.joinColumn))
-                throw new MissingJoinColumnError(entityMetadata, relation);
+                throw new MissingJoinColumnError(entityMetadata, relation);*/
 
             // if its a many-to-many relation and JoinTable is missing on both sides of the relation
             // or its one-side relation without JoinTable we should give an error

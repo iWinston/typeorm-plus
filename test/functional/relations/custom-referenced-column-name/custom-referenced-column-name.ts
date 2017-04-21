@@ -9,7 +9,7 @@ import {Tag} from "./entity/Tag";
 
 const should = chai.should();
 
-describe.only("relations > custom-referenced-column-name", () => {
+describe("relations > custom-referenced-column-name", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

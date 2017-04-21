@@ -39,7 +39,7 @@ export class LazyRelationsWrapper {
                             .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.table.name,
                                 `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.joinColumnName}=:${relation.propertyName}Id AND ` +
                                 `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.inverseJoinColumnName}=${relation.propertyName}.${relation.joinTable.referencedColumn.propertyName}`)
-                            .setParameter(relation.propertyName + "Id", this[relation.referencedColumn.propertyName]);
+                            .setParameter(relation.propertyName + "Id", this[relation.joinTable.referencedColumn.propertyName]);
 
                     } else { // non-owner
                         qb.select(relation.propertyName)
@@ -47,7 +47,7 @@ export class LazyRelationsWrapper {
                             .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.table.name,
                                 `${relation.junctionEntityMetadata.table.name}.${relation.inverseRelation.joinTable.inverseJoinColumnName}=:${relation.propertyName}Id AND ` +
                                 `${relation.junctionEntityMetadata.table.name}.${relation.inverseRelation.joinTable.joinColumnName}=${relation.propertyName}.${relation.inverseRelation.joinTable.referencedColumn.propertyName}`)
-                            .setParameter(relation.propertyName + "Id", this[relation.inverseRelation.referencedColumn.propertyName]);
+                            .setParameter(relation.propertyName + "Id", this[relation.inverseRelation.joinTable.referencedColumn.propertyName]);
                     }
 
                     this[promiseIndex] = qb.getMany().then(results => {
@@ -78,13 +78,13 @@ export class LazyRelationsWrapper {
                     });
                     return this[promiseIndex];
 
-                } else {
+                } else { // todo: fix issues with joinColumn[0]
 
                     if (relation.hasInverseSide) {
                         qb.select(relation.propertyName)
                             .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
                             .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
-                            .where(relation.entityMetadata.targetName + "." + relation.joinColumn.referencedColumn.fullName + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) }); // is referenced column usage is correct here?
+                            .where(relation.entityMetadata.targetName + "." + relation.joinColumns[0].referencedColumn.fullName + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) }); // is referenced column usage is correct here?
 
                     } else {
                         // (ow) post.category<=>category.post
@@ -94,8 +94,8 @@ export class LazyRelationsWrapper {
                         qb.select(relation.propertyName) // category
                             .from(relation.type, relation.propertyName) // Category, category
                             .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name,
-                                `${relation.entityMetadata.name}.${relation.propertyName}=${relation.propertyName}.${relation.referencedColumn.propertyName}`)
-                            .where(relation.entityMetadata.name + "." + relation.joinColumn.referencedColumn.fullName + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) }); // is referenced column usage is correct here?
+                                `${relation.entityMetadata.name}.${relation.propertyName}=${relation.propertyName}.${relation.isOwning ? relation.joinColumns[0].referencedColumn.propertyName : relation.inverseRelation.joinColumns[0].referencedColumn.propertyName }`)
+                            .where(relation.entityMetadata.name + "." + relation.joinColumns[0].referencedColumn.fullName + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) }); // is referenced column usage is correct here?
                     }
 
                     this[promiseIndex] = qb.getOne().then(result => {

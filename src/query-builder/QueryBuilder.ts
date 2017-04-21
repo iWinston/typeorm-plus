@@ -1452,17 +1452,21 @@ export class QueryBuilder<Entity> {
 
             // if real entity relation is involved
             if (relation.isManyToOne || relation.isOneToOneOwner) {
-                const destinationTableReferencedColumn = relation.joinColumn.referencedColumn;
 
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
-                const condition = ea(destinationTableAlias) + "." + ec(destinationTableReferencedColumn.fullName) + "=" + ea(parentAlias) + "." + ec(relation.name);
+                const condition = relation.joinColumns.map(joinColumn => {
+                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(parentAlias) + "." + ec(joinColumn.name);
+                }).join(" AND ");
+
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
 
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                const relationOwnerReferencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = ea(destinationTableAlias!) + "." + ec(relation.inverseRelation.name) + "=" + ea(parentAlias) + "." + ec(relationOwnerReferencedColumn.fullName);
+                const condition = relation.inverseRelation.joinColumns.map(joinColumn => {
+                    return ea(destinationTableAlias!) + "." + ec(joinColumn.name) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
+                }).join(" AND ");
+
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
 
             } else { // means many-to-many

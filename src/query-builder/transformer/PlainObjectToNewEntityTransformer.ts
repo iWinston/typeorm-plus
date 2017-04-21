@@ -46,7 +46,9 @@ export class PlainObjectToNewEntityTransformer {
                             // todo: support custom initial fields here
                             if (entity[relation.propertyName] instanceof Array) {
                                 const existRelation = entity[relation.propertyName].find((subEntity: any) => {
-                                    return subEntity[relation.referencedColumnName] === subObject[relation.referencedColumnName];
+                                    return relation.joinColumns.every(joinColumn => {
+                                        return subEntity[joinColumn.name] === subObject[joinColumn.name];
+                                    });
                                 });
                                 if (existRelation)
                                     this.groupAndTransform(subEntity, existRelation, relationMetadata);

@@ -205,65 +205,67 @@ export class SubjectOperationExecutor {
             // first update relations with join columns (one-to-one owner and many-to-one relations)
             const updateOptions: ObjectLiteral = {};
             subject.metadata.relationsWithJoinColumns.forEach(relation => {
-                const referencedColumn = relation.joinColumn.referencedColumn;
-                const relatedEntity = relation.getEntityValue(subject.entity);
+                relation.joinColumns.forEach(joinColumn => {
+                    const referencedColumn = joinColumn.referencedColumn;
+                    const relatedEntity = relation.getEntityValue(subject.entity);
 
-                // if relation value is not set then nothing to do here
-                if (!relatedEntity)
-                    return;
+                    // if relation value is not set then nothing to do here
+                    if (!relatedEntity)
+                        return;
 
-                // check if relation reference column is a relation
-                let relationId: any;
-                const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === relation.joinColumn.referencedColumn.propertyName);
-                if (columnRelation) { // if referenced column is a relation
-                    const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === relatedEntity[referencedColumn.propertyName]);
+                    // check if relation reference column is a relation
+                    let relationId: any;
+                    const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === joinColumn.referencedColumn.propertyName);
+                    if (columnRelation) { // if referenced column is a relation
+                        const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === relatedEntity[referencedColumn.propertyName]);
 
-                    // if this relation was just inserted
-                    if (insertSubject) {
+                        // if this relation was just inserted
+                        if (insertSubject) {
 
-                        // check if we have this relation id already
-                        relationId = relatedEntity[referencedColumn.propertyName][columnRelation.propertyName];
-                        if (!relationId) {
+                            // check if we have this relation id already
+                            relationId = relatedEntity[referencedColumn.propertyName][columnRelation.propertyName];
+                            if (!relationId) {
 
-                            // if we don't have relation id then use special values
-                            if (referencedColumn.isGenerated) {
-                                relationId = insertSubject.newlyGeneratedId;
+                                // if we don't have relation id then use special values
+                                if (referencedColumn.isGenerated) {
+                                    relationId = insertSubject.newlyGeneratedId;
 
-                            } else if (referencedColumn.isObjectId) {
-                                relationId = insertSubject.generatedObjectId;
+                                } else if (referencedColumn.isObjectId) {
+                                    relationId = insertSubject.generatedObjectId;
 
+                                }
+                                // todo: handle other special types too
                             }
-                            // todo: handle other special types too
                         }
+
+                    } else { // if referenced column is a simple non relational column
+                        const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === relatedEntity);
+
+                        // if this relation was just inserted
+                        if (insertSubject) {
+
+                            // check if we have this relation id already
+                            relationId = relatedEntity[referencedColumn.propertyName];
+                            if (!relationId) {
+
+                                // if we don't have relation id then use special values
+                                if (referencedColumn.isGenerated) {
+                                    relationId = insertSubject.newlyGeneratedId;
+
+                                } else if (referencedColumn.isObjectId) {
+                                    relationId = insertSubject.generatedObjectId;
+                                }
+                                // todo: handle other special types too
+                            }
+                        }
+
                     }
 
-                } else { // if referenced column is a simple non relational column
-                    const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === relatedEntity);
-
-                    // if this relation was just inserted
-                    if (insertSubject) {
-
-                        // check if we have this relation id already
-                        relationId = relatedEntity[referencedColumn.propertyName];
-                        if (!relationId) {
-
-                            // if we don't have relation id then use special values
-                            if (referencedColumn.isGenerated) {
-                                relationId = insertSubject.newlyGeneratedId;
-
-                            } else if (referencedColumn.isObjectId) {
-                                relationId = insertSubject.generatedObjectId;
-                            }
-                            // todo: handle other special types too
-                        }
+                    if (relationId) {
+                        updateOptions[joinColumn.name] = relationId;
                     }
 
-                }
-
-                if (relationId) {
-                    updateOptions[relation.name] = relationId;
-                }
-
+                });
             });
 
             // if we found relations which we can update - then update them
@@ -279,23 +281,25 @@ export class SubjectOperationExecutor {
                     // if entity id is a relation, then extract referenced column from that relation
                     const columnRelation = subject.metadata.relations.find(relation => relation.propertyName === column.propertyName);
 
-                    if (entityValue && columnRelation && columnRelation.joinColumn) { // not sure if we need handle join column from inverse side
-                        let relationIdOfEntityValue = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                        if (!relationIdOfEntityValue) {
-                            const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
-                            if (entityValueInsertSubject) {
-                                if (columnRelation.joinColumn.referencedColumn.isGenerated) {
-                                    relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                    if (entityValue && columnRelation) { // not sure if we need handle join column from inverse side
+                        columnRelation.joinColumns.forEach(joinColumn => {
+                            let relationIdOfEntityValue = entityValue[joinColumn.referencedColumn.propertyName];
+                            if (!relationIdOfEntityValue) {
+                                const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
+                                if (entityValueInsertSubject) {
+                                    if (joinColumn.referencedColumn.isGenerated) {
+                                        relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
 
-                                } else if (columnRelation.joinColumn.referencedColumn.isObjectId) {
-                                    relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
+                                    } else if (joinColumn.referencedColumn.isObjectId) {
+                                        relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
 
+                                    }
                                 }
                             }
-                        }
-                        if (relationIdOfEntityValue) {
-                            conditions[column.fullName] = relationIdOfEntityValue;
-                        }
+                            if (relationIdOfEntityValue) {
+                                conditions[column.fullName] = relationIdOfEntityValue;
+                            }
+                        });
 
                     } else {
                         if (entityValue) {
@@ -322,73 +326,80 @@ export class SubjectOperationExecutor {
             const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
             subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
                 .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
-                    const referencedColumn = relation.inverseRelation.joinColumn.referencedColumn;
-                    const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumnsWithParentIdColumns : inverseEntityMetadata.primaryColumns;
-                    const conditions: ObjectLiteral = {};
+                    relation.inverseRelation.joinColumns.forEach(joinColumn => {
 
-                    columns.forEach(column => {
-                        const entityValue = subRelatedEntity[column.propertyName];
+                        const referencedColumn = joinColumn.referencedColumn;
+                        const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumnsWithParentIdColumns : inverseEntityMetadata.primaryColumns;
+                        const conditions: ObjectLiteral = {};
 
-                        // if entity id is a relation, then extract referenced column from that relation
-                        const columnRelation = inverseEntityMetadata.relations.find(relation => relation.propertyName === column.propertyName);
+                        columns.forEach(column => {
+                            const entityValue = subRelatedEntity[column.propertyName];
 
-                        if (entityValue && columnRelation && columnRelation.joinColumn) { // not sure if we need handle join column from inverse side
-                            let relationIdOfEntityValue = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                            if (!relationIdOfEntityValue) {
-                                const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
-                                if (entityValueInsertSubject) {
-                                    if (columnRelation.joinColumn.referencedColumn.isGenerated) {
-                                        relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                            // if entity id is a relation, then extract referenced column from that relation
+                            const columnRelation = inverseEntityMetadata.relations.find(relation => relation.propertyName === column.propertyName);
 
-                                    } else if (columnRelation.joinColumn.referencedColumn.isObjectId) {
-                                        relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
+                            if (entityValue && columnRelation) { // not sure if we need handle join column from inverse side
+                                columnRelation.joinColumns.forEach(columnRelationJoinColumn => {
+                                    let relationIdOfEntityValue = entityValue[columnRelationJoinColumn.referencedColumn.propertyName];
+                                    if (!relationIdOfEntityValue) {
+                                        const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
+                                        if (entityValueInsertSubject) {
+                                            if (columnRelationJoinColumn.referencedColumn.isGenerated) {
+                                                relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+
+                                            } else if (columnRelationJoinColumn.referencedColumn.isObjectId) {
+                                                relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
+                                            }
+                                        }
+                                    }
+                                    if (relationIdOfEntityValue) {
+                                        conditions[column.fullName] = relationIdOfEntityValue;
+                                    }
+                                });
+
+                            } else {
+                                const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === subRelatedEntity);
+                                if (entityValue) {
+                                    conditions[column.fullName] = entityValue;
+                                } else {
+                                    if (entityValueInsertSubject && entityValueInsertSubject.newlyGeneratedId) {
+                                        conditions[column.fullName] = entityValueInsertSubject.newlyGeneratedId;
+
+                                    } else if (entityValueInsertSubject && entityValueInsertSubject.generatedObjectId) {
+                                        conditions[column.fullName] = entityValueInsertSubject.generatedObjectId;
+
                                     }
                                 }
                             }
-                            if (relationIdOfEntityValue) {
-                                conditions[column.fullName] = relationIdOfEntityValue;
-                            }
+                        });
 
+                        if (!Object.keys(conditions).length)
+                            return;
+
+                        const updateOptions: ObjectLiteral = {};
+                        const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === referencedColumn.propertyName);
+                        if (columnRelation) {
+                            let id = subject.entity[referencedColumn.propertyName][columnRelation.propertyName];
+                            if (!id) {
+                                const insertSubject = this.insertSubjects.find(subject => subject.entity === subject.entity[referencedColumn.propertyName]);
+                                if (insertSubject) {
+                                    if (insertSubject.newlyGeneratedId) {
+                                        id = insertSubject.newlyGeneratedId;
+
+                                    } else if (insertSubject.generatedObjectId) {
+                                        id = insertSubject.generatedObjectId;
+                                    }
+                                }
+                            }
+                            updateOptions[joinColumn.name] = id;
                         } else {
-                            const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === subRelatedEntity);
-                            if (entityValue) {
-                                conditions[column.fullName] = entityValue;
-                            } else {
-                                if (entityValueInsertSubject && entityValueInsertSubject.newlyGeneratedId) {
-                                    conditions[column.fullName] = entityValueInsertSubject.newlyGeneratedId;
-
-                                } else if (entityValueInsertSubject && entityValueInsertSubject.generatedObjectId) {
-                                    conditions[column.fullName] = entityValueInsertSubject.generatedObjectId;
-
-                                }
-                            }
+                            updateOptions[joinColumn.name] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
                         }
+
+                        const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.table.name, updateOptions, conditions);
+                        updatePromises.push(updatePromise);
+
                     });
-                    if (!Object.keys(conditions).length)
-                        return;
-
-                    const updateOptions: ObjectLiteral = {};
-                    const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === referencedColumn.propertyName);
-                    if (columnRelation) {
-                        let id = subject.entity[referencedColumn.propertyName][columnRelation.propertyName];
-                        if (!id) {
-                            const insertSubject = this.insertSubjects.find(subject => subject.entity === subject.entity[referencedColumn.propertyName]);
-                            if (insertSubject) {
-                                if (insertSubject.newlyGeneratedId) {
-                                    id = insertSubject.newlyGeneratedId;
-
-                                } else if (insertSubject.generatedObjectId) {
-                                    id = insertSubject.generatedObjectId;
-                                }
-                            }
-                        }
-                        updateOptions[relation.inverseRelation.joinColumn.name] = id;
-                    } else {
-                        updateOptions[relation.inverseRelation.joinColumn.name] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
-                    }
-
-                    const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.table.name, updateOptions, conditions);
-                    updatePromises.push(updatePromise);
                 });
 
         });
@@ -495,67 +506,70 @@ export class SubjectOperationExecutor {
         collectFromEmbeddeds(entity, columnsAndValuesMap, metadata.embeddeds);
 
         metadata.relationsWithJoinColumns.forEach(relation => {
+            relation.joinColumns.forEach(joinColumn => {
 
-            let relationValue: any;
-            const value = relation.getEntityValue(entity);
+                let relationValue: any;
+                const value = relation.getEntityValue(entity);
 
-            if (value) {
-                // if relation value is stored in the entity itself then use it from there
-                const relationId = relation.getInverseEntityRelationId(value); // todo: check it
-                if (relationId) {
-                    relationValue = relationId;
-                }
-
-                // otherwise try to find relational value from just inserted subjects
-                const alreadyInsertedSubject = alreadyInsertedSubjects.find(insertedSubject => {
-                    return insertedSubject.entity === value;
-                });
-                if (alreadyInsertedSubject) {
-                    const referencedColumn = relation.joinColumn.referencedColumn;
-                    // if join column references to the primary generated column then seek in the newEntityId of the insertedSubject
-                    if (referencedColumn.referencedColumn && referencedColumn.referencedColumn.isGenerated) {
-                        if (referencedColumn.isParentId) {
-                            relationValue = alreadyInsertedSubject.parentGeneratedId;
-                        }
-                        // todo: what if reference column is not generated?
-                        // todo: what if reference column is not related to table inheritance?
+                if (value) {
+                    // if relation value is stored in the entity itself then use it from there
+                    const relationId = value[joinColumn.referencedColumn.propertyName]; // relation.getInverseEntityRelationId(value); // todo: check it
+                    if (relationId) {
+                        relationValue = relationId;
                     }
 
-                    if (referencedColumn.isGenerated)
-                        relationValue = alreadyInsertedSubject.newlyGeneratedId;
-                    if (referencedColumn.isObjectId)
-                        relationValue = alreadyInsertedSubject.generatedObjectId;
-                    // if it references to create or update date columns
-                    if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
-                        relationValue = this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
-                    // if it references to version column
-                    if (referencedColumn.isVersion)
-                        relationValue = this.connection.driver.preparePersistentValue(1, referencedColumn);
-                }
-            } else if (relation.hasInverseSide) {
-                const inverseSubject = this.allSubjects.find(subject => {
-                    if (!subject.hasEntity || subject.entityTarget !== relation.inverseRelation.target)
-                        return false;
-
-                    const inverseRelationValue = subject.entity[relation.inverseRelation.propertyName];
-                    if (inverseRelationValue) {
-                        if (inverseRelationValue instanceof Array) {
-                            return inverseRelationValue.find(subValue => subValue === subValue);
-                        } else {
-                            return inverseRelationValue === entity;
+                    // otherwise try to find relational value from just inserted subjects
+                    const alreadyInsertedSubject = alreadyInsertedSubjects.find(insertedSubject => {
+                        return insertedSubject.entity === value;
+                    });
+                    if (alreadyInsertedSubject) {
+                        const referencedColumn = joinColumn.referencedColumn;
+                        // if join column references to the primary generated column then seek in the newEntityId of the insertedSubject
+                        if (referencedColumn.referencedColumn && referencedColumn.referencedColumn.isGenerated) {
+                            if (referencedColumn.isParentId) {
+                                relationValue = alreadyInsertedSubject.parentGeneratedId;
+                            }
+                            // todo: what if reference column is not generated?
+                            // todo: what if reference column is not related to table inheritance?
                         }
-                    }
-                });
-                if (inverseSubject && inverseSubject.entity[relation.joinColumn.referencedColumn.propertyName]) {
-                    relationValue = inverseSubject.entity[relation.joinColumn.referencedColumn.propertyName];
-                }
-            }
 
-            if (relationValue) {
-                columnNames.push(relation.name);
-                columnValues.push(relationValue);
-                columnsAndValuesMap[relation.propertyName] = entity[relation.name];
-            }
+                        if (referencedColumn.isGenerated)
+                            relationValue = alreadyInsertedSubject.newlyGeneratedId;
+                        if (referencedColumn.isObjectId)
+                            relationValue = alreadyInsertedSubject.generatedObjectId;
+                        // if it references to create or update date columns
+                        if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
+                            relationValue = this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
+                        // if it references to version column
+                        if (referencedColumn.isVersion)
+                            relationValue = this.connection.driver.preparePersistentValue(1, referencedColumn);
+                    }
+                } else if (relation.hasInverseSide) {
+                    const inverseSubject = this.allSubjects.find(subject => {
+                        if (!subject.hasEntity || subject.entityTarget !== relation.inverseRelation.target)
+                            return false;
+
+                        const inverseRelationValue = subject.entity[relation.inverseRelation.propertyName];
+                        if (inverseRelationValue) {
+                            if (inverseRelationValue instanceof Array) {
+                                return inverseRelationValue.find(subValue => subValue === subValue);
+                            } else {
+                                return inverseRelationValue === entity;
+                            }
+                        }
+                    });
+                    if (inverseSubject && inverseSubject.entity[joinColumn.referencedColumn.propertyName]) {
+                        relationValue = inverseSubject.entity[joinColumn.referencedColumn.propertyName];
+                    }
+                }
+
+                if (relationValue) {
+                    columnNames.push(joinColumn.name);
+                    columnValues.push(relationValue);
+                    columnsAndValuesMap[relation.propertyName] = entity[relation.name]; // todo: check most probably wont work
+                }
+
+            });
         });
 
         // add special column and value - date of creation
@@ -638,7 +652,8 @@ export class SubjectOperationExecutor {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
         const tableName = subject.metadata.closureJunctionTable.table.name;
-        const referencedColumn = subject.metadata.treeParentRelation.joinColumn.referencedColumn; // todo: check if joinColumn works
+        const referencedColumn = subject.metadata.treeParentRelation.joinColumns[0].referencedColumn; // todo: check if joinColumn works
+        // todo: fix joinColumns[0] usage
 
         let newEntityId = subject.entity[referencedColumn.propertyName];
         if (!newEntityId && referencedColumn.isGenerated) {
@@ -776,7 +791,9 @@ export class SubjectOperationExecutor {
             }
 
             const value = relation.getEntityValue(entity);
-            valueMap.values[relation.name] = value !== null && value !== undefined ? value[relation.inverseEntityMetadata.firstPrimaryColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
+            relation.joinColumns.forEach(joinColumn => {
+                valueMap!.values[joinColumn.name] = value !== null && value !== undefined ? value[joinColumn.referencedColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
+            });
         });
 
         // if number of updated columns = 0 no need to update updated date and version columns
@@ -859,8 +876,10 @@ export class SubjectOperationExecutor {
     private async updateRelations(subject: Subject) {
         const values: ObjectLiteral = {};
         subject.relationUpdates.forEach(setRelation => {
-            const value = setRelation.value ? setRelation.value[setRelation.relation.joinColumn.referencedColumn.propertyName] : null;
-            values[setRelation.relation.name] = value; // todo: || fromInsertedSubjects ??
+            setRelation.relation.joinColumns.forEach(joinColumn => {
+                const value = setRelation.value ? setRelation.value[joinColumn.referencedColumn.propertyName] : null;
+                values[joinColumn.name] = value; // todo: || fromInsertedSubjects ??
+            });
         });
 
         const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
@@ -931,7 +950,14 @@ export class SubjectOperationExecutor {
         const firstColumn = relation.isOwning ? joinTable.referencedColumn : joinTable.inverseReferencedColumn;
         const secondColumn = relation.isOwning ? joinTable.inverseReferencedColumn : joinTable.referencedColumn;
 
-        let ownId = relation.getOwnEntityRelationId(subject.entity);
+        let ownId: any;
+        if (relation.isManyToManyOwner) {
+            ownId = subject.entity[relation.joinTable.referencedColumn.propertyName];
+
+        } else if (relation.isManyToManyNotOwner) {
+            ownId = subject.entity[relation.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
+        }
+
         if (!ownId) {
             if (firstColumn.isGenerated) {
                 ownId = subject.newlyGeneratedId;
@@ -1010,7 +1036,15 @@ export class SubjectOperationExecutor {
     private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
         const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
-        const ownId = junctionRemove.relation.getOwnEntityRelationId(entity);
+
+        let ownId: any;
+        if (junctionRemove.relation.isManyToManyOwner) {
+            ownId = entity[junctionRemove.relation.joinTable.referencedColumn.propertyName];
+
+        } else if (junctionRemove.relation.isManyToManyNotOwner) {
+            ownId = entity[junctionRemove.relation.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
+        }
+
         const ownColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
         const relateColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[1] : junctionMetadata.columns[0];
         const removePromises = junctionRemove.junctionRelationIds.map(relationId => {

@@ -13,16 +13,20 @@ export class JoinColumnMetadata {
 
     /**
      * Target class to which metadata is applied.
+     *
+     * @deprecated
      */
     target: Function|string;
 
     /**
      * Target's property name to which this metadata is applied.
+     *
+     * @deprecated
      */
     propertyName: string;
 
     /**
-     * Join column name.
+     * Join column name in the database.
      */
     name: string;
 

@@ -603,10 +603,14 @@ export class EntityMetadata {
                 // if entity id is a relation, then extract referenced column from that relation
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                if (columnRelation && columnRelation.joinColumns.length) {
+                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
+
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
+                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
+
                 } else {
                     map[column.propertyName] = entityValue;
                 }
@@ -618,13 +622,18 @@ export class EntityMetadata {
                 if (entityValue === null || entityValue === undefined)
                     return;
 
+                // this case is real when your entity primary keys are relations
                 // if entity id is a relation, then extract referenced column from that relation
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                if (columnRelation && columnRelation.joinColumns.length) {
+                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
+
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
+                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
+
                 } else {
                     map[column.propertyName] = entityValue;
                 }
@@ -647,10 +656,14 @@ export class EntityMetadata {
                 // if entity id is a relation, then extract referenced column from that relation
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.fullName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.fullName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                if (columnRelation && columnRelation.joinColumns.length) {
+                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
+
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
+                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
+
                 } else {
                     map[column.fullName] = entityValue;
                 }
@@ -665,10 +678,14 @@ export class EntityMetadata {
                 // if entity id is a relation, then extract referenced column from that relation
                 const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.fullName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.fullName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                if (columnRelation && columnRelation.joinColumns.length) {
+                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
+
+                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
+                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
+
                 } else {
                     map[column.fullName] = entityValue;
                 }
@@ -863,8 +880,15 @@ export class EntityMetadata {
             return false;
 
         return Object.keys(firstId).every(key => {
-            if (firstId[key] instanceof Object && secondId[key] instanceof Object)
+
+            // ids can be arrays in the case if they are mapped into multiple primary keys
+            if (firstId[key] instanceof Array && secondId[key] instanceof Array) {
+                return firstId[key].length === secondId[key].length &&
+                    firstId[key].every((key: any, index: number) => firstId[key][index] === secondId[key][index]);
+
+            } else if (firstId[key] instanceof Object && secondId[key] instanceof Object) { // ids can be objects
                 return firstId[key].equals(secondId[key]);
+            }
 
             return firstId[key] === secondId[key];
         });

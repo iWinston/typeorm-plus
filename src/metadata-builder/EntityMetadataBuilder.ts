@@ -394,7 +394,7 @@ export class EntityMetadataBuilder {
 
                         joinColumn.referencedColumn = referencedColumn;
                         joinColumn.name = joinColumnMetadataArgs.name || namingStrategy.joinColumnInverseSideName(relation.propertyName, joinColumn.referencedColumn.propertyName);
-                        relation.joinColumn = joinColumn;
+                        relation.joinColumns.push(joinColumn);
                     });
                 });
 
@@ -426,31 +426,34 @@ export class EntityMetadataBuilder {
         entityMetadatas.forEach(metadata => {
             metadata.relationsWithJoinColumns.forEach(relation => {
 
-                // find relational column and if it does not exist - add it
-                const inverseSideColumn = relation.joinColumn.referencedColumn;
-                let relationalColumn = metadata.columns.find(column => column.fullName === relation.name);
-                if (!relationalColumn) {
-                    relationalColumn = new ColumnMetadata({
-                        target: metadata.target,
-                        propertyName: relation.name,
-                        // propertyType: inverseSideColumn.propertyType,
-                        mode: "virtual",
-                        options: <ColumnOptions> {
-                            name: relation.name,
-                            type: inverseSideColumn.type,
-                            nullable: relation.isNullable,
-                            primary: relation.isPrimary
-                        }
-                    });
-                    relationalColumn.relationMetadata = relation;
-                    metadata.addColumn(relationalColumn);
-                }
+                const columns = relation.joinColumns.map(joinColumn => {
+
+                    // find relational column and if it does not exist - add it
+                    let relationalColumn = metadata.columns.find(column => column.fullName === joinColumn.name);
+                    if (!relationalColumn) {
+                        relationalColumn = new ColumnMetadata({
+                            target: metadata.target,
+                            propertyName: joinColumn.name,
+                            mode: "virtual",
+                            options: {
+                                name: joinColumn.name,
+                                type: joinColumn.referencedColumn.type,
+                                nullable: relation.isNullable,
+                                primary: relation.isPrimary
+                            }
+                        });
+                        relationalColumn.relationMetadata = relation;
+                        metadata.addColumn(relationalColumn);
+                    }
+                    return relationalColumn;
+                });
 
                 // create and add foreign key
+                const inverseSideColumns = relation.joinColumns.map(joinColumn => joinColumn.referencedColumn);
                 const foreignKey = new ForeignKeyMetadata(
-                    [relationalColumn],
+                    columns,
                     relation.inverseEntityMetadata.table,
-                    [inverseSideColumn],
+                    inverseSideColumns,
                     relation.onDelete
                 );
                 foreignKey.entityMetadata = metadata;

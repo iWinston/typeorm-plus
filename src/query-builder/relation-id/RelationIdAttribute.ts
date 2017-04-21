@@ -99,7 +99,7 @@ export class RelationIdAttribute {
         return parentAlias + "_" + relationProperty + "_relation_id";
     }
 
-    get referenceColumnName(): string {
+    /*get referenceColumnName(): string {
         if (this.relation.isManyToOne || this.relation.isOneToOneOwner) {
             return this.relation.joinColumn.referencedColumn.fullName;
 
@@ -109,7 +109,7 @@ export class RelationIdAttribute {
         } else {
             return this.relation.isOwning ? this.relation.joinTable.referencedColumn.fullName : this.relation.inverseRelation.joinTable.referencedColumn.fullName;
         }
-    }
+    }*/
 
     /**
      * Metadata of the joined entity.

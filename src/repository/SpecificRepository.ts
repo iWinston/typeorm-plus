@@ -9,6 +9,8 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 
 /**
  * Repository for more specific operations.
+ *
+ * @deprecated Don't use it yet
  */
 export class SpecificRepository<Entity extends ObjectLiteral> {
 
@@ -55,15 +57,17 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (relation.isManyToMany)
             throw new Error(`Many-to-many relation is not supported for this operation. Use #addToRelation method for many-to-many relations.`);
 
+        // todo: fix issues with joinColumns[0]
+
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
             table = relation.entityMetadata.table.name;
             values[relation.name] = relatedEntityId;
-            conditions[relation.joinColumn.referencedColumn.fullName] = entityId;
+            conditions[relation.joinColumns[0].referencedColumn.fullName] = entityId;
         } else {
             table = relation.inverseEntityMetadata.table.name;
             values[relation.inverseRelation.name] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumn.referencedColumn.fullName] = entityId;
+            conditions[relation.inverseRelation.joinColumns[0].referencedColumn.fullName] = entityId;
         }
 
 
@@ -98,6 +102,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!this.metadata.hasRelationWithPropertyName(propertyName))
             throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
 
+        // todo: fix issues with joinColumns[0]
+
         const relation = this.metadata.findRelationWithPropertyName(propertyName);
         // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
         //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
@@ -108,11 +114,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (relation.isOwning) {
             table = relation.inverseEntityMetadata.table.name;
             values[relation.inverseRelation.name] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumn.referencedColumn.fullName] = entityId;
+            conditions[relation.inverseRelation.joinColumns[0].referencedColumn.fullName] = entityId;
         } else {
             table = relation.entityMetadata.table.name;
             values[relation.name] = relatedEntityId;
-            conditions[relation.joinColumn.referencedColumn.fullName] = entityId;
+            conditions[relation.joinColumns[0].referencedColumn.fullName] = entityId;
         }
 
         const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);

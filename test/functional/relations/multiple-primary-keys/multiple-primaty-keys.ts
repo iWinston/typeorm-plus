@@ -8,7 +8,7 @@ import {Category} from "./entity/Category";
 
 const should = chai.should();
 
-describe.skip("relations > multiple-primary-keys", () => {
+describe.only("relations > multiple-primary-keys", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -28,7 +28,7 @@ describe.skip("relations > multiple-primary-keys", () => {
 
         const category2 = new Category();
         category2.name = "airplanes";
-        category1.type = "common-category";
+        category2.type = "common-category";
         await connection.entityManager.persist(category2);
 
         const post1 = new Post();
@@ -53,6 +53,7 @@ describe.skip("relations > multiple-primary-keys", () => {
 
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
+            .leftJoinAndSelect("post.category", "category")
             .where("post.id = :id", { id: 1 })
             .getOne();
 
