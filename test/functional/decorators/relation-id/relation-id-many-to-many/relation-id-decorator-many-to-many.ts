@@ -264,6 +264,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
         let loadedPosts = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
+            .addOrderBy("post.id, categories.id")
             .getMany();
 
         expect(loadedPosts![0].categories).to.not.be.empty;
@@ -286,6 +287,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
+            .addOrderBy("post.id, categories.id")
             .where("post.id = :id", { id: post.id })
             .getOne();
 
@@ -326,6 +328,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .leftJoinAndSelect("post.categories", "categories", "categories.id = :categoryId")
             .where("post.id = :id", { id: post.id })
             .setParameter("categoryId", 2)
+            .addOrderBy("post.id, categories.id")
             .getOne();
 
         expect(loadedPost!.categories).to.be.empty;
@@ -377,6 +380,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
         let loadedPosts = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
+            .addOrderBy("post.id, categories.id")
             .getMany();
 
         expect(loadedPosts![0].categories).to.not.be.empty;
@@ -397,6 +401,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
         let loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
+            .addOrderBy("post.id, categories.id")
             .where("post.id = :id", { id: post.id })
             .getOne();
 

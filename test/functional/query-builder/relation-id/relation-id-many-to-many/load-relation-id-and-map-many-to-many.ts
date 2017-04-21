@@ -55,6 +55,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.tag", "tag")
             .leftJoinAndSelect("post.categories", "categories")
+            .addOrderBy("post.id, tag.id, categories.id")
             .getMany();
 
         expect(loadedPosts![0].tag).to.not.be.empty;
@@ -70,6 +71,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.tag", "tag")
             .leftJoinAndSelect("post.categories", "categories")
+            .addOrderBy("post.id, tag.id, categories.id")
             .where("post.id = :id", { id: post.id })
             .getOne();
 
@@ -307,6 +309,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .loadRelationIdAndMap("categories.imageIds", "categories.images")
             .where("post.id = :id", { id: post.id })
+            .addOrderBy("post.id, categories.id")
             .getOne();
 
         expect(loadedPost!.categories).to.not.be.empty;
@@ -354,6 +357,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
             .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories2", qb => qb.andWhere("categories2.id = :categoryId", { categoryId: 1 }))
             .loadRelationIdAndMap("categories.imageIds", "categories.images", "images", qb => qb.andWhere("images.id = :imageId", { imageId: 1 }))
             .where("post.id = :id", { id: post.id })
+            .addOrderBy("post.id, categories.id")
             .getOne();
 
         expect(loadedPost!.categories).to.not.be.empty;
@@ -395,6 +399,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
             .loadRelationIdAndMap("categories.imageIds", "categories.images")
             .where("post.id = :id", { id: post.id })
             .setParameter("categoryId", 2)
+            .addOrderBy("post.id, categories.id")
             .getOne();
 
         expect(loadedPost!.categories).to.be.empty;

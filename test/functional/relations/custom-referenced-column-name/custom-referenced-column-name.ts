@@ -61,6 +61,121 @@ describe("relations > custom-referenced-column-name", () => {
 
         })));
 
+        it("should load related entity when relation defined without reference column name", () => Promise.all(connections.map(async connection => {
+
+            const category1 = new Category();
+            category1.name = "cars";
+            await connection.entityManager.persist(category1);
+
+            const category2 = new Category();
+            category2.name = "airplanes";
+            await connection.entityManager.persist(category2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.categoryWithoutRefColName = category1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.categoryWithoutRefColName = category2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .getMany();
+
+            expect(loadedPosts![0].categoryId).to.be.equal(1);
+            expect(loadedPosts![1].categoryId).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(loadedPost!.categoryId).to.be.equal(1);
+
+        })));
+
+        it("should load related entity when relation defined without column name", () => Promise.all(connections.map(async connection => {
+
+            const category1 = new Category();
+            category1.name = "cars";
+            await connection.entityManager.persist(category1);
+
+            const category2 = new Category();
+            category2.name = "airplanes";
+            await connection.entityManager.persist(category2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.categoryWithoutColName = category1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.categoryWithoutColName = category2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.categoryWithoutColName", "categoryWithoutColName")
+                .getMany();
+
+            expect(loadedPosts![0].categoryWithoutColName.id).to.be.equal(1);
+            expect(loadedPosts![1].categoryWithoutColName.id).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.categoryWithoutColName", "categoryWithoutColName")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(loadedPost!.categoryWithoutColName.id).to.be.equal(1);
+
+        })));
+
+        it("should load related entity when relation defined without reference column name and relation does not have relation column in entity", () => Promise.all(connections.map(async connection => {
+
+            const category1 = new Category();
+            category1.name = "cars";
+            await connection.entityManager.persist(category1);
+
+            const category2 = new Category();
+            category2.name = "airplanes";
+            await connection.entityManager.persist(category2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.categoryWithoutRefColName2 = category1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.categoryWithoutRefColName2 = category2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.categoryWithoutRefColName2", "categoryWithoutRefColName2")
+                .getMany();
+
+            expect(loadedPosts![0].categoryWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![0].categoryWithoutRefColName2.id).to.be.equal(1);
+            expect(loadedPosts![1].categoryWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![1].categoryWithoutRefColName2.id).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.categoryWithoutRefColName2", "categoryWithoutRefColName2")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(loadedPost!.categoryWithoutRefColName2).to.not.be.empty;
+            expect(loadedPost!.categoryWithoutRefColName2.id).to.be.equal(1);
+
+        })));
+
         it("should persist relation when relation sets via join column", () => Promise.all(connections.map(async connection => {
 
             const category1 = new Category();
@@ -141,6 +256,121 @@ describe("relations > custom-referenced-column-name", () => {
 
             expect(loadedPost!.tagName).to.not.be.empty;
             expect(loadedPost!.tagName).to.be.equal("tag #1");
+
+        })));
+
+        it("should load related entity when relation defined without reference column name", () => Promise.all(connections.map(async connection => {
+
+            const tag1 = new Tag();
+            tag1.name = "tag #1";
+            await connection.entityManager.persist(tag1);
+
+            const tag2 = new Tag();
+            tag2.name = "tag #2";
+            await connection.entityManager.persist(tag2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.tagWithoutRefColName = tag1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.tagWithoutRefColName = tag2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .getMany();
+
+            expect(loadedPosts![0].tagId).to.be.equal(1);
+            expect(loadedPosts![1].tagId).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(loadedPost!.tagId).to.be.equal(1);
+
+        })));
+
+        it("should load related entity when relation defined without column name", () => Promise.all(connections.map(async connection => {
+
+            const tag1 = new Tag();
+            tag1.name = "tag #1";
+            await connection.entityManager.persist(tag1);
+
+            const tag2 = new Tag();
+            tag2.name = "tag #2";
+            await connection.entityManager.persist(tag2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.tagWithoutColName = tag1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.tagWithoutColName = tag2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.tagWithoutColName", "tagWithoutColName")
+                .getMany();
+
+            expect(loadedPosts![0].tagWithoutColName.id).to.be.equal(1);
+            expect(loadedPosts![1].tagWithoutColName.id).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.tagWithoutColName", "tagWithoutColName")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(loadedPost!.tagWithoutColName.id).to.be.equal(1);
+
+        })));
+
+        it("should load related entity when relation defined without reference column name and relation does not have relation column in entity", () => Promise.all(connections.map(async connection => {
+
+            const tag1 = new Tag();
+            tag1.name = "tag #1";
+            await connection.entityManager.persist(tag1);
+
+            const tag2 = new Tag();
+            tag2.name = "tag #2";
+            await connection.entityManager.persist(tag2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.tagWithoutRefColName2 = tag1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.tagWithoutRefColName2 = tag2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.tagWithoutRefColName2", "tagWithoutRefColName2")
+                .getMany();
+
+            expect(loadedPosts![0].tagWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![0].tagWithoutRefColName2.id).to.be.equal(1);
+            expect(loadedPosts![1].tagWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![1].tagWithoutRefColName2.id).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.tagWithoutRefColName2", "tagWithoutRefColName2")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(loadedPost!.tagWithoutRefColName2).to.not.be.empty;
+            expect(loadedPost!.tagWithoutRefColName2.id).to.be.equal(1);
 
         })));
 
