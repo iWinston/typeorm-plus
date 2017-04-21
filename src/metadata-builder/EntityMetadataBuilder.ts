@@ -342,48 +342,40 @@ export class EntityMetadataBuilder {
 
                     // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
                     // throw all of them which don't have JoinColumn decorators and create it for them
-                    let joinColumnMetadataArgs = mergedArgs.joinColumns.findByProperty(relation.propertyName);
-                    if (!joinColumnMetadataArgs && relation.isManyToOne) {
-                        joinColumnMetadataArgs = {
-                            target: relation.entityMetadata.target,
-                            propertyName: relation.propertyName
-                        };
+                    let joinColumnMetadataArgsArray = mergedArgs.joinColumns.filterByProperty(relation.propertyName);
+
+                    const hasAnyReferencedColumnName = joinColumnMetadataArgsArray.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
+                    if ((joinColumnMetadataArgsArray.length === 0 && relation.isManyToOne) ||
+                        (joinColumnMetadataArgsArray.length > 0 && !hasAnyReferencedColumnName)) {
+
+                        joinColumnMetadataArgsArray = relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns.map(primaryColumn => {
+
+                            // in the case if relation has join column with only name set we need this check
+                            const joinColumnMetadataArg = joinColumnMetadataArgsArray.find(joinColumnArgs => !joinColumnArgs.referencedColumnName && !!joinColumnArgs.name);
+                            return {
+                                target: relation.entityMetadata.target,
+                                propertyName: relation.propertyName,
+                                referencedColumnName: primaryColumn.propertyName,
+                                name: joinColumnMetadataArg ? joinColumnMetadataArg.name : undefined
+                            };
+                        });
                     }
 
-                    if (joinColumnMetadataArgs) {
+                    joinColumnMetadataArgsArray.forEach(joinColumnMetadataArgs => {
                         const joinColumn = new JoinColumnMetadata();
+                        joinColumn.relation = relation;
                         joinColumn.target = joinColumnMetadataArgs.target;
                         joinColumn.propertyName = joinColumnMetadataArgs.propertyName;
-                        joinColumn.relation = relation;
+                        const referencedColumn = relation.inverseEntityMetadata.allColumns.find(column => {
+                            return column.propertyName === joinColumnMetadataArgs!.referencedColumnName; // todo: FULLNAME OR PROPERTY NAME? (probably should be propertyName)
+                        });
+                        if (!referencedColumn)
+                            throw new Error(`Referenced column ${joinColumnMetadataArgs.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
+
+                        joinColumn.referencedColumn = referencedColumn;
+                        joinColumn.name = joinColumnMetadataArgs.name || namingStrategy.joinColumnInverseSideName(relation.propertyName, joinColumn.referencedColumn.propertyName);
                         relation.joinColumn = joinColumn;
-
-                        if (joinColumnMetadataArgs.name) {
-                            joinColumn.name = joinColumnMetadataArgs.name;
-
-                        } else {
-                            joinColumn.name = namingStrategy.joinColumnInverseSideName(relation.propertyName);
-                        }
-
-                        if (joinColumnMetadataArgs.referencedColumnName) {
-                            const referencedColumn = relation.inverseEntityMetadata.allColumns.find(column => {
-                                return column.fullName === joinColumnMetadataArgs!.referencedColumnName;
-                            });
-                            if (!referencedColumn)
-                                throw new Error(`Referenced column ${joinColumnMetadataArgs.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
-
-                            joinColumn.referencedColumn = referencedColumn;
-                        } else {
-
-                            const inverseEntityMetadata = relation.inverseEntityMetadata;
-                            const primaryColumns = inverseEntityMetadata.primaryColumnsWithParentIdColumns;
-
-                            if (primaryColumns.length > 1)
-                                throw new Error(`Cannot automatically determine a referenced column of the "${inverseEntityMetadata.name}", because it has multiple primary columns. Try to specify a referenced column explicitly.`);
-
-                            joinColumn.referencedColumn = primaryColumns[0];
-                        }
-
-                    }
+                    });
                 });
 
 
@@ -424,6 +416,7 @@ export class EntityMetadataBuilder {
                         // propertyType: inverseSideColumn.propertyType,
                         mode: "virtual",
                         options: <ColumnOptions> {
+                            name: relation.name,
                             type: inverseSideColumn.type,
                             nullable: relation.isNullable,
                             primary: relation.isPrimary

@@ -612,7 +612,6 @@ export class MysqlQueryRunner implements QueryRunner {
     async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
-
         const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableSchemaOrName as any, foreignKey));
         await Promise.all(promises);
     }

@@ -35,7 +35,7 @@ export class RelationIdLoader {
 
                 const results = rawEntities.map(rawEntity => {
                     return {
-                        id: rawEntity[relationIdAttr.parentAlias + "_" + relationIdAttr.relationProperty],
+                        id: rawEntity[relationIdAttr.parentAlias + "_" + relationIdAttr.relation.name],
                         parentId: this.createIdMap(relationIdAttr.relation.entityMetadata.primaryColumns, relationIdAttr.parentAlias, rawEntity)
                     };
                 });

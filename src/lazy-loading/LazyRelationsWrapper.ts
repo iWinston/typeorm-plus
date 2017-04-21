@@ -30,11 +30,6 @@ export class LazyRelationsWrapper {
                     return Promise.resolve(this[index]);
                 if (this[promiseIndex])
                     return this[promiseIndex];
-
-                // create shortcuts for better readability
-                const escapeAlias = (alias: string) => connection.driver.escapeAliasName(alias);
-                const escapeColumn = (column: string) => connection.driver.escapeColumnName(column);
-
                 const qb = new QueryBuilder(connection);
                 if (relation.isManyToMany) {
 
@@ -42,16 +37,16 @@ export class LazyRelationsWrapper {
                         qb.select(relation.propertyName)
                             .from(relation.type, relation.propertyName)
                             .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.table.name,
-                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.joinTable.joinColumnName)}=:${relation.propertyName}Id AND ` +
-                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.joinTable.inverseJoinColumnName)}=${escapeAlias(relation.propertyName)}.${escapeColumn(relation.joinTable.referencedColumn.propertyName)}`)
+                                `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.joinColumnName}=:${relation.propertyName}Id AND ` +
+                                `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.inverseJoinColumnName}=${relation.propertyName}.${relation.joinTable.referencedColumn.propertyName}`)
                             .setParameter(relation.propertyName + "Id", this[relation.referencedColumn.propertyName]);
 
                     } else { // non-owner
                         qb.select(relation.propertyName)
                             .from(relation.type, relation.propertyName)
                             .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.table.name,
-                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName)}=:${relation.propertyName}Id AND ` +
-                                `${escapeAlias(relation.junctionEntityMetadata.table.name)}.${escapeColumn(relation.inverseRelation.joinTable.joinColumnName)}=${escapeAlias(relation.propertyName)}.${escapeColumn(relation.inverseRelation.joinTable.referencedColumn.propertyName)}`)
+                                `${relation.junctionEntityMetadata.table.name}.${relation.inverseRelation.joinTable.inverseJoinColumnName}=:${relation.propertyName}Id AND ` +
+                                `${relation.junctionEntityMetadata.table.name}.${relation.inverseRelation.joinTable.joinColumnName}=${relation.propertyName}.${relation.inverseRelation.joinTable.referencedColumn.propertyName}`)
                             .setParameter(relation.propertyName + "Id", this[relation.inverseRelation.referencedColumn.propertyName]);
                     }
 
@@ -99,7 +94,7 @@ export class LazyRelationsWrapper {
                         qb.select(relation.propertyName) // category
                             .from(relation.type, relation.propertyName) // Category, category
                             .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name,
-                                `${escapeAlias(relation.entityMetadata.name)}.${escapeColumn(relation.propertyName)}=${escapeAlias(relation.propertyName)}.${escapeColumn(relation.referencedColumn.propertyName)}`)
+                                `${relation.entityMetadata.name}.${relation.propertyName}=${relation.propertyName}.${relation.referencedColumn.propertyName}`)
                             .where(relation.entityMetadata.name + "." + relation.joinColumn.referencedColumn.fullName + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) }); // is referenced column usage is correct here?
                     }
 

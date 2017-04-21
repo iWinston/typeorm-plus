@@ -34,8 +34,8 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "ind_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    joinColumnInverseSideName(propertyName: string): string {
-        return propertyName;
+    joinColumnInverseSideName(relationName: string, referencedColumnName: string): string {
+        return camelCase(relationName + "_" + referencedColumnName);
     }
 
     joinTableName(firstTableName: string,

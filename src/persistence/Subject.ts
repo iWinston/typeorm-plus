@@ -396,13 +396,7 @@ export class Subject {
                     relation.inverseEntityMetadata.getEntityIdMixedMap(this.entity[relation.propertyName])
                     : this.entity[relation.propertyName];
 
-
-            // here because we have enabled RELATION_ID_VALUES option in the QueryBuilder when we loaded db entities
-            // we have in the dbSubject only relationIds.
-            // this allows us to compare relation id in the updated subject with id in the database.
-            // note that we used relation.name instead of relation.propertyName because query builder with RELATION_ID_VALUES
-            // returns values in the relation.name column, not relation.propertyName column
-            const dbEntityRelationId = this.databaseEntity[relation.name];
+            const dbEntityRelationId = this.databaseEntity[relation.propertyName];
 
             // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
             // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))

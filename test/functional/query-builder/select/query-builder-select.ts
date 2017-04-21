@@ -23,7 +23,9 @@ describe("query builder > select", () => {
         expect(sql).to.equal("SELECT post.id AS post_id, " +
             "post.title AS post_title, " +
             "post.description AS post_description, " +
-            "post.rating AS post_rating, post.version AS post_version, post.category AS post_category " +
+            "post.rating AS post_rating, " +
+            "post.version AS post_version, " +
+            "post.categoryId AS post_categoryId " +
             "FROM post post");
     })));
 
@@ -38,7 +40,7 @@ describe("query builder > select", () => {
             "post.description AS post_description, " +
             "post.rating AS post_rating, " +
             "post.version AS post_version, " +
-            "post.category AS post_category, " +
+            "post.categoryId AS post_categoryId, " +
             "category.id AS category_id, " +
             "category.name AS category_name," +
             " category.description AS category_description, " +

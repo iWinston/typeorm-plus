@@ -49,9 +49,10 @@ export class RelationMetadata {
     joinTable: JoinTableMetadata;
 
     /**
-     * Join column metadata.
+     * Relation join columns metadata.
      */
     joinColumn: JoinColumnMetadata;
+    // joinColumns: JoinColumnMetadata[] = [];
 
     // ---------------------------------------------------------------------
     // Readonly Properties
@@ -191,6 +192,8 @@ export class RelationMetadata {
      * Gets the name of column in the database.
      * //Cannot be used with many-to-many relations since they don't have a column in the database.
      * //Also only owning sides of the relations have this property.
+     *
+     * @deprecated use joinColumn.name or table.joinColumn.name instead
      */
     get name(): string {
         // if (!this.isOwning || this.isManyToMany)

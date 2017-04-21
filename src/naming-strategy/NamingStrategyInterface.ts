@@ -37,7 +37,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the join column used in the one-to-one and many-to-one relations.
      */
-    joinColumnInverseSideName(propertyName: string): string;
+    joinColumnInverseSideName(relationName: string, referencedColumnName: string): string;
 
     /**
      * Gets the name of the join table used in the many-to-many relations.

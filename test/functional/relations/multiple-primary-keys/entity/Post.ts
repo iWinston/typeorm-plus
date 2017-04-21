@@ -20,4 +20,9 @@ export class Post {
     // ])
     category: Category;
 
+    // todo: test relation with multiple + empty join column one-to-one
+    // todo: test relation with multiple + empty join column many-to-one
+    // todo: test relation with multiple + single join column
+    // todo: test relation with multiple + multiple join columns
+
 }

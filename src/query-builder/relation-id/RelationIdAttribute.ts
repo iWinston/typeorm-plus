@@ -38,7 +38,7 @@ export class RelationIdAttribute {
     // -------------------------------------------------------------------------
 
     constructor(private expressionMap: QueryExpressionMap,
-                private relationIdAttribute?: Partial<RelationIdAttribute>) {
+                relationIdAttribute?: Partial<RelationIdAttribute>) {
         Object.assign(this, relationIdAttribute || {});
     }
 

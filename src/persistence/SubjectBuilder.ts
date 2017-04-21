@@ -458,8 +458,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .enableAutoRelationIdsLoad()
                         .getOne();
 
-                    console.log(databaseEntity);
-
                     // add only if database entity exist - because in the case of inverse side of the one-to-one relation
                     // we cannot check if it was removed or not until we query the database
                     // and it can be a situation that relation wasn't exist at all. This is particular that case
@@ -549,8 +547,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .enableAutoRelationIdsLoad()
                         .getMany();
 
-                    console.log(databaseEntities);
-
                 } else if (relation.isManyToManyNotOwner) {
 
                     // (example) returns us referenced column (detail's id)
@@ -634,11 +630,12 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                 }
                             }
 
-                            if (loadedSubject)
+                            if (loadedSubject) {
                                 loadedSubject.relationUpdates.push({
                                     relation: relation.inverseRelation,
                                     value: subject.entity
                                 });
+                            }
                         }
                     });
 

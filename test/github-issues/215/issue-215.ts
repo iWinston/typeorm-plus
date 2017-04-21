@@ -26,6 +26,7 @@ describe("github issues > #215 invalid replacements of join conditions", () => {
         abbrev.name = "test";
         await connection.entityManager.persist(abbrev);
 
+
         const post = new Post();
         post.author = author;
         post.abbreviation = abbrev;

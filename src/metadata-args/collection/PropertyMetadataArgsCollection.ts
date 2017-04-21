@@ -16,7 +16,7 @@ export class PropertyMetadataArgsCollection<T extends { target?: Function|string
         return this.items.find(item => item.propertyName === propertyName);
     }
 
-    filterByProperty(propertyName: string) {
+    filterByProperty(propertyName: string): T[] {
         return this.items.filter(item => item.propertyName === propertyName);
     }
 
