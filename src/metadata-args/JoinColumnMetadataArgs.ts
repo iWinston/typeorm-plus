@@ -20,6 +20,7 @@ export interface JoinColumnMetadataArgs {
 
     /**
      * Name of the column in the entity to which this column is referenced.
+     * This is column property name, not a column database name.
      */
     readonly referencedColumnName?: string;
 

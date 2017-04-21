@@ -29,6 +29,10 @@ export class Post {
     tagId: number;
 
     @ManyToOne(type => Category)
+    @JoinColumn()
+    categoryWithEmptyJoinCol: Category;
+
+    @ManyToOne(type => Category)
     @JoinColumn({ name: "categoryId" })
     categoryWithoutRefColName: Category;
 
@@ -43,6 +47,10 @@ export class Post {
     @ManyToOne(type => Category)
     @JoinColumn({ name: "categoryName", referencedColumnName: "name" })
     category: Category;
+
+    @OneToOne(type => Tag)
+    @JoinColumn()
+    tagWithEmptyJoinCol: Tag;
 
     @OneToOne(type => Tag)
     @JoinColumn({ name: "tagId" })

@@ -340,13 +340,33 @@ export class EntityMetadataBuilder {
                 .concat(entityMetadata.manyToOneRelations)
                 .forEach(relation => {
 
-                    // since for many-to-one relations having JoinColumn is not required on decorators level, we need to go
-                    // throw all of them which don't have JoinColumn decorators and create it for them
+                    // cases it should cover:
+                    // 1. when join column is set with custom name and without referenced column name
+                    // we need automatically set referenced column name - primary ids by default
+                    // @JoinColumn({ name: "custom_name" })
+                    // 2. when join column is set with only referenced column name
+                    // we need automatically set join column name - relation name + referenced column name
+                    // @JoinColumn({ referencedColumnName: "title" })
+                    // 3. when join column is set without both referenced column name and join column name
+                    // we need to automatically set both of them
+                    // @JoinColumn()
+                    // 4. when join column is not set at all (as in case of @ManyToOne relation)
+                    // we need to create join column for it with proper referenced column name and join column name
+                    // 5. when multiple join columns set none of referencedColumnName and name can be optional
+                    // both options are required
+                    // @JoinColumn([
+                    //  { name: "category_title", referencedColumnName: "type" },
+                    //  { name: "category_title", referencedColumnName: "name" },
+                    // ])
+
+                    // since for many-to-one relations having JoinColumn decorator is not required,
+                    // we need to go thought each many-to-one relation without join column decorator set
+                    // and create join column metadata args for them
                     let joinColumnMetadataArgsArray = mergedArgs.joinColumns.filterByProperty(relation.propertyName);
 
                     const hasAnyReferencedColumnName = joinColumnMetadataArgsArray.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
                     if ((joinColumnMetadataArgsArray.length === 0 && relation.isManyToOne) ||
-                        (joinColumnMetadataArgsArray.length > 0 && !hasAnyReferencedColumnName)) {
+                        (joinColumnMetadataArgsArray.length > 0 && !hasAnyReferencedColumnName)) { // covers case3 and case1
 
                         joinColumnMetadataArgsArray = relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns.map(primaryColumn => {
 
@@ -367,7 +387,7 @@ export class EntityMetadataBuilder {
                         joinColumn.target = joinColumnMetadataArgs.target;
                         joinColumn.propertyName = joinColumnMetadataArgs.propertyName;
                         const referencedColumn = relation.inverseEntityMetadata.allColumns.find(column => {
-                            return column.propertyName === joinColumnMetadataArgs!.referencedColumnName; // todo: FULLNAME OR PROPERTY NAME? (probably should be propertyName)
+                            return column.propertyName === joinColumnMetadataArgs.referencedColumnName;
                         });
                         if (!referencedColumn)
                             throw new Error(`Referenced column ${joinColumnMetadataArgs.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);

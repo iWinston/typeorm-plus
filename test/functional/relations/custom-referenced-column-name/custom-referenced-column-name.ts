@@ -9,7 +9,7 @@ import {Tag} from "./entity/Tag";
 
 const should = chai.should();
 
-describe("relations > custom-referenced-column-name", () => {
+describe.only("relations > custom-referenced-column-name", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -58,6 +58,44 @@ describe("relations > custom-referenced-column-name", () => {
 
             expect(loadedPost!.categoryName).to.not.be.empty;
             expect(loadedPost!.categoryName).to.be.equal("cars");
+
+        })));
+
+        it("should load related entity when relation defined with empty join column", () => Promise.all(connections.map(async connection => {
+
+            const category1 = new Category();
+            category1.name = "cars";
+            await connection.entityManager.persist(category1);
+
+            const category2 = new Category();
+            category2.name = "airplanes";
+            await connection.entityManager.persist(category2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.categoryWithEmptyJoinCol = category1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.categoryWithEmptyJoinCol = category2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.categoryWithEmptyJoinCol", "categoryWithEmptyJoinCol")
+                .getMany();
+
+            expect(loadedPosts![0].categoryWithEmptyJoinCol.id).to.be.equal(1);
+            expect(loadedPosts![1].categoryWithEmptyJoinCol.id).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: 1 })
+                .leftJoinAndSelect("post.categoryWithEmptyJoinCol", "categoryWithEmptyJoinCol")
+                .getOne();
+
+            expect(loadedPost!.categoryWithEmptyJoinCol.id).to.be.equal(1);
 
         })));
 
@@ -256,6 +294,44 @@ describe("relations > custom-referenced-column-name", () => {
 
             expect(loadedPost!.tagName).to.not.be.empty;
             expect(loadedPost!.tagName).to.be.equal("tag #1");
+
+        })));
+
+        it("should load related entity when relation defined without column name", () => Promise.all(connections.map(async connection => {
+
+            const tag1 = new Tag();
+            tag1.name = "tag #1";
+            await connection.entityManager.persist(tag1);
+
+            const tag2 = new Tag();
+            tag2.name = "tag #2";
+            await connection.entityManager.persist(tag2);
+
+            const post1 = new Post();
+            post1.title = "About BMW";
+            post1.tagWithEmptyJoinCol = tag1;
+            await connection.entityManager.persist(post1);
+
+            const post2 = new Post();
+            post2.title = "About Boeing";
+            post2.tagWithEmptyJoinCol = tag2;
+            await connection.entityManager.persist(post2);
+
+            const loadedPosts = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.tagWithEmptyJoinCol", "tagWithEmptyJoinCol")
+                .getMany();
+
+            expect(loadedPosts![0].tagWithEmptyJoinCol.id).to.be.equal(1);
+            expect(loadedPosts![1].tagWithEmptyJoinCol.id).to.be.equal(2);
+
+            const loadedPost = await connection.entityManager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.tagWithEmptyJoinCol", "tagWithEmptyJoinCol")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(loadedPost!.tagWithEmptyJoinCol.id).to.be.equal(1);
 
         })));
 
