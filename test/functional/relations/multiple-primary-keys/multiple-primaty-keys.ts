@@ -8,7 +8,7 @@ import {Category} from "./entity/Category";
 
 const should = chai.should();
 
-describe.only("relations > multiple-primary-keys", () => {
+describe("relations > multiple-primary-keys", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

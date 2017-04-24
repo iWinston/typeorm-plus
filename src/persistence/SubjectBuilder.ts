@@ -526,44 +526,68 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let databaseEntities: ObjectLiteral[] = [];
 
                 // create shortcuts for better readability
-                const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
-                const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+                const ea = (alias: string) => this.connection.driver.escapeAliasName(alias);
+                const ec = (column: string) => this.connection.driver.escapeColumnName(column);
 
                 if (relation.isManyToManyOwner) {
-
-                    // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.joinTable.referencedColumn.propertyName];
 
                     // we only need to load inverse entities if cascade removes are set
                     // because remove by cascades is the only reason we need relational entities here
                     if (!relation.isCascadeRemove) return;
 
+                    const joinAlias = ea("persistenceJoinedRelation");
+
+                    const joinColumnConditions = relation.joinTable.joinColumns.map(joinColumn => {
+                        return `${joinAlias}.${joinColumn.name} = :${joinColumn.name}`;
+                    });
+                    const inverseJoinColumnConditions = relation.joinTable.inverseJoinColumns.map(inverseJoinColumn => {
+                        return `${joinAlias}.${inverseJoinColumn.name} = ${ea(qbAlias)}.${ec(inverseJoinColumn.referencedColumn.fullName)}`;
+                    });
+
+                    const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
+
+                    // (example) returns us referenced column (detail's id)
+                    const parameters = relation.joinTable.joinColumns.reduce((parameters, joinColumn) => {
+                        parameters[joinColumn.name] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
+                        return parameters;
+                    }, {} as ObjectLiteral);
+
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.inverseJoinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.inverseReferencedColumn.fullName) +
-                            " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=:id")
-                        .setParameter("id", relationIdInDatabaseEntity)
+                        .innerJoin(relation.junctionEntityMetadata.table.name, joinAlias, conditions)
+                        .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
                         .getMany();
 
                 } else if (relation.isManyToManyNotOwner) {
 
-                    // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
-
                     // we only need to load inverse entities if cascade removes are set
                     // because remove by cascades is the only reason we need relational entities here
                     if (!relation.isCascadeRemove) return;
 
+                    const joinAlias = ea("persistenceJoinedRelation");
+
+                    const joinColumnConditions = relation.joinTable.joinColumns.map(joinColumn => {
+                        return `${joinAlias}.${joinColumn.name} = ${ea(qbAlias)}.${ec(joinColumn.referencedColumn.fullName)}`;
+                    });
+                    const inverseJoinColumnConditions = relation.joinTable.inverseJoinColumns.map(inverseJoinColumn => {
+                        return `${joinAlias}.${inverseJoinColumn.name} = :${inverseJoinColumn.name}`;
+                    });
+
+                    const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
+
+                    // (example) returns us referenced column (detail's id)
+                    const parameters = relation.joinTable.joinColumns.reduce((parameters, joinColumn) => {
+                        parameters[joinColumn.name] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
+                        return parameters;
+                    }, {} as ObjectLiteral);
+
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.fullName) +
-                            " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName) + "=:id")
-                        .setParameter("id", relationIdInDatabaseEntity)
+                        .innerJoin(relation.junctionEntityMetadata.table.name, joinAlias, conditions)
+                        .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
                         .getMany();
 
@@ -751,26 +775,37 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
                 const changedInverseEntityRelationIds = relatedValue
                     .map(subRelationValue => {
-                        return relation.isManyToManyOwner
-                            ? subRelationValue[relation.joinTable.inverseReferencedColumn.propertyName]
-                            : subRelationValue[relation.inverseRelation.joinTable.referencedColumn.propertyName];
+                        const joinColumns = relation.isOwning ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
+                        return joinColumns.reduce((ids, joinColumn) => {
+                            ids[joinColumn.referencedColumn.propertyName] = subRelationValue[joinColumn.referencedColumn.propertyName];
+                            return ids;
+                        }, {} as ObjectLiteral);
                     })
                     .filter(subRelationValue => subRelationValue !== undefined && subRelationValue !== null);
 
                 // now from all entities in the persisted entity find only those which aren't found in the db
                 const removedJunctionEntityIds = existInverseEntityRelationIds.filter(existRelationId => {
                     return !changedInverseEntityRelationIds.find(changedRelationId => {
-                        return changedRelationId === existRelationId;
+                        return relation.inverseEntityMetadata.compareIds(changedRelationId, existRelationId);
                     });
                 });
 
+                // console.log("removedJunctionEntityIds: ", removedJunctionEntityIds);
+
                 // now from all entities in the persisted entity find only those which aren't found in the db
                 const newJunctionEntities = relatedValue.filter(subRelatedValue => {
-                    const relationValue = relation.isManyToManyOwner
-                        ? subRelatedValue[relation.joinTable.inverseReferencedColumn.propertyName]
-                        : subRelatedValue[relation.inverseRelation.joinTable.referencedColumn.propertyName];
-                    return !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
+
+                    const joinColumns = relation.isOwning ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
+                    const ids = joinColumns.reduce((ids, joinColumn) => {
+                        ids[joinColumn.referencedColumn.propertyName] = subRelatedValue[joinColumn.referencedColumn.propertyName];
+                        return ids;
+                    }, {} as ObjectLiteral);
+                    return !existInverseEntityRelationIds.find(relationId => {
+                        return relation.inverseEntityMetadata.compareIds(relationId, ids);
+                    });
                 });
+
+                // console.log("newJunctionEntities: ", newJunctionEntities);
 
                 // finally create a new junction insert operation and push it to the array of such operations
                 if (newJunctionEntities.length > 0 && options.insert) {

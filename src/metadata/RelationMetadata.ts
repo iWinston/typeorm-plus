@@ -198,14 +198,14 @@ export class RelationMetadata {
 
         if (this.isOwning) {
             if (this.joinTable) {
-                return this.joinTable.joinColumnName;
+                return this.joinTable.joinColumns[0].name;
             } else if (this.joinColumns) {
                 return this.joinColumns[0].name;
             }
 
         } else if (this.hasInverseSide) {
             if (this.inverseRelation.joinTable) {
-                return this.inverseRelation.joinTable.inverseJoinColumnName;
+                return this.inverseRelation.joinTable.inverseJoinColumns[0].name;
             } else if (this.inverseRelation.joinColumns && this.inverseRelation.joinColumns[0].referencedColumn) {
                 return this.inverseRelation.joinColumns[0].referencedColumn.fullName; // todo: [0] is temporary!!
             }

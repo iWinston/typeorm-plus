@@ -26,41 +26,47 @@ export class JunctionEntityMetadataBuilder {
 
     build(driver: Driver, lazyRelationsWrapper: LazyRelationsWrapper, args: JunctionEntityMetadataBuilderArgs) {
 
-        const column1 = args.joinTable.referencedColumn;
-        const column2 = args.joinTable.inverseReferencedColumn;
-
         const tableMetadata = new TableMetadata({
             target: "",
             name: args.joinTable.name,
             type: "junction"
         });
 
-        const junctionColumn1 = new ColumnMetadata({
-            target: "__virtual__",
-            // propertyType: column1.type,
-            propertyName: args.joinTable.joinColumnName,
-            mode: "virtual",
-            options: <ColumnOptions> {
-                length: column1.length,
-                type: column1.type,
-                name: args.joinTable.joinColumnName,
-                nullable: false,
-                primary: true
-            }
+        const junctionColumns = args.joinTable.joinColumns.map(joinColumn => {
+            return new ColumnMetadata({
+                target: "__virtual__",
+                propertyName: joinColumn.name,
+                mode: "virtual",
+                options: <ColumnOptions> {
+                    length: joinColumn.referencedColumn.length,
+                    type: joinColumn.referencedColumn.type,
+                    name: joinColumn.name,
+                    nullable: false,
+                    primary: true
+                }
+            });
         });
-        const junctionColumn2 = new ColumnMetadata({
-            target: "__virtual__",
-            // propertyType: column2.type,
-            propertyName: args.joinTable.inverseJoinColumnName,
-            mode: "virtual",
-            options: <ColumnOptions> {
-                length: column2.length,
-                type: column2.type,
-                name: args.joinTable.inverseJoinColumnName,
-                nullable: false,
-                primary: true
-            }
+
+        const inverseJunctionColumns = args.joinTable.inverseJoinColumns.map(joinColumn => {
+            return new ColumnMetadata({
+                target: "__virtual__",
+                propertyName: joinColumn.name,
+                mode: "virtual",
+                options: <ColumnOptions> {
+                    length: joinColumn.referencedColumn.length,
+                    type: joinColumn.referencedColumn.type,
+                    name: joinColumn.name,
+                    nullable: false,
+                    primary: true
+                }
+            });
         });
+
+        const junctionReferencedColumns = args.joinTable.joinColumns.map(joinColumn => joinColumn.referencedColumn);
+        const inverseJunctionReferencedColumns = args.joinTable.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn);
+
+        const junctionColumnNames = args.joinTable.joinColumns.map(joinColumn => joinColumn.name);
+        const inverseJunctionColumnNames = args.joinTable.inverseJoinColumns.map(joinColumn => joinColumn.name);
 
         const entityMetadata = new EntityMetadata({
             junction: true,
@@ -68,22 +74,18 @@ export class JunctionEntityMetadataBuilder {
             tablesPrefix: driver.options.tablesPrefix,
             namingStrategy: args.namingStrategy,
             tableMetadata: tableMetadata,
-            columnMetadatas: [
-                junctionColumn1,
-                junctionColumn2
-            ],
+            columnMetadatas: junctionColumns.concat(inverseJunctionColumns),
             foreignKeyMetadatas: [
-                new ForeignKeyMetadata([junctionColumn1], args.firstTable, [column1]),
-                new ForeignKeyMetadata([junctionColumn2], args.secondTable, [column2])
+                new ForeignKeyMetadata(junctionColumns, args.firstTable, junctionReferencedColumns),
+                new ForeignKeyMetadata(inverseJunctionColumns, args.secondTable, inverseJunctionReferencedColumns)
             ],
             indexMetadatas: [
-                new IndexMetadata({ columns: [args.joinTable.joinColumnName], unique: false }),
-                new IndexMetadata({ columns: [args.joinTable.inverseJoinColumnName], unique: false })
+                new IndexMetadata({ columns: junctionColumnNames, unique: false }),
+                new IndexMetadata({ columns: inverseJunctionColumnNames, unique: false })
             ]
         }, lazyRelationsWrapper);
 
-        entityMetadata.columns[0].entityMetadata = entityMetadata;
-        entityMetadata.columns[1].entityMetadata = entityMetadata;
+        entityMetadata.columns.forEach(column => column.entityMetadata = entityMetadata);
 
         return entityMetadata;
     }

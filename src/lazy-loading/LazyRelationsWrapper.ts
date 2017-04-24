@@ -33,13 +33,29 @@ export class LazyRelationsWrapper {
                 const qb = new QueryBuilder(connection);
                 if (relation.isManyToMany) {
 
-                    if (relation.isManyToManyOwner) {
-                        qb.select(relation.propertyName)
-                            .from(relation.type, relation.propertyName)
-                            .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.table.name,
-                                `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.joinColumnName}=:${relation.propertyName}Id AND ` +
-                                `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.inverseJoinColumnName}=${relation.propertyName}.${relation.joinTable.referencedColumn.propertyName}`)
-                            .setParameter(relation.propertyName + "Id", this[relation.joinTable.referencedColumn.propertyName]);
+                    /*if (relation.isManyToManyOwner) {
+
+                        const mainAlias = relation.propertyName;
+                        const joinAlias = relation.junctionEntityMetadata.table.name;
+                        const joinColumnConditions = relation.joinTable.joinColumns.map(joinColumn => {
+                            return `${joinAlias}.${joinColumn.name} = :${joinColumn.name}`;
+                        });
+                        const inverseJoinColumnConditions = relation.joinTable.inverseJoinColumns.map(joinColumn => {
+                            return `${joinAlias}.${joinColumn.name} = :${joinColumn.name}`;
+                        });
+                        const parameters = relation.joinTable.joinColumns.reduce((parameters, joinColumn) => {
+                            parameters[joinColumn.name] = this[joinColumn.referencedColumn.propertyName];
+                            return parameters;
+                        }, {} as ObjectLiteral);
+
+                        const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
+
+                        qb.select(mainAlias)
+                            .from(relation.type, mainAlias)
+                            .innerJoin(relation.junctionEntityMetadata.table.name, joinAlias,
+                                `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.joinColumnName}=:${mainAlias}Id AND ` +
+                                `${relation.junctionEntityMetadata.table.name}.${relation.joinTable.inverseJoinColumnName}=${mainAlias}.${relation.joinTable.referencedColumn.propertyName}`)
+                            .setParameter(mainAlias + "Id", this[relation.joinTable.referencedColumn.propertyName]);
 
                     } else { // non-owner
                         qb.select(relation.propertyName)
@@ -48,7 +64,7 @@ export class LazyRelationsWrapper {
                                 `${relation.junctionEntityMetadata.table.name}.${relation.inverseRelation.joinTable.inverseJoinColumnName}=:${relation.propertyName}Id AND ` +
                                 `${relation.junctionEntityMetadata.table.name}.${relation.inverseRelation.joinTable.joinColumnName}=${relation.propertyName}.${relation.inverseRelation.joinTable.referencedColumn.propertyName}`)
                             .setParameter(relation.propertyName + "Id", this[relation.inverseRelation.joinTable.referencedColumn.propertyName]);
-                    }
+                    }*/
 
                     this[promiseIndex] = qb.getMany().then(results => {
                         this[index] = results;

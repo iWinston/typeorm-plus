@@ -438,12 +438,13 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const relation = this.convertMixedRelationToMetadata(relationOrName);
         if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
+        // todo fix joinColumns[0]
+        const entityReferencedColumns = relation.isOwning ? relation.joinTable.joinColumns.map(joinColumn => joinColumn.referencedColumn) : relation.inverseRelation.joinTable.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn);
+        const ownerEntityColumns = relation.isOwning ? relation.joinTable.joinColumns : relation.inverseRelation.joinTable.inverseJoinColumns;
+        const inverseEntityColumns = relation.isOwning ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
+        const inverseEntityColumnNames = relation.isOwning ? relation.joinTable.inverseJoinColumns.map(joinColumn => joinColumn.name) : relation.inverseRelation.joinTable.joinColumns.map(joinColumn => joinColumn.name);
 
-        const entityReferencedColumn = relation.isOwning ? relation.joinTable.referencedColumn : relation.inverseRelation.joinTable.inverseReferencedColumn;
-        const ownerEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[0] : relation.junctionEntityMetadata.columns[1];
-        const inverseEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[1] : relation.junctionEntityMetadata.columns[0];
-
-        let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumn, entityOrEntities);
+        let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumns, entityOrEntities);
         if (!(entityIds instanceof Array)) entityIds = [entityIds];
 
         // filter out empty entity ids
@@ -454,25 +455,40 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             return [];
 
         // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
-        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+        const ea = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const ec = (column: string) => this.connection.driver.escapeColumnName(column);
 
-        const ids: any[] = [];
+        let ids: any[] = [];
         const promises = (entityIds as any[]).map((entityId: any) => {
-            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
-                .select(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " AS id")
-                .fromTable(relation.junctionEntityMetadata.table.name, "junction")
-                .andWhere(escapeAlias("junction") + "." + escapeColumn(ownerEntityColumn.fullName) + "=:entityId", {entityId: entityId});
+            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
+            inverseEntityColumnNames.forEach(columnName => {
+                qb.select(ea("junction") + "." + ec(columnName) + " AS " + ea(columnName));
+            });
+            qb.fromTable(relation.junctionEntityMetadata.table.name, "junction");
+            Object.keys(entityId).forEach((columnName) => {
+                const junctionColumnName = ownerEntityColumns.find(joinColumn => joinColumn.referencedColumn.name === columnName);
+                qb.andWhere(ea("junction") + "." + ec(junctionColumnName!.name) + "=:" + junctionColumnName!.name + "_entityId", {[junctionColumnName!.name + "_entityId"]: entityId[columnName]});
+            });
+            // ownerEntityColumnNames.forEach(columnName => {
+            //     qb.andWhere(ea("junction") + "." + ec(columnName) + "=:" + columnName + "_entityId", {[columnName + "_entityId"]: entityId});
+            // });
 
-            if (inIds && inIds.length > 0)
-                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " IN (:inIds)", {inIds: inIds});
-
-            if (notInIds && notInIds.length > 0)
-                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " NOT IN (:notInIds)", {notInIds: notInIds});
+            // todo: fix inIds
+            // if (inIds && inIds.length > 0)
+            //     qb.andWhere(ea("junction") + "." + ec(inverseEntityColumnNames.fullName) + " IN (:inIds)", {inIds: inIds});
+            //
+            // if (notInIds && notInIds.length > 0)
+            //     qb.andWhere(ea("junction") + "." + ec(inverseEntityColumnNames.fullName) + " NOT IN (:notInIds)", {notInIds: notInIds});
 
             return qb.getRawMany()
-                .then((results: { id: any }[]) => {
-                    results.forEach(result => ids.push(result.id)); // todo: prepare result?
+                .then((results: any[]) => {
+                    results.forEach(result => {
+                        ids.push(Object.keys(result).reduce((id, key) => {
+                            const junctionColumnName = inverseEntityColumns.find(joinColumn => joinColumn.name === key)!;
+                            id[junctionColumnName.referencedColumn.name] = result[key];
+                            return id;
+                        }, {} as ObjectLiteral));
+                    }); // todo: prepare result?
                 });
         });
 
@@ -487,13 +503,16 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     /**
      * Converts entity or entities to id or ids map.
      */
-    protected convertEntityOrEntitiesToIdOrIds(column: ColumnMetadata, entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
+    protected convertEntityOrEntitiesToIdOrIds(columns: ColumnMetadata[], entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
         if (entityOrEntities instanceof Array) {
-            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(column, entity));
+            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(columns, entity));
 
         } else {
             if (entityOrEntities instanceof Object) {
-                return entityOrEntities[column.propertyName];
+                return columns.reduce((ids, column) => {
+                    ids[column.name] = entityOrEntities[column.propertyName];
+                    return ids;
+                }, {} as ObjectLiteral);
             } else {
                 return entityOrEntities;
             }

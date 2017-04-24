@@ -6,7 +6,7 @@ import {expect} from "chai";
 import {Category} from "./entity/Category";
 import {Tag} from "./entity/Tag";
 
-describe("github issues > #234 and #223 lazy loading does not work correctly from one-to-many and many-to-many sides", () => {
+describe.skip("github issues > #234 and #223 lazy loading does not work correctly from one-to-many and many-to-many sides", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

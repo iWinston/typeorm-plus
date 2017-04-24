@@ -9,6 +9,7 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
+import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -945,66 +946,44 @@ export class SubjectOperationExecutor {
     private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert): Promise<void> {
         // I think here we can only support to work only with single primary key entities
 
+        const getRelationId = (entity: ObjectLiteral, joinColumns: JoinColumnMetadata[]): any[] => {
+            return joinColumns.map(joinColumn => {
+                const id = entity[joinColumn.referencedColumn.propertyName];
+                if (!id && joinColumn.referencedColumn.isGenerated) {
+                    const insertSubject = this.insertSubjects.find(subject => subject.entity === entity);
+                    if (insertSubject)
+                        return insertSubject.newlyGeneratedId;
+                }
+                if (!id && joinColumn.referencedColumn.isObjectId) {
+                    const insertSubject = this.insertSubjects.find(subject => subject.entity === entity);
+                    if (insertSubject)
+                        return insertSubject.generatedObjectId;
+                }
+                // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
+
+                return id;
+            });
+        };
+
         const relation = junctionInsert.relation;
-        const joinTable = relation.isOwning ? relation.joinTable : relation.inverseRelation.joinTable;
-        const firstColumn = relation.isOwning ? joinTable.referencedColumn : joinTable.inverseReferencedColumn;
-        const secondColumn = relation.isOwning ? joinTable.inverseReferencedColumn : joinTable.referencedColumn;
+        const joinColumns = relation.isManyToManyOwner ? relation.joinTable.joinColumns : relation.inverseRelation.joinTable.inverseJoinColumns;
+        const ownId = getRelationId(subject.entity, joinColumns);
 
-        let ownId: any;
-        if (relation.isManyToManyOwner) {
-            ownId = subject.entity[relation.joinTable.referencedColumn.propertyName];
-
-        } else if (relation.isManyToManyNotOwner) {
-            ownId = subject.entity[relation.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
-        }
-
-        if (!ownId) {
-            if (firstColumn.isGenerated) {
-                ownId = subject.newlyGeneratedId;
-
-            } else if (firstColumn.isObjectId) {
-                ownId = subject.generatedObjectId;
-
-            }
-            // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
-        }
-
-        if (!ownId)
+        if (!ownId.length)
             throw new Error(`Cannot insert object of ${subject.entityTarget} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
 
         const promises = junctionInsert.junctionEntities.map(newBindEntity => {
 
             // get relation id from the newly bind entity
-            let relationId: any;
-            if (relation.isManyToManyOwner) {
-                relationId = newBindEntity[relation.joinTable.inverseReferencedColumn.propertyName];
-
-            } else if (relation.isManyToManyNotOwner) {
-                relationId = newBindEntity[relation.inverseRelation.joinTable.referencedColumn.propertyName];
-            }
-
-            // if relation id is missing in the newly bind entity then check maybe it was just persisted
-            // and we can use special newly generated value
-            if (!relationId) {
-                const insertSubject = this.insertSubjects.find(subject => subject.entity === newBindEntity);
-                if (insertSubject) {
-                    if (secondColumn.isGenerated) {
-                        relationId = insertSubject.newlyGeneratedId;
-
-                    } else if (secondColumn.isObjectId) {
-                        relationId = insertSubject.generatedObjectId;
-
-                    }
-                    // todo: implement other special values too
-                }
-            }
+            const joinColumns = relation.isManyToManyOwner ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
+            const relationId = getRelationId(newBindEntity, joinColumns);
 
             // if relation id still does not exist - we arise an error
             if (!relationId)
                 throw new Error(`Cannot insert object of ${(newBindEntity.constructor as any).name} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
 
             const columns = relation.junctionEntityMetadata.columnsWithoutEmbeddeds.map(column => column.fullName);
-            const values = relation.isOwning ? [ownId, relationId] : [relationId, ownId];
+            const values = relation.isOwning ? [...ownId, ...relationId] : [...relationId, ...ownId];
 
             return this.queryRunner.insert(relation.junctionEntityMetadata.table.name, OrmUtils.zipObject(columns, values));
         });
@@ -1037,21 +1016,20 @@ export class SubjectOperationExecutor {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
         const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
 
-        let ownId: any;
-        if (junctionRemove.relation.isManyToManyOwner) {
-            ownId = entity[junctionRemove.relation.joinTable.referencedColumn.propertyName];
+        const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinTable.joinColumns : junctionRemove.relation.joinTable.inverseJoinColumns;
+        const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinTable.inverseJoinColumns : junctionRemove.relation.joinTable.joinColumns;
+        let conditions: ObjectLiteral = {};
+        firstJoinColumns.forEach(joinColumn => {
+            conditions[joinColumn.name] =  entity[joinColumn.referencedColumn.propertyName];
+        });
 
-        } else if (junctionRemove.relation.isManyToManyNotOwner) {
-            ownId = entity[junctionRemove.relation.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
-        }
-
-        const ownColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[0] : junctionMetadata.columns[1];
-        const relateColumn = junctionRemove.relation.isOwning ? junctionMetadata.columns[1] : junctionMetadata.columns[0];
-        const removePromises = junctionRemove.junctionRelationIds.map(relationId => {
-            return this.queryRunner.delete(junctionMetadata.table.name, {
-                [ownColumn.fullName]: ownId,
-                [relateColumn.fullName]: relationId
+        const removePromises = junctionRemove.junctionRelationIds.map(relationIds => {
+            let inverseConditions: ObjectLiteral = {};
+            Object.keys(relationIds).forEach(key => {
+                const joinColumn = secondJoinColumns.find(column => column.referencedColumn.propertyName === key);
+                inverseConditions[joinColumn!.name] = entity[joinColumn!.referencedColumn.propertyName];
             });
+            return this.queryRunner.delete(junctionMetadata.table.name, Object.assign({}, inverseConditions, conditions));
         });
 
         await Promise.all(removePromises);

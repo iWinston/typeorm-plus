@@ -173,7 +173,7 @@ export class RawSqlResultsToEntityTransformer {
                 if (relation.isOneToMany || relation.isOneToOneNotOwner) { // todo: fix joinColumns[0]
                     referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinTable.referencedColumn.fullName : relation.inverseRelation.joinTable.referencedColumn.fullName;
+                    referenceColumnName = relation.isOwning ? relation.joinTable.joinColumns[0].referencedColumn.fullName : relation.inverseRelation.joinTable.joinColumns[0].referencedColumn.fullName;
                 }
                 referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName];
                 if (referenceColumnValue === undefined || referenceColumnValue === null)
@@ -205,7 +205,7 @@ export class RawSqlResultsToEntityTransformer {
                     referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn.fullName;  // todo: fix joinColumns[0]
 
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinTable.referencedColumn.fullName : relation.inverseRelation.joinTable.referencedColumn.fullName;
+                    referenceColumnName = relation.isOwning ? relation.joinTable.joinColumns[0].referencedColumn.fullName : relation.inverseRelation.joinTable.joinColumns[0].referencedColumn.fullName;
                 }
 
                 const referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work

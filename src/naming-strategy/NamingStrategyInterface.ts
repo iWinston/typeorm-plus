@@ -37,7 +37,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the join column used in the one-to-one and many-to-one relations.
      */
-    joinColumnInverseSideName(relationName: string, referencedColumnName: string): string;
+    joinColumnName(relationName: string, referencedColumnName: string): string;
 
     /**
      * Gets the name of the join table used in the many-to-many relations.
@@ -46,18 +46,18 @@ export interface NamingStrategyInterface {
                   secondTableName: string,
                   firstPropertyName: string,
                   secondPropertyName: string,
-                  firstColumnName: string,
-                  secondColumnName: string): string;
+                  columns: string[]): string;
+
+    /**
+     * Columns in join tables can have duplicate names in case of self-referencing.
+     * This method provide a resolution for such column names.
+     */
+    joinTableColumnDuplicationPrefix(columnName: string, index: number): string;
 
     /**
      * Gets the name of the column used for columns in the junction tables.
      */
-    joinTableColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string;
-
-    /**
-     * Gets the name of the column used for second column name in the junction tables.
-     */
-    joinTableInverseColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string;
+    joinTableColumnName(tableName: string, columnName: string): string;
 
     /**
      * Gets the name for the closure junction table.

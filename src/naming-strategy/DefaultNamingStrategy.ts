@@ -34,7 +34,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "ind_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    joinColumnInverseSideName(relationName: string, referencedColumnName: string): string {
+    joinColumnName(relationName: string, referencedColumnName: string): string {
         return camelCase(relationName + "_" + referencedColumnName);
     }
 
@@ -42,21 +42,16 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
                   secondTableName: string,
                   firstPropertyName: string,
                   secondPropertyName: string,
-                  firstColumnName: string,
-                  secondColumnName: string): string {
-        return snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName + "_" + secondColumnName);
+                  columns: string[]): string {
+        return snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName + "_" + columns.join("_"));
     }
 
-    joinTableColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string {
-        const column1 = camelCase(tableName + "_" + columnName);
-        const column2 = camelCase(secondTableName + "_" + secondColumnName);
-        return column1 === column2 ? column1 + "_1" : column1; // todo: do we still need _1 prefix?!
+    joinTableColumnDuplicationPrefix(columnName: string, index: number): string {
+        return columnName + "_" + index;
     }
 
-    joinTableInverseColumnName(tableName: string, columnName: string, secondTableName: string, secondColumnName: string): string {
-        const column1 = camelCase(tableName + "_" + columnName);
-        const column2 = camelCase(secondTableName + "_" + secondColumnName);
-        return column1 === column2 ? column1 + "_2" : column1; // todo: do we still need _2 prefix?!
+    joinTableColumnName(tableName: string, columnName: string): string {
+        return camelCase(tableName + "_" + columnName);
     }
 
     closureJunctionTableName(tableName: string): string {

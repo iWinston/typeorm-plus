@@ -4,6 +4,7 @@ import {OnDeleteType} from "../metadata/ForeignKeyMetadata";
 import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {ColumnType} from "../metadata/types/ColumnTypes";
 import {RelationType} from "../metadata/types/RelationTypes";
+import {JoinTableMuplipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
 
 export interface EntitySchema {
 
@@ -176,25 +177,7 @@ export interface EntitySchema {
             /**
              * Join table options of this column. If set to true then it simply means that it has a join table.
              */
-            joinTable?: boolean|{
-
-                /**
-                 * Name of the table that will be created to store values of the both tables (join table).
-                 * By default is auto generated.
-                 */
-                name?: string;
-
-                /**
-                 * First column of the join table.
-                 */
-                joinColumn?: JoinColumnOptions;
-
-                /**
-                 * Second (inverse) column of the join table.
-                 */
-                inverseJoinColumn?: JoinColumnOptions;
-
-            };
+            joinTable?: boolean|JoinColumnOptions|JoinTableMuplipleColumnsOptions;
 
             /**
              * Join column options of this column. If set to true then it simply means that it has a join column.
