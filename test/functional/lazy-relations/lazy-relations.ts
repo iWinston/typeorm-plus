@@ -8,7 +8,7 @@ import {Category} from "./entity/Category";
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
  * So we run tests only for mysql.
  */
-describe.skip("lazy-relations", () => {
+describe("lazy-relations", () => {
 
     let userSchema: any, profileSchema: any;
     try {
@@ -220,6 +220,113 @@ describe.skip("lazy-relations", () => {
         const loadedCategory = await loadedPost!.twoSideCategory;
 
         loadedCategory.name.should.be.equal("category of great post");
+    })));
+
+    it("should persist and hydrate successfully on a one-to-many relation", () => Promise.all(connections.map(async connection => {
+
+        // create some fake posts and categories to make sure that there are several post ids in the db
+        const fakePosts: Post[] = [];
+        for (let i = 0; i < 8; i++) {
+            const fakePost = new Post();
+            fakePost.title = "post #" + i;
+            fakePost.text = "post #" + i;
+            fakePosts.push(fakePost);
+        }
+        await connection.entityManager.persist(fakePosts);
+
+        const fakeCategories: Category[] = [];
+        for (let i = 0; i < 30; i++) {
+            const fakeCategory = new Category();
+            fakeCategory.name = "category #" + i;
+            fakeCategories.push(fakeCategory);
+        }
+        await connection.entityManager.persist(fakeCategories);
+
+        const category = new Category();
+        category.name = "category of great post";
+        await connection.entityManager.persist(category);
+
+        const post = new Post();
+        post.title = "post with great category";
+        post.text = "post with great category and great text";
+        post.twoSideCategory = Promise.resolve(category);
+        await connection.entityManager.persist(post);
+
+        const loadedCategory = await connection.entityManager.findOne(Category, { where: { name: "category of great post" } });
+        const loadedPost = await loadedCategory!.twoSidePosts2;
+
+        loadedPost[0].title.should.be.equal("post with great category");
+    })));
+
+    it("should persist and hydrate successfully on a one-to-one relation owner side", () => Promise.all(connections.map(async connection => {
+
+        // create some fake posts and categories to make sure that there are several post ids in the db
+        const fakePosts: Post[] = [];
+        for (let i = 0; i < 8; i++) {
+            const fakePost = new Post();
+            fakePost.title = "post #" + i;
+            fakePost.text = "post #" + i;
+            fakePosts.push(fakePost);
+        }
+        await connection.entityManager.persist(fakePosts);
+
+        const fakeCategories: Category[] = [];
+        for (let i = 0; i < 30; i++) {
+            const fakeCategory = new Category();
+            fakeCategory.name = "category #" + i;
+            fakeCategories.push(fakeCategory);
+        }
+        await connection.entityManager.persist(fakeCategories);
+
+        const category = new Category();
+        category.name = "category of great post";
+        await connection.entityManager.persist(category);
+
+        const post = new Post();
+        post.title = "post with great category";
+        post.text = "post with great category and great text";
+        post.oneCategory = Promise.resolve(category);
+        await connection.entityManager.persist(post);
+
+        const loadedPost = await connection.entityManager.findOne(Post, { where: { title: "post with great category" } });
+        const loadedCategory = await loadedPost!.oneCategory;
+
+        loadedCategory.name.should.be.equal("category of great post");
+    })));
+
+    it("should persist and hydrate successfully on a one-to-one relation inverse side", () => Promise.all(connections.map(async connection => {
+
+        // create some fake posts and categories to make sure that there are several post ids in the db
+        const fakePosts: Post[] = [];
+        for (let i = 0; i < 8; i++) {
+            const fakePost = new Post();
+            fakePost.title = "post #" + i;
+            fakePost.text = "post #" + i;
+            fakePosts.push(fakePost);
+        }
+        await connection.entityManager.persist(fakePosts);
+
+        const fakeCategories: Category[] = [];
+        for (let i = 0; i < 30; i++) {
+            const fakeCategory = new Category();
+            fakeCategory.name = "category #" + i;
+            fakeCategories.push(fakeCategory);
+        }
+        await connection.entityManager.persist(fakeCategories);
+
+        const category = new Category();
+        category.name = "category of great post";
+        await connection.entityManager.persist(category);
+
+        const post = new Post();
+        post.title = "post with great category";
+        post.text = "post with great category and great text";
+        post.oneCategory = Promise.resolve(category);
+        await connection.entityManager.persist(post);
+
+        const loadedCategory = await connection.entityManager.findOne(Category, { where: { name: "category of great post" } });
+        const loadedPost = await loadedCategory!.onePost;
+        loadedPost.title.should.be.equal("post with great category");
     })));
 
 });

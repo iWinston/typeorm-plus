@@ -578,7 +578,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
 
                     // (example) returns us referenced column (detail's id)
-                    const parameters = relation.joinTable.joinColumns.reduce((parameters, joinColumn) => {
+                    const parameters = relation.inverseRelation.joinTable.inverseJoinColumns.reduce((parameters, joinColumn) => {
                         parameters[joinColumn.name] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
                         return parameters;
                     }, {} as ObjectLiteral);
@@ -592,7 +592,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .getMany();
 
                 } else { // this case can only be a oneToMany relation
-
+                    // todo: fix issues with joinColumn[0]
                     // (example) returns us referenced column (detail's id)
                     const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn.propertyName];
 
