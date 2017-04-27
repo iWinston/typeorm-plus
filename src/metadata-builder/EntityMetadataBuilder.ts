@@ -26,7 +26,7 @@ import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationIdMetadata} from "../metadata/RelationIdMetadata";
 import {RelationCountMetadata} from "../metadata/RelationCountMetadata";
 import {JoinTableOptions} from "../decorator/options/JoinTableOptions";
-import {JoinTableMuplipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
+import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -159,8 +159,8 @@ export class EntityMetadataBuilder {
                                 target: schema.target || schema.name,
                                 propertyName: relationName,
                                 name: relationSchema.joinTable.name,
-                                joinColumns: ((relationSchema.joinTable as JoinTableOptions).joinColumn ? [(relationSchema.joinTable as JoinTableOptions).joinColumn!] : (relationSchema.joinTable as JoinTableMuplipleColumnsOptions).joinColumns) as any,
-                                inverseJoinColumns: ((relationSchema.joinTable as JoinTableOptions).inverseJoinColumn ? [(relationSchema.joinTable as JoinTableOptions).inverseJoinColumn!] : (relationSchema.joinTable as JoinTableMuplipleColumnsOptions).inverseJoinColumns) as any,
+                                joinColumns: ((relationSchema.joinTable as JoinTableOptions).joinColumn ? [(relationSchema.joinTable as JoinTableOptions).joinColumn!] : (relationSchema.joinTable as JoinTableMultipleColumnsOptions).joinColumns) as any,
+                                inverseJoinColumns: ((relationSchema.joinTable as JoinTableOptions).inverseJoinColumn ? [(relationSchema.joinTable as JoinTableOptions).inverseJoinColumn!] : (relationSchema.joinTable as JoinTableMultipleColumnsOptions).inverseJoinColumns) as any,
                             };
                             metadataArgsStorage.joinTables.add(joinTable);
                         }
@@ -403,6 +403,7 @@ export class EntityMetadataBuilder {
                     // and create join column metadata args for them
 
                     const joinColumnArgsArray = mergedArgs.joinColumns.filterByProperty(relation.propertyName);
+
                     relation.joinColumns = reusable(
                         joinColumnArgsArray,
                         relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns,
@@ -411,7 +412,6 @@ export class EntityMetadataBuilder {
                         (columnName => namingStrategy.joinColumnName(relation.propertyName, columnName))
                     );
                 });
-
         });
 
         entityMetadatas.forEach(entityMetadata => {
@@ -483,8 +483,7 @@ export class EntityMetadataBuilder {
         // generate columns and foreign keys for tables with relations
         entityMetadatas.forEach(metadata => {
             metadata.relationsWithJoinColumns.forEach(relation => {
-
-                const columns = relation.joinColumns.map(joinColumn => {
+                relation.joinColumns.map(joinColumn => {
 
                     // find relational column and if it does not exist - add it
                     let relationalColumn = metadata.columns.find(column => column.fullName === joinColumn.name);
@@ -503,8 +502,19 @@ export class EntityMetadataBuilder {
                         relationalColumn.relationMetadata = relation;
                         metadata.addColumn(relationalColumn);
                     }
-                    return relationalColumn;
                 });
+            });
+        });
+        entityMetadatas.forEach(metadata => {
+            metadata.relationsWithJoinColumns.forEach(relation => {
+
+                const columns = relation.joinColumns.map(joinColumn => {
+                    return metadata.columns.find(column => column.fullName === joinColumn.name)!;
+                });
+                // console.log("metadata:" , metadata.name);
+                // console.log("relation.relation:" , relation.propertyName);
+                // console.log("relation.joinColumns:" , relation.joinColumns);
+                // console.log("columns:" , columns);
 
                 // create and add foreign key
                 const inverseSideColumns = relation.joinColumns.map(joinColumn => joinColumn.referencedColumn);

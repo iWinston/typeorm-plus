@@ -50,7 +50,7 @@ export class LazyRelationsWrapper {
 
                     relation.joinColumns.forEach(joinColumn => {
                         qb.andWhere(`${relation.entityMetadata.name}.${joinColumn.referencedColumn.fullName} = :${joinColumn.referencedColumn.fullName}`)
-                            .setParameter(`${joinColumn.referencedColumn.fullName}`, this[joinColumn.referencedColumn.fullName])
+                            .setParameter(`${joinColumn.referencedColumn.fullName}`, this[joinColumn.referencedColumn.fullName]);
                     });
 
                     this[promiseIndex] = qb.getOne().then(result => {
@@ -76,7 +76,7 @@ export class LazyRelationsWrapper {
 
                     relation.inverseRelation.joinColumns.forEach(joinColumn => {
                         qb.andWhere(`${relation.propertyName}.${joinColumn.name} = :${joinColumn.referencedColumn.fullName}`)
-                            .setParameter(`${joinColumn.referencedColumn.fullName}`, this[joinColumn.referencedColumn.fullName])
+                            .setParameter(`${joinColumn.referencedColumn.fullName}`, this[joinColumn.referencedColumn.fullName]);
                     });
 
                     const result = relation.isOneToMany ? qb.getMany() : qb.getOne();

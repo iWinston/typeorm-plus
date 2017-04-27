@@ -76,8 +76,8 @@ export class SchemaBuilder {
             await this.addNewColumns();
             await this.updateExistColumns();
             await this.updatePrimaryKeys();
+            await this.createIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
             await this.createForeignKeys();
-            await this.createIndices();
             await this.queryRunner.commitTransaction();
 
         } catch (error) {
@@ -363,8 +363,6 @@ export class SchemaBuilder {
         const tableSchema = this.tableSchemas.find(table => table.name === tableName);
         if (!tableSchema)
             return;
-
-        // console.log(allIndexMetadatas);
 
         // find depend indices to drop them
         const dependIndices = allIndexMetadatas.filter(indexMetadata => {

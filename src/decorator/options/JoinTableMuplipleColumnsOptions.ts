@@ -3,7 +3,7 @@ import {JoinColumnOptions} from "./JoinColumnOptions";
 /**
  * Describes all relation's options.
  */
-export interface JoinTableMuplipleColumnsOptions {
+export interface JoinTableMultipleColumnsOptions {
 
     /**
      * Name of the table that will be created to store values of the both tables (join table).

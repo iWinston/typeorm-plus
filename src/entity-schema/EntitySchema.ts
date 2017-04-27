@@ -4,7 +4,7 @@ import {OnDeleteType} from "../metadata/ForeignKeyMetadata";
 import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {ColumnType} from "../metadata/types/ColumnTypes";
 import {RelationType} from "../metadata/types/RelationTypes";
-import {JoinTableMuplipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
+import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
 
 export interface EntitySchema {
 
@@ -177,7 +177,7 @@ export interface EntitySchema {
             /**
              * Join table options of this column. If set to true then it simply means that it has a join table.
              */
-            joinTable?: boolean|JoinColumnOptions|JoinTableMuplipleColumnsOptions;
+            joinTable?: boolean|JoinColumnOptions|JoinTableMultipleColumnsOptions;
 
             /**
              * Join column options of this column. If set to true then it simply means that it has a join column.
