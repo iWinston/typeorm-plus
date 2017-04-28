@@ -177,7 +177,7 @@ describe("query builder > joins", () => {
 
             const loadedRawPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndSelect("post_categories_category_id", "categoriesJunction", "categoriesJunction.postId = post.id")
+                .leftJoinAndSelect("post_categories_category", "categoriesJunction", "categoriesJunction.postId = post.id")
                 .leftJoinAndSelect(Category, "categories", "categories.id = categoriesJunction.categoryId")
                 .where("post.id = :id", { id: post.id })
                 .getRawOne();

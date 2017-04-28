@@ -537,18 +537,18 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     const joinAlias = ea("persistenceJoinedRelation");
 
-                    const joinColumnConditions = relation.joinTable.joinColumns.map(joinColumn => {
-                        return `${joinAlias}.${joinColumn.name} = :${joinColumn.name}`;
+                    const joinColumnConditions = relation.joinColumns.map(joinColumn => {
+                        return `${joinAlias}.${joinColumn.propertyName} = :${joinColumn.propertyName}`;
                     });
-                    const inverseJoinColumnConditions = relation.joinTable.inverseJoinColumns.map(inverseJoinColumn => {
-                        return `${joinAlias}.${inverseJoinColumn.name} = ${ea(qbAlias)}.${ec(inverseJoinColumn.referencedColumn.fullName)}`;
+                    const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
+                        return `${joinAlias}.${inverseJoinColumn.propertyName} = ${ea(qbAlias)}.${ec(inverseJoinColumn.referencedColumn.propertyName)}`;
                     });
 
                     const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
 
                     // (example) returns us referenced column (detail's id)
-                    const parameters = relation.joinTable.joinColumns.reduce((parameters, joinColumn) => {
-                        parameters[joinColumn.name] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
+                    const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
+                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
                         return parameters;
                     }, {} as ObjectLiteral);
 
@@ -568,18 +568,18 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     const joinAlias = ea("persistenceJoinedRelation");
 
-                    const joinColumnConditions = relation.joinTable.joinColumns.map(joinColumn => {
-                        return `${joinAlias}.${joinColumn.name} = ${ea(qbAlias)}.${ec(joinColumn.referencedColumn.fullName)}`;
+                    const joinColumnConditions = relation.joinColumns.map(joinColumn => {
+                        return `${joinAlias}.${joinColumn.propertyName} = ${ea(qbAlias)}.${ec(joinColumn.referencedColumn.propertyName)}`;
                     });
-                    const inverseJoinColumnConditions = relation.joinTable.inverseJoinColumns.map(inverseJoinColumn => {
-                        return `${joinAlias}.${inverseJoinColumn.name} = :${inverseJoinColumn.name}`;
+                    const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
+                        return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;
                     });
 
                     const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
 
                     // (example) returns us referenced column (detail's id)
-                    const parameters = relation.inverseRelation.joinTable.inverseJoinColumns.reduce((parameters, joinColumn) => {
-                        parameters[joinColumn.name] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
+                    const parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
+                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
                         return parameters;
                     }, {} as ObjectLiteral);
 
@@ -775,7 +775,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
                 const changedInverseEntityRelationIds = relatedValue
                     .map(subRelationValue => {
-                        const joinColumns = relation.isOwning ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
+                        const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                         return joinColumns.reduce((ids, joinColumn) => {
                             ids[joinColumn.referencedColumn.propertyName] = subRelationValue[joinColumn.referencedColumn.propertyName];
                             return ids;
@@ -795,7 +795,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // now from all entities in the persisted entity find only those which aren't found in the db
                 const newJunctionEntities = relatedValue.filter(subRelatedValue => {
 
-                    const joinColumns = relation.isOwning ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
+                    const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                     const ids = joinColumns.reduce((ids, joinColumn) => {
                         ids[joinColumn.referencedColumn.propertyName] = subRelatedValue[joinColumn.referencedColumn.propertyName];
                         return ids;

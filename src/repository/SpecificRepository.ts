@@ -439,10 +439,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const relation = this.convertMixedRelationToMetadata(relationOrName);
         if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
         // todo fix joinColumns[0]
-        const entityReferencedColumns = relation.isOwning ? relation.joinTable.joinColumns.map(joinColumn => joinColumn.referencedColumn) : relation.inverseRelation.joinTable.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn);
-        const ownerEntityColumns = relation.isOwning ? relation.joinTable.joinColumns : relation.inverseRelation.joinTable.inverseJoinColumns;
-        const inverseEntityColumns = relation.isOwning ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
-        const inverseEntityColumnNames = relation.isOwning ? relation.joinTable.inverseJoinColumns.map(joinColumn => joinColumn.name) : relation.inverseRelation.joinTable.joinColumns.map(joinColumn => joinColumn.name);
+        const entityReferencedColumns = relation.isOwning ? relation.joinColumns.map(joinColumn => joinColumn.referencedColumn) : relation.inverseRelation.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn);
+        const ownerEntityColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.inverseJoinColumns;
+        const inverseEntityColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
+        const inverseEntityColumnNames = relation.isOwning ? relation.inverseJoinColumns.map(joinColumn => joinColumn.name) : relation.inverseRelation.joinColumns.map(joinColumn => joinColumn.name);
 
         let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumns, entityOrEntities);
         if (!(entityIds instanceof Array)) entityIds = [entityIds];

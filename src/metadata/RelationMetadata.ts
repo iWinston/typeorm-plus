@@ -1,7 +1,6 @@
 import {RelationTypes, RelationType} from "./types/RelationTypes";
 import {EntityMetadata} from "./EntityMetadata";
 import {OnDeleteType, ForeignKeyMetadata} from "./ForeignKeyMetadata";
-import {JoinTableMetadata} from "./JoinTableMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "./ColumnMetadata";
@@ -41,11 +40,6 @@ export class RelationMetadata {
      * Junction entity metadata.
      */
     junctionEntityMetadata: EntityMetadata;
-
-    /**
-     * Join table metadata.
-     */
-    joinTable: JoinTableMetadata;
 
     foreignKeys: ForeignKeyMetadata[] = [];
 
@@ -194,15 +188,15 @@ export class RelationMetadata {
         // if (!this.isOwning || this.isManyToMany)
 
         if (this.isOwning) {
-            if (this.joinTable) {
-                return this.joinTable.joinColumns[0].name;
+            if (this.isManyToMany) {
+                return this.joinColumns[0].name;
             } else if (this.foreignKeys[0] && this.foreignKeys[0].columns) {
                 return this.foreignKeys[0].columns[0].name;
             }
 
         } else if (this.hasInverseSide) {
-            if (this.inverseRelation.joinTable) {
-                return this.inverseRelation.joinTable.inverseJoinColumns[0].name;
+            if (this.inverseRelation.isManyToMany) {
+                return this.inverseRelation.inverseJoinColumns[0].name;
             } else if (this.inverseRelation.foreignKeys[0] && this.inverseRelation.foreignKeys[0].columns && this.inverseRelation.foreignKeys[0].columns[0].referencedColumn) {
                 return this.inverseRelation.foreignKeys[0].columns[0].referencedColumn.fullName; // todo: [0] is temporary!!
             }
@@ -225,6 +219,8 @@ export class RelationMetadata {
     get joinColumns(): ColumnMetadata[] {
         if (!this.isOwning)
             throw new Error(`Inverse join columns are only supported from owning side`);
+        // if (!this.foreignKeys[0])
+        //     return [];
 
         return this.foreignKeys[0].columns;
     }
@@ -309,7 +305,7 @@ export class RelationMetadata {
      */
     get isOwning() {
         return  !!(this.isManyToOne ||
-                (this.isManyToMany && this.joinTable) ||
+                (this.isManyToMany && this.foreignKeys.length > 0) ||
                 (this.isOneToOne && this.foreignKeys.length > 0));
     }
 

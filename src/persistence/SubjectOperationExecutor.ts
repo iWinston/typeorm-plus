@@ -9,7 +9,7 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
-import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -946,7 +946,7 @@ export class SubjectOperationExecutor {
     private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert): Promise<void> {
         // I think here we can only support to work only with single primary key entities
 
-        const getRelationId = (entity: ObjectLiteral, joinColumns: JoinColumnMetadata[]): any[] => {
+        const getRelationId = (entity: ObjectLiteral, joinColumns: ColumnMetadata[]): any[] => {
             return joinColumns.map(joinColumn => {
                 const id = entity[joinColumn.referencedColumn.propertyName];
                 if (!id && joinColumn.referencedColumn.isGenerated) {
@@ -966,7 +966,7 @@ export class SubjectOperationExecutor {
         };
 
         const relation = junctionInsert.relation;
-        const joinColumns = relation.isManyToManyOwner ? relation.joinTable.joinColumns : relation.inverseRelation.joinTable.inverseJoinColumns;
+        const joinColumns = relation.isManyToManyOwner ? relation.joinColumns : relation.inverseRelation.inverseJoinColumns;
         const ownId = getRelationId(subject.entity, joinColumns);
 
         if (!ownId.length)
@@ -975,7 +975,7 @@ export class SubjectOperationExecutor {
         const promises = junctionInsert.junctionEntities.map(newBindEntity => {
 
             // get relation id from the newly bind entity
-            const joinColumns = relation.isManyToManyOwner ? relation.joinTable.inverseJoinColumns : relation.inverseRelation.joinTable.joinColumns;
+            const joinColumns = relation.isManyToManyOwner ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
             const relationId = getRelationId(newBindEntity, joinColumns);
 
             // if relation id still does not exist - we arise an error
@@ -1016,18 +1016,18 @@ export class SubjectOperationExecutor {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
         const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
 
-        const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinTable.joinColumns : junctionRemove.relation.joinTable.inverseJoinColumns;
-        const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinTable.inverseJoinColumns : junctionRemove.relation.joinTable.joinColumns;
+        const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinColumns : junctionRemove.relation.inverseJoinColumns;
+        const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.joinColumns;
         let conditions: ObjectLiteral = {};
         firstJoinColumns.forEach(joinColumn => {
-            conditions[joinColumn.name] =  entity[joinColumn.referencedColumn.propertyName];
+            conditions[joinColumn.fullName] = entity[joinColumn.referencedColumn.propertyName];
         });
 
         const removePromises = junctionRemove.junctionRelationIds.map(relationIds => {
             let inverseConditions: ObjectLiteral = {};
             Object.keys(relationIds).forEach(key => {
                 const joinColumn = secondJoinColumns.find(column => column.referencedColumn.propertyName === key);
-                inverseConditions[joinColumn!.name] = entity[joinColumn!.referencedColumn.propertyName];
+                inverseConditions[joinColumn!.fullName] = entity[joinColumn!.referencedColumn.propertyName];
             });
             return this.queryRunner.delete(junctionMetadata.table.name, Object.assign({}, inverseConditions, conditions));
         });

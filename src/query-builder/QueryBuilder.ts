@@ -1477,25 +1477,25 @@ export class QueryBuilder<Entity> {
 
                 if (relation.isOwning) {
 
-                    junctionCondition = relation.joinTable.joinColumns.map(joinColumn => {
+                    junctionCondition = relation.joinColumns.map(joinColumn => {
                         // `post_category`.`postId` = `post`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.name) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
+                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
                     }).join(" AND ");
 
-                    destinationCondition = relation.joinTable.inverseJoinColumns.map(joinColumn => {
+                    destinationCondition = relation.inverseJoinColumns.map(joinColumn => {
                         // `category`.`id` = `post_category`.`categoryId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.name);
+                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
                     }).join(" AND ");
 
                 } else {
-                    junctionCondition = relation.inverseRelation.joinTable.inverseJoinColumns.map(joinColumn => {
+                    junctionCondition = relation.inverseRelation.inverseJoinColumns.map(joinColumn => {
                         // `post_category`.`categoryId` = `category`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.name) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
+                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
                     }).join(" AND ");
 
-                    destinationCondition = relation.inverseRelation.joinTable.joinColumns.map(joinColumn => {
+                    destinationCondition = relation.inverseRelation.joinColumns.map(joinColumn => {
                         // `post`.`id` = `post_category`.`postId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.name);
+                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
                     }).join(" AND ");
                 }
 

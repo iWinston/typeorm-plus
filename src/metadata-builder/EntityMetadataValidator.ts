@@ -1,6 +1,3 @@
-import {UsingJoinTableIsNotAllowedError} from "./error/UsingJoinTableIsNotAllowedError";
-import {UsingJoinTableOnlyOnOneSideAllowedError} from "./error/UsingJoinTableOnlyOnOneSideAllowedError";
-import {MissingJoinTableError} from "./error/MissingJoinTableError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
 import {CircularRelationsError} from "./error/CircularRelationsError";
@@ -61,14 +58,15 @@ export class EntityMetadataValidator {
 
             // check join tables:
             // using JoinTable is possible only on one side of the many-to-many relation
-            if (relation.joinTable) {
-                if (!relation.isManyToMany)
-                    throw new UsingJoinTableIsNotAllowedError(entityMetadata, relation);
+            // todo(dima): fix
+            // if (relation.joinTable) {
+            //     if (!relation.isManyToMany)
+            //         throw new UsingJoinTableIsNotAllowedError(entityMetadata, relation);
 
-                // if there is inverse side of the relation, then check if it does not have join table too
-                if (relation.hasInverseSide && relation.inverseRelation.joinTable)
-                    throw new UsingJoinTableOnlyOnOneSideAllowedError(entityMetadata, relation);
-            }
+            //     // if there is inverse side of the relation, then check if it does not have join table too
+            //     if (relation.hasInverseSide && relation.inverseRelation.joinTable)
+            //         throw new UsingJoinTableOnlyOnOneSideAllowedError(entityMetadata, relation);
+            // }
 
             // check join columns:
             // using JoinColumn is possible only on one side of the relation and on one-to-one, many-to-one relation types
@@ -97,8 +95,9 @@ export class EntityMetadataValidator {
 
             // if its a many-to-many relation and JoinTable is missing on both sides of the relation
             // or its one-side relation without JoinTable we should give an error
-            if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
-                throw new MissingJoinTableError(entityMetadata, relation);
+            // todo(dima): fix it
+            // if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
+            //     throw new MissingJoinTableError(entityMetadata, relation);
 
 
             // todo: validate if its one-to-one and side which does not have join column MUST have inverse side

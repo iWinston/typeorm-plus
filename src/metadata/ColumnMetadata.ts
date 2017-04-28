@@ -227,7 +227,8 @@ export class ColumnMetadata {
         if (this.entityMetadata)
             return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
 
-        throw new Error(`Column ${this._name ? this._name + " " : ""}is not attached to any entity or embedded.`);
+        return this._name;
+        // throw new Error(`Column ${this._name ? this._name + " " : ""}is not attached to any entity or embedded.`);
     }
 
     /**
@@ -301,7 +302,8 @@ export class ColumnMetadata {
      * and this property will contain reference to this column.
      */
     get referencedColumn(): ColumnMetadata/*|undefined*/ {
-        const foreignKey = this.entityMetadata.foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this) !== -1);
+        const foreignKeys = this.relationMetadata ? this.relationMetadata.foreignKeys : this.entityMetadata.foreignKeys;
+        const foreignKey = foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this) !== -1);
         if (foreignKey) {
             const columnIndex = foreignKey.columns.indexOf(this);
             return foreignKey.referencedColumns[columnIndex];

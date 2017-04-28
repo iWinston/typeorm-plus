@@ -6,15 +6,11 @@ import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadataValidator} from "./EntityMetadataValidator";
 import {IndexMetadata} from "../metadata/IndexMetadata";
-import {JoinColumnMetadata} from "../metadata/JoinColumnMetadata";
 import {TableMetadata} from "../metadata/TableMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {JoinTableMetadata} from "../metadata/JoinTableMetadata";
-import {JunctionEntityMetadataBuilder} from "./JunctionEntityMetadataBuilder";
 import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetadataBuilder";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
-import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {Driver} from "../driver/Driver";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
@@ -174,6 +170,7 @@ export class EntityMetadataBuilder {
                     "CASCADE"
                 );
                 foreignKey.entityMetadata = metadata;
+                // parentRelationColumn.foreignKey =
                 metadata.foreignKeys.push(foreignKey);
             });
 
@@ -285,36 +282,150 @@ export class EntityMetadataBuilder {
                 const joinTableMetadataArgs = mergedArgs.joinTables.findByProperty(relation.propertyName);
                 if (!joinTableMetadataArgs) return;
 
-                if (joinTableMetadataArgs) {
-                    const joinTable = new JoinTableMetadata();
-                    joinTable.target = joinTableMetadataArgs.target;
-                    joinTable.propertyName = joinTableMetadataArgs.propertyName;
-
-                    joinTable.joinColumns = this.createJoinColumns(
-                        joinTableMetadataArgs.joinColumns || [],
-                        relation.entityMetadata.primaryColumnsWithParentIdColumns,
-                        relation.entityMetadata.allColumns,
-                        relation,
-                        (columnName => namingStrategy.joinTableColumnName(relation.entityMetadata.table.nameWithoutPrefix, columnName))
-                    );
-                    joinTable.inverseJoinColumns = this.createJoinColumns(
-                        joinTableMetadataArgs.inverseJoinColumns || [],
-                        relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns,
-                        relation.inverseEntityMetadata.allColumns,
-                        relation,
-                        (columnName => namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.table.nameWithoutPrefix, columnName))
-                    );
-
-                    joinTable.name = joinTableMetadataArgs.name || relation.entityMetadata.namingStrategy.joinTableName(
+                const joinTableName = joinTableMetadataArgs.name || relation.entityMetadata.namingStrategy.joinTableName(
                         relation.entityMetadata.table.nameWithoutPrefix,
                         relation.inverseEntityMetadata.table.nameWithoutPrefix,
                         relation.propertyName,
-                        relation.hasInverseSide ? relation.inverseRelation.propertyName : "",
-                        joinTable.joinColumns.map(joinColumn => joinColumn.referencedColumn.name)
+                        relation.hasInverseSide ? relation.inverseRelation.propertyName : ""
                     );
-                    relation.joinTable = joinTable;
-                    joinTable.relation = relation;
+
+                let referencedColumns: ColumnMetadata[];
+                const hasJoinColumns = !!joinTableMetadataArgs.joinColumns;
+                const hasAnyReferencedColumnName = hasJoinColumns ? joinTableMetadataArgs.joinColumns!.find(joinColumn => !!joinColumn.referencedColumnName) : false;
+                if (!hasJoinColumns || (hasJoinColumns && !hasAnyReferencedColumnName)) {
+                    referencedColumns = relation.entityMetadata.primaryColumnsWithParentIdColumns;
+                } else {
+                    referencedColumns = joinTableMetadataArgs.joinColumns!.map(joinColumn => {
+                        const referencedColumn = relation.entityMetadata.columns.find(column => column.fullName === joinColumn.referencedColumnName);
+                        if (!referencedColumn)
+                            throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`);
+
+                        return referencedColumn;
+                    });
                 }
+
+                let inverseReferencedColumns: ColumnMetadata[];
+                const hasInverseJoinColumns = !!joinTableMetadataArgs.inverseJoinColumns;
+                const hasAnyInverseReferencedColumnName = hasInverseJoinColumns ? joinTableMetadataArgs.inverseJoinColumns!.find(joinColumn => !!joinColumn.referencedColumnName) : false;
+                if (!hasInverseJoinColumns || (hasInverseJoinColumns && !hasAnyInverseReferencedColumnName)) {
+                    inverseReferencedColumns = relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns;
+                } else {
+                    inverseReferencedColumns = joinTableMetadataArgs.inverseJoinColumns!.map(joinColumn => {
+                        const referencedColumn = relation.inverseEntityMetadata.columns.find(column => column.fullName === joinColumn.referencedColumnName);
+                        if (!referencedColumn)
+                            throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
+
+                        return referencedColumn;
+                    });
+                }
+
+                // return joinColumnArgsArray.map(joinColumnMetadataArgs => {
+                //     const joinColumn = new JoinColumnMetadata();
+                //     joinColumn.relation = relation;
+                //     joinColumn.target = joinColumnMetadataArgs.target;
+                //     joinColumn.propertyName = joinColumnMetadataArgs.propertyName;
+                //     const referencedColumn = columnMetadatas.find(column => {
+                //         return column.propertyName === joinColumnMetadataArgs.referencedColumnName;
+                //     });
+                //     if (!referencedColumn)
+                //         throw new Error(`Referenced column ${joinColumnMetadataArgs.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`); // todo: fix  ${relation.inverseEntityMetadata.name}
+                //
+                //     joinColumn.referencedColumn = referencedColumn;
+                //     joinColumn.name = joinColumnMetadataArgs.name || columnNameFactory(joinColumn.referencedColumn.propertyName);
+                //     return joinColumn;
+                // });
+                //
+                // const columns = this.createJoinColumns(
+                //     joinTableMetadataArgs.joinColumns || [],
+                //     relation.entityMetadata.primaryColumnsWithParentIdColumns,
+                //     relation.entityMetadata.allColumns,
+                //     relation,
+                //     (columnName => namingStrategy.joinTableColumnName(relation.entityMetadata.table.nameWithoutPrefix, columnName))
+                // );
+                // const inverseJoinColumns = this.createJoinColumns(
+                //     joinTableMetadataArgs.inverseJoinColumns || [],
+                //     relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns,
+                //     relation.inverseEntityMetadata.allColumns,
+                //     relation,
+                //     (columnName => namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.table.nameWithoutPrefix, columnName))
+                // );
+
+                const tableMetadata = new TableMetadata({
+                    target: "",
+                    name: joinTableName,
+                    type: "junction"
+                });
+
+                const junctionColumns = referencedColumns.map(referencedColumn => {
+                    const joinColumn = joinTableMetadataArgs.joinColumns ? joinTableMetadataArgs.joinColumns.find(joinColumnArgs => {
+                        return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === referencedColumn.propertyName) &&
+                            !!joinColumnArgs.name;
+                    }) : undefined;
+                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : namingStrategy.joinTableColumnName(relation.entityMetadata.table.nameWithoutPrefix, referencedColumn.fullName);
+
+                    return new ColumnMetadata({
+                        target: "__virtual__",
+                        propertyName: columnName,
+                        mode: "virtual",
+                        options: <ColumnOptions> {
+                            length: referencedColumn.length,
+                            type: referencedColumn.type,
+                            name: columnName,
+                            nullable: false,
+                            primary: true
+                        }
+                    });
+                });
+
+                const inverseJunctionColumns = inverseReferencedColumns.map(inverseReferencedColumn => {
+                    const joinColumn = joinTableMetadataArgs.inverseJoinColumns ? joinTableMetadataArgs.inverseJoinColumns.find(joinColumnArgs => {
+                            return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === inverseReferencedColumn.propertyName) &&
+                                !!joinColumnArgs.name;
+                        }) : undefined;
+                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.table.nameWithoutPrefix, inverseReferencedColumn.fullName);
+
+                    return new ColumnMetadata({
+                        target: "__virtual__",
+                        propertyName: columnName,
+                        mode: "virtual",
+                        options: <ColumnOptions> {
+                            length: inverseReferencedColumn.length,
+                            type: inverseReferencedColumn.type,
+                            name: columnName,
+                            nullable: false,
+                            primary: true
+                        }
+                    });
+                });
+
+                const foreignKeys = [
+                    new ForeignKeyMetadata(junctionColumns, relation.entityMetadata.table, referencedColumns),
+                    new ForeignKeyMetadata(inverseJunctionColumns, relation.inverseEntityMetadata.table, inverseReferencedColumns)
+                ];
+
+                junctionColumns.concat(inverseJunctionColumns).forEach(column => column.relationMetadata = relation);
+
+                const junctionEntityMetadata = new EntityMetadata({
+                    junction: true,
+                    target: "__virtual__",
+                    tablesPrefix: driver.options.tablesPrefix,
+                    namingStrategy: namingStrategy,
+                    tableMetadata: tableMetadata,
+                    columnMetadatas: junctionColumns.concat(inverseJunctionColumns),
+                    foreignKeyMetadatas: foreignKeys,
+                    indexMetadatas: [ // todo: shall we remove indices?
+                        new IndexMetadata({ columns: junctionColumns.map(column => column.fullName), unique: false }),
+                        new IndexMetadata({ columns: inverseJunctionColumns.map(column => column.fullName), unique: false })
+                    ]
+                }, lazyRelationsWrapper);
+
+                junctionEntityMetadata.columns.forEach(column => column.entityMetadata = entityMetadata);
+                relation.foreignKeys = foreignKeys;
+                relation.junctionEntityMetadata = junctionEntityMetadata;
+                if (relation.hasInverseSide)
+                    relation.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
+
+                entityMetadatas.push(junctionEntityMetadata);
             });
 
         });
@@ -404,23 +515,6 @@ export class EntityMetadataBuilder {
             entityMetadatas.push(closureJunctionEntityMetadata);
         });
 
-        // generate junction tables for all many-to-many tables
-        entityMetadatas.forEach(metadata => {
-            metadata.ownerManyToManyRelations.forEach(relation => {
-                const junctionEntityMetadata = getFromContainer(JunctionEntityMetadataBuilder).build(driver, lazyRelationsWrapper, {
-                    namingStrategy: namingStrategy,
-                    firstTable: metadata.table,
-                    secondTable: relation.inverseEntityMetadata.table,
-                    joinTable: relation.joinTable
-                });
-                relation.junctionEntityMetadata = junctionEntityMetadata;
-                if (relation.hasInverseSide)
-                    relation.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
-
-                entityMetadatas.push(junctionEntityMetadata);
-            });
-        });
-
         // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
         getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
 
@@ -431,11 +525,11 @@ export class EntityMetadataBuilder {
     // Private Methods
     // -------------------------------------------------------------------------
 
-    private createJoinColumns(joinColumnArgsArray: JoinColumnMetadataArgs[],
+    /*private createJoinColumns(joinColumnArgsArray: JoinColumnMetadataArgs[],
                               primaryColumns: ColumnMetadata[],
                               columnMetadatas: ColumnMetadata[],
                               relation: RelationMetadata,
-                              columnNameFactory: (columnName: string) => string): JoinColumnMetadata[] {
+                              columnNameFactory: (columnName: string) => string): ColumnMetadata[] {
 
         const hasAnyReferencedColumnName = joinColumnArgsArray.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
         const createColumns = (joinColumnArgsArray.length === 0 && relation.isManyToOne) ||
@@ -472,6 +566,6 @@ export class EntityMetadataBuilder {
             joinColumn.name = joinColumnMetadataArgs.name || columnNameFactory(joinColumn.referencedColumn.propertyName);
             return joinColumn;
         });
-    }
+    }*/
 
 }

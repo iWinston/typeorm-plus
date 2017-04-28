@@ -108,14 +108,14 @@ export class LazyRelationsWrapper {
                                  AND post_categories.categoryId = category.id
                          */
 
-                        joinColumnConditions = relation.joinTable.joinColumns.map(joinColumn => {
-                            return `${joinAlias}.${joinColumn.name} = :${joinColumn.name}`;
+                        joinColumnConditions = relation.joinColumns.map(joinColumn => {
+                            return `${joinAlias}.${joinColumn.propertyName} = :${joinColumn.propertyName}`;
                         });
-                        inverseJoinColumnConditions = relation.joinTable.inverseJoinColumns.map(inverseJoinColumn => {
-                            return `${joinAlias}.${inverseJoinColumn.name}=${mainAlias}.${inverseJoinColumn.referencedColumn.fullName}`;
+                        inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
+                            return `${joinAlias}.${inverseJoinColumn.propertyName}=${mainAlias}.${inverseJoinColumn.referencedColumn.propertyName}`;
                         });
-                        parameters = relation.joinTable.joinColumns.reduce((parameters, joinColumn) => {
-                            parameters[joinColumn.name] = this[joinColumn.referencedColumn.propertyName];
+                        parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
+                            parameters[joinColumn.propertyName] = this[joinColumn.referencedColumn.propertyName];
                             return parameters;
                         }, {} as ObjectLiteral);
 
@@ -128,14 +128,14 @@ export class LazyRelationsWrapper {
                                  AND post_categories.categoryId = post_categories.categoryId
                          */
 
-                        joinColumnConditions = relation.inverseRelation.joinTable.joinColumns.map(joinColumn => {
-                            return `${joinAlias}.${joinColumn.name} = ${mainAlias}.${joinColumn.referencedColumn.fullName}`;
+                        joinColumnConditions = relation.inverseRelation.joinColumns.map(joinColumn => {
+                            return `${joinAlias}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn.propertyName}`;
                         });
-                        inverseJoinColumnConditions = relation.inverseRelation.joinTable.inverseJoinColumns.map(inverseJoinColumn => {
-                            return `${joinAlias}.${inverseJoinColumn.name} = :${inverseJoinColumn.name}`;
+                        inverseJoinColumnConditions = relation.inverseRelation.inverseJoinColumns.map(inverseJoinColumn => {
+                            return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;
                         });
-                        parameters = relation.inverseRelation.joinTable.inverseJoinColumns.reduce((parameters, joinColumn) => {
-                            parameters[joinColumn.name] = this[joinColumn.referencedColumn.propertyName];
+                        parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
+                            parameters[joinColumn.propertyName] = this[joinColumn.referencedColumn.propertyName];
                             return parameters;
                         }, {} as ObjectLiteral);
                     }

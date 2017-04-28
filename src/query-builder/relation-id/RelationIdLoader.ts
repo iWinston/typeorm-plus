@@ -140,14 +140,14 @@ export class RelationIdLoader {
                 let secondJunctionColumn: ColumnMetadata;
 
                 if (relationIdAttr.relation.isOwning) { // todo fix joinColumns[0]
-                    joinTableColumnName = relationIdAttr.relation.joinTable.joinColumns[0].referencedColumn.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.joinTable.joinColumns[0].referencedColumn.fullName;
+                    joinTableColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn.fullName;
+                    inverseJoinColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn.fullName;
                     firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
                     secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
 
                 } else {
-                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinTable.joinColumns[0].referencedColumn.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinTable.joinColumns[0].referencedColumn.fullName;
+                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
+                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
                     firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
                     secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
                 }

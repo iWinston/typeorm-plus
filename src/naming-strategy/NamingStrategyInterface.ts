@@ -45,8 +45,7 @@ export interface NamingStrategyInterface {
     joinTableName(firstTableName: string,
                   secondTableName: string,
                   firstPropertyName: string,
-                  secondPropertyName: string,
-                  columns: string[]): string;
+                  secondPropertyName: string): string;
 
     /**
      * Columns in join tables can have duplicate names in case of self-referencing.

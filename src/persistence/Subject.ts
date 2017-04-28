@@ -197,6 +197,7 @@ export class Subject {
 
     /**
      * Gets entity from the database (e.g. original entity).
+     * THIS IS NOT RAW ENTITY DATA.
      * Throws error if database entity was not set.
      */
     get databaseEntity(): ObjectLiteral {

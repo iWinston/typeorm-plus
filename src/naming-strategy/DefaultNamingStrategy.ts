@@ -41,9 +41,8 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     joinTableName(firstTableName: string,
                   secondTableName: string,
                   firstPropertyName: string,
-                  secondPropertyName: string,
-                  columns: string[]): string {
-        return snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName + "_" + columns.join("_"));
+                  secondPropertyName: string): string {
+        return snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName);
     }
 
     joinTableColumnDuplicationPrefix(columnName: string, index: number): string {
