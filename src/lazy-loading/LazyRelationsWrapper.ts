@@ -35,7 +35,7 @@ export class LazyRelationsWrapper {
 
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
 
-                    const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.joinColumns;
+                    const joinColumns = relation.isOwning ? relation.foreignKey.columns : relation.inverseRelation.foreignKey.columns;
                     const conditions = joinColumns.map(joinColumn => {
                         return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn.propertyName}`;
                     }).join(" AND ");
@@ -48,7 +48,7 @@ export class LazyRelationsWrapper {
                         .from(relation.type, relation.propertyName) // Category, category
                         .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, conditions);
 
-                    relation.joinColumns.forEach(joinColumn => {
+                    joinColumns.forEach(joinColumn => {
                         qb.andWhere(`${relation.entityMetadata.name}.${joinColumn.referencedColumn.fullName} = :${joinColumn.referencedColumn.fullName}`)
                             .setParameter(`${joinColumn.referencedColumn.fullName}`, this[joinColumn.referencedColumn.fullName]);
                     });
@@ -74,9 +74,9 @@ export class LazyRelationsWrapper {
                     qb.select(relation.propertyName)
                         .from(relation.inverseRelation.entityMetadata.target, relation.propertyName);
 
-                    relation.inverseRelation.joinColumns.forEach(joinColumn => {
-                        qb.andWhere(`${relation.propertyName}.${joinColumn.name} = :${joinColumn.referencedColumn.fullName}`)
-                            .setParameter(`${joinColumn.referencedColumn.fullName}`, this[joinColumn.referencedColumn.fullName]);
+                    relation.inverseRelation.foreignKey.columns.forEach(joinColumn => {
+                        qb.andWhere(`${relation.propertyName}.${joinColumn.propertyName} = :${joinColumn.referencedColumn.propertyName}`)
+                            .setParameter(`${joinColumn.referencedColumn.propertyName}`, this[joinColumn.referencedColumn.propertyName]);
                     });
 
                     const result = relation.isOneToMany ? qb.getMany() : qb.getOne();

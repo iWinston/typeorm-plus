@@ -206,7 +206,7 @@ export class SubjectOperationExecutor {
             // first update relations with join columns (one-to-one owner and many-to-one relations)
             const updateOptions: ObjectLiteral = {};
             subject.metadata.relationsWithJoinColumns.forEach(relation => {
-                relation.joinColumns.forEach(joinColumn => {
+                relation.foreignKey.columns.forEach(joinColumn => {
                     const referencedColumn = joinColumn.referencedColumn;
                     const relatedEntity = relation.getEntityValue(subject.entity);
 
@@ -263,7 +263,7 @@ export class SubjectOperationExecutor {
                     }
 
                     if (relationId) {
-                        updateOptions[joinColumn.name] = relationId;
+                        updateOptions[joinColumn.fullName] = relationId;
                     }
 
                 });
@@ -283,7 +283,7 @@ export class SubjectOperationExecutor {
                     const columnRelation = subject.metadata.relations.find(relation => relation.propertyName === column.propertyName);
 
                     if (entityValue && columnRelation) { // not sure if we need handle join column from inverse side
-                        columnRelation.joinColumns.forEach(joinColumn => {
+                        columnRelation.foreignKey.columns.forEach(joinColumn => {
                             let relationIdOfEntityValue = entityValue[joinColumn.referencedColumn.propertyName];
                             if (!relationIdOfEntityValue) {
                                 const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
@@ -327,7 +327,7 @@ export class SubjectOperationExecutor {
             const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
             subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
                 .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
-                    relation.inverseRelation.joinColumns.forEach(joinColumn => {
+                    relation.inverseRelation.foreignKey.columns.forEach(joinColumn => {
 
                         const referencedColumn = joinColumn.referencedColumn;
                         const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumnsWithParentIdColumns : inverseEntityMetadata.primaryColumns;
@@ -340,7 +340,7 @@ export class SubjectOperationExecutor {
                             const columnRelation = inverseEntityMetadata.relations.find(relation => relation.propertyName === column.propertyName);
 
                             if (entityValue && columnRelation) { // not sure if we need handle join column from inverse side
-                                columnRelation.joinColumns.forEach(columnRelationJoinColumn => {
+                                columnRelation.foreignKey.columns.forEach(columnRelationJoinColumn => {
                                     let relationIdOfEntityValue = entityValue[columnRelationJoinColumn.referencedColumn.propertyName];
                                     if (!relationIdOfEntityValue) {
                                         const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
@@ -392,9 +392,9 @@ export class SubjectOperationExecutor {
                                     }
                                 }
                             }
-                            updateOptions[joinColumn.name] = id;
+                            updateOptions[joinColumn.fullName] = id;
                         } else {
-                            updateOptions[joinColumn.name] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
+                            updateOptions[joinColumn.fullName] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
                         }
 
                         const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.table.name, updateOptions, conditions);
@@ -507,7 +507,7 @@ export class SubjectOperationExecutor {
         collectFromEmbeddeds(entity, columnsAndValuesMap, metadata.embeddeds);
 
         metadata.relationsWithJoinColumns.forEach(relation => {
-            relation.joinColumns.forEach(joinColumn => {
+            relation.foreignKey.columns.forEach(joinColumn => {
 
                 let relationValue: any;
                 const value = relation.getEntityValue(entity);
@@ -565,7 +565,7 @@ export class SubjectOperationExecutor {
                 }
 
                 if (relationValue) {
-                    columnNames.push(joinColumn.name);
+                    columnNames.push(joinColumn.fullName);
                     columnValues.push(relationValue);
                     columnsAndValuesMap[relation.propertyName] = entity[relation.name]; // todo: check most probably wont work
                 }
@@ -653,7 +653,7 @@ export class SubjectOperationExecutor {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
         const tableName = subject.metadata.closureJunctionTable.table.name;
-        const referencedColumn = subject.metadata.treeParentRelation.joinColumns[0].referencedColumn; // todo: check if joinColumn works
+        const referencedColumn = subject.metadata.treeParentRelation.foreignKey.columns[0].referencedColumn; // todo: check if joinColumn works
         // todo: fix joinColumns[0] usage
 
         let newEntityId = subject.entity[referencedColumn.propertyName];
@@ -792,7 +792,7 @@ export class SubjectOperationExecutor {
             }
 
             const value = relation.getEntityValue(entity);
-            relation.joinColumns.forEach(joinColumn => {
+            relation.foreignKey.columns.forEach(joinColumn => {
                 valueMap!.values[joinColumn.name] = value !== null && value !== undefined ? value[joinColumn.referencedColumn.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
             });
         });
@@ -877,9 +877,9 @@ export class SubjectOperationExecutor {
     private async updateRelations(subject: Subject) {
         const values: ObjectLiteral = {};
         subject.relationUpdates.forEach(setRelation => {
-            setRelation.relation.joinColumns.forEach(joinColumn => {
+            setRelation.relation.foreignKey.columns.forEach(joinColumn => {
                 const value = setRelation.value ? setRelation.value[joinColumn.referencedColumn.propertyName] : null;
-                values[joinColumn.name] = value; // todo: || fromInsertedSubjects ??
+                values[joinColumn.fullName] = value; // todo: || fromInsertedSubjects ??
             });
         });
 

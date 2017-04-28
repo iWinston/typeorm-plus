@@ -349,7 +349,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 if (subject.hasEntity) {
                     const persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue === null) persistValueRelationId = null;
-                    if (persistValue) persistValueRelationId = persistValue[relation.joinColumns[0].referencedColumn.propertyName];
+                    if (persistValue) persistValueRelationId = persistValue[relation.foreignKey.columns[0].referencedColumn.propertyName];
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
@@ -367,7 +367,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Details loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Details
                     // (example) and we need to compare details.id === post.detailsId
-                    return relatedSubject.databaseEntity[relation.joinColumns[0].referencedColumn.propertyName] === relationIdInDatabaseEntity;
+                    return relatedSubject.databaseEntity[relation.foreignKey.columns[0].referencedColumn.propertyName] === relationIdInDatabaseEntity;
                 });
 
                 // if not loaded yet then load it from the database
@@ -377,7 +377,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.joinColumns[0].referencedColumn.propertyName + "=:id")
+                        .where(qbAlias + "." + relation.foreignKey.columns[0].referencedColumn.propertyName + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
                         .enableAutoRelationIdsLoad()
                         .getOne();
@@ -428,7 +428,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 }
 
                 // (example) returns us referenced column (detail's id)
-                const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn.propertyName];
+                const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.foreignKey.columns[0].referencedColumn.propertyName];
 
                 // if database relation id does not exist then nothing to remove (but can this be possible?)
                 if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
@@ -594,7 +594,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 } else { // this case can only be a oneToMany relation
                     // todo: fix issues with joinColumn[0]
                     // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn.propertyName];
+                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.foreignKey.columns[0].referencedColumn.propertyName];
 
                     // in this case we need inverse entities not only because of cascade removes
                     // because we also need inverse entities to be able to perform update of entities

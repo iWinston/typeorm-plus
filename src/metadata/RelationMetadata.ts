@@ -48,16 +48,6 @@ export class RelationMetadata {
 
     foreignKey: ForeignKeyMetadata;
 
-    get joinColumns() {
-        if (!this.foreignKey) return [];
-        return this.foreignKey.columns;
-    }
-
-    /**
-     * Relation join columns metadata.
-     */
-    // joinColumns: ColumnMetadata[] = [];
-
     // ---------------------------------------------------------------------
     // Readonly Properties
     // ---------------------------------------------------------------------
@@ -205,15 +195,15 @@ export class RelationMetadata {
         if (this.isOwning) {
             if (this.joinTable) {
                 return this.joinTable.joinColumns[0].name;
-            } else if (this.joinColumns) {
-                return this.joinColumns[0].name;
+            } else if (this.foreignKey && this.foreignKey.columns) {
+                return this.foreignKey.columns[0].name;
             }
 
         } else if (this.hasInverseSide) {
             if (this.inverseRelation.joinTable) {
                 return this.inverseRelation.joinTable.inverseJoinColumns[0].name;
-            } else if (this.inverseRelation.joinColumns && this.inverseRelation.joinColumns[0].referencedColumn) {
-                return this.inverseRelation.joinColumns[0].referencedColumn.fullName; // todo: [0] is temporary!!
+            } else if (this.inverseRelation.foreignKey && this.inverseRelation.foreignKey.columns && this.inverseRelation.foreignKey.columns[0].referencedColumn) {
+                return this.inverseRelation.foreignKey.columns[0].referencedColumn.fullName; // todo: [0] is temporary!!
             }
         }
 
@@ -288,7 +278,7 @@ export class RelationMetadata {
     get isOwning() {
         return  !!(this.isManyToOne ||
                 (this.isManyToMany && this.joinTable) ||
-                (this.isOneToOne && this.joinColumns.length > 0));
+                (this.isOneToOne && this.foreignKey));
     }
 
     /**

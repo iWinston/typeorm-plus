@@ -63,11 +63,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (relation.isOwning) {
             table = relation.entityMetadata.table.name;
             values[relation.name] = relatedEntityId;
-            conditions[relation.joinColumns[0].referencedColumn.fullName] = entityId;
+            conditions[relation.foreignKey.columns[0].referencedColumn.fullName] = entityId;
         } else {
             table = relation.inverseEntityMetadata.table.name;
             values[relation.inverseRelation.name] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumns[0].referencedColumn.fullName] = entityId;
+            conditions[relation.inverseRelation.foreignKey.columns[0].referencedColumn.fullName] = entityId;
         }
 
 
@@ -114,11 +114,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (relation.isOwning) {
             table = relation.inverseEntityMetadata.table.name;
             values[relation.inverseRelation.name] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumns[0].referencedColumn.fullName] = entityId;
+            conditions[relation.inverseRelation.foreignKey.columns[0].referencedColumn.fullName] = entityId;
         } else {
             table = relation.entityMetadata.table.name;
             values[relation.name] = relatedEntityId;
-            conditions[relation.joinColumns[0].referencedColumn.fullName] = entityId;
+            conditions[relation.foreignKey.columns[0].referencedColumn.fullName] = entityId;
         }
 
         const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);

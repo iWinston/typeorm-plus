@@ -1454,8 +1454,8 @@ export class QueryBuilder<Entity> {
             if (relation.isManyToOne || relation.isOneToOneOwner) {
 
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
-                const condition = relation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(parentAlias) + "." + ec(joinColumn.name);
+                const condition = relation.foreignKey.columns.map(joinColumn => {
+                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(parentAlias) + "." + ec(joinColumn.propertyName);
                 }).join(" AND ");
 
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
@@ -1463,8 +1463,8 @@ export class QueryBuilder<Entity> {
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = relation.inverseRelation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias!) + "." + ec(joinColumn.name) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
+                const condition = relation.inverseRelation.foreignKey.columns.map(joinColumn => {
+                    return ea(destinationTableAlias!) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
                 }).join(" AND ");
 
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
