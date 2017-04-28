@@ -1,8 +1,7 @@
 import {RelationTypes, RelationType} from "./types/RelationTypes";
 import {EntityMetadata} from "./EntityMetadata";
-import {OnDeleteType} from "./ForeignKeyMetadata";
+import {OnDeleteType, ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
-import {JoinColumnMetadata} from "./JoinColumnMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
@@ -47,10 +46,17 @@ export class RelationMetadata {
      */
     joinTable: JoinTableMetadata;
 
+    foreignKey: ForeignKeyMetadata;
+
+    get joinColumns() {
+        if (!this.foreignKey) return [];
+        return this.foreignKey.columns;
+    }
+
     /**
      * Relation join columns metadata.
      */
-    joinColumns: JoinColumnMetadata[] = [];
+    // joinColumns: ColumnMetadata[] = [];
 
     // ---------------------------------------------------------------------
     // Readonly Properties

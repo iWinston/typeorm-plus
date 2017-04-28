@@ -297,15 +297,17 @@ export class ColumnMetadata {
     }
 
     /**
-     * If this column references some column, it gets the first referenced column of this column.
+     * If this column is foreign key then it references some other column,
+     * and this property will contain reference to this column.
      */
-    get referencedColumn(): ColumnMetadata|undefined {
+    get referencedColumn(): ColumnMetadata/*|undefined*/ {
         const foreignKey = this.entityMetadata.foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this) !== -1);
         if (foreignKey) {
-            return foreignKey.referencedColumns[0];
+            const columnIndex = foreignKey.columns.indexOf(this);
+            return foreignKey.referencedColumns[columnIndex];
         }
 
-        return undefined;
+        return undefined!;
     }
 
     /**

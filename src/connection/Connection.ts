@@ -39,6 +39,7 @@ import {CustomRepositoryCannotInheritRepositoryError} from "../repository/error/
 import {MongoRepository} from "../repository/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
+import {EntitySchemaTransformer} from "../entity-schema/EntitySchemaTransformer";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -688,12 +689,10 @@ export class Connection {
                 .filterByTargets(this.entityClasses)
                 .toArray()
                 .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
-        }
 
-        // build entity metadatas from metadata args storage (collected from decorators)
-        if (this.entityClasses && this.entityClasses.length) {
+            // build entity metadatas from metadata args storage (collected from decorators)
             getFromContainer(EntityMetadataBuilder)
-                .buildFromMetadataArgsStorage(this.driver, lazyRelationsWrapper, namingStrategy, this.entityClasses)
+                .build(this.driver, lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy, this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
@@ -702,8 +701,9 @@ export class Connection {
 
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
+            const metadataArgsStorage = getFromContainer(EntitySchemaTransformer).transform(this.entitySchemas);
             getFromContainer(EntityMetadataBuilder)
-                .buildFromSchemas(this.driver, lazyRelationsWrapper, namingStrategy, this.entitySchemas)
+                .build(this.driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));

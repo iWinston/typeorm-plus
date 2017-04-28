@@ -9,7 +9,7 @@ import {Event} from "./entity/Event";
 
 const should = chai.should();
 
-describe("relations > multiple-primary-keys > other-cases", () => {
+describe.skip("relations > multiple-primary-keys > other-cases", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
