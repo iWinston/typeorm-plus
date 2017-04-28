@@ -55,7 +55,7 @@ export class RelationIdLoader {
 
                 const relation = relationIdAttr.relation; // "category.posts"
                 const inverseRelation = relation.inverseRelation; // "post.category"
-                const referenceColumnName = inverseRelation.foreignKey.columns[0].referencedColumn.propertyName; // post id
+                const referenceColumnName = inverseRelation.joinColumns[0].referencedColumn.propertyName; // post id
                 const inverseSideTable = relation.inverseEntityMetadata.table.target; // Post
                 const inverseSideTableName = relation.inverseEntityMetadata.table.name; // post
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined

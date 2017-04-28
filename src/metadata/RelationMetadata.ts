@@ -4,6 +4,7 @@ import {OnDeleteType, ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {JoinTableMetadata} from "./JoinTableMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {ColumnMetadata} from "./ColumnMetadata";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -46,7 +47,7 @@ export class RelationMetadata {
      */
     joinTable: JoinTableMetadata;
 
-    foreignKey: ForeignKeyMetadata;
+    foreignKeys: ForeignKeyMetadata[] = [];
 
     // ---------------------------------------------------------------------
     // Readonly Properties
@@ -195,19 +196,50 @@ export class RelationMetadata {
         if (this.isOwning) {
             if (this.joinTable) {
                 return this.joinTable.joinColumns[0].name;
-            } else if (this.foreignKey && this.foreignKey.columns) {
-                return this.foreignKey.columns[0].name;
+            } else if (this.foreignKeys[0] && this.foreignKeys[0].columns) {
+                return this.foreignKeys[0].columns[0].name;
             }
 
         } else if (this.hasInverseSide) {
             if (this.inverseRelation.joinTable) {
                 return this.inverseRelation.joinTable.inverseJoinColumns[0].name;
-            } else if (this.inverseRelation.foreignKey && this.inverseRelation.foreignKey.columns && this.inverseRelation.foreignKey.columns[0].referencedColumn) {
-                return this.inverseRelation.foreignKey.columns[0].referencedColumn.fullName; // todo: [0] is temporary!!
+            } else if (this.inverseRelation.foreignKeys[0] && this.inverseRelation.foreignKeys[0].columns && this.inverseRelation.foreignKeys[0].columns[0].referencedColumn) {
+                return this.inverseRelation.foreignKeys[0].columns[0].referencedColumn.fullName; // todo: [0] is temporary!!
             }
         }
 
         throw new Error(`Relation name cannot be retrieved.`);
+    }
+
+    /**
+     * Join table name.
+     */
+    get joinTableName(): string {
+        return this.junctionEntityMetadata.table.name;
+    }
+
+
+    /**
+     * Join table columns.
+     */
+    get joinColumns(): ColumnMetadata[] {
+        if (!this.isOwning)
+            throw new Error(`Inverse join columns are only supported from owning side`);
+
+        return this.foreignKeys[0].columns;
+    }
+
+    /**
+     * Join table columns.
+     */
+    get inverseJoinColumns(): ColumnMetadata[] {
+        if (!this.isOwning)
+            throw new Error(`Inverse join columns are only supported from owning side`);
+
+        if (!this.isManyToMany)
+            throw new Error(`Inverse join columns are not supported by non-many-to-many relations`);
+
+        return this.foreignKeys[1].columns;
     }
 
     /**
@@ -278,7 +310,7 @@ export class RelationMetadata {
     get isOwning() {
         return  !!(this.isManyToOne ||
                 (this.isManyToMany && this.joinTable) ||
-                (this.isOneToOne && this.foreignKey));
+                (this.isOneToOne && this.foreignKeys.length > 0));
     }
 
     /**

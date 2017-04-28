@@ -269,7 +269,7 @@ export class EntityMetadataBuilder {
                     );
 
                     foreignKey.entityMetadata = relation.entityMetadata;
-                    relation.foreignKey = foreignKey;
+                    relation.foreignKeys = [foreignKey];
                     relation.entityMetadata.foreignKeys.push(foreignKey);
                 });
         });

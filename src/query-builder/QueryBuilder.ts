@@ -1454,7 +1454,7 @@ export class QueryBuilder<Entity> {
             if (relation.isManyToOne || relation.isOneToOneOwner) {
 
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
-                const condition = relation.foreignKey.columns.map(joinColumn => {
+                const condition = relation.joinColumns.map(joinColumn => {
                     return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(parentAlias) + "." + ec(joinColumn.propertyName);
                 }).join(" AND ");
 
@@ -1463,7 +1463,7 @@ export class QueryBuilder<Entity> {
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = relation.inverseRelation.foreignKey.columns.map(joinColumn => {
+                const condition = relation.inverseRelation.joinColumns.map(joinColumn => {
                     return ea(destinationTableAlias!) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
                 }).join(" AND ");
 

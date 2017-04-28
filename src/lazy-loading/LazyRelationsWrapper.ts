@@ -35,7 +35,7 @@ export class LazyRelationsWrapper {
 
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
 
-                    const joinColumns = relation.isOwning ? relation.foreignKey.columns : relation.inverseRelation.foreignKey.columns;
+                    const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.joinColumns;
                     const conditions = joinColumns.map(joinColumn => {
                         return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn.propertyName}`;
                     }).join(" AND ");
@@ -74,7 +74,7 @@ export class LazyRelationsWrapper {
                     qb.select(relation.propertyName)
                         .from(relation.inverseRelation.entityMetadata.target, relation.propertyName);
 
-                    relation.inverseRelation.foreignKey.columns.forEach(joinColumn => {
+                    relation.inverseRelation.joinColumns.forEach(joinColumn => {
                         qb.andWhere(`${relation.propertyName}.${joinColumn.propertyName} = :${joinColumn.referencedColumn.propertyName}`)
                             .setParameter(`${joinColumn.referencedColumn.propertyName}`, this[joinColumn.referencedColumn.propertyName]);
                     });

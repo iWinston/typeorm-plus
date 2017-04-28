@@ -171,7 +171,7 @@ export class RawSqlResultsToEntityTransformer {
             } else {
                 let referenceColumnName: string;
                 if (relation.isOneToMany || relation.isOneToOneNotOwner) { // todo: fix joinColumns[0]
-                    referenceColumnName = relation.inverseRelation.foreignKey.columns[0].referencedColumn.fullName;
+                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
                 } else {
                     referenceColumnName = relation.isOwning ? relation.joinTable.joinColumns[0].referencedColumn.fullName : relation.inverseRelation.joinTable.joinColumns[0].referencedColumn.fullName;
                 }
@@ -202,7 +202,7 @@ export class RawSqlResultsToEntityTransformer {
                 let referenceColumnName: string;
 
                 if (relation.isOneToMany) {
-                    referenceColumnName = relation.inverseRelation.foreignKey.columns[0].referencedColumn.fullName;  // todo: fix joinColumns[0]
+                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn.fullName;  // todo: fix joinColumns[0]
 
                 } else {
                     referenceColumnName = relation.isOwning ? relation.joinTable.joinColumns[0].referencedColumn.fullName : relation.inverseRelation.joinTable.joinColumns[0].referencedColumn.fullName;
