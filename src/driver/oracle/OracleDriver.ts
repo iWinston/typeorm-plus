@@ -196,7 +196,7 @@ export class OracleDriver implements Driver {
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
             escapedParameters.push(parameters[key.substr(1)]);
-            return ":" + key;
+            return key;
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
