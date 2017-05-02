@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import {Connection} from "../../../../../src/connection/Connection";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {expect} from "chai";
 
-describe("mongodb > array columns", () => {
+describe.skip("mongodb > array columns", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

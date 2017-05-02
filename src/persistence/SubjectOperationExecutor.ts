@@ -765,6 +765,8 @@ export class SubjectOperationExecutor {
             if (subject.metadata.hasVersionColumn)
                 value[subject.metadata.versionColumn.fullName] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
 
+            // console.log(value);
+            // console.log("idMap:", idMap);
             return this.queryRunner.update(subject.metadata.tableName, value, idMap);
         }
 
@@ -905,7 +907,7 @@ export class SubjectOperationExecutor {
      * Updates given subject from the database.
      */
     private async remove(subject: Subject): Promise<void> {
-        if (subject.metadata.parentEntityMetadata) {
+        if (subject.metadata.parentEntityMetadata) { // this code should not be there. it should be handled by  subject.metadata.getEntityIdColumnMap
             const parentConditions: ObjectLiteral = {};
             subject.metadata.parentPrimaryColumns.forEach(column => {
                 parentConditions[column.fullName] = subject.databaseEntity[column.propertyName];

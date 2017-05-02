@@ -3,6 +3,7 @@ import {ColumnType} from "./types/ColumnTypes";
 import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {RelationMetadata} from "./RelationMetadata";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
@@ -342,16 +343,128 @@ export class ColumnMetadata {
         }
     }
 
-    getEntityValue(entity: any) {
-        if (this.isInEmbedded) {
-            if (entity[this.embeddedProperty] === undefined ||
-                entity[this.embeddedProperty] === null)
-                return undefined;
+    /**
+     * Creates entity id map from the given entity ids array.
+     *
+     * @stable
+     */
+    createEntityIdMap(id: any) {
 
-            return entity[this.embeddedProperty][this.propertyName];
-        } else {
+        // extract column value from embeds of entity if column is in embedded
+        if (this.embeddedMetadata) {
+
+            // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
+            // we need to get value of "id" column from the post real entity object and return it in a
+            // { data: { information: { counters: { id: ... } } } } format
+
+            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+
+            // now need to access post[data][information][counters] to get column value from the counters
+            // and on each step we need to create complex literal object, e.g. first { data },
+            // then { data: { information } }, then { data: { information: { counters } } },
+            // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
+            // this recursive function helps doing that
+            const extractEmbeddedColumnValue = (propertyNames: string[], map: ObjectLiteral): any => {
+                const propertyName = propertyNames.shift();
+                if (propertyName) {
+                    map[propertyName] = {};
+                    extractEmbeddedColumnValue(propertyNames, map[propertyName]);
+                    return map;
+                }
+                map[this.propertyName] = id;
+                return map;
+            };
+            return extractEmbeddedColumnValue(propertyNames, {});
+
+        } else { // no embeds - no problems. Simply return column property name and its value of the entity
+            return { [this.propertyName]: id };
+        }
+    }
+
+    /**
+     * Extracts column value and returns its column name with this value in a literal object.
+     * If column is in embedded (or recursive embedded) it returns complex literal object.
+     *
+     * Examples what this method can return depend if this column is in embeds.
+     * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
+     *
+     * @stable
+     */
+    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral {
+
+        // extract column value from embeds of entity if column is in embedded
+        if (this.embeddedMetadata) {
+
+            // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
+            // we need to get value of "id" column from the post real entity object and return it in a
+            // { data: { information: { counters: { id: ... } } } } format
+
+            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+
+            // now need to access post[data][information][counters] to get column value from the counters
+            // and on each step we need to create complex literal object, e.g. first { data },
+            // then { data: { information } }, then { data: { information: { counters } } },
+            // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
+            // this recursive function helps doing that
+            const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral, map: ObjectLiteral): any => {
+                const propertyName = propertyNames.shift();
+                if (propertyName) {
+                    map[propertyName] = {};
+                    extractEmbeddedColumnValue(propertyNames, value ? value[propertyName] : undefined, map[propertyName]);
+                    return map;
+                }
+                map[this.propertyName] = value ? value[this.propertyName] : undefined;
+                return map;
+            };
+            return extractEmbeddedColumnValue(propertyNames, entity, {});
+
+        } else { // no embeds - no problems. Simply return column property name and its value of the entity
+            return { [this.propertyName]: entity[this.propertyName] };
+        }
+    }
+
+    /**
+     * Extracts column value from the given entity.
+     * If column is in embedded (or recursive embedded) it extracts its value from there.
+     *
+     * @stable
+     */
+    getEntityValue(entity: ObjectLiteral): any|undefined {
+
+        // extract column value from embeddeds of entity if column is in embedded
+        if (this.embeddedMetadata) {
+
+            // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
+            // we need to get value of "id" column from the post real entity object
+
+            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+
+            // next we need to access post[data][information][counters][this.propertyName] to get column value from the counters
+            // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
+            const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral): any => {
+                const propertyName = propertyNames.shift();
+                return propertyName ? extractEmbeddedColumnValue(propertyNames, value[propertyName]) : value;
+            };
+
+            // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
+            const embeddedObject = extractEmbeddedColumnValue(propertyNames, entity);
+            return embeddedObject ? embeddedObject[this.propertyName] : undefined;
+
+        } else { // no embeds - no problems. Simply return column name by property name of the entity
             return entity[this.propertyName];
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // Builder Method
+    // ---------------------------------------------------------------------
+
+    static build() {
+        // const columnMetadata = new ColumnMetadata();
+        // return columnMetadata;
     }
 
 }

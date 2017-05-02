@@ -3,9 +3,9 @@ import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-describe.skip("embedded > outer-primary-column", () => {
+describe("embedded > outer-primary-column", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -22,6 +22,7 @@ describe.skip("embedded > outer-primary-column", () => {
 
         const post1 = new Post();
         post1.title = "About cars";
+        post1.text = "About cars";
         post1.counters = new Counters();
         post1.counters.code = 1;
         post1.counters.comments = 1;
@@ -31,6 +32,7 @@ describe.skip("embedded > outer-primary-column", () => {
 
         const post2 = new Post();
         post2.title = "About airplanes";
+        post2.text = "About airplanes";
         post2.counters = new Counters();
         post2.counters.code = 2;
         post2.counters.comments = 2;
@@ -40,7 +42,7 @@ describe.skip("embedded > outer-primary-column", () => {
 
         const loadedPosts = await connection.entityManager
             .createQueryBuilder(Post, "post")
-            .orderBy("post.id")
+            .orderBy("post.counters.code")
             .getMany();
 
         expect(loadedPosts[0].title).to.be.equal("About cars");

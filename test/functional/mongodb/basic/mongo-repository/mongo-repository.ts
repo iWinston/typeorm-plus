@@ -1,10 +1,10 @@
 import "reflect-metadata";
 import {Connection} from "../../../../../src/connection/Connection";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {MongoRepository} from "../../../../../src/repository/MongoRepository";
 
-describe("mongodb > MongoRepository", () => {
+describe.skip("mongodb > MongoRepository", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

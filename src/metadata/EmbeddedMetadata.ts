@@ -1,4 +1,3 @@
-import {EntityMetadata} from "./EntityMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 
@@ -12,49 +11,40 @@ export class EmbeddedMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Its own entity metadata.
-     */
-    entityMetadata: EntityMetadata;
-
-    /**
      * Parent embedded in the case if this embedded inside other embedded.
      */
     parentEmbeddedMetadata: EmbeddedMetadata;
 
-    // ---------------------------------------------------------------------
-    // Private Properties
-    // ---------------------------------------------------------------------
-
     /**
      * Property name on which this embedded is attached.
      */
-    readonly propertyName: string;
+    propertyName: string;
 
     /**
-     * Embeddable table's columns.
+     * Columns inside this embed.
      */
-    readonly columns: ColumnMetadata[];
+    columns: ColumnMetadata[];
 
     /**
-     * Nested embeddable in this embeddable.
+     * Nested embeddable in this embeddable (which has current embedded as parent embedded).
      */
-    readonly embeddeds: EmbeddedMetadata[];
+    embeddeds: EmbeddedMetadata[];
 
     /**
-     * Embedded type.
+     * Embedded target type.
      */
-    readonly type?: Function;
+    type?: Function;
 
     /**
      * Indicates if this embedded is in array mode.
      */
-    readonly isArray: boolean;
+    isArray: boolean;
 
     /**
      * Prefix of the embedded, used instead of propertyName.
      * If set to empty string, then prefix is not set at all.
      */
-    readonly customPrefix: string|undefined;
+    customPrefix: string|undefined;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -83,11 +73,10 @@ export class EmbeddedMetadata {
 
     /**
      * Creates a new embedded object.
+     *
+     * @stable
      */
     create() {
-        if (!this.type)
-            throw new Error(`Embedded cannot be created because it does not have a type set.`);
-
         return new (this.type as any);
     }
 
@@ -96,12 +85,34 @@ export class EmbeddedMetadata {
      * By default its a property name of the class where this prefix is.
      * But if custom prefix is set then it takes its value as a prefix.
      * However if custom prefix is set to empty string prefix to column is not applied at all.
+     *
+     * @stable just need move to builder process
      */
-    get prefix() {
-        if (this.customPrefix !== undefined)
-            return this.customPrefix;
+    get prefix(): string {
+        const prefix = this.customPrefix ? this.customPrefix : this.propertyName;
+        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.prefix + "_" + prefix : prefix; // todo: use naming strategy instead of "_"  !!!
+    }
 
-        return this.propertyName;
+    /**
+     * Returns array of property names of current embed and all its parent embeds.
+     *
+     * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
+     * we need to get value of "id" column from the post real entity object.
+     * this method will return ["data", "information", "counters"]
+     *
+     * @stable just need move to builder process
+     */
+    get parentPropertyNames(): string[] {
+        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.parentPropertyNames.concat(this.propertyName) : [this.propertyName];
+    }
+
+    /**
+     * Returns all columns of this embed and all columns from its child embeds.
+     *
+     * @stable just need move to builder process
+     */
+    get columnsFromTree(): ColumnMetadata[] {
+        return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.columns);
     }
 
 }

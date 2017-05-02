@@ -12,6 +12,7 @@ import {RelationIdMetadata} from "./RelationIdMetadata";
 import {RelationCountMetadata} from "./RelationCountMetadata";
 import {TableType, TableTypes} from "./types/TableTypes";
 import {OrderByCondition} from "../find-options/OrderByCondition";
+import {OrmUtils} from "../util/OrmUtils";
 
 // todo: IDEA. store all entity metadata in the EntityMetadata too? (this will open more features for metadata objects + no need to access connection in lot of places)
 
@@ -168,7 +169,6 @@ export class EntityMetadata {
 
         const setEmbeddedEntityMetadataRecursively = (embeddeds: EmbeddedMetadata[]) => {
             embeddeds.forEach(embedded => {
-                embedded.entityMetadata = this;
                 embedded.columns.forEach(column => column.entityMetadata = this);
                 setEmbeddedEntityMetadataRecursively(embedded.embeddeds);
             });
@@ -228,11 +228,7 @@ export class EntityMetadata {
      * @deprecated
      */
     get columns(): ColumnMetadata[] {
-        let allColumns: ColumnMetadata[] = ([] as ColumnMetadata[]).concat(this._columns);
-        this.embeddeds.forEach(embedded => {
-            allColumns = allColumns.concat(embedded.columns);
-        });
-        return allColumns;
+        return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this._columns);
     }
 
     /**
@@ -341,7 +337,7 @@ export class EntityMetadata {
         // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
         // const parentEntityPrimaryColumns = this.hasParentIdColumn ? [this.parentIdColumn] : [];
         // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
-        return this._columns.filter(column => column.isPrimary);
+        return this.columns.filter(column => column.isPrimary);
         // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
         // const parentEntityPrimaryColumns = this.parentEntityMetadata ? this.parentEntityMetadata.primaryColumns : [];
         // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
@@ -643,59 +639,81 @@ export class EntityMetadata {
     }
 
     /**
-     * todo: undefined entities should not go there
+     * Creates entity id map from the given entity ids array.
+     *
+     * @stable
+     */
+    createEntityIdMap(ids: any[]) {
+        const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
+        return primaryColumns.reduce((map, column, index) => Object.assign(map, column.createEntityIdMap(ids[index])), {});
+    }
+
+    /**
+     * Checks each id in the given entity id map if they all aren't empty.
+     * If they all aren't empty it returns true.
+     * If at least one id in the given map is empty it returns false.
+     *
+     * @stable
+     */
+    isEntityMapEmpty(entity: ObjectLiteral): boolean {
+        const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
+        return !primaryColumns.every(column => {
+            const value = column.getEntityValue(entity);
+            return value !== null && value !== undefined;
+        });
+    }
+
+    /**
+     * Gets primary keys of the entity and returns them in a literal object.
+     * For example, for Post{ id: 1, title: "hello" } where id is primary it will return { id: 1 }
+     * For multiple primary keys it returns multiple keys in object.
+     * For primary keys inside embeds it returns complex object literal with keys in them.
+     *
+     * @stable
      */
     getEntityIdMap(entity: any): ObjectLiteral|undefined {
-        if (!entity)
+        if (!entity) // todo: shall it accept an empty entity? try to remove this
             return undefined;
 
-        const map: ObjectLiteral = {};
-        if (this.parentEntityMetadata) {
-            this.primaryColumnsWithParentIdColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
+        const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
+        const map = primaryColumns.reduce((map, column) => Object.assign(map, column.getEntityValueMap(entity)), {});
+        // console.log(map);
 
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
+        // const map: ObjectLiteral = {};
+        // primaryColumns.forEach(column => {
+        //     const entityValue = column.getEntityValue(entity);
+        //     if (entityValue === null || entityValue === undefined)
+        //         return;
 
-                if (columnRelation && columnRelation.joinColumns.length) {
-                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
+        //     map[column.propertyName] = Object.assign(map, entityValue);
+        // });
 
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
-                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
-
-                } else {
-                    map[column.propertyName] = entityValue;
-                }
-            });
-
-        } else {
-            this.primaryColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
-
-                // this case is real when your entity primary keys are relations
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
-
-                if (columnRelation && columnRelation.joinColumns.length) {
-                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
-
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
-                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
-
-                } else {
-                    map[column.propertyName] = entityValue;
-                }
-            });
-        }
         return Object.keys(map).length > 0 ? map : undefined;
+
+        // const map: ObjectLiteral = {};
+        // primaryColumns.forEach(column => {
+        //     const entityValue = column.getEntityValue(entity);
+        //     if (entityValue === null || entityValue === undefined)
+        //         return;
+        //
+        //     map[column.propertyName] = entityValue;
+            // this case is real when your entity primary keys are relations
+            // if entity id is a relation, then extract referenced column from that relation
+            /*const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
+
+            if (columnRelation && columnRelation.joinColumns.length) {
+                const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
+
+            } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
+                const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                map[column.propertyName] = ids.length === 1 ? ids[0] : ids;
+
+            } else {
+                map[column.propertyName] = entityValue;
+            }*/
+        // });
+        // return Object.keys(map).length > 0 ? map : undefined;
     }
 
     /**
@@ -703,50 +721,28 @@ export class EntityMetadata {
      */
     getDatabaseEntityIdMap(entity: ObjectLiteral): ObjectLiteral|undefined {
         const map: ObjectLiteral = {};
-        if (this.parentEntityMetadata) {
-            this.primaryColumnsWithParentIdColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
+        const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
+        primaryColumns.forEach(column => {
+            const entityValue = column.getEntityValue(entity);
+            if (entityValue === null || entityValue === undefined)
+                return;
 
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
+            map[column.fullName] = entityValue;
+            // if entity id is a relation, then extract referenced column from that relation
+            /*const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
-                if (columnRelation && columnRelation.joinColumns.length) {
-                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
+            if (columnRelation && columnRelation.joinColumns.length) {
+                const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                map[column.fullName] = ids.length === 1 ? ids[0] : ids;
 
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
-                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
+            } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
+                const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
+                map[column.fullName] = ids.length === 1 ? ids[0] : ids;
 
-                } else {
-                    map[column.fullName] = entityValue;
-                }
-            });
-
-        } else {
-            this.primaryColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
-
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
-
-                if (columnRelation && columnRelation.joinColumns.length) {
-                    const ids = columnRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
-
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumns.length) {
-                    const ids = columnRelation.inverseRelation.joinColumns.map(joinColumn => entityValue[joinColumn.referencedColumn.propertyName]);
-                    map[column.fullName] = ids.length === 1 ? ids[0] : ids;
-
-                } else {
-                    map[column.fullName] = entityValue;
-                }
-            });
-        }
+            } else {
+                map[column.fullName] = entityValue;
+            }*/
+        });
         const hasAllIds = Object.keys(map).every(key => {
             return map[key] !== undefined && map[key] !== null;
         });
@@ -791,6 +787,8 @@ export class EntityMetadata {
     /**
      * todo: undefined entities should not go there??
      * todo: shouldnt be entity ObjectLiteral here?
+     *
+     * @deprecated
      */
     getEntityIdMixedMap(entity: any): any {
         if (!entity)
@@ -801,6 +799,7 @@ export class EntityMetadata {
             return idMap;
 
         } else if (idMap) {
+            // console.log("value:", this.firstPrimaryColumn.getEntityValue(idMap));
             return idMap[this.firstPrimaryColumn.propertyName]; // todo: what about parent primary column?
         }
 
@@ -811,7 +810,8 @@ export class EntityMetadata {
      * Same as `getEntityIdMap` but the key of the map will be the column names instead of the property names.
      */
     getEntityIdColumnMap(entity: any): ObjectLiteral|undefined {
-        return this.transformIdMapToColumnNames(this.getEntityIdMap(entity));
+        return this.getDatabaseEntityIdMap(entity);
+        // return this.transformIdMapToColumnNames(this.getEntityIdMap(entity));
     }
 
     transformIdMapToColumnNames(idMap: ObjectLiteral|undefined) {
@@ -925,7 +925,17 @@ export class EntityMetadata {
         });
     }
 
+    /**
+     * @stable
+     */
     compareEntities(firstEntity: any, secondEntity: any) {
+
+        // if any entity ids are empty then they aren't equal
+        const isFirstEntityEmpty = this.isEntityMapEmpty(firstEntity);
+        const isSecondEntityEmpty = this.isEntityMapEmpty(secondEntity);
+        if (isFirstEntityEmpty || isSecondEntityEmpty)
+            return false;
+
         const firstEntityIds = this.getEntityIdMap(firstEntity);
         const secondEntityIds = this.getEntityIdMap(secondEntity);
         return this.compareIds(firstEntityIds, secondEntityIds);
@@ -935,19 +945,20 @@ export class EntityMetadata {
         if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
             return false;
 
-        return Object.keys(firstId).every(key => {
+        return OrmUtils.deepCompare(firstId, secondId);
+        // return Object.keys(firstId).every(key => {
 
-            // ids can be arrays in the case if they are mapped into multiple primary keys
-            if (firstId[key] instanceof Array && secondId[key] instanceof Array) {
-                return firstId[key].length === secondId[key].length &&
-                    firstId[key].every((key: any, index: number) => firstId[key][index] === secondId[key][index]);
+            // // ids can be arrays in the case if they are mapped into multiple primary keys
+            // if (firstId[key] instanceof Array && secondId[key] instanceof Array) {
+            //     return firstId[key].length === secondId[key].length &&
+            //         firstId[key].every((key: any, index: number) => firstId[key][index] === secondId[key][index]);
 
-            } else if (firstId[key] instanceof Object && secondId[key] instanceof Object) { // ids can be objects
-                return firstId[key].equals(secondId[key]);
-            }
+            // } else if (firstId[key] instanceof Object && secondId[key] instanceof Object) { // ids can be objects
+            //     return firstId[key].equals(secondId[key]);
+            // }
 
-            return firstId[key] === secondId[key];
-        });
+        //     return firstId[key] === secondId[key];
+        // });
     }
 
     /**

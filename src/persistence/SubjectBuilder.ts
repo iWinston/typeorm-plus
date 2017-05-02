@@ -236,17 +236,23 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // prepare entity ids of the subjects we need to load
             const allIds = subjectGroup.subjects
                 .filter(subject => !subject.hasDatabaseEntity) // we don't load if subject already has a database entity loaded
-                .map(subject => subject.metadata.getEntityIdMixedMap(subject.entity)) // we only need entity id
-                .filter(mixedId => { // we don't need empty ids
-                    if (mixedId instanceof Object)
-                        return Object.keys(mixedId).every(key => mixedId[key] !== undefined && mixedId[key] !== null && mixedId[key] !== "");
-
-                    return mixedId !== undefined && mixedId !== null && mixedId !== "";
+                .filter(subject => {
+                    return !subject.metadata.isEntityMapEmpty(subject.entity);
+                }) // we only need entity id
+                .map(subject => { // we don't need empty ids
+                    // console.log(subject.entity);
+                    return subject.metadata.getEntityIdMap(subject.entity);
+                    // if (mixedId instanceof Object)
+                    //     return Object.keys(mixedId).every(key => mixedId[key] !== undefined && mixedId[key] !== null && mixedId[key] !== "");
+                    //
+                    // return mixedId !== undefined && mixedId !== null && mixedId !== "";
                 });
 
             // if there no ids found (which means all entities are new and have generated ids) - then nothing to load there
+            // console.log("allIds: ", allIds);
             if (!allIds.length)
                 return;
+            // console.log("Y");
 
             // load database entities for all given ids
             // todo: such implementation is temporary, need to create a good abstraction there
@@ -270,6 +276,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject
             entities.forEach(entity => {
+                // console.log(1);
                 const subject = this.findByEntityLike(subjectGroup.target, entity);
                 if (subject)
                     subject.databaseEntity = entity;
@@ -639,7 +646,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             // now find subject with
                             let loadedSubject = this.findByDatabaseEntityLike(valueMetadata.target, persistValue);
                             if (!loadedSubject) {
-                                const id = valueMetadata.getEntityIdMixedMap(persistValue);
+                                const id = valueMetadata.getEntityIdMap(persistValue);
                                 if (id) { // if there is no id (for newly inserted) then we cant load
                                     const databaseEntity = await this.connection
                                         .getRepository<ObjectLiteral>(valueMetadata.target)

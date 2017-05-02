@@ -1625,25 +1625,25 @@ export class QueryBuilder<Entity> {
         const parameters: ObjectLiteral = {};
         const whereStrings = ids.map((id, index) => {
             const whereSubStrings: string[] = [];
-            if (metadata.hasMultiplePrimaryKeys) {
+            // if (metadata.hasMultiplePrimaryKeys) {
                 metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
                     whereSubStrings.push(ea(alias) + "." + ec(primaryColumn.fullName) + "=:id_" + index + "_" + secondIndex);
-                    parameters["id_" + index + "_" + secondIndex] = id[primaryColumn.fullName];
+                    parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
                 });
                 metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
                     whereSubStrings.push(ea(alias) + "." + ec(id[primaryColumn.fullName]) + "=:parentId_" + index + "_" + secondIndex);
-                    parameters["parentId_" + index + "_" + secondIndex] = id[primaryColumn.propertyName];
+                    parameters["parentId_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
                 });
-            } else {
-                if (metadata.primaryColumns.length > 0) {
-                    whereSubStrings.push(ea(alias) + "." + ec(metadata.firstPrimaryColumn.fullName) + "=:id_" + index);
-                    parameters["id_" + index] = id;
-
-                } else if (metadata.parentIdColumns.length > 0) {
-                    whereSubStrings.push(ea(alias) + "." + ec(metadata.parentIdColumns[0].fullName) + "=:parentId_" + index);
-                    parameters["parentId_" + index] = id;
-                }
-            }
+            // } else {
+            //     if (metadata.primaryColumns.length > 0) {
+            //         whereSubStrings.push(ea(alias) + "." + ec(metadata.firstPrimaryColumn.fullName) + "=:id_" + index);
+            //         parameters["id_" + index] = id;
+            //
+            //     } else if (metadata.parentIdColumns.length > 0) {
+            //         whereSubStrings.push(ea(alias) + "." + ec(metadata.parentIdColumns[0].fullName) + "=:parentId_" + index);
+            //         parameters["parentId_" + index] = id;
+            //     }
+            // }
             return whereSubStrings.join(" AND ");
         });
 

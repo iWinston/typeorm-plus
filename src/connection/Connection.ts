@@ -6,7 +6,7 @@ import {ObjectType} from "../common/ObjectType";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
-import {getMetadataArgsStorage, getFromContainer} from "../index";
+import {getFromContainer, getMetadataArgsStorage} from "../index";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
@@ -661,7 +661,7 @@ export class Connection {
     /**
      * Builds all registered metadatas.
      */
-    protected buildMetadatas() {
+    public buildMetadatas() {
 
         this.entitySubscribers.length = 0;
         this.entityListeners.length = 0;

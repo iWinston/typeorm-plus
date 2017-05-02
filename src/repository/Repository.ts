@@ -343,9 +343,16 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.tableName);
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
-            .andWhereInIds(ids)
-            .getMany();
+        FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
+
+        ids = ids.map(id => {
+            if (!this.metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
+                return this.metadata.createEntityIdMap([id]);
+            }
+            return id;
+        });
+        qb.andWhereInIds(ids);
+        return qb.getMany();
     }
 
     /**
@@ -384,9 +391,18 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
         const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.tableName);
-        return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
-            .andWhereInIds([id])
-            .getOne();
+        if (this.metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
+            // const columnNames = this.metadata.getEntityIdMap({  });
+            throw new Error(`You have multiple primary keys in your entity, to use findOneById with multiple primary keys please provide ` +
+                `complete object with all entity ids, like this: { firstKey: value, secondKey: value }`);
+        }
+
+        FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
+        if (!this.metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
+           id = this.metadata.createEntityIdMap([id]);
+        }
+        qb.andWhereInIds([id]);
+        return qb.getOne();
     }
 
     /**
