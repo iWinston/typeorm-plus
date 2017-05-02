@@ -1,6 +1,6 @@
-import {RelationTypes, RelationType} from "./types/RelationTypes";
+import {RelationType, RelationTypes} from "./types/RelationTypes";
 import {EntityMetadata} from "./EntityMetadata";
-import {OnDeleteType, ForeignKeyMetadata} from "./ForeignKeyMetadata";
+import {ForeignKeyMetadata, OnDeleteType} from "./ForeignKeyMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "./ColumnMetadata";
@@ -209,7 +209,7 @@ export class RelationMetadata {
      * Join table name.
      */
     get joinTableName(): string {
-        return this.junctionEntityMetadata.table.name;
+        return this.junctionEntityMetadata.tableName;
     }
 
 

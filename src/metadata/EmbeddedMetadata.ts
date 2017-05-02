@@ -1,5 +1,4 @@
 import {EntityMetadata} from "./EntityMetadata";
-import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 
@@ -32,11 +31,6 @@ export class EmbeddedMetadata {
     readonly propertyName: string;
 
     /**
-     * Embeddable table.
-     */
-    readonly table: TableMetadata;
-
-    /**
      * Embeddable table's columns.
      */
     readonly columns: ColumnMetadata[];
@@ -66,15 +60,13 @@ export class EmbeddedMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(table: TableMetadata,
-                columns: ColumnMetadata[],
+    constructor(columns: ColumnMetadata[],
                 embeddeds: EmbeddedMetadata[],
                 args: EmbeddedMetadataArgs) {
         this.type = args.type ? args.type() : undefined;
         this.propertyName = args.propertyName;
         this.isArray = args.isArray;
         this.customPrefix = args.prefix;
-        this.table = table;
         this.columns = columns;
         this.embeddeds = embeddeds;
         this.embeddeds.forEach(embedded => {

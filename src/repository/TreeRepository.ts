@@ -49,7 +49,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
         const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.fullName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
         return this.createQueryBuilder(alias)
-            .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
+            .innerJoin(this.metadata.closureJunctionTable.tableName, closureTableAlias, joinCondition)
             .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 
@@ -97,7 +97,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
         const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.fullName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
         return this.createQueryBuilder(alias)
-            .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
+            .innerJoin(this.metadata.closureJunctionTable.tableName, closureTableAlias, joinCondition)
             .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
     }
 

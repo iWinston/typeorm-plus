@@ -62,14 +62,14 @@ export class IndexMetadata {
      * Gets index's name.
      */
     get name() {
-        return this.entityMetadata.namingStrategy.indexName(this._name, this.entityMetadata.table.name, this.columns);
+        return this.entityMetadata.namingStrategy.indexName(this._name, this.entityMetadata.tableName, this.columns);
     }
 
     /**
      * Gets the table name on which index is applied.
      */
     get tableName() {
-        return this.entityMetadata.table.name;
+        return this.entityMetadata.tableName;
     }
 
     /**

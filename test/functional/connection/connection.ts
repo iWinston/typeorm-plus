@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
@@ -340,7 +340,7 @@ describe("Connection", () => {
             connection.importNamingStrategies([FirstCustomNamingStrategy]);
             connection.useNamingStrategy(FirstCustomNamingStrategy);
             await connection.connect();
-            connection.getMetadata(Post).table.name.should.be.equal("POST");
+            connection.getMetadata(Post).tableName.should.be.equal("POST");
         });
 
         it("should use naming strategy when its name passed to useNamingStrategy method", async () => {
@@ -348,7 +348,7 @@ describe("Connection", () => {
             connection.importNamingStrategies([SecondCustomNamingStrategy]);
             connection.useNamingStrategy("secondCustomNamingStrategy");
             await connection.connect();
-            connection.getMetadata(Category).table.name.should.be.equal("category");
+            connection.getMetadata(Category).tableName.should.be.equal("category");
         });
 
         it("should throw an error if not registered naming strategy was used (assert by name)", () => {

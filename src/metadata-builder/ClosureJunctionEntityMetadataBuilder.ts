@@ -3,7 +3,6 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {TableMetadata} from "../metadata/TableMetadata";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
@@ -14,7 +13,7 @@ import {Driver} from "../driver/Driver";
  */
 export interface ClosureJunctionEntityMetadataBuilderArgs {
     namingStrategy: NamingStrategyInterface;
-    table: TableMetadata;
+    entityMetadata: EntityMetadata;
     primaryColumn: ColumnMetadata;
     hasTreeLevelColumn: boolean;
 }
@@ -64,22 +63,17 @@ export class ClosureJunctionEntityMetadataBuilder {
             }));
         }
 
-        const closureJunctionTableMetadata = new TableMetadata({
-            target: "__virtual__",
-            name: args.table.name,
-            type: "closure-junction"
-        });
-
         return new EntityMetadata({
             junction: true,
             target: "__virtual__",
             tablesPrefix: driver.options.tablesPrefix,
             namingStrategy: args.namingStrategy,
-            tableMetadata: closureJunctionTableMetadata,
+            tableName: args.entityMetadata.tableName,
+            tableType: "closure-junction",
             columnMetadatas: columns,
             foreignKeyMetadatas: [
-                new ForeignKeyMetadata([columns[0]], args.table, [args.primaryColumn]),
-                new ForeignKeyMetadata([columns[1]], args.table, [args.primaryColumn])
+                new ForeignKeyMetadata([columns[0]], args.entityMetadata, [args.primaryColumn]),
+                new ForeignKeyMetadata([columns[1]], args.entityMetadata, [args.primaryColumn])
             ]
         }, lazyRelationsWrapper);
     }

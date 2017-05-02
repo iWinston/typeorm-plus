@@ -78,7 +78,7 @@ export class JoinAttribute {
      * Name of the table which we should join.
      */
     get tableName(): string {
-        return this.metadata ? this.metadata.table.name : this.entityOrProperty as string;
+        return this.metadata ? this.metadata.tableName : this.entityOrProperty as string;
     }
 
     /**
@@ -146,7 +146,7 @@ export class JoinAttribute {
                 return metadata;
 
             // check if we have entity with such table name, and use its metadata if found
-            return this.connection.entityMetadatas.find(metadata => metadata.table.name === this.entityOrProperty);
+            return this.connection.entityMetadatas.find(metadata => metadata.tableName === this.entityOrProperty);
         }
 
         return undefined;

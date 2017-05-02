@@ -214,7 +214,7 @@ export class QueryBuilder<Entity> {
     fromTable(tableName: string, aliasName: string) {
 
         // if table has a metadata then find it to properly escape its properties
-        const metadata = this.connection.entityMetadatas.find(metadata => metadata.table.name === tableName);
+        const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
         if (metadata) {
             this.expressionMap.createMainAlias({
                 name: aliasName,
@@ -1256,7 +1256,7 @@ export class QueryBuilder<Entity> {
         const aliasName = this.expressionMap.mainAlias.name;
 
         if (this.expressionMap.mainAlias.hasMetadata) {
-            tableName = this.expressionMap.mainAlias.metadata.table.name;
+            tableName = this.expressionMap.mainAlias.metadata.tableName;
 
             allSelects.push(...this.buildEscapedEntityColumnSelects(aliasName, this.expressionMap.mainAlias.metadata));
             excludedSelects.push(...this.findEntityColumnSelects(aliasName, this.expressionMap.mainAlias.metadata));
@@ -1282,7 +1282,7 @@ export class QueryBuilder<Entity> {
 
         if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias.hasMetadata) {
             if (this.expressionMap.mainAlias!.metadata.parentEntityMetadata && this.expressionMap.mainAlias!.metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + ea(this.expressionMap.mainAlias!.metadata.parentEntityMetadata.table.name);
+                const alias = "parentIdColumn_" + ea(this.expressionMap.mainAlias!.metadata.parentEntityMetadata.tableName);
                 this.expressionMap.mainAlias!.metadata.parentEntityMetadata.columns.forEach(column => {
                     // TODO implement partial select
                     allSelects.push({ selection: ea(alias + "." + column.fullName), aliasName: alias + "_" + column.fullName });
@@ -1470,7 +1470,7 @@ export class QueryBuilder<Entity> {
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
 
             } else { // means many-to-many
-                const junctionTableName = relation.junctionEntityMetadata.table.name;
+                const junctionTableName = relation.junctionEntityMetadata.tableName;
 
                 const junctionAlias = joinAttr.junctionAlias;
                 let junctionCondition = "", destinationCondition = "";
@@ -1509,8 +1509,8 @@ export class QueryBuilder<Entity> {
         if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
             if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.table.name;
-                const parentJoin = " JOIN " + et(metadata.parentEntityMetadata.table.name) + " " + ea(alias) + " ON " +
+                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
+                const parentJoin = " JOIN " + et(metadata.parentEntityMetadata.tableName) + " " + ea(alias) + " ON " +
                     metadata.parentIdColumns.map(parentIdColumn => {
                         return this.expressionMap.mainAlias!.name + "." + parentIdColumn.fullName + "=" + ea(alias) + "." + parentIdColumn.propertyName;
                     });
@@ -1531,7 +1531,7 @@ export class QueryBuilder<Entity> {
         // if table has a default order then apply it
         let orderBys = this.expressionMap.orderBys;
         if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.table.orderBy || {};
+            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
         }
 
         const selectString = Object.keys(orderBys)
@@ -1557,7 +1557,7 @@ export class QueryBuilder<Entity> {
 
         // if table has a default order then apply it
         if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.table.orderBy || {};
+            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
         }
 
         // if user specified a custom order then apply it

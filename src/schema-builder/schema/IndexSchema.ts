@@ -60,7 +60,7 @@ export class IndexSchema {
      */
     static create(indexMetadata: IndexMetadata): IndexSchema {
         return new IndexSchema(
-            indexMetadata.entityMetadata.table.name,
+            indexMetadata.entityMetadata.tableName,
             indexMetadata.name,
             indexMetadata.columns,
             indexMetadata.isUnique

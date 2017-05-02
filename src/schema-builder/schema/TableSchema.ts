@@ -223,7 +223,7 @@ export class TableSchema {
      * todo: need deeper implementation
      */
     static create(entityMetadata: EntityMetadata, queryRunner: QueryRunner) {
-        const tableSchema = new TableSchema(entityMetadata.table.name);
+        const tableSchema = new TableSchema(entityMetadata.tableName);
         entityMetadata.columns.forEach(column => {
             tableSchema.columns.push(ColumnSchema.create(column, queryRunner.normalizeType(column)));
         });

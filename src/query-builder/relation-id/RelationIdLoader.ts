@@ -56,8 +56,8 @@ export class RelationIdLoader {
                 const relation = relationIdAttr.relation; // "category.posts"
                 const inverseRelation = relation.inverseRelation; // "post.category"
                 const referenceColumnName = inverseRelation.joinColumns[0].referencedColumn.propertyName; // post id
-                const inverseSideTable = relation.inverseEntityMetadata.table.target; // Post
-                const inverseSideTableName = relation.inverseEntityMetadata.table.name; // post
+                const inverseSideTable = relation.inverseEntityMetadata.target; // Post
+                const inverseSideTableName = relation.inverseEntityMetadata.tableName; // post
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
                 const inverseSidePropertyName = inverseRelation.propertyName; // "category" from "post.category"
 
@@ -162,9 +162,9 @@ export class RelationIdLoader {
                     return { relationIdAttribute: relationIdAttr, results: [] };
 
                 const junctionAlias = relationIdAttr.junctionAlias;
-                const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.table.name;
+                const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
-                const junctionTableName = relationIdAttr.relation.junctionEntityMetadata.table.name;
+                const junctionTableName = relationIdAttr.relation.junctionEntityMetadata.tableName;
                 const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
                     " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 

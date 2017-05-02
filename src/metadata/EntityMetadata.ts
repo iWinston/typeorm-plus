@@ -1,6 +1,5 @@
-import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
-import {RelationMetadata, PropertyTypeInFunction} from "./RelationMetadata";
+import {PropertyTypeInFunction, RelationMetadata} from "./RelationMetadata";
 import {IndexMetadata} from "./IndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
@@ -11,6 +10,8 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {RelationIdMetadata} from "./RelationIdMetadata";
 import {RelationCountMetadata} from "./RelationCountMetadata";
+import {TableType, TableTypes} from "./types/TableTypes";
+import {OrderByCondition} from "../find-options/OrderByCondition";
 
 // todo: IDEA. store all entity metadata in the EntityMetadata too? (this will open more features for metadata objects + no need to access connection in lot of places)
 
@@ -56,7 +57,12 @@ export class EntityMetadata {
     /**
      * Entity's table metadata.
      */
-    readonly table: TableMetadata;
+    readonly _tableName?: string;
+
+    /**
+     * Specifies a default order by used for queries from this table when no explicit order by is specified.
+     */
+    readonly _orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
 
     /**
      * Entity's relation metadatas.
@@ -105,6 +111,21 @@ export class EntityMetadata {
      */
     readonly tablesPrefix?: string;
 
+    /**
+     * Table's database engine type (like "InnoDB", "MyISAM", etc).
+     */
+    readonly engine?: string;
+
+    /**
+     * Whether table must be synced during schema build or not
+     */
+    readonly skipSchemaSync?: boolean;
+
+    /**
+     * Table type. Tables can be abstract, closure, junction, embedded, etc.
+     */
+    tableType: TableType = "regular";
+
     // -------------------------------------------------------------------------
     // Private properties
     // -------------------------------------------------------------------------
@@ -124,7 +145,8 @@ export class EntityMetadata {
         this.junction = args.junction;
         this.tablesPrefix = args.tablesPrefix;
         this.namingStrategy = args.namingStrategy;
-        this.table = args.tableMetadata;
+        this._tableName = args.tableName;
+        this.tableType = args.tableType;
         this._columns = args.columnMetadatas || [];
         this.relations = args.relationMetadatas || [];
         this.relationIds = args.relationIdMetadatas || [];
@@ -134,8 +156,9 @@ export class EntityMetadata {
         this.embeddeds = args.embeddedMetadatas || [];
         this.discriminatorValue = args.discriminatorValue;
         this.inheritanceType = args.inheritanceType;
-
-        this.table.entityMetadata = this;
+        this.engine = args.engine;
+        this.skipSchemaSync = args.skipSchemaSync;
+        this._orderBy = args.orderBy;
         this._columns.forEach(column => column.entityMetadata = this);
         this.relations.forEach(relation => relation.entityMetadata = this);
         this.relationIds.forEach(relationId => relationId.entityMetadata = this);
@@ -161,10 +184,43 @@ export class EntityMetadata {
      * Entity's name. Equal to entity target class's name if target is set to table, or equals to table name if its set.
      */
     get name(): string {
-        if (!this.table)
-            throw new Error("No table target set to the entity metadata.");
+        return this.targetName ? this.targetName : this.tableName;
+    }
 
-        return this.targetName ? this.targetName : this.table.name;
+    /**
+     * Entity's name. Equal to entity target class's name if target is set to table, or equals to table name if its set.
+     */
+    get tableName(): string {
+        if (this.tablesPrefix)
+            return this.namingStrategy.prefixTableName(this.tablesPrefix, this.tableNameWithoutPrefix);
+
+        return this.tableNameWithoutPrefix;
+    }
+
+    /**
+     * Gets the table name without global table prefix.
+     * When querying table you need a table name with prefix, but in some scenarios,
+     * for example when you want to name a junction table that contains names of two other tables,
+     * you may want a table name without prefix.
+     */
+    get tableNameWithoutPrefix() {
+        if (this.isClosureJunction && this._tableName)
+            return this.namingStrategy.closureJunctionTableName(this._tableName);
+
+        // otherwise generate table name from target's name
+        const name = this.target instanceof Function ? (this.target as any).name : this.target;
+        return this.namingStrategy.tableName(name, this._tableName);
+    }
+
+    /**
+     * Specifies a default order by used for queries from this table when no explicit order by is specified.
+     * If default order by was not set, then returns undefined.
+     */
+    get orderBy(): OrderByCondition|undefined {
+        if (this._orderBy instanceof Function)
+            return this._orderBy(this.createPropertiesMap());
+
+        return this._orderBy;
     }
 
     /**
@@ -961,6 +1017,72 @@ export class EntityMetadata {
     get hasNonNullableColumns(): boolean {
         return this.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
         // return this.relationsWithJoinColumns.some(relation => relation.isNullable || relation.isPrimary);
+    }
+
+    /**
+     * Checks if this table is regular.
+     * All non-specific tables are just regular tables. Its a default table type.
+     */
+    get isRegular() {
+        return this.tableType === TableTypes.REGULAR;
+    }
+
+    /**
+     * Checks if this table is abstract.
+     * This type is for the tables that does not exist in the database,
+     * but provide columns and relations for the tables of the child classes who inherit them.
+     */
+    get isAbstract() {
+        return this.tableType === TableTypes.ABSTRACT;
+    }
+
+    /**
+     * Checks if this table is abstract.
+     * Junction table is a table automatically created by many-to-many relationship.
+     */
+    get isJunction() {
+        return this.tableType === TableTypes.JUNCTION;
+    }
+
+    /**
+     * Checks if this table is a closure table.
+     * Closure table is one of the tree-specific tables that supports closure database pattern.
+     */
+    get isClosure() {
+        return this.tableType === TableTypes.CLOSURE;
+    }
+
+    /**
+     * Checks if this table is a junction table of the closure table.
+     * This type is for tables that contain junction metadata of the closure tables.
+     */
+    get isClosureJunction() {
+        return this.tableType === TableTypes.CLOSURE_JUNCTION;
+    }
+
+    /**
+     * Checks if this table is an embeddable table.
+     * Embeddable tables are not stored in the database as separate tables.
+     * Instead their columns are embed into tables who owns them.
+     */
+    get isEmbeddable() {
+        return this.tableType === TableTypes.EMBEDDABLE;
+    }
+
+    /**
+     * Checks if this table is a single table child.
+     * Special table type for tables that are mapped into single table using Single Table Inheritance pattern.
+     */
+    get isSingleTableChild() {
+        return this.tableType === TableTypes.SINGLE_TABLE_CHILD;
+    }
+
+    /**
+     * Checks if this table is a class table child.
+     * Special table type for tables that are mapped into multiple tables using Class Table Inheritance pattern.
+     */
+    get isClassTableChild() {
+        return this.tableType === TableTypes.CLASS_TABLE_CHILD;
     }
 
 }

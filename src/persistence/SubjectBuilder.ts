@@ -300,7 +300,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
         // note: we can't use extractRelationValuesFromEntity here because it does not handle empty arrays
         const promises = subject.metadata.relations.map(async relation => {
             const valueMetadata = relation.inverseEntityMetadata;
-            const qbAlias = valueMetadata.table.name;
+            const qbAlias = valueMetadata.tableName;
 
             // added for type-safety, but subject without databaseEntity cant come here anyway because of checks on upper levels
             if (!subject.hasDatabaseEntity) return;
@@ -555,7 +555,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.table.name, joinAlias, conditions)
+                        .innerJoin(relation.junctionEntityMetadata.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
                         .getMany();
@@ -586,7 +586,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.table.name, joinAlias, conditions)
+                        .innerJoin(relation.junctionEntityMetadata.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
                         .getMany();

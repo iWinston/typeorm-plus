@@ -94,7 +94,7 @@ export class LazyRelationsWrapper {
                 } else { // ManyToMany
 
                     const mainAlias = relation.propertyName;
-                    const joinAlias = relation.junctionEntityMetadata.table.name;
+                    const joinAlias = relation.junctionEntityMetadata.tableName;
                     let joinColumnConditions: string[] = [];
                     let inverseJoinColumnConditions: string[] = [];
                     let parameters: ObjectLiteral;

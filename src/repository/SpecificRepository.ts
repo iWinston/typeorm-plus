@@ -61,11 +61,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
-            table = relation.entityMetadata.table.name;
+            table = relation.entityMetadata.tableName;
             values[relation.name] = relatedEntityId;
             conditions[relation.joinColumns[0].referencedColumn.fullName] = entityId;
         } else {
-            table = relation.inverseEntityMetadata.table.name;
+            table = relation.inverseEntityMetadata.tableName;
             values[relation.inverseRelation.name] = relatedEntityId;
             conditions[relation.inverseRelation.joinColumns[0].referencedColumn.fullName] = entityId;
         }
@@ -112,11 +112,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
-            table = relation.inverseEntityMetadata.table.name;
+            table = relation.inverseEntityMetadata.tableName;
             values[relation.inverseRelation.name] = relatedEntityId;
             conditions[relation.inverseRelation.joinColumns[0].referencedColumn.fullName] = entityId;
         } else {
-            table = relation.entityMetadata.table.name;
+            table = relation.entityMetadata.tableName;
             values[relation.name] = relatedEntityId;
             conditions[relation.joinColumns[0].referencedColumn.fullName] = entityId;
         }
@@ -168,7 +168,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 values[relation.junctionEntityMetadata.columns[0].fullName] = relatedEntityId;
             }
 
-            return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
+            return queryRunner.insert(relation.junctionEntityMetadata.tableName, values);
         });
         await Promise.all(insertPromises);
 
@@ -218,7 +218,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                     values[relation.junctionEntityMetadata.columns[0].fullName] = relatedEntityId;
                 }
 
-                return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
+                return queryRunner.insert(relation.junctionEntityMetadata.tableName, values);
             });
             await Promise.all(insertPromises);
 
@@ -262,7 +262,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
-            .fromTable(relation.junctionEntityMetadata.table.name, "junctionEntity");
+            .fromTable(relation.junctionEntityMetadata.tableName, "junctionEntity");
 
         const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[0].fullName : relation.junctionEntityMetadata.columns[1].fullName);
         const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[1].fullName : relation.junctionEntityMetadata.columns[0].fullName);
@@ -311,7 +311,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
-            .from(relation.junctionEntityMetadata.table.name, "junctionEntity");
+            .from(relation.junctionEntityMetadata.tableName, "junctionEntity");
 
         const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].fullName : relation.junctionEntityMetadata.columns[0].fullName;
         const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].fullName : relation.junctionEntityMetadata.columns[1].fullName;
@@ -381,7 +381,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async removeById(id: any): Promise<void> {
-        const alias = this.metadata.table.name;
+        const alias = this.metadata.tableName;
         const parameters: ObjectLiteral = {};
         let condition = "";
 
@@ -408,7 +408,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async removeByIds(ids: any[]): Promise<void> {
-        const alias = this.metadata.table.name;
+        const alias = this.metadata.tableName;
         const parameters: ObjectLiteral = {};
         let condition = "";
 
@@ -464,7 +464,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             inverseEntityColumnNames.forEach(columnName => {
                 qb.select(ea("junction") + "." + ec(columnName) + " AS " + ea(columnName));
             });
-            qb.fromTable(relation.junctionEntityMetadata.table.name, "junction");
+            qb.fromTable(relation.junctionEntityMetadata.tableName, "junction");
             Object.keys(entityId).forEach((columnName) => {
                 const junctionColumnName = ownerEntityColumns.find(joinColumn => joinColumn.referencedColumn.name === columnName);
                 qb.andWhere(ea("junction") + "." + ec(junctionColumnName!.name) + "=:" + junctionColumnName!.name + "_entityId", {[junctionColumnName!.name + "_entityId"]: entityId[columnName]});

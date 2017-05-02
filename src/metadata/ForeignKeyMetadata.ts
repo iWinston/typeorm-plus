@@ -1,5 +1,4 @@
 import {ColumnMetadata} from "./ColumnMetadata";
-import {TableMetadata} from "./TableMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 
 /**
@@ -21,6 +20,11 @@ export class ForeignKeyMetadata {
      */
     entityMetadata: EntityMetadata;
 
+    /**
+     * Entity metadata which this foreign key is references.
+     */
+    referencedEntityMetadata: EntityMetadata;
+
     // -------------------------------------------------------------------------
     // Public Readonly Properties
     // -------------------------------------------------------------------------
@@ -29,11 +33,6 @@ export class ForeignKeyMetadata {
      * Array of columns of this foreign key.
      */
     readonly columns: ColumnMetadata[];
-
-    /**
-     * Table to which this foreign key is references.
-     */
-    readonly referencedTable: TableMetadata;
 
     /**
      * Array of referenced columns.
@@ -50,11 +49,11 @@ export class ForeignKeyMetadata {
     // -------------------------------------------------------------------------
 
     constructor(columns: ColumnMetadata[],
-                referencedTable: TableMetadata,
+                referencedEntityMetadata: EntityMetadata,
                 referencedColumns: ColumnMetadata[],
                 onDelete?: OnDeleteType) {
         this.columns = columns;
-        this.referencedTable = referencedTable;
+        this.referencedEntityMetadata = referencedEntityMetadata;
         this.referencedColumns = referencedColumns;
         if (onDelete)
             this.onDelete = onDelete;
@@ -68,21 +67,21 @@ export class ForeignKeyMetadata {
      * Gets the table name to which this foreign key is applied.
      */
     get tableName() {
-        return this.entityMetadata.table.name;
+        return this.entityMetadata.tableName;
     }
 
     /**
      * Gets the table name to which this foreign key is referenced.
      */
     get referencedTableName() {
-        return this.referencedTable.name;
+        return this.referencedEntityMetadata.tableName;
     }
 
     /**
      * Gets foreign key name.
      */
     get name() {
-        return this.entityMetadata.namingStrategy.foreignKeyName(this.tableName, this.columnNames, this.referencedTable.name, this.referencedColumnNames);
+        return this.entityMetadata.namingStrategy.foreignKeyName(this.tableName, this.columnNames, this.referencedEntityMetadata.tableName, this.referencedColumnNames);
     }
 
     /**

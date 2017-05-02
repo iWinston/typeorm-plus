@@ -279,7 +279,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Counts entities that match given find options or conditions.
      */
     count(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<number> {
-        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.tableName);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
     }
 
@@ -297,7 +297,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given find options or conditions.
      */
     find(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
-        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.tableName);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
 
@@ -321,7 +321,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * but ignores pagination settings (from and take options).
      */
     findAndCount(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[ Entity[], number ]> {
-        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.tableName);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
 
@@ -342,7 +342,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Optionally find options can be applied.
      */
     findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
-        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || this.metadata.tableName);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
             .andWhereInIds(ids)
             .getMany();
@@ -362,7 +362,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity that matches given conditions.
      */
     findOne(optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
-        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.tableName);
         return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
     }
 
@@ -383,7 +383,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Optionally find options or conditions can be applied.
      */
     findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
-        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.table.name);
+        const qb = this.createQueryBuilder(FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || this.metadata.tableName);
         return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions)
             .andWhereInIds([id])
             .getOne();
@@ -451,7 +451,7 @@ export class Repository<Entity extends ObjectLiteral> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
         try {
-            return await queryRunner.truncate(this.metadata.table.name); // await is needed here because we are using finally
+            return await queryRunner.truncate(this.metadata.tableName); // await is needed here because we are using finally
 
         } finally {
             await queryRunnerProvider.release(queryRunner);
