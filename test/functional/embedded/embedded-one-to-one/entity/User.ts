@@ -1,8 +1,8 @@
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
 import {Post} from "./Post";
+import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
 
 @Entity()
 export class User {
@@ -13,7 +13,7 @@ export class User {
     @Column()
     name: string;
 
-    @ManyToMany(type => Post, post => post.counters.likedUsers)
-    likedPosts: Post[];
+    @OneToOne(type => Post, post => post.counters.likedUser)
+    likedPost: Post;
 
 }

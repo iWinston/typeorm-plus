@@ -124,7 +124,7 @@ export class EntityMetadataBuilder {
             entityMetadata.relations.forEach(relation => {
                 const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type || (typeof relation.type === "string" && m.targetName === relation.type));
                 if (!inverseEntityMetadata)
-                    throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyName + " was not found.");
+                    throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found.");
 
                 relation.inverseEntityMetadata = inverseEntityMetadata;
             });
@@ -178,10 +178,6 @@ export class EntityMetadataBuilder {
             });
 
         entityMetadatas.forEach(entityMetadata => {
-            const mergedArgs = allMergedArgs.find(mergedArgs => {
-                return mergedArgs.table.target === entityMetadata.target;
-            });
-            if (!mergedArgs) return;
 
             // create entity's relations join columns
             entityMetadata.oneToOneRelations
@@ -211,7 +207,7 @@ export class EntityMetadataBuilder {
                     // we need to go thought each many-to-one relation without join column decorator set
                     // and create join column metadata args for them
 
-                    const joinColumnArgsArray = mergedArgs.joinColumns.filterByProperty(relation.propertyName);
+                    const joinColumnArgsArray = metadataArgsStorage.findJoinColumns(relation.target, relation.propertyName);
 
                     const hasAnyReferencedColumnName = joinColumnArgsArray.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
                     const manyToOneWithoutJoinColumn = joinColumnArgsArray.length === 0 && relation.isManyToOne;

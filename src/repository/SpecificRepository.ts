@@ -46,12 +46,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async setRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async setRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
         // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
         //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
         if (relation.isManyToMany)
@@ -97,14 +94,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async setInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
+    async setInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
         // todo: fix issues with joinColumns[0]
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
         // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
         //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
         if (relation.isManyToMany)
@@ -147,14 +140,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently add a relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async addToRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async addToRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
@@ -195,15 +185,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently add a relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async addToInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async addToInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyName(propertyPath);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
-
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
@@ -247,14 +233,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async removeFromRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async removeFromRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         // check if given relation entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
         if (!relatedEntityIds || !relatedEntityIds.length)
@@ -296,14 +279,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async removeFromInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async removeFromInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyName(propertyPath);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         // check if given entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
         if (!entityIds || !entityIds.length)
@@ -526,8 +506,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (relationOrName instanceof RelationMetadata)
             return relationOrName;
 
-        const relationName = relationOrName instanceof Function ? relationOrName(this.metadata.createPropertiesMap()) : relationOrName;
-        return this.metadata.findRelationWithPropertyName(relationName);
+        const relationPropertyPath = relationOrName instanceof Function ? relationOrName(this.metadata.createPropertiesMap()) : relationOrName;
+        return this.metadata.findRelationWithPropertyPath(relationPropertyPath);
     }
 
     /**

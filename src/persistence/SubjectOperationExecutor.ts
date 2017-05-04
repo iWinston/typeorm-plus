@@ -325,6 +325,7 @@ export class SubjectOperationExecutor {
             // we need to update relation ids if newly inserted objects are used from inverse side in one-to-many inverse relation
             // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
             const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
+            // console.log(oneToManyAndOneToOneNonOwnerRelations);
             subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
                 .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
                     relation.inverseRelation.joinColumns.forEach(joinColumn => {
@@ -723,7 +724,7 @@ export class SubjectOperationExecutor {
                 throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
 
-            const addEmbeddedValuesRecursively = (entity: any, value: any, embeddeds: EmbeddedMetadata[]) => {
+            /*const addEmbeddedValuesRecursively = (entity: any, value: any, embeddeds: EmbeddedMetadata[]) => {
                 embeddeds.forEach(embedded => {
                     if (!entity[embedded.propertyName])
                         return;
@@ -746,14 +747,14 @@ export class SubjectOperationExecutor {
                     }
                     addEmbeddedValuesRecursively(entity[embedded.propertyName], value[embedded.prefix], embedded.embeddeds);
                 });
-            };
+            };*/
 
             const value: ObjectLiteral = {};
-            subject.metadata.columnsWithoutEmbeddeds.forEach(column => {
+            subject.metadata.columns.forEach(column => {
                 if (entity[column.propertyName] !== undefined)
-                    value[column.fullName] = entity[column.propertyName];
+                    value[column.fullName] = column.getValue(entity);
             });
-            addEmbeddedValuesRecursively(entity, value, subject.metadata.embeddeds);
+            // addEmbeddedValuesRecursively(entity, value, subject.metadata.embeddeds);
 
             // if number of updated columns = 0 no need to update updated date and version columns
             if (Object.keys(value).length === 0)
@@ -787,10 +788,9 @@ export class SubjectOperationExecutor {
         });
 
         subject.diffRelations.forEach(relation => {
-            const metadata = this.connection.getMetadata(relation.entityTarget);
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.tableName);
+            let valueMap = valueMaps.find(valueMap => valueMap.tableName === relation.entityMetadata.tableName);
             if (!valueMap) {
-                valueMap = { tableName: metadata.tableName, metadata: metadata, values: {} };
+                valueMap = { tableName: relation.entityMetadata.tableName, metadata: relation.entityMetadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
@@ -1019,8 +1019,9 @@ export class SubjectOperationExecutor {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
         const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
 
-        const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinColumns : junctionRemove.relation.inverseJoinColumns;
-        const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.joinColumns;
+        console.log(junctionRemove);
+        const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinColumns : junctionRemove.relation.inverseRelation.inverseJoinColumns;
+        const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.inverseRelation.joinColumns;
         let conditions: ObjectLiteral = {};
         firstJoinColumns.forEach(joinColumn => {
             conditions[joinColumn.fullName] = joinColumn.referencedColumn.getValue(entity);

@@ -59,7 +59,7 @@ export class RelationIdLoader {
                 const inverseSideTable = relation.inverseEntityMetadata.target; // Post
                 const inverseSideTableName = relation.inverseEntityMetadata.tableName; // post
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
-                const inverseSidePropertyName = inverseRelation.propertyName; // "category" from "post.category"
+                const inverseSidePropertyName = inverseRelation.propertyPath; // "category" from "post.category"
 
                 const referenceColumnValues = rawEntities
                     .map(rawEntity => rawEntity[relationIdAttr.parentAlias + "_" + referenceColumnName])
@@ -165,12 +165,12 @@ export class RelationIdLoader {
                 const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
                 const junctionTableName = relationIdAttr.relation.junctionEntityMetadata.tableName;
-                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
-                    " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
+                const condition = junctionAlias + "." + firstJunctionColumn.propertyPath + " IN (" + referenceColumnValues + ")" +
+                    " AND " + junctionAlias + "." + secondJunctionColumn.propertyPath + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 
                 const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
                     .select(inverseSideTableAlias + "." + inverseJoinColumnName, "id")
-                    .addSelect(junctionAlias + "." + firstJunctionColumn.propertyName, "manyToManyId")
+                    .addSelect(junctionAlias + "." + firstJunctionColumn.propertyPath, "manyToManyId")
                     .fromTable(inverseSideTableName, inverseSideTableAlias)
                     .innerJoin(junctionTableName, junctionAlias, condition);
 

@@ -394,12 +394,12 @@ export class Subject {
             // 1. related entity can be another entity which is natural way
             // 2. related entity can be entity id which is hacked way of updating entity
             // todo: what to do if there is a column with relationId? (cover this too?)
-            const updatedEntityRelationId: any =
-                this.entity[relation.propertyName] instanceof Object ?
-                    relation.inverseEntityMetadata.getEntityIdMixedMap(this.entity[relation.propertyName])
-                    : this.entity[relation.propertyName];
+            const entityValue = relation.getEntityValue(this.entity);
+            const updatedEntityRelationId: any = entityValue instanceof Object
+                    ? relation.inverseEntityMetadata.getEntityIdMixedMap(entityValue)
+                    : entityValue;
 
-            const dbEntityRelationId = this.databaseEntity[relation.propertyName];
+            const dbEntityRelationId = relation.getEntityValue(this.databaseEntity);
 
             // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
             // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))

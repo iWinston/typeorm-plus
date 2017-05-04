@@ -7,7 +7,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Subcounters} from "./entity/Subcounters";
 import {User} from "./entity/User";
 
-describe("embedded > embedded-many-to-many", () => {
+describe("embedded > embedded-one-to-one", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -20,7 +20,7 @@ describe("embedded > embedded-many-to-many", () => {
 
     describe("owner side", () => {
 
-        it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation", () => Promise.all(connections.map(async connection => {
+        it("should insert, load, update and remove entities with embeddeds when embedded entity having OneToOne relation", () => Promise.all(connections.map(async connection => {
 
             const user1 = new User();
             user1.name = "Alice";
@@ -43,7 +43,7 @@ describe("embedded > embedded-many-to-many", () => {
             post1.counters.comments = 1;
             post1.counters.favorites = 2;
             post1.counters.likes = 3;
-            post1.counters.likedUsers = [user1, user2];
+            post1.counters.likedUser = user1;
             post1.counters.subcounters = new Subcounters();
             post1.counters.subcounters.version = 1;
             post1.counters.subcounters.watches = 5;
@@ -56,7 +56,7 @@ describe("embedded > embedded-many-to-many", () => {
             post2.counters.comments = 2;
             post2.counters.favorites = 3;
             post2.counters.likes = 4;
-            post2.counters.likedUsers = [user3];
+            post2.counters.likedUser = user2;
             post2.counters.subcounters = new Subcounters();
             post2.counters.subcounters.version = 1;
             post2.counters.subcounters.watches = 10;
@@ -64,9 +64,8 @@ describe("embedded > embedded-many-to-many", () => {
 
             const loadedPosts = await connection.entityManager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
+                .leftJoinAndSelect("post.counters.likedUser", "likedUser")
                 .orderBy("post.id")
-                .addOrderBy("likedUser.id")
                 .getMany();
 
             expect(loadedPosts[0].should.be.eql(
@@ -78,16 +77,7 @@ describe("embedded > embedded-many-to-many", () => {
                         comments: 1,
                         favorites: 2,
                         likes: 3,
-                        likedUsers: [
-                            {
-                                id: 1,
-                                name: "Alice"
-                            },
-                            {
-                                id: 2,
-                                name: "Bob"
-                            }
-                        ],
+                        likedUser: { id: 1, name: "Alice" },
                         subcounters: {
                             version: 1,
                             watches: 5
@@ -104,12 +94,7 @@ describe("embedded > embedded-many-to-many", () => {
                         comments: 2,
                         favorites: 3,
                         likes: 4,
-                        likedUsers: [
-                            {
-                                id: 3,
-                                name: "Clara"
-                            }
-                        ],
+                        likedUser: { id: 2, name: "Bob" },
                         subcounters: {
                             version: 1,
                             watches: 10
@@ -120,9 +105,8 @@ describe("embedded > embedded-many-to-many", () => {
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
-                .orderBy("likedUser.id")
-                .where("post.id = :id", {id: 1})
+                .leftJoinAndSelect("post.counters.likedUser", "likedUser")
+                .where("post.id = :id", { id: 1 })
                 .getOne();
 
             expect(loadedPost!.should.be.eql(
@@ -134,16 +118,7 @@ describe("embedded > embedded-many-to-many", () => {
                         comments: 1,
                         favorites: 2,
                         likes: 3,
-                        likedUsers: [
-                            {
-                                id: 1,
-                                name: "Alice"
-                            },
-                            {
-                                id: 2,
-                                name: "Bob"
-                            }
-                        ],
+                        likedUser: { id: 1, name: "Alice" },
                         subcounters: {
                             version: 1,
                             watches: 5
@@ -154,14 +129,13 @@ describe("embedded > embedded-many-to-many", () => {
 
             loadedPost!.counters.favorites += 1;
             loadedPost!.counters.subcounters.watches += 1;
-            loadedPost!.counters.likedUsers = [user1];
+            loadedPost!.counters.likedUser = user3;
             await postRepository.persist(loadedPost!);
 
             const loadedPost2 = await connection.entityManager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
-                .orderBy("likedUser.id")
-                .where("post.id = :id", {id: 1})
+                .leftJoinAndSelect("post.counters.likedUser", "likedUser")
+                .where("post.id = :id", { id: 1 })
                 .getOne();
 
             expect(loadedPost2!.should.be.eql(
@@ -173,12 +147,7 @@ describe("embedded > embedded-many-to-many", () => {
                         comments: 1,
                         favorites: 3,
                         likes: 3,
-                        likedUsers: [
-                            {
-                                id: 1,
-                                name: "Alice"
-                            }
-                        ],
+                        likedUser: { id: 3, name: "Clara" },
                         subcounters: {
                             version: 1,
                             watches: 6
@@ -195,9 +164,11 @@ describe("embedded > embedded-many-to-many", () => {
         })));
     });
 
-    describe("inverse side", () => {
+    // uncomment this section once inverse side persistment of one-to-one relation will be finished
+    describe.skip("inverse side", () => {
 
-        it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation", () => Promise.all(connections.map(async connection => {
+
+        it("should insert, load, update and remove entities with embeddeds when embedded entity having OneToOne relation", () => Promise.all(connections.map(async connection => {
 
             const post1 = new Post();
             post1.title = "About cars";
@@ -223,194 +194,138 @@ describe("embedded > embedded-many-to-many", () => {
             post2.counters.subcounters.watches = 10;
             await connection.getRepository(Post).persist(post2);
 
+            const post3 = new Post();
+            post3.title = "About horses";
+            post3.counters = new Counters();
+            post3.counters.code = 3;
+            post3.counters.comments = 4;
+            post3.counters.favorites = 5;
+            post3.counters.likes = 6;
+            post3.counters.subcounters = new Subcounters();
+            post3.counters.subcounters.version = 1;
+            post3.counters.subcounters.watches = 12;
+            await connection.getRepository(Post).persist(post3);
+
             const user1 = new User();
             user1.name = "Alice";
-            user1.likedPosts = [post1, post2];
+            user1.likedPost = post1;
             await connection.getRepository(User).persist(user1);
 
             const user2 = new User();
             user2.name = "Bob";
-            user2.likedPosts = [post1];
+            user2.likedPost = post2;
             await connection.getRepository(User).persist(user2);
-
-            const user3 = new User();
-            user3.name = "Clara";
-            user3.likedPosts = [post2];
-            await connection.getRepository(User).persist(user3);
 
             const loadedUsers = await connection.entityManager
                 .createQueryBuilder(User, "user")
-                .leftJoinAndSelect("user.likedPosts", "likedPost")
+                .leftJoinAndSelect("user.likedPost", "likedPost")
                 .orderBy("user.id")
-                .addOrderBy("likedPost.id")
                 .getMany();
 
             expect(loadedUsers[0].should.be.eql(
                 {
                     id: 1,
                     name: "Alice",
-                    likedPosts: [
-                        {
-                            id: 1,
-                            title: "About cars",
-                            counters: {
-                                code: 1,
-                                comments: 1,
-                                favorites: 2,
-                                likes: 3,
-                                subcounters: {
-                                    version: 1,
-                                    watches: 5
-                                }
-                            }
-                        },
-                        {
-                            id: 2,
-                            title: "About airplanes",
-                            counters: {
-                                code: 2,
-                                comments: 2,
-                                favorites: 3,
-                                likes: 4,
-                                subcounters: {
-                                    version: 1,
-                                    watches: 10
-                                }
+                    likedPost: {
+                        id: 1,
+                        title: "About cars",
+                        counters: {
+                            code: 1,
+                            comments: 1,
+                            favorites: 2,
+                            likes: 3,
+                            subcounters: {
+                                version: 1,
+                                watches: 5
                             }
                         }
-                    ]
+                    }
                 }
             ));
             expect(loadedUsers[1].should.be.eql(
                 {
                     id: 2,
                     name: "Bob",
-                    likedPosts: [
-                        {
-                            id: 1,
-                            title: "About cars",
-                            counters: {
-                                code: 1,
-                                comments: 1,
-                                favorites: 2,
-                                likes: 3,
-                                subcounters: {
-                                    version: 1,
-                                    watches: 5
-                                }
+                    likedPost: {
+                        id: 2,
+                        title: "About airplanes",
+                        counters: {
+                            code: 2,
+                            comments: 2,
+                            favorites: 3,
+                            likes: 4,
+                            subcounters: {
+                                version: 1,
+                                watches: 10
                             }
                         }
-                    ]
-                }
-            ));
-            expect(loadedUsers[2].should.be.eql(
-                {
-                    id: 3,
-                    name: "Clara",
-                    likedPosts: [
-                        {
-                            id: 2,
-                            title: "About airplanes",
-                            counters: {
-                                code: 2,
-                                comments: 2,
-                                favorites: 3,
-                                likes: 4,
-                                subcounters: {
-                                    version: 1,
-                                    watches: 10
-                                }
-                            }
-                        }
-                    ]
+                    }
                 }
             ));
 
             const loadedUser = await connection.entityManager
                 .createQueryBuilder(User, "user")
-                .leftJoinAndSelect("user.likedPosts", "likedPost")
-                .orderBy("likedPost.id")
-                .where("user.id = :id", {id: 1})
+                .leftJoinAndSelect("user.likedPost", "likedPost")
+                .where("user.id = :id", { id: 1 })
                 .getOne();
 
             expect(loadedUser!.should.be.eql(
                 {
                     id: 1,
                     name: "Alice",
-                    likedPosts: [
-                        {
-                            id: 1,
-                            title: "About cars",
-                            counters: {
-                                code: 1,
-                                comments: 1,
-                                favorites: 2,
-                                likes: 3,
-                                subcounters: {
-                                    version: 1,
-                                    watches: 5
-                                }
-                            }
-                        },
-                        {
-                            id: 2,
-                            title: "About airplanes",
-                            counters: {
-                                code: 2,
-                                comments: 2,
-                                favorites: 3,
-                                likes: 4,
-                                subcounters: {
-                                    version: 1,
-                                    watches: 10
-                                }
+                    likedPost: {
+                        id: 1,
+                        title: "About cars",
+                        counters: {
+                            code: 1,
+                            comments: 1,
+                            favorites: 2,
+                            likes: 3,
+                            subcounters: {
+                                version: 1,
+                                watches: 5
                             }
                         }
-                    ]
+                    }
                 }
             ));
 
             loadedUser!.name = "Anna";
-            loadedUser!.likedPosts = [post1];
+            loadedUser!.likedPost = post3;
             await connection.getRepository(User).persist(loadedUser!);
 
             const loadedUser2 = await connection.entityManager
                 .createQueryBuilder(User, "user")
-                .leftJoinAndSelect("user.likedPosts", "likedPost")
-                .orderBy("likedPost.id")
-                .where("user.id = :id", {id: 1})
+                .leftJoinAndSelect("user.likedPost", "likedPost")
+                .where("user.id = :id", { id: 1 })
                 .getOne();
 
             expect(loadedUser2!.should.be.eql(
                 {
                     id: 1,
                     name: "Anna",
-                    likedPosts: [
-                        {
-                            id: 1,
-                            title: "About cars",
-                            counters: {
-                                code: 1,
-                                comments: 1,
-                                favorites: 2,
-                                likes: 3,
-                                subcounters: {
-                                    version: 1,
-                                    watches: 5
-                                }
+                    likedPost: {
+                        id: 3,
+                        title: "About horses",
+                        counters: {
+                            code: 3,
+                            comments: 4,
+                            favorites: 5,
+                            likes: 6,
+                            subcounters: {
+                                version: 1,
+                                watches: 12
                             }
                         }
-                    ]
+                    }
                 }
             ));
 
             await connection.getRepository(User).remove(loadedUser2!);
 
             const loadedUsers2 = (await connection.getRepository(User).find())!;
-            expect(loadedUsers2.length).to.be.equal(2);
+            expect(loadedUsers2.length).to.be.equal(1);
             expect(loadedUsers2[0].name).to.be.equal("Bob");
-            expect(loadedUsers2[1].name).to.be.equal("Clara");
         })));
-
     });
 });

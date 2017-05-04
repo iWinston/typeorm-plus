@@ -401,13 +401,13 @@ export class RelationMetadata {
      * Checks if inverse side is specified by a relation.
      */
     get hasInverseSide(): boolean {
-        return this.inverseEntityMetadata && this.inverseEntityMetadata.hasRelationWithPropertyName(this.inverseSideProperty);
+        return this.inverseEntityMetadata && this.inverseEntityMetadata.hasRelationWithPropertyName(this.inverseSidePropertyPath);
     }
 
     /**
      * Gets the property name of the inverse side of the relation.
      */
-    get inverseSideProperty(): string { // todo: should be called inverseSidePropertyName ?
+    get inverseSidePropertyPath(): string { // todo: should be called inverseSidePropertyName ?
 
         if (this._inverseSideProperty) {
             return this.computeInverseSide(this._inverseSideProperty);
@@ -427,9 +427,9 @@ export class RelationMetadata {
      * Gets the relation metadata of the inverse side of this relation.
      */
     get inverseRelation(): RelationMetadata {
-        const relation = this.inverseEntityMetadata.findRelationWithPropertyName(this.inverseSideProperty);
+        const relation = this.inverseEntityMetadata.findRelationWithPropertyPath(this.inverseSidePropertyPath);
         if (!relation)
-            throw new Error(`Inverse side was not found in the relation ${this.entityMetadata.name}#${this.inverseSideProperty}`);
+            throw new Error(`Inverse side was not found in the relation ${this.entityMetadata.name}#${this.inverseSidePropertyPath}`);
 
         return relation;
     }
@@ -508,6 +508,45 @@ export class RelationMetadata {
 
         } else {
             entity[propertyName] = value;
+        }
+    }
+
+    /**
+     * Creates entity id map from the given entity ids array.
+     *
+     * @stable
+     */
+    createValueMap(value: any) {
+
+        // extract column value from embeds of entity if column is in embedded
+        if (this.embeddedMetadata) {
+
+            // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
+            // we need to get value of "id" column from the post real entity object and return it in a
+            // { data: { information: { counters: { id: ... } } } } format
+
+            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+
+            // now need to access post[data][information][counters] to get column value from the counters
+            // and on each step we need to create complex literal object, e.g. first { data },
+            // then { data: { information } }, then { data: { information: { counters } } },
+            // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
+            // this recursive function helps doing that
+            const extractEmbeddedColumnValue = (propertyNames: string[], map: ObjectLiteral): any => {
+                const propertyName = propertyNames.shift();
+                if (propertyName) {
+                    map[propertyName] = {};
+                    extractEmbeddedColumnValue(propertyNames, map[propertyName]);
+                    return map;
+                }
+                map[this.propertyName] = value;
+                return map;
+            };
+            return extractEmbeddedColumnValue(propertyNames, {});
+
+        } else { // no embeds - no problems. Simply return column property name and its value of the entity
+            return { [this.propertyName]: value };
         }
     }
 

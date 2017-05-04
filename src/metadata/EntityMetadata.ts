@@ -631,18 +631,22 @@ export class EntityMetadata {
 
     /**
      * Creates an object - map of columns and relations of the entity.
+     *
+     * example: Post{ id: number, name: string, counterEmbed: { count: number }, category: Category }.
+     * This method will create following object:
+     * { id: "id", counterEmbed: { count: "counterEmbed.count" }, category: "category" }
      */
     createPropertiesMap(): { [name: string]: string|any } {
-        const entity: { [name: string]: string|any } = {};
-        this._columns.forEach(column => entity[column.propertyName] = column.propertyName);
-        this.relations.forEach(relation => entity[relation.propertyName] = relation.propertyName);
-        return entity;
+        const map: { [name: string]: string|any } = {};
+        this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
+        this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
+        return map;
     }
 
     /**
      * Computes property name of the entity using given PropertyTypeInFunction.
      */
-    computePropertyName(nameOrFn: PropertyTypeInFunction<any>) {
+    computePropertyPath(nameOrFn: PropertyTypeInFunction<any>) {
         return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.createPropertiesMap());
     }
 
@@ -1007,27 +1011,13 @@ export class EntityMetadata {
      * Checks if given entity has an id.
      */
     hasId(entity: ObjectLiteral): boolean {
+        if (!entity)
+            return false;
 
-        // if (this.metadata.parentEntityMetadata) {
-        //     return this.metadata.parentEntityMetadata.parentIdColumns.every(parentIdColumn => {
-        //         const columnName = parentIdColumn.propertyName;
-        //         return !!entity &&
-        //             entity.hasOwnProperty(columnName) &&
-        //             entity[columnName] !== null &&
-        //             entity[columnName] !== undefined &&
-        //             entity[columnName] !== "";
-        //     });
-
-        // } else {
-        return this.primaryColumns.every(primaryColumn => {
-            const columnName = primaryColumn.propertyName;
-            return !!entity &&
-                entity.hasOwnProperty(columnName) &&
-                entity[columnName] !== null &&
-                entity[columnName] !== undefined &&
-                entity[columnName] !== "";
+        return this.primaryColumns.every(primaryColumn => { /// todo: this.metadata.parentEntityMetadata ?
+            const value = primaryColumn.getValue(entity);
+            return value !== null && value !== undefined && value!== "";
         });
-        // }
     }
 
     /**

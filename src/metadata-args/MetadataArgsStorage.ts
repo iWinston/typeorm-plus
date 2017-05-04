@@ -309,10 +309,15 @@ export class MetadataArgsStorage {
         return Object.getPrototypeOf(target1.prototype).constructor === target2;
     }
 
-    findJoinTable(target: Function|string, propertyName: string) {
+    findJoinTable(target: Function|string, propertyName: string): JoinTableMetadataArgs|undefined {
         return this.joinTables.toArray().find(joinTable => {
             return joinTable.target === target && joinTable.propertyName === propertyName;
         });
     }
 
+    findJoinColumns(target: Function|string, propertyName: string): JoinColumnMetadataArgs[] {
+        return this.joinColumns.toArray().filter(joinColumn => {
+            return joinColumn.target === target && joinColumn.propertyName === propertyName;
+        });
+    }
 }

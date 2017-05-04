@@ -345,7 +345,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // note that if databaseEntity has relation, it can only be a relation id,
                 // because of query builder option "RELATION_ID_VALUES" we used
-                const relationIdInDatabaseEntity = subject.databaseEntity[relation.propertyName]; // (example) returns post.detailsId
+                const relationIdInDatabaseEntity = relation.getEntityValue(subject.databaseEntity); // (example) returns post.detailsId
 
                 // if database relation id does not exist in the database object then nothing to remove
                 if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
@@ -356,7 +356,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 if (subject.hasEntity) {
                     const persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue === null) persistValueRelationId = null;
-                    if (persistValue) persistValueRelationId = persistValue[relation.joinColumns[0].referencedColumn.propertyName];
+                    if (persistValue) persistValueRelationId = relation.joinColumns[0].referencedColumn.getValue(persistValue);
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
@@ -374,7 +374,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Details loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Details
                     // (example) and we need to compare details.id === post.detailsId
-                    return relatedSubject.databaseEntity[relation.joinColumns[0].referencedColumn.propertyName] === relationIdInDatabaseEntity;
+                    return relation.joinColumns[0].referencedColumn.getValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
                 });
 
                 // if not loaded yet then load it from the database
@@ -384,7 +384,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.joinColumns[0].referencedColumn.propertyName + "=:id")
+                        .where(qbAlias + "." + relation.joinColumns[0].referencedColumn.propertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
                         .enableAutoRelationIdsLoad()
                         .getOne();
@@ -461,7 +461,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
+                        .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
                         .enableAutoRelationIdsLoad()
                         .getOne();
@@ -610,7 +610,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
+                        .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableAutoRelationIdsLoad()
                         .getMany();

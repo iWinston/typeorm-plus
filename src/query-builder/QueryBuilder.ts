@@ -1402,20 +1402,20 @@ export class QueryBuilder<Entity> {
     protected replacePropertyNames(statement: string) {
         this.expressionMap.aliases.forEach(alias => {
             if (!alias.hasMetadata) return;
-            alias.metadata.embeddeds.forEach(embedded => {
-                embedded.columns.forEach(column => {
-                    const expression = "([ =]|^.{0})" + alias.name + "\\." + embedded.propertyName + "\\." + column.propertyName + "([ =]|.{0}$)";
-                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$2");
-                });
-                // todo: what about embedded relations here?
-            });
-            alias.metadata.columns.filter(column => !column.isInEmbedded).forEach(column => {
-                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyName + "([ =]|.{0}$)";
+            // alias.metadata.embeddeds.forEach(embedded => {
+            //     embedded.columns.forEach(column => {
+            //         const expression = "([ =]|^.{0})" + alias.name + "\\." + embedded.propertyName + "\\." + column.propertyName + "([ =]|.{0}$)";
+            //         statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$2");
+            //     });
+            //     todo: what about embedded relations here?
+            // });
+            alias.metadata.columns.forEach(column => {
+                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$2");
             });
             alias.metadata.relationsWithJoinColumns/*.filter(relation => !relation.isInEmbedded)*/.forEach(relation => {
-                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyName + "([ =]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.name) + "$2");
+                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =]|.{0}$)";
+                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].fullName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
             });
         });
         return statement;
