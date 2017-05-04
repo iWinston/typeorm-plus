@@ -1,6 +1,6 @@
 import {NamingStrategyInterface} from "./NamingStrategyInterface";
 import {RandomGenerator} from "../util/RandomGenerator";
-import {snakeCase, camelCase} from "../util/StringUtils";
+import {camelCase, snakeCase} from "../util/StringUtils";
 
 /**
  * Naming strategy that is used by default.
@@ -42,7 +42,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
                   secondTableName: string,
                   firstPropertyName: string,
                   secondPropertyName: string): string {
-        return snakeCase(firstTableName + "_" + firstPropertyName + "_" + secondTableName);
+        return snakeCase(firstTableName + "_" + firstPropertyName.replace(/\./gi, "_") + "_" + secondTableName);
     }
 
     joinTableColumnDuplicationPrefix(columnName: string, index: number): string {

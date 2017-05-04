@@ -15,6 +15,33 @@ export class OrmUtils {
         }, [] as Array<{ id: R, items: T[] }>);
     }
 
+    static isObject(item: any) {
+        return (item && typeof item === "object" && !Array.isArray(item));
+    }
+
+    /**
+     * Deep Object.assign.
+     *
+     * @see http://stackoverflow.com/a/34749873
+     */
+    static mergeDeep(target: any, ...sources: any[]): any {
+        if (!sources.length) return target;
+        const source = sources.shift();
+
+        if (this.isObject(target) && this.isObject(source)) {
+            for (const key in source) {
+                if (this.isObject(source[key])) {
+                    if (!target[key]) Object.assign(target, { [key]: {} });
+                    this.mergeDeep(target[key], source[key]);
+                } else {
+                    Object.assign(target, { [key]: source[key] });
+                }
+            }
+        }
+
+        return this.mergeDeep(target, ...sources);
+    }
+
     /**
      * Deep compare objects.
      *
@@ -24,7 +51,7 @@ export class OrmUtils {
         let i: any, l: any, leftChain: any, rightChain: any;
 
         function compare2Objects(x: any, y: any) {
-            var p;
+            let p;
 
             // remember that NaN === NaN returns false
             // and isNaN(undefined) returns true
@@ -118,13 +145,13 @@ export class OrmUtils {
         }
 
         if (arguments.length < 1) {
-            return true; //Die silently? Don't know how to handle such case, please help...
+            return true; // Die silently? Don't know how to handle such case, please help...
             // throw "Need two or more arguments to compare";
         }
 
         for (i = 1, l = arguments.length; i < l; i++) {
 
-            leftChain = []; //Todo: this can be cached
+            leftChain = []; // Todo: this can be cached
             rightChain = [];
 
             if (!compare2Objects(arguments[0], arguments[i])) {

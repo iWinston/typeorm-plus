@@ -319,8 +319,10 @@ export class Subject {
         this.diffColumns = this.metadata.allColumns.filter(column => {
 
             // prepare both entity and database values to make comparision
-            let entityValue = column.getEntityValue(this.entity);
-            let databaseValue = column.getEntityValue(this.databaseEntity);
+            let entityValue = column.getValue(this.entity);
+            let databaseValue = column.getValue(this.databaseEntity);
+            if (entityValue === undefined)
+                return false;
 
             // normalize special values to make proper comparision
             if (entityValue !== null && entityValue !== undefined) {
@@ -352,12 +354,12 @@ export class Subject {
             // todo: this mechanism does not get in count embeddeds in embeddeds
 
             // if value is not defined then no need to update it
-            if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)
-                return false;
-
+            // if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)
+            //     return false;
+            //
             // if value is in embedded and is not defined then no need to update it
-            if (column.isInEmbedded && (this.entity[column.embeddedProperty] === undefined || this.entity[column.embeddedProperty][column.propertyName] === undefined))
-                return false;
+            // if (column.isInEmbedded && (this.entity[column.embeddedProperty] === undefined || this.entity[column.embeddedProperty][column.propertyName] === undefined))
+            //     return false;
 
             // if its a special column or value is not changed - then do nothing
             if (column.isVirtual ||

@@ -1,5 +1,6 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
+import {RelationMetadata} from "./RelationMetadata";
 
 /**
  * Contains all information about entity's embedded property.
@@ -26,6 +27,11 @@ export class EmbeddedMetadata {
     columns: ColumnMetadata[];
 
     /**
+     * Relations inside this embed.
+     */
+    relations: RelationMetadata[];
+
+    /**
      * Nested embeddable in this embeddable (which has current embedded as parent embedded).
      */
     embeddeds: EmbeddedMetadata[];
@@ -37,6 +43,8 @@ export class EmbeddedMetadata {
 
     /**
      * Indicates if this embedded is in array mode.
+     *
+     * This option works only in monogodb.
      */
     isArray: boolean;
 
@@ -51,6 +59,7 @@ export class EmbeddedMetadata {
     // ---------------------------------------------------------------------
 
     constructor(columns: ColumnMetadata[],
+                relations: RelationMetadata[],
                 embeddeds: EmbeddedMetadata[],
                 args: EmbeddedMetadataArgs) {
         this.type = args.type ? args.type() : undefined;
@@ -58,12 +67,16 @@ export class EmbeddedMetadata {
         this.isArray = args.isArray;
         this.customPrefix = args.prefix;
         this.columns = columns;
+        this.relations = relations;
         this.embeddeds = embeddeds;
         this.embeddeds.forEach(embedded => {
             embedded.parentEmbeddedMetadata = this;
         });
         this.columns.forEach(column => {
             column.embeddedMetadata = this;
+        });
+        this.relations.forEach(relation => {
+            relation.embeddedMetadata = this;
         });
     }
 
@@ -89,7 +102,7 @@ export class EmbeddedMetadata {
      * @stable just need move to builder process
      */
     get prefix(): string {
-        const prefix = this.customPrefix ? this.customPrefix : this.propertyName;
+        const prefix = this.customPrefix !== undefined ? this.customPrefix : this.propertyName;
         return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.prefix + "_" + prefix : prefix; // todo: use naming strategy instead of "_"  !!!
     }
 
@@ -107,12 +120,33 @@ export class EmbeddedMetadata {
     }
 
     /**
+     * Returns embed metadatas from all levels of the parent tree.
+     *
+     * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
+     * this method will return [embed metadata of data, embed metadata of information, embed metadata of counters]
+     *
+     * @stable just need move to builder process
+     */
+    get embeddedMetadataTree(): EmbeddedMetadata[] {
+        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.embeddedMetadataTree.concat(this) : [this];
+    }
+
+    /**
      * Returns all columns of this embed and all columns from its child embeds.
      *
      * @stable just need move to builder process
      */
     get columnsFromTree(): ColumnMetadata[] {
         return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.columns);
+    }
+
+    /**
+     * Returns all relations of this embed and all relations from its child embeds.
+     *
+     * @stable just need move to builder process
+     */
+    get relationsFromTree(): RelationMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), this.relations);
     }
 
 }

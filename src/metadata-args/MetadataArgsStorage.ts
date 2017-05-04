@@ -262,6 +262,7 @@ export class MetadataArgsStorage {
     protected mergeWithEmbeddable(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
                                   tableMetadata: TableMetadataArgs) {
         const columns = this.columns.filterByTarget(tableMetadata.target);
+        const relations = this.relations.filterByTarget(tableMetadata.target);
         const embeddeds = this.embeddeds.filterByTarget(tableMetadata.target);
 
         allTableMetadatas
@@ -279,6 +280,11 @@ export class MetadataArgsStorage {
                     .toArray()
                     .forEach(metadata => columns.add(metadata));
 
+                metadatasFromParents.relations
+                    .filterRepeatedMetadatas(relations.toArray())
+                    .toArray()
+                    .forEach(metadata => relations.add(metadata));
+
                 metadatasFromParents.embeddeds
                     .filterRepeatedMetadatas(embeddeds.toArray())
                     .toArray()
@@ -288,6 +294,7 @@ export class MetadataArgsStorage {
         return {
             table: tableMetadata,
             columns: columns,
+            relations: relations,
             embeddeds: embeddeds
         };
     }
@@ -300,6 +307,12 @@ export class MetadataArgsStorage {
         // properties get inherited in a right order. To achieve it we can only check a first parent of the class
         // return this.target.prototype instanceof anotherTable.target;
         return Object.getPrototypeOf(target1.prototype).constructor === target2;
+    }
+
+    findJoinTable(target: Function|string, propertyName: string) {
+        return this.joinTables.toArray().find(joinTable => {
+            return joinTable.target === target && joinTable.propertyName === propertyName;
+        });
     }
 
 }

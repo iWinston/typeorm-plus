@@ -91,7 +91,7 @@ export class JoinAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
             return undefined;
 
-        return this.entityOrProperty.split(".")[0];
+        return this.entityOrProperty.substr(0, this.entityOrProperty.indexOf("."));
     }
 
     /**
@@ -101,11 +101,11 @@ export class JoinAttribute {
      * This value is extracted from entityOrProperty value.
      * This is available when join was made using "post.category" syntax.
      */
-    get relationProperty(): string|undefined {
+    get relationPropertyPath(): string|undefined {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
             return undefined;
 
-        return this.entityOrProperty.split(".")[1];
+        return this.entityOrProperty.substr(this.entityOrProperty.indexOf(".") + 1);
     }
 
     /**
@@ -118,9 +118,8 @@ export class JoinAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
             return undefined;
 
-        const [parentAlias, relationProperty] = this.entityOrProperty.split(".");
-        const relationOwnerSelection = this.queryExpressionMap.findAliasByName(parentAlias);
-        return relationOwnerSelection.metadata.findRelationWithPropertyName(relationProperty);
+        const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
+        return relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
     }
 
     /**

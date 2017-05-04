@@ -1,5 +1,4 @@
 import {Driver} from "../../driver/Driver";
-import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 import {RelationIdLoadResult} from "../relation-id/RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -69,14 +68,12 @@ export class RawSqlResultsToEntityTransformer {
         const entity: any = alias.metadata.create();
 
         // get value from columns selections and put them into newly created entity
-        hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata.columnsWithoutEmbeddeds);
-        hasEmbeddedColumns = this.transformEmbeddeds(rawResults, alias, entity, alias.metadata.embeddeds);
+        hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata.columns);
 
         // add columns tables metadata
-        if (alias.metadata.parentEntityMetadata) {
-            hasParentColumns = this.transformColumns(rawResults, alias, entity, alias.metadata.parentEntityMetadata.columnsWithoutEmbeddeds);
-            hasParentEmbeddedColumns = this.transformEmbeddeds(rawResults, alias, entity, alias.metadata.parentEntityMetadata.embeddeds);
-        }
+        if (alias.metadata.parentEntityMetadata)
+            hasParentColumns = this.transformColumns(rawResults, alias, entity, alias.metadata.parentEntityMetadata.columns);
+
         hasRelations = this.transformJoins(rawResults, entity, alias);
         hasRelationIds = this.transformRelationIds(rawResults, alias, entity);
         hasRelationCounts = this.transformRelationCounts(rawResults, alias, entity);
@@ -92,25 +89,8 @@ export class RawSqlResultsToEntityTransformer {
             if (value === undefined || value === null || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
 
-            entity[column.propertyName] = this.driver.prepareHydratedValue(value, column);
+            column.setValue(entity, this.driver.prepareHydratedValue(value, column));
             hasData = true;
-        });
-        return hasData;
-    }
-
-    protected transformEmbeddeds(rawResults: any[], alias: Alias, entity: any, embeddeds: EmbeddedMetadata[]): boolean {
-        let hasData = false;
-        embeddeds.forEach(embedded => {
-            const embeddedEntity = entity[embedded.propertyName] ? entity[embedded.propertyName] : embedded.create();
-            const hasAnyColumns = this.transformColumns(rawResults, alias, embeddedEntity, embedded.columns);
-            if (hasAnyColumns) {
-                entity[embedded.propertyName] = embeddedEntity;
-                hasData = true;
-            }
-
-            const hasInnerData = this.transformEmbeddeds(rawResults, alias, entity[embedded.propertyName], embedded.embeddeds);
-            if (hasInnerData)
-                hasData = true;
         });
         return hasData;
     }
@@ -131,7 +111,7 @@ export class RawSqlResultsToEntityTransformer {
                 if (join.mapToPropertyParentAlias !== alias.name)
                     return;
             } else {
-                if (!join.relation || join.parentAlias !== alias.name || join.relationProperty !== join.relation!.propertyName)
+                if (!join.relation || join.parentAlias !== alias.name || join.relationPropertyPath !== join.relation!.propertyPath)
                     return;
             }
 
@@ -143,9 +123,10 @@ export class RawSqlResultsToEntityTransformer {
 
             // if join was mapped to some property then save result to that property
             if (join.mapToPropertyPropertyName) {
-                entity[join.mapToPropertyPropertyName] = result;
+                entity[join.mapToPropertyPropertyName] = result; // todo: fix embeds
 
             } else { // otherwise set to relation
+                // console.log(result);
                 join.relation!.setEntityValue(entity, result);
             }
 

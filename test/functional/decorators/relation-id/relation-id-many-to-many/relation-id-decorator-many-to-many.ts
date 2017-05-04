@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -174,15 +174,12 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category];
+        await connection.entityManager.persist(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.categories = [category];
-
-        await Promise.all([
-            connection.entityManager.persist(post1),
-            connection.entityManager.persist(post2)
-        ]);
+        await connection.entityManager.persist(post2);
 
         let loadedCategory = await connection.entityManager
             .createQueryBuilder(Category, "category")

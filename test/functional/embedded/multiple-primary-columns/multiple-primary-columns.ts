@@ -5,7 +5,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-describe.skip("embedded > multiple-primary-column", () => {
+describe("embedded > multiple-primary-column", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

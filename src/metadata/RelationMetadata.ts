@@ -4,6 +4,7 @@ import {ForeignKeyMetadata, OnDeleteType} from "./ForeignKeyMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
 
 /**
  * Function that returns a type of the field. Returned value must be a class used on the relation.
@@ -30,6 +31,12 @@ export class RelationMetadata {
      * Its own entity metadata.
      */
     entityMetadata: EntityMetadata;
+
+    /**
+     * Embedded metadata where this relation is.
+     * If this relation is not in embed then this property value is undefined.
+     */
+    embeddedMetadata: EmbeddedMetadata;
 
     /**
      * Related entity metadata.
@@ -206,12 +213,26 @@ export class RelationMetadata {
     }
 
     /**
+     * Gets full path to this column property (including column property name).
+     * Full path is relevant when column is used in embeds (one or multiple nested).
+     * For example it will return "counters.subcounters.likes".
+     * If property is not in embeds then it returns just property name of the column.
+     *
+     * @stable
+     */
+    get propertyPath(): string {
+        if (!this.embeddedMetadata || !this.embeddedMetadata.parentPropertyNames.length)
+            return this.propertyName;
+
+        return this.embeddedMetadata.parentPropertyNames.join(".") + "." + this.propertyName;
+    }
+
+    /**
      * Join table name.
      */
     get joinTableName(): string {
         return this.junctionEntityMetadata.tableName;
     }
-
 
     /**
      * Join table columns.
@@ -414,8 +435,41 @@ export class RelationMetadata {
      * Gets given entity's relation's value.
      * Using of this method helps to access value of the lazy and non-lazy relations.
      */
-    getEntityValue(entity: ObjectLiteral): any {
-        return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
+    // getValue(entity: ObjectLiteral): any {
+    //     return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
+    // }
+
+    /**
+     * Extracts column value from the given entity.
+     * If column is in embedded (or recursive embedded) it extracts its value from there.
+     *
+     * @stable
+     */
+    getEntityValue(entity: ObjectLiteral): any|undefined {
+
+        // extract column value from embeddeds of entity if column is in embedded
+        if (this.embeddedMetadata) {
+
+            // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
+            // we need to get value of "id" column from the post real entity object
+
+            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+
+            // next we need to access post[data][information][counters][this.propertyName] to get column value from the counters
+            // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
+            const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral): any => {
+                const propertyName = propertyNames.shift();
+                return propertyName ? extractEmbeddedColumnValue(propertyNames, value[propertyName]) : value;
+            };
+
+            // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
+            const embeddedObject = extractEmbeddedColumnValue(propertyNames, entity);
+            return embeddedObject ? embeddedObject[this.isLazy ? "__" + this.propertyName + "__" : this.propertyName] : undefined;
+
+        } else { // no embeds - no problems. Simply return column name by property name of the entity
+            return entity[this.isLazy ? "__" + this.propertyName + "__" : this.propertyName];
+        }
     }
 
     /**
@@ -423,18 +477,31 @@ export class RelationMetadata {
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
-        if (this.isLazy) {
-            entity["__" + this.propertyName + "__"] = value;
-        } else {
-            entity[this.propertyName] = value;
-        }
-    }
+        const propertyName = this.isLazy ? "__" + this.propertyName + "__" : this.propertyName;
 
-    /**
-     * Checks if given entity has a value in a relation.
-     */
-    hasEntityValue(entity: ObjectLiteral): boolean {
-        return this.isLazy ? entity["__" + this.propertyName + "__"] : entity[this.propertyName];
+        if (this.embeddedMetadata) {
+
+            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const extractEmbeddedColumnValue = (embeddedMetadatas: EmbeddedMetadata[], map: ObjectLiteral): any => {
+                // if (!object[embeddedMetadata.propertyName])
+                //     object[embeddedMetadata.propertyName] = embeddedMetadata.create();
+
+                const embeddedMetadata = embeddedMetadatas.shift();
+                if (embeddedMetadata) {
+                    if (!map[embeddedMetadata.propertyName])
+                        map[embeddedMetadata.propertyName] = embeddedMetadata.create();
+
+                    extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
+                    return map;
+                }
+                map[propertyName] = value;
+                return map;
+            };
+            return extractEmbeddedColumnValue(this.embeddedMetadata.embeddedMetadataTree, entity);
+
+        } else {
+            entity[propertyName] = value;
+        }
     }
 
     /**

@@ -89,8 +89,8 @@ export class IndexMetadata {
             columnPropertyNames = columnsNamesFromFnResult.map((i: any) => String(i));
         }
 
-        const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyName) !== -1);
-        const missingColumnNames = columnPropertyNames.filter(columnPropertyName => !this.entityMetadata.columns.find(column => column.propertyName === columnPropertyName));
+        const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyPath) !== -1);
+        const missingColumnNames = columnPropertyNames.filter(columnPropertyName => !this.entityMetadata.columns.find(column => column.propertyPath === columnPropertyName));
         if (missingColumnNames.length > 0) { // todo: better to extract all validation into single place is possible
             // console.log(this.entityMetadata.columns);
             throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));

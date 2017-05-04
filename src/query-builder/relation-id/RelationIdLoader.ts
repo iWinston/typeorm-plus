@@ -142,14 +142,14 @@ export class RelationIdLoader {
                 if (relationIdAttr.relation.isOwning) { // todo fix joinColumns[0]
                     joinTableColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn.fullName;
                     inverseJoinColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn.fullName;
-                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
-                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
+                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[0];
+                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[1];
 
                 } else {
                     joinTableColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
                     inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
-                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
-                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
+                    firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[1];
+                    secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[0];
                 }
 
                 const referenceColumnValues = rawEntities

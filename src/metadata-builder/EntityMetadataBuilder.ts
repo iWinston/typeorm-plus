@@ -55,8 +55,9 @@ export class EntityMetadataBuilder {
                         const embeddableTable = embeddableMergedArgs.find(embeddedMergedArgs => embeddedMergedArgs.table.target === embedded.type());
                         if (embeddableTable) {
                             const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
+                            const relations = embeddableTable.relations.toArray().map(args => new RelationMetadata(args));
                             const subEmbeddeds = findEmbeddedsRecursively(embeddableTable.embeddeds.toArray());
-                            embeddeds.push(new EmbeddedMetadata(columns, subEmbeddeds, embedded));
+                            embeddeds.push(new EmbeddedMetadata(columns, relations, subEmbeddeds, embedded));
                         }
                     });
                     return embeddeds;
@@ -274,20 +275,20 @@ export class EntityMetadataBuilder {
         });
 
         entityMetadatas.forEach(entityMetadata => {
-            const mergedArgs = allMergedArgs.find(mergedArgs => {
-                return mergedArgs.table.target === entityMetadata.target;
-            });
-            if (!mergedArgs) return;
+            // const mergedArgs = allMergedArgs.find(mergedArgs => {
+            //     return mergedArgs.table.target === entityMetadata.target;
+            // });
+            // if (!mergedArgs) return;
 
             // create entity's relations join columns
             entityMetadata.manyToManyRelations.forEach(relation => {
-                const joinTableMetadataArgs = mergedArgs.joinTables.findByProperty(relation.propertyName);
+                const joinTableMetadataArgs = metadataArgsStorage.findJoinTable(relation.target, relation.propertyName);
                 if (!joinTableMetadataArgs) return;
 
                 const joinTableName = joinTableMetadataArgs.name || relation.entityMetadata.namingStrategy.joinTableName(
                         relation.entityMetadata.tableNameWithoutPrefix,
                         relation.inverseEntityMetadata.tableNameWithoutPrefix,
-                        relation.propertyName,
+                        relation.propertyPath,
                         relation.hasInverseSide ? relation.inverseRelation.propertyName : ""
                     );
 

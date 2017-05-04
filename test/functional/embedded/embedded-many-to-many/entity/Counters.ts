@@ -1,13 +1,15 @@
 import {EmbeddableEntity} from "../../../../../src/decorator/entity/EmbeddableEntity";
 import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 import {Embedded} from "../../../../../src/decorator/Embedded";
 import {Subcounters} from "./Subcounters";
+import {User} from "./User";
+import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
+import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
 
 @EmbeddableEntity()
 export class Counters {
 
-    @PrimaryColumn()
+    @Column()
     code: number;
 
     @Column()
@@ -21,5 +23,9 @@ export class Counters {
 
     @Embedded(() => Subcounters)
     subcounters: Subcounters;
+
+    @ManyToMany(type => User)
+    @JoinTable()
+    likedUsers: User[];
 
 }

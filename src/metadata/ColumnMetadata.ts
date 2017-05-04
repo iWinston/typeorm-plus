@@ -29,6 +29,7 @@ export class ColumnMetadata {
 
     /**
      * Embedded metadata where this column metadata is.
+     * If this column is not in embed then this property value is undefined.
      */
     embeddedMetadata: EmbeddedMetadata;
 
@@ -202,6 +203,21 @@ export class ColumnMetadata {
     }
 
     /**
+     * Gets full path to this column property (including column property name).
+     * Full path is relevant when column is used in embeds (one or multiple nested).
+     * For example it will return "counters.subcounters.likes".
+     * If property is not in embeds then it returns just property name of the column.
+     *
+     * @stable
+     */
+    get propertyPath(): string {
+        if (!this.embeddedMetadata || !this.embeddedMetadata.parentPropertyNames.length)
+            return this.propertyName;
+
+        return this.embeddedMetadata.parentPropertyNames.join(".") + "." + this.propertyName;
+    }
+
+    /**
      * Column name in the database including its embedded prefixes.
      *
      * todo: rename to databaseName
@@ -327,6 +343,9 @@ export class ColumnMetadata {
     // Public Methods
     // ---------------------------------------------------------------------
 
+    /**
+     * @deprecated
+     */
     hasEntityValue(entity: any) {
         if (!entity)
             return false;
@@ -348,7 +367,7 @@ export class ColumnMetadata {
      *
      * @stable
      */
-    createEntityIdMap(id: any) {
+    createValueMap(value: any) {
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -372,13 +391,13 @@ export class ColumnMetadata {
                     extractEmbeddedColumnValue(propertyNames, map[propertyName]);
                     return map;
                 }
-                map[this.propertyName] = id;
+                map[this.propertyName] = value;
                 return map;
             };
             return extractEmbeddedColumnValue(propertyNames, {});
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            return { [this.propertyName]: id };
+            return { [this.propertyName]: value };
         }
     }
 
@@ -391,7 +410,7 @@ export class ColumnMetadata {
      *
      * @stable
      */
-    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral {
+    getValueMap(entity: ObjectLiteral): ObjectLiteral {
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -431,7 +450,7 @@ export class ColumnMetadata {
      *
      * @stable
      */
-    getEntityValue(entity: ObjectLiteral): any|undefined {
+    getValue(entity: ObjectLiteral): any|undefined {
 
         // extract column value from embeddeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -455,6 +474,36 @@ export class ColumnMetadata {
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             return entity[this.propertyName];
+        }
+    }
+
+    /**
+     * Sets given entity's column's value.
+     * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
+     */
+    setValue(entity: ObjectLiteral, value: any): void {
+        if (this.embeddedMetadata) {
+
+            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const extractEmbeddedColumnValue = (embeddedMetadatas: EmbeddedMetadata[], map: ObjectLiteral): any => {
+                // if (!object[embeddedMetadata.propertyName])
+                //     object[embeddedMetadata.propertyName] = embeddedMetadata.create();
+
+                const embeddedMetadata = embeddedMetadatas.shift();
+                if (embeddedMetadata) {
+                    if (!map[embeddedMetadata.propertyName])
+                        map[embeddedMetadata.propertyName] = embeddedMetadata.create();
+
+                    extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
+                    return map;
+                }
+                map[this.propertyName] = value;
+                return map;
+            };
+            return extractEmbeddedColumnValue(this.embeddedMetadata.embeddedMetadataTree, entity);
+
+        } else {
+            entity[this.propertyName] = value;
         }
     }
 

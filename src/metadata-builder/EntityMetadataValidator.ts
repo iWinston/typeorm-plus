@@ -108,6 +108,7 @@ export class EntityMetadataValidator {
             // todo: check if there are multiple columns on the same column applied.
             // todo: check column type if is missing in relational databases (throw new Error(`Column type of ${type} cannot be determined.`);)
             // todo: include driver-specific checks. for example in mongodb empty prefixes are not allowed
+            // todo: if multiple columns with same name - throw exception, including cases when columns are in embeds with same prefixes or without prefix at all
 
         });
 

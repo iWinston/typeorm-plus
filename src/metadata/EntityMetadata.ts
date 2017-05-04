@@ -68,7 +68,7 @@ export class EntityMetadata {
     /**
      * Entity's relation metadatas.
      */
-    readonly relations: RelationMetadata[];
+    private readonly _relations: RelationMetadata[];
 
     /**
      * Entity's relation id metadatas.
@@ -149,7 +149,7 @@ export class EntityMetadata {
         this._tableName = args.tableName;
         this.tableType = args.tableType;
         this._columns = args.columnMetadatas || [];
-        this.relations = args.relationMetadatas || [];
+        this._relations = args.relationMetadatas || [];
         this.relationIds = args.relationIdMetadatas || [];
         this.relationCounts = args.relationCountMetadatas || [];
         this.indices = args.indexMetadatas || [];
@@ -161,7 +161,7 @@ export class EntityMetadata {
         this.skipSchemaSync = args.skipSchemaSync;
         this._orderBy = args.orderBy;
         this._columns.forEach(column => column.entityMetadata = this);
-        this.relations.forEach(relation => relation.entityMetadata = this);
+        this._relations.forEach(relation => relation.entityMetadata = this);
         this.relationIds.forEach(relationId => relationId.entityMetadata = this);
         this.relationCounts.forEach(relationCount => relationCount.entityMetadata = this);
         this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
@@ -170,6 +170,7 @@ export class EntityMetadata {
         const setEmbeddedEntityMetadataRecursively = (embeddeds: EmbeddedMetadata[]) => {
             embeddeds.forEach(embedded => {
                 embedded.columns.forEach(column => column.entityMetadata = this);
+                embedded.relations.forEach(relation => relation.entityMetadata = this);
                 setEmbeddedEntityMetadataRecursively(embedded.embeddeds);
             });
         };
@@ -221,6 +222,13 @@ export class EntityMetadata {
             return this._orderBy(this.createPropertiesMap());
 
         return this._orderBy;
+    }
+
+    /**
+     * Relations of the entity, including relations that are coming from the embeddeds of this entity.
+     */
+    get relations(): RelationMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), this._relations);
     }
 
     /**
@@ -645,7 +653,7 @@ export class EntityMetadata {
      */
     createEntityIdMap(ids: any[]) {
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
-        return primaryColumns.reduce((map, column, index) => Object.assign(map, column.createEntityIdMap(ids[index])), {});
+        return primaryColumns.reduce((map, column, index) => Object.assign(map, column.createValueMap(ids[index])), {});
     }
 
     /**
@@ -658,7 +666,7 @@ export class EntityMetadata {
     isEntityMapEmpty(entity: ObjectLiteral): boolean {
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
         return !primaryColumns.every(column => {
-            const value = column.getEntityValue(entity);
+            const value = column.getValue(entity);
             return value !== null && value !== undefined;
         });
     }
@@ -676,18 +684,7 @@ export class EntityMetadata {
             return undefined;
 
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
-        const map = primaryColumns.reduce((map, column) => Object.assign(map, column.getEntityValueMap(entity)), {});
-        // console.log(map);
-
-        // const map: ObjectLiteral = {};
-        // primaryColumns.forEach(column => {
-        //     const entityValue = column.getEntityValue(entity);
-        //     if (entityValue === null || entityValue === undefined)
-        //         return;
-
-        //     map[column.propertyName] = Object.assign(map, entityValue);
-        // });
-
+        const map = primaryColumns.reduce((map, column) => OrmUtils.mergeDeep(map, column.getValueMap(entity)), {});
         return Object.keys(map).length > 0 ? map : undefined;
 
         // const map: ObjectLiteral = {};
@@ -723,7 +720,7 @@ export class EntityMetadata {
         const map: ObjectLiteral = {};
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
         primaryColumns.forEach(column => {
-            const entityValue = column.getEntityValue(entity);
+            const entityValue = column.getValue(entity);
             if (entityValue === null || entityValue === undefined)
                 return;
 
@@ -860,6 +857,17 @@ export class EntityMetadata {
         const relation = this.relations.find(relation => relation.propertyName === propertyName);
         if (!relation)
             throw new Error(`Relation with property name ${propertyName} in ${this.name} entity was not found.`);
+
+        return relation;
+    }
+
+    /**
+     * Finds relation with the given property path.
+     */
+    findRelationWithPropertyPath(propertyPath: string): RelationMetadata {
+        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in ${this.name} entity was not found.`);
 
         return relation;
     }

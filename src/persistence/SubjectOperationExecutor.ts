@@ -773,6 +773,7 @@ export class SubjectOperationExecutor {
         // we group by table name, because metadata can have different table names
         const valueMaps: { tableName: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
 
+        // console.log(subject.diffColumns);
         subject.diffColumns.forEach(column => {
             if (!column.entityTarget) return; // todo: how this can be possible?
             const metadata = this.connection.getMetadata(column.entityTarget);
@@ -782,7 +783,7 @@ export class SubjectOperationExecutor {
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[column.fullName] = this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
+            valueMap.values[column.fullName] = this.connection.driver.preparePersistentValue(column.getValue(entity), column);
         });
 
         subject.diffRelations.forEach(relation => {
@@ -1022,14 +1023,14 @@ export class SubjectOperationExecutor {
         const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.joinColumns;
         let conditions: ObjectLiteral = {};
         firstJoinColumns.forEach(joinColumn => {
-            conditions[joinColumn.fullName] = entity[joinColumn.referencedColumn.propertyName];
+            conditions[joinColumn.fullName] = joinColumn.referencedColumn.getValue(entity);
         });
 
         const removePromises = junctionRemove.junctionRelationIds.map(relationIds => {
             let inverseConditions: ObjectLiteral = {};
             Object.keys(relationIds).forEach(key => {
                 const joinColumn = secondJoinColumns.find(column => column.referencedColumn.propertyName === key);
-                inverseConditions[joinColumn!.fullName] = entity[joinColumn!.referencedColumn.propertyName];
+                inverseConditions[joinColumn!.fullName] = relationIds[key];
             });
             return this.queryRunner.delete(junctionMetadata.tableName, Object.assign({}, inverseConditions, conditions));
         });
