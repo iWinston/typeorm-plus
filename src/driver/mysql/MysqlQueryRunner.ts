@@ -684,11 +684,15 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
+    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
 
         switch (typeOptions.type) {
             case "string":
-                return "varchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                if (typeOptions.fixedLength) {
+                    return "char(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                } else {
+                    return "varchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
+                }
             case "text":
                 return "text";
             case "boolean":

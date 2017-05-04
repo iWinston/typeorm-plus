@@ -103,7 +103,9 @@ export class EntityManager extends BaseEntityManager {
                     if (target.length === 0)
                         return Promise.resolve(target);
 
-                    return this.getRepository<Entity[]>(target[0].constructor).persist(entity as Entity[], options);
+                    return Promise.all(target.map((t, i) => {
+                        return this.getRepository<Entity>(t.constructor).persist((entity as Entity[])[i], options);
+                    }));
                 } else {
                     return this.getRepository<Entity>(target.constructor).persist(entity as Entity, options);
                 }
@@ -178,7 +180,9 @@ export class EntityManager extends BaseEntityManager {
         } else {
             // todo: throw exception if constructor in target is not set
             if (target instanceof Array) {
-                return this.getRepository<Entity[]>(target[0].constructor).remove(entity as Entity[], options);
+                return Promise.all(target.map((t, i) => {
+                    return this.getRepository<Entity>(t.constructor).remove((entity as Entity[])[i], options);
+                }));
             } else {
                 return this.getRepository<Entity>(target.constructor).remove(entity as Entity, options);
             }

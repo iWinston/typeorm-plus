@@ -1,23 +1,38 @@
-# TypeORM
+<div align="center">
+  <a href="https://typeorm.github.io/">
+    <img src="./resources/logo_big.png" width="492" height="228">
+  </a>
+  <br>
+  <br>
+	<a href="https://travis-ci.org/typeorm/typeorm">
+		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
+	</a>
+	<a href="https://badge.fury.io/js/typeorm">
+		<img src="https://badge.fury.io/js/typeorm.svg">
+	</a>
+	<a href="https://david-dm.org/typeorm/typeorm">
+		<img src="https://david-dm.org/typeorm/typeorm.svg">
+	</a>
+	<a href="https://david-dm.org/typeorm/typeorm#info=devDependencies">
+		<img src="https://david-dm.org/typeorm/typeorm/dev-status.svg">
+	</a>
+	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
+		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
+	</a>
+  <br>
+  <br>
+</div>
 
-[![Build Status](https://travis-ci.org/typeorm/typeorm.svg?branch=master)](https://travis-ci.org/typeorm/typeorm)
-[![npm version](https://badge.fury.io/js/typeorm.svg)](https://badge.fury.io/js/typeorm)
-[![Dependency Status](https://david-dm.org/typeorm/typeorm.svg)](https://david-dm.org/typeorm/typeorm)
-[![devDependency Status](https://david-dm.org/typeorm/typeorm/dev-status.svg)](https://david-dm.org/typeorm/typeorm#info=devDependencies)
-[![Join the chat at https://gitter.im/typeorm/typeorm](https://badges.gitter.im/typeorm/typeorm.svg)](https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-[![TypeORM Logo](./resources/logo_big.png)](https://typeorm.github.io/)
-
-> Please support a project by simply putting a github star. 
-Share this library with friends on twitter and everywhere else you can.
+> Please support a project by simply putting a Github star. 
+Share this library with friends on Twitter and everywhere else you can.
 
 > ORM is in active development, but main API is pretty stable.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
-> 0.0.9 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
+> For the latest release changes see [changelog](./CHANGELOG.md).
 
-TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
+TypeORM is an [Object Relational Mapper](1) (ORM) for Node.js written in
 TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
 Its goal to always support latest JavaScript features and provide features
 that help you to develop any kind of applications that use database - from
@@ -30,7 +45,7 @@ your objects
 * map your selections from tables to javascript objects and map table columns
 to javascript object's properties
 * create one-to-one, many-to-one, one-to-many, many-to-many relations between tables
-* and much more ...
+* and much more...
 
 TypeORM uses Data Mapper pattern, unlike all other JavaScript ORMs that
 currently exist, which means you can write loosely coupled, scalable,
@@ -52,9 +67,9 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
     `npm install reflect-metadata --save`
 
-    and use it somewhere in the global place of your app:
+    and import it somewhere in the global place of your app (for example in `app.ts`):
 
-    * `require("reflect-metadata")` in your app's entry point (for example `app.ts`)
+    `import "reflect-metadata";`
 
 3. You may need to install node typings:
 
@@ -66,7 +81,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
     
         `npm install mysql --save`
     
-    * for **Postgres**
+    * for **PostgreSQL**
     
         `npm install pg --save`
     
@@ -96,12 +111,12 @@ Also make sure you are using TypeScript compiler version > **2.1** and you have 
 "experimentalDecorators": true,
 ```
 
-You'll also need to enable `es6` in the `lib` section of compiler options, or install `es6-shim` from `@typings`.
+You'll also need to enable `es6` in the `lib` section of compiler options, or install `es6-shim` from `@types`.
 
 #### Node.js version
 
-TypeORM was tested with Node.JS version 4 and above. 
-If you have errors during app bootstrap, try to upgrade your node.js version to the latest version.
+TypeORM was tested with Node.js version 4 and above. 
+If you have errors during app bootstrap, try to upgrade your Node.js version to the latest version.
 
 #### Usage in the browser with WebSQL (experimental)
 
@@ -129,7 +144,7 @@ export class Photo {
         
 ### Creating entity
 
-Now lets make it entity:
+Now let's make it entity:
 
 ```typescript
 import {Entity} from "typeorm";
@@ -214,7 +229,7 @@ export class Photo {
    
 ### Create auto-increment / generated / sequence / identity column
 
-Now, lets say you want to make your id column to be auto-generated (this is known as auto-increment / sequence / generated identity column).
+Now, let's say you want to make your id column to be auto-generated (this is known as auto-increment / sequence / generated identity column).
 To do that you need to change your column's type to integer and set a `{ generated: true }` in your primary column's options:
 
 ```typescript
@@ -278,10 +293,10 @@ export class Photo {
 
 ### Custom column data types
 
-Next step, lets fix our data types. By default, string is mapped to a varchar(255)-like type (depend of database type). 
+Next step, let's fix our data types. By default, string is mapped to a varchar(255)-like type (depend of database type). 
 Number is mapped to a float/double-like type (depend of database type). 
 We don't want all our columns to be limited varchars or excessive floats. 
-Lets setup correct data types:
+Let's setup correct data types:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
@@ -313,7 +328,7 @@ export class Photo {
 
 ### Creating connection with the database
 
-Now, when our entity is created, lets create `app.ts` file and setup our connection there:
+Now, when our entity is created, let's create `app.ts` file and setup our connection there:
 
 ```typescript
 import "reflect-metadata";
@@ -334,11 +349,11 @@ createConnection({
     ],
     autoSchemaSync: true,
 }).then(connection => {
-    // here you can start to work with your entities
+    // Here you can start to work with your entities
 }).catch(error => console.log(error));
 ```
 
-We are using mysql in this example, but you can use any other database. 
+We are using MySQL in this example, but you can use any other database. 
 To use another database simply change type in the driver options to the database type you are using: 
 mysql, mariadb, postgres, sqlite, mssql or oracle.
 Also make sure to use your own host, port, username, password and database settings.
@@ -371,7 +386,7 @@ createConnection({
     ],
     autoSchemaSync: true,
 }).then(connection => {
-    // here you can start to work with your entities
+    // Here you can start to work with your entities
 }).catch(error => console.log(error));
 ```
 
@@ -392,12 +407,11 @@ Now you if run your `app.ts`, connection with database will be initialized and d
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
 ```
-    
-Now you can run your `app.ts`, connection with database will be initialized, and database table for your Photo will be created.
+
 
 ### Creating and inserting photo into the database
 
-Now lets create a new photo to save it in the database:
+Now let's create a new photo to save it in the database:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -422,7 +436,7 @@ createConnection(/*...*/).then(connection => {
   
 ### Using async/await syntax
 
-Lets use latest TypeScript advantages and use async/await syntax instead:
+Let's use latest TypeScript advantages and use async/await syntax instead:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -448,7 +462,7 @@ createConnection(/*...*/).then(async connection => {
 We just created a new photo and saved it in the database. 
 We used `EntityManager` to save it. 
 Using entity managers you can manipulate any entity in your app. 
-Now lets load our saved entity:
+Now let's load our saved entity:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -467,7 +481,7 @@ savedPhotos will be an array of Photo objects with the data loaded from the data
 
 ### Using Repositories
 
-Now lets refactor our code and use `Repository` instead of EntityManager.
+Now let's refactor our code and use `Repository` instead of EntityManager.
 Each entity has its own repository which handles all operations with its entity. 
 When you deal with entities a lot, Repositories are more convenient to use then EntityManager:
 
@@ -498,7 +512,7 @@ createConnection(/*...*/).then(async connection => {
  
 ### Loading photos from the database
 
-Lets try more load operations using Repository:
+Let's try more load operations using Repository:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -523,15 +537,15 @@ createConnection(/*...*/).then(async connection => {
     console.log("All published photos: ", allPublishedPhotos);
 
     let [allPhotos, photosCount] = await photoRepository.findAndCount();
-    console.log("All photos: ", allPublishedPhotos);
-    console.log("Photos count: ", allPublishedPhotos);
+    console.log("All photos: ", allPhotos);
+    console.log("Photos count: ", photosCount);
 
 }).catch(error => console.log(error));
 ```
 
 ### Updating photo in the database
 
-Now lets load a single photo from the database, update it and save it:
+Now let's load a single photo from the database, update it and save it:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -553,7 +567,6 @@ Now photo with `id = 1` will be updated in the database.
 
 Now let's remove our photo from the database:
 
-
 ```typescript
 import {createConnection} from "typeorm";
 import {Photo} from "./entity/Photo";
@@ -569,10 +582,10 @@ createConnection(/*...*/).then(async connection => {
 
 Now photo with `id = 1` will be removed from the database.
 
-### creating a one-to-one relation
+### Creating a one-to-one relation
 
-Lets create a one-to-one relation with another class. 
-Lets create a new class called PhotoMetadata.ts which will contain a PhotoMetadata class which supposed to contain our photo's additional meta-information:
+Let's create a one-to-one relation with another class. 
+Let's create a new class called `PhotoMetadata.ts` which will contain a PhotoMetadata class which supposed to contain our photo's additional meta-information:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
@@ -612,7 +625,7 @@ We can also write it as a `() => Photo`, but we use `type => Photo as convention
 Type variable itself does not contain anything.
 
 We also put `@JoinColumn` decorator, which indicates that this side of the relationship will be owning relationship.
-Relations can be a uni-directional and bi-directional. 
+Relations can be a unidirectional and bidirectional. 
 Only one side of relational can be owner. 
 Using this decorator is required on owner side of the relationship.
 
@@ -620,7 +633,7 @@ If you run the app you'll see a new generated table, and it will contain a colum
 
 ```shell
 +-------------+--------------+----------------------------+
-|                         photo                           |
+|                      photometadata                      |
 +-------------+--------------+----------------------------+
 | id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
 | height      | int(11)      |                            |
@@ -632,9 +645,9 @@ If you run the app you'll see a new generated table, and it will contain a colum
 +-------------+--------------+----------------------------+
 ```
 
-### persisting an object with one-to-one relation
+### Persisting an object with one-to-one relation
 
-Now lets save a photo, its metadata and attach them to each other.
+Now let's save a photo, its metadata and attach them to each other.
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -643,14 +656,14 @@ import {PhotoMetadata} from "./entity/PhotoMetadata";
 
 createConnection(/*...*/).then(async connection => {
 
-    // create a photo
+    // Create a photo
     let photo = new Photo();
     photo.name = "Me and Bears";
     photo.description = "I am near polar bears";
     photo.filename = "photo-with-bears.jpg"
     photo.isPublished = true;
 
-    // create a photo metadata
+    // Create a photo metadata
     let metadata = new PhotoMetadata();
     metadata.height = 640;
     metadata.width = 480;
@@ -659,29 +672,29 @@ createConnection(/*...*/).then(async connection => {
     metadata.orientation = "portait";
     metadata.photo = photo; // this way we connect them
 
-    // get entity repositories
+    // Get entity repositories
     let photoRepository = connection.getRepository(Photo);
     let metadataRepository = connection.getRepository(PhotoMetadata);
 
-    // first we should persist a photo
+    // First we should persist a photo
     await photoRepository.persist(photo);
 
-    // photo is saved. Now we need to persist a photo metadata
+    // Photo is saved. Now we need to persist a photo metadata
     await metadataRepository.persist(metadata);
 
-    // done
-    console.log("metadata is saved, and relation between metadata and photo is created in the database too");
+    // Done
+    console.log("Metadata is saved, and relation between metadata and photo is created in the database too");
 
 }).catch(error => console.log(error));
 ```
  
 ### Adding inverse side of a relation
 
-Relations can be a uni-directional and bi-directional. 
-Now, relation between PhotoMetadata and Photo is uni-directional.
+Relations can be a unidirectional and bidirectional. 
+Now, relation between PhotoMetadata and Photo is unidirectional.
 Owner of the relation is PhotoMetadata and Photo doesn't know anything about PhotoMetadata. 
 This makes complicated accessing a photo metadata from the photo objects. 
-To fix it we should add inverse relation and make relations between PhotoMetadata and Photo bi-directional. 
+To fix it we should add inverse relation and make relations between PhotoMetadata and Photo bidirectional. 
 Let's modify our entities:
 
 ```typescript
@@ -724,9 +737,9 @@ Owning side of relationship contain a column with a foreign key in the database.
 
 ### Loading object with their relations
 
-Now lets load our photo, and its photo metadata in a single query. 
+Now let's load our photo, and its photo metadata in a single query. 
 There are two ways to do it - one you can use `FindOptions`, second is to use QueryBuilder. 
-Lets use FindOptions first. 
+Let's use FindOptions first. 
 `Repository.find` method allows you to specify object with FindOptions interface. 
 Using this you can customize your query to perform more complex queries.
 
@@ -759,7 +772,7 @@ We also used `innerJoinAndSelect` to inner and join and select the data from pho
 In `"photo.metadata"` "photo" is an alias you used, and "metadata" is a property name with relation of the object you are selecting. 
 `"metadata"`: is a new alias to the data returned by join expression.
 
-Lets use `QueryBuilder` for the same purpose. QueryBuilder allows to use more complex queries in an elegant way:
+Let's use `QueryBuilder` for the same purpose. QueryBuilder allows to use more complex queries in an elegant way:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -778,7 +791,7 @@ createConnection(/*...*/).then(async connection => {
 }).catch(error => console.log(error));
 ```
 
-### using cascade options to automatically save related objects
+### Using cascade options to automatically save related objects
 
 We can setup cascade options in our relations, in the cases when we want our related object to be persisted whenever other object is saved. 
 Let's change our photo's `@OneToOne` decorator a bit:
@@ -807,14 +820,14 @@ Now we can simply persist a photo object, and metadata object will persist autom
 ```typescript
 createConnection(options).then(async connection => {
 
-    // create photo object
+    // Create photo object
     let photo = new Photo();
     photo.name = "Me and Bears";
     photo.description = "I am near polar bears";
     photo.filename = "photo-with-bears.jpg"
     photo.isPublished = true;
 
-    // create photo metadata object
+    // Create photo metadata object
     let metadata = new PhotoMetadata();
     metadata.height = 640;
     metadata.width = 480;
@@ -824,10 +837,10 @@ createConnection(options).then(async connection => {
     
     photo.metadata = metadata; // this way we connect them
 
-    // get repository
+    // Get repository
     let photoRepository = connection.getRepository(Photo);
 
-    // first we should persist a photo
+    // Persisting a photo also persist the metadata
     await photoRepository.persist(photo);
 
     console.log("Photo is saved, photo metadata is saved too.")
@@ -835,11 +848,11 @@ createConnection(options).then(async connection => {
 }).catch(error => console.log(error));
 ```     
 
-### creating a many-to-one / one-to-many relation
+### Creating a many-to-one / one-to-many relation
 
-Lets create a many-to-one / one-to-many relation. 
-Lets say a photo has one author, and each author can have many photos. 
-First, lets create Author class:
+Let's create a many-to-one / one-to-many relation. 
+Let's say a photo has one author, and each author can have many photos. 
+First, let's create Author class:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn} from "typeorm";
@@ -854,7 +867,7 @@ export class Author {
     @Column()
     name: string;
 
-    @OneToMany(type => Photo, photo => photo.author) // note: we will create author property in the Photo class below
+    @OneToMany(type => Photo, photo => photo.author) // Note: we will create author property in the Photo class below
     photos: Photo[];
 }
 ```
@@ -862,7 +875,7 @@ export class Author {
 Author contains an inverse side of a relationship. 
 OneToMany is always an inverse side of relation, and it can't exist without ManyToOne of the other side of relationship.
 
-Now lets add owner side of relationship into the Photo entity:
+Now let's add owner side of relationship into the Photo entity:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
@@ -909,11 +922,11 @@ It will also modify photo table - add a new column author and create a foreign k
 +-------------+--------------+----------------------------+
 ```
    
-### creating a many-to-many relation
+### Creating a many-to-many relation
 
-Lets create a many-to-one / many-to-many relation. 
-Lets say a photo can be in many albums, and multiple can have many photos. 
-Lets create an `Album` class:
+Let's create a many-to-one / many-to-many relation. 
+Let's say a photo can be in many albums, and multiple can have many photos. 
+Let's create an `Album` class:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
@@ -927,30 +940,30 @@ export class Album {
     @Column()
     name: string;
 
-    @ManyToMany(type => Photo, photo => photo.albums, {  // note: we will create "albums" property in the Photo class below
-        cascadeInsert: true, // allow to insert a new photo on album save
-        cascadeUpdate: true, // allow to update a photo on album save
-        cascadeRemove: true  // allow to remove a photo on album remove
+    @ManyToMany(type => Photo, photo => photo.albums, {  // Note: we will create "albums" property in the Photo class below
+        cascadeInsert: true, // Allow to insert a new photo on album save
+        cascadeUpdate: true, // Allow to update a photo on album save
+        cascadeRemove: true  // Allow to remove a photo on album remove
     })
     @JoinTable()
-    photos: Photo[] = []; // we initialize array for convinience here
+    photos: Photo[] = []; // We initialize array for convinience here
 }
 ```
   
 `@JoinTable` is required to specify that this is owner side of the relationship.
 
-Now lets add inverse side of our relation to the `Photo` class:
+Now let's add inverse side of our relation to the `Photo` class:
 
 ```typescript
 export class Photo {
     /// ... other columns
 
     @ManyToMany(type => Album, album => album.photos, {
-        cascadeInsert: true, // allow to insert a new album on photo save
-        cascadeUpdate: true, // allow to update an album on photo save
-        cascadeRemove: true  // allow to remove an album on photo remove
+        cascadeInsert: true, // Allow to insert a new album on photo save
+        cascadeUpdate: true, // Allow to update an album on photo save
+        cascadeRemove: true  // Allow to remove an album on photo remove
     })
-    albums: Album[] = []; // we initialize array for convinience here
+    albums: Album[] = []; // We initialize array for convinience here
 }
 ```
 
@@ -974,19 +987,19 @@ const options: CreateConnectionOptions = {
 };
 ```
         
-Now lets insert albums and photos to our database:
+Now let's insert albums and photos to our database:
 
 ```typescript
 let connection = await createConnection(options);
 
-// create a few albums
+// Create a few albums
 let album1 = new Album();
 album1.name = "Bears";
 
 let album2 = new Album();
 album2.name = "Me";
 
-// create a few photos
+// Create a few photos
 let photo1 = new Photo();
 photo1.name = "Me and Bears";
 photo1.description = "I am near polar bears";
@@ -999,23 +1012,23 @@ photo2.description = "I am near polar bears";
 photo2.filename = "photo-with-bears.jpg";
 photo2.albums.push(album2);
 
-// get entity repository
+// Get entity repository
 let photoRepository = connection.getRepository(Photo);
 
-// first save a first photo
-// we only save the photos, albums are persisted
+// First save a first photo
+// We only save the photos, albums are persisted
 // automatically because of cascade options
 await photoRepository.persist(photo1);
 
-// second save a first photo
+// Second save a first photo
 await photoRepository.persist(photo2);
 
 console.log("Both photos have been saved");
 ```
 
-### using QueryBuilder
+### Using QueryBuilder
 
-You can use QueryBuilder to build even more complex queries. For example you can do this:
+You can use QueryBuilder to build even more complex queries. For example, you can do this:
 
 ```typescript
 let photoRepository = connection.getRepository(Photo);
@@ -1069,6 +1082,8 @@ There are few repositories which you can clone and start with:
 * [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
 * [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
 * [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
+* [Example how to use Express and TypeORM with TypeScript](https://github.com/typeorm/typescript-express-example)
+* [Example how to use Koa and TypeORM with TypeScript](https://github.com/typeorm/typescript-koa-example)
 
 ## Extensions
 

@@ -80,4 +80,10 @@ export interface ColumnOptions {
      */
     readonly localTimezone?: boolean;
 
+    /**
+     * Indicates if column's type will be set as a fixed-length data type.
+     * Works only with "string" columns.
+     */
+    readonly fixedLength?: boolean;
+
 }

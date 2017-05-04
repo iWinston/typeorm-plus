@@ -30,4 +30,3 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
         getMetadataArgsStorage().columns.add(args);
     };
 }
-

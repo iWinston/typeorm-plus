@@ -18,6 +18,8 @@ import {MongoRepository} from "./repository/MongoRepository";
 // -------------------------------------------------------------------------
 
 export * from "./container";
+export * from "./common/ObjectType";
+export * from "./common/ObjectLiteral";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";
 export * from "./decorator/columns/DiscriminatorColumn";
@@ -253,12 +255,12 @@ export function getEntityManager(connectionName: string = "default"): EntityMana
 /**
  * Gets repository for the given entity class.
  */
-export function getRepository<Entity>(entityClass: ObjectType<Entity>, connectionName: string): Repository<Entity>;
+export function getRepository<Entity>(entityClass: ObjectType<Entity>, connectionName?: string): Repository<Entity>;
 
 /**
  * Gets repository for the given entity name.
  */
-export function getRepository<Entity>(entityName: string, connectionName: string): Repository<Entity>;
+export function getRepository<Entity>(entityName: string, connectionName?: string): Repository<Entity>;
 
 /**
  * Gets repository for the given entity class or name.
@@ -270,12 +272,12 @@ export function getRepository<Entity>(entityClassOrName: ObjectType<Entity>|stri
 /**
  * Gets tree repository for the given entity class.
  */
-export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>, connectionName: string): TreeRepository<Entity>;
+export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>, connectionName?: string): TreeRepository<Entity>;
 
 /**
  * Gets tree repository for the given entity name.
  */
-export function getTreeRepository<Entity>(entityName: string, connectionName: string): TreeRepository<Entity>;
+export function getTreeRepository<Entity>(entityName: string, connectionName?: string): TreeRepository<Entity>;
 
 /**
  * Gets tree repository for the given entity class or name.
@@ -287,12 +289,12 @@ export function getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|
 /**
  * Gets mongodb repository for the given entity class.
  */
-export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>, connectionName: string): MongoRepository<Entity>;
+export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>, connectionName?: string): MongoRepository<Entity>;
 
 /**
  * Gets mongodb repository for the given entity name.
  */
-export function getMongoRepository<Entity>(entityName: string, connectionName: string): MongoRepository<Entity>;
+export function getMongoRepository<Entity>(entityName: string, connectionName?: string): MongoRepository<Entity>;
 
 /**
  * Gets mongodb repository for the given entity class or name.

@@ -30,6 +30,14 @@ each for its own `findOne*` or `find*` methods
 * fixes [#285](https://github.com/typeorm/typeorm/issues/285) - issue when cli commands rise `CannotCloseNotConnectedError`
 * fixes [#309](https://github.com/typeorm/typeorm/issues/309) - issue when `andHaving` didn't work without calling `having` on `QueryBuilder`
 
+# 0.0.10
+
+* added `ObjectLiteral` and `ObjectType` into main exports
+* fixed issue fixes [#345](https://github.com/typeorm/typeorm/issues/345).
+* fixed issue with migration not saving into the database correctly.
+    Note its a breaking change if you have run migrations before and have records in the database table,
+    make sure to apply corresponding changes. More info in [#360](https://github.com/typeorm/typeorm/issues/360) issue.
+
 # 0.0.9 (latest)
 
 * fixed bug with indices from columns are not being inherited from parent entity [#242](https://github.com/typeorm/typeorm/issues/242)

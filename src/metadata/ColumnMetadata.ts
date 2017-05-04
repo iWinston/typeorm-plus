@@ -128,6 +128,12 @@ export class ColumnMetadata {
      */
     readonly localTimezone?: boolean;
 
+    /**
+     * Indicates if column's type will be set as a fixed-length data type.
+     * Works only with "string" columns.
+     */
+    readonly fixedLength?: boolean;
+
     // ---------------------------------------------------------------------
     // Private Properties
     // ---------------------------------------------------------------------
@@ -176,6 +182,8 @@ export class ColumnMetadata {
             this.timezone = args.options.timezone;
         if (args.options.localTimezone)
             this.localTimezone = args.options.localTimezone;
+        if (args.options.fixedLength)
+            this.fixedLength = args.options.fixedLength;
     }
 
     // ---------------------------------------------------------------------
