@@ -1019,7 +1019,7 @@ export class EntityMetadata {
 
         return this.primaryColumns.every(primaryColumn => { /// todo: this.metadata.parentEntityMetadata ?
             const value = primaryColumn.getValue(entity);
-            return value !== null && value !== undefined && value!== "";
+            return value !== null && value !== undefined && value !== "";
         });
     }
 
