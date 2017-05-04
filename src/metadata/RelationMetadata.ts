@@ -346,6 +346,13 @@ export class RelationMetadata {
     }
 
     /**
+     * Checks if this relation has a join column (e.g. is it many-to-one or one-to-one owner side).
+     */
+    get isWithJoinColumn(): boolean {
+        return this.isManyToOne || this.isOneToOneOwner;
+    }
+
+    /**
      * Checks if this relation is NOT owner side of the "one-to-one" relation.
      * NOT owner side means this side of relation does not have a join column in the table.
      */

@@ -90,8 +90,16 @@ export class IndexMetadata {
         }
 
         const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyPath) !== -1);
-        const missingColumnNames = columnPropertyNames.filter(columnPropertyName => !this.entityMetadata.columns.find(column => column.propertyPath === columnPropertyName));
-        if (missingColumnNames.length > 0) { // todo: better to extract all validation into single place is possible
+        this.entityMetadata.relations
+            .filter(relation => relation.isWithJoinColumn && columnPropertyNames.indexOf(relation.propertyName) !== -1)
+            .forEach(relation => columns.push(...relation.joinColumns));
+
+        // todo: better to extract all validation into single place if possible
+        const missingColumnNames = columnPropertyNames.filter(columnPropertyName => {
+            return !this.entityMetadata.columns.find(column => column.propertyPath === columnPropertyName) &&
+                !this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && columnPropertyNames.indexOf(relation.propertyName) !== -1);
+        });
+        if (missingColumnNames.length > 0) {
             // console.log(this.entityMetadata.columns);
             throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
         }
