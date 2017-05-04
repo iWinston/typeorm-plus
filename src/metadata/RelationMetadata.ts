@@ -401,7 +401,7 @@ export class RelationMetadata {
      * Checks if inverse side is specified by a relation.
      */
     get hasInverseSide(): boolean {
-        return this.inverseEntityMetadata && this.inverseEntityMetadata.hasRelationWithPropertyName(this.inverseSidePropertyPath);
+        return this.inverseEntityMetadata && this.inverseEntityMetadata.hasRelationWithPropertyPath(this.inverseSidePropertyPath);
     }
 
     /**

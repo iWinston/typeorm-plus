@@ -1019,7 +1019,6 @@ export class SubjectOperationExecutor {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
         const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
 
-        console.log(junctionRemove);
         const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinColumns : junctionRemove.relation.inverseRelation.inverseJoinColumns;
         const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.inverseRelation.joinColumns;
         let conditions: ObjectLiteral = {};

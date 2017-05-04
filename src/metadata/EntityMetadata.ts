@@ -840,6 +840,14 @@ export class EntityMetadata {
         return !!this._columns.find(column => column.propertyName === propertyName);
     }
 
+
+    /**
+     * Checks if relation with the given property path exist.
+     */
+    hasRelationWithPropertyPath(propertyPath: string): boolean {
+        return !!this.relations.find(relation => relation.propertyPath === propertyPath);
+    }
+
     /**
      * Checks if column with the given database name exist.
      */
@@ -1093,5 +1101,4 @@ export class EntityMetadata {
     get isClassTableChild() {
         return this.tableType === TableTypes.CLASS_TABLE_CHILD;
     }
-
 }
