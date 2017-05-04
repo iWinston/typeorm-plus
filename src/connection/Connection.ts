@@ -165,11 +165,17 @@ export class Connection {
 
     /**
      * Gets entity manager that allows to perform repository operations with any entity in this connection.
+     *
+     * @deprecated use manager instead.
      */
     get entityManager(): EntityManager {
-        // if (!this.isConnected)
-        //     throw new CannotGetEntityManagerNotConnectedError(this.name);
+        return this._entityManager;
+    }
 
+    /**
+     * Gets entity manager that allows to perform repository operations with any entity in this connection.
+     */
+    get manager(): EntityManager {
         return this._entityManager;
     }
 
@@ -691,8 +697,8 @@ export class Connection {
                 .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
 
             // build entity metadatas from metadata args storage (collected from decorators)
-            getFromContainer(EntityMetadataBuilder)
-                .build(this.driver, lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy, this.entityClasses)
+            new EntityMetadataBuilder(this.driver, lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy)
+                .build(this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
@@ -702,8 +708,8 @@ export class Connection {
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
             const metadataArgsStorage = getFromContainer(EntitySchemaTransformer).transform(this.entitySchemas);
-            getFromContainer(EntityMetadataBuilder)
-                .build(this.driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy)
+            new EntityMetadataBuilder(this.driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy)
+                .build()
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));

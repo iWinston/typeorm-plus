@@ -10,9 +10,19 @@ export interface NamingStrategyInterface {
     name?: string;
 
     /**
-     * Gets the table name from the given class name.
+     * Normalizes table name.
+     *
+     * @param targetName Name of the target entity that can be used to generate a table name.
+     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. @Entity("name")
      */
-    tableName(className: string, customName?: string): string;
+    tableName(targetName: string, userSpecifiedName: string|undefined): string;
+
+    /**
+     * Creates a table name for a junction table of a closure table.
+     *
+     * @param originalClosureTableName Name of the closure table which owns this junction table.
+     */
+    closureJunctionTableName(originalClosureTableName: string): string;
 
     /**
      * Gets the table's column name from the given property name.
@@ -59,11 +69,6 @@ export interface NamingStrategyInterface {
     joinTableColumnName(tableName: string, columnName: string): string;
 
     /**
-     * Gets the name for the closure junction table.
-     */
-    closureJunctionTableName(tableName: string): string;
-
-    /**
      * Gets the name of the foreign key.
      */
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string;
@@ -74,8 +79,11 @@ export interface NamingStrategyInterface {
     classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string;
 
     /**
-     * Adds prefix to the table.
+     * Adds globally set prefix to the table name.
+     * This method is executed no matter if prefix was set or not.
+     * Table name is either user's given table name, either name generated from entity target.
+     * Note that table name comes here already normalized by #tableName method.
      */
-    prefixTableName(prefix: string, originalTableName: string): string;
+    prefixTableName(prefix: string|undefined, tableName: string): string;
 
 }

@@ -45,7 +45,7 @@ export class ColumnMetadata {
     /**
      * Target class to which metadata is applied.
      */
-    readonly target: Function|string|"__virtual__";
+    readonly target: Function|string;
 
     /**
      * Target's property name to which this metadata is applied.

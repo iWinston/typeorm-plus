@@ -47,18 +47,15 @@ export class EntityMetadata {
     /**
      * Target class to which this entity metadata is bind.
      * Note, that when using table inheritance patterns target can be different rather then table's target.
+     * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
      */
-    readonly target: Function|string;
+    target: Function|string;
 
     /**
      * Indicates if this entity metadata of a junction table, or not.
+     * Junction table is a table created by many-to-many relationship.
      */
-    readonly junction: boolean;
-
-    /**
-     * Entity's table metadata.
-     */
-    readonly _tableName?: string;
+    readonly isJunction: boolean;
 
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
@@ -143,10 +140,9 @@ export class EntityMetadata {
     constructor(args: EntityMetadataArgs,
                 private lazyRelationsWrapper: LazyRelationsWrapper) {
         this.target = args.target;
-        this.junction = args.junction;
+        this.isJunction = args.junction;
         this.tablesPrefix = args.tablesPrefix;
         this.namingStrategy = args.namingStrategy;
-        this._tableName = args.tableName;
         this.tableType = args.tableType;
         this._columns = args.columnMetadatas || [];
         this._relations = args.relationMetadatas || [];
@@ -182,36 +178,48 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Entity's name. Equal to entity target class's name if target is set to table, or equals to table name if its set.
+     * Entity's name.
+     * Equal to entity target class's name if target is set to table.
+     * If target class is not then then it equals to table name.
+     *
+     * @stable
      */
-    get name(): string {
-        return this.targetName ? this.targetName : this.tableName;
-    }
+    name: string;
 
     /**
-     * Entity's name. Equal to entity target class's name if target is set to table, or equals to table name if its set.
+     * Gets the name of the target.
+     *
+     * @stable
      */
-    get tableName(): string {
-        if (this.tablesPrefix)
-            return this.namingStrategy.prefixTableName(this.tablesPrefix, this.tableNameWithoutPrefix);
+    targetName: string;
 
-        return this.tableNameWithoutPrefix;
-    }
+    /**
+     * Original user-given table name (taken from schema or @Entity(tableName) decorator).
+     * If user haven't specified a table name this property will be undefined.
+     *
+     * @stable
+     */
+    tableNameUserSpecified?: string;
+
+    /**
+     * Entity table name in the database.
+     * This is final table name of the entity.
+     * This name already passed naming strategy, and generated based on
+     * multiple criteria, including user table name and global table prefix.
+     *
+     * @stable
+     */
+    tableName: string;
 
     /**
      * Gets the table name without global table prefix.
      * When querying table you need a table name with prefix, but in some scenarios,
      * for example when you want to name a junction table that contains names of two other tables,
      * you may want a table name without prefix.
+     *
+     * @stable
      */
-    get tableNameWithoutPrefix() {
-        if (this.isClosureJunction && this._tableName)
-            return this.namingStrategy.closureJunctionTableName(this._tableName);
-
-        // otherwise generate table name from target's name
-        const name = this.target instanceof Function ? (this.target as any).name : this.target;
-        return this.namingStrategy.tableName(name, this._tableName);
-    }
+    tableNameWithoutPrefix: string;
 
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
@@ -267,19 +275,6 @@ export class EntityMetadata {
             relations = relations.concat(this.parentEntityMetadata.relations);
 
         return relations;
-    }
-
-    /**
-     * Gets the name of the target.
-     */
-    get targetName(): string {
-        if (typeof this.target === "string")
-            return this.target;
-
-        if (this.target instanceof Function)
-            return (<any> this.target).name;
-
-        return "";
     }
 
     /**
@@ -1051,14 +1046,6 @@ export class EntityMetadata {
      */
     get isAbstract() {
         return this.tableType === TableTypes.ABSTRACT;
-    }
-
-    /**
-     * Checks if this table is abstract.
-     * Junction table is a table automatically created by many-to-many relationship.
-     */
-    get isJunction() {
-        return this.tableType === TableTypes.JUNCTION;
     }
 
     /**

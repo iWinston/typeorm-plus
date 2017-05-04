@@ -61,7 +61,7 @@ export class MetadataArgsStorage {
         const tableMetadatas = allTableMetadataArgs.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child");
 
         return tableMetadatas.toArray().map(tableMetadata => {
-            return this.mergeWithAbstract(allTableMetadataArgs, tableMetadata);
+            return this.mergeWithAbstract(this.tables, tableMetadata);
         });
     }
 

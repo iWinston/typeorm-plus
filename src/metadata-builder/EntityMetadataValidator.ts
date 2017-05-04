@@ -29,7 +29,7 @@ export class EntityMetadataValidator {
     validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[]) {
 
         // check if table metadata has an id
-        if (!entityMetadata.isClassTableChild && !entityMetadata.primaryColumns.length && !entityMetadata.junction)
+        if (!entityMetadata.isClassTableChild && !entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata);
 
         // validate if table is using inheritance it has a discriminator

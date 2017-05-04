@@ -18,6 +18,7 @@ each for its own `findOne*` or `find*` methods
 * table decorators were not removed in the release, however they will be removed in next. Be sure to replace them before that.
 * `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#skip`
 * `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
+* renamed `entityManager` to `manager`
 
 ### NEW FEATURES
 

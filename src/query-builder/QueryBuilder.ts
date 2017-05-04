@@ -1223,7 +1223,7 @@ export class QueryBuilder<Entity> {
             // return this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName) +
             //     " AS " + this.escapeAlias(aliasName + "_" + column.fullName);
         });
-    };
+    }
 
     protected findEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const mainSelect = this.expressionMap.selects.find(select => select.selection === aliasName);

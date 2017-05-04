@@ -37,7 +37,7 @@ export class RelationIdMetadataToAttributeTransformer {
         this.expressionMap.joinAttributes.forEach(join => {
 
             // ensure this join has a metadata, because relation id can only work for real orm entities
-            if (!join.metadata || join.metadata.junction)
+            if (!join.metadata || join.metadata.isJunction)
                 return;
 
             join.metadata.relationIds.forEach(relationId => {

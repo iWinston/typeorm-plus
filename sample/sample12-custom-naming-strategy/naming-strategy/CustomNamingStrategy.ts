@@ -6,8 +6,8 @@ import {snakeCase} from "../../../src/util/StringUtils";
 @NamingStrategy("custom_strategy")
 export class CustomNamingStrategy extends DefaultNamingStrategy implements NamingStrategyInterface {
 
-    tableName(className: string, customName: string): string {
-        return customName ? customName : snakeCase(className);
+    tableName(targetName: string, userSpecifiedName: string): string {
+        return userSpecifiedName ? userSpecifiedName : snakeCase(targetName);
     }
 
     columnName(propertyName: string, customName: string): string {

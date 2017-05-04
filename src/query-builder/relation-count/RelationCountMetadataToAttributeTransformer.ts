@@ -37,7 +37,7 @@ export class RelationCountMetadataToAttributeTransformer {
         this.expressionMap.joinAttributes.forEach(join => {
 
             // ensure this join has a metadata, because relation count can only work for real orm entities
-            if (!join.metadata || join.metadata.junction)
+            if (!join.metadata || join.metadata.isJunction)
                 return;
 
             join.metadata.relationCounts.forEach(relationCount => {

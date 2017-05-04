@@ -59,7 +59,7 @@ export class Broadcaster {
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.beforeInsert)
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeInsert)
             .map(subscriber => subscriber.beforeInsert!({
                 entityManager: entityManager,
                 entity: subject.entity
@@ -81,7 +81,7 @@ export class Broadcaster {
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.beforeUpdate)
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate!({
                 entityManager: entityManager,
                 entity: subject.entity,
@@ -106,7 +106,7 @@ export class Broadcaster {
             .map(entityListener => subject.databaseEntity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.beforeRemove)
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove!({
                 entityManager: entityManager,
                 entity: subject.hasEntity ? subject.entity : undefined,
@@ -130,7 +130,7 @@ export class Broadcaster {
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.afterInsert)
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterInsert)
             .map(subscriber => subscriber.afterInsert!({
                 entityManager: entityManager,
                 entity: subject.entity
@@ -152,7 +152,7 @@ export class Broadcaster {
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.afterUpdate)
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate!({
                 entityManager: entityManager,
                 entity: subject.entity,
@@ -177,7 +177,7 @@ export class Broadcaster {
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget) && subscriber.afterRemove)
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove!({
                 entityManager: entityManager,
                 entity: subject.hasEntity ? subject.entity : undefined,
@@ -215,9 +215,9 @@ export class Broadcaster {
 
             const value = relation.getEntityValue(entity);
             if (value instanceof Array) {
-                promises = promises.concat(this.broadcastLoadEventsForAll(relation.inverseEntityMetadata.target, value));
+                promises = promises.concat(this.broadcastLoadEventsForAll(relation.inverseEntityMetadata.target!, value));
             } else if (value) {
-                promises.push(this.broadcastLoadEvents(relation.inverseEntityMetadata.target, value));
+                promises.push(this.broadcastLoadEvents(relation.inverseEntityMetadata.target!, value));
             }
 
             return promises;

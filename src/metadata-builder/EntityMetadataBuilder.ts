@@ -15,6 +15,10 @@ import {Driver} from "../driver/Driver";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationIdMetadata} from "../metadata/RelationIdMetadata";
 import {RelationCountMetadata} from "../metadata/RelationCountMetadata";
+import {ColumnTypes} from "../metadata/types/ColumnTypes";
+import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
+import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
+import {TableType} from "../metadata/types/TableTypes";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -28,6 +32,12 @@ export class EntityMetadataBuilder {
     // todo: tree decorators can be used only on closure table (validation)
     // todo: throw error if parent tree metadata was not specified in a closure table
 
+    constructor(private driver: Driver,
+                private lazyRelationsWrapper: LazyRelationsWrapper,
+                private metadataArgsStorage: MetadataArgsStorage,
+                private namingStrategy: NamingStrategyInterface) {
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -35,14 +45,11 @@ export class EntityMetadataBuilder {
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    build(driver: Driver,
-          lazyRelationsWrapper: LazyRelationsWrapper,
-          metadataArgsStorage: MetadataArgsStorage,
-          namingStrategy: NamingStrategyInterface,
+    build(
           entityClasses?: Function[]): EntityMetadata[] {
-        const embeddableMergedArgs = metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
+        const embeddableMergedArgs = this.metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas: EntityMetadata[] = [];
-        const allMergedArgs = metadataArgsStorage.getMergedTableMetadatas(entityClasses);
+        const allMergedArgs = this.metadataArgsStorage.getMergedTableMetadatas(entityClasses);
         allMergedArgs.forEach(mergedArgs => {
 
             const tables = [mergedArgs.table].concat(mergedArgs.children);
@@ -89,8 +96,8 @@ export class EntityMetadataBuilder {
                 const entityMetadata = new EntityMetadata({
                     junction: false,
                     target: tableArgs.target,
-                    tablesPrefix: driver.options.tablesPrefix,
-                    namingStrategy: namingStrategy,
+                    tablesPrefix: this.driver.options.tablesPrefix,
+                    namingStrategy: this.namingStrategy,
                     tableName: argsForTable.name,
                     tableType: argsForTable.type,
                     orderBy: argsForTable.orderBy,
@@ -104,7 +111,13 @@ export class EntityMetadataBuilder {
                     embeddedMetadatas: embeddeds,
                     inheritanceType: mergedArgs.inheritance ? mergedArgs.inheritance.type : undefined,
                     discriminatorValue: discriminatorValueArgs ? discriminatorValueArgs.value : (tableArgs.target as any).name // todo: pass this to naming strategy to generate a name
-                }, lazyRelationsWrapper);
+                }, this.lazyRelationsWrapper);
+                this.createEntityMetadata(entityMetadata, {
+                    target: tableArgs.target,
+                    tableType: argsForTable.type,
+                    userSpecifiedTableName: argsForTable.name,
+                });
+
                 entityMetadatas.push(entityMetadata);
                 // create entity's relations join tables
 
@@ -113,7 +126,7 @@ export class EntityMetadataBuilder {
                     entityMetadata.relations
                         .filter(relation => relation.isLazy)
                         .forEach(relation => {
-                            lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                            this.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
                         });
                 }
             });
@@ -147,7 +160,7 @@ export class EntityMetadataBuilder {
             .filter(metadata => !!metadata.parentEntityMetadata)
             .forEach(metadata => {
                 const parentEntityMetadataPrimaryColumn = metadata.parentEntityMetadata.firstPrimaryColumn; // todo: make sure to create columns for all its primary columns
-                const columnName = namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentEntityMetadataPrimaryColumn.propertyName);
+                const columnName = this.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentEntityMetadataPrimaryColumn.propertyName);
                 const parentRelationColumn = new ColumnMetadata({
                     target: metadata.parentEntityMetadata.target,
                     propertyName: parentEntityMetadataPrimaryColumn.propertyName,
@@ -207,7 +220,7 @@ export class EntityMetadataBuilder {
                     // we need to go thought each many-to-one relation without join column decorator set
                     // and create join column metadata args for them
 
-                    const joinColumnArgsArray = metadataArgsStorage.findJoinColumns(relation.target, relation.propertyName);
+                    const joinColumnArgsArray = this.metadataArgsStorage.findJoinColumns(relation.target, relation.propertyName);
 
                     const hasAnyReferencedColumnName = joinColumnArgsArray.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
                     const manyToOneWithoutJoinColumn = joinColumnArgsArray.length === 0 && relation.isManyToOne;
@@ -236,7 +249,7 @@ export class EntityMetadataBuilder {
                             return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === referencedColumn.propertyName) &&
                                 !!joinColumnArgs.name;
                         });
-                        const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
+                        const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
 
                         let relationalColumn = relation.entityMetadata.columns.find(column => column.fullName === joinColumnName);
                         if (!relationalColumn) {
@@ -278,7 +291,7 @@ export class EntityMetadataBuilder {
 
             // create entity's relations join columns
             entityMetadata.manyToManyRelations.forEach(relation => {
-                const joinTableMetadataArgs = metadataArgsStorage.findJoinTable(relation.target, relation.propertyName);
+                const joinTableMetadataArgs = this.metadataArgsStorage.findJoinTable(relation.target, relation.propertyName);
                 if (!joinTableMetadataArgs) return;
 
                 const joinTableName = joinTableMetadataArgs.name || relation.entityMetadata.namingStrategy.joinTableName(
@@ -354,7 +367,7 @@ export class EntityMetadataBuilder {
                         return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === referencedColumn.propertyName) &&
                             !!joinColumnArgs.name;
                     }) : undefined;
-                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.fullName);
+                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.fullName);
 
                     return new ColumnMetadata({
                         target: "__virtual__",
@@ -375,7 +388,7 @@ export class EntityMetadataBuilder {
                             return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === inverseReferencedColumn.propertyName) &&
                                 !!joinColumnArgs.name;
                         }) : undefined;
-                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.fullName);
+                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.fullName);
 
                     return new ColumnMetadata({
                         target: "__virtual__",
@@ -401,8 +414,8 @@ export class EntityMetadataBuilder {
                 const junctionEntityMetadata = new EntityMetadata({
                     junction: true,
                     target: "__virtual__",
-                    tablesPrefix: driver.options.tablesPrefix,
-                    namingStrategy: namingStrategy,
+                    tablesPrefix: this.driver.options.tablesPrefix,
+                    namingStrategy: this.namingStrategy,
                     tableName: joinTableName,
                     tableType: "junction",
                     columnMetadatas: junctionColumns.concat(inverseJunctionColumns),
@@ -411,7 +424,11 @@ export class EntityMetadataBuilder {
                         new IndexMetadata({ columns: junctionColumns.map(column => column.fullName), unique: false }),
                         new IndexMetadata({ columns: inverseJunctionColumns.map(column => column.fullName), unique: false })
                     ]
-                }, lazyRelationsWrapper);
+                }, this.lazyRelationsWrapper);
+                this.createEntityMetadata(junctionEntityMetadata, {
+                    tableType: "junction",
+                    userSpecifiedTableName: joinTableName,
+                });
 
                 junctionEntityMetadata.columns.forEach(column => column.entityMetadata = entityMetadata);
                 relation.foreignKeys = foreignKeys;
@@ -499,24 +516,126 @@ export class EntityMetadataBuilder {
             if (metadata.primaryColumns.length > 1)
                 throw new Error(`Cannot use given entity ${metadata.name} as a closure table, because it have multiple primary keys. Entities with multiple primary keys are not supported in closure tables.`);
 
-            const closureJunctionEntityMetadata = getFromContainer(ClosureJunctionEntityMetadataBuilder).build(driver, lazyRelationsWrapper, {
-                namingStrategy: namingStrategy,
-                entityMetadata: metadata,
-                primaryColumn: metadata.firstPrimaryColumn,
-                hasTreeLevelColumn: metadata.hasTreeLevelColumn
+            const columns = [
+                new ColumnMetadata(<ColumnMetadataArgs> {
+                    target: "__virtual__",
+                    propertyName: "__virtual__",
+                    propertyType: metadata.firstPrimaryColumn.type,
+                    mode: "virtual",
+                    options: <ColumnOptions> {
+                        length: metadata.firstPrimaryColumn.length,
+                        type: metadata.firstPrimaryColumn.type,
+                        name: "ancestor"
+                    }
+                }),
+                new ColumnMetadata(<ColumnMetadataArgs> {
+                    target: "__virtual__",
+                    propertyName: "__virtual__",
+                    propertyType: metadata.firstPrimaryColumn.type,
+                    mode: "virtual",
+                    options: <ColumnOptions> {
+                        length: metadata.firstPrimaryColumn.length,
+                        type: metadata.firstPrimaryColumn.type,
+                        name: "descendant"
+                    }
+                })
+            ];
+
+            if (metadata.hasTreeLevelColumn) {
+                columns.push(new ColumnMetadata(<ColumnMetadataArgs> {
+                    target: "__virtual__",
+                    propertyName: "__virtual__",
+                    propertyType: ColumnTypes.INTEGER,
+                    mode: "virtual",
+                    options: {
+                        type: ColumnTypes.INTEGER,
+                        name: "level"
+                    }
+                }));
+            }
+
+            const closureJunctionEntityMetadata = new EntityMetadata({
+                junction: true,
+                target: "__virtual__",
+                tablesPrefix: this.driver.options.tablesPrefix,
+                namingStrategy: this.namingStrategy,
+                tableName: metadata.tableName,
+                tableType: "closure-junction",
+                columnMetadatas: columns,
+                foreignKeyMetadatas: [
+                    new ForeignKeyMetadata([columns[0]], metadata, [metadata.firstPrimaryColumn]),
+                    new ForeignKeyMetadata([columns[1]], metadata, [metadata.firstPrimaryColumn])
+                ]
+            }, this.lazyRelationsWrapper);
+            this.createEntityMetadata(closureJunctionEntityMetadata, {
+                tableType: "closure-junction",
+                closureOwnerTableName: metadata.tableName,
             });
+
             metadata.closureJunctionTable = closureJunctionEntityMetadata;
             entityMetadatas.push(closureJunctionEntityMetadata);
         });
 
         // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
-        getFromContainer(EntityMetadataValidator).validateMany(entityMetadatas);
+        new EntityMetadataValidator().validateMany(entityMetadatas);
 
         return entityMetadatas;
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Protected Methods
     // -------------------------------------------------------------------------
+
+    protected createEntityMetadata(metadata: EntityMetadata, options: {
+        target?: Function|string,
+        tableType: TableType,
+        userSpecifiedTableName?: string,
+        closureOwnerTableName?: string
+    }) {
+
+        let target = options.target;
+        const tableNameUserSpecified = options.userSpecifiedTableName;
+        const tableType = options.tableType;
+        const isClosureJunction = tableType === "closure-junction";
+        const targetName = target instanceof Function ? (target as any).name : target;
+        const tableNameWithoutPrefix = isClosureJunction
+            ? this.namingStrategy.closureJunctionTableName(options.closureOwnerTableName!)
+            : this.namingStrategy.tableName(targetName, options.userSpecifiedTableName);
+
+        const tableName = this.namingStrategy.prefixTableName(this.driver.options.tablesPrefix, tableNameWithoutPrefix);
+
+        // for virtual tables (like junction table) target is equal to undefined at this moment
+        // we change this by setting virtual's table name to a target name
+        // todo: add validation so targets with same schema names won't conflicts with virtual table names
+        metadata.target = target ? target : tableName;
+        metadata.targetName = targetName;
+        metadata.tableNameUserSpecified = tableNameUserSpecified;
+        metadata.tableNameWithoutPrefix = tableNameWithoutPrefix;
+        metadata.tableName = tableName;
+        metadata.name = targetName ? targetName : tableName;
+    }
+
+    /*protected createEntityMetadata(tableArgs: any, argsForTable: any, ): EntityMetadata {
+        const metadata = new EntityMetadata({
+            junction: false,
+            target: tableArgs.target,
+            tablesPrefix: this.driver.options.tablesPrefix,
+            namingStrategy: this.namingStrategy,
+            tableName: argsForTable.name,
+            tableType: argsForTable.type,
+            orderBy: argsForTable.orderBy,
+            engine: argsForTable.engine,
+            skipSchemaSync: argsForTable.skipSchemaSync,
+            columnMetadatas: columns,
+            relationMetadatas: relations,
+            relationIdMetadatas: relationIds,
+            relationCountMetadatas: relationCounts,
+            indexMetadatas: indices,
+            embeddedMetadatas: embeddeds,
+            inheritanceType: mergedArgs.inheritance ? mergedArgs.inheritance.type : undefined,
+            discriminatorValue: discriminatorValueArgs ? discriminatorValueArgs.value : (tableArgs.target as any).name // todo: pass this to naming strategy to generate a name
+        }, this.lazyRelationsWrapper);
+        return metadata;
+    }*/
 
 }
