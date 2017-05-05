@@ -56,7 +56,7 @@ export class Broadcaster {
 
         const listeners = this.entityListeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && this.isAllowedListener(listener, subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => subject.entity[entityListener.propertyName]()); // getValue() ?
 
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeInsert)

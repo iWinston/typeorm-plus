@@ -517,7 +517,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const promises = metadata.relations.map(relation => {
             const relMetadata = relation.inverseEntityMetadata;
 
-            const value = relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
+            const value = relation.getEntityValue(entity);
             if (!value)
                 return undefined;
 

@@ -1628,11 +1628,11 @@ export class QueryBuilder<Entity> {
             // if (metadata.hasMultiplePrimaryKeys) {
                 metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
                     whereSubStrings.push(ea(alias) + "." + ec(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                    parameters["id_" + index + "_" + secondIndex] = primaryColumn.getValue(id);
+                    parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
                 });
                 metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
                     whereSubStrings.push(ea(alias) + "." + ec(id[primaryColumn.databaseName]) + "=:parentId_" + index + "_" + secondIndex);
-                    parameters["parentId_" + index + "_" + secondIndex] = primaryColumn.getValue(id);
+                    parameters["parentId_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
                 });
             // } else {
             //     if (metadata.primaryColumns.length > 0) {

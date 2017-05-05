@@ -319,8 +319,8 @@ export class Subject {
         this.diffColumns = this.metadata.allColumns.filter(column => {
 
             // prepare both entity and database values to make comparision
-            let entityValue = column.getValue(this.entity);
-            let databaseValue = column.getValue(this.databaseEntity);
+            let entityValue = column.getEntityValue(this.entity);
+            let databaseValue = column.getEntityValue(this.databaseEntity);
             if (entityValue === undefined)
                 return false;
 
@@ -372,9 +372,10 @@ export class Subject {
                 return false;
 
             // filter out "relational columns" only in the case if there is a relation object in entity
-            if (!column.isInEmbedded && this.metadata.hasRelationWithDbName(column.propertyName)) {
-                const relation = this.metadata.findRelationWithDbName(column.propertyName); // todo: why with dbName ?
-                if (this.entity[relation.propertyName] !== null && this.entity[relation.propertyName] !== undefined)
+            if (this.metadata.hasRelationWithDbName(column.databaseName)) {
+                const relation = this.metadata.findRelationWithDbName(column.databaseName);
+                const value = relation.getEntityValue(this.entity);
+                if (value !== null && value !== undefined)
                     return false;
             }
 

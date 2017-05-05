@@ -156,10 +156,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     protected buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const childProperty = this.metadata.treeChildrenRelation.propertyName;
-        const parentEntityId = entity[this.metadata.firstPrimaryColumn.propertyName];
+        const parentEntityId = this.metadata.firstPrimaryColumn.getEntityValue(entity);
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
         const childIds = childRelationMaps.map(relationMap => relationMap.id);
-        entity[childProperty] = entities.filter(entity => childIds.indexOf(entity[this.metadata.firstPrimaryColumn.propertyName]) !== -1);
+        entity[childProperty] = entities.filter(entity => childIds.indexOf(this.metadata.firstPrimaryColumn.getEntityValue(entity)) !== -1);
         entity[childProperty].forEach((childEntity: any) => {
             this.buildChildrenEntityTree(childEntity, entities, relationMaps);
         });
@@ -167,7 +167,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     protected buildParentEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
         const parentProperty = this.metadata.treeParentRelation.propertyName;
-        const entityId = entity[this.metadata.firstPrimaryColumn.propertyName];
+        const entityId = this.metadata.firstPrimaryColumn.getEntityValue(entity);
         const parentRelationMap = relationMaps.find(relationMap => relationMap.id === entityId);
         const parentEntity = entities.find(entity => {
             if (!parentRelationMap)

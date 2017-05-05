@@ -260,13 +260,6 @@ export class ColumnMetadata {
     }
 
     /**
-     * Indicates if this column is in embedded, not directly in the table.
-     */
-    get isInEmbedded(): boolean {
-        return !!this.embeddedMetadata;
-    }
-
-    /**
      * Indicates if column is virtual. Virtual columns are not mapped to the entity.
      */
     get isVirtual() {
@@ -382,7 +375,7 @@ export class ColumnMetadata {
      *
      * @stable
      */
-    getValueMap(entity: ObjectLiteral): ObjectLiteral {
+    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral {
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -422,7 +415,7 @@ export class ColumnMetadata {
      *
      * @stable
      */
-    getValue(entity: ObjectLiteral): any|undefined {
+    getEntityValue(entity: ObjectLiteral): any|undefined {
         // if (entity === undefined || entity === null) return undefined; // uncomment if needed
 
         // extract column value from embeddeds of entity if column is in embedded
@@ -454,7 +447,7 @@ export class ColumnMetadata {
      * Sets given entity's column value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      */
-    setValue(entity: ObjectLiteral, value: any): void {
+    setEntityValue(entity: ObjectLiteral, value: any): void {
         if (this.embeddedMetadata) {
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]

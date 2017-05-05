@@ -356,7 +356,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 if (subject.hasEntity) {
                     const persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue === null) persistValueRelationId = null;
-                    if (persistValue) persistValueRelationId = relation.joinColumns[0].referencedColumn!.getValue(persistValue);
+                    if (persistValue) persistValueRelationId = relation.joinColumns[0].referencedColumn!.getEntityValue(persistValue);
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
@@ -374,7 +374,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Details loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Details
                     // (example) and we need to compare details.id === post.detailsId
-                    return relation.joinColumns[0].referencedColumn!.getValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
+                    return relation.joinColumns[0].referencedColumn!.getEntityValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
                 });
 
                 // if not loaded yet then load it from the database
@@ -430,12 +430,12 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let persistValueRelationId: any = undefined;
                 if (subject.hasEntity && !subject.mustBeRemoved) {
                     const persistValue = relation.getEntityValue(subject.entity);
-                    if (persistValue) persistValueRelationId = persistValue[relation.inverseRelation.propertyName];
+                    if (persistValue) persistValueRelationId = relation.inverseRelation.getEntityValue(persistValue);
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
                 // (example) returns us referenced column (detail's id)
-                const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn!.propertyName];
+                const relationIdInDatabaseEntity = relation.inverseRelation.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
 
                 // if database relation id does not exist then nothing to remove (but can this be possible?)
                 if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
@@ -451,7 +451,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Post loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Post
                     // (example) and we need to compare post.detailsId === details.id
-                    return relatedSubject.databaseEntity[relation.inverseRelation.propertyName] === relationIdInDatabaseEntity;
+                    return relation.inverseRelation.getEntityValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
                 });
 
                 // if not loaded yet then load it from the database
@@ -480,7 +480,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) persistValue is a postFromPersistedDetails here
                     // (example) alreadyLoadedRelatedDatabaseSubject.databaseEntity is a postFromDatabaseDetails here
                     // (example) postFromPersistedDetails.id === postFromDatabaseDetails - means nothing changed
-                    const inverseEntityRelationId = alreadyLoadedRelatedDatabaseSubject.databaseEntity[relation.inverseRelation.propertyName];
+                    const inverseEntityRelationId = relation.inverseRelation.getEntityValue(alreadyLoadedRelatedDatabaseSubject.databaseEntity);
                     if (persistValueRelationId && persistValueRelationId === inverseEntityRelationId)
                         return;
 
@@ -555,7 +555,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     // (example) returns us referenced column (detail's id)
                     const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
-                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn!.propertyName];
+                        parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(subject.databaseEntity);
                         return parameters;
                     }, {} as ObjectLiteral);
 
@@ -586,7 +586,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     // (example) returns us referenced column (detail's id)
                     const parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
-                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn!.propertyName];
+                        parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(subject.databaseEntity);
                         return parameters;
                     }, {} as ObjectLiteral);
 
@@ -601,7 +601,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 } else { // this case can only be a oneToMany relation
                     // todo: fix issues with joinColumn[0]
                     // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn!.propertyName];
+                    const relationIdInDatabaseEntity = relation.inverseRelation.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
 
                     // in this case we need inverse entities not only because of cascade removes
                     // because we also need inverse entities to be able to perform update of entities

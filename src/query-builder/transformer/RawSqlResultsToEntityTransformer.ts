@@ -89,7 +89,7 @@ export class RawSqlResultsToEntityTransformer {
             if (value === undefined || value === null || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
 
-            column.setValue(entity, this.driver.prepareHydratedValue(value, column));
+            column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
             hasData = true;
         });
         return hasData;

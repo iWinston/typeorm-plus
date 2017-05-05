@@ -633,7 +633,7 @@ export class EntityMetadata {
     isEntityMapEmpty(entity: ObjectLiteral): boolean {
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
         return !primaryColumns.every(column => {
-            const value = column.getValue(entity);
+            const value = column.getEntityValue(entity);
             return value !== null && value !== undefined;
         });
     }
@@ -651,7 +651,7 @@ export class EntityMetadata {
             return undefined;
 
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
-        const map = primaryColumns.reduce((map, column) => OrmUtils.mergeDeep(map, column.getValueMap(entity)), {});
+        const map = primaryColumns.reduce((map, column) => OrmUtils.mergeDeep(map, column.getEntityValueMap(entity)), {});
         return Object.keys(map).length > 0 ? map : undefined;
 
         // const map: ObjectLiteral = {};
@@ -687,7 +687,7 @@ export class EntityMetadata {
         const map: ObjectLiteral = {};
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumnsWithParentIdColumns : this.primaryColumns;
         primaryColumns.forEach(column => {
-            const entityValue = column.getValue(entity);
+            const entityValue = column.getEntityValue(entity);
             if (entityValue === null || entityValue === undefined)
                 return;
 
@@ -851,16 +851,20 @@ export class EntityMetadata {
      * Checks if relation with the given name exist.
      */
     hasRelationWithDbName(dbName: string): boolean {
-        return !!this.relationsWithJoinColumns.find(relation => relation.name === dbName);
+        return !!this.relationsWithJoinColumns.find(relation => {
+            return !!relation.joinColumns.find(column => column.databaseName === dbName);
+        });
     }
 
     /**
      * Finds relation with the given name.
      */
-    findRelationWithDbName(name: string): RelationMetadata {
-        const relation = this.relationsWithJoinColumns.find(relation => relation.name === name);
+    findRelationWithDbName(dbName: string): RelationMetadata {
+        const relation = this.relationsWithJoinColumns.find(relation => {
+            return !!relation.joinColumns.find(column => column.databaseName === dbName);
+        });
         if (!relation)
-            throw new Error(`Relation with name ${name} in ${this.name} entity was not found.`);
+            throw new Error(`Relation with name ${dbName} in ${this.name} entity was not found.`);
 
         return relation;
     }
@@ -986,7 +990,7 @@ export class EntityMetadata {
             return false;
 
         return this.primaryColumns.every(primaryColumn => { /// todo: this.metadata.parentEntityMetadata ?
-            const value = primaryColumn.getValue(entity);
+            const value = primaryColumn.getEntityValue(entity);
             return value !== null && value !== undefined && value !== "";
         });
     }
