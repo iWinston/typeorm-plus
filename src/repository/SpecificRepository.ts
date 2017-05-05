@@ -465,7 +465,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                     results.forEach(result => {
                         ids.push(Object.keys(result).reduce((id, key) => {
                             const junctionColumnName = inverseEntityColumns.find(joinColumn => joinColumn.name === key)!;
-                            id[junctionColumnName.referencedColumn.propertyName] = result[key];
+                            id[junctionColumnName.referencedColumn!.propertyName] = result[key];
                             return id;
                         }, {} as ObjectLiteral));
                     }); // todo: prepare result?
