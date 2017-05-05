@@ -17,7 +17,6 @@ import {RelationIdMetadata} from "../metadata/RelationIdMetadata";
 import {RelationCountMetadata} from "../metadata/RelationCountMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
-import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {TableType} from "../metadata/types/TableTypes";
 import {MetadataArgsUtils} from "../metadata-args/MetadataArgsUtils";
 
@@ -81,39 +80,6 @@ export class EntityMetadataBuilder {
             };
             const embeddeds = findEmbeddedsRecursively(MetadataArgsUtils.filterByTarget(allEmbeddeds, inheritanceTree));
 
-            // const tables = [mergedArgs.table].concat(mergedArgs.children);
-            // tables.forEach(tableArgs => {
-
-                // find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
-                // const findEmbeddedsRecursively = (embeddedArgs: EmbeddedMetadataArgs[]) => {
-                //     const embeddeds: EmbeddedMetadata[] = [];
-                //     embeddedArgs.forEach(embedded => {
-                //         const embeddableTable = embeddableMergedArgs.find(embeddedMergedArgs => embeddedMergedArgs.table.target === embedded.type());
-                //         if (embeddableTable) {
-                //             const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
-                //             const relations = embeddableTable.relations.toArray().map(args => new RelationMetadata(args));
-                //             const subEmbeddeds = findEmbeddedsRecursively(embeddableTable.embeddeds.toArray());
-                //             embeddeds.push(new EmbeddedMetadata(columns, relations, subEmbeddeds, embedded));
-                //         }
-                //     });
-                //     return embeddeds;
-                // };
-                // const embeddeds = findEmbeddedsRecursively(mergedArgs.embeddeds.toArray());
-
-                // create metadatas from args
-                // const argsForTable = mergedArgs.inheritance && mergedArgs.inheritance.type === "single-table" ? mergedArgs.table : tableArgs;
-
-                // const table = new TableMetadata(argsForTable);
-                // const columns = mergedArgs.columns.toArray().map(args => {
-                //
-                //     // if column's target is a child table then this column should have all nullable columns
-                //     if (mergedArgs.inheritance &&
-                //         mergedArgs.inheritance.type === "single-table" &&
-                //         args.target !== mergedArgs.table.target && !!mergedArgs.children.find(childTable => childTable.target === args.target)) {
-                //         args.options.nullable = true;
-                //     }
-                //     return new ColumnMetadata(args);
-                // });
 
             const columns = MetadataArgsUtils.filterByTarget(allColumns, inheritanceTree).map(args => new ColumnMetadata(args));
             const relations = MetadataArgsUtils.filterByTarget(allRelations, inheritanceTree).map(args => new RelationMetadata(args));
@@ -121,9 +87,6 @@ export class EntityMetadataBuilder {
             const relationCounts = MetadataArgsUtils.filterByTarget(allRelationCounts, inheritanceTree).map(args => new RelationCountMetadata(args));
             const indices = MetadataArgsUtils.filterByTarget(allIndices, inheritanceTree).map(args => new IndexMetadata(args));
 
-            // const discriminatorValueArgs = mergedArgs.discriminatorValues.find(discriminatorValueArgs => {
-            //     return discriminatorValueArgs.target === tableArgs.target;
-            // });
             // create a new entity metadata
             const entityMetadata = new EntityMetadata({
                 junction: false,
@@ -173,16 +136,6 @@ export class EntityMetadataBuilder {
                 relation.inverseEntityMetadata = inverseEntityMetadata;
             });
         });
-
-        // after all metadatas created we set parent entity metadata for class-table inheritance
-        // entityMetadatas.forEach(entityMetadata => {
-        //     const mergedArgs = realTables.find(args => args.target === entityMetadata.target);
-        //     if (mergedArgs && mergedArgs.parent) {
-        //         const parentEntityMetadata = entityMetadatas.find(entityMetadata => entityMetadata.target === (mergedArgs!.parent! as any).target); // todo: weird compiler error here, thats why type casing is used
-        //         if (parentEntityMetadata)
-        //             entityMetadata.parentEntityMetadata = parentEntityMetadata;
-        //     }
-        // });
 
         // generate virtual column with foreign key for class-table inheritance
         entityMetadatas
@@ -672,3 +625,53 @@ export class EntityMetadataBuilder {
     }*/
 
 }
+
+
+// const tables = [mergedArgs.table].concat(mergedArgs.children);
+// tables.forEach(tableArgs => {
+
+// find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
+// const findEmbeddedsRecursively = (embeddedArgs: EmbeddedMetadataArgs[]) => {
+//     const embeddeds: EmbeddedMetadata[] = [];
+//     embeddedArgs.forEach(embedded => {
+//         const embeddableTable = embeddableMergedArgs.find(embeddedMergedArgs => embeddedMergedArgs.table.target === embedded.type());
+//         if (embeddableTable) {
+//             const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
+//             const relations = embeddableTable.relations.toArray().map(args => new RelationMetadata(args));
+//             const subEmbeddeds = findEmbeddedsRecursively(embeddableTable.embeddeds.toArray());
+//             embeddeds.push(new EmbeddedMetadata(columns, relations, subEmbeddeds, embedded));
+//         }
+//     });
+//     return embeddeds;
+// };
+// const embeddeds = findEmbeddedsRecursively(mergedArgs.embeddeds.toArray());
+
+// create metadatas from args
+// const argsForTable = mergedArgs.inheritance && mergedArgs.inheritance.type === "single-table" ? mergedArgs.table : tableArgs;
+
+// const table = new TableMetadata(argsForTable);
+// const columns = mergedArgs.columns.toArray().map(args => {
+//
+//     // if column's target is a child table then this column should have all nullable columns
+//     if (mergedArgs.inheritance &&
+//         mergedArgs.inheritance.type === "single-table" &&
+//         args.target !== mergedArgs.table.target && !!mergedArgs.children.find(childTable => childTable.target === args.target)) {
+//         args.options.nullable = true;
+//     }
+//     return new ColumnMetadata(args);
+// });
+// const discriminatorValueArgs = mergedArgs.discriminatorValues.find(discriminatorValueArgs => {
+//     return discriminatorValueArgs.target === tableArgs.target;
+// });
+
+
+
+// after all metadatas created we set parent entity metadata for class-table inheritance
+// entityMetadatas.forEach(entityMetadata => {
+//     const mergedArgs = realTables.find(args => args.target === entityMetadata.target);
+//     if (mergedArgs && mergedArgs.parent) {
+//         const parentEntityMetadata = entityMetadatas.find(entityMetadata => entityMetadata.target === (mergedArgs!.parent! as any).target); // todo: weird compiler error here, thats why type casing is used
+//         if (parentEntityMetadata)
+//             entityMetadata.parentEntityMetadata = parentEntityMetadata;
+//     }
+// });

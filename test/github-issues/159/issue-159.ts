@@ -4,7 +4,8 @@ import {Connection} from "../../../src/connection/Connection";
 import {Department} from "./entity/Department";
 import {Employee} from "./entity/Employee";
 
-describe("github issues > #159 Referencing ClassTableChild build table error", () => {
+// unskip once table inheritance support is back
+describe.skip("github issues > #159 Referencing ClassTableChild build table error", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

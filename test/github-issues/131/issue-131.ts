@@ -4,7 +4,8 @@ import { Connection } from "../../../src/connection/Connection";
 import { Employee } from "./entity/Employee";
 import { expect } from "chai";
 
-describe("github issues > #131 Error with single table inheritance query without additional conditions", () => {
+// unskip once table inheritance is back
+describe.skip("github issues > #131 Error with single table inheritance query without additional conditions", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

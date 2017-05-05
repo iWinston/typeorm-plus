@@ -1,4 +1,3 @@
-import {EmbeddableEntity} from "../../../../../src/decorator/entity/EmbeddableEntity";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
@@ -7,7 +6,6 @@ import {User} from "./User";
 import {Subcounters} from "./Subcounters";
 import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 
-@EmbeddableEntity()
 export class Counters {
 
     @PrimaryColumn()
