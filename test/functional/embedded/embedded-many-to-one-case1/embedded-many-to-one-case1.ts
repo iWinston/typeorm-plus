@@ -62,7 +62,7 @@ describe("embedded > embedded-many-to-one-case1", () => {
             post2.counters.subcounters.watches = 10;
             await postRepository.persist(post2);
 
-            let loadedPosts = await connection.entityManager
+            let loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
                 .orderBy("post.id")
@@ -103,7 +103,7 @@ describe("embedded > embedded-many-to-one-case1", () => {
                 }
             ));
 
-            let loadedPost = await connection.entityManager
+            let loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
                 .where("post.id = :id", { id: 1 })
@@ -132,7 +132,7 @@ describe("embedded > embedded-many-to-one-case1", () => {
             loadedPost!.counters.likedUser = user3;
             await postRepository.persist(loadedPost!);
 
-            loadedPost = await connection.entityManager
+            loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
                 .where("post.id = :id", { id: 1 })
@@ -214,7 +214,7 @@ describe("embedded > embedded-many-to-one-case1", () => {
             user2.likedPosts = [post3];
             await connection.getRepository(User).persist(user2);
 
-            let loadedUsers = await connection.entityManager
+            let loadedUsers = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("user.id, likedPost.id")
@@ -279,7 +279,7 @@ describe("embedded > embedded-many-to-one-case1", () => {
                 }
             ));
 
-            let loadedUser = await connection.entityManager
+            let loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("likedPost.id")
@@ -327,7 +327,7 @@ describe("embedded > embedded-many-to-one-case1", () => {
             loadedUser!.likedPosts = [post1];
             await connection.getRepository(User).persist(loadedUser!);
 
-            loadedUser = await connection.entityManager
+            loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("likedPost.id")
@@ -356,6 +356,14 @@ describe("embedded > embedded-many-to-one-case1", () => {
                     ]
                 }
             ));
+
+            const loadedPost = await connection.manager
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.counters.likedUser", "likedUser")
+                .where("post.id = :id", { id: 2 })
+                .getOne();
+
+            expect(loadedPost!.counters.likedUser).to.be.empty;
         })));
 
     });

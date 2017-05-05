@@ -328,6 +328,14 @@ describe("embedded > embedded-many-to-one-case2", () => {
                     }
                 }
             ));
+
+            const loadedUser = await connection.manager
+                .createQueryBuilder(User, "user")
+                .leftJoinAndSelect("user.likedPost", "likedPost")
+                .where("user.id = :id", { id: 2 })
+                .getOne();
+
+            expect(loadedUser!.likedPost).to.be.empty;
         })));
     });
 });

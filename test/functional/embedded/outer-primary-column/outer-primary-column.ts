@@ -40,7 +40,7 @@ describe("embedded > outer-primary-column", () => {
         post2.counters.likes = 4;
         await postRepository.persist(post2);
 
-        const loadedPosts = await connection.entityManager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .orderBy("post.counters.code")
             .getMany();

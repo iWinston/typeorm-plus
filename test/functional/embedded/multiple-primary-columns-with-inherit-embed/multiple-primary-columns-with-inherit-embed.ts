@@ -47,7 +47,7 @@ describe("embedded > multiple-primary-columns-with-inherit-embed", () => {
         post2.counters.subcounters.watches = 10;
         await postRepository.persist(post2);
 
-        const loadedPosts = await connection.entityManager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .orderBy("post.id")
             .getMany();

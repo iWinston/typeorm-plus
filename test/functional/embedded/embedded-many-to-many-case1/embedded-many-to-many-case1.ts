@@ -62,7 +62,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
             post2.counters.subcounters.watches = 10;
             await postRepository.persist(post2);
 
-            const loadedPosts = await connection.entityManager
+            const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
                 .orderBy("post.id")
@@ -118,7 +118,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                 }
             ));
 
-            const loadedPost = await connection.entityManager
+            const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
                 .orderBy("likedUser.id")
@@ -157,7 +157,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
             loadedPost!.counters.likedUsers = [user1];
             await postRepository.persist(loadedPost!);
 
-            const loadedPost2 = await connection.entityManager
+            const loadedPost2 = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
                 .orderBy("likedUser.id")
@@ -238,7 +238,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
             user3.likedPosts = [post2];
             await connection.getRepository(User).persist(user3);
 
-            const loadedUsers = await connection.entityManager
+            const loadedUsers = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("user.id")
@@ -326,7 +326,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                 }
             ));
 
-            const loadedUser = await connection.entityManager
+            const loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("likedPost.id")
@@ -374,7 +374,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
             loadedUser!.likedPosts = [post1];
             await connection.getRepository(User).persist(loadedUser!);
 
-            const loadedUser2 = await connection.entityManager
+            const loadedUser2 = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("likedPost.id")
