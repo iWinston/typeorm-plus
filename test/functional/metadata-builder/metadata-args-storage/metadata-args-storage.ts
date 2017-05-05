@@ -16,7 +16,7 @@ describe("metadata builder > MetadataArgsUtils", () => {
     });
 
     it("filterByTargetClasses", () => {
-        MetadataArgsUtils.filterByTargetClasses([
+        MetadataArgsUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },
@@ -30,7 +30,7 @@ describe("metadata builder > MetadataArgsUtils", () => {
             { target: Unit },
         ]);
 
-        MetadataArgsUtils.filterByTargetClasses([
+        MetadataArgsUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },
@@ -42,7 +42,7 @@ describe("metadata builder > MetadataArgsUtils", () => {
             { target: Unit },
         ]);
 
-        MetadataArgsUtils.filterByTargetClasses([
+        MetadataArgsUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },
@@ -57,11 +57,11 @@ describe("metadata builder > MetadataArgsUtils", () => {
             { target: Unit },
         ]);
 
-        MetadataArgsUtils.filterByTargetClasses([
+        MetadataArgsUtils.filterByTarget([
         ], [Post, Unit, ContentModule]).should.be.eql([
         ]);
 
-        MetadataArgsUtils.filterByTargetClasses([
+        MetadataArgsUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },

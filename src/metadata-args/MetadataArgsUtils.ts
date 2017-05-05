@@ -26,7 +26,7 @@ export class MetadataArgsUtils {
      * Filters given array of targets by a given classes.
      * If classes are not given, then it returns array itself.
      */
-    static filterByTargetClasses<T extends { target?: any }>(array: T[], classes?: Function[]): T[] {
+    static filterByTarget<T extends { target?: any }>(array: T[], classes?: any[]): T[] {
         if (!classes) return array;
         return array.filter(item => item.target && classes.indexOf(item.target) !== -1);
     }

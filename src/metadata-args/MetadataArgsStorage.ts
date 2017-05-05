@@ -60,7 +60,7 @@ export class MetadataArgsStorage {
     getMergedTableMetadatas(classes?: Function[]) {
 
         // filter out tables by a given allowed classes
-        const allTableMetadataArgs = MetadataArgsUtils.filterByTargetClasses(this.tables.toArray(), classes);
+        const allTableMetadataArgs = MetadataArgsUtils.filterByTarget(this.tables.toArray(), classes);
 
         // filter out table metadata args for those we really create entity metadatas and tables in the db
         const realTables = allTableMetadataArgs.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child");
