@@ -9,7 +9,7 @@ import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
  *
  * Array option works only in monogodb.
  */
-export function Embedded<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { prefix?: string, array?: boolean }) {
+export function Embedded<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { prefix?: string|boolean, array?: boolean }) {
     return function (object: Object, propertyName: string) {
 
         const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;

@@ -7,7 +7,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Subcounters} from "./entity/Subcounters";
 import {User} from "./entity/User";
 
-describe("embedded > embedded-many-to-one", () => {
+describe("embedded > embedded-many-to-one-case1", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -62,7 +62,7 @@ describe("embedded > embedded-many-to-one", () => {
             post2.counters.subcounters.watches = 10;
             await postRepository.persist(post2);
 
-            const loadedPosts = await connection.entityManager
+            let loadedPosts = await connection.entityManager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
                 .orderBy("post.id")
@@ -103,7 +103,7 @@ describe("embedded > embedded-many-to-one", () => {
                 }
             ));
 
-            const loadedPost = await connection.entityManager
+            let loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
                 .where("post.id = :id", { id: 1 })
@@ -132,13 +132,13 @@ describe("embedded > embedded-many-to-one", () => {
             loadedPost!.counters.likedUser = user3;
             await postRepository.persist(loadedPost!);
 
-            const loadedPost2 = await connection.entityManager
+            loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost2!.should.be.eql(
+            expect(loadedPost!.should.be.eql(
                 {
                     id: 1,
                     title: "About cars",
@@ -156,11 +156,11 @@ describe("embedded > embedded-many-to-one", () => {
                 }
             ));
 
-            await postRepository.remove(loadedPost2!);
+            await postRepository.remove(loadedPost!);
 
-            const loadedPosts2 = (await postRepository.find())!;
-            expect(loadedPosts2.length).to.be.equal(1);
-            expect(loadedPosts2[0].title).to.be.equal("About airplanes");
+            loadedPosts = (await postRepository.find())!;
+            expect(loadedPosts.length).to.be.equal(1);
+            expect(loadedPosts[0].title).to.be.equal("About airplanes");
         })));
     });
 
@@ -214,7 +214,7 @@ describe("embedded > embedded-many-to-one", () => {
             user2.likedPosts = [post3];
             await connection.getRepository(User).persist(user2);
 
-            const loadedUsers = await connection.entityManager
+            let loadedUsers = await connection.entityManager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("user.id, likedPost.id")
@@ -279,7 +279,7 @@ describe("embedded > embedded-many-to-one", () => {
                 }
             ));
 
-            const loadedUser = await connection.entityManager
+            let loadedUser = await connection.entityManager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("likedPost.id")
@@ -327,14 +327,14 @@ describe("embedded > embedded-many-to-one", () => {
             loadedUser!.likedPosts = [post1];
             await connection.getRepository(User).persist(loadedUser!);
 
-            const loadedUser2 = await connection.entityManager
+            loadedUser = await connection.entityManager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPosts", "likedPost")
                 .orderBy("likedPost.id")
                 .where("user.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedUser2!.should.be.eql(
+            expect(loadedUser!.should.be.eql(
                 {
                     id: 1,
                     name: "Anna",

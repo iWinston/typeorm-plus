@@ -52,7 +52,7 @@ export class EmbeddedMetadata {
      * Prefix of the embedded, used instead of propertyName.
      * If set to empty string, then prefix is not set at all.
      */
-    customPrefix: string|undefined;
+    customPrefix: string|boolean|undefined;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -102,8 +102,18 @@ export class EmbeddedMetadata {
      * @stable just need move to builder process
      */
     get prefix(): string {
-        const prefix = this.customPrefix !== undefined ? this.customPrefix : this.propertyName;
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.prefix + "_" + prefix : prefix; // todo: use naming strategy instead of "_"  !!!
+        let prefixes: string[] = [];
+        if (this.parentEmbeddedMetadata)
+            prefixes.push(this.parentEmbeddedMetadata.prefix);
+
+        if (this.customPrefix === undefined) {
+            prefixes.push(this.propertyName);
+
+        } else if (typeof this.customPrefix === "string") {
+            prefixes.push(this.customPrefix);
+        }
+
+        return prefixes.join("_"); // todo: use naming strategy instead of "_"  !!!
     }
 
     /**
