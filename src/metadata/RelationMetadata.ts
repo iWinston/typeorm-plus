@@ -197,16 +197,16 @@ export class RelationMetadata {
 
         if (this.isOwning) {
             if (this.isManyToMany) {
-                return this.joinColumns[0].name;
+                return this.joinColumns[0].databaseName;
             } else if (this.foreignKeys[0] && this.foreignKeys[0].columns) {
-                return this.foreignKeys[0].columns[0].name;
+                return this.foreignKeys[0].columns[0].databaseName;
             }
 
         } else if (this.hasInverseSide) {
             if (this.inverseRelation.isManyToMany) {
-                return this.inverseRelation.inverseJoinColumns[0].name;
+                return this.inverseRelation.inverseJoinColumns[0].databaseName;
             } else if (this.inverseRelation.foreignKeys[0] && this.inverseRelation.foreignKeys[0].columns && this.inverseRelation.foreignKeys[0].columns[0].referencedColumn!) {
-                return this.inverseRelation.foreignKeys[0].columns[0].referencedColumn!.fullName; // todo: [0] is temporary!!
+                return this.inverseRelation.foreignKeys[0].columns[0].referencedColumn!.databaseName; // todo: [0] is temporary!!
             }
         }
 

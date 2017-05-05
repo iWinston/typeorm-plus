@@ -883,11 +883,11 @@ export class QueryBuilder<Entity> {
                 const metadata = this.expressionMap.mainAlias!.metadata;
                 let idsQuery = `SELECT `;
                 idsQuery += metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escapeAlias(mainAliasName + "_" + primaryColumn.fullName);
+                    const propertyName = this.escapeAlias(mainAliasName + "_" + primaryColumn.databaseName);
                     if (index === 0) {
-                        return `DISTINCT(${distinctAlias}.${propertyName}) as ids_${primaryColumn.fullName}`;
+                        return `DISTINCT(${distinctAlias}.${propertyName}) as ids_${primaryColumn.databaseName}`;
                     } else {
-                        return `${distinctAlias}.${propertyName}) as ids_${primaryColumn.fullName}`;
+                        return `${distinctAlias}.${propertyName}) as ids_${primaryColumn.databaseName}`;
                     }
                 }).join(", ");
                 if (selects.length > 0)
@@ -898,7 +898,7 @@ export class QueryBuilder<Entity> {
                 if (orderBys.length > 0) {
                     idsQuery += " ORDER BY " + orderBys;
                 } else {
-                    idsQuery += ` ORDER BY "ids_${metadata.firstPrimaryColumn.fullName}"`; // this is required for mssql driver if firstResult is used. Other drivers don't care about it
+                    idsQuery += ` ORDER BY "ids_${metadata.firstPrimaryColumn.databaseName}"`; // this is required for mssql driver if firstResult is used. Other drivers don't care about it
                 }
 
                 if (this.connection.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
@@ -994,7 +994,7 @@ export class QueryBuilder<Entity> {
 
         const distinctAlias = this.escapeAlias(mainAlias);
         let countSql = `COUNT(` + metadata.primaryColumnsWithParentIdColumns.map((primaryColumn, index) => {
-                const propertyName = this.escapeColumn(primaryColumn.fullName);
+                const propertyName = this.escapeColumn(primaryColumn.databaseName);
                 if (index === 0) {
                     return `DISTINCT(${distinctAlias}.${propertyName})`;
                 } else {
@@ -1216,8 +1216,8 @@ export class QueryBuilder<Entity> {
         return columns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
             return {
-                selection: this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName),
-                aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.fullName,
+                selection: this.escapeAlias(aliasName) + "." + this.escapeColumn(column.databaseName),
+                aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
             };
             // return this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName) +
@@ -1285,7 +1285,7 @@ export class QueryBuilder<Entity> {
                 const alias = "parentIdColumn_" + ea(this.expressionMap.mainAlias!.metadata.parentEntityMetadata.tableName);
                 this.expressionMap.mainAlias!.metadata.parentEntityMetadata.columns.forEach(column => {
                     // TODO implement partial select
-                    allSelects.push({ selection: ea(alias + "." + column.fullName), aliasName: alias + "_" + column.fullName });
+                    allSelects.push({ selection: ea(alias + "." + column.databaseName), aliasName: alias + "_" + column.databaseName });
                     // allSelects.push(alias + "." + ec(column.fullName) + " AS " + alias + "_" + ea(column.fullName));
                 });
             }
@@ -1389,7 +1389,7 @@ export class QueryBuilder<Entity> {
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const mainMetadata = this.expressionMap.mainAlias!.metadata;
             if (mainMetadata.hasDiscriminatorColumn)
-                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${mainMetadata.discriminatorColumn.fullName}=:discriminatorColumnValue`;
+                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${mainMetadata.discriminatorColumn.databaseName}=:discriminatorColumnValue`;
         }
 
         if (!conditions.length) return "";
@@ -1411,11 +1411,11 @@ export class QueryBuilder<Entity> {
             // });
             alias.metadata.columns.forEach(column => {
                 const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$2");
+                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.databaseName) + "$2");
             });
             alias.metadata.relationsWithJoinColumns/*.filter(relation => !relation.isInEmbedded)*/.forEach(relation => {
                 const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].fullName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
             });
         });
         return statement;
@@ -1455,7 +1455,7 @@ export class QueryBuilder<Entity> {
 
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
                 const condition = relation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.fullName) + "=" + ea(parentAlias) + "." + ec(joinColumn.propertyName);
+                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.databaseName) + "=" + ea(parentAlias) + "." + ec(joinColumn.propertyName);
                 }).join(" AND ");
 
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
@@ -1464,7 +1464,7 @@ export class QueryBuilder<Entity> {
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
                 const condition = relation.inverseRelation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias!) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.fullName);
+                    return ea(destinationTableAlias!) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.databaseName);
                 }).join(" AND ");
 
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
@@ -1479,23 +1479,23 @@ export class QueryBuilder<Entity> {
 
                     junctionCondition = relation.joinColumns.map(joinColumn => {
                         // `post_category`.`postId` = `post`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.fullName);
+                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.databaseName);
                     }).join(" AND ");
 
                     destinationCondition = relation.inverseJoinColumns.map(joinColumn => {
                         // `category`.`id` = `post_category`.`categoryId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
+                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.databaseName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
                     }).join(" AND ");
 
                 } else {
                     junctionCondition = relation.inverseRelation.inverseJoinColumns.map(joinColumn => {
                         // `post_category`.`categoryId` = `category`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.fullName);
+                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.databaseName);
                     }).join(" AND ");
 
                     destinationCondition = relation.inverseRelation.joinColumns.map(joinColumn => {
                         // `post`.`id` = `post_category`.`postId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
+                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.databaseName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
                     }).join(" AND ");
                 }
 
@@ -1512,7 +1512,7 @@ export class QueryBuilder<Entity> {
                 const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
                 const parentJoin = " JOIN " + et(metadata.parentEntityMetadata.tableName) + " " + ea(alias) + " ON " +
                     metadata.parentIdColumns.map(parentIdColumn => {
-                        return this.expressionMap.mainAlias!.name + "." + parentIdColumn.fullName + "=" + ea(alias) + "." + parentIdColumn.propertyName;
+                        return this.expressionMap.mainAlias!.name + "." + parentIdColumn.databaseName + "=" + ea(alias) + "." + parentIdColumn.propertyName;
                     });
                 joins.push(parentJoin);
             }
@@ -1627,11 +1627,11 @@ export class QueryBuilder<Entity> {
             const whereSubStrings: string[] = [];
             // if (metadata.hasMultiplePrimaryKeys) {
                 metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(ea(alias) + "." + ec(primaryColumn.fullName) + "=:id_" + index + "_" + secondIndex);
+                    whereSubStrings.push(ea(alias) + "." + ec(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
                     parameters["id_" + index + "_" + secondIndex] = primaryColumn.getValue(id);
                 });
                 metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(ea(alias) + "." + ec(id[primaryColumn.fullName]) + "=:parentId_" + index + "_" + secondIndex);
+                    whereSubStrings.push(ea(alias) + "." + ec(id[primaryColumn.databaseName]) + "=:parentId_" + index + "_" + secondIndex);
                     parameters["parentId_" + index + "_" + secondIndex] = primaryColumn.getValue(id);
                 });
             // } else {

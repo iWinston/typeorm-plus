@@ -49,8 +49,8 @@ export class LazyRelationsWrapper {
                         .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, conditions);
 
                     joinColumns.forEach(joinColumn => {
-                        qb.andWhere(`${relation.entityMetadata.name}.${joinColumn.referencedColumn!.fullName} = :${joinColumn.referencedColumn!.fullName}`)
-                            .setParameter(`${joinColumn.referencedColumn!.fullName}`, this[joinColumn.referencedColumn!.fullName]);
+                        qb.andWhere(`${relation.entityMetadata.name}.${joinColumn.referencedColumn!.databaseName} = :${joinColumn.referencedColumn!.databaseName}`)
+                            .setParameter(`${joinColumn.referencedColumn!.databaseName}`, this[joinColumn.referencedColumn!.databaseName]);
                     });
 
                     this[promiseIndex] = qb.getOne().then(result => {

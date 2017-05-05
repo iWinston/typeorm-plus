@@ -46,7 +46,7 @@ export class RawSqlResultsToEntityTransformer {
     protected group(rawResults: any[], alias: Alias): any[][] {
         const groupedResults: { id: any, items: any[] }[] = [];
         rawResults.forEach(rawResult => {
-            const id = alias.metadata.primaryColumnsWithParentIdColumns.map(column => rawResult[alias.name + "_" + column.fullName]).join("_"); // todo: check partial
+            const id = alias.metadata.primaryColumnsWithParentIdColumns.map(column => rawResult[alias.name + "_" + column.databaseName]).join("_"); // todo: check partial
             if (!id) return;
 
             let group = groupedResults.find(groupedResult => groupedResult.id === id);
@@ -85,7 +85,7 @@ export class RawSqlResultsToEntityTransformer {
     protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, columns: ColumnMetadata[]): boolean {
         let hasData = false;
         columns.forEach(column => {
-            const value = rawResults[0][alias.name + "_" + column.fullName];
+            const value = rawResults[0][alias.name + "_" + column.databaseName];
             if (value === undefined || value === null || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
 
@@ -145,16 +145,16 @@ export class RawSqlResultsToEntityTransformer {
             let idMap: any, referenceColumnValue: any;
             if (relation.isManyToOne || relation.isOneToOneOwner) {
                 idMap = relation.entityMetadata.primaryColumns.reduce((idMap, primaryColumn) => {
-                    idMap[primaryColumn.propertyName] = rawSqlResults[0][alias.name + "_" + primaryColumn.fullName];
+                    idMap[primaryColumn.propertyName] = rawSqlResults[0][alias.name + "_" + primaryColumn.databaseName];
                     return idMap;
                 }, {} as ObjectLiteral);
 
             } else {
                 let referenceColumnName: string;
                 if (relation.isOneToMany || relation.isOneToOneNotOwner) { // todo: fix joinColumns[0]
-                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
+                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.fullName : relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
+                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.databaseName : relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
                 }
                 referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName];
                 if (referenceColumnValue === undefined || referenceColumnValue === null)
@@ -183,10 +183,10 @@ export class RawSqlResultsToEntityTransformer {
                 let referenceColumnName: string;
 
                 if (relation.isOneToMany) {
-                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;  // todo: fix joinColumns[0]
+                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;  // todo: fix joinColumns[0]
 
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.fullName : relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
+                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.databaseName : relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
                 }
 
                 const referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work

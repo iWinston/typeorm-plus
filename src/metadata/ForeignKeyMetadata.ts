@@ -90,14 +90,14 @@ export class ForeignKeyMetadata {
      * Gets array of column names.
      */
     get columnNames(): string[] {
-        return this.columns.map(column => column.fullName);
+        return this.columns.map(column => column.databaseName);
     }
 
     /**
      * Gets array of referenced column names.
      */
     get referencedColumnNames(): string[] {
-        return this.referencedColumns.map(column => column.fullName);
+        return this.referencedColumns.map(column => column.databaseName);
     }
 
 }

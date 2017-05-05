@@ -191,7 +191,7 @@ export class EntityMetadataBuilder {
                         referencedColumns = relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns;
                     } else { // cases with referenced columns defined
                         referencedColumns = joinColumnArgsArray.map(joinColumnArgs => {
-                            const referencedColumn = relation.inverseEntityMetadata.columns.find(column => column.fullName === joinColumnArgs.referencedColumnName);
+                            const referencedColumn = relation.inverseEntityMetadata.columns.find(column => column.databaseName === joinColumnArgs.referencedColumnName);
                             if (!referencedColumn)
                                 throw new Error(`Referenced column ${joinColumnArgs.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
 
@@ -211,7 +211,7 @@ export class EntityMetadataBuilder {
                         });
                         const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
 
-                        let relationalColumn = relation.entityMetadata.columns.find(column => column.fullName === joinColumnName);
+                        let relationalColumn = relation.entityMetadata.columns.find(column => column.databaseName === joinColumnName);
                         if (!relationalColumn) {
                             relationalColumn = new ColumnMetadata(entityMetadata, {
                                 target: relation.entityMetadata.target,
@@ -264,7 +264,7 @@ export class EntityMetadataBuilder {
                     referencedColumns = relation.entityMetadata.primaryColumnsWithParentIdColumns;
                 } else {
                     referencedColumns = joinTableMetadataArgs.joinColumns!.map(joinColumn => {
-                        const referencedColumn = relation.entityMetadata.columns.find(column => column.fullName === joinColumn.referencedColumnName);
+                        const referencedColumn = relation.entityMetadata.columns.find(column => column.databaseName === joinColumn.referencedColumnName);
                         if (!referencedColumn)
                             throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`);
 
@@ -279,7 +279,7 @@ export class EntityMetadataBuilder {
                     inverseReferencedColumns = relation.inverseEntityMetadata.primaryColumnsWithParentIdColumns;
                 } else {
                     inverseReferencedColumns = joinTableMetadataArgs.inverseJoinColumns!.map(joinColumn => {
-                        const referencedColumn = relation.inverseEntityMetadata.columns.find(column => column.fullName === joinColumn.referencedColumnName);
+                        const referencedColumn = relation.inverseEntityMetadata.columns.find(column => column.databaseName === joinColumn.referencedColumnName);
                         if (!referencedColumn)
                             throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
 
@@ -293,7 +293,7 @@ export class EntityMetadataBuilder {
                         return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === referencedColumn.propertyName) &&
                             !!joinColumnArgs.name;
                     }) : undefined;
-                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.fullName);
+                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.databaseName);
 
                     return new ColumnMetadata(junctionEntityMetadata, {
                         propertyName: columnName,
@@ -313,7 +313,7 @@ export class EntityMetadataBuilder {
                             return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === inverseReferencedColumn.propertyName) &&
                                 !!joinColumnArgs.name;
                         }) : undefined;
-                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.fullName);
+                    const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.databaseName);
 
                     return new ColumnMetadata(junctionEntityMetadata, {
                         propertyName: columnName,
@@ -339,8 +339,8 @@ export class EntityMetadataBuilder {
                 junctionEntityMetadata.ownColumns = junctionColumns.concat(inverseJunctionColumns);
                 junctionEntityMetadata.foreignKeys = foreignKeys;
                 junctionEntityMetadata.indices = [ // todo: shall we remove indices?
-                    new IndexMetadata(junctionEntityMetadata, { columns: junctionColumns.map(column => column.fullName), unique: false }),
-                    new IndexMetadata(junctionEntityMetadata, { columns: inverseJunctionColumns.map(column => column.fullName), unique: false })
+                    new IndexMetadata(junctionEntityMetadata, { columns: junctionColumns.map(column => column.databaseName), unique: false }),
+                    new IndexMetadata(junctionEntityMetadata, { columns: inverseJunctionColumns.map(column => column.databaseName), unique: false })
                 ];
                 this.createEntityMetadata(junctionEntityMetadata, {
                     tableType: "junction",
@@ -363,7 +363,7 @@ export class EntityMetadataBuilder {
             .forEach(metadata => {
                 const indexForKey = new IndexMetadata(metadata, {
                     target: metadata.target,
-                    columns: [metadata.discriminatorColumn.fullName],
+                    columns: [metadata.discriminatorColumn.databaseName],
                     unique: false
                 });
                 metadata.indices.push(indexForKey);

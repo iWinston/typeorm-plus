@@ -263,7 +263,7 @@ export class SubjectOperationExecutor {
                     }
 
                     if (relationId) {
-                        updateOptions[joinColumn.fullName] = relationId;
+                        updateOptions[joinColumn.databaseName] = relationId;
                     }
 
                 });
@@ -298,19 +298,19 @@ export class SubjectOperationExecutor {
                                 }
                             }
                             if (relationIdOfEntityValue) {
-                                conditions[column.fullName] = relationIdOfEntityValue;
+                                conditions[column.databaseName] = relationIdOfEntityValue;
                             }
                         });
 
                     } else {
                         if (entityValue) {
-                            conditions[column.fullName] = entityValue;
+                            conditions[column.databaseName] = entityValue;
                         } else {
                             if (subject.newlyGeneratedId) {
-                                conditions[column.fullName] = subject.newlyGeneratedId;
+                                conditions[column.databaseName] = subject.newlyGeneratedId;
 
                             } else if (subject.generatedObjectId) {
-                                conditions[column.fullName] = subject.generatedObjectId;
+                                conditions[column.databaseName] = subject.generatedObjectId;
                             }
                         }
                     }
@@ -355,20 +355,20 @@ export class SubjectOperationExecutor {
                                         }
                                     }
                                     if (relationIdOfEntityValue) {
-                                        conditions[column.fullName] = relationIdOfEntityValue;
+                                        conditions[column.databaseName] = relationIdOfEntityValue;
                                     }
                                 });
 
                             } else {
                                 const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === subRelatedEntity);
                                 if (entityValue) {
-                                    conditions[column.fullName] = entityValue;
+                                    conditions[column.databaseName] = entityValue;
                                 } else {
                                     if (entityValueInsertSubject && entityValueInsertSubject.newlyGeneratedId) {
-                                        conditions[column.fullName] = entityValueInsertSubject.newlyGeneratedId;
+                                        conditions[column.databaseName] = entityValueInsertSubject.newlyGeneratedId;
 
                                     } else if (entityValueInsertSubject && entityValueInsertSubject.generatedObjectId) {
-                                        conditions[column.fullName] = entityValueInsertSubject.generatedObjectId;
+                                        conditions[column.databaseName] = entityValueInsertSubject.generatedObjectId;
 
                                     }
                                 }
@@ -393,9 +393,9 @@ export class SubjectOperationExecutor {
                                     }
                                 }
                             }
-                            updateOptions[joinColumn.fullName] = id;
+                            updateOptions[joinColumn.databaseName] = id;
                         } else {
-                            updateOptions[joinColumn.fullName] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
+                            updateOptions[joinColumn.databaseName] = subject.entity[referencedColumn.propertyName] || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
                         }
 
                         const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tableName, updateOptions, conditions);
@@ -471,7 +471,7 @@ export class SubjectOperationExecutor {
             if (value === null || value === undefined)
                 return;
 
-            values[column.fullName] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
+            values[column.databaseName] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
         });
 
         metadata.relationsWithJoinColumns.forEach(relation => {
@@ -533,7 +533,7 @@ export class SubjectOperationExecutor {
                 }
 
                 if (relationValue) {
-                    values[joinColumn.fullName] = relationValue;
+                    values[joinColumn.databaseName] = relationValue;
                 }
 
             });
@@ -542,25 +542,25 @@ export class SubjectOperationExecutor {
         // add special column and value - date of creation
         if (metadata.hasCreateDateColumn) {
             const value = this.connection.driver.preparePersistentValue(date, metadata.createDateColumn);
-            values[metadata.createDateColumn.fullName] = value;
+            values[metadata.createDateColumn.databaseName] = value;
         }
 
         // add special column and value - date of updating
         if (metadata.hasUpdateDateColumn) {
             const value = this.connection.driver.preparePersistentValue(date, metadata.updateDateColumn);
-            values[metadata.updateDateColumn.fullName] = value;
+            values[metadata.updateDateColumn.databaseName] = value;
         }
 
         // add special column and value - version column
         if (metadata.hasVersionColumn) {
             const value = this.connection.driver.preparePersistentValue(1, metadata.versionColumn);
-            values[metadata.versionColumn.fullName] = value;
+            values[metadata.versionColumn.databaseName] = value;
         }
 
         // add special column and value - discriminator value (for tables using table inheritance)
         if (metadata.hasDiscriminatorColumn) {
             const value = this.connection.driver.preparePersistentValue(discriminatorValue || metadata.discriminatorValue, metadata.discriminatorColumn);
-            values[metadata.discriminatorColumn.fullName] = value;
+            values[metadata.discriminatorColumn.databaseName] = value;
         }
 
         // add special column and value - tree level and tree parents (for tree-type tables)
@@ -568,12 +568,12 @@ export class SubjectOperationExecutor {
             const parentEntity = entity[metadata.treeParentRelation.propertyName];
             const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
 
-            values[metadata.treeLevelColumn.fullName] = parentLevel + 1;
+            values[metadata.treeLevelColumn.databaseName] = parentLevel + 1;
         }
 
         // add special column and value - parent id column (for tables using table inheritance)
         if (metadata.parentEntityMetadata && metadata.hasParentIdColumn) { // todo: should be array of primary keys
-            values[metadata.parentIdColumn.fullName] = parentIdColumnValue || entity[metadata.parentEntityMetadata.firstPrimaryColumn.propertyName];
+            values[metadata.parentIdColumn.databaseName] = parentIdColumnValue || entity[metadata.parentEntityMetadata.firstPrimaryColumn.propertyName];
         }
 
         return values;
@@ -646,8 +646,8 @@ export class SubjectOperationExecutor {
         subject.treeLevel = await this.queryRunner.insertIntoClosureTable(tableName, newEntityId, parentEntityId, subject.metadata.hasTreeLevelColumn);
 
         if (subject.metadata.hasTreeLevelColumn) {
-            const values = { [subject.metadata.treeLevelColumn.fullName]: subject.treeLevel };
-            await this.queryRunner.update(subject.metadata.tableName, values, { [referencedColumn.fullName]: newEntityId });
+            const values = { [subject.metadata.treeLevelColumn.databaseName]: subject.treeLevel };
+            await this.queryRunner.update(subject.metadata.tableName, values, { [referencedColumn.databaseName]: newEntityId });
         }
     }
 
@@ -702,7 +702,7 @@ export class SubjectOperationExecutor {
             const value: ObjectLiteral = {};
             subject.metadata.columns.forEach(column => {
                 if (entity[column.propertyName] !== undefined)
-                    value[column.fullName] = column.getValue(entity);
+                    value[column.databaseName] = column.getValue(entity);
             });
             // addEmbeddedValuesRecursively(entity, value, subject.metadata.embeddeds);
 
@@ -711,10 +711,10 @@ export class SubjectOperationExecutor {
                 return;
 
             if (subject.metadata.hasUpdateDateColumn)
-                value[subject.metadata.updateDateColumn.fullName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
+                value[subject.metadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
 
             if (subject.metadata.hasVersionColumn)
-                value[subject.metadata.versionColumn.fullName] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
+                value[subject.metadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
 
             // console.log(value);
             // console.log("idMap:", idMap);
@@ -734,7 +734,7 @@ export class SubjectOperationExecutor {
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[column.fullName] = this.connection.driver.preparePersistentValue(column.getValue(entity), column);
+            valueMap.values[column.databaseName] = this.connection.driver.preparePersistentValue(column.getValue(entity), column);
         });
 
         subject.diffRelations.forEach(relation => {
@@ -746,7 +746,7 @@ export class SubjectOperationExecutor {
 
             const value = relation.getEntityValue(entity);
             relation.joinColumns.forEach(joinColumn => {
-                valueMap!.values[joinColumn.name] = value !== null && value !== undefined ? value[joinColumn.referencedColumn!.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
+                valueMap!.values[joinColumn.databaseName] = value !== null && value !== undefined ? value[joinColumn.referencedColumn!.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
             });
         });
 
@@ -761,7 +761,7 @@ export class SubjectOperationExecutor {
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[subject.metadata.updateDateColumn.fullName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
+            valueMap.values[subject.metadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
         }
 
         if (subject.metadata.hasVersionColumn) {
@@ -771,7 +771,7 @@ export class SubjectOperationExecutor {
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[subject.metadata.versionColumn.fullName] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
+            valueMap.values[subject.metadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(entity[subject.metadata.versionColumn.propertyName] + 1, subject.metadata.versionColumn);
         }
 
         if (subject.metadata.parentEntityMetadata) {
@@ -786,7 +786,7 @@ export class SubjectOperationExecutor {
                     valueMaps.push(valueMap);
                 }
 
-                valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.fullName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
+                valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
             }
 
             if (subject.metadata.parentEntityMetadata.hasVersionColumn) {
@@ -800,7 +800,7 @@ export class SubjectOperationExecutor {
                     valueMaps.push(valueMap);
                 }
 
-                valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.fullName] = this.connection.driver.preparePersistentValue(entity[subject.metadata.parentEntityMetadata.versionColumn.propertyName] + 1, subject.metadata.parentEntityMetadata.versionColumn);
+                valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(entity[subject.metadata.parentEntityMetadata.versionColumn.propertyName] + 1, subject.metadata.parentEntityMetadata.versionColumn);
             }
         }
 
@@ -832,7 +832,7 @@ export class SubjectOperationExecutor {
         subject.relationUpdates.forEach(setRelation => {
             setRelation.relation.joinColumns.forEach(joinColumn => {
                 const value = setRelation.value ? setRelation.value[joinColumn.referencedColumn!.propertyName] : null;
-                values[joinColumn.fullName] = value; // todo: || fromInsertedSubjects ??
+                values[joinColumn.databaseName] = value; // todo: || fromInsertedSubjects ??
             });
         });
 
@@ -861,13 +861,13 @@ export class SubjectOperationExecutor {
         if (subject.metadata.parentEntityMetadata) { // this code should not be there. it should be handled by  subject.metadata.getEntityIdColumnMap
             const parentConditions: ObjectLiteral = {};
             subject.metadata.parentPrimaryColumns.forEach(column => {
-                parentConditions[column.fullName] = subject.databaseEntity[column.propertyName];
+                parentConditions[column.databaseName] = subject.databaseEntity[column.propertyName];
             });
             await this.queryRunner.delete(subject.metadata.parentEntityMetadata.tableName, parentConditions);
 
             const childConditions: ObjectLiteral = {};
             subject.metadata.primaryColumnsWithParentIdColumns.forEach(column => {
-                childConditions[column.fullName] = subject.databaseEntity[column.propertyName];
+                childConditions[column.databaseName] = subject.databaseEntity[column.propertyName];
             });
             await this.queryRunner.delete(subject.metadata.tableName, childConditions);
         } else {
@@ -935,7 +935,7 @@ export class SubjectOperationExecutor {
             if (!relationId)
                 throw new Error(`Cannot insert object of ${(newBindEntity.constructor as any).name} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
 
-            const columns = relation.junctionEntityMetadata.columnsWithoutEmbeddeds.map(column => column.fullName);
+            const columns = relation.junctionEntityMetadata.columnsWithoutEmbeddeds.map(column => column.databaseName);
             const values = relation.isOwning ? [...ownId, ...relationId] : [...relationId, ...ownId];
 
             return this.queryRunner.insert(relation.junctionEntityMetadata.tableName, OrmUtils.zipObject(columns, values));
@@ -973,14 +973,14 @@ export class SubjectOperationExecutor {
         const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.inverseRelation.joinColumns;
         let conditions: ObjectLiteral = {};
         firstJoinColumns.forEach(joinColumn => {
-            conditions[joinColumn.fullName] = joinColumn.referencedColumn!.getValue(entity);
+            conditions[joinColumn.databaseName] = joinColumn.referencedColumn!.getValue(entity);
         });
 
         const removePromises = junctionRemove.junctionRelationIds.map(relationIds => {
             let inverseConditions: ObjectLiteral = {};
             Object.keys(relationIds).forEach(key => {
                 const joinColumn = secondJoinColumns.find(column => column.referencedColumn!.propertyName === key);
-                inverseConditions[joinColumn!.fullName] = relationIds[key];
+                inverseConditions[joinColumn!.databaseName] = relationIds[key];
             });
             return this.queryRunner.delete(junctionMetadata.tableName, Object.assign({}, inverseConditions, conditions));
         });

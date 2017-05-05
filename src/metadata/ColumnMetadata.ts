@@ -216,17 +216,6 @@ export class ColumnMetadata {
     }
 
     /**
-     * Column name in the database.
-     *
-     * todo: rename to databaseName
-     * @deprecated
-     */
-    // name: string;
-    get name(): string {
-        return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
-    }
-
-    /**
      * Gets full path to this column property (including column property name).
      * Full path is relevant when column is used in embeds (one or multiple nested).
      * For example it will return "counters.subcounters.likes".
@@ -242,11 +231,9 @@ export class ColumnMetadata {
     }
 
     /**
-     * Column name in the database including its embedded prefixes.
-     *
-     * todo: rename to databaseName
+     * Complete column name in the database including its embedded prefixes.
      */
-    get fullName(): string {
+    get databaseName(): string {
 
         // if this column is embedded's column then apply different entity
         if (this.embeddedMetadata) {

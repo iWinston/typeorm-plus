@@ -691,7 +691,7 @@ export class EntityMetadata {
             if (entityValue === null || entityValue === undefined)
                 return;
 
-            map[column.fullName] = entityValue;
+            map[column.databaseName] = entityValue;
             // if entity id is a relation, then extract referenced column from that relation
             /*const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
 
@@ -786,7 +786,7 @@ export class EntityMetadata {
         Object.keys(idMap).forEach(propertyName => {
             const column = this.getColumnByPropertyName(propertyName);
             if (column) {
-                map[column.fullName] = idMap[propertyName];
+                map[column.databaseName] = idMap[propertyName];
             }
         });
         return map;
@@ -815,7 +815,7 @@ export class EntityMetadata {
      * Checks if column with the given database name exist.
      */
     hasColumnWithDbName(name: string): boolean {
-        return !!this.ownColumns.find(column => column.fullName === name);
+        return !!this.ownColumns.find(column => column.databaseName === name);
     }
 
     /**

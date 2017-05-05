@@ -89,7 +89,7 @@ export class RelationIdLoader {
                 qb.select(inverseSideTableAlias + "." + inverseSidePropertyName, "manyToManyId");
 
                 inverseRelation.entityMetadata.primaryColumns.forEach(primaryColumn => {
-                    qb.addSelect(inverseSideTableAlias + "." + primaryColumn.fullName, inverseSideTableAlias + "_" + primaryColumn.fullName);
+                    qb.addSelect(inverseSideTableAlias + "." + primaryColumn.databaseName, inverseSideTableAlias + "_" + primaryColumn.databaseName);
                 });
 
                 qb.from(inverseSideTable, inverseSideTableAlias)
@@ -111,10 +111,10 @@ export class RelationIdLoader {
                     }
 
                     if (inverseRelation.entityMetadata.primaryColumns.length === 1) {
-                        result.id.push(rawResult[inverseSideTableAlias + "_" +  inverseRelation.entityMetadata.firstPrimaryColumn.fullName]);
+                        result.id.push(rawResult[inverseSideTableAlias + "_" +  inverseRelation.entityMetadata.firstPrimaryColumn.databaseName]);
                     } else {
                         result.id.push(inverseRelation.entityMetadata.primaryColumns.reduce((ids, primaryColumn) => {
-                            ids[primaryColumn.propertyName] = rawResult[inverseSideTableAlias + "_" + primaryColumn.fullName];
+                            ids[primaryColumn.propertyName] = rawResult[inverseSideTableAlias + "_" + primaryColumn.databaseName];
                             return ids;
                         }, {} as ObjectLiteral));
                     }
@@ -140,14 +140,14 @@ export class RelationIdLoader {
                 let secondJunctionColumn: ColumnMetadata;
 
                 if (relationIdAttr.relation.isOwning) { // todo fix joinColumns[0]
-                    joinTableColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn!.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn!.fullName;
+                    joinTableColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn!.databaseName;
+                    inverseJoinColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn!.databaseName;
                     firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[0];
                     secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[1];
 
                 } else {
-                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
+                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
+                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
                     firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[1];
                     secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[0];
                 }
@@ -203,7 +203,7 @@ export class RelationIdLoader {
 
     protected createIdMap(columns: ColumnMetadata[], parentAlias: string, rawEntity: any) {
         return columns.reduce((idMap, primaryColumn) => {
-            idMap[primaryColumn.propertyName] = rawEntity[parentAlias + "_" + primaryColumn.fullName];
+            idMap[primaryColumn.propertyName] = rawEntity[parentAlias + "_" + primaryColumn.databaseName];
             return idMap;
         }, {} as ObjectLiteral);
     }

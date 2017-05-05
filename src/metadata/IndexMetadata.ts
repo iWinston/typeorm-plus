@@ -105,7 +105,7 @@ export class IndexMetadata {
             throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
         }
 
-        return columns.map(column => column.fullName);
+        return columns.map(column => column.databaseName);
     }
 
     /**
@@ -137,7 +137,7 @@ export class IndexMetadata {
             if (!column)
                 throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ${key}`);
 
-            updatedMap[column.name] = map[key];
+            updatedMap[column.databaseName] = map[key];
             return updatedMap;
         }, {} as { [key: string]: number });
     }

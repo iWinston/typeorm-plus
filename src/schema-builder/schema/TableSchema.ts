@@ -198,11 +198,11 @@ export class TableSchema {
      */
     findChangedColumns(queryRunner: QueryRunner, columnMetadatas: ColumnMetadata[]): ColumnSchema[] {
         return this.columns.filter(columnSchema => {
-            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.fullName === columnSchema.name);
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === columnSchema.name);
             if (!columnMetadata)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  columnSchema.name !== columnMetadata.fullName ||
+            return  columnSchema.name !== columnMetadata.databaseName ||
                     columnSchema.type !== queryRunner.normalizeType(columnMetadata) ||
                     columnSchema.comment !== columnMetadata.comment ||
                     (!columnSchema.isGenerated && !queryRunner.compareDefaultValues(columnMetadata.default, columnSchema.default)) || // we included check for generated here, because generated columns already can have default values

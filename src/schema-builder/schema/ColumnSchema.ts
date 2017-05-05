@@ -104,7 +104,7 @@ export class ColumnSchema {
      */
     static create(columnMetadata: ColumnMetadata, normalizedType: string): ColumnSchema {
         const columnSchema = new ColumnSchema();
-        columnSchema.name = columnMetadata.fullName;
+        columnSchema.name = columnMetadata.databaseName;
         columnSchema.default = columnMetadata.default;
         columnSchema.comment = columnMetadata.comment;
         columnSchema.isGenerated = columnMetadata.isGenerated;
