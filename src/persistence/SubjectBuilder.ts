@@ -356,7 +356,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 if (subject.hasEntity) {
                     const persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue === null) persistValueRelationId = null;
-                    if (persistValue) persistValueRelationId = relation.joinColumns[0].referencedColumn.getValue(persistValue);
+                    if (persistValue) persistValueRelationId = relation.joinColumns[0].referencedColumn!.getValue(persistValue);
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
@@ -374,7 +374,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Details loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Details
                     // (example) and we need to compare details.id === post.detailsId
-                    return relation.joinColumns[0].referencedColumn.getValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
+                    return relation.joinColumns[0].referencedColumn!.getValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
                 });
 
                 // if not loaded yet then load it from the database
@@ -384,7 +384,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.joinColumns[0].referencedColumn.propertyPath + "=:id")
+                        .where(qbAlias + "." + relation.joinColumns[0].referencedColumn!.propertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
                         .enableAutoRelationIdsLoad()
                         .getOne();
@@ -435,7 +435,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 }
 
                 // (example) returns us referenced column (detail's id)
-                const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn.propertyName];
+                const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn!.propertyName];
 
                 // if database relation id does not exist then nothing to remove (but can this be possible?)
                 if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
@@ -548,14 +548,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         return `${joinAlias}.${joinColumn.propertyName} = :${joinColumn.propertyName}`;
                     });
                     const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
-                        return `${joinAlias}.${inverseJoinColumn.propertyName} = ${ea(qbAlias)}.${ec(inverseJoinColumn.referencedColumn.propertyName)}`;
+                        return `${joinAlias}.${inverseJoinColumn.propertyName} = ${ea(qbAlias)}.${ec(inverseJoinColumn.referencedColumn!.propertyName)}`;
                     });
 
                     const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
 
                     // (example) returns us referenced column (detail's id)
                     const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
-                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
+                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn!.propertyName];
                         return parameters;
                     }, {} as ObjectLiteral);
 
@@ -576,7 +576,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const joinAlias = ea("persistenceJoinedRelation");
 
                     const joinColumnConditions = relation.joinColumns.map(joinColumn => {
-                        return `${joinAlias}.${joinColumn.propertyName} = ${ea(qbAlias)}.${ec(joinColumn.referencedColumn.propertyName)}`;
+                        return `${joinAlias}.${joinColumn.propertyName} = ${ea(qbAlias)}.${ec(joinColumn.referencedColumn!.propertyName)}`;
                     });
                     const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
                         return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;
@@ -586,7 +586,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     // (example) returns us referenced column (detail's id)
                     const parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
-                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn.propertyName];
+                        parameters[joinColumn.propertyName] = subject.databaseEntity[joinColumn.referencedColumn!.propertyName];
                         return parameters;
                     }, {} as ObjectLiteral);
 
@@ -601,7 +601,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 } else { // this case can only be a oneToMany relation
                     // todo: fix issues with joinColumn[0]
                     // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn.propertyName];
+                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumns[0].referencedColumn!.propertyName];
 
                     // in this case we need inverse entities not only because of cascade removes
                     // because we also need inverse entities to be able to perform update of entities
@@ -784,7 +784,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     .map(subRelationValue => {
                         const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                         return joinColumns.reduce((ids, joinColumn) => {
-                            ids[joinColumn.referencedColumn.propertyName] = subRelationValue[joinColumn.referencedColumn.propertyName];
+                            ids[joinColumn.referencedColumn!.propertyName] = subRelationValue[joinColumn.referencedColumn!.propertyName];
                             return ids;
                         }, {} as ObjectLiteral);
                     })
@@ -804,7 +804,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                     const ids = joinColumns.reduce((ids, joinColumn) => {
-                        ids[joinColumn.referencedColumn.propertyName] = subRelatedValue[joinColumn.referencedColumn.propertyName];
+                        ids[joinColumn.referencedColumn!.propertyName] = subRelatedValue[joinColumn.referencedColumn!.propertyName];
                         return ids;
                     }, {} as ObjectLiteral);
                     return !existInverseEntityRelationIds.find(relationId => {

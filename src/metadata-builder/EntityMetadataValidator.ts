@@ -110,6 +110,8 @@ export class EntityMetadataValidator {
             // todo: include driver-specific checks. for example in mongodb empty prefixes are not allowed
             // todo: if multiple columns with same name - throw exception, including cases when columns are in embeds with same prefixes or without prefix at all
             // todo: if multiple primary key used, at least one of them must be unique or @Index decorator must be set on entity
+            // todo: check if entity with duplicate names, some decorators exist
+
 
         });
 

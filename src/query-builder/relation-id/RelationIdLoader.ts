@@ -55,7 +55,7 @@ export class RelationIdLoader {
 
                 const relation = relationIdAttr.relation; // "category.posts"
                 const inverseRelation = relation.inverseRelation; // "post.category"
-                const referenceColumnName = inverseRelation.joinColumns[0].referencedColumn.propertyName; // post id
+                const referenceColumnName = inverseRelation.joinColumns[0].referencedColumn!.propertyName; // post id
                 const inverseSideTable = relation.inverseEntityMetadata.target; // Post
                 const inverseSideTableName = relation.inverseEntityMetadata.tableName; // post
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
@@ -140,14 +140,14 @@ export class RelationIdLoader {
                 let secondJunctionColumn: ColumnMetadata;
 
                 if (relationIdAttr.relation.isOwning) { // todo fix joinColumns[0]
-                    joinTableColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn.fullName;
+                    joinTableColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn!.fullName;
+                    inverseJoinColumnName = relationIdAttr.relation.joinColumns[0].referencedColumn!.fullName;
                     firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[0];
                     secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[1];
 
                 } else {
-                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
-                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
+                    joinTableColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
+                    inverseJoinColumnName = relationIdAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
                     firstJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[1];
                     secondJunctionColumn = relationIdAttr.relation.junctionEntityMetadata.columns[0];
                 }

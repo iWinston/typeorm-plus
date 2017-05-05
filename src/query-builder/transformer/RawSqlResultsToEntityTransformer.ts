@@ -152,9 +152,9 @@ export class RawSqlResultsToEntityTransformer {
             } else {
                 let referenceColumnName: string;
                 if (relation.isOneToMany || relation.isOneToOneNotOwner) { // todo: fix joinColumns[0]
-                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
+                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn.fullName : relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
+                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.fullName : relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
                 }
                 referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName];
                 if (referenceColumnValue === undefined || referenceColumnValue === null)
@@ -183,10 +183,10 @@ export class RawSqlResultsToEntityTransformer {
                 let referenceColumnName: string;
 
                 if (relation.isOneToMany) {
-                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn.fullName;  // todo: fix joinColumns[0]
+                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;  // todo: fix joinColumns[0]
 
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn.fullName : relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
+                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.fullName : relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
                 }
 
                 const referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work

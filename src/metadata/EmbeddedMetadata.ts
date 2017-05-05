@@ -17,7 +17,6 @@ export class EmbeddedMetadata {
      */
     entityMetadata: EntityMetadata;
 
-
     /**
      * Parent embedded in the case if this embedded inside other embedded.
      */

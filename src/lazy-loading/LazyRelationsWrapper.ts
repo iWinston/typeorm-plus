@@ -37,7 +37,7 @@ export class LazyRelationsWrapper {
 
                     const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.joinColumns;
                     const conditions = joinColumns.map(joinColumn => {
-                        return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn.propertyName}`;
+                        return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn!.propertyName}`;
                     }).join(" AND ");
 
                     // (ow) post.category<=>category.post
@@ -49,8 +49,8 @@ export class LazyRelationsWrapper {
                         .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, conditions);
 
                     joinColumns.forEach(joinColumn => {
-                        qb.andWhere(`${relation.entityMetadata.name}.${joinColumn.referencedColumn.fullName} = :${joinColumn.referencedColumn.fullName}`)
-                            .setParameter(`${joinColumn.referencedColumn.fullName}`, this[joinColumn.referencedColumn.fullName]);
+                        qb.andWhere(`${relation.entityMetadata.name}.${joinColumn.referencedColumn!.fullName} = :${joinColumn.referencedColumn!.fullName}`)
+                            .setParameter(`${joinColumn.referencedColumn!.fullName}`, this[joinColumn.referencedColumn!.fullName]);
                     });
 
                     this[promiseIndex] = qb.getOne().then(result => {
@@ -75,8 +75,8 @@ export class LazyRelationsWrapper {
                         .from(relation.inverseRelation.entityMetadata.target, relation.propertyName);
 
                     relation.inverseRelation.joinColumns.forEach(joinColumn => {
-                        qb.andWhere(`${relation.propertyName}.${joinColumn.propertyName} = :${joinColumn.referencedColumn.propertyName}`)
-                            .setParameter(`${joinColumn.referencedColumn.propertyName}`, this[joinColumn.referencedColumn.propertyName]);
+                        qb.andWhere(`${relation.propertyName}.${joinColumn.propertyName} = :${joinColumn.referencedColumn!.propertyName}`)
+                            .setParameter(`${joinColumn.referencedColumn!.propertyName}`, this[joinColumn.referencedColumn!.propertyName]);
                     });
 
                     const result = relation.isOneToMany ? qb.getMany() : qb.getOne();
@@ -112,10 +112,10 @@ export class LazyRelationsWrapper {
                             return `${joinAlias}.${joinColumn.propertyName} = :${joinColumn.propertyName}`;
                         });
                         inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
-                            return `${joinAlias}.${inverseJoinColumn.propertyName}=${mainAlias}.${inverseJoinColumn.referencedColumn.propertyName}`;
+                            return `${joinAlias}.${inverseJoinColumn.propertyName}=${mainAlias}.${inverseJoinColumn.referencedColumn!.propertyName}`;
                         });
                         parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
-                            parameters[joinColumn.propertyName] = this[joinColumn.referencedColumn.propertyName];
+                            parameters[joinColumn.propertyName] = this[joinColumn.referencedColumn!.propertyName];
                             return parameters;
                         }, {} as ObjectLiteral);
 
@@ -129,13 +129,13 @@ export class LazyRelationsWrapper {
                          */
 
                         joinColumnConditions = relation.inverseRelation.joinColumns.map(joinColumn => {
-                            return `${joinAlias}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn.propertyName}`;
+                            return `${joinAlias}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`;
                         });
                         inverseJoinColumnConditions = relation.inverseRelation.inverseJoinColumns.map(inverseJoinColumn => {
                             return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;
                         });
                         parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
-                            parameters[joinColumn.propertyName] = this[joinColumn.referencedColumn.propertyName];
+                            parameters[joinColumn.propertyName] = this[joinColumn.referencedColumn!.propertyName];
                             return parameters;
                         }, {} as ObjectLiteral);
                     }

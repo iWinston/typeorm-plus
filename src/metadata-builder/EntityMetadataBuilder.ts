@@ -1,4 +1,3 @@
-import {getFromContainer} from "../index";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
@@ -7,7 +6,6 @@ import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {EntityMetadataValidator} from "./EntityMetadataValidator";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetadataBuilder";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
@@ -64,7 +62,6 @@ export class EntityMetadataBuilder {
 
         realTables.forEach(tableArgs => {
             const entityMetadata = new EntityMetadata(this.lazyRelationsWrapper);
-            entityMetadata.namingStrategy = this.namingStrategy;
 
             const inheritanceTree = tableArgs.target instanceof Function ? MetadataArgsUtils.getInheritanceTree(tableArgs.target) : [tableArgs.target]; // todo: implement later here inheritance for string-targets
 
@@ -109,14 +106,6 @@ export class EntityMetadataBuilder {
             entityMetadatas.push(entityMetadata);
             // create entity's relations join tables
 
-            // add lazy initializer for entity relations
-            if (entityMetadata.target instanceof Function) {
-                entityMetadata.relations
-                    .filter(relation => relation.isLazy)
-                    .forEach(relation => {
-                        this.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
-                    });
-            }
         });
 
         // after all metadatas created we set inverse side (related) entity metadatas for all relation metadatas
@@ -131,38 +120,35 @@ export class EntityMetadataBuilder {
         });
 
         // generate virtual column with foreign key for class-table inheritance
-        entityMetadatas
-            .filter(metadata => !!metadata.parentEntityMetadata)
-            .forEach(metadata => {
-                const parentEntityMetadataPrimaryColumn = metadata.parentEntityMetadata.firstPrimaryColumn; // todo: make sure to create columns for all its primary columns
-                const columnName = this.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentEntityMetadataPrimaryColumn.propertyName);
-                const parentRelationColumn = new ColumnMetadata(metadata, {
-                    target: metadata.parentEntityMetadata.target,
-                    propertyName: parentEntityMetadataPrimaryColumn.propertyName,
-                    // propertyType: parentEntityMetadataPrimaryColumn.propertyType,
-                    mode: "parentId",
-                    options: <ColumnOptions> {
-                        name: columnName,
-                        type: parentEntityMetadataPrimaryColumn.type,
-                        unique: true,
-                        nullable: false,
-                        primary: false
-                    }
-                });
+        entityMetadatas.forEach(entityMetadata => {
+            if (!entityMetadata.parentEntityMetadata)
+                return;
 
-                // add column
-                metadata.addColumn(parentRelationColumn);
-
-                // add foreign key
-                const foreignKey = new ForeignKeyMetadata(
-                    metadata,
-                    [parentRelationColumn],
-                    metadata.parentEntityMetadata,
-                    [parentEntityMetadataPrimaryColumn],
-                    "CASCADE"
-                );
-                metadata.foreignKeys.push(foreignKey);
+            const parentPrimaryColumns = entityMetadata.parentEntityMetadata.primaryColumns;
+            const parentIdColumns = parentPrimaryColumns.map(primaryColumn => {
+                const columnName = this.namingStrategy.classTableInheritanceParentColumnName(entityMetadata.parentEntityMetadata.tableName, primaryColumn.propertyName);
+                const column = new ColumnMetadata(entityMetadata);
+                column.type = primaryColumn.type;
+                column.propertyName = primaryColumn.propertyName; // todo: check why needed
+                column._name = columnName;
+                column.mode = "parentId";
+                column.isUnique = true;
+                column.isNullable = false;
+                // column.entityTarget = entityMetadata.target;
+                return column;
             });
+
+            // add foreign key
+            const foreignKey = new ForeignKeyMetadata(
+                entityMetadata,
+                parentIdColumns,
+                entityMetadata.parentEntityMetadata,
+                parentPrimaryColumns,
+                "CASCADE"
+            );
+            entityMetadata.ownColumns.push(...parentIdColumns);
+            entityMetadata.foreignKeys.push(foreignKey);
+        });
 
         entityMetadatas.forEach(entityMetadata => {
 
@@ -310,7 +296,6 @@ export class EntityMetadataBuilder {
                     const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.fullName);
 
                     return new ColumnMetadata(junctionEntityMetadata, {
-                        target: "__virtual__",
                         propertyName: columnName,
                         mode: "virtual",
                         options: <ColumnOptions> {
@@ -331,7 +316,6 @@ export class EntityMetadataBuilder {
                     const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.fullName);
 
                     return new ColumnMetadata(junctionEntityMetadata, {
-                        target: "__virtual__",
                         propertyName: columnName,
                         mode: "virtual",
                         options: <ColumnOptions> {
@@ -351,7 +335,6 @@ export class EntityMetadataBuilder {
 
                 junctionColumns.concat(inverseJunctionColumns).forEach(column => column.relationMetadata = relation);
                 junctionEntityMetadata.isJunction = true;
-                junctionEntityMetadata.target = "__virtual__";
                 junctionEntityMetadata.namingStrategy = this.namingStrategy;
                 junctionEntityMetadata.ownColumns = junctionColumns.concat(inverseJunctionColumns);
                 junctionEntityMetadata.foreignKeys = foreignKeys;
@@ -393,52 +376,6 @@ export class EntityMetadataBuilder {
                 metadata.indices.push(indexForKeyWithPrimary);
             });
 
-        // generate columns and foreign keys for tables with relations
-        /*entityMetadatas.forEach(metadata => {
-            metadata.relationsWithJoinColumns.forEach(relation => {
-                relation.joinColumns.map(joinColumn => {
-
-                    // find relational column and if it does not exist - add it
-                    let relationalColumn = metadata.columns.find(column => column.fullName === joinColumn.name);
-                    if (!relationalColumn) {
-                        relationalColumn = new ColumnMetadata({
-                            target: metadata.target,
-                            propertyName: joinColumn.name,
-                            mode: "virtual",
-                            options: {
-                                name: joinColumn.name,
-                                type: joinColumn.referencedColumn.type,
-                                nullable: relation.isNullable,
-                                primary: relation.isPrimary
-                            }
-                        });
-                        relationalColumn.relationMetadata = relation;
-                        metadata.addColumn(relationalColumn);
-                    }
-                });
-            });
-        });*/
-
-        /*entityMetadatas.forEach(metadata => {
-            metadata.relationsWithJoinColumns.forEach(relation => {
-
-                const columns = relation.joinColumns.map(joinColumn => {
-                    return metadata.columns.find(column => column.fullName === joinColumn.name)!;
-                });
-
-                // create and add foreign key
-                const inverseSideColumns = relation.joinColumns.map(joinColumn => joinColumn.referencedColumn!);
-                const foreignKey = new ForeignKeyMetadata(
-                    columns,
-                    relation.inverseEntityMetadata.table,
-                    inverseSideColumns,
-                    relation.onDelete
-                );
-                foreignKey.entityMetadata = metadata;
-                metadata.foreignKeys.push(foreignKey);
-            });
-        });*/
-
         // generate junction tables for all closure tables
         entityMetadatas.forEach(metadata => {
             if (!metadata.isClosure)
@@ -451,8 +388,7 @@ export class EntityMetadataBuilder {
 
             const columns = [
                 new ColumnMetadata(closureJunctionEntityMetadata, <ColumnMetadataArgs> {
-                    target: "__virtual__",
-                    propertyName: "__virtual__",
+                    propertyName: "__virtual__", // check how property name is used
                     propertyType: metadata.firstPrimaryColumn.type,
                     mode: "virtual",
                     options: <ColumnOptions> {
@@ -462,8 +398,7 @@ export class EntityMetadataBuilder {
                     }
                 }),
                 new ColumnMetadata(closureJunctionEntityMetadata, <ColumnMetadataArgs> {
-                    target: "__virtual__",
-                    propertyName: "__virtual__",
+                    propertyName: "__virtual__", // check how property name is used
                     propertyType: metadata.firstPrimaryColumn.type,
                     mode: "virtual",
                     options: <ColumnOptions> {
@@ -476,8 +411,7 @@ export class EntityMetadataBuilder {
 
             if (metadata.hasTreeLevelColumn) {
                 columns.push(new ColumnMetadata(closureJunctionEntityMetadata, <ColumnMetadataArgs> {
-                    target: "__virtual__",
-                    propertyName: "__virtual__",
+                    propertyName: "__virtual__", // check how property name is used
                     propertyType: ColumnTypes.INTEGER,
                     mode: "virtual",
                     options: {
@@ -488,7 +422,6 @@ export class EntityMetadataBuilder {
             }
 
             closureJunctionEntityMetadata.isJunction = true;
-            closureJunctionEntityMetadata.target = "__virtual__";
             closureJunctionEntityMetadata.ownColumns = columns;
             closureJunctionEntityMetadata.foreignKeys = [
                 new ForeignKeyMetadata(closureJunctionEntityMetadata, [columns[0]], metadata, [metadata.firstPrimaryColumn]),
@@ -503,8 +436,16 @@ export class EntityMetadataBuilder {
             entityMetadatas.push(closureJunctionEntityMetadata);
         });
 
-        // check for errors in a built metadata schema (we need to check after relationEntityMetadata is set)
-        new EntityMetadataValidator().validateMany(entityMetadatas);
+        // add lazy initializer for entity relations
+        entityMetadatas.forEach(entityMetadata => {
+            if (entityMetadata.target instanceof Function) {
+                entityMetadata.relations
+                    .filter(relation => relation.isLazy)
+                    .forEach(relation => {
+                        this.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                    });
+            }
+        });
 
         return entityMetadatas;
     }

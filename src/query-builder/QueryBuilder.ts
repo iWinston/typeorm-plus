@@ -1455,7 +1455,7 @@ export class QueryBuilder<Entity> {
 
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
                 const condition = relation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(parentAlias) + "." + ec(joinColumn.propertyName);
+                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.fullName) + "=" + ea(parentAlias) + "." + ec(joinColumn.propertyName);
                 }).join(" AND ");
 
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
@@ -1464,7 +1464,7 @@ export class QueryBuilder<Entity> {
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
                 const condition = relation.inverseRelation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias!) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
+                    return ea(destinationTableAlias!) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.fullName);
                 }).join(" AND ");
 
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
@@ -1479,23 +1479,23 @@ export class QueryBuilder<Entity> {
 
                     junctionCondition = relation.joinColumns.map(joinColumn => {
                         // `post_category`.`postId` = `post`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
+                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.fullName);
                     }).join(" AND ");
 
                     destinationCondition = relation.inverseJoinColumns.map(joinColumn => {
                         // `category`.`id` = `post_category`.`categoryId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
+                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
                     }).join(" AND ");
 
                 } else {
                     junctionCondition = relation.inverseRelation.inverseJoinColumns.map(joinColumn => {
                         // `post_category`.`categoryId` = `category`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn.fullName);
+                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.fullName);
                     }).join(" AND ");
 
                     destinationCondition = relation.inverseRelation.joinColumns.map(joinColumn => {
                         // `post`.`id` = `post_category`.`postId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
+                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.fullName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
                     }).join(" AND ");
                 }
 

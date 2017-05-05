@@ -40,6 +40,7 @@ import {MongoRepository} from "../repository/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {EntitySchemaTransformer} from "../entity-schema/EntitySchemaTransformer";
+import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidator";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -677,6 +678,7 @@ export class Connection {
         const namingStrategy = this.createNamingStrategy();
         this.driver.namingStrategy = namingStrategy;
         const lazyRelationsWrapper = this.createLazyRelationsWrapper();
+        const entityMetadataValidator = new EntityMetadataValidator();
 
         // take imported event subscribers
         if (this.subscriberClasses && this.subscriberClasses.length && !PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
@@ -715,6 +717,8 @@ export class Connection {
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
                 });
         }
+
+        entityMetadataValidator.validateMany(this.entityMetadatas);
     }
 
     /**

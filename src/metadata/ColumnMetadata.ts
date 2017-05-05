@@ -4,6 +4,7 @@ import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 
 /**
  * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
@@ -34,7 +35,8 @@ export class ColumnMetadata {
     embeddedMetadata: EmbeddedMetadata;
 
     /**
-     * If this column is foreign key of some relation then this relation's metadata will be here.
+     * If column is a foreign key of some relation then this relation's metadata will be there.
+     * If this column does not have a foreign key then this property value is undefined.
      */
     relationMetadata: RelationMetadata;
 
@@ -43,96 +45,87 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Target class to which metadata is applied.
+     * Column's mode in which this column is working.
      */
-    readonly target: Function|string;
+    mode: ColumnMode;
 
     /**
-     * Target's property name to which this metadata is applied.
+     * Class's property name on which this column is applied.
      */
-    readonly propertyName: string;
-
-    /**
-     * The real reflected property type.
-     */
-    // readonly propertyType: string;
+    propertyName: string;
 
     /**
      * The database type of the column.
      */
-    readonly type: ColumnType;
-
-    /**
-     * Column's mode in which this column is working.
-     */
-    readonly mode: ColumnMode;
+    type: ColumnType;
 
     /**
      * Type's length in the database.
      */
-    readonly length: string = "";
+    length: string = "";
 
     /**
      * Indicates if this column is a primary key.
      */
-    readonly isPrimary: boolean = false;
+    isPrimary: boolean = false;
 
     /**
      * Indicates if this column is generated (auto increment or generated other way).
      */
-    readonly isGenerated: boolean = false;
+    isGenerated: boolean = false;
 
     /**
      * Indicates if value in the database should be unique or not.
      */
-    readonly isUnique: boolean = false;
+    isUnique: boolean = false;
 
     /**
      * Indicates if column can contain nulls or not.
      */
-    readonly isNullable: boolean = false;
+    isNullable: boolean = false;
 
     /**
      * Column comment.
+     * This feature is not supported by all databases.
      */
-    readonly comment: string = "";
+    comment: string = "";
 
     /**
      * Default database value.
      */
-    readonly default: any;
+    default: any;
 
     /**
-     * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
-     * number of digits that are stored for the values.
+     * The precision for a decimal (exact numeric) column (applies only for decimal column),
+     * which is the maximum number of digits that are stored for the values.
      */
-    readonly precision: number;
+    precision: number;
 
     /**
-     * The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number
-     * of digits to the right of the decimal point and must not be greater than precision.
+     * The scale for a decimal (exact numeric) column (applies only for decimal column),
+     * which represents the number of digits to the right of the decimal point and must not be greater than precision.
      */
-    readonly scale: number;
+    scale: number;
 
     /**
-     * Indicates if this date column will contain a timezone.
+     * Indicates if date column will contain a timezone.
      * Used only for date-typed column types.
      * Note that timezone option is not supported by all databases (only postgres for now).
      */
-    readonly timezone: boolean;
+    timezone: boolean;
 
     /**
      * Indicates if date object must be stored in given date's timezone.
      * By default date is saved in UTC timezone.
      * Works only with "datetime" columns.
      */
-    readonly localTimezone?: boolean;
+    localTimezone?: boolean;
 
     /**
      * Indicates if column's type will be set as a fixed-length data type.
      * Works only with "string" columns.
      */
-    readonly fixedLength?: boolean;
+    fixedLength?: boolean;
 
     // ---------------------------------------------------------------------
     // Private Properties
@@ -141,50 +134,71 @@ export class ColumnMetadata {
     /**
      * Column name to be used in the database.
      */
-    private _name: string;
+    _name: string;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(entityMetadata: EntityMetadata, args: ColumnMetadataArgs) {
+    constructor(entityMetadata: EntityMetadata, args?: ColumnMetadataArgs) {
         this.entityMetadata = entityMetadata;
-        this.target = args.target;
-        this.propertyName = args.propertyName;
+        // this.entityTarget = entityMetadata.target;
+        if (args) {
+            this.propertyName = args.propertyName;
 
-        if (args.mode)
-            this.mode = args.mode;
-        // if (args.propertyType)
-        //     this.propertyType = args.propertyType.toLowerCase();
-        if (args.options.name)
-            this._name = args.options.name;
-        if (args.options.type)
-            this.type = args.options.type;
+            if (args.mode)
+                this.mode = args.mode;
+            // if (args.propertyType)
+            //     this.propertyType = args.propertyType.toLowerCase();
+            if (args.options.name)
+                this._name = args.options.name;
+            if (args.options.type)
+                this.type = args.options.type;
 
-        if (args.options.length)
-            this.length = String(args.options.length);
-        if (args.options.primary)
-            this.isPrimary = args.options.primary;
-        if (args.options.generated)
-            this.isGenerated = args.options.generated;
-        if (args.options.unique)
-            this.isUnique = args.options.unique;
-        if (args.options.nullable)
-            this.isNullable = args.options.nullable;
-        if (args.options.comment)
-            this.comment = args.options.comment;
-        if (args.options.default !== undefined && args.options.default !== null)
-            this.default = args.options.default;
-        if (args.options.scale)
-            this.scale = args.options.scale;
-        if (args.options.precision)
-            this.precision = args.options.precision;
-        if (args.options.timezone)
-            this.timezone = args.options.timezone;
-        if (args.options.localTimezone)
-            this.localTimezone = args.options.localTimezone;
-        if (args.options.fixedLength)
-            this.fixedLength = args.options.fixedLength;
+            if (args.options.length)
+                this.length = String(args.options.length);
+            if (args.options.primary)
+                this.isPrimary = args.options.primary;
+            if (args.options.generated)
+                this.isGenerated = args.options.generated;
+            if (args.options.unique)
+                this.isUnique = args.options.unique;
+            if (args.options.nullable)
+                this.isNullable = args.options.nullable;
+            if (args.options.comment)
+                this.comment = args.options.comment;
+            if (args.options.default !== undefined && args.options.default !== null)
+                this.default = args.options.default;
+            if (args.options.scale)
+                this.scale = args.options.scale;
+            if (args.options.precision)
+                this.precision = args.options.precision;
+            if (args.options.timezone)
+                this.timezone = args.options.timezone;
+            if (args.options.localTimezone)
+                this.localTimezone = args.options.localTimezone;
+            if (args.options.fixedLength)
+                this.fixedLength = args.options.fixedLength;
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Build
+    // ---------------------------------------------------------------------
+
+    build(options: {
+        namingStrategy: NamingStrategyInterface,
+        entityMetadata: EntityMetadata,
+        userSpecifiedName: string,
+        propertyName: string,
+        propertyPath: string,
+    }): ColumnMetadata {
+        this.entityMetadata = options.entityMetadata;
+        // this.entityTarget = options.entityMetadata.target;
+        this.propertyName = options.propertyName;
+        // this.name = options.namingStrategy.columnName(options.propertyName, options.userSpecifiedName);
+
+        return this;
     }
 
     // ---------------------------------------------------------------------
@@ -204,9 +218,10 @@ export class ColumnMetadata {
     /**
      * Column name in the database.
      *
-     * todo: rename to originalName
+     * todo: rename to databaseName
      * @deprecated
      */
+    // name: string;
     get name(): string {
         return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
     }
@@ -272,16 +287,6 @@ export class ColumnMetadata {
     }
 
     /**
-     * Indicates if column is array.
-     * Array columns are now only supported by Mongodb driver.
-     *
-     * todo: implement array serialization functionality for relational databases as well
-     */
-    get isArray() {
-        return this.mode === "array";
-    }
-
-    /**
      * Indicates if column is a parent id. Parent id columns are not mapped to the entity.
      */
     get isParentId() {
@@ -327,7 +332,7 @@ export class ColumnMetadata {
      * If this column is foreign key then it references some other column,
      * and this property will contain reference to this column.
      */
-    get referencedColumn(): ColumnMetadata/*|undefined*/ {
+    get referencedColumn(): ColumnMetadata|undefined {
         const foreignKeys = this.relationMetadata ? this.relationMetadata.foreignKeys : this.entityMetadata.foreignKeys;
         const foreignKey = foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this) !== -1);
         if (foreignKey) {
@@ -338,38 +343,9 @@ export class ColumnMetadata {
         return undefined!;
     }
 
-    /**
-     * Gets embedded property in which column is.
-     */
-    get embeddedProperty() {
-        if (!this.embeddedMetadata)
-            throw new Error(`This column${ this._name ? this._name + " " : "" } is not in embedded entity.`);
-
-        return this.embeddedMetadata.propertyName;
-    }
-
     // ---------------------------------------------------------------------
     // Public Methods
     // ---------------------------------------------------------------------
-
-    /**
-     * @deprecated
-     */
-    hasEntityValue(entity: any) {
-        if (!entity)
-            return false;
-
-        if (this.isInEmbedded) {
-            return  entity[this.embeddedProperty] !== undefined &&
-                    entity[this.embeddedProperty] !== null &&
-                    entity[this.embeddedProperty][this.propertyName] !== undefined &&
-                    entity[this.embeddedProperty][this.propertyName] !== null;
-
-        } else {
-            return  entity[this.propertyName] !== undefined &&
-                    entity[this.propertyName] !== null;
-        }
-    }
 
     /**
      * Creates entity id map from the given entity ids array.
@@ -460,6 +436,7 @@ export class ColumnMetadata {
      * @stable
      */
     getValue(entity: ObjectLiteral): any|undefined {
+        // if (entity === undefined || entity === null) return undefined; // uncomment if needed
 
         // extract column value from embeddeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -487,7 +464,7 @@ export class ColumnMetadata {
     }
 
     /**
-     * Sets given entity's column's value.
+     * Sets given entity's column value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      */
     setValue(entity: ObjectLiteral, value: any): void {
@@ -514,15 +491,6 @@ export class ColumnMetadata {
         } else {
             entity[this.propertyName] = value;
         }
-    }
-
-    // ---------------------------------------------------------------------
-    // Builder Method
-    // ---------------------------------------------------------------------
-
-    static build() {
-        // const columnMetadata = new ColumnMetadata();
-        // return columnMetadata;
     }
 
 }

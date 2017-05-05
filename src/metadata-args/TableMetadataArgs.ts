@@ -10,9 +10,8 @@ export interface TableMetadataArgs {
      * Class to which table is applied.
      * Function target is a table defined in the class.
      * String target is a table defined in a json schema.
-     * "__virtual__" is a table defined without class (like junction tables).
      */
-    readonly target: Function|string|"__virtual__";
+    readonly target: Function|string;
 
     /**
      * Table's name. If name is not set then table's name will be generated from target's name.

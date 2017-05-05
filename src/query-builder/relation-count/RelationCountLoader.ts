@@ -32,7 +32,7 @@ export class RelationCountLoader {
                 // todo(dima): fix issues wit multiple primary keys and remove joinColumns[0]
                 const relation = relationCountAttr.relation; // "category.posts"
                 const inverseRelation = relation.inverseRelation; // "post.category"
-                const referenceColumnName = inverseRelation.joinColumns[0].referencedColumn.propertyName; // post id
+                const referenceColumnName = inverseRelation.joinColumns[0].referencedColumn!.propertyName; // post id
                 const inverseSideTable = relation.inverseEntityMetadata.target; // Post
                 const inverseSideTableName = relation.inverseEntityMetadata.tableName; // post
                 const inverseSideTableAlias = relationCountAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
@@ -78,14 +78,14 @@ export class RelationCountLoader {
                 let secondJunctionColumn: ColumnMetadata;
 
                 if (relationCountAttr.relation.isOwning) { // todo fix joinColumns[0] and inverseJoinColumns[0].
-                    joinTableColumnName = relationCountAttr.relation.joinColumns[0].referencedColumn.fullName;
-                    inverseJoinColumnName = relationCountAttr.relation.inverseJoinColumns[0].referencedColumn.fullName;
+                    joinTableColumnName = relationCountAttr.relation.joinColumns[0].referencedColumn!.fullName;
+                    inverseJoinColumnName = relationCountAttr.relation.inverseJoinColumns[0].referencedColumn!.fullName;
                     firstJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
                     secondJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
 
                 } else {
-                    joinTableColumnName = relationCountAttr.relation.inverseRelation.inverseJoinColumns[0].referencedColumn.fullName;
-                    inverseJoinColumnName = relationCountAttr.relation.inverseRelation.joinColumns[0].referencedColumn.fullName;
+                    joinTableColumnName = relationCountAttr.relation.inverseRelation.inverseJoinColumns[0].referencedColumn!.fullName;
+                    inverseJoinColumnName = relationCountAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.fullName;
                     firstJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[1];
                     secondJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columnsWithoutEmbeddeds[0];
                 }
