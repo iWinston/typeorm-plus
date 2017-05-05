@@ -16,6 +16,7 @@ import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
 import {DiscriminatorValueMetadataArgs} from "./DiscriminatorValueMetadataArgs";
 import {EntityRepositoryMetadataArgs} from "./EntityRepositoryMetadataArgs";
 import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
+import {MetadataArgsUtils} from "./MetadataArgsUtils";
 
 /**
  * Storage all metadatas of all available types: tables, fields, subscribers, relations, etc.
@@ -57,10 +58,14 @@ export class MetadataArgsStorage {
      * Gets merged (with all abstract classes) table metadatas for the given classes.
      */
     getMergedTableMetadatas(classes?: Function[]) {
-        const allTableMetadataArgs = classes ? this.tables.filterByTargets(classes) : this.tables;
-        const tableMetadatas = allTableMetadataArgs.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child");
 
-        return tableMetadatas.toArray().map(tableMetadata => {
+        // filter out tables by a given allowed classes
+        const allTableMetadataArgs = MetadataArgsUtils.filterByTargetClasses(this.tables.toArray(), classes);
+
+        // filter out table metadata args for those we really create entity metadatas and tables in the db
+        const realTables = allTableMetadataArgs.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child");
+
+        return realTables.map(tableMetadata => {
             return this.mergeWithAbstract(this.tables, tableMetadata);
         });
     }

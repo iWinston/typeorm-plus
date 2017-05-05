@@ -45,8 +45,7 @@ export class EntityMetadataBuilder {
     /**
      * Builds a complete metadata aggregations for the given entity classes.
      */
-    build(
-          entityClasses?: Function[]): EntityMetadata[] {
+    build(entityClasses?: Function[]): EntityMetadata[] {
         const embeddableMergedArgs = this.metadataArgsStorage.getMergedEmbeddableTableMetadatas(entityClasses);
         const entityMetadatas: EntityMetadata[] = [];
         const allMergedArgs = this.metadataArgsStorage.getMergedTableMetadatas(entityClasses);
@@ -101,8 +100,6 @@ export class EntityMetadataBuilder {
                     tableName: argsForTable.name,
                     tableType: argsForTable.type,
                     orderBy: argsForTable.orderBy,
-                    engine: argsForTable.engine,
-                    skipSchemaSync: argsForTable.skipSchemaSync,
                     columnMetadatas: columns,
                     relationMetadatas: relations,
                     relationIdMetadatas: relationIds,
@@ -116,6 +113,8 @@ export class EntityMetadataBuilder {
                     target: tableArgs.target,
                     tableType: argsForTable.type,
                     userSpecifiedTableName: argsForTable.name,
+                    engine: argsForTable.engine,
+                    skipSchemaSync: argsForTable.skipSchemaSync,
                 });
 
                 entityMetadatas.push(entityMetadata);
@@ -590,7 +589,9 @@ export class EntityMetadataBuilder {
         target?: Function|string,
         tableType: TableType,
         userSpecifiedTableName?: string,
-        closureOwnerTableName?: string
+        closureOwnerTableName?: string,
+        engine?: string,
+        skipSchemaSync?: boolean,
     }) {
 
         let target = options.target;
@@ -613,6 +614,8 @@ export class EntityMetadataBuilder {
         metadata.tableNameWithoutPrefix = tableNameWithoutPrefix;
         metadata.tableName = tableName;
         metadata.name = targetName ? targetName : tableName;
+        metadata.engine = options.engine;
+        metadata.skipSchemaSync = options.skipSchemaSync || false;
     }
 
     /*protected createEntityMetadata(tableArgs: any, argsForTable: any, ): EntityMetadata {

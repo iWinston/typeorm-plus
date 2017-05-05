@@ -45,19 +45,6 @@ export class EntityMetadata {
     readonly namingStrategy: NamingStrategyInterface;
 
     /**
-     * Target class to which this entity metadata is bind.
-     * Note, that when using table inheritance patterns target can be different rather then table's target.
-     * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
-     */
-    target: Function|string;
-
-    /**
-     * Indicates if this entity metadata of a junction table, or not.
-     * Junction table is a table created by many-to-many relationship.
-     */
-    readonly isJunction: boolean;
-
-    /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
      */
     readonly _orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
@@ -104,26 +91,6 @@ export class EntityMetadata {
      */
     readonly discriminatorValue?: string;
 
-    /**
-     * Global tables prefix. Customer can set a global table prefix for all tables in the database.
-     */
-    readonly tablesPrefix?: string;
-
-    /**
-     * Table's database engine type (like "InnoDB", "MyISAM", etc).
-     */
-    readonly engine?: string;
-
-    /**
-     * Whether table must be synced during schema build or not
-     */
-    readonly skipSchemaSync?: boolean;
-
-    /**
-     * Table type. Tables can be abstract, closure, junction, embedded, etc.
-     */
-    tableType: TableType = "regular";
-
     // -------------------------------------------------------------------------
     // Private properties
     // -------------------------------------------------------------------------
@@ -141,7 +108,6 @@ export class EntityMetadata {
                 private lazyRelationsWrapper: LazyRelationsWrapper) {
         this.target = args.target;
         this.isJunction = args.junction;
-        this.tablesPrefix = args.tablesPrefix;
         this.namingStrategy = args.namingStrategy;
         this.tableType = args.tableType;
         this._columns = args.columnMetadatas || [];
@@ -153,8 +119,6 @@ export class EntityMetadata {
         this.embeddeds = args.embeddedMetadatas || [];
         this.discriminatorValue = args.discriminatorValue;
         this.inheritanceType = args.inheritanceType;
-        this.engine = args.engine;
-        this.skipSchemaSync = args.skipSchemaSync;
         this._orderBy = args.orderBy;
         this._columns.forEach(column => column.entityMetadata = this);
         this._relations.forEach(relation => relation.entityMetadata = this);
@@ -176,6 +140,26 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
+
+    /**
+     * Table type. Tables can be abstract, closure, junction, embedded, etc.
+     */
+    tableType: TableType = "regular";
+
+    /**
+     * Target class to which this entity metadata is bind.
+     * Note, that when using table inheritance patterns target can be different rather then table's target.
+     * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
+     */
+    target: Function|string;
+
+    /**
+     * Indicates if this entity metadata of a junction table, or not.
+     * Junction table is a table created by many-to-many relationship.
+     *
+     * Its also possible to understand if entity is junction via tableType.
+     */
+    isJunction: boolean;
 
     /**
      * Entity's name.
@@ -220,6 +204,18 @@ export class EntityMetadata {
      * @stable
      */
     tableNameWithoutPrefix: string;
+
+    /**
+     * Indicates if schema sync is skipped for this entity.
+     */
+    skipSchemaSync: boolean;
+
+    /**
+     * Table's database engine type (like "InnoDB", "MyISAM", etc).
+     */
+    engine?: string;
+
+    // propertiesMap: ObjectLiteral;
 
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.

@@ -19,6 +19,8 @@ each for its own `findOne*` or `find*` methods
 * `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#skip`
 * `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
 * renamed `entityManager` to `manager`
+* `@AbstractEntity` is deprecated. Now there is no need to mark class with a decorator, it can extend any class with columns
+* 
 
 ### NEW FEATURES
 
