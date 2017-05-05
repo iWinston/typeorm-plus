@@ -138,7 +138,8 @@ export class RelationMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: RelationMetadataArgs) {
+    constructor(entityMetadata: EntityMetadata, args: RelationMetadataArgs) {
+        this.entityMetadata = entityMetadata;
         this.target = args.target;
         this.propertyName = args.propertyName;
         this.relationType = args.relationType;

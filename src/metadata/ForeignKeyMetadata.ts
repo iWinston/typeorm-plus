@@ -48,10 +48,12 @@ export class ForeignKeyMetadata {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(columns: ColumnMetadata[],
+    constructor(entityMetadata: EntityMetadata,
+                columns: ColumnMetadata[],
                 referencedEntityMetadata: EntityMetadata,
                 referencedColumns: ColumnMetadata[],
                 onDelete?: OnDeleteType) {
+        this.entityMetadata = entityMetadata;
         this.columns = columns;
         this.referencedEntityMetadata = referencedEntityMetadata;
         this.referencedColumns = referencedColumns;

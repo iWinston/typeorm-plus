@@ -147,7 +147,8 @@ export class ColumnMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: ColumnMetadataArgs) {
+    constructor(entityMetadata: EntityMetadata, args: ColumnMetadataArgs) {
+        this.entityMetadata = entityMetadata;
         this.target = args.target;
         this.propertyName = args.propertyName;
 

@@ -1,6 +1,7 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationMetadata} from "./RelationMetadata";
+import {EntityMetadata} from "./EntityMetadata";
 
 /**
  * Contains all information about entity's embedded property.
@@ -10,6 +11,12 @@ export class EmbeddedMetadata {
     // ---------------------------------------------------------------------
     // Public Properties
     // ---------------------------------------------------------------------
+
+    /**
+     * Entity metadata where this embedded is.
+     */
+    entityMetadata: EntityMetadata;
+
 
     /**
      * Parent embedded in the case if this embedded inside other embedded.
@@ -58,10 +65,12 @@ export class EmbeddedMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(columns: ColumnMetadata[],
+    constructor(entityMetadata: EntityMetadata,
+                columns: ColumnMetadata[],
                 relations: RelationMetadata[],
                 embeddeds: EmbeddedMetadata[],
                 args: EmbeddedMetadataArgs) {
+        this.entityMetadata = entityMetadata;
         this.type = args.type ? args.type() : undefined;
         this.propertyName = args.propertyName;
         this.isArray = args.isArray;

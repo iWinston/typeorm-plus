@@ -50,7 +50,8 @@ export class RelationCountMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: RelationCountMetadataArgs) {
+    constructor(entityMetadata: EntityMetadata, args: RelationCountMetadataArgs) {
+        this.entityMetadata = entityMetadata;
         this.target = args.target;
         this.propertyName = args.propertyName;
         this.relationNameOrFactory = args.relation;

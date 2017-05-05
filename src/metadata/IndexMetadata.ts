@@ -47,7 +47,8 @@ export class IndexMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: IndexMetadataArgs) {
+    constructor(entityMetadata: EntityMetadata, args: IndexMetadataArgs) {
+        this.entityMetadata = entityMetadata;
         this.target = args.target;
         this._columns = args.columns;
         this._name = args.name;
