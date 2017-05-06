@@ -275,16 +275,19 @@ export class OracleQueryRunner implements QueryRunner {
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
         const tablesSql      = `SELECT TABLE_NAME FROM user_tables WHERE TABLE_NAME IN (${tableNamesString})`;
         const columnsSql     = `SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE, IDENTITY_COLUMN FROM all_tab_cols WHERE TABLE_NAME IN (${tableNamesString})`;
-        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
+        const indicesSql     = `SELECT ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS, LISTAGG(cols.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY cols.COLUMN_NAME) AS COLUMN_NAMES
+                                FROM USER_INDEXES ind, USER_IND_COLUMNS cols 
+                                WHERE ind.INDEX_NAME = cols.INDEX_NAME AND ind.TABLE_NAME IN (${tableNamesString})
+                                GROUP BY ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS`;
         const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
         const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
         const constraintsSql = `SELECT cols.table_name, cols.column_name, cols.position, cons.constraint_type, cons.constraint_name
 FROM all_constraints cons, all_cons_columns cols WHERE cols.table_name IN (${tableNamesString}) 
 AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDER BY cols.table_name, cols.position`;
-        const [dbTables, dbColumns, /*dbIndices, dbForeignKeys, dbUniqueKeys, */constraints]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns, dbIndices, /*dbForeignKeys, dbUniqueKeys, */constraints]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
-            // this.query(indicesSql),
+            this.query(indicesSql),
             // this.query(foreignKeysSql),
             // this.query(uniqueKeysSql),
             this.query(constraintsSql),
@@ -333,32 +336,28 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
 
             // create primary key schema
             tableSchema.primaryKeys = constraints
-                .filter(constraint => constraint["TABLE_NAME"] === tableSchema.name && constraint["CONSTRAINT_TYPE"] === "P")
-                .map(constraint => new PrimaryKeySchema(constraint["CONSTRAINT_NAME"], constraint["COLUMN_NAME"]));
+                .filter(constraint => 
+                    constraint["TABLE_NAME"] === tableSchema.name && constraint["CONSTRAINT_TYPE"] === "P"
+                )
+                .map(constraint => 
+                    new PrimaryKeySchema(constraint["CONSTRAINT_NAME"], constraint["COLUMN_NAME"])
+                );
 
             // create foreign key schemas from the loaded indices
             tableSchema.foreignKeys = constraints
                 .filter(constraint => constraint["TABLE_NAME"] === tableSchema.name && constraint["CONSTRAINT_TYPE"] === "R")
                 .map(constraint => new ForeignKeySchema(constraint["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
 
-            // console.log(tableSchema);
-
             // create index schemas from the loaded indices
-            // tableSchema.indices = dbIndices
-            //     .filter(dbIndex => {
-            //         return  dbIndex["table_name"] === tableSchema.name &&
-            //             (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-            //             (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
-            //     })
-            //     .map(dbIndex => dbIndex["INDEX_NAME"])
-            //     .filter((value, index, self) => self.indexOf(value) === index) // unqiue
-            //     .map(dbIndexName => {
-            //         const columnNames = dbIndices
-            //             .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
-            //             .map(dbIndex => dbIndex["COLUMN_NAME"]);
-            //
-            //         return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
-            //     });
+            tableSchema.indices = dbIndices
+                .filter(dbIndex => {
+                    return  dbIndex["TABLE_NAME"] === tableSchema.name &&
+                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
+                })
+                .map(dbIndex => {
+                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndex["INDEX_NAME"], dbIndex["COLUMN_NAMES"], !!(dbIndex["COLUMN_NAMES"] === "UNIQUE"));
+                });
 
             return tableSchema;
         });
@@ -840,7 +839,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.driver.options.database as string;
+        return this.driver.options.schemaName as string;
     }
 
     /**
