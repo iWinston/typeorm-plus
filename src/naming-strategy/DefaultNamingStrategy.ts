@@ -31,7 +31,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
             return customName;
 
         const key = "ind_" + tableName + "_" + columns.join("_");
-        return "in_" + RandomGenerator.sha1(key).substr(0, 27);
+        return "ind_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
     joinColumnInverseSideName(joinColumnName: string, propertyName: string): string {
