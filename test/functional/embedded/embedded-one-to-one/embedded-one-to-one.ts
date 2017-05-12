@@ -216,7 +216,7 @@ describe("embedded > embedded-one-to-one", () => {
             user2.likedPost = post2;
             await connection.getRepository(User).persist(user2);
 
-            const loadedUsers = await connection.manager
+            let loadedUsers = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
                 .orderBy("user.id")
@@ -263,7 +263,7 @@ describe("embedded > embedded-one-to-one", () => {
                 }
             ));
 
-            const loadedUser = await connection.manager
+            let loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
                 .where("user.id = :id", { id: 1 })
@@ -292,15 +292,16 @@ describe("embedded > embedded-one-to-one", () => {
 
             loadedUser!.name = "Anna";
             loadedUser!.likedPost = post3;
+            console.log(loadedUser);
             await connection.getRepository(User).persist(loadedUser!);
 
-            const loadedUser2 = await connection.manager
+            loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
                 .where("user.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedUser2!.should.be.eql(
+            expect(loadedUser!.should.be.eql(
                 {
                     id: 1,
                     name: "Anna",
@@ -321,11 +322,11 @@ describe("embedded > embedded-one-to-one", () => {
                 }
             ));
 
-            await connection.getRepository(User).remove(loadedUser2!);
+            await connection.getRepository(User).remove(loadedUser!);
 
-            const loadedUsers2 = (await connection.getRepository(User).find())!;
-            expect(loadedUsers2.length).to.be.equal(1);
-            expect(loadedUsers2[0].name).to.be.equal("Bob");
+            loadedUsers = (await connection.getRepository(User).find())!;
+            expect(loadedUsers.length).to.be.equal(1);
+            expect(loadedUsers[0].name).to.be.equal("Bob");
         })));
     });
 });

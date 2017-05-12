@@ -1,7 +1,6 @@
 import {NamingStrategyInterface} from "./NamingStrategyInterface";
 import {RandomGenerator} from "../util/RandomGenerator";
 import {camelCase, snakeCase} from "../util/StringUtils";
-import {TableType} from "../metadata/types/TableTypes";
 
 /**
  * Naming strategy that is used by default.
@@ -31,11 +30,9 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return customName ? customName : propertyName;
     }
 
-    embeddedColumnName(prefixes: string[], columnPropertyName: string, columnCustomName?: string): string {
+    embeddedColumnName(prefix: string, columnPropertyName: string, columnCustomName?: string): string {
         // todo: need snake case property name but only if its a property name and not a custom embedded prefix
-        prefixes = prefixes.filter(prefix => !!prefix);
-        const embeddedPropertyName = prefixes.length ? prefixes.join("_") + "_" : "";
-        return camelCase(embeddedPropertyName + (columnCustomName ? columnCustomName : columnPropertyName));
+        return camelCase(prefix + "_" + (columnCustomName ? columnCustomName : columnPropertyName));
     }
 
     relationName(propertyName: string): string {

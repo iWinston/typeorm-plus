@@ -37,8 +37,8 @@ export class RelationIdAttribute {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private expressionMap: QueryExpressionMap,
-                relationIdAttribute?: Partial<RelationIdAttribute>) {
+    constructor(private queryExpressionMap: QueryExpressionMap,
+                        relationIdAttribute?: Partial<RelationIdAttribute>) {
         Object.assign(this, relationIdAttribute || {});
     }
 
@@ -60,7 +60,7 @@ export class RelationIdAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
             throw new Error(`Given value must be a string representation of alias property`);
 
-        return this.relationName.split(".")[0];
+        return this.relationName.substr(0, this.relationName.indexOf("."));
     }
 
     /**
@@ -70,11 +70,11 @@ export class RelationIdAttribute {
      * This value is extracted from entityOrProperty value.
      * This is available when join was made using "post.category" syntax.
      */
-    get relationProperty(): string {
+    get relationPropertyPath(): string {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
             throw new Error(`Given value must be a string representation of alias property`);
 
-        return this.relationName.split(".")[1];
+        return this.relationName.substr(this.relationName.indexOf(".") + 1);
     }
 
     /**
@@ -86,9 +86,8 @@ export class RelationIdAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
             throw new Error(`Given value must be a string representation of alias property`);
 
-        const [parentAlias, relationProperty] = this.relationName.split(".");
-        const relationOwnerSelection = this.expressionMap.findAliasByName(parentAlias);
-        return relationOwnerSelection.metadata.findRelationWithPropertyName(relationProperty);
+        const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
+        return relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
     }
 
     /**
@@ -99,18 +98,6 @@ export class RelationIdAttribute {
         return parentAlias + "_" + relationProperty + "_relation_id";
     }
 
-    /*get referenceColumnName(): string {
-        if (this.relation.isManyToOne || this.relation.isOneToOneOwner) {
-            return this.relation.joinColumn.referencedColumn.fullName;
-
-        } else if (this.relation.isOneToMany || this.relation.isOneToOneNotOwner) {
-            return this.relation.inverseRelation.joinColumn.referencedColumn.fullName;
-
-        } else {
-            return this.relation.isOwning ? this.relation.joinTable.referencedColumn.fullName : this.relation.inverseRelation.joinTable.referencedColumn.fullName;
-        }
-    }*/
-
     /**
      * Metadata of the joined entity.
      * If extra condition without entity was joined, then it will return undefined.
@@ -120,11 +107,11 @@ export class RelationIdAttribute {
     }
 
     get mapToPropertyParentAlias(): string {
-        return this.mapToProperty!.split(".")[0];
+        return this.mapToProperty.substr(0, this.mapToProperty.indexOf("."));
     }
 
-    get mapToPropertyPropertyName(): string {
-        return this.mapToProperty!.split(".")[1];
+    get mapToPropertyPropertyPath(): string {
+        return this.mapToProperty.substr(this.mapToProperty.indexOf(".") + 1);
     }
 
 }

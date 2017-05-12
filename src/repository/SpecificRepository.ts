@@ -6,6 +6,7 @@ import {Subject} from "../persistence/Subject";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Repository for more specific operations.
@@ -439,6 +440,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const ec = (column: string) => this.connection.driver.escapeColumnName(column);
 
         let ids: any[] = [];
+        console.log("entityOrEntities:", entityOrEntities);
+        // console.log("entityIds:", entityIds);
         const promises = (entityIds as any[]).map((entityId: any) => {
             const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
             inverseEntityColumnNames.forEach(columnName => {
@@ -460,12 +463,14 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             // if (notInIds && notInIds.length > 0)
             //     qb.andWhere(ea("junction") + "." + ec(inverseEntityColumnNames.fullName) + " NOT IN (:notInIds)", {notInIds: notInIds});
 
+            // console.log(qb.getSql());
             return qb.getRawMany()
                 .then((results: any[]) => {
+                    // console.log(results);
                     results.forEach(result => {
                         ids.push(Object.keys(result).reduce((id, key) => {
                             const junctionColumnName = inverseEntityColumns.find(joinColumn => joinColumn.databaseName === key)!;
-                            id[junctionColumnName.referencedColumn!.propertyName] = result[key];
+                            OrmUtils.mergeDeep(id, junctionColumnName.referencedColumn!.createValueMap(result[key]));
                             return id;
                         }, {} as ObjectLiteral));
                     }); // todo: prepare result?
@@ -490,7 +495,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         } else {
             if (entityOrEntities instanceof Object) {
                 return columns.reduce((ids, column) => {
-                    ids[column.databaseName] = entityOrEntities[column.propertyName];
+                    ids[column.databaseName] = column.getEntityValue(entityOrEntities);
                     return ids;
                 }, {} as ObjectLiteral);
             } else {

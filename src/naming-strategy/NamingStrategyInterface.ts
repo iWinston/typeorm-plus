@@ -32,7 +32,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the embedded's column name from the given property name.
      */
-    embeddedColumnName(prefixes: string[], columnPropertyName: string, columnCustomName?: string): string;
+    embeddedColumnName(prefix: string, columnPropertyName: string, columnCustomName?: string): string;
 
     /**
      * Gets the table's relation name from the given property name.

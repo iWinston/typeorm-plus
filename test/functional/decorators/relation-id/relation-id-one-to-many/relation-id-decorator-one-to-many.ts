@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
@@ -23,28 +23,28 @@ describe("decorators > relation-id > one-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.entityManager.persist(category);
+        await connection.manager.persist(category);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category = category;
-        await connection.entityManager.persist(post1);
+        await connection.manager.persist(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.category = category;
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
         const post3 = new Post();
         post3.title = "about Boeing";
         post3.category = category2;
-        await connection.entityManager.persist(post3);
+        await connection.manager.persist(post3);
 
-        let loadedCategories = await connection.entityManager
+        let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .getMany();
 
@@ -54,7 +54,7 @@ describe("decorators > relation-id > one-to-many", () => {
         expect(loadedCategories![1].postIds.length).to.be.equal(1);
         expect(loadedCategories![1].postIds[0]).to.be.equal(3);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .where("category.id = :id", { id: 1 })
             .getOne();
@@ -68,30 +68,30 @@ describe("decorators > relation-id > one-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.entityManager.persist(category);
+        await connection.manager.persist(category);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category = category;
-        await connection.entityManager.persist(post1);
+        await connection.manager.persist(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.category = category;
         post2.isRemoved = true;
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
         const post3 = new Post();
         post3.title = "about Boeing";
         post3.category = category2;
         post3.isRemoved = true;
-        await connection.entityManager.persist(post3);
+        await connection.manager.persist(post3);
 
-        let loadedCategories = await connection.entityManager
+        let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .getMany();
 
@@ -100,7 +100,7 @@ describe("decorators > relation-id > one-to-many", () => {
         expect(loadedCategories![0].removedPostIds[0]).to.be.equal(2);
         expect(loadedCategories![1].removedPostIds[0]).to.be.equal(3);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .where("category.id = :id", { id: 1 })
             .getOne();

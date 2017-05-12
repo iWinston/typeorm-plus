@@ -4,7 +4,6 @@ import {IndexMetadata} from "./IndexMetadata";
 import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {EntityMetadataArgs} from "../metadata-args/EntityMetadataArgs";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
@@ -209,7 +208,6 @@ export class EntityMetadata {
 
     /**
      * Columns of the entity, including columns that are coming from the embeddeds of this entity.
-     * @deprecated
      */
     get columns(): ColumnMetadata[] {
         return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);

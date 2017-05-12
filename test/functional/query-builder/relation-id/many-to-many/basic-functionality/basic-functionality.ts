@@ -1,8 +1,12 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../../utils/test-utils";
+import {Connection} from "../../../../../../src/connection/Connection";
 import {Tag} from "./entity/Tag";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -10,7 +14,7 @@ import {Image} from "./entity/Image";
 
 const should = chai.should();
 
-describe("query builder > load-relation-id-and-map > many-to-many", () => {
+describe("query builder > relation-id > many-to-many > basic-functionality", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -25,33 +29,33 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
 
         const tag = new Tag();
         tag.name = "kids";
-        await connection.entityManager.persist(tag);
+        await connection.manager.persist(tag);
 
         const category1 = new Category();
         category1.name = "kids";
-        await connection.entityManager.persist(category1);
+        await connection.manager.persist(category1);
 
         const category2 = new Category();
         category2.name = "future";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const category3 = new Category();
         category3.name = "cars";
-        await connection.entityManager.persist(category3);
+        await connection.manager.persist(category3);
 
         const post = new Post();
         post.title = "about kids";
         post.categories = [category1, category2];
         post.tag = tag;
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
         const post2 = new Post();
         post2.title = "about BMW";
         post2.categories = [category3];
         post2.tag = tag;
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.tag", "tag")
             .leftJoinAndSelect("post.categories", "categories")
@@ -67,7 +71,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         expect(loadedPosts![1].categories).to.not.be.empty;
         expect(loadedPosts![1].categoryIds).to.be.empty;
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.tag", "tag")
             .leftJoinAndSelect("post.categories", "categories")
@@ -86,23 +90,23 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
 
         const category1 = new Category();
         category1.name = "kids";
-        await connection.entityManager.persist(category1);
+        await connection.manager.persist(category1);
 
         const category2 = new Category();
         category2.name = "future";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post = new Post();
         post.title = "about kids";
         post.categories = [category1, category2];
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
         const post2 = new Post();
         post2.title = "about kids";
         post2.categories = [category1, category2];
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .getMany();
@@ -114,7 +118,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         expect(loadedPosts![1].categoryIds[0]).to.be.equal(1);
         expect(loadedPosts![1].categoryIds[1]).to.be.equal(2);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .where("post.id = :id", { id: post.id })
@@ -135,16 +139,16 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         category2.name = "future";
 
         await Promise.all([
-            connection.entityManager.persist(category1),
-            connection.entityManager.persist(category2)
+            connection.manager.persist(category1),
+            connection.manager.persist(category2)
         ]);
 
         const post = new Post();
         post.title = "about kids";
         post.subcategories = [category1, category2];
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.subcategories")
             .where("post.id = :id", { id: post.id })
@@ -160,7 +164,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.entityManager.persist(category);
+        await connection.manager.persist(category);
 
         const post1 = new Post();
         post1.title = "about BMW";
@@ -171,11 +175,11 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         post2.categories = [category];
 
         await Promise.all([
-            connection.entityManager.persist(post1),
-            connection.entityManager.persist(post2)
+            connection.manager.persist(post1),
+            connection.manager.persist(post2)
         ]);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationIdAndMap("category.postIds", "category.posts")
             .where("category.id = :id", { id: category.id })
@@ -196,16 +200,16 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         category2.name = "future";
 
         await Promise.all([
-            connection.entityManager.persist(category1),
-            connection.entityManager.persist(category2)
+            connection.manager.persist(category1),
+            connection.manager.persist(category2)
         ]);
 
         const post = new Post();
         post.title = "about kids";
         post.categories = [category1, category2];
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.andWhere("categories.id = :categoryId", { categoryId: 1 }))
             .getOne();
@@ -225,16 +229,16 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         category2.name = "future";
 
         await Promise.all([
-            connection.entityManager.persist(category1),
-            connection.entityManager.persist(category2)
+            connection.manager.persist(category1),
+            connection.manager.persist(category2)
         ]);
 
         const post = new Post();
         post.title = "about kids";
         post.subcategories = [category1, category2];
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.subcategories", "subCategories", qb => qb.andWhere("subCategories.id = :categoryId", { categoryId: 1 }))
             .getOne();
@@ -249,7 +253,7 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.entityManager.persist(category);
+        await connection.manager.persist(category);
 
         const post1 = new Post();
         post1.title = "about BMW";
@@ -260,11 +264,11 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         post2.categories = [category];
 
         await Promise.all([
-            connection.entityManager.persist(post1),
-            connection.entityManager.persist(post2)
+            connection.manager.persist(post1),
+            connection.manager.persist(post2)
         ]);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationIdAndMap("category.postIds", "category.posts", "posts", qb => qb.andWhere("posts.id = :postId", { postId: 1 }))
             .where("category.id = :id", { id: category.id })
@@ -285,25 +289,25 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         image2.name = "photo2";
 
         await Promise.all([
-            connection.entityManager.persist(image1),
-            connection.entityManager.persist(image2)
+            connection.manager.persist(image1),
+            connection.manager.persist(image2)
         ]);
 
         const category1 = new Category();
         category1.name = "cars";
         category1.images = [image1, image2];
-        await connection.entityManager.persist(category1);
+        await connection.manager.persist(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post = new Post();
         post.title = "about BMW";
         post.categories = [category1, category2];
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
@@ -333,25 +337,25 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         image2.name = "photo2";
 
         await Promise.all([
-            connection.entityManager.persist(image1),
-            connection.entityManager.persist(image2)
+            connection.manager.persist(image1),
+            connection.manager.persist(image2)
         ]);
 
         const category1 = new Category();
         category1.name = "cars";
         category1.images = [image1, image2];
-        await connection.entityManager.persist(category1);
+        await connection.manager.persist(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post = new Post();
         post.title = "about BMW";
         post.categories = [category1, category2];
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories2", qb => qb.andWhere("categories2.id = :categoryId", { categoryId: 1 }))
@@ -379,21 +383,21 @@ describe("query builder > load-relation-id-and-map > many-to-many", () => {
         image2.name = "photo2";
 
         await Promise.all([
-            connection.entityManager.persist(image1),
-            connection.entityManager.persist(image2)
+            connection.manager.persist(image1),
+            connection.manager.persist(image2)
         ]);
 
         const category1 = new Category();
         category1.name = "cars";
         category1.images = [image1, image2];
-        await connection.entityManager.persist(category1);
+        await connection.manager.persist(category1);
 
         const post = new Post();
         post.title = "about BMW";
         post.categories = [category1];
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories", "categories.id = :categoryId")
             .loadRelationIdAndMap("categories.imageIds", "categories.images")

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
@@ -24,23 +24,23 @@ describe("query builder > load-relation-id-and-map > one-to-one", () => {
 
         const category = new Category();
         category.name = "kids";
-        await connection.entityManager.persist(category);
+        await connection.manager.persist(category);
 
         const post = new Post();
         post.title = "about kids";
         post.category = category;
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
         const category2 = new Category();
         category2.name = "cars";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post2 = new Post();
         post2.title = "about cars";
         post2.category = category2;
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryId", "post.category")
             .getMany();
@@ -50,7 +50,7 @@ describe("query builder > load-relation-id-and-map > one-to-one", () => {
         expect(loadedPosts![1].categoryId).to.not.be.empty;
         expect(loadedPosts![1].categoryId).to.be.equal(2);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryId", "post.category")
             .where("post.id = :id", { id: post.id })
@@ -64,23 +64,23 @@ describe("query builder > load-relation-id-and-map > one-to-one", () => {
 
         const category = new Category();
         category.name = "kids";
-        await connection.entityManager.persist(category);
+        await connection.manager.persist(category);
 
         const post = new Post();
         post.title = "about kids";
         post.category2 = category;
-        await connection.entityManager.persist(post);
+        await connection.manager.persist(post);
 
         const category2 = new Category();
         category2.name = "cars";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post2 = new Post();
         post2.title = "about cars";
         post2.category2 = category2;
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
-        let loadedCategories = await connection.entityManager
+        let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationIdAndMap("category.postId", "category.post")
             .getMany();
@@ -90,7 +90,7 @@ describe("query builder > load-relation-id-and-map > one-to-one", () => {
         expect(loadedCategories![1].postId).to.not.be.empty;
         expect(loadedCategories![1].postId).to.be.equal(2);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationIdAndMap("category.postId", "category.post")
             .getOne();

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
@@ -23,33 +23,33 @@ describe("decorators > relation-id > one-to-one", () => {
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.persist(category1);
+        await connection.manager.persist(category1);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const categoryByName1 = new Category();
         categoryByName1.name = "BMW";
-        await connection.entityManager.persist(categoryByName1);
+        await connection.manager.persist(categoryByName1);
 
         const categoryByName2 = new Category();
         categoryByName2.name = "Boeing";
-        await connection.entityManager.persist(categoryByName2);
+        await connection.manager.persist(categoryByName2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category = category1;
         post1.categoryByName = categoryByName1;
-        await connection.entityManager.persist(post1);
+        await connection.manager.persist(post1);
 
         const post2 = new Post();
         post2.title = "about Boeing";
         post2.category = category2;
         post2.categoryByName = categoryByName2;
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .addOrderBy("post.id")
             .getMany();
@@ -63,7 +63,7 @@ describe("decorators > relation-id > one-to-one", () => {
         expect(loadedPosts![1].categoryName).to.not.be.empty;
         expect(loadedPosts![1].categoryName).to.be.equal("Boeing");
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .where("post.id = :id", { id: 1 })
             .getOne();
@@ -78,23 +78,23 @@ describe("decorators > relation-id > one-to-one", () => {
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.persist(category1);
+        await connection.manager.persist(category1);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.entityManager.persist(category2);
+        await connection.manager.persist(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category2 = category1;
-        await connection.entityManager.persist(post1);
+        await connection.manager.persist(post1);
 
         const post2 = new Post();
         post2.title = "about Boeing";
         post2.category2 = category2;
-        await connection.entityManager.persist(post2);
+        await connection.manager.persist(post2);
 
-        let loadedCategories = await connection.entityManager
+        let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .addOrderBy("category.id")
             .getMany();
@@ -104,7 +104,7 @@ describe("decorators > relation-id > one-to-one", () => {
         expect(loadedCategories![1].postId).to.not.be.empty;
         expect(loadedCategories![1].postId).to.be.equal(2);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .where("category.id = :id", { id: 1 })
             .getOne();

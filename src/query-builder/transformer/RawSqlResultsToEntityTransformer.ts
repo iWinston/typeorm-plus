@@ -5,6 +5,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Alias} from "../Alias";
 import {JoinAttribute} from "../JoinAttribute";
 import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -142,7 +143,9 @@ export class RawSqlResultsToEntityTransformer {
                 return;
 
             const relation = rawRelationIdResult.relationIdAttribute.relation;
-            let idMap: any, referenceColumnValue: any;
+            let idMap: any;
+            let valueMap: ObjectLiteral;
+
             if (relation.isManyToOne || relation.isOneToOneOwner) {
                 idMap = relation.entityMetadata.primaryColumns.reduce((idMap, primaryColumn) => {
                     idMap[primaryColumn.propertyName] = rawSqlResults[0][alias.name + "_" + primaryColumn.databaseName];
@@ -150,26 +153,68 @@ export class RawSqlResultsToEntityTransformer {
                 }, {} as ObjectLiteral);
 
             } else {
-                let referenceColumnName: string;
-                if (relation.isOneToMany || relation.isOneToOneNotOwner) { // todo: fix joinColumns[0]
-                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
+                if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+                    valueMap = this.createValueMapFromJoinColumns(relation, entity);
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.databaseName : relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
+                    valueMap = this.createValueMapFromJoinColumns(relation, entity);
                 }
-                referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName];
+               /* referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName];
                 if (referenceColumnValue === undefined || referenceColumnValue === null)
+                    return;*/
+                if (valueMap === undefined || valueMap === null)
                     return;
             }
 
-            rawRelationIdResult.results.forEach(result => {
-                if (result.parentId && !alias.metadata.compareIds(result.parentId, idMap))
+            const referencedColumnResults = rawRelationIdResult.results.map(result => {
+             /*   if (result.parentId && !alias.metadata.compareIds(result.parentId, idMap))
                     return;
                 if (result.manyToManyId && result.manyToManyId !== referenceColumnValue)
+                    return;*/
+
+                const entityPrimaryIds = this.extractEntityPrimaryIds(relation, result);
+                if (!alias.metadata.compareIds(entityPrimaryIds, valueMap))
                     return;
 
-                entity[rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyName] = result.id;
-                hasData = true;
-            });
+                let joinColumns: ColumnMetadata[];
+                if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+                    joinColumns = relation.inverseEntityMetadata.primaryColumns.map(joinColumn => joinColumn);
+                } else {
+                    if (relation.isManyToManyOwner) {
+                        joinColumns = relation.inverseJoinColumns.map(joinColumn => joinColumn);
+                    } else {
+                        joinColumns = relation.inverseRelation.joinColumns.map(joinColumn => joinColumn);
+                    }
+                }
+
+                return joinColumns.reduce((referencedColumnResult, joinColumn) => {
+                    if (joinColumns.length > 1) {
+                        if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+                            referencedColumnResult[joinColumn.propertyName] = result[joinColumn.databaseName];
+                        } else {
+                            referencedColumnResult[joinColumn.referencedColumn!.propertyName] = result[joinColumn.databaseName];
+                        }
+                    } else {
+                        referencedColumnResult = result[joinColumn.databaseName];
+                    }
+                    return referencedColumnResult;
+                }, {} as ObjectLiteral);
+            }).filter(result => result);
+
+            const properties = rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyPath.split(".");
+            const mapToProperty = (properties: string[], map: ObjectLiteral, value: any): any => {
+
+                const property = properties.shift();
+                if (property && properties.length === 0) {
+                    map[property] = value;
+                    return map;
+                } else if (property && properties.length > 0) {
+                    mapToProperty(properties, map[property], value);
+                } else {
+                    return map;
+                }
+            };
+            mapToProperty(properties, entity, referencedColumnResults);
+            hasData = true;
         });
         return hasData;
     }
@@ -202,6 +247,41 @@ export class RawSqlResultsToEntityTransformer {
             });
 
         return hasData;
+    }
+
+    private createValueMapFromJoinColumns(relation: RelationMetadata, entity: ObjectLiteral): ObjectLiteral {
+        let joinColumns: ColumnMetadata[];
+        if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+            joinColumns = relation.inverseRelation.joinColumns.map(joinColumn => joinColumn);
+        } else {
+            if (relation.isOwning) {
+                joinColumns = relation.joinColumns.map(joinColumn => joinColumn);
+            } else {
+                joinColumns = relation.inverseRelation.inverseJoinColumns.map(joinColumn => joinColumn);
+            }
+        }
+        return joinColumns.reduce((valueMap, joinColumn) => {
+            valueMap[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(entity);
+            return valueMap;
+        }, {} as ObjectLiteral);
+
+    }
+
+    private extractEntityPrimaryIds(relation: RelationMetadata, relationIdRawResult: any) {
+        let joinColumns: ColumnMetadata[];
+        if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+            joinColumns = relation.inverseRelation.joinColumns.map(joinColumn => joinColumn);
+        } else {
+            if (relation.isOwning) {
+                joinColumns = relation.joinColumns.map(joinColumn => joinColumn);
+            } else {
+                joinColumns = relation.inverseRelation.inverseJoinColumns.map(joinColumn => joinColumn);
+            }
+        }
+        return joinColumns.reduce((data, joinColumn) => {
+            data[joinColumn.databaseName] = relationIdRawResult[joinColumn.databaseName];
+            return data;
+        }, {} as ObjectLiteral);
     }
 
 }

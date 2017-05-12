@@ -8,7 +8,6 @@ import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
@@ -317,6 +316,8 @@ export class SubjectOperationExecutor {
                 });
                 if (!Object.keys(conditions).length)
                     return;
+
+
 
                 const updatePromise = this.queryRunner.update(subject.metadata.tableName, updateOptions, conditions);
                 updatePromises.push(updatePromise);

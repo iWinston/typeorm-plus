@@ -239,16 +239,7 @@ export class ColumnMetadata {
         if (this.embeddedMetadata) {
 
             // because embedded can be inside other embedded we need to go recursively and collect all prefix name
-            const prefixes: string[] = [];
-            const buildPrefixRecursively = (embeddedMetadata: EmbeddedMetadata) => {
-                if (embeddedMetadata.parentEmbeddedMetadata)
-                    buildPrefixRecursively(embeddedMetadata.parentEmbeddedMetadata);
-
-                prefixes.push(embeddedMetadata.prefix);
-            };
-            buildPrefixRecursively(this.embeddedMetadata);
-
-            return this.entityMetadata.namingStrategy.embeddedColumnName(prefixes, this.propertyName, this._name);
+            return this.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.prefix, this.propertyName, this._name);
         }
 
         // if there is a naming strategy then use it to normalize propertyName as column name

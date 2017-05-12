@@ -20,7 +20,7 @@ describe.skip("embedded > embedded-many-to-many-case3", () => {
 
     describe("owner side", () => {
 
-        it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation with multiple primary keys (one PK en each embed)", () => Promise.all(connections.map(async connection => {
+        it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation with multiple primary keys (one PK in each embed)", () => Promise.all(connections.map(async connection => {
 
             const user1 = new User();
             user1.name = "Alice";
@@ -197,7 +197,7 @@ describe.skip("embedded > embedded-many-to-many-case3", () => {
 
     describe("inverse side", () => {
 
-        it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation with multiple primary keys (one PK en each embed)", () => Promise.all(connections.map(async connection => {
+        it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation with multiple primary keys (one PK in each embed)", () => Promise.all(connections.map(async connection => {
 
             const post1 = new Post();
             post1.id = 1;

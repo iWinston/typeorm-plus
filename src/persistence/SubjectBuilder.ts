@@ -5,6 +5,7 @@ import {Subject} from "./Subject";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -777,6 +778,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const specificRepository = new SpecificRepository(this.connection, subject.metadata, this.queryRunnerProvider);
                     existInverseEntityRelationIds = await specificRepository
                         .findRelationIds(relation, subject.databaseEntity);
+                    // console.log(existInverseEntityRelationIds);
                 }
 
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
@@ -784,8 +786,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     .map(subRelationValue => {
                         const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                         return joinColumns.reduce((ids, joinColumn) => {
-                            ids[joinColumn.referencedColumn!.propertyName] = subRelationValue[joinColumn.referencedColumn!.propertyName];
-                            return ids;
+                            return OrmUtils.mergeDeep(ids, joinColumn.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelationValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
                         }, {} as ObjectLiteral);
                     })
                     .filter(subRelationValue => subRelationValue !== undefined && subRelationValue !== null);
@@ -804,8 +805,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                     const ids = joinColumns.reduce((ids, joinColumn) => {
-                        ids[joinColumn.referencedColumn!.propertyName] = subRelatedValue[joinColumn.referencedColumn!.propertyName];
-                        return ids;
+                        return OrmUtils.mergeDeep(ids, joinColumn.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelatedValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
                     }, {} as ObjectLiteral);
                     return !existInverseEntityRelationIds.find(relationId => {
                         return relation.inverseEntityMetadata.compareIds(relationId, ids);
