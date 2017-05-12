@@ -7,7 +7,7 @@ import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
 import {getFromContainer, getMetadataArgsStorage} from "../index";
-import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
+import {AllEntityMetadataBuilder} from "../metadata-builder/AllEntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
@@ -699,7 +699,7 @@ export class Connection {
                 .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
 
             // build entity metadatas from metadata args storage (collected from decorators)
-            new EntityMetadataBuilder(this.driver, lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy)
+            new AllEntityMetadataBuilder(this.driver, lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy)
                 .build(this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
@@ -710,7 +710,7 @@ export class Connection {
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
             const metadataArgsStorage = getFromContainer(EntitySchemaTransformer).transform(this.entitySchemas);
-            new EntityMetadataBuilder(this.driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy)
+            new AllEntityMetadataBuilder(this.driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy)
                 .build()
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);

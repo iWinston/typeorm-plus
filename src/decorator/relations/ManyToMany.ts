@@ -1,5 +1,4 @@
 import {RelationOptions} from "../options/RelationOptions";
-import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ObjectType} from "../../common/ObjectType";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
@@ -50,7 +49,7 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,
-            relationType: RelationTypes.MANY_TO_MANY,
+            relationType: "many-to-many",
             isLazy: isLazy,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,

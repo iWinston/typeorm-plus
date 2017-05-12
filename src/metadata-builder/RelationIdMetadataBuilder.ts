@@ -1,12 +1,12 @@
 import {RelationIdMetadataArgs} from "../metadata-args/RelationIdMetadataArgs";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {EntityMetadata} from "./EntityMetadata";
-import {RelationMetadata} from "./RelationMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Contains all information about entity's relation count.
  */
-export class RelationIdMetadata {
+export class RelationIdMetadataBuilder {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -24,35 +24,39 @@ export class RelationIdMetadata {
     /**
      * Relation name which need to count.
      */
-    relationNameOrFactory: string|((object: any) => any);
+    readonly relationNameOrFactory: string|((object: any) => any);
 
     /**
      * Target class to which metadata is applied.
      */
-    target: Function|string;
+    readonly target: Function|string;
 
     /**
      * Target's property name to which this metadata is applied.
      */
-    propertyName: string;
+    readonly propertyName: string;
 
     /**
      * Alias of the joined (destination) table.
      */
-    alias?: string;
+    readonly alias?: string;
 
     /**
      * Extra condition applied to "ON" section of join.
      */
-    queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
+    readonly queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(options?: Partial<RelationIdMetadata>, args?: RelationIdMetadataArgs) {
-        Object.assign(this, options || {});
-        if (args) this.buildFromArgs(args);
+    constructor(entityMetadata: EntityMetadata, args: RelationIdMetadataArgs) {
+        this.entityMetadata = entityMetadata;
+        this.target = args.target;
+        this.propertyName = args.propertyName;
+        this.relationNameOrFactory = args.relation;
+        this.alias = args.alias;
+        this.queryBuilderFactory = args.queryBuilderFactory;
     }
 
     // ---------------------------------------------------------------------
@@ -69,19 +73,6 @@ export class RelationIdMetadata {
             throw new Error(`Cannot find relation ${propertyName}. Wrong relation specified for @RelationId decorator.`);
 
         return relation;
-    }
-
-    // ---------------------------------------------------------------------
-    // Build Methods
-    // ---------------------------------------------------------------------
-
-    buildFromArgs(args: RelationIdMetadataArgs): this {
-        this.target = args.target;
-        this.propertyName = args.propertyName;
-        this.relationNameOrFactory = args.relation;
-        this.alias = args.alias;
-        this.queryBuilderFactory = args.queryBuilderFactory;
-        return this;
     }
 
 }

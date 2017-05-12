@@ -10,8 +10,8 @@ export class CustomNamingStrategy extends DefaultNamingStrategy implements Namin
         return userSpecifiedName ? userSpecifiedName : snakeCase(targetName);
     }
 
-    columnName(propertyName: string, customName: string): string {
-        return customName ? customName : snakeCase(propertyName);
+    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string {
+        return snakeCase(embeddedPrefixes.concat(customName ? customName : propertyName).join("_"));
     }
 
     columnNameCustomized(customName: string): string {

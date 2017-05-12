@@ -35,7 +35,7 @@ export class EntityMetadataValidator {
         // validate if table is using inheritance it has a discriminator
         // also validate if discriminator values are not empty and not repeated
         if (entityMetadata.inheritanceType === "single-table") {
-            if (!entityMetadata.hasDiscriminatorColumn)
+            if (!entityMetadata.discriminatorColumn)
                 throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put @DiscriminatorColumn decorator?`);
 
             if (["", undefined, null].indexOf(entityMetadata.discriminatorValue) !== -1)

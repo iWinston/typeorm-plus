@@ -1,6 +1,6 @@
 import {NamingStrategyInterface} from "./NamingStrategyInterface";
 import {RandomGenerator} from "../util/RandomGenerator";
-import {camelCase, snakeCase} from "../util/StringUtils";
+import {camelCase, snakeCase, titleCase} from "../util/StringUtils";
 
 /**
  * Naming strategy that is used by default.
@@ -26,13 +26,9 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return originalClosureTableName + "_closure";
     }
 
-    columnName(propertyName: string, customName: string): string {
-        return customName ? customName : propertyName;
-    }
-
-    embeddedColumnName(prefix: string, columnPropertyName: string, columnCustomName?: string): string {
-        // todo: need snake case property name but only if its a property name and not a custom embedded prefix
-        return camelCase(prefix + "_" + (columnCustomName ? columnCustomName : columnPropertyName));
+    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string { // todo: simplify
+        embeddedPrefixes = !customName ? embeddedPrefixes.concat([propertyName]) : embeddedPrefixes;
+        return camelCase(embeddedPrefixes.join("_")) + (customName ? embeddedPrefixes.length > 0 ? titleCase(customName) : customName : customName);
     }
 
     relationName(propertyName: string): string {
@@ -62,8 +58,8 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return columnName + "_" + index;
     }
 
-    joinTableColumnName(tableName: string, columnName: string): string {
-        return camelCase(tableName + "_" + columnName);
+    joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string {
+        return camelCase(tableName + "_" + (columnName ? columnName : propertyName));
     }
 
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string {

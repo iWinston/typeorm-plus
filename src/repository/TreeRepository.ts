@@ -149,7 +149,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         return rawResults.map(rawResult => {
             return {
                 id: rawResult[alias + "_" + this.metadata.firstPrimaryColumn.databaseName],
-                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation.name]
+                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation.joinColumns[0].referencedColumn!.databaseName]
             };
         });
     }

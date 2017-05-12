@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage, getConnection} from "../../index";
+import {getConnection, getMetadataArgsStorage} from "../../index";
 
 /**
  * Wraps some method into the transaction.

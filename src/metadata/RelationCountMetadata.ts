@@ -24,41 +24,36 @@ export class RelationCountMetadata {
     /**
      * Relation name which need to count.
      */
-    readonly relationNameOrFactory: string|((object: any) => any);
+    relationNameOrFactory: string|((object: any) => any);
 
     /**
      * Target class to which metadata is applied.
      */
-    readonly target: Function|string;
+    target: Function|string;
 
     /**
      * Target's property name to which this metadata is applied.
      */
-    readonly propertyName: string;
+    propertyName: string;
 
     /**
      * Alias of the joined (destination) table.
      */
-    readonly alias?: string;
+    alias?: string;
 
     /**
      * Extra condition applied to "ON" section of join.
      */
-    readonly queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
+    queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(entityMetadata: EntityMetadata, args: RelationCountMetadataArgs) {
-        this.entityMetadata = entityMetadata;
-        this.target = args.target;
-        this.propertyName = args.propertyName;
-        this.relationNameOrFactory = args.relation;
-        this.alias = args.alias;
-        this.queryBuilderFactory = args.queryBuilderFactory;
+    constructor(options?: Partial<RelationCountMetadata>, args?: RelationCountMetadataArgs) {
+        Object.assign(this, options || {});
+        if (args) this.buildFromArgs(args);
     }
-
     // ---------------------------------------------------------------------
     // Accessors
     // ---------------------------------------------------------------------
@@ -74,5 +69,19 @@ export class RelationCountMetadata {
 
         return relation;
     }
+
+    // ---------------------------------------------------------------------
+    // Build Methods
+    // ---------------------------------------------------------------------
+
+    buildFromArgs(args: RelationCountMetadataArgs): this {
+        this.target = args.target;
+        this.propertyName = args.propertyName;
+        this.relationNameOrFactory = args.relation;
+        this.alias = args.alias;
+        this.queryBuilderFactory = args.queryBuilderFactory;
+        return this;
+    }
+
 
 }

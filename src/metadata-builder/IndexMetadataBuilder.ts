@@ -1,11 +1,10 @@
-import {EntityMetadata} from "./EntityMetadata";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
-import {RelationCountMetadataArgs} from "../metadata-args/RelationCountMetadataArgs";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Index metadata contains all information about table's index.
  */
-export class IndexMetadata {
+export class IndexMetadataBuilder {
 
     // ---------------------------------------------------------------------
     // Public Properties
@@ -23,12 +22,12 @@ export class IndexMetadata {
     /**
      * Indicates if this index must be unique.
      */
-    isUnique: boolean;
+    readonly isUnique: boolean;
 
     /**
      * Target class to which metadata is applied.
      */
-    target?: Function|string;
+    readonly target?: Function|string;
 
     // ---------------------------------------------------------------------
     // Private Properties
@@ -37,20 +36,23 @@ export class IndexMetadata {
     /**
      * Composite index name.
      */
-    private _name: string|undefined;
+    private readonly _name: string|undefined;
 
     /**
      * Columns combination to be used as index.
      */
-    private _columns: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
+    private readonly _columns: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(options?: Partial<IndexMetadata>, args?: IndexMetadataArgs) {
-        Object.assign(this, options || {});
-        if (args) this.buildFromArgs(args);
+    constructor(entityMetadata: EntityMetadata, args: IndexMetadataArgs) {
+        this.entityMetadata = entityMetadata;
+        this.target = args.target;
+        this._columns = args.columns;
+        this._name = args.name;
+        this.isUnique = args.unique;
     }
 
     // ---------------------------------------------------------------------
@@ -139,18 +141,5 @@ export class IndexMetadata {
             return updatedMap;
         }, {} as { [key: string]: number });
     }
-
-    // ---------------------------------------------------------------------
-    // Build Methods
-    // ---------------------------------------------------------------------
-
-    buildFromArgs(args: IndexMetadataArgs): this {
-        this.target = args.target;
-        this._columns = args.columns;
-        this._name = args.name;
-        this.isUnique = args.unique;
-        return this;
-    }
-
 
 }

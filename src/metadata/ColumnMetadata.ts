@@ -1,10 +1,10 @@
-import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {ColumnType} from "./types/ColumnTypes";
 import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 
 /**
  * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
@@ -39,10 +39,6 @@ export class ColumnMetadata {
      * If this column does not have a foreign key then this property value is undefined.
      */
     relationMetadata: RelationMetadata;
-
-    // ---------------------------------------------------------------------
-    // Public Readonly Properties
-    // ---------------------------------------------------------------------
 
     /**
      * Column's mode in which this column is working.
@@ -93,225 +89,111 @@ export class ColumnMetadata {
     /**
      * Default database value.
      */
-    default: any;
+    default?: any;
 
     /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column),
      * which is the maximum number of digits that are stored for the values.
      */
-    precision: number;
+    precision?: number;
 
     /**
      * The scale for a decimal (exact numeric) column (applies only for decimal column),
      * which represents the number of digits to the right of the decimal point and must not be greater than precision.
      */
-    scale: number;
+    scale?: number;
 
     /**
      * Indicates if date column will contain a timezone.
      * Used only for date-typed column types.
      * Note that timezone option is not supported by all databases (only postgres for now).
      */
-    timezone: boolean;
+    timezone: boolean = false;
 
     /**
      * Indicates if date object must be stored in given date's timezone.
      * By default date is saved in UTC timezone.
      * Works only with "datetime" columns.
      */
-    localTimezone?: boolean;
+    localTimezone: boolean = false;
 
     /**
      * Indicates if column's type will be set as a fixed-length data type.
      * Works only with "string" columns.
      */
-    fixedLength?: boolean;
-
-    // ---------------------------------------------------------------------
-    // Private Properties
-    // ---------------------------------------------------------------------
-
-    /**
-     * Column name to be used in the database.
-     */
-    _name: string;
-
-    // ---------------------------------------------------------------------
-    // Constructor
-    // ---------------------------------------------------------------------
-
-    constructor(entityMetadata: EntityMetadata, args?: ColumnMetadataArgs) {
-        this.entityMetadata = entityMetadata;
-        // this.entityTarget = entityMetadata.target;
-        if (args) {
-            this.propertyName = args.propertyName;
-
-            if (args.mode)
-                this.mode = args.mode;
-            // if (args.propertyType)
-            //     this.propertyType = args.propertyType.toLowerCase();
-            if (args.options.name)
-                this._name = args.options.name;
-            if (args.options.type)
-                this.type = args.options.type;
-
-            if (args.options.length)
-                this.length = String(args.options.length);
-            if (args.options.primary)
-                this.isPrimary = args.options.primary;
-            if (args.options.generated)
-                this.isGenerated = args.options.generated;
-            if (args.options.unique)
-                this.isUnique = args.options.unique;
-            if (args.options.nullable)
-                this.isNullable = args.options.nullable;
-            if (args.options.comment)
-                this.comment = args.options.comment;
-            if (args.options.default !== undefined && args.options.default !== null)
-                this.default = args.options.default;
-            if (args.options.scale)
-                this.scale = args.options.scale;
-            if (args.options.precision)
-                this.precision = args.options.precision;
-            if (args.options.timezone)
-                this.timezone = args.options.timezone;
-            if (args.options.localTimezone)
-                this.localTimezone = args.options.localTimezone;
-            if (args.options.fixedLength)
-                this.fixedLength = args.options.fixedLength;
-        }
-    }
-
-    // ---------------------------------------------------------------------
-    // Build
-    // ---------------------------------------------------------------------
-
-    build(options: {
-        namingStrategy: NamingStrategyInterface,
-        entityMetadata: EntityMetadata,
-        userSpecifiedName: string,
-        propertyName: string,
-        propertyPath: string,
-    }): ColumnMetadata {
-        this.entityMetadata = options.entityMetadata;
-        // this.entityTarget = options.entityMetadata.target;
-        this.propertyName = options.propertyName;
-        // this.name = options.namingStrategy.columnName(options.propertyName, options.userSpecifiedName);
-
-        return this;
-    }
-
-    // ---------------------------------------------------------------------
-    // Accessors
-    // ---------------------------------------------------------------------
-
-    /**
-     * Gets column's entity target.
-     * Original target returns target of the class where column is.
-     * This class can be an abstract class, but column even is from that class,
-     * but its more related to a specific entity. That's why we need this field.
-     */
-    get entityTarget(): Function|string {
-        return this.entityMetadata.target;
-    }
+    fixedLength: boolean = false;
 
     /**
      * Gets full path to this column property (including column property name).
      * Full path is relevant when column is used in embeds (one or multiple nested).
      * For example it will return "counters.subcounters.likes".
      * If property is not in embeds then it returns just property name of the column.
-     *
-     * @stable
      */
-    get propertyPath(): string {
-        if (!this.embeddedMetadata || !this.embeddedMetadata.parentPropertyNames.length)
-            return this.propertyName;
-
-        return this.embeddedMetadata.parentPropertyNames.join(".") + "." + this.propertyName;
-    }
+    propertyPath: string;
 
     /**
      * Complete column name in the database including its embedded prefixes.
      */
-    get databaseName(): string {
+    databaseName: string;
 
-        // if this column is embedded's column then apply different entity
-        if (this.embeddedMetadata) {
+    /**
+     * Database name in the database without embedded prefixes applied.
+     */
+    databaseNameWithoutPrefixes: string;
 
-            // because embedded can be inside other embedded we need to go recursively and collect all prefix name
-            return this.entityMetadata.namingStrategy.embeddedColumnName(this.embeddedMetadata.prefix, this.propertyName, this._name);
-        }
-
-        // if there is a naming strategy then use it to normalize propertyName as column name
-        if (this.entityMetadata)
-            return this.entityMetadata.namingStrategy.columnName(this.propertyName, this._name);
-
-        return this._name;
-        // throw new Error(`Column ${this._name ? this._name + " " : ""}is not attached to any entity or embedded.`);
-    }
+    /**
+     * Database name set by entity metadata builder, not yet passed naming strategy process and without embedded prefixes.
+     */
+    givenDatabaseName?: string;
 
     /**
      * Indicates if column is virtual. Virtual columns are not mapped to the entity.
      */
-    get isVirtual() {
-        return this.mode === "virtual";
-    }
+    isVirtual: boolean = false;
 
     /**
      * Indicates if column is a parent id. Parent id columns are not mapped to the entity.
      */
-    get isParentId() {
-        return this.mode === "parentId";
-    }
+    isParentId: boolean = false;
 
     /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
      */
-    get isDiscriminator() {
-        return this.mode === "discriminator";
-    }
+    isDiscriminator: boolean = false;
 
     /**
      * Indicates if this column contains an entity creation date.
      */
-    get isCreateDate() {
-        return this.mode === "createDate";
-    }
+    isCreateDate: boolean = false;
 
     /**
      * Indicates if this column contains an entity update date.
      */
-    get isUpdateDate() {
-        return this.mode === "updateDate";
-    }
+    isUpdateDate: boolean = false;
 
     /**
      * Indicates if this column contains an entity version.
      */
-    get isVersion() {
-        return this.mode === "version";
-    }
+    isVersion: boolean = false;
 
     /**
      * Indicates if this column contains an object id.
      */
-    get isObjectId() {
-        return this.mode === "objectId";
-    }
+    isObjectId: boolean = false;
 
     /**
      * If this column is foreign key then it references some other column,
      * and this property will contain reference to this column.
      */
-    get referencedColumn(): ColumnMetadata|undefined {
-        const foreignKeys = this.relationMetadata ? this.relationMetadata.foreignKeys : this.entityMetadata.foreignKeys;
-        const foreignKey = foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this) !== -1);
-        if (foreignKey) {
-            const columnIndex = foreignKey.columns.indexOf(this);
-            return foreignKey.referencedColumns[columnIndex];
-        }
+    referencedColumn: ColumnMetadata|undefined;
 
-        return undefined!;
+    // ---------------------------------------------------------------------
+    // Constructor
+    // ---------------------------------------------------------------------
+
+    constructor(options?: Partial<ColumnMetadata>, args?: ColumnMetadataArgs) {
+        Object.assign(this, options || {});
+        if (args) this.buildFromArgs(args);
     }
 
     // ---------------------------------------------------------------------
@@ -320,8 +202,6 @@ export class ColumnMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
-     *
-     * @stable
      */
     createValueMap(value: any) {
 
@@ -363,8 +243,6 @@ export class ColumnMetadata {
      *
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
-     *
-     * @stable
      */
     getEntityValueMap(entity: ObjectLiteral): ObjectLiteral {
 
@@ -403,8 +281,6 @@ export class ColumnMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
-     *
-     * @stable
      */
     getEntityValue(entity: ObjectLiteral): any|undefined {
         // if (entity === undefined || entity === null) return undefined; // uncomment if needed
@@ -477,6 +353,78 @@ export class ColumnMetadata {
         } else {
             entity[this.propertyName] = value;
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // Builder Methods
+    // ---------------------------------------------------------------------
+
+    buildFromArgs(args: ColumnMetadataArgs): this {
+        // this.target = args.target;
+        this.propertyName = args.propertyName;
+        this.givenDatabaseName = args.options.name;
+        if (args.options.type)
+            this.type = args.options.type;
+        this.length = args.options.length ? String(args.options.length) : "";
+        this.isPrimary = args.options.primary || false;
+        this.isGenerated = args.options.generated || false;
+        this.isUnique = args.options.unique || false;
+        this.isNullable = args.options.nullable || false;
+        this.comment = args.options.comment || "";
+        this.default = args.options.default;
+        this.scale = args.options.scale;
+        this.precision = args.options.precision;
+        this.timezone = args.options.timezone || false;
+        this.localTimezone = args.options.localTimezone || false;
+        this.fixedLength = args.options.fixedLength || false;
+        this.mode = args.mode;
+        this.isVirtual = args.mode === "virtual";
+        this.isParentId = args.mode === "parentId";
+        this.isDiscriminator = args.mode === "discriminator";
+        this.isCreateDate = args.mode === "createDate";
+        this.isUpdateDate = args.mode === "updateDate";
+        this.isVersion = args.mode === "version";
+        this.isObjectId = args.mode === "objectId";
+        return this;
+    }
+
+    build(namingStrategy: NamingStrategyInterface): this {
+        this.propertyPath = this.buildPropertyPath();
+        this.databaseName = this.buildDatabaseName(namingStrategy);
+        this.databaseNameWithoutPrefixes = namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);
+        return this;
+    }
+
+    buildOnRelationChange(): this {
+        this.referencedColumn = this.buildReferencedColumn();
+        return this;
+    }
+
+    // ---------------------------------------------------------------------
+    // Protected Methods
+    // ---------------------------------------------------------------------
+
+    protected buildPropertyPath(): string {
+        if (!this.embeddedMetadata || !this.embeddedMetadata.parentPropertyNames.length)
+            return this.propertyName;
+
+        return this.embeddedMetadata.parentPropertyNames.join(".") + "." + this.propertyName;
+    }
+
+    protected buildDatabaseName(namingStrategy: NamingStrategyInterface): string {
+        const propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPropertyNames : [];
+        return namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
+    }
+
+    protected buildReferencedColumn(): ColumnMetadata|undefined {
+        const foreignKeys = this.relationMetadata ? this.relationMetadata.foreignKeys : this.entityMetadata.foreignKeys; // why else part? explain
+        const foreignKey = foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this as any) !== -1);
+        if (foreignKey) {
+            const columnIndex = foreignKey.columns.indexOf(this as any);
+            return foreignKey.referencedColumns[columnIndex];
+        }
+
+        return undefined;
     }
 
 }

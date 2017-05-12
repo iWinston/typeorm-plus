@@ -1,4 +1,3 @@
-import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ObjectType} from "../../common/ObjectType";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
@@ -27,7 +26,7 @@ export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>, invers
             propertyName: propertyName,
             // propertyType: reflectedType,
             isLazy: isLazy,
-            relationType: RelationTypes.ONE_TO_MANY,
+            relationType: "one-to-many",
             type: typeFunction,
             inverseSideProperty: inverseSide,
             options: options

@@ -774,7 +774,7 @@ export class QueryBuilder<Entity> {
 
         // add discriminator column parameter if it exist
         if (this.expressionMap.mainAlias!.hasMetadata) {
-            if (this.expressionMap.mainAlias!.metadata.hasDiscriminatorColumn)
+            if (this.expressionMap.mainAlias!.metadata.discriminatorColumn)
                 parameters["discriminatorColumnValue"] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
         }
 
@@ -868,7 +868,7 @@ export class QueryBuilder<Entity> {
 
             if (this.expressionMap.lockMode === "optimistic") {
                 const metadata = this.expressionMap.mainAlias!.metadata;
-                if (!metadata.hasVersionColumn && !metadata.hasUpdateDateColumn)
+                if (!metadata.versionColumn && !metadata.updateDateColumn)
                     throw new NoVersionOrUpdateDateColumnError(metadata.name);
             }
 
@@ -1388,7 +1388,7 @@ export class QueryBuilder<Entity> {
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const mainMetadata = this.expressionMap.mainAlias!.metadata;
-            if (mainMetadata.hasDiscriminatorColumn)
+            if (mainMetadata.discriminatorColumn)
                 return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${mainMetadata.discriminatorColumn.databaseName}=:discriminatorColumnValue`;
         }
 

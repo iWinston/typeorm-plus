@@ -1,7 +1,8 @@
 import {ColumnMetadata} from "./ColumnMetadata";
-import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationMetadata} from "./RelationMetadata";
 import {EntityMetadata} from "./EntityMetadata";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 
 /**
  * Contains all information about entity's embedded property.
@@ -21,6 +22,11 @@ export class EmbeddedMetadata {
      * Parent embedded in the case if this embedded inside other embedded.
      */
     parentEmbeddedMetadata: EmbeddedMetadata;
+
+    /**
+     * Embedded target type.
+     */
+    type: Function;
 
     /**
      * Property name on which this embedded is attached.
@@ -43,16 +49,11 @@ export class EmbeddedMetadata {
     embeddeds: EmbeddedMetadata[];
 
     /**
-     * Embedded target type.
-     */
-    type?: Function;
-
-    /**
      * Indicates if this embedded is in array mode.
      *
      * This option works only in monogodb.
      */
-    isArray: boolean;
+    isArray: boolean = false;
 
     /**
      * Prefix of the embedded, used instead of propertyName.
@@ -60,32 +61,51 @@ export class EmbeddedMetadata {
      */
     customPrefix: string|boolean|undefined;
 
+    /**
+     * Gets the prefix of the columns.
+     * By default its a property name of the class where this prefix is.
+     * But if custom prefix is set then it takes its value as a prefix.
+     * However if custom prefix is set to empty string prefix to column is not applied at all.
+     */
+    prefix: string;
+
+    /**
+     * Returns array of property names of current embed and all its parent embeds.
+     *
+     * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
+     * we need to get value of "id" column from the post real entity object.
+     * this method will return ["data", "information", "counters"]
+     */
+    parentPropertyNames: string[];
+
+    /**
+     * Returns embed metadatas from all levels of the parent tree.
+     *
+     * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
+     * this method will return [embed metadata of data, embed metadata of information, embed metadata of counters]
+     */
+    embeddedMetadataTree: EmbeddedMetadata[];
+
+    /**
+     * Returns embed metadatas from all levels of the parent tree.
+     *
+     * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
+     * this method will return [embed metadata of data, embed metadata of information, embed metadata of counters]
+     */
+    columnsFromTree: ColumnMetadata[];
+
+    /**
+     * Returns all relations of this embed and all relations from its child embeds.
+     */
+    relationsFromTree: RelationMetadata[];
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(entityMetadata: EntityMetadata,
-                columns: ColumnMetadata[],
-                relations: RelationMetadata[],
-                embeddeds: EmbeddedMetadata[],
-                args: EmbeddedMetadataArgs) {
-        this.entityMetadata = entityMetadata;
-        this.type = args.type ? args.type() : undefined;
-        this.propertyName = args.propertyName;
-        this.isArray = args.isArray;
-        this.customPrefix = args.prefix;
-        this.columns = columns;
-        this.relations = relations;
-        this.embeddeds = embeddeds;
-        this.embeddeds.forEach(embedded => {
-            embedded.parentEmbeddedMetadata = this;
-        });
-        this.columns.forEach(column => {
-            column.embeddedMetadata = this;
-        });
-        this.relations.forEach(relation => {
-            relation.embeddedMetadata = this;
-        });
+    constructor(options?: Partial<EmbeddedMetadata>, args?: EmbeddedMetadataArgs) {
+        Object.assign(this, options || {});
+        if (args) this.buildFromArgs(args);
     }
 
     // ---------------------------------------------------------------------
@@ -94,25 +114,39 @@ export class EmbeddedMetadata {
 
     /**
      * Creates a new embedded object.
-     *
-     * @stable
      */
-    create() {
+    create(): any {
         return new (this.type as any);
     }
 
-    /**
-     * Gets the prefix of the columns.
-     * By default its a property name of the class where this prefix is.
-     * But if custom prefix is set then it takes its value as a prefix.
-     * However if custom prefix is set to empty string prefix to column is not applied at all.
-     *
-     * @stable just need move to builder process
-     */
-    get prefix(): string {
+    // ---------------------------------------------------------------------
+    // Builder Methods
+    // ---------------------------------------------------------------------
+
+    buildFromArgs(args: EmbeddedMetadataArgs): this {
+        this.type = args.type();
+        this.propertyName = args.propertyName;
+        this.customPrefix = args.prefix;
+        return this;
+    }
+
+    build(namingStrategy: NamingStrategyInterface): this {
+        this.prefix = this.buildPrefix();
+        this.parentPropertyNames = this.buildParentPropertyNames();
+        this.embeddedMetadataTree = this.buildEmbeddedMetadataTree();
+        this.columnsFromTree = this.buildColumnsFromTree();
+        this.relationsFromTree = this.buildRelationsFromTree();
+        return this;
+    }
+
+    // ---------------------------------------------------------------------
+    // Protected Methods
+    // ---------------------------------------------------------------------
+
+    protected buildPrefix(): string {
         let prefixes: string[] = [];
         if (this.parentEmbeddedMetadata)
-            prefixes.push(this.parentEmbeddedMetadata.prefix);
+            prefixes.push(this.parentEmbeddedMetadata.buildPrefix());
 
         if (this.customPrefix === undefined) {
             prefixes.push(this.propertyName);
@@ -124,47 +158,20 @@ export class EmbeddedMetadata {
         return prefixes.join("_"); // todo: use naming strategy instead of "_"  !!!
     }
 
-    /**
-     * Returns array of property names of current embed and all its parent embeds.
-     *
-     * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
-     * we need to get value of "id" column from the post real entity object.
-     * this method will return ["data", "information", "counters"]
-     *
-     * @stable just need move to builder process
-     */
-    get parentPropertyNames(): string[] {
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.parentPropertyNames.concat(this.propertyName) : [this.propertyName];
+    protected buildParentPropertyNames(): string[] {
+        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPropertyNames().concat(this.propertyName) : [this.propertyName];
     }
 
-    /**
-     * Returns embed metadatas from all levels of the parent tree.
-     *
-     * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
-     * this method will return [embed metadata of data, embed metadata of information, embed metadata of counters]
-     *
-     * @stable just need move to builder process
-     */
-    get embeddedMetadataTree(): EmbeddedMetadata[] {
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.embeddedMetadataTree.concat(this) : [this];
+    protected buildEmbeddedMetadataTree(): EmbeddedMetadata[] {
+        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildEmbeddedMetadataTree().concat(this) : [this];
     }
 
-    /**
-     * Returns all columns of this embed and all columns from its child embeds.
-     *
-     * @stable just need move to builder process
-     */
-    get columnsFromTree(): ColumnMetadata[] {
-        return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.columns);
+    protected buildColumnsFromTree(): ColumnMetadata[] {
+        return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.buildColumnsFromTree()), this.columns);
     }
 
-    /**
-     * Returns all relations of this embed and all relations from its child embeds.
-     *
-     * @stable just need move to builder process
-     */
-    get relationsFromTree(): RelationMetadata[] {
-        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), this.relations);
+    protected buildRelationsFromTree(): RelationMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationsFromTree()), this.relations);
     }
 
 }

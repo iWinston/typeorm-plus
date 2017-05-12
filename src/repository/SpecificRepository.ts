@@ -60,11 +60,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
             table = relation.entityMetadata.tableName;
-            values[relation.name] = relatedEntityId;
+            values[relation.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
             conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         } else {
             table = relation.inverseEntityMetadata.tableName;
-            values[relation.inverseRelation.name] = relatedEntityId;
+            values[relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
             conditions[relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         }
 
@@ -107,11 +107,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
             table = relation.inverseEntityMetadata.tableName;
-            values[relation.inverseRelation.name] = relatedEntityId;
+            values[relation.inverseRelation.joinColumns[0].databaseName] = relatedEntityId;
             conditions[relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         } else {
             table = relation.entityMetadata.tableName;
-            values[relation.name] = relatedEntityId;
+            values[relation.joinColumns[0].databaseName] = relatedEntityId;
             conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         }
 

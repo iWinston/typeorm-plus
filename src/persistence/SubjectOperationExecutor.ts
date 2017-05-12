@@ -448,10 +448,10 @@ export class SubjectOperationExecutor {
 
         // todo: better if insert method will return object with all generated ids, object id, etc.
         if (newlyGeneratedId) {
-            if (metadata.hasGeneratedColumn) {
+            if (metadata.generatedColumn) {
                 subject.newlyGeneratedId = newlyGeneratedId;
 
-            } else if (metadata.hasObjectIdColumn) {
+            } else if (metadata.objectIdColumn) {
                 subject.generatedObjectId = newlyGeneratedId;
 
             }
@@ -542,31 +542,31 @@ export class SubjectOperationExecutor {
         });
 
         // add special column and value - date of creation
-        if (metadata.hasCreateDateColumn) {
+        if (metadata.createDateColumn) {
             const value = this.connection.driver.preparePersistentValue(date, metadata.createDateColumn);
             values[metadata.createDateColumn.databaseName] = value;
         }
 
         // add special column and value - date of updating
-        if (metadata.hasUpdateDateColumn) {
+        if (metadata.updateDateColumn) {
             const value = this.connection.driver.preparePersistentValue(date, metadata.updateDateColumn);
             values[metadata.updateDateColumn.databaseName] = value;
         }
 
         // add special column and value - version column
-        if (metadata.hasVersionColumn) {
+        if (metadata.versionColumn) {
             const value = this.connection.driver.preparePersistentValue(1, metadata.versionColumn);
             values[metadata.versionColumn.databaseName] = value;
         }
 
         // add special column and value - discriminator value (for tables using table inheritance)
-        if (metadata.hasDiscriminatorColumn) {
+        if (metadata.discriminatorColumn) {
             const value = this.connection.driver.preparePersistentValue(discriminatorValue || metadata.discriminatorValue, metadata.discriminatorColumn);
             values[metadata.discriminatorColumn.databaseName] = value;
         }
 
         // add special column and value - tree level and tree parents (for tree-type tables)
-        if (metadata.hasTreeLevelColumn && metadata.hasTreeParentRelation) {
+        if (metadata.treeLevelColumn && metadata.treeParentRelation) {
             const parentEntity = metadata.treeParentRelation.getEntityValue(entity);
             const parentLevel = parentEntity ? (metadata.treeLevelColumn.getEntityValue(parentEntity) || 0) : 0;
 
@@ -574,8 +574,8 @@ export class SubjectOperationExecutor {
         }
 
         // add special column and value - parent id column (for tables using table inheritance)
-        if (metadata.parentEntityMetadata && metadata.hasParentIdColumn) { // todo: should be array of primary keys
-            values[metadata.parentIdColumn.databaseName] = parentIdColumnValue || metadata.parentEntityMetadata.firstPrimaryColumn.getEntityValue(entity);
+        if (metadata.parentEntityMetadata && metadata.parentIdColumns.length) { // todo: should be array of primary keys
+            values[metadata.parentIdColumns[0].databaseName] = parentIdColumnValue || metadata.parentEntityMetadata.firstPrimaryColumn.getEntityValue(entity);
         }
 
         return values;
@@ -629,7 +629,7 @@ export class SubjectOperationExecutor {
         // try to find parent entity id in some other entity that has this entity in its children
         if (!parentEntityId) {
             const parentSubject = this.allSubjects.find(allSubject => {
-                if (!allSubject.hasEntity || !allSubject.metadata.isClosure || !allSubject.metadata.hasTreeChildrenRelation)
+                if (!allSubject.hasEntity || !allSubject.metadata.isClosure || !allSubject.metadata.treeChildrenRelation)
                     return false;
 
                 const children = subject.metadata.treeChildrenRelation.getEntityValue(allSubject.entity);
@@ -645,9 +645,9 @@ export class SubjectOperationExecutor {
         }
 
         // if parent entity exist then insert a new row into closure table
-        subject.treeLevel = await this.queryRunner.insertIntoClosureTable(tableName, newEntityId, parentEntityId, subject.metadata.hasTreeLevelColumn);
+        subject.treeLevel = await this.queryRunner.insertIntoClosureTable(tableName, newEntityId, parentEntityId, !!subject.metadata.treeLevelColumn);
 
-        if (subject.metadata.hasTreeLevelColumn) {
+        if (subject.metadata.treeLevelColumn) {
             const values = { [subject.metadata.treeLevelColumn.databaseName]: subject.treeLevel };
             await this.queryRunner.update(subject.metadata.tableName, values, { [referencedColumn.databaseName]: newEntityId });
         }
@@ -687,10 +687,10 @@ export class SubjectOperationExecutor {
             if (Object.keys(value).length === 0)
                 return;
 
-            if (subject.metadata.hasUpdateDateColumn)
+            if (subject.metadata.updateDateColumn)
                 value[subject.metadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
 
-            if (subject.metadata.hasVersionColumn)
+            if (subject.metadata.versionColumn)
                 value[subject.metadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
 
             // console.log(value);
@@ -703,8 +703,8 @@ export class SubjectOperationExecutor {
 
         // console.log(subject.diffColumns);
         subject.diffColumns.forEach(column => {
-            if (!column.entityTarget) return; // todo: how this can be possible?
-            const metadata = this.connection.getMetadata(column.entityTarget);
+            // if (!column.entityTarget) return; // todo: how this can be possible?
+            const metadata = this.connection.getMetadata(column.entityMetadata.target);
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.tableName);
             if (!valueMap) {
                 valueMap = { tableName: metadata.tableName, metadata: metadata, values: {} };
@@ -731,7 +731,7 @@ export class SubjectOperationExecutor {
         if (Object.keys(valueMaps).length === 0)
             return;
 
-        if (subject.metadata.hasUpdateDateColumn) {
+        if (subject.metadata.updateDateColumn) {
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.tableName);
             if (!valueMap) {
                 valueMap = { tableName: subject.metadata.tableName, metadata: subject.metadata, values: {} };
@@ -741,7 +741,7 @@ export class SubjectOperationExecutor {
             valueMap.values[subject.metadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
         }
 
-        if (subject.metadata.hasVersionColumn) {
+        if (subject.metadata.versionColumn) {
             let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.tableName);
             if (!valueMap) {
                 valueMap = { tableName: subject.metadata.tableName, metadata: subject.metadata, values: {} };
@@ -752,7 +752,7 @@ export class SubjectOperationExecutor {
         }
 
         if (subject.metadata.parentEntityMetadata) {
-            if (subject.metadata.parentEntityMetadata.hasUpdateDateColumn) {
+            if (subject.metadata.parentEntityMetadata.updateDateColumn) {
                 let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.tableName);
                 if (!valueMap) {
                     valueMap = {
@@ -766,7 +766,7 @@ export class SubjectOperationExecutor {
                 valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
             }
 
-            if (subject.metadata.parentEntityMetadata.hasVersionColumn) {
+            if (subject.metadata.parentEntityMetadata.versionColumn) {
                 let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.tableName);
                 if (!valueMap) {
                     valueMap = {
@@ -976,7 +976,7 @@ export class SubjectOperationExecutor {
 
         // update entity columns that gets updated on each entity insert
         this.insertSubjects.forEach(subject => {
-            if (subject.generatedObjectId && subject.metadata.hasObjectIdColumn)
+            if (subject.generatedObjectId && subject.metadata.objectIdColumn)
                 subject.metadata.objectIdColumn.setEntityValue(subject.entity, subject.generatedObjectId);
 
             subject.metadata.primaryColumns.forEach(primaryColumn => {
@@ -988,13 +988,13 @@ export class SubjectOperationExecutor {
                     primaryColumn.setEntityValue(subject.entity, subject.parentGeneratedId);
             });
 
-            if (subject.metadata.hasUpdateDateColumn)
+            if (subject.metadata.updateDateColumn)
                 subject.metadata.updateDateColumn.setEntityValue(subject.entity, subject.date);
-            if (subject.metadata.hasCreateDateColumn)
+            if (subject.metadata.createDateColumn)
                 subject.metadata.createDateColumn.setEntityValue(subject.entity, subject.date);
-            if (subject.metadata.hasVersionColumn)
+            if (subject.metadata.versionColumn)
                 subject.metadata.versionColumn.setEntityValue(subject.entity, 1);
-            if (subject.metadata.hasTreeLevelColumn) {
+            if (subject.metadata.treeLevelColumn) {
                 // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
                 // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
                 subject.metadata.treeLevelColumn.setEntityValue(subject.entity, subject.treeLevel);
@@ -1006,9 +1006,9 @@ export class SubjectOperationExecutor {
 
         // update special columns that gets updated on each entity update
         this.updateSubjects.forEach(subject => {
-            if (subject.metadata.hasUpdateDateColumn)
+            if (subject.metadata.updateDateColumn)
                 subject.metadata.updateDateColumn.setEntityValue(subject.entity, subject.date);
-            if (subject.metadata.hasVersionColumn)
+            if (subject.metadata.versionColumn)
                 subject.metadata.versionColumn.setEntityValue(subject.entity, subject.metadata.versionColumn.getEntityValue(subject.entity) + 1);
         });
 

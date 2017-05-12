@@ -27,12 +27,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the table's column name from the given property name.
      */
-    columnName(propertyName: string, customName?: string): string;
-
-    /**
-     * Gets the embedded's column name from the given property name.
-     */
-    embeddedColumnName(prefix: string, columnPropertyName: string, columnCustomName?: string): string;
+    columnName(propertyName: string, customName: string|undefined, embeddedPrefixes: string[]): string;
 
     /**
      * Gets the table's relation name from the given property name.
@@ -66,7 +61,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the column used for columns in the junction tables.
      */
-    joinTableColumnName(tableName: string, columnName: string): string;
+    joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string;
 
     /**
      * Gets the name of the foreign key.
