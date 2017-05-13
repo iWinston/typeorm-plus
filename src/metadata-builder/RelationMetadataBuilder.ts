@@ -147,7 +147,7 @@ export class RelationMetadataBuilder {
     // ---------------------------------------------------------------------
 
     constructor() {
-        this.relationMetadata = new RelationMetadata();
+        this.relationMetadata = new RelationMetadata({} as any);
     }
 
     // ---------------------------------------------------------------------
@@ -315,7 +315,7 @@ export class RelationMetadataBuilder {
     // ---------------------------------------------------------------------
 
     build(): RelationMetadata {
-        const metadata = new RelationMetadata();
+        const metadata = this.relationMetadata;
         metadata.relationType = this.relationType;
         metadata.entityMetadata = this.entityMetadata;
         metadata.inverseEntityMetadata = this.inverseEntityMetadata;
@@ -359,7 +359,7 @@ export class RelationMetadataBuilder {
      * Second approach is used to achieve type-safety.
      */
     protected computeInverseSide(inverseSide: PropertyTypeInFunction<any>): string {
-        const ownerEntityPropertiesMap = this.inverseEntityMetadata.createPropertiesMap();
+        const ownerEntityPropertiesMap = this.inverseEntityMetadata.propertiesMap;
         if (typeof inverseSide === "function")
             return (<Function> inverseSide)(ownerEntityPropertiesMap);
         if (typeof inverseSide === "string")

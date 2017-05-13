@@ -27,12 +27,12 @@ export class PlainObjectToNewEntityTransformer {
     private groupAndTransform(entity: any, object: ObjectLiteral, metadata: EntityMetadata): void {
 
         // copy regular column properties from the given object
-        metadata.allColumns
+        metadata.columns
             .filter(column => object.hasOwnProperty(column.propertyName))
             .forEach(column => entity[column.propertyName] = object[column.propertyName]); // todo: also need to be sure that type is correct
 
         // if relation is loaded then go into it recursively and transform its values too
-        metadata.allRelations
+        metadata.relations
             .filter(relation => object.hasOwnProperty(relation.propertyName))
             .forEach(relation => {
                 const relationMetadata = relation.inverseEntityMetadata;

@@ -47,7 +47,7 @@ export class RawSqlResultsToEntityTransformer {
     protected group(rawResults: any[], alias: Alias): any[][] {
         const groupedResults: { id: any, items: any[] }[] = [];
         rawResults.forEach(rawResult => {
-            const id = alias.metadata.primaryColumnsWithParentIdColumns.map(column => rawResult[alias.name + "_" + column.databaseName]).join("_"); // todo: check partial
+            const id = alias.metadata.primaryColumns.map(column => rawResult[alias.name + "_" + column.databaseName]).join("_"); // todo: check partial
             if (!id) return;
 
             let group = groupedResults.find(groupedResult => groupedResult.id === id);

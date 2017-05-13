@@ -50,7 +50,7 @@ export class IndexMetadataBuilder {
     constructor(entityMetadata: EntityMetadata, args: IndexMetadataArgs) {
         this.entityMetadata = entityMetadata;
         this.target = args.target;
-        this._columns = args.columns;
+        // this._columns = args.columns;
         this._name = args.name;
         this.isUnique = args.unique;
     }
@@ -84,8 +84,7 @@ export class IndexMetadataBuilder {
             columnPropertyNames = this._columns;
         } else {
             // if columns is a function that returns array of field names then execute it and get columns names from it
-            const propertiesMap = this.entityMetadata.createPropertiesMap();
-            const columnsFnResult = this._columns(propertiesMap);
+            const columnsFnResult = this._columns(this.entityMetadata.propertiesMap);
             const columnsNamesFromFnResult = columnsFnResult instanceof Array ? columnsFnResult : Object.keys(columnsFnResult);
             columnPropertyNames = columnsNamesFromFnResult.map((i: any) => String(i));
         }
@@ -122,8 +121,7 @@ export class IndexMetadataBuilder {
 
         } else {
             // if columns is a function that returns array of field names then execute it and get columns names from it
-            const propertiesMap = this.entityMetadata.createPropertiesMap();
-            const columnsFnResult = this._columns(propertiesMap);
+            const columnsFnResult = this._columns(this.entityMetadata.propertiesMap);
             if (columnsFnResult instanceof Array) {
                 columnsFnResult.forEach(columnName => map[columnName] = defaultValue);
             } else {

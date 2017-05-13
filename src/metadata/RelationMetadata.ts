@@ -240,9 +240,36 @@ export class RelationMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(options?: Partial<RelationMetadata>, args?: RelationMetadataArgs) {
-        Object.assign(this, options || {});
-        if (args) this.buildFromArgs(args);
+    constructor(options: {
+        entityMetadata: EntityMetadata,
+        embeddedMetadata?: EmbeddedMetadata,
+        args: RelationMetadataArgs
+    }) {
+        this.entityMetadata = options.entityMetadata;
+        this.embeddedMetadata = options.embeddedMetadata!;
+        const args = options.args;
+        this.target = args.target;
+        this.propertyName = args.propertyName;
+        this.relationType = args.relationType;
+
+        if (args.inverseSideProperty)
+            this.inverseSideProperty = args.inverseSideProperty;
+
+        this.isLazy = args.isLazy || false;
+        this.isCascadeInsert = args.options.cascadeInsert || args.options.cascadeAll || false;
+        this.isCascadeUpdate = args.options.cascadeUpdate || args.options.cascadeAll || false;
+        this.isCascadeRemove = args.options.cascadeRemove || args.options.cascadeAll || false;
+        this.isNullable = args.options.nullable !== false;
+        this.onDelete = args.options.onDelete;
+        this.isPrimary = args.options.primary || false;
+        this.isTreeParent = args.isTreeParent || false;
+        this.isTreeChildren = args.isTreeChildren || false;
+        this.type = args.type instanceof Function ? (args.type as () => any)() : args.type;
+
+        this.isOneToOne = this.relationType === "one-to-one";
+        this.isOneToMany = this.relationType === "one-to-many";
+        this.isManyToOne = this.relationType === "many-to-one";
+        this.isManyToMany = this.relationType === "many-to-many";
     }
 
     // ---------------------------------------------------------------------
@@ -262,7 +289,7 @@ export class RelationMetadata {
             // we need to get value of "id" column from the post real entity object
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
 
             // next we need to access post[data][information][counters][this.propertyName] to get column value from the counters
             // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
@@ -305,7 +332,7 @@ export class RelationMetadata {
                 map[propertyName] = value;
                 return map;
             };
-            return extractEmbeddedColumnValue(this.embeddedMetadata.embeddedMetadataTree, entity);
+            return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
             entity[propertyName] = value;
@@ -325,7 +352,7 @@ export class RelationMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
 
             // now need to access post[data][information][counters] to get column value from the counters
             // and on each step we need to create complex literal object, e.g. first { data },
@@ -353,32 +380,7 @@ export class RelationMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    buildFromArgs(args: RelationMetadataArgs): this {
-        this.target = args.target;
-        this.propertyName = args.propertyName;
-        this.relationType = args.relationType;
-
-        // if (args.inverseSideProperty)
-        //     this._inverseSideProperty = args.inverseSideProperty;
-        this.isLazy = args.isLazy || false;
-        this.isCascadeInsert = args.options.cascadeInsert || args.options.cascadeAll || false;
-        this.isCascadeUpdate = args.options.cascadeUpdate || args.options.cascadeAll || false;
-        this.isCascadeRemove = args.options.cascadeRemove || args.options.cascadeAll || false;
-        this.isNullable = args.options.nullable || false;
-        this.onDelete = args.options.onDelete;
-        this.isPrimary = args.options.primary || false;
-        this.isTreeParent = args.isTreeParent || false;
-        this.isTreeChildren = args.isTreeChildren || false;
-        if (!this.type)
-            this.type = args.type;
-        return this;
-    }
-
     build(namingStrategy: NamingStrategyInterface) {
-        this.isOneToOne = this.relationType === "one-to-one";
-        this.isOneToMany = this.relationType === "one-to-many";
-        this.isManyToOne = this.relationType === "many-to-one";
-        this.isManyToMany = this.relationType === "many-to-many";
         this.propertyPath = this.buildPropertyPath();
     }
 
@@ -388,7 +390,7 @@ export class RelationMetadata {
         this.isOneToOneNotOwner = this.isOneToOne && !this.isOwning;
         this.isManyToManyOwner = this.isManyToMany && this.isOwning;
         this.isManyToManyNotOwner = this.isManyToMany && !this.isOwning;
-        this.isWithJoinColumn = this.isManyToOne && this.isOneToOneOwner;
+        this.isWithJoinColumn = this.isManyToOne || this.isOneToOneOwner;
         this.joinColumns = this.foreignKeys[0] ? this.foreignKeys[0].columns : [];
         this.inverseJoinColumns = this.foreignKeys[1] ? this.foreignKeys[1].columns : [];
     }
@@ -403,7 +405,7 @@ export class RelationMetadata {
     buildInverseSidePropertyPath(): string {
 
         if (this.inverseSideProperty) {
-            const ownerEntityPropertiesMap = this.inverseEntityMetadata.createPropertiesMap();
+            const ownerEntityPropertiesMap = this.inverseEntityMetadata.propertiesMap;
             if (typeof this.inverseSideProperty === "function")
                 return this.inverseSideProperty(ownerEntityPropertiesMap);
 

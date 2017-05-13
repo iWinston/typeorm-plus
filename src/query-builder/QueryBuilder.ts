@@ -898,7 +898,7 @@ export class QueryBuilder<Entity> {
                 if (orderBys.length > 0) {
                     idsQuery += " ORDER BY " + orderBys;
                 } else {
-                    idsQuery += ` ORDER BY "ids_${metadata.firstPrimaryColumn.databaseName}"`; // this is required for mssql driver if firstResult is used. Other drivers don't care about it
+                    idsQuery += ` ORDER BY "ids_${metadata.primaryColumns[0].databaseName}"`; // this is required for mssql driver if firstResult is used. Other drivers don't care about it
                 }
 
                 if (this.connection.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
@@ -929,14 +929,14 @@ export class QueryBuilder<Entity> {
                             }).join(" AND ");
                         }).join(" OR ");
                     } else {
-                        const ids = rawResults.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
+                        const ids = rawResults.map(result => result["ids_" + metadata.primaryColumns[0].propertyName]);
                         const areAllNumbers = ids.map((id: any) => typeof id === "number");
                         if (areAllNumbers) {
                             // fixes #190. if all numbers then its safe to perform query without parameter
-                            condition = `${mainAliasName}.${metadata.firstPrimaryColumn.propertyName} IN (${ids.join(", ")})`;
+                            condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyName} IN (${ids.join(", ")})`;
                         } else {
                             parameters["ids"] = ids;
-                            condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+                            condition = mainAliasName + "." + metadata.primaryColumns[0].propertyName + " IN (:ids)";
                         }
                     }
                     const [queryWithIdsSql, queryWithIdsParameters] = this.clone({queryRunnerProvider: this.queryRunnerProvider})
@@ -993,7 +993,7 @@ export class QueryBuilder<Entity> {
         const metadata = this.expressionMap.mainAlias!.metadata;
 
         const distinctAlias = this.escapeAlias(mainAlias);
-        let countSql = `COUNT(` + metadata.primaryColumnsWithParentIdColumns.map((primaryColumn, index) => {
+        let countSql = `COUNT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                 const propertyName = this.escapeColumn(primaryColumn.databaseName);
                 if (index === 0) {
                     return `DISTINCT(${distinctAlias}.${propertyName})`;

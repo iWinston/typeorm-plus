@@ -11,31 +11,31 @@ export interface TableMetadataArgs {
      * Function target is a table defined in the class.
      * String target is a table defined in a json schema.
      */
-    readonly target: Function|string;
+    target: Function|string;
 
     /**
      * Table's name. If name is not set then table's name will be generated from target's name.
      */
-    readonly name?: string;
+    name?: string;
 
     /**
      * Table type. Tables can be abstract, closure, junction, embedded, etc.
      */
-    readonly type: TableType;
+    type: TableType;
 
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
      */
-    readonly orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
+    orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
 
     /**
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
      */
-    readonly engine?: string;
+    engine?: string;
 
     /**
      * Whether table must be synced during schema build or not
      */
-    readonly skipSchemaSync?: boolean;
+    skipSchemaSync?: boolean;
 
 }

@@ -67,7 +67,7 @@ export class RelationCountMetadataBuilder {
      * Relation which need to count.
      */
     get relation(): RelationMetadata {
-        const propertyName = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.createPropertiesMap()) : this.relationNameOrFactory;
+        const propertyName = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
         const relation = this.entityMetadata.relations.find(relation => relation.propertyName === propertyName);
         if (!relation)
             throw new Error(`Cannot find relation ${propertyName}. Wrong relation specified for @RelationCount decorator.`);

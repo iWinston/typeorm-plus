@@ -366,7 +366,7 @@ export class SchemaBuilder {
 
         // find depend indices to drop them
         const dependIndices = allIndexMetadatas.filter(indexMetadata => {
-            return indexMetadata.tableName === tableName && indexMetadata.columns.indexOf(columnName) !== -1;
+            return indexMetadata.tableName === tableName && !!indexMetadata.columns.find(column => column.databaseName === columnName);
         });
         if (!dependIndices.length)
             return;

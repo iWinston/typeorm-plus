@@ -39,7 +39,7 @@ describe("entity-metadata > property-map", () => {
         post1.counters.subcounters.watches = 5;
         post1.counters.subcounters.watchedUsers = [user1];
 
-        const postPropertiesMap = connection.getMetadata(Post).createPropertiesMap();
+        const postPropertiesMap = connection.getMetadata(Post).propertiesMap;
         expect(postPropertiesMap.should.be.eql(
             {
                 id: "id",

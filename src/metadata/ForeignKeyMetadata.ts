@@ -1,5 +1,6 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EntityMetadata} from "./EntityMetadata";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 
 /**
  * ON_DELETE type to be used to specify delete strategy when some relation is being deleted from the database.
@@ -79,6 +80,14 @@ export class ForeignKeyMetadata {
 
     constructor(options?: Partial<ForeignKeyMetadata>) {
         Object.assign(this, options || {});
+    }
+
+    build(namingStrategy: NamingStrategyInterface) {
+        this.columnNames = this.columns.map(column => column.databaseName);
+        this.referencedColumnNames = this.referencedColumns.map(column => column.databaseName);
+        this.tableName = this.entityMetadata.tableName;
+        this.referencedTableName = this.referencedEntityMetadata.tableName;
+        this.name = namingStrategy.foreignKeyName(this.tableName, this.columnNames, this.referencedEntityMetadata.tableName, this.referencedColumnNames);
     }
 
 }

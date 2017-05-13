@@ -272,7 +272,7 @@ export class SubjectOperationExecutor {
             if (Object.keys(updateOptions).length > 0 /*&& subject.hasEntity*/) {
                 // const relatedEntityIdMap = subject.getPersistedEntityIdMap; // todo: this works incorrectly
 
-                const columns = subject.metadata.parentEntityMetadata ? subject.metadata.primaryColumnsWithParentIdColumns : subject.metadata.primaryColumns;
+                const columns = subject.metadata.parentEntityMetadata ? subject.metadata.primaryColumns : subject.metadata.primaryColumns;
                 const conditions: ObjectLiteral = {};
 
                 columns.forEach(column => {
@@ -332,7 +332,7 @@ export class SubjectOperationExecutor {
                     relation.inverseRelation.joinColumns.forEach(joinColumn => {
 
                         const referencedColumn = joinColumn.referencedColumn!;
-                        const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumnsWithParentIdColumns : inverseEntityMetadata.primaryColumns;
+                        const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumns : inverseEntityMetadata.primaryColumns;
                         const conditions: ObjectLiteral = {};
 
                         columns.forEach(column => {
@@ -430,17 +430,17 @@ export class SubjectOperationExecutor {
 
             // first insert entity values into parent class table
             const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects);
-            newlyGeneratedId = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tableName, parentValuesMap, parentEntityMetadata.generatedColumnIfExist);
+            newlyGeneratedId = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tableName, parentValuesMap, parentEntityMetadata.generatedColumn);
 
             // second insert entity values into child class table
             const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, newlyGeneratedId, undefined, alreadyInsertedSubjects);
-            const secondGeneratedId = await this.queryRunner.insert(metadata.tableName, childValuesMap, metadata.generatedColumnIfExist);
+            const secondGeneratedId = await this.queryRunner.insert(metadata.tableName, childValuesMap, metadata.generatedColumn);
             if (!newlyGeneratedId && secondGeneratedId) newlyGeneratedId = secondGeneratedId;
 
         } else { // in the case when class table inheritance is not used
 
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
-            newlyGeneratedId = await this.queryRunner.insert(metadata.tableName, valuesMap, metadata.generatedColumnIfExist);
+            newlyGeneratedId = await this.queryRunner.insert(metadata.tableName, valuesMap, metadata.generatedColumn);
         }
 
         if (parentGeneratedId)
@@ -575,7 +575,7 @@ export class SubjectOperationExecutor {
 
         // add special column and value - parent id column (for tables using table inheritance)
         if (metadata.parentEntityMetadata && metadata.parentIdColumns.length) { // todo: should be array of primary keys
-            values[metadata.parentIdColumns[0].databaseName] = parentIdColumnValue || metadata.parentEntityMetadata.firstPrimaryColumn.getEntityValue(entity);
+            values[metadata.parentIdColumns[0].databaseName] = parentIdColumnValue || metadata.parentEntityMetadata.primaryColumns[0].getEntityValue(entity);
         }
 
         return values;
@@ -837,13 +837,13 @@ export class SubjectOperationExecutor {
     private async remove(subject: Subject): Promise<void> {
         if (subject.metadata.parentEntityMetadata) { // this code should not be there. it should be handled by  subject.metadata.getEntityIdColumnMap
             const parentConditions: ObjectLiteral = {};
-            subject.metadata.parentPrimaryColumns.forEach(column => {
+            subject.metadata.primaryColumns.forEach(column => {
                 parentConditions[column.databaseName] = column.getEntityValue(subject.databaseEntity);
             });
             await this.queryRunner.delete(subject.metadata.parentEntityMetadata.tableName, parentConditions);
 
             const childConditions: ObjectLiteral = {};
-            subject.metadata.primaryColumnsWithParentIdColumns.forEach(column => {
+            subject.metadata.primaryColumns.forEach(column => {
                 childConditions[column.databaseName] = column.getEntityValue(subject.databaseEntity);
             });
             await this.queryRunner.delete(subject.metadata.tableName, childConditions);
@@ -912,7 +912,7 @@ export class SubjectOperationExecutor {
             if (!relationId)
                 throw new Error(`Cannot insert object of ${(newBindEntity.constructor as any).name} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
 
-            const columns = relation.junctionEntityMetadata.columnsWithoutEmbeddeds.map(column => column.databaseName);
+            const columns = relation.junctionEntityMetadata.columns.map(column => column.databaseName);
             const values = relation.isOwning ? [...ownId, ...relationId] : [...relationId, ...ownId];
 
             return this.queryRunner.insert(relation.junctionEntityMetadata.tableName, OrmUtils.zipObject(columns, values));
@@ -983,7 +983,7 @@ export class SubjectOperationExecutor {
                 if (subject.newlyGeneratedId)
                     primaryColumn.setEntityValue(subject.entity, subject.newlyGeneratedId);
             });
-            subject.metadata.parentPrimaryColumns.forEach(primaryColumn => {
+            subject.metadata.primaryColumns.forEach(primaryColumn => {
                 if (subject.parentGeneratedId)
                     primaryColumn.setEntityValue(subject.entity, subject.parentGeneratedId);
             });

@@ -36,17 +36,17 @@ export class EmbeddedMetadata {
     /**
      * Columns inside this embed.
      */
-    columns: ColumnMetadata[];
+    columns: ColumnMetadata[] = [];
 
     /**
      * Relations inside this embed.
      */
-    relations: RelationMetadata[];
+    relations: RelationMetadata[] = [];
 
     /**
      * Nested embeddable in this embeddable (which has current embedded as parent embedded).
      */
-    embeddeds: EmbeddedMetadata[];
+    embeddeds: EmbeddedMetadata[] = [];
 
     /**
      * Indicates if this embedded is in array mode.
@@ -76,7 +76,7 @@ export class EmbeddedMetadata {
      * we need to get value of "id" column from the post real entity object.
      * this method will return ["data", "information", "counters"]
      */
-    parentPropertyNames: string[];
+    parentPropertyNames: string[] = [];
 
     /**
      * Returns embed metadatas from all levels of the parent tree.
@@ -84,7 +84,7 @@ export class EmbeddedMetadata {
      * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
      * this method will return [embed metadata of data, embed metadata of information, embed metadata of counters]
      */
-    embeddedMetadataTree: EmbeddedMetadata[];
+    embeddedMetadataTree: EmbeddedMetadata[] = [];
 
     /**
      * Returns embed metadatas from all levels of the parent tree.
@@ -92,12 +92,12 @@ export class EmbeddedMetadata {
      * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
      * this method will return [embed metadata of data, embed metadata of information, embed metadata of counters]
      */
-    columnsFromTree: ColumnMetadata[];
+    columnsFromTree: ColumnMetadata[] = [];
 
     /**
      * Returns all relations of this embed and all relations from its child embeds.
      */
-    relationsFromTree: RelationMetadata[];
+    relationsFromTree: RelationMetadata[] = [];
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -131,6 +131,7 @@ export class EmbeddedMetadata {
     }
 
     build(namingStrategy: NamingStrategyInterface): this {
+        this.embeddeds.forEach(embedded => embedded.build(namingStrategy));
         this.prefix = this.buildPrefix();
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.embeddedMetadataTree = this.buildEmbeddedMetadataTree();

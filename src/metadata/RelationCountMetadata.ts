@@ -17,10 +17,6 @@ export class RelationCountMetadata {
      */
     entityMetadata: EntityMetadata;
 
-    // ---------------------------------------------------------------------
-    // Readonly Properties
-    // ---------------------------------------------------------------------
-
     /**
      * Relation name which need to count.
      */
@@ -50,9 +46,17 @@ export class RelationCountMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(options?: Partial<RelationCountMetadata>, args?: RelationCountMetadataArgs) {
-        Object.assign(this, options || {});
-        if (args) this.buildFromArgs(args);
+    constructor(options: {
+        entityMetadata: EntityMetadata,
+        args: RelationCountMetadataArgs
+    }) {
+        this.entityMetadata = options.entityMetadata;
+        const args = options.args;
+        this.target = args.target;
+        this.propertyName = args.propertyName;
+        this.relationNameOrFactory = args.relation;
+        this.alias = args.alias;
+        this.queryBuilderFactory = args.queryBuilderFactory;
     }
     // ---------------------------------------------------------------------
     // Accessors
@@ -62,26 +66,12 @@ export class RelationCountMetadata {
      * Relation which need to count.
      */
     get relation(): RelationMetadata {
-        const propertyName = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.createPropertiesMap()) : this.relationNameOrFactory;
+        const propertyName = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
         const relation = this.entityMetadata.relations.find(relation => relation.propertyName === propertyName);
         if (!relation)
             throw new Error(`Cannot find relation ${propertyName}. Wrong relation specified for @RelationCount decorator.`);
 
         return relation;
     }
-
-    // ---------------------------------------------------------------------
-    // Build Methods
-    // ---------------------------------------------------------------------
-
-    buildFromArgs(args: RelationCountMetadataArgs): this {
-        this.target = args.target;
-        this.propertyName = args.propertyName;
-        this.relationNameOrFactory = args.relation;
-        this.alias = args.alias;
-        this.queryBuilderFactory = args.queryBuilderFactory;
-        return this;
-    }
-
 
 }

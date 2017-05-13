@@ -27,8 +27,10 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string { // todo: simplify
-        embeddedPrefixes = !customName ? embeddedPrefixes.concat([propertyName]) : embeddedPrefixes;
-        return camelCase(embeddedPrefixes.join("_")) + (customName ? embeddedPrefixes.length > 0 ? titleCase(customName) : customName : customName);
+        if (embeddedPrefixes.length)
+            return camelCase(embeddedPrefixes.join("_")) + (customName ? titleCase(customName) : titleCase(propertyName));
+
+        return customName ? customName : propertyName;
     }
 
     relationName(propertyName: string): string {
@@ -77,8 +79,8 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
      * Table name is either user's given table name, either name generated from entity target.
      * Note that table name comes here already normalized by #tableName method.
      */
-    prefixTableName(prefix: string|undefined, tableName: string): string {
-        return prefix ? prefix + tableName : tableName;
+    prefixTableName(prefix: string, tableName: string): string {
+        return prefix + tableName;
     }
 
 }

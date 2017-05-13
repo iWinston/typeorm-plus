@@ -62,7 +62,7 @@ export class IndexSchema {
         return new IndexSchema(
             indexMetadata.entityMetadata.tableName,
             indexMetadata.name,
-            indexMetadata.columns,
+            indexMetadata.columns.map(column => column.databaseName),
             indexMetadata.isUnique
         );
     }

@@ -191,9 +191,56 @@ export class ColumnMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(options?: Partial<ColumnMetadata>, args?: ColumnMetadataArgs) {
-        Object.assign(this, options || {});
-        if (args) this.buildFromArgs(args);
+    constructor(options: {
+        entityMetadata: EntityMetadata,
+        embeddedMetadata?: EmbeddedMetadata,
+        referencedColumn?: ColumnMetadata,
+        args: ColumnMetadataArgs
+    }) {
+        this.entityMetadata = options.entityMetadata;
+        this.embeddedMetadata = options.embeddedMetadata!;
+        this.referencedColumn = options.referencedColumn;
+        const args = options.args;
+        if (args.propertyName)
+            this.propertyName = args.propertyName;
+        if (args.options.name)
+            this.givenDatabaseName = args.options.name;
+        if (args.options.type)
+            this.type = args.options.type;
+        if (args.options.length)
+            this.length = String(args.options.length);
+        if (args.options.primary)
+            this.isPrimary = args.options.primary;
+        if (args.options.generated)
+            this.isGenerated = args.options.generated;
+        if (args.options.unique)
+            this.isUnique = args.options.unique;
+        if (args.options.nullable)
+            this.isNullable = args.options.nullable;
+        if (args.options.comment)
+            this.comment = args.options.comment;
+        if (args.options.default !== undefined)
+            this.default = args.options.default;
+        if (args.options.scale)
+            this.scale = args.options.scale;
+        if (args.options.precision)
+            this.precision = args.options.precision;
+        if (args.options.timezone)
+            this.timezone = args.options.timezone;
+        if (args.options.localTimezone)
+            this.localTimezone = args.options.localTimezone;
+        if (args.options.fixedLength)
+            this.fixedLength = args.options.fixedLength;
+        if (args.mode) {
+            this.mode = args.mode;
+            this.isVirtual = args.mode === "virtual";
+            this.isParentId = args.mode === "parentId";
+            this.isDiscriminator = args.mode === "discriminator";
+            this.isCreateDate = args.mode === "createDate";
+            this.isUpdateDate = args.mode === "updateDate";
+            this.isVersion = args.mode === "version";
+            this.isObjectId = args.mode === "objectId";
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -213,7 +260,7 @@ export class ColumnMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
 
             // now need to access post[data][information][counters] to get column value from the counters
             // and on each step we need to create complex literal object, e.g. first { data },
@@ -254,7 +301,7 @@ export class ColumnMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
 
             // now need to access post[data][information][counters] to get column value from the counters
             // and on each step we need to create complex literal object, e.g. first { data },
@@ -292,7 +339,7 @@ export class ColumnMetadata {
             // we need to get value of "id" column from the post real entity object
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = this.embeddedMetadata.parentPropertyNames;
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
 
             // next we need to access post[data][information][counters][this.propertyName] to get column value from the counters
             // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
@@ -348,7 +395,7 @@ export class ColumnMetadata {
                 map[this.propertyName] = value;
                 return map;
             };
-            return extractEmbeddedColumnValue(this.embeddedMetadata.embeddedMetadataTree, entity);
+            return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
             entity[this.propertyName] = value;
@@ -358,35 +405,6 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
     // Builder Methods
     // ---------------------------------------------------------------------
-
-    buildFromArgs(args: ColumnMetadataArgs): this {
-        // this.target = args.target;
-        this.propertyName = args.propertyName;
-        this.givenDatabaseName = args.options.name;
-        if (args.options.type)
-            this.type = args.options.type;
-        this.length = args.options.length ? String(args.options.length) : "";
-        this.isPrimary = args.options.primary || false;
-        this.isGenerated = args.options.generated || false;
-        this.isUnique = args.options.unique || false;
-        this.isNullable = args.options.nullable || false;
-        this.comment = args.options.comment || "";
-        this.default = args.options.default;
-        this.scale = args.options.scale;
-        this.precision = args.options.precision;
-        this.timezone = args.options.timezone || false;
-        this.localTimezone = args.options.localTimezone || false;
-        this.fixedLength = args.options.fixedLength || false;
-        this.mode = args.mode;
-        this.isVirtual = args.mode === "virtual";
-        this.isParentId = args.mode === "parentId";
-        this.isDiscriminator = args.mode === "discriminator";
-        this.isCreateDate = args.mode === "createDate";
-        this.isUpdateDate = args.mode === "updateDate";
-        this.isVersion = args.mode === "version";
-        this.isObjectId = args.mode === "objectId";
-        return this;
-    }
 
     build(namingStrategy: NamingStrategyInterface): this {
         this.propertyPath = this.buildPropertyPath();

@@ -373,7 +373,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             }).join(" AND ");
 
         } else {
-            condition = alias + "." + this.metadata.firstPrimaryColumn.propertyName + "=:id";
+            condition = alias + "." + this.metadata.primaryColumns[0].propertyName + "=:id";
             parameters["id"] = id;
         }
 
@@ -401,7 +401,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 }).join(" AND ");
             }).join(" OR ");
         } else {
-            condition = alias + "." + this.metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+            condition = alias + "." + this.metadata.primaryColumns[0].propertyName + " IN (:ids)";
             parameters["ids"] = ids;
         }
 
@@ -510,7 +510,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (relationOrName instanceof RelationMetadata)
             return relationOrName;
 
-        const relationPropertyPath = relationOrName instanceof Function ? relationOrName(this.metadata.createPropertiesMap()) : relationOrName;
+        const relationPropertyPath = relationOrName instanceof Function ? relationOrName(this.metadata.propertiesMap) : relationOrName;
         return this.metadata.findRelationWithPropertyPath(relationPropertyPath);
     }
 

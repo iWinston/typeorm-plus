@@ -316,7 +316,7 @@ export class Subject {
      * Differentiate columns from the updated entity and entity stored in the database.
      */
     protected computeDiffColumns(): void {
-        this.diffColumns = this.metadata.allColumns.filter(column => {
+        this.diffColumns = this.metadata.columns.filter(column => {
 
             // prepare both entity and database values to make comparision
             let entityValue = column.getEntityValue(this.entity);
@@ -387,7 +387,7 @@ export class Subject {
      * Difference columns of the owning one-to-one and many-to-one columns.
      */
     protected computeDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): void {
-        this.diffRelations = this.metadata.allRelations.filter(relation => {
+        this.diffRelations = this.metadata.relations.filter(relation => {
             if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
                 return false;
 

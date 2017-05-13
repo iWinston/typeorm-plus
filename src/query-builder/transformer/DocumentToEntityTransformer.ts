@@ -67,7 +67,7 @@ export class DocumentToEntityTransformer {
             });*/
 
         // get value from columns selections and put them into object
-        metadata.columnsWithoutEmbeddeds.forEach(column => {
+        metadata.columns.forEach(column => {
             const valueInObject = document[column.databaseName];
             if (valueInObject !== undefined &&
                 valueInObject !== null &&

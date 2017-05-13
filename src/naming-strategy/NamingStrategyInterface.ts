@@ -79,6 +79,6 @@ export interface NamingStrategyInterface {
      * Table name is either user's given table name, either name generated from entity target.
      * Note that table name comes here already normalized by #tableName method.
      */
-    prefixTableName(prefix: string|undefined, tableName: string): string;
+    prefixTableName(prefix: string, tableName: string): string;
 
 }
