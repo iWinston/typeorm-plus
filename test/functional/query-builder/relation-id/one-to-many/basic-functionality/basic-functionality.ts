@@ -13,7 +13,7 @@ import {Image} from "./entity/Image";
 
 const should = chai.should();
 
-describe.only("query builder > load-relation-id-and-map > one-to-many", () => {
+describe("query builder > relation-id > one-to-many > basic-functionality", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

@@ -9,7 +9,7 @@ import {Image} from "./entity/Image";
 
 const should = chai.should();
 
-describe.skip("query builder > relation-count-decorator-many-to-many > many-to-many", () => {
+describe("query builder > relation-count-decorator-many-to-many > many-to-many", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

@@ -786,7 +786,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     .map(subRelationValue => {
                         const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                         return joinColumns.reduce((ids, joinColumn) => {
-                            return OrmUtils.mergeDeep(ids, joinColumn.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelationValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
+                            return OrmUtils.mergeDeep(ids, joinColumn.referencedColumn!.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelationValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
                         }, {} as ObjectLiteral);
                     })
                     .filter(subRelationValue => subRelationValue !== undefined && subRelationValue !== null);
@@ -802,11 +802,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // now from all entities in the persisted entity find only those which aren't found in the db
                 const newJunctionEntities = relatedValue.filter(subRelatedValue => {
+                    // console.log(subRelatedValue);
 
                     const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
                     const ids = joinColumns.reduce((ids, joinColumn) => {
-                        return OrmUtils.mergeDeep(ids, joinColumn.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelatedValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
+                        return OrmUtils.mergeDeep(ids, joinColumn.referencedColumn!.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelatedValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
                     }, {} as ObjectLiteral);
+                    // console.log("ids:", ids);
                     return !existInverseEntityRelationIds.find(relationId => {
                         return relation.inverseEntityMetadata.compareIds(relationId, ids);
                     });

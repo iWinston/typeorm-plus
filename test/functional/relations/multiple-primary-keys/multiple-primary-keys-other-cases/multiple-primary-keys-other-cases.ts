@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {EventMember} from "./entity/EventMember";
@@ -24,45 +24,45 @@ describe.skip("relations > multiple-primary-keys > other-cases", () => {
 
         const user1 = new User();
         user1.name = "Alice";
-        await connection.entityManager.persist(user1);
+        await connection.manager.persist(user1);
 
         const user2 = new User();
         user2.name = "Bob";
-        await connection.entityManager.persist(user2);
+        await connection.manager.persist(user2);
 
         const user3 = new User();
         user3.name = "Clara";
-        await connection.entityManager.persist(user3);
+        await connection.manager.persist(user3);
 
         const event1 = new Event();
         event1.name = "Event #1";
-        await connection.entityManager.persist(event1);
+        await connection.manager.persist(event1);
 
         const event2 = new Event();
         event2.name = "Event #2";
-        await connection.entityManager.persist(event2);
+        await connection.manager.persist(event2);
 
         const eventMember1 = new EventMember();
         eventMember1.user = user1;
         eventMember1.event = event1;
-        await connection.entityManager.persist(eventMember1);
+        await connection.manager.persist(eventMember1);
 
         const eventMember2 = new EventMember();
         eventMember2.user = user2;
         eventMember2.event = event1;
-        await connection.entityManager.persist(eventMember2);
+        await connection.manager.persist(eventMember2);
 
         const eventMember3 = new EventMember();
         eventMember3.user = user1;
         eventMember3.event = event2;
-        await connection.entityManager.persist(eventMember3);
+        await connection.manager.persist(eventMember3);
 
         const eventMember4 = new EventMember();
         eventMember4.user = user3;
         eventMember4.event = event2;
-        await connection.entityManager.persist(eventMember4);
+        await connection.manager.persist(eventMember4);
 
-        const loadedEvents = await connection.entityManager
+        const loadedEvents = await connection.manager
             .createQueryBuilder(Event, "event")
             .leftJoinAndSelect("event.members", "members")
             .leftJoinAndSelect("members.user", "user")
@@ -80,7 +80,7 @@ describe.skip("relations > multiple-primary-keys > other-cases", () => {
         expect(loadedEvents[1].members[1].user.id).to.be.equal(3);
         expect(loadedEvents[1].members[1].user.name).to.be.equal("Clara");
 
-        const loadedUsers = await connection.entityManager
+        const loadedUsers = await connection.manager
             .createQueryBuilder(User, "user")
             .leftJoinAndSelect("user.members", "members")
             .leftJoinAndSelect("members.event", "event")

@@ -1149,7 +1149,7 @@ export class QueryBuilder<Entity> {
      */
     enableAutoRelationIdsLoad(): this {
         this.expressionMap.mainAlias!.metadata.relations.forEach(relation => {
-            this.loadRelationIdAndMap(this.expressionMap.mainAlias!.name + "." + relation.propertyName, this.expressionMap.mainAlias!.name + "." + relation.propertyName);
+            this.loadRelationIdAndMap(this.expressionMap.mainAlias!.name + "." + relation.propertyPath, this.expressionMap.mainAlias!.name + "." + relation.propertyPath);
         });
         return this;
     }

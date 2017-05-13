@@ -1,14 +1,18 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../../utils/test-utils";
+import {Connection} from "../../../../../../src/connection/Connection";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 
 const should = chai.should();
 
-describe("query builder > load-relation-id-and-map > one-to-one", () => {
+describe("query builder > relation-id > one-to-one > basic-functionality", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -18,7 +22,6 @@ describe("query builder > load-relation-id-and-map > one-to-one", () => {
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
-
 
     it("should load ids when loadRelationIdAndMap used with OneToOne owner side relation", () => Promise.all(connections.map(async connection => {
 

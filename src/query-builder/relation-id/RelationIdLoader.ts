@@ -34,10 +34,15 @@ export class RelationIdLoader {
                     throw new Error(""); // todo: fix
 
                 const results = rawEntities.map(rawEntity => {
-                    return {
-                        id: rawEntity[relationIdAttr.parentAlias + "_" + relationIdAttr.relation.name],
-                        parentId: this.createIdMap(relationIdAttr.relation.entityMetadata.primaryColumns, relationIdAttr.parentAlias, rawEntity)
-                    };
+                    const result: ObjectLiteral = {};
+                    relationIdAttr.relation.joinColumns.forEach(joinColumn => {
+                        result[joinColumn.databaseName] = rawEntity[relationIdAttr.parentAlias + "_" + joinColumn.databaseName];
+                    });
+
+                    relationIdAttr.relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
+                        result[primaryColumn.databaseName] = rawEntity[relationIdAttr.parentAlias + "_" + primaryColumn.databaseName];
+                    });
+                    return result;
                 });
 
                 return {
@@ -51,8 +56,7 @@ export class RelationIdLoader {
                 // we expect it to load array of category ids
 
                 const relation = relationIdAttr.relation; // "post.categories"
-                const inverseRelation = relation.inverseRelation; // "category.post"
-                const joinColumns = relation.isOwning ? relation.joinColumns : inverseRelation.joinColumns;
+                const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.joinColumns;
                 const table = relation.inverseEntityMetadata.target; // category
                 const tableName = relation.inverseEntityMetadata.tableName; // category
                 const tableAlias = relationIdAttr.alias || tableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
@@ -80,7 +84,7 @@ export class RelationIdLoader {
                     qb.addSelect(tableAlias + "." + joinColumn.databaseName, joinColumn.databaseName);
                 });
 
-                inverseRelation.entityMetadata.primaryColumns.forEach(primaryColumn => {
+                relation.inverseRelation.entityMetadata.primaryColumns.forEach(primaryColumn => {
                     qb.addSelect(tableAlias + "." + primaryColumn.databaseName, primaryColumn.databaseName);
                 });
 

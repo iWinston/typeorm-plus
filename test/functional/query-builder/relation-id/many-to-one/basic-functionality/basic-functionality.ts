@@ -1,8 +1,12 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../../utils/test-utils";
+import {Connection} from "../../../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
@@ -10,7 +14,7 @@ import {PostCategory} from "./entity/PostCategory";
 
 const should = chai.should();
 
-describe("query builder > load-relation-id-and-map > many-to-one", () => {
+describe("query builder > relation-id > many-to-one > basic-functionality", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

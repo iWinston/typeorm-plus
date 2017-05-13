@@ -22,7 +22,7 @@ describe.skip("benchmark > bulk-save", () => {
 
         const posts: Post[] = [];
 
-        for(let i = 1; i <= 100; i++) {
+        for (let i = 1; i <= 100; i++) {
             const post = new Post();
             post.title = `Post #${i}`;
             post.text = `Post #${i} text`;

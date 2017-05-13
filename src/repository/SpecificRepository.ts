@@ -419,7 +419,6 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const relation = this.convertMixedRelationToMetadata(relationOrName);
         if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
-        // todo fix joinColumns[0]
         const entityReferencedColumns = relation.isOwning ? relation.joinColumns.map(joinColumn => joinColumn.referencedColumn!) : relation.inverseRelation.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn!);
         const ownerEntityColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.inverseJoinColumns;
         const inverseEntityColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
@@ -440,7 +439,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const ec = (column: string) => this.connection.driver.escapeColumnName(column);
 
         let ids: any[] = [];
-        console.log("entityOrEntities:", entityOrEntities);
+        // console.log("entityOrEntities:", entityOrEntities);
         // console.log("entityIds:", entityIds);
         const promises = (entityIds as any[]).map((entityId: any) => {
             const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);

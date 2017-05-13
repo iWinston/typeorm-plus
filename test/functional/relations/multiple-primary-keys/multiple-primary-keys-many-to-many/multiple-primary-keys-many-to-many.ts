@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -29,33 +29,33 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.type = "common-category";
             category1.code = 1;
             category1.version = 1;
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "BMW";
             category2.type = "cars-category";
             category2.code = 2;
             category2.version = 1;
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
             const category3 = new Category();
             category3.name = "airplanes";
             category3.type = "common-category";
             category3.code = 3;
             category3.version = 1;
-            await connection.entityManager.persist(category3);
+            await connection.manager.persist(category3);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categories = [category1, category2];
-            await connection.entityManager.persist(post1);
+            await connection.manager.persist(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categories = [category3];
-            await connection.entityManager.persist(post2);
+            await connection.manager.persist(post2);
 
-            const loadedPosts = await connection.entityManager
+            const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categories", "categories")
                 .orderBy("post.id, categories.code")
@@ -70,7 +70,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedPosts[1].categories[0].name).to.be.equal("airplanes");
             expect(loadedPosts[1].categories[0].type).to.be.equal("common-category");
 
-            const loadedPost = await connection.entityManager
+            const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categories", "categories")
                 .orderBy("categories.code")
@@ -90,33 +90,33 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.type = "common-category";
             category1.code = 1;
             category1.version = 1;
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "BMW";
             category2.type = "cars-category";
             category2.code = 2;
             category2.version = 1;
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
             const category3 = new Category();
             category3.name = "airplanes";
             category3.type = "common-category";
             category3.code = 3;
             category3.version = 1;
-            await connection.entityManager.persist(category3);
+            await connection.manager.persist(category3);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoriesWithOptions = [category1, category2];
-            await connection.entityManager.persist(post1);
+            await connection.manager.persist(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoriesWithOptions = [category3];
-            await connection.entityManager.persist(post2);
+            await connection.manager.persist(post2);
 
-            const loadedPosts = await connection.entityManager
+            const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoriesWithOptions", "categories")
                 .orderBy("post.id, categories.code")
@@ -131,7 +131,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedPosts[1].categoriesWithOptions[0].name).to.be.equal("airplanes");
             expect(loadedPosts[1].categoriesWithOptions[0].type).to.be.equal("common-category");
 
-            const loadedPost = await connection.entityManager
+            const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoriesWithOptions", "categories")
                 .orderBy("categories.code")
@@ -152,7 +152,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.description = "category of cars";
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "BMW";
@@ -160,7 +160,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.description = "category of BMW";
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
             const category3 = new Category();
             category3.name = "airplanes";
@@ -168,19 +168,19 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category3.code = 3;
             category3.version = 1;
             category3.description = "category of airplanes";
-            await connection.entityManager.persist(category3);
+            await connection.manager.persist(category3);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoriesWithNonPrimaryColumns = [category1, category2];
-            await connection.entityManager.persist(post1);
+            await connection.manager.persist(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoriesWithNonPrimaryColumns = [category3];
-            await connection.entityManager.persist(post2);
+            await connection.manager.persist(post2);
 
-            const loadedPosts = await connection.entityManager
+            const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoriesWithNonPrimaryColumns", "categories")
                 .orderBy("post.id, categories.code")
@@ -198,7 +198,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedPosts[1].categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
             expect(loadedPosts[1].categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of airplanes");
 
-            const loadedPost = await connection.entityManager
+            const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoriesWithNonPrimaryColumns", "categories")
                 .orderBy("categories.code")
@@ -219,37 +219,37 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.type = "common-category";
             category1.code = 1;
             category1.version = 1;
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "BMW";
             category2.type = "cars-category";
             category2.code = 2;
             category2.version = 1;
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
             const category3 = new Category();
             category3.name = "airplanes";
             category3.type = "common-category";
             category3.code = 3;
             category3.version = 1;
-            await connection.entityManager.persist(category3);
+            await connection.manager.persist(category3);
 
             const tag1 = new Tag();
             tag1.code = 1;
             tag1.title = "About BMW";
             tag1.description = "Tag about BMW";
             tag1.categories = [category1, category2];
-            await connection.entityManager.persist(tag1);
+            await connection.manager.persist(tag1);
 
             const tag2 = new Tag();
             tag2.code = 2;
             tag2.title = "About Boeing";
             tag2.description = "tag about Boeing";
             tag2.categories = [category3];
-            await connection.entityManager.persist(tag2);
+            await connection.manager.persist(tag2);
 
-            const loadedTags = await connection.entityManager
+            const loadedTags = await connection.manager
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categories", "categories")
                 .orderBy("tag.code, categories.code")
@@ -264,7 +264,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedTags[1].categories[0].name).to.be.equal("airplanes");
             expect(loadedTags[1].categories[0].type).to.be.equal("common-category");
 
-            const loadedTag = await connection.entityManager
+            const loadedTag = await connection.manager
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categories", "categories")
                 .orderBy("categories.code")
@@ -284,37 +284,37 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.type = "common-category";
             category1.code = 1;
             category1.version = 1;
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "BMW";
             category2.type = "cars-category";
             category2.code = 2;
             category2.version = 1;
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
             const category3 = new Category();
             category3.name = "airplanes";
             category3.type = "common-category";
             category3.code = 3;
             category3.version = 1;
-            await connection.entityManager.persist(category3);
+            await connection.manager.persist(category3);
 
             const tag1 = new Tag();
             tag1.code = 1;
             tag1.title = "About BMW";
             tag1.description = "Tag about BMW";
             tag1.categoriesWithOptions = [category1, category2];
-            await connection.entityManager.persist(tag1);
+            await connection.manager.persist(tag1);
 
             const tag2 = new Tag();
             tag2.code = 2;
             tag2.title = "About Boeing";
             tag2.description = "Tag about Boeing";
             tag2.categoriesWithOptions = [category3];
-            await connection.entityManager.persist(tag2);
+            await connection.manager.persist(tag2);
 
-            const loadedTags = await connection.entityManager
+            const loadedTags = await connection.manager
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoriesWithOptions", "categories")
                 .orderBy("tag.code, categories.code")
@@ -329,7 +329,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedTags[1].categoriesWithOptions[0].name).to.be.equal("airplanes");
             expect(loadedTags[1].categoriesWithOptions[0].type).to.be.equal("common-category");
 
-            const loadedTag = await connection.entityManager
+            const loadedTag = await connection.manager
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoriesWithOptions", "categories")
                 .orderBy("categories.code")
@@ -350,7 +350,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.description = "category of cars";
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "BMW";
@@ -358,7 +358,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.description = "category of BMW";
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
             const category3 = new Category();
             category3.name = "airplanes";
@@ -366,23 +366,23 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category3.code = 3;
             category3.version = 1;
             category3.description = "category of airplanes";
-            await connection.entityManager.persist(category3);
+            await connection.manager.persist(category3);
 
             const tag1 = new Tag();
             tag1.code = 1;
             tag1.title = "About BMW";
             tag1.description = "Tag about BMW";
             tag1.categoriesWithNonPrimaryColumns = [category1, category2];
-            await connection.entityManager.persist(tag1);
+            await connection.manager.persist(tag1);
 
             const tag2 = new Tag();
             tag2.code = 2;
             tag2.title = "About Boeing";
             tag2.description = "Tag about Boeing";
             tag2.categoriesWithNonPrimaryColumns = [category3];
-            await connection.entityManager.persist(tag2);
+            await connection.manager.persist(tag2);
 
-            const loadedTags = await connection.entityManager
+            const loadedTags = await connection.manager
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoriesWithNonPrimaryColumns", "categories")
                 .orderBy("tag.code, categories.code")
@@ -400,7 +400,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedTags[1].categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
             expect(loadedTags[1].categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of airplanes");
 
-            const loadedTag = await connection.entityManager
+            const loadedTag = await connection.manager
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoriesWithNonPrimaryColumns", "categories")
                 .orderBy("categories.code")
@@ -422,15 +422,15 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            await connection.entityManager.persist(post1);
+            await connection.manager.persist(post1);
 
             const post2 = new Post();
             post2.title = "About Audi";
-            await connection.entityManager.persist(post2);
+            await connection.manager.persist(post2);
 
             const post3 = new Post();
             post3.title = "About Boeing";
-            await connection.entityManager.persist(post3);
+            await connection.manager.persist(post3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -438,7 +438,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.posts = [post1, post2];
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -446,9 +446,9 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.posts = [post3];
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
-            const loadedCategories = await connection.entityManager
+            const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.posts", "posts")
                 .orderBy("category.code, posts.id")
@@ -460,7 +460,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedCategories[1].posts).to.not.be.empty;
             expect(loadedCategories[1].posts[0].id).to.be.equal(3);
 
-            const loadedCategory = await connection.entityManager
+            const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.posts", "posts")
                 .orderBy("posts.id")
@@ -477,15 +477,15 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            await connection.entityManager.persist(post1);
+            await connection.manager.persist(post1);
 
             const post2 = new Post();
             post2.title = "About Audi";
-            await connection.entityManager.persist(post2);
+            await connection.manager.persist(post2);
 
             const post3 = new Post();
             post3.title = "About Boeing";
-            await connection.entityManager.persist(post3);
+            await connection.manager.persist(post3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -493,7 +493,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.postsWithOptions = [post1, post2];
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -501,9 +501,9 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.postsWithOptions = [post3];
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
-            const loadedCategories = await connection.entityManager
+            const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.postsWithOptions", "posts")
                 .orderBy("category.code, posts.id")
@@ -515,7 +515,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedCategories[1].postsWithOptions).to.not.be.empty;
             expect(loadedCategories[1].postsWithOptions[0].id).to.be.equal(3);
 
-            const loadedCategory = await connection.entityManager
+            const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.postsWithOptions", "posts")
                 .orderBy("posts.id")
@@ -532,15 +532,15 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            await connection.entityManager.persist(post1);
+            await connection.manager.persist(post1);
 
             const post2 = new Post();
             post2.title = "About Audi";
-            await connection.entityManager.persist(post2);
+            await connection.manager.persist(post2);
 
             const post3 = new Post();
             post3.title = "About Boeing";
-            await connection.entityManager.persist(post3);
+            await connection.manager.persist(post3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -549,7 +549,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.version = 1;
             category1.description = "category of cars";
             category1.postsWithNonPrimaryColumns = [post1, post2];
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -558,9 +558,9 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.version = 1;
             category2.description = "category of airplanes";
             category2.postsWithNonPrimaryColumns = [post3];
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
-            const loadedCategories = await connection.entityManager
+            const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.postsWithNonPrimaryColumns", "posts")
                 .orderBy("category.code, posts.id")
@@ -572,7 +572,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedCategories[1].postsWithNonPrimaryColumns).to.not.be.empty;
             expect(loadedCategories[1].postsWithNonPrimaryColumns[0].id).to.be.equal(3);
 
-            const loadedCategory = await connection.entityManager
+            const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.postsWithNonPrimaryColumns", "posts")
                 .orderBy("posts.id")
@@ -591,19 +591,19 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             tag1.code = 1;
             tag1.title = "About BMW";
             tag1.description = "Tag about BMW";
-            await connection.entityManager.persist(tag1);
+            await connection.manager.persist(tag1);
 
             const tag2 = new Tag();
             tag2.code = 2;
             tag2.title = "About Audi";
             tag2.description = "Tag about Audi";
-            await connection.entityManager.persist(tag2);
+            await connection.manager.persist(tag2);
 
             const tag3 = new Tag();
             tag3.code = 3;
             tag3.title = "About Boeing";
             tag3.description = "tag about Boeing";
-            await connection.entityManager.persist(tag3);
+            await connection.manager.persist(tag3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -611,7 +611,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.tags = [tag1, tag2];
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -619,9 +619,9 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.tags = [tag3];
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
-            const loadedCategories = await connection.entityManager
+            const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tags", "tags")
                 .orderBy("category.code, tags.code")
@@ -636,7 +636,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedCategories[1].tags[0].title).to.be.equal("About Boeing");
             expect(loadedCategories[1].tags[0].description).to.be.equal("tag about Boeing");
 
-            const loadedCategory = await connection.entityManager
+            const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tags", "tags")
                 .orderBy("tags.code")
@@ -655,19 +655,19 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             tag1.code = 1;
             tag1.title = "About BMW";
             tag1.description = "Tag about BMW";
-            await connection.entityManager.persist(tag1);
+            await connection.manager.persist(tag1);
 
             const tag2 = new Tag();
             tag2.code = 2;
             tag2.title = "About Audi";
             tag2.description = "Tag about Audi";
-            await connection.entityManager.persist(tag2);
+            await connection.manager.persist(tag2);
 
             const tag3 = new Tag();
             tag3.code = 3;
             tag3.title = "About Boeing";
             tag3.description = "tag about Boeing";
-            await connection.entityManager.persist(tag3);
+            await connection.manager.persist(tag3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -675,7 +675,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.tagsWithOptions = [tag1, tag2];
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -683,9 +683,9 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.tagsWithOptions = [tag3];
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
-            const loadedCategories = await connection.entityManager
+            const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagsWithOptions", "tags")
                 .orderBy("category.code, tags.code")
@@ -700,7 +700,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedCategories[1].tagsWithOptions[0].title).to.be.equal("About Boeing");
             expect(loadedCategories[1].tagsWithOptions[0].description).to.be.equal("tag about Boeing");
 
-            const loadedCategory = await connection.entityManager
+            const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagsWithOptions", "tags")
                 .orderBy("tags.code")
@@ -719,19 +719,19 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             tag1.code = 1;
             tag1.title = "About BMW";
             tag1.description = "Tag about BMW";
-            await connection.entityManager.persist(tag1);
+            await connection.manager.persist(tag1);
 
             const tag2 = new Tag();
             tag2.code = 2;
             tag2.title = "About Audi";
             tag2.description = "Tag about Audi";
-            await connection.entityManager.persist(tag2);
+            await connection.manager.persist(tag2);
 
             const tag3 = new Tag();
             tag3.code = 3;
             tag3.title = "About Boeing";
             tag3.description = "tag about Boeing";
-            await connection.entityManager.persist(tag3);
+            await connection.manager.persist(tag3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -740,7 +740,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.version = 1;
             category1.description = "category of cars";
             category1.tagsWithNonPrimaryColumns = [tag1, tag2];
-            await connection.entityManager.persist(category1);
+            await connection.manager.persist(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -749,9 +749,9 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.version = 1;
             category2.description = "category of airplanes";
             category2.tagsWithNonPrimaryColumns = [tag3];
-            await connection.entityManager.persist(category2);
+            await connection.manager.persist(category2);
 
-            const loadedCategories = await connection.entityManager
+            const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagsWithNonPrimaryColumns", "tags")
                 .orderBy("category.code, tags.code")
@@ -766,7 +766,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             expect(loadedCategories[1].tagsWithNonPrimaryColumns[0].title).to.be.equal("About Boeing");
             expect(loadedCategories[1].tagsWithNonPrimaryColumns[0].description).to.be.equal("tag about Boeing");
 
-            const loadedCategory = await connection.entityManager
+            const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagsWithNonPrimaryColumns", "tags")
                 .orderBy("tags.code")

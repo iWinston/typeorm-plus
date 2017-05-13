@@ -1,5 +1,5 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
+import {Entity} from "../../../../../../../src/decorator/entity/Entity";
+import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
 import {Post} from "./Post";
 import {Category} from "./Category";
 import {Image} from "./Image";
