@@ -351,7 +351,7 @@ export class ColumnMetadata {
             // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
             const embeddedObject = extractEmbeddedColumnValue(propertyNames, entity);
             if (embeddedObject) {
-                if (this.relationMetadata && this.referencedColumn) {
+                if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
                     return relatedEntity ? this.referencedColumn.getEntityValue(relatedEntity) : undefined;
                 } else {
@@ -362,7 +362,7 @@ export class ColumnMetadata {
             // return embeddedObject ? embeddedObject[this.propertyName] : undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
-            if (this.relationMetadata && this.referencedColumn) {
+            if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 return relatedEntity ? this.referencedColumn.getEntityValue(relatedEntity) : undefined;
             } else {

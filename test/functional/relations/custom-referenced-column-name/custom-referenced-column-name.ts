@@ -214,7 +214,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         })));
 
-        it.skip("should persist relation when relation sets via join column", () => Promise.all(connections.map(async connection => {
+        it("should persist relation when relation sets via join column", () => Promise.all(connections.map(async connection => {
 
             const category1 = new Category();
             category1.name = "cars";
@@ -450,7 +450,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         })));
 
-        it.skip("should persist relation when relation sets via join column", () => Promise.all(connections.map(async connection => {
+        it("should persist relation when relation sets via join column", () => Promise.all(connections.map(async connection => {
 
             const tag1 = new Tag();
             tag1.name = "tag #1";
