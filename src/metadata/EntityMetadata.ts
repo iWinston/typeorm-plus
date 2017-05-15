@@ -583,30 +583,38 @@ export class EntityMetadata {
     }
 
     // ---------------------------------------------------------------------
-    // Builder Methods
+    // Public Builder Methods
     // ---------------------------------------------------------------------
 
-    buildOnRelationsChange() {
-        this.relationsWithJoinColumns = this.relations.filter(relation => relation.isWithJoinColumn);
-        this.hasNonNullableRelations = this.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
-    }
-
-    buildOnColumnsChange() {
+    registerColumn(column: ColumnMetadata) {
+        this.ownColumns.push(column);
         this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
         this.primaryColumns = this.columns.filter(column => column.isPrimary);
         this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
         this.propertiesMap = this.createPropertiesMap();
     }
 
-    // ---------------------------------------------------------------------
-    // Protected Methods
-    // ---------------------------------------------------------------------
-
-    protected createPropertiesMap(): { [name: string]: string|any } {
+    createPropertiesMap(): { [name: string]: string|any } {
         const map: { [name: string]: string|any } = {};
         this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
     }
+
+    // buildOnRelationsChange() {
+    //     this.relationsWithJoinColumns = this.relations.filter(relation => relation.isWithJoinColumn);
+    //     this.hasNonNullableRelations = this.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
+    // }
+
+    // buildOnColumnsChange() {
+    //     this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
+    //     this.primaryColumns = this.columns.filter(column => column.isPrimary);
+    //     this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
+    //     this.propertiesMap = this.createPropertiesMap();
+    // }
+
+    // ---------------------------------------------------------------------
+    // Protected Methods
+    // ---------------------------------------------------------------------
 
 }

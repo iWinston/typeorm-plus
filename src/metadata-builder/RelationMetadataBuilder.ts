@@ -331,12 +331,10 @@ export class RelationMetadataBuilder {
         metadata.isOneToOne = this.isOneToOne;
         metadata.isOneToOneOwner = this.isOneToOneOwner;
         metadata.isWithJoinColumn = this.isWithJoinColumn;
-        metadata.isOneToOneNotOwner = this.isOneToOneNotOwner;
         metadata.isOneToMany = this.isOneToMany;
         metadata.isManyToOne = this.isManyToOne;
         metadata.isManyToMany = this.isManyToMany;
         metadata.isManyToManyOwner = this.isManyToManyOwner;
-        metadata.isManyToManyNotOwner = this.isManyToManyNotOwner;
         metadata.hasInverseSide = this.hasInverseSide;
         metadata.propertyPath = this.propertyPath;
         metadata.inverseSidePropertyPath = this.inverseSidePropertyPath;

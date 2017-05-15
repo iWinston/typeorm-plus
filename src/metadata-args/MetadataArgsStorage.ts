@@ -16,7 +16,7 @@ import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
 import {DiscriminatorValueMetadataArgs} from "./DiscriminatorValueMetadataArgs";
 import {EntityRepositoryMetadataArgs} from "./EntityRepositoryMetadataArgs";
 import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
-import {MetadataArgsUtils} from "./MetadataArgsUtils";
+import {MetadataUtils} from "./MetadataUtils";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**

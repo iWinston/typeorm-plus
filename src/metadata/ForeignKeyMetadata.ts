@@ -82,19 +82,18 @@ export class ForeignKeyMetadata {
     constructor(options: {
         entityMetadata: EntityMetadata,
         referencedEntityMetadata: EntityMetadata,
+        namingStrategy?: NamingStrategyInterface,
         columns: ColumnMetadata[],
         referencedColumns: ColumnMetadata[],
         onDelete?: OnDeleteType
     }) {
         this.entityMetadata = options.entityMetadata;
         this.referencedEntityMetadata = options.referencedEntityMetadata;
-        // this.tableName = options.entityMetadata.tableName;
-        // this.referencedTableName = options.referencedEntityMetadata.tableName;
         this.columns = options.columns;
-        // this.columnNames = options.columns.map(column => column.databaseName);
         this.referencedColumns = options.referencedColumns;
-        // this.referencedColumnNames = options.referencedColumns.map(column => column.databaseName);
         this.onDelete = options.onDelete;
+        if (options.namingStrategy)
+            this.build(options.namingStrategy);
     }
 
     build(namingStrategy: NamingStrategyInterface) {

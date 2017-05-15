@@ -145,7 +145,7 @@ export class RelationMetadata {
      * If this relation is a many-to-one/one-to-one then it takes join columns from the current entity.
      * If this relation is many-to-many then it takes all owner join columns from the junction entity.
      */
-    joinColumns: ColumnMetadata[];
+    joinColumns: ColumnMetadata[] = [];
 
     /**
      * Inverse join table columns.
@@ -153,7 +153,7 @@ export class RelationMetadata {
      * and can be obtained only from owner side of the relation.
      * From non-owner side of the relation join columns will be undefined.
      */
-    inverseJoinColumns: ColumnMetadata[];
+    inverseJoinColumns: ColumnMetadata[] = [];
 
     /**
      * Gets the property's type to which this relation is applied.
@@ -270,6 +270,8 @@ export class RelationMetadata {
         this.isOneToMany = this.relationType === "one-to-many";
         this.isManyToOne = this.relationType === "many-to-one";
         this.isManyToMany = this.relationType === "many-to-many";
+        this.isOneToOneNotOwner = this.isOneToOne ? true : false;
+        this.isManyToManyNotOwner = this.isManyToMany ? true : false;
     }
 
     // ---------------------------------------------------------------------
@@ -384,15 +386,14 @@ export class RelationMetadata {
         this.propertyPath = this.buildPropertyPath();
     }
 
-    buildOnForeignKeysChange() {
-        this.isOwning = this.isManyToOne || ((this.isManyToMany || this.isOneToOne) && this.foreignKeys.length > 0);
-        this.isOneToOneOwner = this.isOneToOne && this.isOwning;
-        this.isOneToOneNotOwner = this.isOneToOne && !this.isOwning;
-        this.isManyToManyOwner = this.isManyToMany && this.isOwning;
-        this.isManyToManyNotOwner = this.isManyToMany && !this.isOwning;
-        this.isWithJoinColumn = this.isManyToOne || this.isOneToOneOwner;
+    registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
+        this.foreignKeys.push(...foreignKeys);
         this.joinColumns = this.foreignKeys[0] ? this.foreignKeys[0].columns : [];
         this.inverseJoinColumns = this.foreignKeys[1] ? this.foreignKeys[1].columns : [];
+        this.isOwning = this.isManyToOne || ((this.isManyToMany || this.isOneToOne) && this.joinColumns.length > 0);
+        this.isOneToOneOwner = this.isOneToOne && this.isOwning;
+        this.isManyToManyOwner = this.isManyToMany && this.isOwning;
+        this.isWithJoinColumn = this.isManyToOne || this.isOneToOneOwner;
     }
 
     /**

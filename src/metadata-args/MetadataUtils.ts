@@ -1,7 +1,7 @@
 /**
  * Metadata args utility functions.
  */
-export class MetadataArgsUtils {
+export class MetadataUtils {
 
     /**
      * Gets given's entity all inherited classes.

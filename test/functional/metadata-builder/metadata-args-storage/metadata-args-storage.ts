@@ -2,12 +2,12 @@ import "reflect-metadata";
 import {Post} from "./entity/Post";
 import {ContentModule} from "./entity/ContentModule";
 import {Unit} from "./entity/Unit";
-import {MetadataArgsUtils} from "../../../../src/metadata-args/MetadataArgsUtils";
+import {MetadataUtils} from "../../../../src/metadata-args/MetadataUtils";
 
 describe("metadata builder > MetadataArgsUtils", () => {
 
     it("getInheritanceTree", () => {
-        const inheritanceTree = MetadataArgsUtils.getInheritanceTree(Post);
+        const inheritanceTree = MetadataUtils.getInheritanceTree(Post);
         inheritanceTree.should.be.eql([
             Post,
             ContentModule,
@@ -16,7 +16,7 @@ describe("metadata builder > MetadataArgsUtils", () => {
     });
 
     it("filterByTargetClasses", () => {
-        MetadataArgsUtils.filterByTarget([
+        MetadataUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },
@@ -30,7 +30,7 @@ describe("metadata builder > MetadataArgsUtils", () => {
             { target: Unit },
         ]);
 
-        MetadataArgsUtils.filterByTarget([
+        MetadataUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },
@@ -42,7 +42,7 @@ describe("metadata builder > MetadataArgsUtils", () => {
             { target: Unit },
         ]);
 
-        MetadataArgsUtils.filterByTarget([
+        MetadataUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },
@@ -57,11 +57,11 @@ describe("metadata builder > MetadataArgsUtils", () => {
             { target: Unit },
         ]);
 
-        MetadataArgsUtils.filterByTarget([
+        MetadataUtils.filterByTarget([
         ], [Post, Unit, ContentModule]).should.be.eql([
         ]);
 
-        MetadataArgsUtils.filterByTarget([
+        MetadataUtils.filterByTarget([
             { },
             { target: undefined },
             { target: null },
