@@ -2,9 +2,6 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
-import {Driver} from "../driver/Driver";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 
 // cases it should cover:
