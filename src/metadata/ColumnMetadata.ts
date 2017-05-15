@@ -413,11 +413,6 @@ export class ColumnMetadata {
         return this;
     }
 
-    buildOnRelationChange(): this {
-        this.referencedColumn = this.buildReferencedColumn();
-        return this;
-    }
-
     // ---------------------------------------------------------------------
     // Protected Methods
     // ---------------------------------------------------------------------
@@ -432,17 +427,6 @@ export class ColumnMetadata {
     protected buildDatabaseName(namingStrategy: NamingStrategyInterface): string {
         const propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPropertyNames : [];
         return namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
-    }
-
-    protected buildReferencedColumn(): ColumnMetadata|undefined {
-        const foreignKeys = this.relationMetadata ? this.relationMetadata.foreignKeys : this.entityMetadata.foreignKeys; // why else part? explain
-        const foreignKey = foreignKeys.find(foreignKey => foreignKey.columns.indexOf(this as any) !== -1);
-        if (foreignKey) {
-            const columnIndex = foreignKey.columns.indexOf(this as any);
-            return foreignKey.referencedColumns[columnIndex];
-        }
-
-        return undefined;
     }
 
 }

@@ -180,12 +180,12 @@ export class SubjectOperationExecutor {
 
         // first group of subjects are subjects without any non-nullable column
         // we need to insert first such entities because second group entities may rely on those entities.
-        const firstInsertSubjects = this.insertSubjects.filter(subject => !subject.metadata.hasNonNullableColumns);
+        const firstInsertSubjects = this.insertSubjects.filter(subject => !subject.metadata.hasNonNullableRelations);
 
         // second group - are all other subjects
         // since in this group there are non nullable columns, some of them may depend on value of the
         // previously inserted entity (which only can be entity with all nullable columns)
-        const secondInsertSubjects = this.insertSubjects.filter(subject => subject.metadata.hasNonNullableColumns);
+        const secondInsertSubjects = this.insertSubjects.filter(subject => subject.metadata.hasNonNullableRelations);
 
         // note: these operations should be executed in sequence, not in parallel
         // because second group depend of obtained data from the first group

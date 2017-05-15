@@ -1,6 +1,7 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {RelationMetadata} from "./RelationMetadata";
 
 /**
  * ON_DELETE type to be used to specify delete strategy when some relation is being deleted from the database.
@@ -43,7 +44,7 @@ export class ForeignKeyMetadata {
     /**
      * What to do with a relation on deletion of the row containing a foreign key.
      */
-    onDelete: OnDeleteType;
+    onDelete?: OnDeleteType;
 
     // -------------------------------------------------------------------------
     // Accessors
@@ -78,8 +79,22 @@ export class ForeignKeyMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(options?: Partial<ForeignKeyMetadata>) {
-        Object.assign(this, options || {});
+    constructor(options: {
+        entityMetadata: EntityMetadata,
+        referencedEntityMetadata: EntityMetadata,
+        columns: ColumnMetadata[],
+        referencedColumns: ColumnMetadata[],
+        onDelete?: OnDeleteType
+    }) {
+        this.entityMetadata = options.entityMetadata;
+        this.referencedEntityMetadata = options.referencedEntityMetadata;
+        // this.tableName = options.entityMetadata.tableName;
+        // this.referencedTableName = options.referencedEntityMetadata.tableName;
+        this.columns = options.columns;
+        // this.columnNames = options.columns.map(column => column.databaseName);
+        this.referencedColumns = options.referencedColumns;
+        // this.referencedColumnNames = options.referencedColumns.map(column => column.databaseName);
+        this.onDelete = options.onDelete;
     }
 
     build(namingStrategy: NamingStrategyInterface) {

@@ -103,9 +103,14 @@ export class EmbeddedMetadata {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(options?: Partial<EmbeddedMetadata>, args?: EmbeddedMetadataArgs) {
-        Object.assign(this, options || {});
-        if (args) this.buildFromArgs(args);
+    constructor(options: {
+        entityMetadata: EntityMetadata,
+        args: EmbeddedMetadataArgs,
+    }) {
+        this.entityMetadata = options.entityMetadata;
+        this.type = options.args.type();
+        this.propertyName = options.args.propertyName;
+        this.customPrefix = options.args.prefix;
     }
 
     // ---------------------------------------------------------------------
@@ -122,13 +127,6 @@ export class EmbeddedMetadata {
     // ---------------------------------------------------------------------
     // Builder Methods
     // ---------------------------------------------------------------------
-
-    buildFromArgs(args: EmbeddedMetadataArgs): this {
-        this.type = args.type();
-        this.propertyName = args.propertyName;
-        this.customPrefix = args.prefix;
-        return this;
-    }
 
     build(namingStrategy: NamingStrategyInterface): this {
         this.embeddeds.forEach(embedded => embedded.build(namingStrategy));

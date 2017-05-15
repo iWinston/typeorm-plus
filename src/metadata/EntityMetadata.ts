@@ -260,7 +260,7 @@ export class EntityMetadata {
     /**
      * Checks if there any non-nullable column exist in this entity.
      */
-    hasNonNullableColumns: boolean;
+    hasNonNullableRelations: boolean;
 
     /**
      * Checks if this table is regular.
@@ -588,7 +588,7 @@ export class EntityMetadata {
 
     buildOnRelationsChange() {
         this.relationsWithJoinColumns = this.relations.filter(relation => relation.isWithJoinColumn);
-        this.hasNonNullableColumns = this.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
+        this.hasNonNullableRelations = this.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
     }
 
     buildOnColumnsChange() {
