@@ -360,6 +360,14 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Drop the table.
+     */
+    async dropTable(tableName: String): Promise<void> {
+        let sql = `DROP TABLE \`${tableName}\``;
+        await this.query(sql);
+    }
+
+    /**
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableName: string, columnName: string): Promise<boolean> {
