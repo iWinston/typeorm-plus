@@ -84,9 +84,12 @@ export class RelationCountAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
             throw new Error(`Given value is a string representation of alias property`);
 
-        const [parentAlias, relationProperty] = this.relationName.split(".");
+        const [parentAlias, propertyPath] = this.relationName.split(".");
         const relationOwnerSelection = this.expressionMap.findAliasByName(parentAlias);
-        return relationOwnerSelection.metadata.findRelationWithPropertyName(relationProperty);
+        const relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
+        return relation;
     }
 
     /**

@@ -606,7 +606,7 @@ export class SubjectOperationExecutor {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
         const tableName = subject.metadata.closureJunctionTable.tableName;
-        const referencedColumn = subject.metadata.treeParentRelation.joinColumns[0].referencedColumn!; // todo: check if joinColumn works
+        const referencedColumn = subject.metadata.treeParentRelation!.joinColumns[0].referencedColumn!; // todo: check if joinColumn works
         // todo: fix joinColumns[0] usage
 
         let newEntityId = referencedColumn.getEntityValue(subject.entity);
@@ -615,7 +615,7 @@ export class SubjectOperationExecutor {
             // we should not handle object id here because closure tables are not supported by mongodb driver.
         } // todo: implement other special column types too
 
-        const parentEntity = subject.metadata.treeParentRelation.getEntityValue(subject.entity);
+        const parentEntity = subject.metadata.treeParentRelation!.getEntityValue(subject.entity);
         let parentEntityId: any = 0; // zero is important
         if (parentEntity) {
             parentEntityId = referencedColumn.getEntityValue(parentEntity);
@@ -632,7 +632,7 @@ export class SubjectOperationExecutor {
                 if (!allSubject.hasEntity || !allSubject.metadata.isClosure || !allSubject.metadata.treeChildrenRelation)
                     return false;
 
-                const children = subject.metadata.treeChildrenRelation.getEntityValue(allSubject.entity);
+                const children = subject.metadata.treeChildrenRelation!.getEntityValue(allSubject.entity);
                 return children instanceof Array ? children.indexOf(subject.entity) !== -1 : false;
             });
 
@@ -848,7 +848,7 @@ export class SubjectOperationExecutor {
             });
             await this.queryRunner.delete(subject.metadata.tableName, childConditions);
         } else {
-            await this.queryRunner.delete(subject.metadata.tableName, subject.metadata.getEntityIdColumnMap(subject.databaseEntity)!);
+            await this.queryRunner.delete(subject.metadata.tableName, subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity)!);
         }
     }
 

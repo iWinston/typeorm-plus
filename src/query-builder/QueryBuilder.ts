@@ -1083,13 +1083,13 @@ export class QueryBuilder<Entity> {
             const metadata = this.expressionMap.mainAlias!.metadata;
 
             if (this.expressionMap.lockVersion instanceof Date) {
-                const actualVersion = result[metadata.updateDateColumn.propertyName];
+                const actualVersion = result[metadata.updateDateColumn!.propertyName]; // what if columns arent set?
                 this.expressionMap.lockVersion.setMilliseconds(0);
                 if (actualVersion.getTime() !== this.expressionMap.lockVersion.getTime())
                     throw new OptimisticLockVersionMismatchError(metadata.name, this.expressionMap.lockVersion, actualVersion);
 
             } else {
-                const actualVersion = result[metadata.versionColumn.propertyName];
+                const actualVersion = result[metadata.versionColumn!.propertyName]; // what if columns arent set?
                 if (actualVersion !== this.expressionMap.lockVersion)
                     throw new OptimisticLockVersionMismatchError(metadata.name, this.expressionMap.lockVersion, actualVersion);
             }

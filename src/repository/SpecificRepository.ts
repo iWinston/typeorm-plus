@@ -50,6 +50,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     async setRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
         const propertyPath = this.metadata.computePropertyPath(relationProperty);
         const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
         //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
         if (relation.isManyToMany)
@@ -99,6 +101,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const propertyPath = this.metadata.computePropertyPath(relationProperty);
         // todo: fix issues with joinColumns[0]
         const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
         //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
         if (relation.isManyToMany)
@@ -144,6 +148,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     async addToRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
         const propertyPath = this.metadata.computePropertyPath(relationProperty);
         const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
@@ -188,7 +194,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      */
     async addToInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
         const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        const relation = this.metadata.findRelationWithPropertyName(propertyPath);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
@@ -237,6 +245,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     async removeFromRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
         const propertyPath = this.metadata.computePropertyPath(relationProperty);
         const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
@@ -282,7 +292,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      */
     async removeFromInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
         const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        const relation = this.metadata.findRelationWithPropertyName(propertyPath);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
@@ -511,7 +523,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             return relationOrName;
 
         const relationPropertyPath = relationOrName instanceof Function ? relationOrName(this.metadata.propertiesMap) : relationOrName;
-        return this.metadata.findRelationWithPropertyPath(relationPropertyPath);
+        const relation = this.metadata.findRelationWithPropertyPath(relationPropertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${relationPropertyPath} in entity was not found.`);
+        return relation;
     }
 
     /**

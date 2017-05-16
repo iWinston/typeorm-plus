@@ -32,7 +32,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      */
     findRoots(): Promise<Entity[]> {
 
-        const parentPropertyName = this.metadata.treeParentRelation.propertyName;
+        const parentPropertyName = this.metadata.treeParentRelation!.propertyName;
         return this.createQueryBuilder("treeEntity")
             .where(`treeEntity.${parentPropertyName} IS NULL`)
             .getMany();
@@ -149,13 +149,13 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         return rawResults.map(rawResult => {
             return {
                 id: rawResult[alias + "_" + this.metadata.primaryColumns[0].databaseName],
-                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation.joinColumns[0].referencedColumn!.databaseName]
+                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation!.joinColumns[0].referencedColumn!.databaseName]
             };
         });
     }
 
     protected buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
-        const childProperty = this.metadata.treeChildrenRelation.propertyName;
+        const childProperty = this.metadata.treeChildrenRelation!.propertyName;
         const parentEntityId = this.metadata.primaryColumns[0].getEntityValue(entity);
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
         const childIds = childRelationMaps.map(relationMap => relationMap.id);
@@ -166,7 +166,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     }
 
     protected buildParentEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
-        const parentProperty = this.metadata.treeParentRelation.propertyName;
+        const parentProperty = this.metadata.treeParentRelation!.propertyName;
         const entityId = this.metadata.primaryColumns[0].getEntityValue(entity);
         const parentRelationMap = relationMaps.find(relationMap => relationMap.id === entityId);
         const parentEntity = entities.find(entity => {

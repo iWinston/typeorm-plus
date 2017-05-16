@@ -372,8 +372,8 @@ export class Subject {
                 return false;
 
             // filter out "relational columns" only in the case if there is a relation object in entity
-            if (this.metadata.hasRelationWithDbName(column.databaseName)) {
-                const relation = this.metadata.findRelationWithDbName(column.databaseName);
+            const relation = this.metadata.findRelationWithDbName(column.databaseName);
+            if (relation) {
                 const value = relation.getEntityValue(this.entity);
                 if (value !== null && value !== undefined)
                     return false;

@@ -212,19 +212,19 @@ export class EntityMetadataBuilder {
         entityMetadata.manyToManyRelations = entityMetadata.relations.filter(relation => relation.isManyToMany);
         entityMetadata.ownerOneToOneRelations = entityMetadata.relations.filter(relation => relation.isOneToOneOwner);
         entityMetadata.ownerManyToManyRelations = entityMetadata.relations.filter(relation => relation.isManyToManyOwner);
-        entityMetadata.treeParentRelation = entityMetadata.relations.find(relation => relation.isTreeParent)!; // todo: fix ! later
-        entityMetadata.treeChildrenRelation = entityMetadata.relations.find(relation => relation.isTreeChildren)!; // todo: fix ! later
+        entityMetadata.treeParentRelation = entityMetadata.relations.find(relation => relation.isTreeParent);
+        entityMetadata.treeChildrenRelation = entityMetadata.relations.find(relation => relation.isTreeChildren);
         entityMetadata.columns = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), entityMetadata.ownColumns);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
-        entityMetadata.generatedColumn = entityMetadata.columns.find(column => column.isGenerated)!; // todo: fix ! later
-        entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.mode === "createDate")!; // todo: fix ! later
-        entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.mode === "updateDate")!; // todo: fix ! later
-        entityMetadata.versionColumn = entityMetadata.columns.find(column => column.mode === "version")!; // todo: fix ! later
-        entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.mode === "discriminator")!; // todo: fix ! later
-        entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.mode === "treeLevel")!; // todo: fix ! later
-        entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.mode === "parentId")!; // todo: fix ! later
-        entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.mode === "objectId")!; // todo: fix ! later
+        entityMetadata.generatedColumn = entityMetadata.columns.find(column => column.isGenerated);
+        entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.mode === "createDate");
+        entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.mode === "updateDate");
+        entityMetadata.versionColumn = entityMetadata.columns.find(column => column.mode === "version");
+        entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.mode === "discriminator");
+        entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.mode === "treeLevel");
+        entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.mode === "parentId");
+        entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.mode === "objectId");
         entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.driver.namingStrategy));
         entityMetadata.indices.forEach(index => index.build(this.connection.driver.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
@@ -257,7 +257,7 @@ export class EntityMetadataBuilder {
         entityMetadata.indices.push(
             new IndexMetadata({
                 entityMetadata: entityMetadata,
-                columns: [entityMetadata.discriminatorColumn],
+                columns: [entityMetadata.discriminatorColumn!],
                 args: {
                     target: entityMetadata.target,
                     unique: false
@@ -265,7 +265,7 @@ export class EntityMetadataBuilder {
             }),
             new IndexMetadata({
                 entityMetadata: entityMetadata,
-                columns: [...entityMetadata.primaryColumns, entityMetadata.discriminatorColumn],
+                columns: [...entityMetadata.primaryColumns, entityMetadata.discriminatorColumn!],
                 args: {
                     target: entityMetadata.target,
                     unique: false

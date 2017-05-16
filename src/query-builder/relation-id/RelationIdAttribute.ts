@@ -87,7 +87,10 @@ export class RelationIdAttribute {
             throw new Error(`Given value must be a string representation of alias property`);
 
         const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
-        return relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+        const relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+        if (!relation)
+            throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
+        return relation;
     }
 
     /**
