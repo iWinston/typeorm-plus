@@ -454,7 +454,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const ids: any[] = [];
         const promises = (entityIds as any[]).map((entityId: any) => {
             const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
-                .select(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " AS id")
+                .select(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " AS " + escapeColumn("id"))
                 .fromTable(relation.junctionEntityMetadata.table.name, "junction")
                 .andWhere(escapeAlias("junction") + "." + escapeColumn(ownerEntityColumn.fullName) + "=:entityId", {entityId: entityId});
 
