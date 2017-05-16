@@ -1,6 +1,5 @@
 import {EntityMetadata} from "./EntityMetadata";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
-import {RelationCountMetadataArgs} from "../metadata-args/RelationCountMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 
@@ -49,6 +48,11 @@ export class IndexMetadata {
      */
     name: string;
 
+    /**
+     * Gets the table name on which index is applied.
+     */
+    tableName: string;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -71,16 +75,7 @@ export class IndexMetadata {
     }
 
     // ---------------------------------------------------------------------
-    // Accessors
-    // ---------------------------------------------------------------------
-
-    /**
-     * Gets the table name on which index is applied.
-     */
-    tableName: string;
-
-    // ---------------------------------------------------------------------
-    // Build Methods
+    // Public Build Methods
     // ---------------------------------------------------------------------
 
     build(namingStrategy: NamingStrategyInterface): this {

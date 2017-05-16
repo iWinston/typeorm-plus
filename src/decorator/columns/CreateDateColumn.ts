@@ -27,6 +27,6 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
             mode: "createDate",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }

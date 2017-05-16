@@ -51,6 +51,6 @@ export function Index(nameOrFieldsOrOptions: string|string[]|((object: any) => a
             columns: propertyName ? [propertyName] : fields,
             unique: options && options.unique ? true : false
         };
-        getMetadataArgsStorage().indices.add(args);
+        getMetadataArgsStorage().indices.push(args);
     };
 }

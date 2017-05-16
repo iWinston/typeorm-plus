@@ -16,8 +16,7 @@ export class Broadcaster {
     // -------------------------------------------------------------------------
 
     constructor(private connection: Connection,
-                private subscriberMetadatas: EntitySubscriberInterface<any>[],
-                private entityListeners: EntityListenerMetadata[]) {
+                private subscriberMetadatas: EntitySubscriberInterface<any>[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -54,8 +53,8 @@ export class Broadcaster {
      */
     async broadcastBeforeInsertEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
 
-        const listeners = this.entityListeners
-            .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && this.isAllowedListener(listener, subject.entity))
+        const listeners = subject.metadata.listeners
+            .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]()); // getValue() ?
 
         const subscribers = this.subscriberMetadatas
@@ -76,8 +75,8 @@ export class Broadcaster {
      */
     async broadcastBeforeUpdateEvent(entityManager: EntityManager, subject: Subject): Promise<void> { // todo: send relations too?
 
-        const listeners = this.entityListeners
-            .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && this.isAllowedListener(listener, subject.entity))
+        const listeners = subject.metadata.listeners
+            .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
@@ -101,8 +100,8 @@ export class Broadcaster {
      */
     async broadcastBeforeRemoveEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
 
-        const listeners = this.entityListeners
-            .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && this.isAllowedListener(listener, subject.entity))
+        const listeners = subject.metadata.listeners
+            .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.databaseEntity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
@@ -125,8 +124,8 @@ export class Broadcaster {
      */
     async broadcastAfterInsertEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
 
-        const listeners = this.entityListeners
-            .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && this.isAllowedListener(listener, subject.entity))
+        const listeners = subject.metadata.listeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
@@ -147,8 +146,8 @@ export class Broadcaster {
      */
     async broadcastAfterUpdateEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
 
-        const listeners = this.entityListeners
-            .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && this.isAllowedListener(listener, subject.entity))
+        const listeners = subject.metadata.listeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
@@ -172,8 +171,8 @@ export class Broadcaster {
      */
     async broadcastAfterRemoveEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
 
-        const listeners = this.entityListeners
-            .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && this.isAllowedListener(listener, subject.entity))
+        const listeners = subject.metadata.listeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
@@ -223,8 +222,8 @@ export class Broadcaster {
             return promises;
         }, [] as Promise<void>[]);
 
-        const listeners = this.entityListeners
-            .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD && this.isAllowedListener(listener, entity))
+        const listeners = this.connection.getMetadata(target).listeners
+            .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD && listener.isAllowed(entity))
             .map(listener => entity[listener.propertyName]());
 
         const subscribers = this.subscriberMetadatas
@@ -237,15 +236,6 @@ export class Broadcaster {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Checks if entity listener is allowed to be executed on the given entity.
-     */
-    protected isAllowedListener(listener: EntityListenerMetadata, entity: ObjectLiteral) {
-        // todo: create in entity metadata method like isInherited
-        return listener.target === entity.constructor || // todo: .constructor won't work for entity schemas
-            (listener.target instanceof Function && entity.constructor.prototype instanceof listener.target); // todo: also need to implement entity schema inheritance
-    }
 
     /**
      * Checks if subscriber's methods can be executed by checking if its don't listen to the particular entity,

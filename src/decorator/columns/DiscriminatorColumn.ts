@@ -24,7 +24,7 @@ export function DiscriminatorColumn(discriminatorOptions: { name: string, type: 
             propertyName: discriminatorOptions.name,
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

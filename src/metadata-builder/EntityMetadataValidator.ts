@@ -12,6 +12,11 @@ import {DepGraph} from "../util/DepGraph";
 // todo: tree decorators can be used only on closure table (validation)
 // todo: throw error if parent tree metadata was not specified in a closure table
 
+// todo: MetadataArgsStorage: type in function validation, inverse side function validation
+// todo: MetadataArgsStorage: check on build for duplicate names, since naming checking was removed from MetadataStorage
+// todo: MetadataArgsStorage: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
+// todo: MetadataArgsStorage: check for duplicate targets too since this check has been removed too
+
 /**
  * Validates built entity metadatas.
  */

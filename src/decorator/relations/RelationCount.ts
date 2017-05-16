@@ -14,7 +14,7 @@ export function RelationCount<T>(relation: string|((object: T) => any), alias?: 
             alias: alias,
             queryBuilderFactory: queryBuilderFactory
         };
-        getMetadataArgsStorage().relationCounts.add(args);
+        getMetadataArgsStorage().relationCounts.push(args);
     };
 }
 

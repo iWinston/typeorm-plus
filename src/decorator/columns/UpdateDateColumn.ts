@@ -26,7 +26,7 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
             mode: "updateDate",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

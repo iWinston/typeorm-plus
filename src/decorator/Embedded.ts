@@ -22,6 +22,6 @@ export function Embedded<T>(typeFunction: (type?: any) => ObjectType<T>, options
             prefix: options && options.prefix !== undefined ? options.prefix : undefined,
             type: typeFunction
         };
-        getMetadataArgsStorage().embeddeds.add(args);
+        getMetadataArgsStorage().embeddeds.push(args);
     };
 }

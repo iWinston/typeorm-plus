@@ -13,6 +13,6 @@ export function EmbeddableEntity(): Function {
             type: "embeddable",
             orderBy: undefined
         };
-        getMetadataArgsStorage().tables.add(args);
+        getMetadataArgsStorage().tables.push(args);
     };
 }

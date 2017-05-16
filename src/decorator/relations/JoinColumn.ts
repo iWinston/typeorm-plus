@@ -38,7 +38,7 @@ export function JoinColumn(optionsOrOptionsArray?: JoinColumnOptions|JoinColumnO
                 name: options.name,
                 referencedColumnName: options.referencedColumnName
             };
-            getMetadataArgsStorage().joinColumns.add(args);
+            getMetadataArgsStorage().joinColumns.push(args);
         });
     };
 }

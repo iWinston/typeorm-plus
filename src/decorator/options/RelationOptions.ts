@@ -1,4 +1,4 @@
-import {OnDeleteType} from "../../metadata/ForeignKeyMetadata";
+import {OnDeleteType} from "../../metadata/types/OnDeleteType";
 
 // todo: add ON_UPDATE
 

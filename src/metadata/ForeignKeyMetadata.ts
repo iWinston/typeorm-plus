@@ -1,12 +1,7 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {RelationMetadata} from "./RelationMetadata";
-
-/**
- * ON_DELETE type to be used to specify delete strategy when some relation is being deleted from the database.
- */
-export type OnDeleteType = "RESTRICT"|"CASCADE"|"SET NULL";
+import {OnDeleteType} from "./types/OnDeleteType";
 
 /**
  * Contains all information about entity's foreign key.
@@ -27,28 +22,20 @@ export class ForeignKeyMetadata {
      */
     referencedEntityMetadata: EntityMetadata;
 
-    // -------------------------------------------------------------------------
-    // Public Readonly Properties
-    // -------------------------------------------------------------------------
-
     /**
      * Array of columns of this foreign key.
      */
-    columns: ColumnMetadata[];
+    columns: ColumnMetadata[] = [];
 
     /**
      * Array of referenced columns.
      */
-    referencedColumns: ColumnMetadata[];
+    referencedColumns: ColumnMetadata[] = [];
 
     /**
      * What to do with a relation on deletion of the row containing a foreign key.
      */
     onDelete?: OnDeleteType;
-
-    // -------------------------------------------------------------------------
-    // Accessors
-    // -------------------------------------------------------------------------
 
     /**
      * Gets the table name to which this foreign key is applied.
@@ -68,12 +55,12 @@ export class ForeignKeyMetadata {
     /**
      * Gets array of column names.
      */
-    columnNames: string[];
+    columnNames: string[] = [];
 
     /**
      * Gets array of referenced column names.
      */
-    referencedColumnNames: string[];
+    referencedColumnNames: string[] = [];
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -95,6 +82,10 @@ export class ForeignKeyMetadata {
         if (options.namingStrategy)
             this.build(options.namingStrategy);
     }
+
+    // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
 
     build(namingStrategy: NamingStrategyInterface) {
         this.columnNames = this.columns.map(column => column.databaseName);

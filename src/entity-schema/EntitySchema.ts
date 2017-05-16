@@ -1,10 +1,10 @@
 import {TableType} from "../metadata/types/TableTypes";
 import {OrderByCondition} from "../find-options/OrderByCondition";
-import {OnDeleteType} from "../metadata/ForeignKeyMetadata";
 import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {ColumnType} from "../metadata/types/ColumnTypes";
 import {RelationType} from "../metadata/types/RelationTypes";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
+import {OnDeleteType} from "../metadata/types/OnDeleteType";
 
 export interface EntitySchema {
 

@@ -7,12 +7,13 @@ import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationIdMetadata} from "../metadata/RelationIdMetadata";
 import {RelationCountMetadata} from "../metadata/RelationCountMetadata";
-import {MetadataUtils} from "../metadata-args/MetadataUtils";
+import {MetadataUtils} from "./MetadataUtils";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {JunctionEntityMetadataBuilder} from "./JunctionEntityMetadataBuilder";
 import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetadataBuilder";
 import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
 import {Connection} from "../connection/Connection";
+import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -58,7 +59,7 @@ export class EntityMetadataBuilder {
     build(entityClasses?: Function[]): EntityMetadata[] {
 
         // if entity classes to filter entities by are given then do filtering, otherwise use all
-        const allTables = entityClasses ? this.metadataArgsStorage.filterTables(entityClasses) : this.metadataArgsStorage.tables.toArray();
+        const allTables = entityClasses ? this.metadataArgsStorage.filterTables(entityClasses) : this.metadataArgsStorage.tables;
 
         // filter out table metadata args for those we really create entity metadatas and tables in the db
         const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child");
@@ -171,6 +172,9 @@ export class EntityMetadataBuilder {
         });
         entityMetadata.indices = this.metadataArgsStorage.filterIndices(inheritanceTree).map(args => {
             return new IndexMetadata({ entityMetadata, args });
+        });
+        entityMetadata.listeners = this.metadataArgsStorage.filterListeners(inheritanceTree).map(args => {
+            return new EntityListenerMetadata(args);
         });
         return entityMetadata;
     }

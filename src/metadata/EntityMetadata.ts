@@ -1,5 +1,5 @@
 import {ColumnMetadata} from "./ColumnMetadata";
-import {PropertyTypeInFunction, RelationMetadata} from "./RelationMetadata";
+import {RelationMetadata} from "./RelationMetadata";
 import {IndexMetadata} from "./IndexMetadata";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
@@ -12,6 +12,8 @@ import {OrderByCondition} from "../find-options/OrderByCondition";
 import {OrmUtils} from "../util/OrmUtils";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
+import {EntityListenerMetadata} from "./EntityListenerMetadata";
+import {PropertyTypeInFunction} from "./types/PropertyTypeInFunction";
 
 /**
  * Contains all entity metadata.
@@ -157,6 +159,11 @@ export class EntityMetadata {
     embeddeds: EmbeddedMetadata[] = [];
 
     /**
+     * Entity listener metadatas.
+     */
+    listeners: EntityListenerMetadata[] = [];
+
+    /**
      * If this entity metadata's table using one of the inheritance patterns,
      * then this will contain what pattern it uses.
      */
@@ -179,9 +186,9 @@ export class EntityMetadata {
     generatedColumn?: ColumnMetadata;
 
     /**
-     * Gets the primary columns.
+     * Gets the object id column used with mongodb database.
      */
-    primaryColumns: ColumnMetadata[] = [];
+    objectIdColumn?: ColumnMetadata;
 
     /**
      * Gets entity column which contains a create date value.
@@ -203,14 +210,20 @@ export class EntityMetadata {
      */
     discriminatorColumn?: ColumnMetadata;
 
+    /**
+     * Special column that stores tree level in tree entities.
+     */
     treeLevelColumn?: ColumnMetadata;
 
-    parentIdColumns: ColumnMetadata[] = [];
+    /**
+     * Gets the primary columns.
+     */
+    primaryColumns: ColumnMetadata[] = [];
 
     /**
-     * Gets the object id column used with mongodb database.
+     * Id columns in the parent table (used in table inheritance).
      */
-    objectIdColumn?: ColumnMetadata;
+    parentIdColumns: ColumnMetadata[] = [];
 
     /**
      * Gets only one-to-one relations of the entity.
@@ -556,6 +569,10 @@ export class EntityMetadata {
     /**
      * Creates a special object - all columns and relations of the object (plus columns and relations from embeds)
      * in a special format - { propertyName: propertyName }.
+     *
+     * example: Post{ id: number, name: string, counterEmbed: { count: number }, category: Category }.
+     * This method will create following object:
+     * { id: "id", counterEmbed: { count: "counterEmbed.count" }, category: "category" }
      */
     createPropertiesMap(): { [name: string]: string|any } {
         const map: { [name: string]: string|any } = {};

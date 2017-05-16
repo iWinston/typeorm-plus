@@ -55,6 +55,6 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
             inverseSideProperty: inverseSideProperty,
             options: options
         };
-        getMetadataArgsStorage().relations.add(args);
+        getMetadataArgsStorage().relations.push(args);
     };
 }

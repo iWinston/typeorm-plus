@@ -22,7 +22,7 @@ export function TreeLevelColumn(): Function {
             mode: "treeLevel",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

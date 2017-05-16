@@ -27,7 +27,7 @@ export function TreeParent(options?: { cascadeInsert?: boolean, cascadeUpdate?: 
             type: () => object.constructor,
             options: options
         };
-        getMetadataArgsStorage().relations.add(args);
+        getMetadataArgsStorage().relations.push(args);
     };
 }
 

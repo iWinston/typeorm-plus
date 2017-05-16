@@ -1,13 +1,13 @@
 import {EntitySchema} from "./EntitySchema";
 import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
-import {ColumnMode} from "../metadata/ColumnMetadata";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {JoinTableOptions} from "../decorator/options/JoinTableOptions";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
+import {ColumnMode} from "../metadata/types/ColumnMode";
 
 export class EntitySchemaTransformer {
 
@@ -28,7 +28,7 @@ export class EntitySchemaTransformer {
                 type: tableSchema.type || "regular",
                 orderBy: tableSchema.orderBy
             };
-            metadataArgsStorage.tables.add(table);
+            metadataArgsStorage.tables.push(table);
 
             // add columns metadata args from the schema
             Object.keys(schema.columns).forEach(columnName => {
@@ -64,7 +64,7 @@ export class EntitySchemaTransformer {
                     }
                 };
 
-                metadataArgsStorage.columns.add(column);
+                metadataArgsStorage.columns.push(column);
             });
 
             // add relation metadata args from the schema
@@ -90,7 +90,7 @@ export class EntitySchemaTransformer {
                         }
                     };
 
-                    metadataArgsStorage.relations.add(relation);
+                    metadataArgsStorage.relations.push(relation);
 
                     // add join column
                     if (relationSchema.joinColumn) {
@@ -99,7 +99,7 @@ export class EntitySchemaTransformer {
                                 target: schema.target || schema.name,
                                 propertyName: relationName
                             };
-                            metadataArgsStorage.joinColumns.add(joinColumn);
+                            metadataArgsStorage.joinColumns.push(joinColumn);
                         } else {
                             const joinColumn: JoinColumnMetadataArgs = {
                                 target: schema.target || schema.name,
@@ -107,7 +107,7 @@ export class EntitySchemaTransformer {
                                 name: relationSchema.joinColumn.name,
                                 referencedColumnName: relationSchema.joinColumn.referencedColumnName
                             };
-                            metadataArgsStorage.joinColumns.add(joinColumn);
+                            metadataArgsStorage.joinColumns.push(joinColumn);
                         }
                     }
 
@@ -118,7 +118,7 @@ export class EntitySchemaTransformer {
                                 target: schema.target || schema.name,
                                 propertyName: relationName
                             };
-                            metadataArgsStorage.joinTables.add(joinTable);
+                            metadataArgsStorage.joinTables.push(joinTable);
                         } else {
                             const joinTable: JoinTableMetadataArgs = {
                                 target: schema.target || schema.name,
@@ -127,7 +127,7 @@ export class EntitySchemaTransformer {
                                 joinColumns: ((relationSchema.joinTable as JoinTableOptions).joinColumn ? [(relationSchema.joinTable as JoinTableOptions).joinColumn!] : (relationSchema.joinTable as JoinTableMultipleColumnsOptions).joinColumns) as any,
                                 inverseJoinColumns: ((relationSchema.joinTable as JoinTableOptions).inverseJoinColumn ? [(relationSchema.joinTable as JoinTableOptions).inverseJoinColumn!] : (relationSchema.joinTable as JoinTableMultipleColumnsOptions).inverseJoinColumns) as any,
                             };
-                            metadataArgsStorage.joinTables.add(joinTable);
+                            metadataArgsStorage.joinTables.push(joinTable);
                         }
                     }
                 });

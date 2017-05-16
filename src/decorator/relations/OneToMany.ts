@@ -31,7 +31,7 @@ export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>, invers
             inverseSideProperty: inverseSide,
             options: options
         };
-        getMetadataArgsStorage().relations.add(args);
+        getMetadataArgsStorage().relations.push(args);
     };
 }
 

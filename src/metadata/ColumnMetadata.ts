@@ -5,14 +5,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
-
-/**
- * Kinda type of the column. Not a type in the database, but locally used type to determine what kind of column
- * we are working with.
- * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
- * date column.
- */
-export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId"|"objectId"|"array";
+import {ColumnMode} from "./types/ColumnMode";
 
 /**
  * This metadata contains all information about entity's column.

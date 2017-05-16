@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Post} from "./entity/Post";
 import {ContentModule} from "./entity/ContentModule";
 import {Unit} from "./entity/Unit";
-import {MetadataUtils} from "../../../../src/metadata-args/MetadataUtils";
+import {MetadataUtils} from "../../../../src/metadata-builder/MetadataUtils";
 
 describe("metadata builder > MetadataArgsUtils", () => {
 

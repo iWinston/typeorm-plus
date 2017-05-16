@@ -14,7 +14,7 @@ export function RelationId<T>(relation: string|((object: T) => any), alias?: str
             alias: alias,
             queryBuilderFactory: queryBuilderFactory
         };
-        getMetadataArgsStorage().relationIds.add(args);
+        getMetadataArgsStorage().relationIds.push(args);
     };
 }
 

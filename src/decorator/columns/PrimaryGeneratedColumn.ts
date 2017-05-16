@@ -37,7 +37,7 @@ export function PrimaryGeneratedColumn(options?: ColumnOptions): Function {
             mode: "regular",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

@@ -3,7 +3,6 @@ import {Repository} from "../repository/Repository";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {ObjectType} from "../common/ObjectType";
-import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
 import {getFromContainer, getMetadataArgsStorage} from "../index";
@@ -95,11 +94,6 @@ export class Connection {
      * Stores all entity repository instances.
      */
     private readonly entityRepositories: Object[] = [];
-
-    /**
-     * Entity listeners that are registered for this connection.
-     */
-    private readonly entityListeners: EntityListenerMetadata[] = [];
 
     /**
      * Entity subscribers that are registered for this connection.
@@ -580,7 +574,7 @@ export class Connection {
      * Gets custom entity repository marked with @EntityRepository decorator.
      */
     getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.toArray().find(repository => {
+        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
             return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
         });
         if (!entityRepositoryMetadataArgs)
@@ -634,7 +628,7 @@ export class Connection {
      * If given custom repository does not manage any entity then undefined will be returned.
      */
     getCustomRepositoryTarget<T>(customRepository: any): Function|string|undefined {
-        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.toArray().find(repository => {
+        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
             return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
         });
         if (!entityRepositoryMetadataArgs)
@@ -671,7 +665,6 @@ export class Connection {
     public buildMetadatas() {
 
         this.entitySubscribers.length = 0;
-        this.entityListeners.length = 0;
         this.repositoryAggregators.length = 0;
         this.entityMetadatas.length = 0;
 
@@ -682,20 +675,13 @@ export class Connection {
         // take imported event subscribers
         if (this.subscriberClasses && this.subscriberClasses.length && !PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
             getMetadataArgsStorage()
-                .entitySubscribers
-                .filterByTargets(this.subscriberClasses)
-                .toArray()
+                .filterSubscribers(this.subscriberClasses)
                 .map(metadata => getFromContainer(metadata.target))
                 .forEach(subscriber => this.entitySubscribers.push(subscriber));
         }
 
         // take imported entity listeners
         if (this.entityClasses && this.entityClasses.length) {
-            getMetadataArgsStorage()
-                .entityListeners
-                .filterByTargets(this.entityClasses)
-                .toArray()
-                .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
 
             // build entity metadatas from metadata args storage (collected from decorators)
             new EntityMetadataBuilder(this, getMetadataArgsStorage())
@@ -731,9 +717,7 @@ export class Connection {
 
         // try to find used naming strategy in the list of loaded naming strategies
         const namingMetadata = getMetadataArgsStorage()
-            .namingStrategies
-            .filterByTargets(this.namingStrategyClasses)
-            .toArray()
+            .filterNamingStrategies(this.namingStrategyClasses)
             .find(strategy => {
                 if (typeof this.usedNamingStrategy === "string") {
                     return strategy.name === this.usedNamingStrategy;
@@ -764,7 +748,7 @@ export class Connection {
      * Creates a new entity broadcaster using in this connection.
      */
     protected createBroadcaster() {
-        return new Broadcaster(this, this.entitySubscribers, this.entityListeners);
+        return new Broadcaster(this, this.entitySubscribers);
     }
 
     /**

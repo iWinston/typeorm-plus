@@ -1,22 +1,13 @@
 import {RelationType} from "./types/RelationTypes";
 import {EntityMetadata} from "./EntityMetadata";
-import {ForeignKeyMetadata, OnDeleteType} from "./ForeignKeyMetadata";
+import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
-
-/**
- * Function that returns a type of the field. Returned value must be a class used on the relation.
- */
-export type RelationTypeInFunction = ((type?: any) => Function)|Function|string; // todo: |string ?
-
-
-/**
- * Contains the name of the property of the object, or the function that returns this name.
- */
-export type PropertyTypeInFunction<T> = string|((t: T) => string|any);
+import {OnDeleteType} from "./types/OnDeleteType";
+import {PropertyTypeInFunction} from "./types/PropertyTypeInFunction";
 
 /**
  * Contains all information about some entity's relation.

@@ -29,6 +29,6 @@ export function EntityRepository(entityOrOptions?: Function|{ useContainer?: boo
             entity: entity,
             useContainer: !!(options && options.useContainer)
         };
-        getMetadataArgsStorage().entityRepositories.add(args);
+        getMetadataArgsStorage().entityRepositories.push(args);
     };
 }

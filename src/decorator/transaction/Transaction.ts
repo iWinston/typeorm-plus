@@ -22,9 +22,7 @@ export function Transaction(connectionName: string = "default"): Function {
 
                     // gets all @TransactionEntityManager() decorator usages for this method
                     const indices = getMetadataArgsStorage()
-                        .transactionEntityManagers
-                        .filterByTarget(target.constructor)
-                        .toArray()
+                        .filterTransactionEntityManagers(target.constructor)
                         .filter(transactionEntityManager => transactionEntityManager.methodName === methodName)
                         .map(transactionEntityManager => transactionEntityManager.index);
 

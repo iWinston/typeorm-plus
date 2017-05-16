@@ -14,6 +14,6 @@ export function AbstractEntity() {
             name: undefined,
             type: "abstract"
         };
-        getMetadataArgsStorage().tables.add(args);
+        getMetadataArgsStorage().tables.push(args);
     };
 }
