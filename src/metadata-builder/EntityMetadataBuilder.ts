@@ -15,7 +15,7 @@ import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
 import {Connection} from "../connection/Connection";
 
 /**
- * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
+ * Builds EntityMetadata objects and all its sub-metadatas.
  */
 export class EntityMetadataBuilder {
 
@@ -23,8 +23,19 @@ export class EntityMetadataBuilder {
     // Protected Properties
     // -------------------------------------------------------------------------
 
+    /**
+     * Used to build entity metadatas of the junction entities.
+     */
     protected junctionEntityMetadataBuilder: JunctionEntityMetadataBuilder;
+
+    /**
+     * Used to build entity metadatas of the closure junction entities.
+     */
     protected closureJunctionEntityMetadataBuilder: ClosureJunctionEntityMetadataBuilder;
+
+    /**
+     * Used to build join columns of the relations.
+     */
     protected relationJoinColumnBuilder: RelationJoinColumnBuilder;
 
     // -------------------------------------------------------------------------
@@ -239,26 +250,28 @@ export class EntityMetadataBuilder {
         });
     }
 
+    /**
+     * Creates indices for the table of single table inheritance.
+     */
     protected createKeysForTableInheritance(entityMetadata: EntityMetadata) {
-        const indexForKey = new IndexMetadata({
-            entityMetadata: entityMetadata,
-            columns: [entityMetadata.discriminatorColumn],
-            args: {
-                target: entityMetadata.target,
-                unique: false
-            }
-        });
-        entityMetadata.indices.push(indexForKey);
-
-        const indexForKeyWithPrimary = new IndexMetadata({
-            entityMetadata: entityMetadata,
-            columns: [entityMetadata.primaryColumns[0], entityMetadata.discriminatorColumn],
-            args: {
-                target: entityMetadata.target,
-                unique: false
-            }
-        });
-        entityMetadata.indices.push(indexForKeyWithPrimary);
+        entityMetadata.indices.push(
+            new IndexMetadata({
+                entityMetadata: entityMetadata,
+                columns: [entityMetadata.discriminatorColumn],
+                args: {
+                    target: entityMetadata.target,
+                    unique: false
+                }
+            }),
+            new IndexMetadata({
+                entityMetadata: entityMetadata,
+                columns: [...entityMetadata.primaryColumns, entityMetadata.discriminatorColumn],
+                args: {
+                    target: entityMetadata.target,
+                    unique: false
+                }
+            })
+        );
     }
 
 }

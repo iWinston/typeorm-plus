@@ -4,28 +4,36 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 
-// cases it should cover:
-// 1. when join column is set with custom name and without referenced column name
-// we need automatically set referenced column name - primary ids by default
-// @JoinColumn({ name: "custom_name" })
-// 2. when join column is set with only referenced column name
-// we need automatically set join column name - relation name + referenced column name
-// @JoinColumn({ referencedColumnName: "title" })
-// 3. when join column is set without both referenced column name and join column name
-// we need to automatically set both of them
-// @JoinColumn()
-// 4. when join column is not set at all (as in case of @ManyToOne relation)
-// we need to create join column for it with proper referenced column name and join column name
-// 5. when multiple join columns set none of referencedColumnName and name can be optional
-// both options are required
-// @JoinColumn([
-//  { name: "category_title", referencedColumnName: "type" },
-//  { name: "category_title", referencedColumnName: "name" },
-// ])
-
-// since for many-to-one relations having JoinColumn decorator is not required,
-// we need to go thought each many-to-one relation without join column decorator set
-// and create join column metadata args for them
+/**
+ * Builds join column for the many-to-one and one-to-one owner relations.
+ *
+ * Cases it should cover:
+ * 1. when join column is set with custom name and without referenced column name
+ * we need automatically set referenced column name - primary ids by default
+ * @JoinColumn({ name: "custom_name" })
+ *
+ * 2. when join column is set with only referenced column name
+ * we need automatically set join column name - relation name + referenced column name
+ * @JoinColumn({ referencedColumnName: "title" })
+ *
+ * 3. when join column is set without both referenced column name and join column name
+ * we need to automatically set both of them
+ * @JoinColumn()
+ *
+ * 4. when join column is not set at all (as in case of @ManyToOne relation)
+ * we need to create join column for it with proper referenced column name and join column name
+ *
+ * 5. when multiple join columns set none of referencedColumnName and name can be optional
+ * both options are required
+ * @JoinColumn([
+ *      { name: "category_title", referencedColumnName: "type" },
+ *      { name: "category_title", referencedColumnName: "name" },
+ * ])
+ *
+ * Since for many-to-one relations having JoinColumn decorator is not required,
+ * we need to go thought each many-to-one relation without join column decorator set
+ * and create join column metadata args for them.
+ */
 export class RelationJoinColumnBuilder {
 
     // -------------------------------------------------------------------------
@@ -39,12 +47,15 @@ export class RelationJoinColumnBuilder {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Builds a foreign key of the many-to-one or one-to-one owner relations.
+     */
     build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): ForeignKeyMetadata|undefined {
-        const referencedColumns = this.collectRelationReferencedColumns(joinColumns, relation);
+        const referencedColumns = this.collectReferencedColumns(joinColumns, relation);
         if (!referencedColumns.length)
             return undefined; // this case is possible only for one-to-one non owning side
 
-        const columns = this.collectRelationColumns(joinColumns, relation, referencedColumns);
+        const columns = this.collectColumns(joinColumns, relation, referencedColumns);
         return new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
@@ -58,7 +69,10 @@ export class RelationJoinColumnBuilder {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected collectRelationReferencedColumns(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): ColumnMetadata[] {
+    /**
+     * Collects referenced columns from the given join column args.
+     */
+    protected collectReferencedColumns(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): ColumnMetadata[] {
         const hasAnyReferencedColumnName = joinColumns.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
         const manyToOneWithoutJoinColumn = joinColumns.length === 0 && relation.isManyToOne;
         const hasJoinColumnWithoutAnyReferencedColumnName = joinColumns.length > 0 && !hasAnyReferencedColumnName;
@@ -77,7 +91,10 @@ export class RelationJoinColumnBuilder {
         }
     }
 
-    private collectRelationColumns(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata, referencedColumns: ColumnMetadata[]): ColumnMetadata[] {
+    /**
+     * Collects columns from the given join column args.
+     */
+    private collectColumns(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata, referencedColumns: ColumnMetadata[]): ColumnMetadata[] {
         return referencedColumns.map(referencedColumn => {
 
             // in the case if relation has join column with only name set we need this check
