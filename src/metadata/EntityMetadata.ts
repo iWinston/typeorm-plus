@@ -462,10 +462,8 @@ export class EntityMetadata {
      * For example, for Post{ id: 1, title: "hello" } where id is primary it will return { id: 1 }
      * For multiple primary keys it returns multiple keys in object.
      * For primary keys inside embeds it returns complex object literal with keys in them.
-     *
-     * @stable
      */
-    getEntityIdMap(entity: any): ObjectLiteral|undefined {
+    getEntityIdMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
         if (!entity) // todo: shall it accept an empty entity? try to remove this
             return undefined;
 
@@ -494,21 +492,19 @@ export class EntityMetadata {
     }
 
     /**
-     * todo: undefined entities should not go there??
-     * todo: shouldnt be entity ObjectLiteral here?
-     *
-     * @deprecated
+     * Creates a "mixed id map".
+     * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
+     * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
+     * This is called mixed id map.
      */
-    getEntityIdMixedMap(entity: any): any {
-        if (!entity)
+    getEntityIdMixedMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
+        if (!entity) // todo: undefined entities should not go there??
             return undefined;
 
         const idMap = this.getEntityIdMap(entity);
         if (this.hasMultiplePrimaryKeys) {
             return idMap;
-
         } else if (idMap) {
-            // console.log("value:", this.firstPrimaryColumn.getEntityValue(idMap));
             return idMap[this.primaryColumns[0].propertyName]; // todo: what about parent primary column?
         }
 
@@ -543,9 +539,12 @@ export class EntityMetadata {
     }
 
     // ---------------------------------------------------------------------
-    // Public Methods
+    // Public Builder Methods
     // ---------------------------------------------------------------------
 
+    /**
+     * Registers a new column in the entity and recomputes all depend properties.
+     */
     registerColumn(column: ColumnMetadata) {
         this.ownColumns.push(column);
         this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
@@ -554,6 +553,10 @@ export class EntityMetadata {
         this.propertiesMap = this.createPropertiesMap();
     }
 
+    /**
+     * Creates a special object - all columns and relations of the object (plus columns and relations from embeds)
+     * in a special format - { propertyName: propertyName }.
+     */
     createPropertiesMap(): { [name: string]: string|any } {
         const map: { [name: string]: string|any } = {};
         this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
