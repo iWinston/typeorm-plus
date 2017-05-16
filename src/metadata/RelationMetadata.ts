@@ -383,7 +383,9 @@ export class RelationMetadata {
         this.inverseJoinColumns = this.foreignKeys[1] ? this.foreignKeys[1].columns : [];
         this.isOwning = this.isManyToOne || ((this.isManyToMany || this.isOneToOne) && this.joinColumns.length > 0);
         this.isOneToOneOwner = this.isOneToOne && this.isOwning;
+        this.isOneToOneNotOwner = this.isOneToOne && !this.isOwning;
         this.isManyToManyOwner = this.isManyToMany && this.isOwning;
+        this.isManyToManyNotOwner = this.isManyToMany && !this.isOwning;
         this.isWithJoinColumn = this.isManyToOne || this.isOneToOneOwner;
     }
 

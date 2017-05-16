@@ -36,4 +36,19 @@ describe.skip("benchmark > bulk-save", () => {
 
     })));
 
+    /**
+     * Before getters refactoring
+     *
+     √ testing bulk save of 1000 objects (3149ms)
+     √ testing bulk save of 1000 objects (2008ms)
+     √ testing bulk save of 1000 objects (1893ms)
+     √ testing bulk save of 1000 objects (1744ms)
+     √ testing bulk save of 1000 objects (1836ms)
+     √ testing bulk save of 1000 objects (1787ms)
+     √ testing bulk save of 1000 objects (1904ms)
+     √ testing bulk save of 1000 objects (1848ms)
+     √ testing bulk save of 1000 objects (1947ms)
+     √ testing bulk save of 1000 objects (2004ms)
+     */
+
 });

@@ -1,5 +1,4 @@
 import {RelationIdAttribute} from "./RelationIdAttribute";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {QueryBuilder} from "../QueryBuilder";
 import {Connection} from "../../connection/Connection";
 import {QueryRunnerProvider} from "../../query-runner/QueryRunnerProvider";
@@ -27,11 +26,11 @@ export class RelationIdLoader {
 
             if (relationIdAttr.relation.isManyToOne || relationIdAttr.relation.isOneToOneOwner) {
                 // example: Post and Tag
-                // loadRelationIdAndMap("post.tagId", "post.tag") post_tag
+                // loadRelationIdAndMap("post.tagId", "post.tag")
                 // we expect it to load id of tag
 
                 if (relationIdAttr.queryBuilderFactory)
-                    throw new Error(""); // todo: fix
+                    throw new Error("Additional condition can not be used with ManyToOne or OneToOne owner relations.");
 
                 const results = rawEntities.map(rawEntity => {
                     const result: ObjectLiteral = {};
@@ -166,13 +165,6 @@ export class RelationIdLoader {
         });
 
         return Promise.all(promises);
-    }
-
-    protected createIdMap(columns: ColumnMetadata[], parentAlias: string, rawEntity: any) {
-        return columns.reduce((idMap, primaryColumn) => {
-            idMap[primaryColumn.propertyName] = rawEntity[parentAlias + "_" + primaryColumn.databaseName];
-            return idMap;
-        }, {} as ObjectLiteral);
     }
 
 }

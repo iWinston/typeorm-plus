@@ -199,6 +199,7 @@ export class RawSqlResultsToEntityTransformer {
             }
             hasData = true;
         });
+
         return hasData;
     }
 
