@@ -1,12 +1,9 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
-import {Driver} from "../driver/Driver";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationIdMetadata} from "../metadata/RelationIdMetadata";
 import {RelationCountMetadata} from "../metadata/RelationCountMetadata";
@@ -15,18 +12,12 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {JunctionEntityMetadataBuilder} from "./JunctionEntityMetadataBuilder";
 import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetadataBuilder";
 import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
+import {Connection} from "../connection/Connection";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
  */
 export class EntityMetadataBuilder {
-
-    // todo: type in function validation, inverse side function validation
-    // todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
-    // todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
-    // todo: check if multiple tree parent metadatas in validator
-    // todo: tree decorators can be used only on closure table (validation)
-    // todo: throw error if parent tree metadata was not specified in a closure table
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -40,13 +31,10 @@ export class EntityMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private driver: Driver,
-                private lazyRelationsWrapper: LazyRelationsWrapper,
-                private metadataArgsStorage: MetadataArgsStorage,
-                private namingStrategy: NamingStrategyInterface) {
-        this.junctionEntityMetadataBuilder = new JunctionEntityMetadataBuilder(driver, lazyRelationsWrapper, namingStrategy);
-        this.closureJunctionEntityMetadataBuilder = new ClosureJunctionEntityMetadataBuilder(driver, lazyRelationsWrapper, namingStrategy);
-        this.relationJoinColumnBuilder = new RelationJoinColumnBuilder(namingStrategy);
+    constructor(private connection: Connection, private metadataArgsStorage: MetadataArgsStorage) {
+        this.junctionEntityMetadataBuilder = new JunctionEntityMetadataBuilder(connection);
+        this.closureJunctionEntityMetadataBuilder = new ClosureJunctionEntityMetadataBuilder(connection);
+        this.relationJoinColumnBuilder = new RelationJoinColumnBuilder(connection);
     }
 
     // -------------------------------------------------------------------------
@@ -132,7 +120,7 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter(relation => relation.isLazy)
                     .forEach(relation => {
-                        this.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                        this.connection.driver.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
                     });
             });
 
@@ -156,14 +144,8 @@ export class EntityMetadataBuilder {
             ? MetadataUtils.getInheritanceTree(tableArgs.target)
             : [tableArgs.target]; // todo: implement later here inheritance for string-targets
 
-        const entityMetadata = new EntityMetadata({
-            namingStrategy: this.namingStrategy,
-            lazyRelationsWrapper: this.lazyRelationsWrapper,
-            tablesPrefix: this.driver.options.tablesPrefix,
-            args: tableArgs
-        });
+        const entityMetadata = new EntityMetadata({ connection: this.connection, args: tableArgs });
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(inheritanceTree));
-
         entityMetadata.ownColumns = this.metadataArgsStorage.filterColumns(inheritanceTree).map(args => {
             return new ColumnMetadata({ entityMetadata, args });
         });
@@ -205,13 +187,13 @@ export class EntityMetadataBuilder {
      * Computes all entity metadata's computed properties, and all its sub-metadatas (relations, columns, embeds, etc).
      */
     protected computeEntityMetadata(entityMetadata: EntityMetadata) {
-        entityMetadata.embeddeds.forEach(embedded => embedded.build(this.namingStrategy));
+        entityMetadata.embeddeds.forEach(embedded => embedded.build(this.connection.driver.namingStrategy));
         entityMetadata.embeddeds.forEach(embedded => {
-            embedded.columnsFromTree.forEach(column => column.build(this.namingStrategy));
-            embedded.relationsFromTree.forEach(relation => relation.build(this.namingStrategy));
+            embedded.columnsFromTree.forEach(column => column.build(this.connection.driver.namingStrategy));
+            embedded.relationsFromTree.forEach(relation => relation.build(this.connection.driver.namingStrategy));
         });
-        entityMetadata.ownColumns.forEach(column => column.build(this.namingStrategy));
-        entityMetadata.ownRelations.forEach(relation => relation.build(this.namingStrategy));
+        entityMetadata.ownColumns.forEach(column => column.build(this.connection.driver.namingStrategy));
+        entityMetadata.ownRelations.forEach(relation => relation.build(this.connection.driver.namingStrategy));
         entityMetadata.relations = entityMetadata.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), entityMetadata.ownRelations);
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(relation => relation.isOneToOne);
         entityMetadata.oneToManyRelations = entityMetadata.relations.filter(relation => relation.isOneToMany);
@@ -232,8 +214,8 @@ export class EntityMetadataBuilder {
         entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.mode === "treeLevel")!; // todo: fix ! later
         entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.mode === "parentId")!; // todo: fix ! later
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.mode === "objectId")!; // todo: fix ! later
-        entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.namingStrategy));
-        entityMetadata.indices.forEach(index => index.build(this.namingStrategy));
+        entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.driver.namingStrategy));
+        entityMetadata.indices.forEach(index => index.build(this.connection.driver.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
     }
 

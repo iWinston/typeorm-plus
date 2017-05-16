@@ -12,6 +12,7 @@ import {OrderByCondition} from "../find-options/OrderByCondition";
 import {OrmUtils} from "../util/OrmUtils";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
+import {Connection} from "../connection/Connection";
 
 /**
  * Contains all entity metadata.
@@ -320,13 +321,13 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        namingStrategy: NamingStrategyInterface,
-        lazyRelationsWrapper: LazyRelationsWrapper,
+        connection: Connection,
         parentClosureEntityMetadata?: EntityMetadata,
-        tablesPrefix?: string,
         args: TableMetadataArgs
     }) {
-        this.lazyRelationsWrapper = options.lazyRelationsWrapper;
+        const namingStrategy = options.connection.driver.namingStrategy;
+        const tablesPrefix = options.connection.driver.options.tablesPrefix;
+        this.lazyRelationsWrapper = options.connection.driver.lazyRelationsWrapper;
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.target = options.args.target;
         this.tableType = options.args.type;
@@ -334,10 +335,8 @@ export class EntityMetadata {
         this.givenTableName = options.args.name;
         this.skipSchemaSync = options.args.skipSchemaSync || false;
         this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
-        this.tableNameWithoutPrefix = this.tableType === "closure-junction"
-            ? options.namingStrategy.closureJunctionTableName(this.givenTableName!)
-            : options.namingStrategy.tableName(this.targetName, this.givenTableName);
-        this.tableName = options.tablesPrefix ? options.namingStrategy.prefixTableName(options.tablesPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
+        this.tableNameWithoutPrefix = this.tableType === "closure-junction" ? namingStrategy.closureJunctionTableName(this.givenTableName!) : namingStrategy.tableName(this.targetName, this.givenTableName);
+        this.tableName = tablesPrefix ? namingStrategy.prefixTableName(tablesPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
 

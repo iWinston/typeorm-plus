@@ -12,6 +12,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Organizes communication with MongoDB.
@@ -26,6 +27,11 @@ export class MongoDriver implements Driver {
      * Naming strategy used in the connection where this driver is used.
      */
     namingStrategy: NamingStrategyInterface;
+
+    /**
+     * Used to wrap lazy relations to be able to perform lazy loadings.
+     */
+    lazyRelationsWrapper: LazyRelationsWrapper;
 
     /**
      * Mongodb does not require to dynamically create query runner each time,

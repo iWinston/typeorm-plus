@@ -5,6 +5,12 @@ import {DepGraph} from "../util/DepGraph";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
+// todo: type in function validation, inverse side function validation
+// todo: check on build for duplicate names, since naming checking was removed from MetadataStorage
+// todo: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
+// todo: check if multiple tree parent metadatas in validator
+// todo: tree decorators can be used only on closure table (validation)
+// todo: throw error if parent tree metadata was not specified in a closure table
 
 /**
  * Validates built entity metadatas.

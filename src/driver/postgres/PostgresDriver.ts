@@ -14,6 +14,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 
 // todo(tests):
 // check connection with url
@@ -33,6 +34,11 @@ export class PostgresDriver implements Driver {
      * Naming strategy used in the connection where this driver is used.
      */
     namingStrategy: NamingStrategyInterface;
+
+    /**
+     * Used to wrap lazy relations to be able to perform lazy loadings.
+     */
+    lazyRelationsWrapper: LazyRelationsWrapper;
 
     /**
      * Driver connection options.

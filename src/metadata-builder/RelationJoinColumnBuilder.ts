@@ -1,8 +1,8 @@
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
+import {Connection} from "../connection/Connection";
 
 // cases it should cover:
 // 1. when join column is set with custom name and without referenced column name
@@ -32,7 +32,7 @@ export class RelationJoinColumnBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private namingStrategy: NamingStrategyInterface) {
+    constructor(private connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -48,7 +48,7 @@ export class RelationJoinColumnBuilder {
         return new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
-            namingStrategy: this.namingStrategy,
+            namingStrategy: this.connection.driver.namingStrategy,
             columns: columns,
             referencedColumns: referencedColumns,
             onDelete: relation.onDelete,
@@ -85,7 +85,7 @@ export class RelationJoinColumnBuilder {
                 return (!joinColumn.referencedColumnName || joinColumn.referencedColumnName === referencedColumn.propertyName) &&
                     !!joinColumn.name;
             });
-            const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
+            const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.connection.driver.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
 
             let relationalColumn = relation.entityMetadata.ownColumns.find(column => column.databaseName === joinColumnName);
             if (!relationalColumn) {
@@ -103,7 +103,7 @@ export class RelationJoinColumnBuilder {
                         }
                     }
                 });
-                relationalColumn.build(this.namingStrategy);
+                relationalColumn.build(this.connection.driver.namingStrategy);
                 relation.entityMetadata.registerColumn(relationalColumn);
             }
             relationalColumn.referencedColumn = referencedColumn; // its important to set it here because we need to set referenced column for user defined join column

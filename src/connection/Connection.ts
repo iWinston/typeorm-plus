@@ -675,9 +675,8 @@ export class Connection {
         this.repositoryAggregators.length = 0;
         this.entityMetadatas.length = 0;
 
-        const namingStrategy = this.createNamingStrategy();
-        this.driver.namingStrategy = namingStrategy;
-        const lazyRelationsWrapper = this.createLazyRelationsWrapper();
+        this.driver.namingStrategy = this.createNamingStrategy(); // todo: why they are in the driver
+        this.driver.lazyRelationsWrapper = this.createLazyRelationsWrapper(); // todo: why they are in the driver
         const entityMetadataValidator = new EntityMetadataValidator();
 
         // take imported event subscribers
@@ -699,7 +698,7 @@ export class Connection {
                 .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
 
             // build entity metadatas from metadata args storage (collected from decorators)
-            new EntityMetadataBuilder(this.driver, lazyRelationsWrapper, getMetadataArgsStorage(), namingStrategy)
+            new EntityMetadataBuilder(this, getMetadataArgsStorage())
                 .build(this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
@@ -710,7 +709,7 @@ export class Connection {
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
             const metadataArgsStorage = getFromContainer(EntitySchemaTransformer).transform(this.entitySchemas);
-            new EntityMetadataBuilder(this.driver, lazyRelationsWrapper, metadataArgsStorage, namingStrategy)
+            new EntityMetadataBuilder(this, metadataArgsStorage)
                 .build()
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);

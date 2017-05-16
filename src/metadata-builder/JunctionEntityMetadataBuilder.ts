@@ -1,12 +1,10 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
-import {Driver} from "../driver/Driver";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
+import {Connection} from "../connection/Connection";
 
 export class JunctionEntityMetadataBuilder {
 
@@ -14,9 +12,7 @@ export class JunctionEntityMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private driver: Driver,
-                private lazyRelationsWrapper: LazyRelationsWrapper,
-                private namingStrategy: NamingStrategyInterface) {
+    constructor(private connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -27,7 +23,7 @@ export class JunctionEntityMetadataBuilder {
         const referencedColumns = this.collectRelationReferencedColumns(relation, joinTable);
         const inverseReferencedColumns = this.collectRelationInverseReferencedColumns(relation, joinTable);
 
-        const joinTableName = joinTable.name || this.namingStrategy.joinTableName(
+        const joinTableName = joinTable.name || this.connection.driver.namingStrategy.joinTableName(
                 relation.entityMetadata.tableNameWithoutPrefix,
                 relation.inverseEntityMetadata.tableNameWithoutPrefix,
                 relation.propertyPath,
@@ -35,9 +31,7 @@ export class JunctionEntityMetadataBuilder {
             );
 
         const entityMetadata = new EntityMetadata({
-            lazyRelationsWrapper: this.lazyRelationsWrapper,
-            namingStrategy: this.namingStrategy,
-            tablesPrefix: this.driver.options.tablesPrefix,
+            connection: this.connection,
             args: {
                 target: "",
                 name: joinTableName,
@@ -49,7 +43,7 @@ export class JunctionEntityMetadataBuilder {
                 return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === referencedColumn.propertyName) &&
                     !!joinColumnArgs.name;
             }) : undefined;
-            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.propertyName, referencedColumn.givenDatabaseName);
+            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.driver.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.propertyName, referencedColumn.givenDatabaseName);
 
             return new ColumnMetadata({
                 entityMetadata: entityMetadata,
@@ -74,7 +68,7 @@ export class JunctionEntityMetadataBuilder {
                 return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === inverseReferencedColumn.propertyName) &&
                     !!joinColumnArgs.name;
             }) : undefined;
-            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.propertyName, inverseReferencedColumn.givenDatabaseName);
+            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.driver.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.propertyName, inverseReferencedColumn.givenDatabaseName);
 
             return new ColumnMetadata({
                 entityMetadata: entityMetadata,

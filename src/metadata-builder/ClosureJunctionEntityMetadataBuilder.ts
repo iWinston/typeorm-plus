@@ -1,10 +1,8 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
-import {Driver} from "../driver/Driver";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
+import {Connection} from "../connection/Connection";
 
 export class ClosureJunctionEntityMetadataBuilder {
 
@@ -12,9 +10,7 @@ export class ClosureJunctionEntityMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private driver: Driver,
-                private lazyRelationsWrapper: LazyRelationsWrapper,
-                private namingStrategy: NamingStrategyInterface) {
+    constructor(private connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -24,9 +20,7 @@ export class ClosureJunctionEntityMetadataBuilder {
     build(parentClosureEntityMetadata: EntityMetadata) {
         const entityMetadata = new EntityMetadata({
             parentClosureEntityMetadata: parentClosureEntityMetadata,
-            lazyRelationsWrapper: this.lazyRelationsWrapper,
-            namingStrategy: this.namingStrategy,
-            tablesPrefix: this.driver.options.tablesPrefix,
+            connection: this.connection,
             args: {
                 target: "",
                 name: parentClosureEntityMetadata.tableNameWithoutPrefix,
