@@ -1,9 +1,8 @@
 import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
 import {Embedded} from "../../../../../../../src/decorator/Embedded";
 import {Category} from "./Category";
 import {Subcounters} from "./Subcounters";
+import {OneToMany} from "../../../../../../../src/decorator/relations/OneToMany";
 
 export class Counters {
 
@@ -16,8 +15,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @ManyToMany(type => Category, category => category.posts)
-    @JoinTable()
+    @OneToMany(type => Category, category => category.posts)
     categories: Category[];
 
     @Embedded(() => Subcounters)

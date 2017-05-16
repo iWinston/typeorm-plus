@@ -15,7 +15,7 @@ import {Subcounters} from "./entity/Subcounters";
 
 const should = chai.should();
 
-describe("query builder > relation-id > many-to-many > embedded", () => {
+describe("query builder > relation-id > many-to-one > embedded", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -36,25 +36,13 @@ describe("query builder > relation-id > many-to-many > embedded", () => {
         user2.name = "Bob";
         await connection.manager.persist(user2);
 
-        const user3 = new User();
-        user3.name = "Clara";
-        await connection.manager.persist(user3);
-
         const category1 = new Category();
         category1.name = "cars";
         await connection.manager.persist(category1);
 
         const category2 = new Category();
-        category2.name = "BMW";
+        category2.name = "airplanes";
         await connection.manager.persist(category2);
-
-        const category3 = new Category();
-        category3.name = "airplanes";
-        await connection.manager.persist(category3);
-
-        const category4 = new Category();
-        category4.name = "Boeing";
-        await connection.manager.persist(category4);
 
         const post1 = new Post();
         post1.title = "About BMW";
@@ -62,11 +50,11 @@ describe("query builder > relation-id > many-to-many > embedded", () => {
         post1.counters.likes = 1;
         post1.counters.comments = 2;
         post1.counters.favorites = 3;
-        post1.counters.categories = [category1, category2];
+        post1.counters.category = category1;
         post1.counters.subcounters = new Subcounters();
         post1.counters.subcounters.version = 1;
         post1.counters.subcounters.watches = 2;
-        post1.counters.subcounters.watchedUsers = [user1, user2];
+        post1.counters.subcounters.watchedUser = user1;
         await connection.manager.persist(post1);
 
         const post2 = new Post();
@@ -75,17 +63,17 @@ describe("query builder > relation-id > many-to-many > embedded", () => {
         post2.counters.likes = 3;
         post2.counters.comments = 4;
         post2.counters.favorites = 5;
-        post2.counters.categories = [category3, category4];
+        post2.counters.category = category2;
         post2.counters.subcounters = new Subcounters();
         post2.counters.subcounters.version = 1;
         post2.counters.subcounters.watches = 1;
-        post2.counters.subcounters.watchedUsers = [user3];
+        post2.counters.subcounters.watchedUser = user2;
         await connection.manager.persist(post2);
 
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.counters.categoryIds", "post.counters.categories")
-            .loadRelationIdAndMap("post.counters.subcounters.watchedUserIds", "post.counters.subcounters.watchedUsers")
+            .loadRelationIdAndMap("post.counters.categoryId", "post.counters.category")
+            .loadRelationIdAndMap("post.counters.subcounters.watchedUserId", "post.counters.subcounters.watchedUser")
             .orderBy("post.id")
             .getMany();
 
@@ -97,11 +85,11 @@ describe("query builder > relation-id > many-to-many > embedded", () => {
                     likes: 1,
                     comments: 2,
                     favorites: 3,
-                    categoryIds: [1, 2],
+                    categoryId: 1,
                     subcounters: {
                         version: 1,
                         watches: 2,
-                        watchedUserIds: [1, 2]
+                        watchedUserId: 1
                     }
                 }
             }
@@ -114,11 +102,11 @@ describe("query builder > relation-id > many-to-many > embedded", () => {
                     likes: 3,
                     comments: 4,
                     favorites: 5,
-                    categoryIds: [3, 4],
+                    categoryId: 2,
                     subcounters: {
                         version: 1,
                         watches: 1,
-                        watchedUserIds: [3]
+                        watchedUserId: 2
                     }
                 }
             }
