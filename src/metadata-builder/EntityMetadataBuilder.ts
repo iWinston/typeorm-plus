@@ -125,6 +125,11 @@ export class EntityMetadataBuilder {
             .filter(metadata => metadata.inheritanceType === "single-table")
             .forEach(entityMetadata => this.createKeysForTableInheritance(entityMetadata));
 
+        // build all indices (need to do it after relations and their join columns are built)
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.indices.forEach(index => index.build(this.connection.driver.namingStrategy));
+        });
+
         // add lazy initializer for entity relations
         entityMetadatas
             .filter(metadata => metadata.target instanceof Function)
@@ -230,7 +235,6 @@ export class EntityMetadataBuilder {
         entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.mode === "parentId");
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.mode === "objectId");
         entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.driver.namingStrategy));
-        entityMetadata.indices.forEach(index => index.build(this.connection.driver.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
     }
 

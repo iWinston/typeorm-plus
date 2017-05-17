@@ -101,7 +101,7 @@ export class IndexMetadata {
             // todo: better to extract all validation into single place if possible
             const missingColumnNames = columnPropertyNames.filter(columnPropertyName => {
                 return !this.entityMetadata.columns.find(column => column.propertyPath === columnPropertyName) &&
-                    !this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && columnPropertyNames.indexOf(relation.propertyName) !== -1);
+                    !this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && relation.propertyPath === columnPropertyName);
             });
             if (missingColumnNames.length > 0) {
                 throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));

@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {PostMetadata} from "./entity/PostMetadata";
 
-describe("github issues > #151 joinAndSelect can't find entity from inverse side of relation", () => {
+describe.skip("github issues > #151 joinAndSelect can't find entity from inverse side of relation", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -49,7 +49,7 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
 
     })));
 
-    it("should cascade remove successfully with uni-directional relation", () => Promise.all(connections.map(async connection => {
+    it.only("should cascade remove successfully with uni-directional relation", () => Promise.all(connections.map(async connection => {
 
         const category = new Category();
         category.name = "post category";

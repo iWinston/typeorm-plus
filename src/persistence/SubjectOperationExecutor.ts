@@ -215,15 +215,15 @@ export class SubjectOperationExecutor {
 
                     // check if relation reference column is a relation
                     let relationId: any;
-                    const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === joinColumn.referencedColumn!.propertyName);
+                    const columnRelation = relation.inverseEntityMetadata.findRelationWithPropertyPath(joinColumn.referencedColumn!.propertyPath);
                     if (columnRelation) { // if referenced column is a relation
-                        const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === relatedEntity[referencedColumn.propertyName]);
+                        const insertSubject = this.insertSubjects.find(insertedSubject => insertedSubject.entity === referencedColumn.getEntityValue(relatedEntity));
 
                         // if this relation was just inserted
                         if (insertSubject) {
 
                             // check if we have this relation id already
-                            relationId = relatedEntity[referencedColumn.propertyName][columnRelation.propertyName];
+                            relationId = columnRelation.getEntityValue(referencedColumn.getEntityValue(relatedEntity));
                             if (!relationId) {
 
                                 // if we don't have relation id then use special values
@@ -245,7 +245,7 @@ export class SubjectOperationExecutor {
                         if (insertSubject) {
 
                             // check if we have this relation id already
-                            relationId = relatedEntity[referencedColumn.propertyName];
+                            relationId = referencedColumn.getEntityValue(relatedEntity);
                             if (!relationId) {
 
                                 // if we don't have relation id then use special values
@@ -336,7 +336,7 @@ export class SubjectOperationExecutor {
                         const conditions: ObjectLiteral = {};
 
                         columns.forEach(column => {
-                            const entityValue = subRelatedEntity[column.propertyName];
+                            const entityValue = column.getEntityValue(subRelatedEntity);
 
                             // if entity id is a relation, then extract referenced column from that relation
                             const columnRelation = inverseEntityMetadata.relations.find(relation => relation.propertyName === column.propertyName);
@@ -484,7 +484,7 @@ export class SubjectOperationExecutor {
 
                 if (value) {
                     // if relation value is stored in the entity itself then use it from there
-                    const relationId = value[joinColumn.referencedColumn!.propertyName]; // relation.getInverseEntityRelationId(value); // todo: check it
+                    const relationId = joinColumn.referencedColumn!.getEntityValue(value); // relation.getInverseEntityRelationId(value); // todo: check it
                     if (relationId) {
                         relationValue = relationId;
                     }

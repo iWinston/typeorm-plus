@@ -107,7 +107,7 @@ export class LazyRelationsWrapper {
 
         joinColumns.forEach(joinColumn => {
             qb.andWhere(`${relation.entityMetadata.name}.${joinColumn.referencedColumn!.databaseName} = :${joinColumn.referencedColumn!.databaseName}`)
-                .setParameter(`${joinColumn.referencedColumn!.databaseName}`, entity[joinColumn.referencedColumn!.databaseName]);
+                .setParameter(`${joinColumn.referencedColumn!.databaseName}`, joinColumn.referencedColumn!.getEntityValue(entity));
         });
         return qb.getOne();
     }
@@ -126,7 +126,7 @@ export class LazyRelationsWrapper {
 
         relation.inverseRelation.joinColumns.forEach(joinColumn => {
             qb.andWhere(`${relation.propertyName}.${joinColumn.propertyName} = :${joinColumn.referencedColumn!.propertyName}`)
-                .setParameter(`${joinColumn.referencedColumn!.propertyName}`, entity[joinColumn.referencedColumn!.propertyName]);
+                .setParameter(`${joinColumn.referencedColumn!.propertyName}`, joinColumn.referencedColumn!.getEntityValue(entity));
         });
         return relation.isOneToMany ? qb.getMany() : qb.getOne();
     }
@@ -150,7 +150,7 @@ export class LazyRelationsWrapper {
             return `${joinAlias}.${inverseJoinColumn.propertyName}=${mainAlias}.${inverseJoinColumn.referencedColumn!.propertyName}`;
         });
         const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
-            parameters[joinColumn.propertyName] = entity[joinColumn.referencedColumn!.propertyName];
+            parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(entity);
             return parameters;
         }, {} as ObjectLiteral);
 
@@ -181,7 +181,7 @@ export class LazyRelationsWrapper {
             return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;
         });
         const parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
-            parameters[joinColumn.propertyName] = entity[joinColumn.referencedColumn!.propertyName];
+            parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(entity);
             return parameters;
         }, {} as ObjectLiteral);
 

@@ -83,7 +83,7 @@ export class Connection {
     /**
      * Gets EntityManager of this connection.
      */
-    private readonly _entityManager: EntityManager;
+    readonly manager: EntityManager;
 
     /**
      * Stores all registered repositories.
@@ -143,7 +143,7 @@ export class Connection {
         this.name = name;
         this.driver = driver;
         this.logger = logger;
-        this._entityManager = this.createEntityManager();
+        this.manager = this.createEntityManager();
         this.broadcaster = this.createBroadcaster();
     }
 
@@ -164,14 +164,7 @@ export class Connection {
      * @deprecated use manager instead.
      */
     get entityManager(): EntityManager {
-        return this._entityManager;
-    }
-
-    /**
-     * Gets entity manager that allows to perform repository operations with any entity in this connection.
-     */
-    get manager(): EntityManager {
-        return this._entityManager;
+        return this.manager;
     }
 
     /**
@@ -179,10 +172,10 @@ export class Connection {
      * with any entity in this connection.
      */
     get mongoEntityManager(): MongoEntityManager {
-        if (!(this._entityManager instanceof MongoEntityManager))
+        if (!(this.manager instanceof MongoEntityManager))
             throw new Error(`MongoEntityManager is only available for MongoDB databases.`);
 
-        return this._entityManager as MongoEntityManager;
+        return this.manager as MongoEntityManager;
     }
 
     // -------------------------------------------------------------------------

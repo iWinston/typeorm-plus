@@ -6,10 +6,11 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {EventMember} from "./entity/EventMember";
 import {Event} from "./entity/Event";
+import {Person} from "./entity/Person";
 
 const should = chai.should();
 
-describe.skip("relations > multiple-primary-keys > other-cases", () => {
+describe("relations > multiple-primary-keys > other-cases", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -34,12 +35,24 @@ describe.skip("relations > multiple-primary-keys > other-cases", () => {
         user3.name = "Clara";
         await connection.manager.persist(user3);
 
+        const person1 = new Person();
+        person1.fullName = "Alice A";
+        person1.user = user1;
+        await connection.manager.persist(person1);
+
+        const person2 = new Person();
+        person2.fullName = "Bob B";
+        person2.user = user2;
+        await connection.manager.persist(person2);
+
         const event1 = new Event();
         event1.name = "Event #1";
+        event1.author = person1;
         await connection.manager.persist(event1);
 
         const event2 = new Event();
         event2.name = "Event #2";
+        event2.author = person2;
         await connection.manager.persist(event2);
 
         const eventMember1 = new EventMember();
@@ -64,16 +77,26 @@ describe.skip("relations > multiple-primary-keys > other-cases", () => {
 
         const loadedEvents = await connection.manager
             .createQueryBuilder(Event, "event")
+            .leftJoinAndSelect("event.author", "author")
+            .leftJoinAndSelect("author.user", "authorUser")
             .leftJoinAndSelect("event.members", "members")
             .leftJoinAndSelect("members.user", "user")
             .orderBy("event.id, user.id")
             .getMany();
 
+        expect(loadedEvents[0].author).to.not.be.empty;
+        expect(loadedEvents[0].author.fullName).to.be.equal("Alice A");
+        expect(loadedEvents[0].author.user).to.not.be.empty;
+        expect(loadedEvents[0].author.user.id).to.be.equal(1);
         expect(loadedEvents[0].members).to.not.be.empty;
         expect(loadedEvents[0].members[0].user.id).to.be.equal(1);
         expect(loadedEvents[0].members[0].user.name).to.be.equal("Alice");
         expect(loadedEvents[0].members[1].user.id).to.be.equal(2);
         expect(loadedEvents[0].members[1].user.name).to.be.equal("Bob");
+        expect(loadedEvents[1].author).to.not.be.empty;
+        expect(loadedEvents[1].author.fullName).to.be.equal("Bob B");
+        expect(loadedEvents[1].author.user).to.not.be.empty;
+        expect(loadedEvents[1].author.user.id).to.be.equal(2);
         expect(loadedEvents[1].members).to.not.be.empty;
         expect(loadedEvents[1].members[0].user.id).to.be.equal(1);
         expect(loadedEvents[1].members[0].user.name).to.be.equal("Alice");

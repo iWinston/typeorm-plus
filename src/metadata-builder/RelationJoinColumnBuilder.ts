@@ -111,7 +111,7 @@ export class RelationJoinColumnBuilder {
                     args: {
                         target: "",
                         mode: "virtual",
-                        propertyName: joinColumnName!,
+                        propertyName: relation.propertyName,
                         options: {
                             name: joinColumnName,
                             type: referencedColumn.type,

@@ -1428,7 +1428,11 @@ export class QueryBuilder<Entity> {
                 const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.databaseName) + "$2");
             });
-            alias.metadata.relationsWithJoinColumns/*.filter(relation => !relation.isInEmbedded)*/.forEach(relation => {
+            alias.metadata.relationsWithJoinColumns.forEach(relation => {
+                relation.joinColumns.forEach(joinColumn => {
+                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(joinColumn.databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+                });
                 const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
             });
@@ -1456,7 +1460,7 @@ export class QueryBuilder<Entity> {
             const relation = joinAttr.relation;
             const destinationTableName = joinAttr.tableName;
             const destinationTableAlias = joinAttr.alias.name;
-            const appendedCondition = joinAttr.condition ? " AND (" + this.replacePropertyNames(joinAttr.condition) + ")" : "";
+            const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
             const parentAlias = joinAttr.parentAlias;
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
@@ -1470,19 +1474,21 @@ export class QueryBuilder<Entity> {
 
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
                 const condition = relation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.databaseName) + "=" + ea(parentAlias) + "." + ec(joinColumn.propertyName);
+                    return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" +
+                        parentAlias + "." + relation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
-                return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
+                return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
                 const condition = relation.inverseRelation.joinColumns.map(joinColumn => {
-                    return ea(destinationTableAlias!) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.databaseName);
+                    return destinationTableAlias + "." + relation.inverseRelation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath + "=" +
+                        parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
-                return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + condition + appendedCondition;
+                return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else { // means many-to-many
                 const junctionTableName = relation.junctionEntityMetadata.tableName;
@@ -1494,29 +1500,29 @@ export class QueryBuilder<Entity> {
 
                     junctionCondition = relation.joinColumns.map(joinColumn => {
                         // `post_category`.`postId` = `post`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.databaseName);
+                        return junctionAlias + "." + joinColumn.propertyPath + "=" + parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                     }).join(" AND ");
 
                     destinationCondition = relation.inverseJoinColumns.map(joinColumn => {
                         // `category`.`id` = `post_category`.`categoryId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.databaseName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
+                        return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" + junctionAlias + "." + joinColumn.propertyPath;
                     }).join(" AND ");
 
                 } else {
                     junctionCondition = relation.inverseRelation.inverseJoinColumns.map(joinColumn => {
                         // `post_category`.`categoryId` = `category`.`id`
-                        return ea(junctionAlias) + "." + ec(joinColumn.propertyName) + "=" + ea(parentAlias) + "." + ec(joinColumn.referencedColumn!.databaseName);
+                        return junctionAlias + "." + joinColumn.propertyPath + "=" + parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                     }).join(" AND ");
 
                     destinationCondition = relation.inverseRelation.joinColumns.map(joinColumn => {
                         // `post`.`id` = `post_category`.`postId`
-                        return ea(destinationTableAlias) + "." + ec(joinColumn.referencedColumn!.databaseName) + "=" + ea(junctionAlias) + "." + ec(joinColumn.propertyName);
+                        return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" + junctionAlias + "." + joinColumn.propertyPath;
                     }).join(" AND ");
                 }
 
 
-                return " " + joinAttr.direction + " JOIN " + et(junctionTableName) + " " + ea(junctionAlias) + " ON " + junctionCondition +
-                       " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + destinationCondition + appendedCondition;
+                return " " + joinAttr.direction + " JOIN " + et(junctionTableName) + " " + ea(junctionAlias) + " ON " + this.replacePropertyNames(junctionCondition) +
+                       " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
 
             }
         });
@@ -1659,6 +1665,8 @@ export class QueryBuilder<Entity> {
             //         parameters["parentId_" + index] = id;
             //     }
             // }
+            // console.log(whereSubStrings);
+            // console.log(parameters);
             return whereSubStrings.join(" AND ");
         });
 
