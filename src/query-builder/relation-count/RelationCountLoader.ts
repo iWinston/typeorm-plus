@@ -31,7 +31,7 @@ export class RelationCountLoader {
 
                 // todo(dima): fix issues wit multiple primary keys and remove joinColumns[0]
                 const relation = relationCountAttr.relation; // "category.posts"
-                const inverseRelation = relation.inverseRelation; // "post.category"
+                const inverseRelation = relation.inverseRelation!; // "post.category"
                 const referenceColumnName = inverseRelation.joinColumns[0].referencedColumn!.propertyName; // post id
                 const inverseSideTable = relation.inverseEntityMetadata.target; // Post
                 const inverseSideTableName = relation.inverseEntityMetadata.tableName; // post
@@ -80,14 +80,14 @@ export class RelationCountLoader {
                 if (relationCountAttr.relation.isOwning) { // todo fix joinColumns[0] and inverseJoinColumns[0].
                     joinTableColumnName = relationCountAttr.relation.joinColumns[0].referencedColumn!.databaseName;
                     inverseJoinColumnName = relationCountAttr.relation.inverseJoinColumns[0].referencedColumn!.databaseName;
-                    firstJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columns[0];
-                    secondJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columns[1];
+                    firstJunctionColumn = relationCountAttr.relation.junctionEntityMetadata!.columns[0];
+                    secondJunctionColumn = relationCountAttr.relation.junctionEntityMetadata!.columns[1];
 
                 } else {
-                    joinTableColumnName = relationCountAttr.relation.inverseRelation.inverseJoinColumns[0].referencedColumn!.databaseName;
-                    inverseJoinColumnName = relationCountAttr.relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
-                    firstJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columns[1];
-                    secondJunctionColumn = relationCountAttr.relation.junctionEntityMetadata.columns[0];
+                    joinTableColumnName = relationCountAttr.relation.inverseRelation!.inverseJoinColumns[0].referencedColumn!.databaseName;
+                    inverseJoinColumnName = relationCountAttr.relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName;
+                    firstJunctionColumn = relationCountAttr.relation.junctionEntityMetadata!.columns[1];
+                    secondJunctionColumn = relationCountAttr.relation.junctionEntityMetadata!.columns[0];
                 }
 
                 const referenceColumnValues = rawEntities
@@ -102,7 +102,7 @@ export class RelationCountLoader {
                 const junctionAlias = relationCountAttr.junctionAlias;
                 const inverseSideTableName = relationCountAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationCountAttr.alias || inverseSideTableName;
-                const junctionTableName = relationCountAttr.relation.junctionEntityMetadata.tableName;
+                const junctionTableName = relationCountAttr.relation.junctionEntityMetadata!.tableName;
                 const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
                     " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 

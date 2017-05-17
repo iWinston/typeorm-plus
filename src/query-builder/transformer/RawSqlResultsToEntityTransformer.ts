@@ -161,7 +161,7 @@ export class RawSqlResultsToEntityTransformer {
                     if (relation.isOwning) {
                         columns = relation.inverseJoinColumns.map(joinColumn => joinColumn);
                     } else {
-                        columns = relation.inverseRelation.joinColumns.map(joinColumn => joinColumn);
+                        columns = relation.inverseRelation!.joinColumns.map(joinColumn => joinColumn);
                     }
                 }
 
@@ -212,10 +212,10 @@ export class RawSqlResultsToEntityTransformer {
                 let referenceColumnName: string;
 
                 if (relation.isOneToMany) {
-                    referenceColumnName = relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;  // todo: fix joinColumns[0]
+                    referenceColumnName = relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName;  // todo: fix joinColumns[0]
 
                 } else {
-                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.databaseName : relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName;
+                    referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.databaseName : relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName;
                 }
 
                 const referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
@@ -238,12 +238,12 @@ export class RawSqlResultsToEntityTransformer {
         if (relation.isManyToOne || relation.isOneToOneOwner) {
             columns = relation.entityMetadata.primaryColumns.map(joinColumn => joinColumn);
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-            columns = relation.inverseRelation.joinColumns.map(joinColumn => joinColumn);
+            columns = relation.inverseRelation!.joinColumns.map(joinColumn => joinColumn);
         } else {
             if (relation.isOwning) {
                 columns = relation.joinColumns.map(joinColumn => joinColumn);
             } else {
-                columns = relation.inverseRelation.inverseJoinColumns.map(joinColumn => joinColumn);
+                columns = relation.inverseRelation!.inverseJoinColumns.map(joinColumn => joinColumn);
             }
         }
         return columns.reduce((valueMap, column) => {
@@ -264,12 +264,12 @@ export class RawSqlResultsToEntityTransformer {
         if (relation.isManyToOne || relation.isOneToOneOwner) {
             columns = relation.entityMetadata.primaryColumns.map(joinColumn => joinColumn);
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-            columns = relation.inverseRelation.joinColumns.map(joinColumn => joinColumn);
+            columns = relation.inverseRelation!.joinColumns.map(joinColumn => joinColumn);
         } else {
             if (relation.isOwning) {
                 columns = relation.joinColumns.map(joinColumn => joinColumn);
             } else {
-                columns = relation.inverseRelation.inverseJoinColumns.map(joinColumn => joinColumn);
+                columns = relation.inverseRelation!.inverseJoinColumns.map(joinColumn => joinColumn);
             }
         }
         return columns.reduce((data, column) => {

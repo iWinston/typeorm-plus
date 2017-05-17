@@ -1483,15 +1483,15 @@ export class QueryBuilder<Entity> {
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = relation.inverseRelation.joinColumns.map(joinColumn => {
-                    return destinationTableAlias + "." + relation.inverseRelation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath + "=" +
+                const condition = relation.inverseRelation!.joinColumns.map(joinColumn => {
+                    return destinationTableAlias + "." + relation.inverseRelation!.propertyPath + "." + joinColumn.referencedColumn!.propertyPath + "=" +
                         parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
                 return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else { // means many-to-many
-                const junctionTableName = relation.junctionEntityMetadata.tableName;
+                const junctionTableName = relation.junctionEntityMetadata!.tableName;
 
                 const junctionAlias = joinAttr.junctionAlias;
                 let junctionCondition = "", destinationCondition = "";
@@ -1509,12 +1509,12 @@ export class QueryBuilder<Entity> {
                     }).join(" AND ");
 
                 } else {
-                    junctionCondition = relation.inverseRelation.inverseJoinColumns.map(joinColumn => {
+                    junctionCondition = relation.inverseRelation!.inverseJoinColumns.map(joinColumn => {
                         // `post_category`.`categoryId` = `category`.`id`
                         return junctionAlias + "." + joinColumn.propertyPath + "=" + parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                     }).join(" AND ");
 
-                    destinationCondition = relation.inverseRelation.joinColumns.map(joinColumn => {
+                    destinationCondition = relation.inverseRelation!.joinColumns.map(joinColumn => {
                         // `post`.`id` = `post_category`.`postId`
                         return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" + junctionAlias + "." + joinColumn.propertyPath;
                     }).join(" AND ");

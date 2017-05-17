@@ -66,8 +66,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         } else {
             table = relation.inverseEntityMetadata.tableName;
-            values[relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName] = entityId;
+            values[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
+            conditions[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = entityId;
         }
 
 
@@ -111,8 +111,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
             table = relation.inverseEntityMetadata.tableName;
-            values[relation.inverseRelation.joinColumns[0].databaseName] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumns[0].referencedColumn!.databaseName] = entityId;
+            values[relation.inverseRelation!.joinColumns[0].databaseName] = relatedEntityId;
+            conditions[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = entityId;
         } else {
             table = relation.entityMetadata.tableName;
             values[relation.joinColumns[0].databaseName] = relatedEntityId;
@@ -158,14 +158,14 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
             const values: any = {};
             if (relation.isOwning) {
-                values[relation.junctionEntityMetadata.columns[0].databaseName] = entityId;
-                values[relation.junctionEntityMetadata.columns[1].databaseName] = relatedEntityId;
+                values[relation.junctionEntityMetadata!.columns[0].databaseName] = entityId;
+                values[relation.junctionEntityMetadata!.columns[1].databaseName] = relatedEntityId;
             } else {
-                values[relation.junctionEntityMetadata.columns[1].databaseName] = entityId;
-                values[relation.junctionEntityMetadata.columns[0].databaseName] = relatedEntityId;
+                values[relation.junctionEntityMetadata!.columns[1].databaseName] = entityId;
+                values[relation.junctionEntityMetadata!.columns[0].databaseName] = relatedEntityId;
             }
 
-            return queryRunner.insert(relation.junctionEntityMetadata.tableName, values);
+            return queryRunner.insert(relation.junctionEntityMetadata!.tableName, values);
         });
         await Promise.all(insertPromises);
 
@@ -206,14 +206,14 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             const insertPromises = entityIds.map(entityId => {
                 const values: any = {};
                 if (relation.isOwning) {
-                    values[relation.junctionEntityMetadata.columns[0].databaseName] = entityId;
-                    values[relation.junctionEntityMetadata.columns[1].databaseName] = relatedEntityId;
+                    values[relation.junctionEntityMetadata!.columns[0].databaseName] = entityId;
+                    values[relation.junctionEntityMetadata!.columns[1].databaseName] = relatedEntityId;
                 } else {
-                    values[relation.junctionEntityMetadata.columns[1].databaseName] = entityId;
-                    values[relation.junctionEntityMetadata.columns[0].databaseName] = relatedEntityId;
+                    values[relation.junctionEntityMetadata!.columns[1].databaseName] = entityId;
+                    values[relation.junctionEntityMetadata!.columns[0].databaseName] = relatedEntityId;
                 }
 
-                return queryRunner.insert(relation.junctionEntityMetadata.tableName, values);
+                return queryRunner.insert(relation.junctionEntityMetadata!.tableName, values);
             });
             await Promise.all(insertPromises);
 
@@ -256,10 +256,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
-            .fromTable(relation.junctionEntityMetadata.tableName, "junctionEntity");
+            .fromTable(relation.junctionEntityMetadata!.tableName, "junctionEntity");
 
-        const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[0].databaseName : relation.junctionEntityMetadata.columns[1].databaseName);
-        const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[1].databaseName : relation.junctionEntityMetadata.columns[0].databaseName);
+        const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName);
+        const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName);
 
         relatedEntityIds.forEach((relatedEntityId, index) => {
             qb.orWhere(`(${firstColumnName}=:entityId AND ${secondColumnName}=:relatedEntity_${index})`)
@@ -304,10 +304,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
-            .from(relation.junctionEntityMetadata.tableName, "junctionEntity");
+            .from(relation.junctionEntityMetadata!.tableName, "junctionEntity");
 
-        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].databaseName : relation.junctionEntityMetadata.columns[0].databaseName;
-        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].databaseName : relation.junctionEntityMetadata.columns[1].databaseName;
+        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName;
+        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName;
 
         entityIds.forEach((entityId, index) => {
             qb.orWhere(`(${firstColumnName}=:relatedEntityId AND ${secondColumnName}=:entity_${index})`)
@@ -431,10 +431,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const relation = this.convertMixedRelationToMetadata(relationOrName);
         if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
-        const entityReferencedColumns = relation.isOwning ? relation.joinColumns.map(joinColumn => joinColumn.referencedColumn!) : relation.inverseRelation.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn!);
-        const ownerEntityColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.inverseJoinColumns;
-        const inverseEntityColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
-        const inverseEntityColumnNames = relation.isOwning ? relation.inverseJoinColumns.map(joinColumn => joinColumn.databaseName) : relation.inverseRelation.joinColumns.map(joinColumn => joinColumn.databaseName);
+        const entityReferencedColumns = relation.isOwning ? relation.joinColumns.map(joinColumn => joinColumn.referencedColumn!) : relation.inverseRelation!.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn!);
+        const ownerEntityColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.inverseJoinColumns;
+        const inverseEntityColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
+        const inverseEntityColumnNames = relation.isOwning ? relation.inverseJoinColumns.map(joinColumn => joinColumn.databaseName) : relation.inverseRelation!.joinColumns.map(joinColumn => joinColumn.databaseName);
 
         let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumns, entityOrEntities);
         if (!(entityIds instanceof Array)) entityIds = [entityIds];
@@ -458,7 +458,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             inverseEntityColumnNames.forEach(columnName => {
                 qb.select(ea("junction") + "." + ec(columnName) + " AS " + ea(columnName));
             });
-            qb.fromTable(relation.junctionEntityMetadata.tableName, "junction");
+            qb.fromTable(relation.junctionEntityMetadata!.tableName, "junction");
             Object.keys(entityId).forEach((columnName) => {
                 const junctionColumnName = ownerEntityColumns.find(joinColumn => joinColumn.referencedColumn!.databaseName === columnName);
                 qb.andWhere(ea("junction") + "." + ec(junctionColumnName!.databaseName) + "=:" + junctionColumnName!.databaseName + "_entityId", {[junctionColumnName!.databaseName + "_entityId"]: entityId[columnName]});

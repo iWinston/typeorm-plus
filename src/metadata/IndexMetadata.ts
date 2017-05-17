@@ -20,7 +20,7 @@ export class IndexMetadata {
     /**
      * Indicates if this index must be unique.
      */
-    isUnique: boolean;
+    isUnique: boolean = false;
 
     /**
      * Target class to which metadata is applied.
@@ -28,8 +28,9 @@ export class IndexMetadata {
     target?: Function|string;
 
     /**
+     * Indexed columns.
      */
-    columns: ColumnMetadata[];
+    columns: ColumnMetadata[] = [];
 
     /**
      * User specified index name.

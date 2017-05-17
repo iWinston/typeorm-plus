@@ -24,13 +24,13 @@ export class ColumnMetadata {
      * Embedded metadata where this column metadata is.
      * If this column is not in embed then this property value is undefined.
      */
-    embeddedMetadata: EmbeddedMetadata;
+    embeddedMetadata?: EmbeddedMetadata;
 
     /**
      * If column is a foreign key of some relation then this relation's metadata will be there.
      * If this column does not have a foreign key then this property value is undefined.
      */
-    relationMetadata: RelationMetadata;
+    relationMetadata?: RelationMetadata;
 
     /**
      * Class's property name on which this column is applied.
@@ -58,7 +58,7 @@ export class ColumnMetadata {
     isGenerated: boolean = false;
 
     /**
-     * Indicates if value in the database should be unique or not.
+     * Indicates if column value in the database should be unique or not.
      */
     isUnique: boolean = false;
 

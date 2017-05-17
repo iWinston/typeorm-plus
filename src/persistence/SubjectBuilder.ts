@@ -429,12 +429,12 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let persistValueRelationId: any = undefined;
                 if (subject.hasEntity && !subject.mustBeRemoved) {
                     const persistValue = relation.getEntityValue(subject.entity);
-                    if (persistValue) persistValueRelationId = relation.inverseRelation.getEntityValue(persistValue);
+                    if (persistValue) persistValueRelationId = relation.inverseRelation!.getEntityValue(persistValue);
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
                 // (example) returns us referenced column (detail's id)
-                const relationIdInDatabaseEntity = relation.inverseRelation.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
+                const relationIdInDatabaseEntity = relation.inverseRelation!.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
 
                 // if database relation id does not exist then nothing to remove (but can this be possible?)
                 if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
@@ -450,7 +450,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Post loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Post
                     // (example) and we need to compare post.detailsId === details.id
-                    return relation.inverseRelation.getEntityValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
+                    return relation.inverseRelation!.getEntityValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
                 });
 
                 // if not loaded yet then load it from the database
@@ -479,7 +479,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) persistValue is a postFromPersistedDetails here
                     // (example) alreadyLoadedRelatedDatabaseSubject.databaseEntity is a postFromDatabaseDetails here
                     // (example) postFromPersistedDetails.id === postFromDatabaseDetails - means nothing changed
-                    const inverseEntityRelationId = relation.inverseRelation.getEntityValue(alreadyLoadedRelatedDatabaseSubject.databaseEntity);
+                    const inverseEntityRelationId = relation.inverseRelation!.getEntityValue(alreadyLoadedRelatedDatabaseSubject.databaseEntity);
                     if (persistValueRelationId && persistValueRelationId === inverseEntityRelationId)
                         return;
 
@@ -561,7 +561,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.tableName, joinAlias, conditions)
+                        .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
                         .getMany();
@@ -584,7 +584,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
 
                     // (example) returns us referenced column (detail's id)
-                    const parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
+                    const parameters = relation.inverseRelation!.inverseJoinColumns.reduce((parameters, joinColumn) => {
                         parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(subject.databaseEntity);
                         return parameters;
                     }, {} as ObjectLiteral);
@@ -592,7 +592,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.tableName, joinAlias, conditions)
+                        .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
                         .getMany();
@@ -600,7 +600,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 } else { // this case can only be a oneToMany relation
                     // todo: fix issues with joinColumn[0]
                     // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = relation.inverseRelation.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
+                    const relationIdInDatabaseEntity = relation.inverseRelation!.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
 
                     // in this case we need inverse entities not only because of cascade removes
                     // because we also need inverse entities to be able to perform update of entities
@@ -663,7 +663,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                             if (loadedSubject) {
                                 loadedSubject.relationUpdates.push({
-                                    relation: relation.inverseRelation,
+                                    relation: relation.inverseRelation!,
                                     value: subject.entity
                                 });
                             }
@@ -776,7 +776,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
                 const changedInverseEntityRelationIds = relatedValue
                     .map(subRelationValue => {
-                        const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
+                        const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
                         return joinColumns.reduce((ids, joinColumn) => {
                             return OrmUtils.mergeDeep(ids, joinColumn.referencedColumn!.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelationValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
                         }, {} as ObjectLiteral);
@@ -795,7 +795,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 const newJunctionEntities = relatedValue.filter(subRelatedValue => {
                     // console.log(subRelatedValue);
 
-                    const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
+                    const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
                     const ids = joinColumns.reduce((ids, joinColumn) => {
                         return OrmUtils.mergeDeep(ids, joinColumn.referencedColumn!.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelatedValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
                     }, {} as ObjectLiteral);

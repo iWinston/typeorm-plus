@@ -329,7 +329,7 @@ export class SubjectOperationExecutor {
             // console.log(oneToManyAndOneToOneNonOwnerRelations);
             subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
                 .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
-                    relation.inverseRelation.joinColumns.forEach(joinColumn => {
+                    relation.inverseRelation!.joinColumns.forEach(joinColumn => {
 
                         const referencedColumn = joinColumn.referencedColumn!;
                         const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumns : inverseEntityMetadata.primaryColumns;
@@ -515,12 +515,12 @@ export class SubjectOperationExecutor {
                         if (referencedColumn.isVersion)
                             relationValue = this.connection.driver.preparePersistentValue(1, referencedColumn);
                     }
-                } else if (relation.hasInverseSide) {
+                } else if (relation.inverseRelation) {
                     const inverseSubject = this.allSubjects.find(subject => {
-                        if (!subject.hasEntity || subject.entityTarget !== relation.inverseRelation.target)
+                        if (!subject.hasEntity || subject.entityTarget !== relation.inverseRelation!.target)
                             return false;
 
-                        const inverseRelationValue = relation.inverseRelation.getEntityValue(subject.entity);
+                        const inverseRelationValue = relation.inverseRelation!.getEntityValue(subject.entity);
                         if (inverseRelationValue) {
                             if (inverseRelationValue instanceof Array) {
                                 return inverseRelationValue.find(subValue => subValue === subValue);
@@ -896,7 +896,7 @@ export class SubjectOperationExecutor {
         };
 
         const relation = junctionInsert.relation;
-        const joinColumns = relation.isManyToManyOwner ? relation.joinColumns : relation.inverseRelation.inverseJoinColumns;
+        const joinColumns = relation.isManyToManyOwner ? relation.joinColumns : relation.inverseRelation!.inverseJoinColumns;
         const ownId = getRelationId(subject.entity, joinColumns);
 
         if (!ownId.length)
@@ -905,17 +905,17 @@ export class SubjectOperationExecutor {
         const promises = junctionInsert.junctionEntities.map(newBindEntity => {
 
             // get relation id from the newly bind entity
-            const joinColumns = relation.isManyToManyOwner ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
+            const joinColumns = relation.isManyToManyOwner ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
             const relationId = getRelationId(newBindEntity, joinColumns);
 
             // if relation id still does not exist - we arise an error
             if (!relationId)
                 throw new Error(`Cannot insert object of ${(newBindEntity.constructor as any).name} type. Looks like its not persisted yet, or cascades are not set on the relation.`); // todo: better error message
 
-            const columns = relation.junctionEntityMetadata.columns.map(column => column.databaseName);
+            const columns = relation.junctionEntityMetadata!.columns.map(column => column.databaseName);
             const values = relation.isOwning ? [...ownId, ...relationId] : [...relationId, ...ownId];
 
-            return this.queryRunner.insert(relation.junctionEntityMetadata.tableName, OrmUtils.zipObject(columns, values));
+            return this.queryRunner.insert(relation.junctionEntityMetadata!.tableName, OrmUtils.zipObject(columns, values));
         });
 
         await Promise.all(promises);
@@ -943,11 +943,11 @@ export class SubjectOperationExecutor {
      * Removes from database junction table all given subject's removal junction data.
      */
     private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
-        const junctionMetadata = junctionRemove.relation.junctionEntityMetadata;
+        const junctionMetadata = junctionRemove.relation.junctionEntityMetadata!;
         const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
 
-        const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinColumns : junctionRemove.relation.inverseRelation.inverseJoinColumns;
-        const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.inverseRelation.joinColumns;
+        const firstJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.joinColumns : junctionRemove.relation.inverseRelation!.inverseJoinColumns;
+        const secondJoinColumns = junctionRemove.relation.isOwning ? junctionRemove.relation.inverseJoinColumns : junctionRemove.relation.inverseRelation!.joinColumns;
         let conditions: ObjectLiteral = {};
         firstJoinColumns.forEach(joinColumn => {
             conditions[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(entity);

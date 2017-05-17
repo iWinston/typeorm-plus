@@ -7,7 +7,7 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {OnDeleteType} from "./types/OnDeleteType";
-import {PropertyTypeInFunction} from "./types/PropertyTypeInFunction";
+import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 
 /**
  * Contains all information about some entity's relation.
@@ -41,13 +41,13 @@ export class RelationMetadata {
      * Entity metadata of the junction table.
      * Defined only for many-to-many relations.
      */
-    junctionEntityMetadata: EntityMetadata; // todo: optional
+    junctionEntityMetadata?: EntityMetadata;
 
     /**
      * Embedded metadata where this relation is.
      * If this relation is not in embed then this property value is undefined.
      */
-    embeddedMetadata: EmbeddedMetadata; // todo: optional
+    embeddedMetadata?: EmbeddedMetadata;
 
     /**
      * Foreign keys created for this relation.
@@ -92,27 +92,27 @@ export class RelationMetadata {
      * Indicates if this relation's column is a primary key.
      * Can be used only for many-to-one and owner one-to-one relations.
      */
-    isPrimary: boolean;
+    isPrimary: boolean = false;
 
     /**
      * Indicates if this relation is lazily loaded.
      */
-    isLazy: boolean;
+    isLazy: boolean = false;
 
     /**
      * If set to true then related objects are allowed to be inserted to the database.
      */
-    isCascadeInsert: boolean;
+    isCascadeInsert: boolean = false;
 
     /**
      * If set to true then related objects are allowed to be updated in the database.
      */
-    isCascadeUpdate: boolean;
+    isCascadeUpdate: boolean = false;
 
     /**
      * If set to true then related objects are allowed to be remove from the database.
      */
-    isCascadeRemove: boolean;
+    isCascadeRemove: boolean = false;
 
     /**
      * Indicates if relation column value can be nullable or not.
@@ -208,24 +208,19 @@ export class RelationMetadata {
     isManyToManyNotOwner: boolean = false;
 
     /**
-     * Checks if inverse side is specified by a relation.
+     * Gets the property path of the inverse side of the relation.
      */
-    hasInverseSide: boolean = false;
-
-    /**
-     * Gets the property name of the inverse side of the relation.
-     */
-    inverseSidePropertyPath: string;  // todo: should be called inverseSidePropertyName ?
+    inverseSidePropertyPath: string;
 
     /**
      * Inverse side of the relation.
      */
-    inverseSideProperty: PropertyTypeInFunction<any>;
+    givenInverseSidePropertyFactory: PropertyTypeFactory<any>;
 
     /**
      * Gets the relation metadata of the inverse side of this relation.
      */
-    inverseRelation: RelationMetadata;
+    inverseRelation?: RelationMetadata;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -244,7 +239,7 @@ export class RelationMetadata {
         this.relationType = args.relationType;
 
         if (args.inverseSideProperty)
-            this.inverseSideProperty = args.inverseSideProperty;
+            this.givenInverseSidePropertyFactory = args.inverseSideProperty;
 
         this.isLazy = args.isLazy || false;
         this.isCascadeInsert = args.options.cascadeInsert || args.options.cascadeAll || false;
@@ -398,13 +393,13 @@ export class RelationMetadata {
      */
     buildInverseSidePropertyPath(): string {
 
-        if (this.inverseSideProperty) {
+        if (this.givenInverseSidePropertyFactory) {
             const ownerEntityPropertiesMap = this.inverseEntityMetadata.propertiesMap;
-            if (typeof this.inverseSideProperty === "function")
-                return this.inverseSideProperty(ownerEntityPropertiesMap);
+            if (typeof this.givenInverseSidePropertyFactory === "function")
+                return this.givenInverseSidePropertyFactory(ownerEntityPropertiesMap);
 
-            if (typeof this.inverseSideProperty === "string")
-                return this.inverseSideProperty;
+            if (typeof this.givenInverseSidePropertyFactory === "string")
+                return this.givenInverseSidePropertyFactory;
 
         } else if (this.isTreeParent && this.entityMetadata.treeChildrenRelation) {
             return this.entityMetadata.treeChildrenRelation.propertyName;

@@ -55,7 +55,7 @@ export class RelationIdLoader {
                 // we expect it to load array of category ids
 
                 const relation = relationIdAttr.relation; // "post.categories"
-                const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.joinColumns;
+                const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
                 const table = relation.inverseEntityMetadata.target; // category
                 const tableName = relation.inverseEntityMetadata.tableName; // category
                 const tableAlias = relationIdAttr.alias || tableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
@@ -83,7 +83,7 @@ export class RelationIdLoader {
                     qb.addSelect(tableAlias + "." + joinColumn.databaseName, joinColumn.databaseName);
                 });
 
-                relation.inverseRelation.entityMetadata.primaryColumns.forEach(primaryColumn => {
+                relation.inverseRelation!.entityMetadata.primaryColumns.forEach(primaryColumn => {
                     qb.addSelect(tableAlias + "." + primaryColumn.databaseName, primaryColumn.databaseName);
                 });
 
@@ -107,12 +107,12 @@ export class RelationIdLoader {
                 // we expect it to load array of post ids
 
                 const relation = relationIdAttr.relation;
-                const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.inverseJoinColumns;
-                const inverseJoinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation.joinColumns;
+                const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.inverseJoinColumns;
+                const inverseJoinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
                 const junctionAlias = relationIdAttr.junctionAlias;
                 const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
-                const junctionTableName = relation.junctionEntityMetadata.tableName;
+                const junctionTableName = relation.junctionEntityMetadata!.tableName;
 
                 const mappedColumns = rawEntities.map(rawEntity => {
                     return joinColumns.reduce((map, joinColumn) => {

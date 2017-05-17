@@ -128,9 +128,9 @@ export class EntityMetadataValidator {
 
         // make sure cascade remove is not set for both sides of relationships (can be set in OneToOne decorators)
         entityMetadata.relations.forEach(relation => {
-            const isCircularCascadeRemove = relation.isCascadeRemove && relation.hasInverseSide && relation.inverseRelation.isCascadeRemove;
+            const isCircularCascadeRemove = relation.isCascadeRemove && relation.inverseRelation && relation.inverseRelation!.isCascadeRemove;
             if (isCircularCascadeRemove)
-                throw new Error(`Relation ${entityMetadata.name}#${relation.propertyName} and ${relation.inverseRelation.entityMetadata.name}#${relation.inverseRelation.propertyName} both has cascade remove set. ` +
+                throw new Error(`Relation ${entityMetadata.name}#${relation.propertyName} and ${relation.inverseRelation!.entityMetadata.name}#${relation.inverseRelation!.propertyName} both has cascade remove set. ` +
                     `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`);
         }); // todo: maybe better just deny removal from one to one relation without join column?
     }

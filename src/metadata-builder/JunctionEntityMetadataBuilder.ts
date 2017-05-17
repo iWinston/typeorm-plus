@@ -34,7 +34,7 @@ export class JunctionEntityMetadataBuilder {
             relation.entityMetadata.tableNameWithoutPrefix,
             relation.inverseEntityMetadata.tableNameWithoutPrefix,
             relation.propertyPath,
-            relation.hasInverseSide ? relation.inverseRelation.propertyName : ""
+            relation.inverseRelation ? relation.inverseRelation.propertyName : ""
         );
 
         const entityMetadata = new EntityMetadata({

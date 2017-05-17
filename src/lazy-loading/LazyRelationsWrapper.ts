@@ -95,7 +95,7 @@ export class LazyRelationsWrapper {
      *              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
      */
     protected loadManyToOneOrOneToOneOwner(relation: RelationMetadata, entity: ObjectLiteral): Promise<any> {
-        const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation.joinColumns;
+        const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
         const conditions = joinColumns.map(joinColumn => {
             return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn!.propertyName}`;
         }).join(" AND ");
@@ -122,9 +122,9 @@ export class LazyRelationsWrapper {
     protected loadOneToManyOrOneToOneNotOwner(relation: RelationMetadata, entity: ObjectLiteral): Promise<any> {
         const qb = new QueryBuilder(this.connection)
             .select(relation.propertyName)
-            .from(relation.inverseRelation.entityMetadata.target, relation.propertyName);
+            .from(relation.inverseRelation!.entityMetadata.target, relation.propertyName);
 
-        relation.inverseRelation.joinColumns.forEach(joinColumn => {
+        relation.inverseRelation!.joinColumns.forEach(joinColumn => {
             qb.andWhere(`${relation.propertyName}.${joinColumn.propertyName} = :${joinColumn.referencedColumn!.propertyName}`)
                 .setParameter(`${joinColumn.referencedColumn!.propertyName}`, joinColumn.referencedColumn!.getEntityValue(entity));
         });
@@ -142,7 +142,7 @@ export class LazyRelationsWrapper {
      */
     protected loadManyToManyOwner(relation: RelationMetadata, entity: ObjectLiteral): Promise<any> {
         const mainAlias = relation.propertyName;
-        const joinAlias = relation.junctionEntityMetadata.tableName;
+        const joinAlias = relation.junctionEntityMetadata!.tableName;
         const joinColumnConditions = relation.joinColumns.map(joinColumn => {
             return `${joinAlias}.${joinColumn.propertyName} = :${joinColumn.propertyName}`;
         });
@@ -173,14 +173,14 @@ export class LazyRelationsWrapper {
      */
     protected loadManyToManyNotOwner(relation: RelationMetadata, entity: ObjectLiteral): Promise<any> {
         const mainAlias = relation.propertyName;
-        const joinAlias = relation.junctionEntityMetadata.tableName;
-        const joinColumnConditions = relation.inverseRelation.joinColumns.map(joinColumn => {
+        const joinAlias = relation.junctionEntityMetadata!.tableName;
+        const joinColumnConditions = relation.inverseRelation!.joinColumns.map(joinColumn => {
             return `${joinAlias}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`;
         });
-        const inverseJoinColumnConditions = relation.inverseRelation.inverseJoinColumns.map(inverseJoinColumn => {
+        const inverseJoinColumnConditions = relation.inverseRelation!.inverseJoinColumns.map(inverseJoinColumn => {
             return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;
         });
-        const parameters = relation.inverseRelation.inverseJoinColumns.reduce((parameters, joinColumn) => {
+        const parameters = relation.inverseRelation!.inverseJoinColumns.reduce((parameters, joinColumn) => {
             parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(entity);
             return parameters;
         }, {} as ObjectLiteral);

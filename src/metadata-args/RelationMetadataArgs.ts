@@ -1,6 +1,6 @@
 import {RelationType} from "../metadata/types/RelationTypes";
 import {RelationOptions} from "../decorator/options/RelationOptions";
-import {PropertyTypeInFunction} from "../metadata/types/PropertyTypeInFunction";
+import {PropertyTypeFactory} from "../metadata/types/PropertyTypeInFunction";
 import {RelationTypeInFunction} from "../metadata/types/RelationTypeInFunction";
 
 /**
@@ -50,7 +50,7 @@ export interface RelationMetadataArgs {
     /**
      * Inverse side of the relation.
      */
-    readonly inverseSideProperty?: PropertyTypeInFunction<any>;
+    readonly inverseSideProperty?: PropertyTypeFactory<any>;
 
     /**
      * Additional relation options.

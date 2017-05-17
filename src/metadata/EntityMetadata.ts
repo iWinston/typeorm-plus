@@ -13,7 +13,7 @@ import {OrmUtils} from "../util/OrmUtils";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
-import {PropertyTypeInFunction} from "./types/PropertyTypeInFunction";
+import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 
 /**
  * Contains all entity metadata.
@@ -445,7 +445,7 @@ export class EntityMetadata {
     /**
      * Computes property name of the entity using given PropertyTypeInFunction.
      */
-    computePropertyPath(nameOrFn: PropertyTypeInFunction<any>) {
+    computePropertyPath(nameOrFn: PropertyTypeFactory<any>) {
         return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.propertiesMap);
     }
 

@@ -111,7 +111,7 @@ export class RelationIdAttribute {
      * If extra condition without entity was joined, then it will return undefined.
      */
     get junctionMetadata(): EntityMetadata {
-        return this.relation.junctionEntityMetadata;
+        return this.relation.junctionEntityMetadata!;
     }
 
     get mapToPropertyParentAlias(): string {

@@ -254,7 +254,6 @@ export class EntityMetadataBuilder {
 
             // and compute inverse relation and mark if it has such
             relation.inverseRelation = inverseEntityMetadata.relations.find(foundRelation => foundRelation.propertyPath === relation.inverseSidePropertyPath)!; // todo: remove ! later
-            relation.hasInverseSide = !!relation.inverseRelation; // todo: do we really need this flag
         });
     }
 

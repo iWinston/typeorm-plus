@@ -21,7 +21,7 @@ export class EmbeddedMetadata {
     /**
      * Parent embedded in the case if this embedded inside other embedded.
      */
-    parentEmbeddedMetadata: EmbeddedMetadata;
+    parentEmbeddedMetadata?: EmbeddedMetadata;
 
     /**
      * Embedded target type.
