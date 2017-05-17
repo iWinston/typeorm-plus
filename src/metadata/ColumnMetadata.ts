@@ -5,7 +5,6 @@ import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
-import {ColumnMode} from "./types/ColumnMode";
 
 /**
  * This metadata contains all information about entity's column.
@@ -32,11 +31,6 @@ export class ColumnMetadata {
      * If this column does not have a foreign key then this property value is undefined.
      */
     relationMetadata: RelationMetadata;
-
-    /**
-     * Column's mode in which this column is working.
-     */
-    mode: ColumnMode;
 
     /**
      * Class's property name on which this column is applied.
@@ -155,6 +149,11 @@ export class ColumnMetadata {
     isDiscriminator: boolean = false;
 
     /**
+     * Indicates if column is tree-level column. Tree-level columns are used in closure entities.
+     */
+    isTreeLevel: boolean = false;
+
+    /**
      * Indicates if this column contains an entity creation date.
      */
     isCreateDate: boolean = false;
@@ -193,46 +192,45 @@ export class ColumnMetadata {
         this.entityMetadata = options.entityMetadata;
         this.embeddedMetadata = options.embeddedMetadata!;
         this.referencedColumn = options.referencedColumn;
-        const args = options.args;
-        if (args.propertyName)
-            this.propertyName = args.propertyName;
-        if (args.options.name)
-            this.givenDatabaseName = args.options.name;
-        if (args.options.type)
-            this.type = args.options.type;
-        if (args.options.length)
-            this.length = String(args.options.length);
-        if (args.options.primary)
-            this.isPrimary = args.options.primary;
-        if (args.options.generated)
-            this.isGenerated = args.options.generated;
-        if (args.options.unique)
-            this.isUnique = args.options.unique;
-        if (args.options.nullable)
-            this.isNullable = args.options.nullable;
-        if (args.options.comment)
-            this.comment = args.options.comment;
-        if (args.options.default !== undefined)
-            this.default = args.options.default;
-        if (args.options.scale)
-            this.scale = args.options.scale;
-        if (args.options.precision)
-            this.precision = args.options.precision;
-        if (args.options.timezone)
-            this.timezone = args.options.timezone;
-        if (args.options.localTimezone)
-            this.localTimezone = args.options.localTimezone;
-        if (args.options.fixedLength)
-            this.fixedLength = args.options.fixedLength;
-        if (args.mode) {
-            this.mode = args.mode;
-            this.isVirtual = args.mode === "virtual";
-            this.isParentId = args.mode === "parentId";
-            this.isDiscriminator = args.mode === "discriminator";
-            this.isCreateDate = args.mode === "createDate";
-            this.isUpdateDate = args.mode === "updateDate";
-            this.isVersion = args.mode === "version";
-            this.isObjectId = args.mode === "objectId";
+        if (options.args.propertyName)
+            this.propertyName = options.args.propertyName;
+        if (options.args.options.name)
+            this.givenDatabaseName = options.args.options.name;
+        if (options.args.options.type)
+            this.type = options.args.options.type;
+        if (options.args.options.length)
+            this.length = String(options.args.options.length);
+        if (options.args.options.primary)
+            this.isPrimary = options.args.options.primary;
+        if (options.args.options.generated)
+            this.isGenerated = options.args.options.generated;
+        if (options.args.options.unique)
+            this.isUnique = options.args.options.unique;
+        if (options.args.options.nullable)
+            this.isNullable = options.args.options.nullable;
+        if (options.args.options.comment)
+            this.comment = options.args.options.comment;
+        if (options.args.options.default !== undefined)
+            this.default = options.args.options.default;
+        if (options.args.options.scale)
+            this.scale = options.args.options.scale;
+        if (options.args.options.precision)
+            this.precision = options.args.options.precision;
+        if (options.args.options.timezone)
+            this.timezone = options.args.options.timezone;
+        if (options.args.options.localTimezone)
+            this.localTimezone = options.args.options.localTimezone;
+        if (options.args.options.fixedLength)
+            this.fixedLength = options.args.options.fixedLength;
+        if (options.args.mode) {
+            this.isVirtual = options.args.mode === "virtual";
+            this.isParentId = options.args.mode === "parentId";
+            this.isDiscriminator = options.args.mode === "discriminator";
+            this.isTreeLevel = options.args.mode === "treeLevel";
+            this.isCreateDate = options.args.mode === "createDate";
+            this.isUpdateDate = options.args.mode === "updateDate";
+            this.isVersion = options.args.mode === "version";
+            this.isObjectId = options.args.mode === "objectId";
         }
     }
 

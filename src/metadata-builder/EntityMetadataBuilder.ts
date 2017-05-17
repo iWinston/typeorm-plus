@@ -227,13 +227,13 @@ export class EntityMetadataBuilder {
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
         entityMetadata.generatedColumn = entityMetadata.columns.find(column => column.isGenerated);
-        entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.mode === "createDate");
-        entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.mode === "updateDate");
-        entityMetadata.versionColumn = entityMetadata.columns.find(column => column.mode === "version");
-        entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.mode === "discriminator");
-        entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.mode === "treeLevel");
-        entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.mode === "parentId");
-        entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.mode === "objectId");
+        entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.isCreateDate);
+        entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.isUpdateDate);
+        entityMetadata.versionColumn = entityMetadata.columns.find(column => column.isVersion);
+        entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.isDiscriminator);
+        entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.isTreeLevel);
+        entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.isParentId);
+        entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);
         entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.driver.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
     }

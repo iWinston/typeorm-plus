@@ -7,7 +7,7 @@ import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {JoinTableOptions} from "../decorator/options/JoinTableOptions";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
-import {ColumnMode} from "../metadata/types/ColumnMode";
+import {ColumnMode} from "../metadata-args/types/ColumnMode";
 
 export class EntitySchemaTransformer {
 

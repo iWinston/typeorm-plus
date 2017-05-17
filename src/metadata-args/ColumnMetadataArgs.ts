@@ -1,5 +1,5 @@
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
-import {ColumnMode} from "../metadata/types/ColumnMode";
+import {ColumnMode} from "./types/ColumnMode";
 
 /**
  * Arguments for ColumnMetadata class.
