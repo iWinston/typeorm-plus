@@ -7,7 +7,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Subcounters} from "./entity/Subcounters";
 import {User} from "./entity/User";
 
-describe.skip("embedded > embedded-many-to-many-case3", () => {
+describe("embedded > embedded-many-to-many-case3", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

@@ -33,6 +33,11 @@ export class RelationIdAttribute {
      */
     queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
+    /**
+     * Indicates if relation id should NOT be loaded as id map.
+     */
+    disableMixedMap = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

@@ -1,11 +1,17 @@
 import "reflect-metadata";
+import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+    sleep
+} from "../../../utils/test-utils";
 import {Subcounters} from "../embedded-many-to-one-case2/entity/Subcounters";
 
-describe.skip("embedded > embedded-with-special-columns", () => {
+describe("embedded > embedded-with-special-columns", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -40,41 +46,43 @@ describe.skip("embedded > embedded-with-special-columns", () => {
         post2.counters.subcounters.watches = 10;
         await connection.getRepository(Post).persist(post2);
 
-        let loadedPosts = await connection.manager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .orderBy("post.id")
             .getMany();
-        console.log(loadedPosts);
-        /*expect(loadedPosts[0].should.be.eql(
-            {
-                id: 1,
-                title: "About cars",
-                counters: {
-                    comments: 1,
-                    favorites: 2,
-                    likes: 3,
-                    subcounters: {
-                        version: 1,
-                        watches: 5
-                    }
-                }
-            }
-        ));
-        expect(loadedPosts[1].should.be.eql(
-            {
-                id: 2,
-                title: "About airplanes",
-                counters: {
-                    comments: 2,
-                    favorites: 3,
-                    likes: 4,
-                    subcounters: {
-                        version: 1,
-                        watches: 10
-                    }
-                }
-            }
-        ));*/
+
+        expect(loadedPosts[0].counters.createdDate.should.be.instanceof(Date));
+        expect(loadedPosts[0].counters.updatedDate.should.be.instanceof(Date));
+        expect(loadedPosts[0].counters.subcounters.version.should.be.equal(1));
+        expect(loadedPosts[1].counters.createdDate.should.be.instanceof(Date));
+        expect(loadedPosts[1].counters.updatedDate.should.be.instanceof(Date));
+        expect(loadedPosts[1].counters.subcounters.version.should.be.equal(1));
+
+        let loadedPost = await connection.manager
+            .createQueryBuilder(Post, "post")
+            .orderBy("post.id")
+            .where("post.id = :id", { id: 1 })
+            .getOne();
+
+        expect(loadedPost!.counters.createdDate.should.be.instanceof(Date));
+        expect(loadedPost!.counters.updatedDate.should.be.instanceof(Date));
+        expect(loadedPost!.counters.subcounters.version.should.be.equal(1));
+
+        const prevUpdateDate = loadedPost!.counters.updatedDate;
+
+        loadedPost!.title = "About cars #2";
+
+        await sleep(1000);
+        await connection.getRepository(Post).persist(loadedPost!);
+
+        loadedPost = await connection.manager
+            .createQueryBuilder(Post, "post")
+            .where("post.id = :id", { id: 1 })
+            .getOne();
+
+        expect((loadedPost!.counters.updatedDate.valueOf()).should.be.greaterThan(prevUpdateDate.valueOf()));
+        expect(loadedPost!.counters.subcounters.version.should.be.equal(2));
+
     })));
 
 });

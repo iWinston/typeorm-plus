@@ -534,17 +534,30 @@ export class QueryBuilder<Entity> {
      * LEFT JOINs relation id and maps it into some entity's property.
      * Optionally, you can add condition and parameters used in condition.
      */
+    loadRelationIdAndMap(mapToProperty: string, relationName: string, options: { disableMixedMap: boolean }): this;
+
+    /**
+     * LEFT JOINs relation id and maps it into some entity's property.
+     * Optionally, you can add condition and parameters used in condition.
+     */
     loadRelationIdAndMap(mapToProperty: string, relationName: string, aliasName: string, queryBuilderFactory: (qb: QueryBuilder<any>) => QueryBuilder<any>): this;
 
     /**
      * LEFT JOINs relation id and maps it into some entity's property.
      * Optionally, you can add condition and parameters used in condition.
      */
-    loadRelationIdAndMap(mapToProperty: string, relationName: string, aliasName?: string, queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>): this {
+    loadRelationIdAndMap(mapToProperty: string,
+                         relationName: string,
+                         aliasNameOrOptions?: string|{ disableMixedMap?: boolean },
+                         queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>): this {
         const relationIdAttribute = new RelationIdAttribute(this.expressionMap);
         relationIdAttribute.mapToProperty = mapToProperty;
         relationIdAttribute.relationName = relationName;
-        relationIdAttribute.alias = aliasName;
+        if (typeof aliasNameOrOptions === "string")
+            relationIdAttribute.alias = aliasNameOrOptions;
+        if (aliasNameOrOptions instanceof Object && (aliasNameOrOptions as any).disableMixedMap)
+            relationIdAttribute.disableMixedMap = true;
+
         relationIdAttribute.queryBuilderFactory = queryBuilderFactory;
         this.expressionMap.relationIdAttributes.push(relationIdAttribute);
         return this;
@@ -1149,7 +1162,9 @@ export class QueryBuilder<Entity> {
      */
     enableAutoRelationIdsLoad(): this {
         this.expressionMap.mainAlias!.metadata.relations.forEach(relation => {
-            this.loadRelationIdAndMap(this.expressionMap.mainAlias!.name + "." + relation.propertyPath, this.expressionMap.mainAlias!.name + "." + relation.propertyPath);
+            this.loadRelationIdAndMap(this.expressionMap.mainAlias!.name + "." + relation.propertyPath,
+                                      this.expressionMap.mainAlias!.name + "." + relation.propertyPath,
+                                      { disableMixedMap: true});
         });
         return this;
     }

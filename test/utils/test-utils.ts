@@ -205,3 +205,9 @@ export function generateRandomText(length: number): string {
 
     return text;
 }
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise<void>(ok => {
+        setTimeout(ok, ms);
+    });
+}

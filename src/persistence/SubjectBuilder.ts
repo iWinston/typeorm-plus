@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {SpecificRepository} from "../repository/SpecificRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {OrmUtils} from "../util/OrmUtils";
 
@@ -342,7 +341,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // (example) "relation" - is a relation in post with details.
                 // (example) "valueMetadata" - is an entity metadata of the Details object.
                 // (example) "persistValue" - is a detailsId from the persisted entity
-                // todo: fix joinColumns[0] usages
 
                 // note that if databaseEntity has relation, it can only be a relation id,
                 // because of query builder option "RELATION_ID_VALUES" we used
@@ -732,18 +730,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      * Options specifies which junction operations should be built - insert, remove or both.
      */
     private async buildJunctionOperations(options: { insert: boolean, remove: boolean }): Promise<void> {
-
         const promises = this.operateSubjects.filter(subject => subject.hasEntity).map(subject => {
             const promises = subject.metadata.manyToManyRelations.map(async relation => {
 
                 // if subject marked to be removed then all its junctions must be removed
                 if (subject.mustBeRemoved && options.remove) {
-
                     // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
                     // this way we gonna check which relation ids are missing and which are new (e.g. inserted or removed)
-                    const specificRepository = new SpecificRepository(this.connection, subject.metadata, this.queryRunnerProvider);
-                    const existInverseEntityRelationIds = await specificRepository
-                        .findRelationIds(relation, subject.databaseEntity);
+                    const existInverseEntityRelationIds = relation.getEntityValue(subject.databaseEntity);
 
                     // finally create a new junction remove operation and push it to the array of such operations
                     if (existInverseEntityRelationIds.length > 0) {
@@ -775,10 +769,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // if subject don't have database entity it means its new and we don't need to remove something that is not exist
                 if (subject.hasDatabaseEntity) {
-                    const specificRepository = new SpecificRepository(this.connection, subject.metadata, this.queryRunnerProvider);
-                    existInverseEntityRelationIds = await specificRepository
-                        .findRelationIds(relation, subject.databaseEntity);
-                    // console.log(existInverseEntityRelationIds);
+                    existInverseEntityRelationIds = relation.getEntityValue(subject.databaseEntity);
+                    // console.log("existInverseEntityRelationIds:", existInverseEntityRelationIds);
                 }
 
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
@@ -797,8 +789,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         return relation.inverseEntityMetadata.compareIds(changedRelationId, existRelationId);
                     });
                 });
-
-                // console.log("removedJunctionEntityIds: ", removedJunctionEntityIds);
+                // console.log("removedJunctionEntityIds:", removedJunctionEntityIds);
 
                 // now from all entities in the persisted entity find only those which aren't found in the db
                 const newJunctionEntities = relatedValue.filter(subRelatedValue => {

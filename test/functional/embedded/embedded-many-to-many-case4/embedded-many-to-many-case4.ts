@@ -18,7 +18,7 @@ describe("embedded > embedded-many-to-many-case4", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    describe.skip("owner side", () => {
+    describe("owner side", () => {
 
         it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation with multiple primary keys (multiple keys in related entity)", () => Promise.all(connections.map(async connection => {
 

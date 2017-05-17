@@ -166,14 +166,14 @@ export class RawSqlResultsToEntityTransformer {
                 }
 
                 return columns.reduce((idMap, joinColumn) => {
-                    if (columns.length > 1) {
+                    if (columns.length === 1 && rawRelationIdResult.relationIdAttribute.disableMixedMap === false) {
+                        idMap = result[joinColumn.databaseName];
+                    } else {
                         if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                             idMap[joinColumn.propertyName] = result[joinColumn.databaseName];
                         } else {
                             idMap[joinColumn.referencedColumn!.propertyName] = result[joinColumn.databaseName];
                         }
-                    } else {
-                        idMap = result[joinColumn.databaseName];
                     }
                     return idMap;
                 }, {} as ObjectLiteral);
