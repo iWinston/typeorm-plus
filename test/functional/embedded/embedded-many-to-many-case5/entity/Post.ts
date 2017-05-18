@@ -6,7 +6,7 @@ import {Index} from "../../../../../src/decorator/Index";
 import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 
 @Entity()
-@Index(["id", "counters.code", "counters.subcounters.version"])
+@Index(["id", "counters.code", "counters.subcounters.version"], { unique: true })
 export class Post {
 
     @PrimaryColumn()

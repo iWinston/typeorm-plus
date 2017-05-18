@@ -52,7 +52,7 @@ export class JunctionEntityMetadataBuilder {
                 return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === referencedColumn.propertyName) &&
                     !!joinColumnArgs.name;
             }) : undefined;
-            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.driver.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.propertyName, referencedColumn.givenDatabaseName);
+            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.driver.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.propertyName, referencedColumn.databaseName);
 
             return new ColumnMetadata({
                 entityMetadata: entityMetadata,
@@ -78,7 +78,7 @@ export class JunctionEntityMetadataBuilder {
                 return (!joinColumnArgs.referencedColumnName || joinColumnArgs.referencedColumnName === inverseReferencedColumn.propertyName) &&
                     !!joinColumnArgs.name;
             }) : undefined;
-            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.driver.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.propertyName, inverseReferencedColumn.givenDatabaseName);
+            const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.driver.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.propertyName, inverseReferencedColumn.databaseName);
 
             return new ColumnMetadata({
                 entityMetadata: entityMetadata,
@@ -153,10 +153,10 @@ export class JunctionEntityMetadataBuilder {
     protected collectReferencedColumns(relation: RelationMetadata, joinTable: JoinTableMetadataArgs) {
         const hasAnyReferencedColumnName = joinTable.joinColumns ? joinTable.joinColumns.find(joinColumn => !!joinColumn.referencedColumnName) : false;
         if (!joinTable.joinColumns || (joinTable.joinColumns && !hasAnyReferencedColumnName)) {
-            return relation.entityMetadata.ownColumns.filter(column => column.isPrimary);
+            return relation.entityMetadata.columns.filter(column => column.isPrimary);
         } else {
             return joinTable.joinColumns.map(joinColumn => {
-                const referencedColumn = relation.entityMetadata.ownColumns.find(column => column.propertyName === joinColumn.referencedColumnName);
+                const referencedColumn = relation.entityMetadata.columns.find(column => column.propertyName === joinColumn.referencedColumnName);
                 if (!referencedColumn)
                     throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`);
 

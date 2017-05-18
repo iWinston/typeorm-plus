@@ -955,9 +955,8 @@ export class SubjectOperationExecutor {
 
         const removePromises = junctionRemove.junctionRelationIds.map(relationIds => {
             let inverseConditions: ObjectLiteral = {};
-            Object.keys(relationIds).forEach(key => {
-                const joinColumn = secondJoinColumns.find(column => column.referencedColumn!.propertyName === key);
-                inverseConditions[joinColumn!.databaseName] = relationIds[key];
+            secondJoinColumns.forEach(joinColumn => {
+                inverseConditions[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(relationIds);
             });
             return this.queryRunner.delete(junctionMetadata.tableName, Object.assign({}, inverseConditions, conditions));
         });

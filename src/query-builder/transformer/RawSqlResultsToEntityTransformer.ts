@@ -6,6 +6,7 @@ import {Alias} from "../Alias";
 import {JoinAttribute} from "../JoinAttribute";
 import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -165,18 +166,27 @@ export class RawSqlResultsToEntityTransformer {
                     }
                 }
 
-                return columns.reduce((idMap, joinColumn) => {
-                    if (columns.length === 1 && rawRelationIdResult.relationIdAttribute.disableMixedMap === false) {
-                        idMap = result[joinColumn.databaseName];
+                // const idMapColumns = (relation.isOneToMany || relation.isOneToOneNotOwner) ? columns : columns.map(column => column.referencedColumn!);
+                // const idMap = idMapColumns.reduce((idMap, column) => {
+                //     return OrmUtils.mergeDeep(idMap, column.createValueMap(result[column.databaseName]));
+                // }, {} as ObjectLiteral); // need to create reusable function for this process
+
+                const idMap = columns.reduce((idMap, column) => {
+                    if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+                        return OrmUtils.mergeDeep(idMap, column.createValueMap(result[column.databaseName]));
                     } else {
-                        if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                            idMap[joinColumn.propertyName] = result[joinColumn.databaseName];
-                        } else {
-                            idMap[joinColumn.referencedColumn!.propertyName] = result[joinColumn.databaseName];
-                        }
+                        return OrmUtils.mergeDeep(idMap, column.referencedColumn!.createValueMap(result[column.databaseName]));
                     }
-                    return idMap;
                 }, {} as ObjectLiteral);
+
+                if (columns.length === 1 && rawRelationIdResult.relationIdAttribute.disableMixedMap === false) {
+                    if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+                        return columns[0].getEntityValue(idMap);
+                    } else {
+                        return columns[0].referencedColumn!.getEntityValue(idMap);
+                    }
+                }
+                return idMap;
             }).filter(result => result);
 
             const properties = rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyPath.split(".");

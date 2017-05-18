@@ -560,6 +560,13 @@ export class QueryBuilder<Entity> {
 
         relationIdAttribute.queryBuilderFactory = queryBuilderFactory;
         this.expressionMap.relationIdAttributes.push(relationIdAttribute);
+
+        if (relationIdAttribute.relation.junctionEntityMetadata) {
+            this.expressionMap.createAlias({
+                name: relationIdAttribute.junctionAlias,
+                metadata: relationIdAttribute.relation.junctionEntityMetadata
+            });
+        }
         return this;
     }
 
@@ -578,6 +585,12 @@ export class QueryBuilder<Entity> {
         this.expressionMap.createAlias({
             name: relationCountAttribute.junctionAlias
         });
+        if (relationCountAttribute.relation.junctionEntityMetadata) {
+            this.expressionMap.createAlias({
+                name: relationCountAttribute.junctionAlias,
+                metadata: relationCountAttribute.relation.junctionEntityMetadata
+            });
+        }
         return this;
     }
 
@@ -1214,6 +1227,12 @@ export class QueryBuilder<Entity> {
             name: aliasName,
             metadata: joinAttribute.metadata!
         });
+        if (joinAttribute.relation && joinAttribute.relation.junctionEntityMetadata) {
+            this.expressionMap.createAlias({
+                name: joinAttribute.junctionAlias,
+                metadata: joinAttribute.relation.junctionEntityMetadata
+            });
+        }
     }
 
     protected rawResultsToEntities(results: any[], rawRelationIdResults: RelationIdLoadResult[], rawRelationCountResults: RelationCountLoadResult[]) {
@@ -1417,23 +1436,16 @@ export class QueryBuilder<Entity> {
     protected replacePropertyNames(statement: string) {
         this.expressionMap.aliases.forEach(alias => {
             if (!alias.hasMetadata) return;
-            // alias.metadata.embeddeds.forEach(embedded => {
-            //     embedded.columns.forEach(column => {
-            //         const expression = "([ =]|^.{0})" + alias.name + "\\." + embedded.propertyName + "\\." + column.propertyName + "([ =]|.{0}$)";
-            //         statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.fullName) + "$2");
-            //     });
-            //     todo: what about embedded relations here?
-            // });
             alias.metadata.columns.forEach(column => {
-                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =]|.{0}$)";
+                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =\)]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.databaseName) + "$2");
             });
             alias.metadata.relationsWithJoinColumns.forEach(relation => {
                 relation.joinColumns.forEach(joinColumn => {
-                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =]|.{0}$)";
+                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =\)]|.{0}$)";
                     statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(joinColumn.databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
                 });
-                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =]|.{0}$)";
+                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =\)]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
             });
         });
@@ -1665,8 +1677,6 @@ export class QueryBuilder<Entity> {
             //         parameters["parentId_" + index] = id;
             //     }
             // }
-            // console.log(whereSubStrings);
-            // console.log(parameters);
             return whereSubStrings.join(" AND ");
         });
 

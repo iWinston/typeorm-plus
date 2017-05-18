@@ -42,7 +42,7 @@ export function Index(nameOrFieldsOrOptions: string|string[]|((object: any) => a
     const fields = typeof nameOrFieldsOrOptions === "string" ? <((object?: any) => (any[]|{ [key: string]: number }))|string[]> maybeFieldsOrOptions : nameOrFieldsOrOptions as string[];
     let options = (typeof nameOrFieldsOrOptions === "object" && !Array.isArray(nameOrFieldsOrOptions)) ? nameOrFieldsOrOptions as IndexOptions : maybeOptions;
     if (!options)
-        options = (typeof maybeFieldsOrOptions === "object" && !Array.isArray(maybeFieldsOrOptions)) ? nameOrFieldsOrOptions as IndexOptions : maybeOptions;
+        options = (typeof maybeFieldsOrOptions === "object" && !Array.isArray(maybeFieldsOrOptions)) ? maybeFieldsOrOptions as IndexOptions : maybeOptions;
 
     return function (clsOrObject: Function|Object, propertyName?: string) {
         const args: IndexMetadataArgs = {

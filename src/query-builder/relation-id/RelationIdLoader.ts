@@ -65,7 +65,7 @@ export class RelationIdLoader {
                     return joinColumns.map(joinColumn => {
                         const parameterName = joinColumn.databaseName + index;
                         parameters[parameterName] = rawEntity[relationIdAttr.parentAlias + "_" + joinColumn.referencedColumn!.databaseName];
-                        return tableAlias + "." + joinColumn.databaseName + " = :" + parameterName;
+                        return tableAlias + "." + joinColumn.propertyPath + " = :" + parameterName;
                     }).join(" AND ");
                 }).map(condition => "(" + condition + ")")
                     .join(" OR ");
@@ -80,11 +80,11 @@ export class RelationIdLoader {
                 const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
 
                 joinColumns.forEach(joinColumn => {
-                    qb.addSelect(tableAlias + "." + joinColumn.databaseName, joinColumn.databaseName);
+                    qb.addSelect(tableAlias + "." + joinColumn.propertyPath, joinColumn.databaseName);
                 });
 
                 relation.inverseRelation!.entityMetadata.primaryColumns.forEach(primaryColumn => {
-                    qb.addSelect(tableAlias + "." + primaryColumn.databaseName, primaryColumn.databaseName);
+                    qb.addSelect(tableAlias + "." + primaryColumn.propertyPath, primaryColumn.databaseName);
                 });
 
                 qb.from(table, tableAlias)
@@ -116,7 +116,7 @@ export class RelationIdLoader {
 
                 const mappedColumns = rawEntities.map(rawEntity => {
                     return joinColumns.reduce((map, joinColumn) => {
-                        map[joinColumn.databaseName] = rawEntity[relationIdAttr.parentAlias + "_" + joinColumn.referencedColumn!.databaseName];
+                        map[joinColumn.propertyPath] = rawEntity[relationIdAttr.parentAlias + "_" + joinColumn.referencedColumn!.databaseName];
                         return map;
                     }, {} as ObjectLiteral);
                 });
@@ -133,7 +133,7 @@ export class RelationIdLoader {
                 });
 
                 const inverseJoinColumnCondition = inverseJoinColumns.map(joinColumn => {
-                    return junctionAlias + "." + joinColumn.databaseName + " = " + inverseSideTableAlias + "." + joinColumn.referencedColumn!.databaseName;
+                    return junctionAlias + "." + joinColumn.propertyPath + " = " + inverseSideTableAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
                 const condition = joinColumnConditions.map(condition => {
@@ -143,11 +143,11 @@ export class RelationIdLoader {
                 const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
 
                 inverseJoinColumns.forEach(joinColumn => {
-                    qb.addSelect(junctionAlias + "." + joinColumn.databaseName, joinColumn.databaseName);
+                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName);
                 });
 
                 joinColumns.forEach(joinColumn => {
-                    qb.addSelect(junctionAlias + "." + joinColumn.databaseName, joinColumn.databaseName);
+                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName);
                 });
 
                 qb.fromTable(inverseSideTableName, inverseSideTableAlias)

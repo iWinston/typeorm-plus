@@ -361,7 +361,8 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
             throw new QueryRunnerAlreadyReleasedError();
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        let sql = `CREATE SCHEMA IF NOT EXISTS "${this.schemaName}";CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        await this.query(`CREATE SCHEMA IF NOT EXISTS "${this.schemaName}"`);
+        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
             .map(column => `, CONSTRAINT "uk_${table.name}_${column.name}" UNIQUE ("${column.name}")`)

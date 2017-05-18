@@ -401,7 +401,6 @@ export class Repository<Entity extends ObjectLiteral> {
         if (!this.metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
            id = this.metadata.createEntityIdMap([id]);
         }
-        console.log("me", [id]);
         qb.andWhereInIds([id]);
         return qb.getOne();
     }
