@@ -3,7 +3,7 @@ import {AbstractRepository} from "../../../src/repository/AbstractRepository";
 import {Author} from "../entity/Author";
 
 /**
- * Second type of custom repository - extends abstract repository (also can not extend anything).
+ * First type of custom repository - extends abstract repository.
  */
 @EntityRepository(Author)
 export class AuthorRepository extends AbstractRepository<Author> {

@@ -567,39 +567,8 @@ export class Connection {
      * Gets custom entity repository marked with @EntityRepository decorator.
      */
     getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
-            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
-        });
-        if (!entityRepositoryMetadataArgs)
-            throw new CustomRepositoryNotFoundError(customRepository);
-
-        let entityRepositoryInstance: any = this.entityRepositories.find(entityRepository => entityRepository.constructor === customRepository);
-        if (!entityRepositoryInstance) {
-            entityRepositoryInstance = new (entityRepositoryMetadataArgs.target as any)();
-
-            if (entityRepositoryInstance instanceof AbstractRepository) {
-                // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-                // however we need these properties for internal work of the class
-                if (!(entityRepositoryInstance as any)["manager"])
-                    (entityRepositoryInstance as any)["manager"] = this.manager;
-            }
-            if (entityRepositoryInstance instanceof Repository) {
-                if (!entityRepositoryMetadataArgs.entity)
-                    throw new CustomRepositoryCannotInheritRepositoryError(customRepository);
-
-                // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-                // however we need these properties for internal work of the class
-                (entityRepositoryInstance as any)["manager"] = this.manager;
-                (entityRepositoryInstance as any)["metadata"] = this.getMetadata(entityRepositoryMetadataArgs.entity);
-            }
-
-            // register entity repository
-            this.entityRepositories.push(entityRepositoryInstance);
-        }
-
-        return entityRepositoryInstance;
+        return this.manager.getCustomRepository(customRepository);
     }
-
 
     // -------------------------------------------------------------------------
     // Protected Methods

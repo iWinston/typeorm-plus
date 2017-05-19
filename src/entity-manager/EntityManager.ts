@@ -21,6 +21,10 @@ import {SubjectBuilder} from "../persistence/SubjectBuilder";
 import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
+import {CustomRepositoryNotFoundError} from "../repository/error/CustomRepositoryNotFoundError";
+import {getMetadataArgsStorage} from "../index";
+import {AbstractRepository} from "../repository/AbstractRepository";
+import {CustomRepositoryCannotInheritRepositoryError} from "../repository/error/CustomRepositoryCannotInheritRepositoryError";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -665,7 +669,31 @@ export class EntityManager {
      * Gets custom entity repository marked with @EntityRepository decorator.
      */
     getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        return this.connection.getCustomRepository<T>(customRepository);
+        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
+            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
+        });
+        if (!entityRepositoryMetadataArgs)
+            throw new CustomRepositoryNotFoundError(customRepository);
+
+        const entityMetadata = entityRepositoryMetadataArgs.entity ? this.connection.getMetadata(entityRepositoryMetadataArgs.entity) : undefined;
+
+        const entityRepositoryInstance = new (entityRepositoryMetadataArgs.target as any)(this, entityMetadata);
+
+        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+        // however we need these properties for internal work of the class
+        if (entityRepositoryInstance instanceof AbstractRepository) {
+            if (!(entityRepositoryInstance as any)["manager"])
+                (entityRepositoryInstance as any)["manager"] = this;
+        }
+        if (entityRepositoryInstance instanceof Repository) {
+            if (!entityMetadata)
+                throw new CustomRepositoryCannotInheritRepositoryError(customRepository);
+
+            (entityRepositoryInstance as any)["manager"] = this;
+            (entityRepositoryInstance as any)["metadata"] = entityMetadata;
+        }
+
+        return entityRepositoryInstance;
     }
 
     /**
