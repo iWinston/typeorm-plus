@@ -17,6 +17,8 @@ export class ColumnMetadata {
 
     /**
      * Entity metadata where this column metadata is.
+     *
+     * For example for @Column() name: string in Post, entityMetadata will be metadata of Post entity.
      */
     entityMetadata: EntityMetadata;
 

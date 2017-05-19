@@ -3,6 +3,8 @@ import {RelationMetadata} from "./RelationMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
+import {RelationIdMetadata} from "./RelationIdMetadata";
+import {RelationCountMetadata} from "./RelationCountMetadata";
 
 /**
  * Contains all information about entity's embedded property.
@@ -87,7 +89,7 @@ export class EmbeddedMetadata {
     embeddedMetadataTree: EmbeddedMetadata[] = [];
 
     /**
-     * Returns embed metadatas from all levels of the parent tree.
+     * Embed metadatas from all levels of the parent tree.
      *
      * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
      * this method will return [embed metadata of data, embed metadata of information, embed metadata of counters]
@@ -95,9 +97,19 @@ export class EmbeddedMetadata {
     columnsFromTree: ColumnMetadata[] = [];
 
     /**
-     * Returns all relations of this embed and all relations from its child embeds.
+     * Relations of this embed and all relations from its child embeds.
      */
     relationsFromTree: RelationMetadata[] = [];
+
+    /**
+     * Relation ids of this embed and all relation ids from its child embeds.
+     */
+    relationIdsFromTree: RelationIdMetadata[] = [];
+
+    /**
+     * Relation counts of this embed and all relation counts from its child embeds.
+     */
+    relationCountsFromTree: RelationCountMetadata[] = [];
 
     // ---------------------------------------------------------------------
     // Constructor

@@ -79,6 +79,10 @@ export class IndexMetadata {
     // Public Build Methods
     // ---------------------------------------------------------------------
 
+    /**
+     * Builds some depend index properties.
+     * Must be called after all entity metadata's properties map, columns and relations are built.
+     */
     build(namingStrategy: NamingStrategyInterface): this {
         this.tableName = this.entityMetadata.tableName;
 

@@ -18,6 +18,11 @@ export class RelationIdMetadata {
     entityMetadata: EntityMetadata;
 
     /**
+     * Relation from which ids will be extracted.
+     */
+    relation: RelationMetadata;
+
+    /**
      * Relation name which need to count.
      */
     relationNameOrFactory: string|((object: any) => any);
@@ -51,28 +56,28 @@ export class RelationIdMetadata {
         args: RelationIdMetadataArgs
     }) {
         this.entityMetadata = options.entityMetadata;
-        const args = options.args;
-        this.target = args.target;
-        this.propertyName = args.propertyName;
-        this.relationNameOrFactory = args.relation;
-        this.alias = args.alias;
-        this.queryBuilderFactory = args.queryBuilderFactory;
+        this.target = options.args.target;
+        this.propertyName = options.args.propertyName;
+        this.relationNameOrFactory = options.args.relation;
+        this.alias = options.args.alias;
+        this.queryBuilderFactory = options.args.queryBuilderFactory;
     }
 
     // ---------------------------------------------------------------------
-    // Accessors
+    // Public Builder Methods
     // ---------------------------------------------------------------------
 
     /**
-     * Relation which need to count.
+     * Builds some depend relation id properties.
+     * This builder method should be used only after entity metadata, its properties map and all relations are build.
      */
-    get relation(): RelationMetadata {
-        const propertyName = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
-        const relation = this.entityMetadata.relations.find(relation => relation.propertyName === propertyName);
+    build() {
+        const propertyPath = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
+        const relation = this.entityMetadata.findRelationWithPropertyPath(propertyPath);
         if (!relation)
-            throw new Error(`Cannot find relation ${propertyName}. Wrong relation specified for @RelationId decorator.`);
+            throw new Error(`Cannot find relation ${propertyPath}. Wrong relation specified for @RelationId decorator.`);
 
-        return relation;
+        this.relation = relation;
     }
 
 }

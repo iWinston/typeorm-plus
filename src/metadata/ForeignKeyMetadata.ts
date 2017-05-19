@@ -87,6 +87,10 @@ export class ForeignKeyMetadata {
     // Public Methods
     // ---------------------------------------------------------------------
 
+    /**
+     * Builds some depend foreign key properties.
+     * Must be called after all entity metadatas and their columns are built.
+     */
     build(namingStrategy: NamingStrategyInterface) {
         this.columnNames = this.columns.map(column => column.databaseName);
         this.referencedColumnNames = this.referencedColumns.map(column => column.databaseName);

@@ -19,11 +19,6 @@ export class RelationMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Relation type, e.g. is it one-to-one, one-to-many, many-to-one or many-to-many.
-     */
-    relationType: RelationType;
-
-    /**
      * Entity metadata of the entity where this relation is placed.
      *
      * For example for @ManyToMany(type => Category) in Post, entityMetadata will be metadata of Post entity.
@@ -39,6 +34,7 @@ export class RelationMetadata {
 
     /**
      * Entity metadata of the junction table.
+     * Junction tables have their own entity metadata objects.
      * Defined only for many-to-many relations.
      */
     junctionEntityMetadata?: EntityMetadata;
@@ -50,9 +46,9 @@ export class RelationMetadata {
     embeddedMetadata?: EmbeddedMetadata;
 
     /**
-     * Foreign keys created for this relation.
+     * Relation type, e.g. is it one-to-one, one-to-many, many-to-one or many-to-many.
      */
-    foreignKeys: ForeignKeyMetadata[] = [];
+    relationType: RelationType;
 
     /**
      * Target entity to which this relation is applied.
@@ -125,28 +121,6 @@ export class RelationMetadata {
     onDelete?: OnDeleteType;
 
     /**
-     * Join table name.
-     */
-    joinTableName: string;
-
-    /**
-     * Join table columns.
-     * Join columns can be obtained only from owner side of the relation.
-     * From non-owner side of the relation join columns will be empty.
-     * If this relation is a many-to-one/one-to-one then it takes join columns from the current entity.
-     * If this relation is many-to-many then it takes all owner join columns from the junction entity.
-     */
-    joinColumns: ColumnMetadata[] = [];
-
-    /**
-     * Inverse join table columns.
-     * Inverse join columns are supported only for many-to-many relations
-     * and can be obtained only from owner side of the relation.
-     * From non-owner side of the relation join columns will be undefined.
-     */
-    inverseJoinColumns: ColumnMetadata[] = [];
-
-    /**
      * Gets the property's type to which this relation is applied.
      *
      * For example for @ManyToMany(type => Category) in Post, target will be Category.
@@ -213,7 +187,11 @@ export class RelationMetadata {
     inverseSidePropertyPath: string;
 
     /**
-     * Inverse side of the relation.
+     * Inverse side of the relation set by user.
+     *
+     * Inverse side set in the relation can be either string - property name of the column on inverse side,
+     * either can be a function that accepts a map of properties with the object and returns one of them.
+     * Second approach is used to achieve type-safety.
      */
     givenInverseSidePropertyFactory: PropertyTypeFactory<any>;
 
@@ -221,6 +199,33 @@ export class RelationMetadata {
      * Gets the relation metadata of the inverse side of this relation.
      */
     inverseRelation?: RelationMetadata;
+
+    /**
+     * Join table name.
+     */
+    joinTableName: string;
+
+    /**
+     * Foreign keys created for this relation.
+     */
+    foreignKeys: ForeignKeyMetadata[] = [];
+
+    /**
+     * Join table columns.
+     * Join columns can be obtained only from owner side of the relation.
+     * From non-owner side of the relation join columns will be empty.
+     * If this relation is a many-to-one/one-to-one then it takes join columns from the current entity.
+     * If this relation is many-to-many then it takes all owner join columns from the junction entity.
+     */
+    joinColumns: ColumnMetadata[] = [];
+
+    /**
+     * Inverse join table columns.
+     * Inverse join columns are supported only for many-to-many relations
+     * and can be obtained only from owner side of the relation.
+     * From non-owner side of the relation join columns will be undefined.
+     */
+    inverseJoinColumns: ColumnMetadata[] = [];
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -368,10 +373,18 @@ export class RelationMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(namingStrategy: NamingStrategyInterface) {
+    /**
+     * Builds some depend relation metadata properties.
+     * This builder method should be used only after embedded metadata tree was build.
+     */
+    build() {
         this.propertyPath = this.buildPropertyPath();
     }
 
+    /**
+     * Registers given foreign keys in the relation.
+     * This builder method should be used to register foreign key in the relation.
+     */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
         this.foreignKeys.push(...foreignKeys);
         this.joinColumns = this.foreignKeys[0] ? this.foreignKeys[0].columns : [];
@@ -385,11 +398,21 @@ export class RelationMetadata {
     }
 
     /**
-     * Inverse side set in the relation can be either string - property name of the column on inverse side,
-     * either can be a function that accepts a map of properties with the object and returns one of them.
-     * Second approach is used to achieve type-safety.
-     *
-     * todo: revisit comment
+     * Registers a given junction entity metadata.
+     * This builder method can be called after junction entity metadata for the many-to-many relation was created.
+     */
+    registerJunctionEntityMetadata(junctionEntityMetadata: EntityMetadata) {
+        this.junctionEntityMetadata = junctionEntityMetadata;
+        this.joinTableName = junctionEntityMetadata.tableName;
+        if (this.inverseRelation) {
+            this.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
+            this.joinTableName = junctionEntityMetadata.tableName;
+        }
+    }
+
+    /**
+     * Builds inverse side property path based on given inverse side property factory.
+     * This builder method should be used only after properties map of the inverse entity metadata was build.
      */
     buildInverseSidePropertyPath(): string {
 
@@ -408,14 +431,13 @@ export class RelationMetadata {
             return this.entityMetadata.treeParentRelation.propertyName;
         }
 
-        return ""; // todo: return undefined instead?
+        return "";
     }
 
-    // ---------------------------------------------------------------------
-    // Protected Methods
-    // ---------------------------------------------------------------------
-
-    protected buildPropertyPath(): string {
+    /**
+     * Builds relation's property path based on its embedded tree.
+     */
+    buildPropertyPath(): string {
         if (!this.embeddedMetadata || !this.embeddedMetadata.parentPropertyNames.length)
             return this.propertyName;
 

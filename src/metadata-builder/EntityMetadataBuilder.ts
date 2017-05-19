@@ -94,9 +94,7 @@ export class EntityMetadataBuilder {
                 // here we create a junction entity metadata for a new junction table of many-to-many relation
                 const junctionEntityMetadata = this.junctionEntityMetadataBuilder.build(relation, joinTable);
                 relation.registerForeignKeys(...junctionEntityMetadata.foreignKeys);
-                relation.junctionEntityMetadata = junctionEntityMetadata;
-                if (relation.inverseRelation)
-                    relation.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
+                relation.registerJunctionEntityMetadata(junctionEntityMetadata);
 
                 // compute new entity metadata properties and push it to entity metadatas pool
                 this.computeEntityMetadata(junctionEntityMetadata);
@@ -210,10 +208,10 @@ export class EntityMetadataBuilder {
         entityMetadata.embeddeds.forEach(embedded => embedded.build(this.connection.driver.namingStrategy));
         entityMetadata.embeddeds.forEach(embedded => {
             embedded.columnsFromTree.forEach(column => column.build(this.connection.driver.namingStrategy));
-            embedded.relationsFromTree.forEach(relation => relation.build(this.connection.driver.namingStrategy));
+            embedded.relationsFromTree.forEach(relation => relation.build());
         });
         entityMetadata.ownColumns.forEach(column => column.build(this.connection.driver.namingStrategy));
-        entityMetadata.ownRelations.forEach(relation => relation.build(this.connection.driver.namingStrategy));
+        entityMetadata.ownRelations.forEach(relation => relation.build());
         entityMetadata.relations = entityMetadata.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), entityMetadata.ownRelations);
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(relation => relation.isOneToOne);
         entityMetadata.oneToManyRelations = entityMetadata.relations.filter(relation => relation.isOneToMany);
@@ -236,6 +234,13 @@ export class EntityMetadataBuilder {
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);
         entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.driver.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
+
+        entityMetadata.relationIds.forEach(relationId => relationId.build());
+        // entityMetadata.relationCounts.forEach(relationCount => relationCount.build());
+        entityMetadata.embeddeds.forEach(embedded => {
+            embedded.relationIdsFromTree.forEach(relationId => relationId.build());
+            // embedded.relationCountsFromTree.forEach(relationCount => relationCount.build());
+        });
     }
 
     /**
