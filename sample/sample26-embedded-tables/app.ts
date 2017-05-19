@@ -34,7 +34,7 @@ createConnection(options).then(connection => {
     question.counters.metadata = "#question #question-counter";
 
     questionRepository
-        .persist(question)
+        .save(question)
         .then(savedQuestion => {
             console.log("question has been saved: ", savedQuestion);
             
@@ -47,7 +47,7 @@ createConnection(options).then(connection => {
             loadedQuestion!.counters.commentCount = 7;
             loadedQuestion!.counters.metadata = "#updated question";
             
-            return questionRepository.persist(loadedQuestion!);
+            return questionRepository.save(loadedQuestion!);
         })
         .then(updatedQuestion => {
             console.log("question has been updated: ", updatedQuestion);

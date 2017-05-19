@@ -23,7 +23,7 @@ describe("persistence > multi primary keys", () => {
             post1.firstId = 1;
             post1.secondId = 2;
 
-            await connection.entityManager.persist(post1);
+            await connection.entityManager.save(post1);
 
             // create first category and post and save them
             const category1 = new Category();
@@ -31,7 +31,7 @@ describe("persistence > multi primary keys", () => {
             category1.name = "Category saved by cascades #1";
             category1.posts = [post1];
 
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             // now check
             const posts = await connection.entityManager.find(Post, {

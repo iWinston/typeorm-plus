@@ -24,25 +24,25 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const category1 = new Category();
         category1.name = "kids";
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "future";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "cars";
-        await connection.manager.persist(category3);
+        await connection.manager.save(category3);
 
         const post = new Post();
         post.title = "about kids";
         post.categories = [category1, category2];
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         const post2 = new Post();
         post2.title = "about BMW";
         post2.categories = [category3];
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -69,27 +69,27 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const category1 = new Category();
         category1.name = "kids";
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "future";
         category2.isRemoved = true;
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "cars";
         category3.isRemoved = true;
-        await connection.manager.persist(category3);
+        await connection.manager.save(category3);
 
         const post = new Post();
         post.title = "about kids";
         post.categories = [category1, category2];
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         const post2 = new Post();
         post2.title = "about BMW";
         post2.categories = [category3];
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -116,16 +116,16 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const category1 = new Category();
         category1.name = "kids";
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "future";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const post = new Post();
         post.title = "about kids";
         post.subcategories = [category1, category2];
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -142,17 +142,17 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const category1 = new Category();
         category1.name = "kids";
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "future";
         category2.isRemoved = true;
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const post = new Post();
         post.title = "about kids";
         post.subcategories = [category1, category2];
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -169,17 +169,17 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.manager.persist(category);
+        await connection.manager.save(category);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category];
-        await connection.manager.persist(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.categories = [category];
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
@@ -196,18 +196,18 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.manager.persist(category);
+        await connection.manager.save(category);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category];
-        await connection.manager.persist(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.isRemoved = true;
         post2.categories = [category];
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
@@ -224,39 +224,39 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const image1 = new Image();
         image1.name = "photo1";
-        await connection.manager.persist(image1);
+        await connection.manager.save(image1);
 
         const image2 = new Image();
         image2.name = "photo2";
-        await connection.manager.persist(image2);
+        await connection.manager.save(image2);
 
         const image3 = new Image();
         image3.name = "photo2";
-        await connection.manager.persist(image3);
+        await connection.manager.save(image3);
 
         const category1 = new Category();
         category1.name = "cars";
         category1.images = [image1, image2];
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "Audi";
         category3.images = [image3];
-        await connection.manager.persist(category3);
+        await connection.manager.save(category3);
 
         const post = new Post();
         post.title = "about BMW";
         post.categories = [category1, category2];
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.categories = [category3];
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -304,21 +304,21 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const image1 = new Image();
         image1.name = "photo1";
-        await connection.manager.persist(image1);
+        await connection.manager.save(image1);
 
         const image2 = new Image();
         image2.name = "photo2";
-        await connection.manager.persist(image2);
+        await connection.manager.save(image2);
 
         const category1 = new Category();
         category1.name = "cars";
         category1.images = [image1, image2];
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const post = new Post();
         post.title = "about BMW";
         post.categories = [category1];
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -336,43 +336,43 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         const image1 = new Image();
         image1.name = "photo1";
-        await connection.manager.persist(image1);
+        await connection.manager.save(image1);
 
         const image2 = new Image();
         image2.name = "photo2";
         image2.isRemoved = true;
-        await connection.manager.persist(image2);
+        await connection.manager.save(image2);
 
         const image3 = new Image();
         image3.name = "photo2";
         image3.isRemoved = true;
-        await connection.manager.persist(image3);
+        await connection.manager.save(image3);
 
         const category1 = new Category();
         category1.name = "cars";
         category1.images = [image1, image2];
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
         category2.isRemoved = true;
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "BMW";
         category3.isRemoved = true;
         category3.images = [image3];
-        await connection.manager.persist(category3);
+        await connection.manager.save(category3);
 
         const post = new Post();
         post.title = "about BMW";
         post.categories = [category1, category2];
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         const post2 = new Post();
         post2.title = "about BMW";
         post2.categories = [category3];
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")

@@ -200,7 +200,7 @@ describe("Connection", () => {
             const postRepository = connection.getRepository(Post);
             const post = new Post();
             post.title = "new post";
-            await postRepository.persist(post);
+            await postRepository.save(post);
             const loadedPost = await postRepository.findOneById(post.id);
             expect(loadedPost).to.be.eql(post);
             await connection.syncSchema(true);
@@ -460,7 +460,7 @@ describe("Connection", () => {
                 comment.context = `To ${schemaName}`;
 
                 const commentRepo = connection.getRepository(CommentV1);
-                await commentRepo.persist(comment);
+                await commentRepo.save(comment);
 
                 const query = await connection.driver.createQueryRunner();
                 const rows = await query.query(`select * from "${schemaName}"."comment" where id = $1`, [comment.id]);

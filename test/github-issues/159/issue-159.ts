@@ -28,7 +28,7 @@ describe.skip("github issues > #159 Referencing ClassTableChild build table erro
 
         department.manager = employee;
 
-        await connection.entityManager.persist(department);
+        await connection.entityManager.save(department);
 
         department.id.should.be.equal(1);
         department.name.should.be.equal("Software");

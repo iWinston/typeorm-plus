@@ -11,7 +11,7 @@ import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor"
 import {SubjectBuilder} from "../persistence/SubjectBuilder";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
-import {PersistOptions} from "./PersistOptions";
+import {SaveOptions} from "./SaveOptions";
 import {RemoveOptions} from "./RemoveOptions";
 
 /**
@@ -139,18 +139,18 @@ export class Repository<Entity extends ObjectLiteral> {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    async persist(entities: Entity[], options?: PersistOptions): Promise<Entity[]>;
+    async save(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Saves a given entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
-    async persist(entity: Entity, options?: PersistOptions): Promise<Entity>;
+    async save(entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
      * Saves one or many given entities.
      */
-    async persist(entityOrEntities: Entity|Entity[], options?: PersistOptions): Promise<Entity|Entity[]> {
+    async save(entityOrEntities: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
 
         // if for some reason non empty entity was passed then return it back without having to do anything
         if (!entityOrEntities)
@@ -158,7 +158,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
         // if multiple entities given then go throw all of them and save them
         if (entityOrEntities instanceof Array)
-            return Promise.all(entityOrEntities.map(entity => this.persist(entity)));
+            return Promise.all(entityOrEntities.map(entity => this.save(entity)));
 
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
@@ -180,37 +180,56 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Saves all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    async persist(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+
+    /**
+     * Saves a given entity in the database.
+     * If entity does not exist in the database then inserts, otherwise updates.
+     */
+    async persist(entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Saves one or many given entities.
+     */
+    async persist(entityOrEntities: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
+        return this.save(entityOrEntities as any, options);
+    }
+
+    /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void>;
+    async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given find options.
      */
-    async update(findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void>;
+    async update(findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    async update(conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void> {
+    async update(conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         const entity = await this.findOne(conditionsOrFindOptions as any); // this is temporary, in the future can be refactored to perform better
         if (!entity)
             throw new Error(`Cannot find entity to update by a given criteria`);
 
         Object.assign(entity, partialEntity);
-        await this.persist(entity, options);
+        await this.save(entity, options);
     }
 
     /**
      * Updates entity partially. Entity will be found by a given id.
      */
-    async updateById(id: any, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void> {
+    async updateById(id: any, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         const entity = await this.findOneById(id as any); // this is temporary, in the future can be refactored to perform better
         if (!entity)
             throw new Error(`Cannot find entity to update by a id`);
 
         Object.assign(entity, partialEntity);
-        await this.persist(entity, options);
+        await this.save(entity, options);
     }
 
     /**

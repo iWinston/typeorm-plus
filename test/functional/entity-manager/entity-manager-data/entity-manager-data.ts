@@ -32,7 +32,7 @@ describe.skip("entity manager > custom data", () => {
 
         const post = new Post();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         expect(connection.entityManager.getData("user")).to.be.not.empty;
         connection.entityManager.getData("user").should.be.eql({ name: "Updated Dima" });

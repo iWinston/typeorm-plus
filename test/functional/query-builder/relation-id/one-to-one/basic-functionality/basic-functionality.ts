@@ -27,21 +27,21 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
 
         const category = new Category();
         category.name = "kids";
-        await connection.manager.persist(category);
+        await connection.manager.save(category);
 
         const post = new Post();
         post.title = "about kids";
         post.category = category;
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         const category2 = new Category();
         category2.name = "cars";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const post2 = new Post();
         post2.title = "about cars";
         post2.category = category2;
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -67,21 +67,21 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
 
         const category = new Category();
         category.name = "kids";
-        await connection.manager.persist(category);
+        await connection.manager.save(category);
 
         const post = new Post();
         post.title = "about kids";
         post.category2 = category;
-        await connection.manager.persist(post);
+        await connection.manager.save(post);
 
         const category2 = new Category();
         category2.name = "cars";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const post2 = new Post();
         post2.title = "about cars";
         post2.category2 = category2;
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")

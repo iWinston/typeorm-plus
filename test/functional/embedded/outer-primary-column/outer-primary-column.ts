@@ -28,7 +28,7 @@ describe("embedded > outer-primary-column", () => {
         post1.counters.comments = 1;
         post1.counters.favorites = 2;
         post1.counters.likes = 3;
-        await connection.getRepository(Post).persist(post1);
+        await connection.getRepository(Post).save(post1);
 
         const post2 = new Post();
         post2.title = "About airplanes";
@@ -38,7 +38,7 @@ describe("embedded > outer-primary-column", () => {
         post2.counters.comments = 2;
         post2.counters.favorites = 3;
         post2.counters.likes = 4;
-        await postRepository.persist(post2);
+        await postRepository.save(post2);
 
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -55,7 +55,7 @@ describe("embedded > outer-primary-column", () => {
         expect(loadedPost.counters.should.be.eql({ code: 1, comments: 1, favorites: 2, likes: 3 }));
 
         loadedPost.counters.favorites += 1;
-        await postRepository.persist(loadedPost);
+        await postRepository.save(loadedPost);
 
         const loadedPost2 = (await postRepository.findOneById(1))!;
         expect(loadedPost.title).to.be.equal("About cars");

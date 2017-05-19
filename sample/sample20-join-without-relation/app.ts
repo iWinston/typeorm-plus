@@ -46,12 +46,12 @@ createConnection(options).then(connection => {
     post.categories = [category1, category2];
 
     Promise.all<any>([
-        authorRepository.persist(author),
-        categoryRepository.persist(category1),
-        categoryRepository.persist(category2),
+        authorRepository.save(author),
+        categoryRepository.save(category1),
+        categoryRepository.save(category2),
     ])
         .then(() => {
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(() => {
             console.log("Everything has been saved.");

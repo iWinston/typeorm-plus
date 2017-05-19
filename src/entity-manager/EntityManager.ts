@@ -8,7 +8,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
 import {RemoveOptions} from "../repository/RemoveOptions";
-import {PersistOptions} from "../repository/PersistOptions";
+import {SaveOptions} from "../repository/SaveOptions";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -56,47 +56,47 @@ export class EntityManager extends BaseEntityManager {
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    persist<Entity>(entity: Entity, options?: PersistOptions): Promise<Entity>;
+    save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    persist<Entity>(targetOrEntity: Function, entity: Entity, options?: PersistOptions): Promise<Entity>;
+    save<Entity>(targetOrEntity: Function, entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    persist<Entity>(targetOrEntity: string, entity: Entity, options?: PersistOptions): Promise<Entity>;
+    save<Entity>(targetOrEntity: string, entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    persist<Entity>(entities: Entity[], options?: PersistOptions): Promise<Entity[]>;
+    save<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    persist<Entity>(targetOrEntity: Function, entities: Entity[], options?: PersistOptions): Promise<Entity[]>;
+    save<Entity>(targetOrEntity: Function, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    persist<Entity>(targetOrEntity: string, entities: Entity[], options?: PersistOptions): Promise<Entity[]>;
+    save<Entity>(targetOrEntity: string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Persists (saves) a given entity in the database.
      */
-    persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[], options?: PersistOptions): Promise<Entity|Entity[]> {
+    save<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
         const target = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Function|string;
         const entity = arguments.length === 2 ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
         return Promise.resolve().then(() => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
             if (typeof target === "string") {
-                return this.getRepository<Entity|Entity[]>(target).persist(entity, options);
+                return this.getRepository<Entity|Entity[]>(target).save(entity, options);
             } else {
                 // todo: throw exception if constructor in target is not set
                 if (target instanceof Array) {
@@ -104,29 +104,72 @@ export class EntityManager extends BaseEntityManager {
                         return Promise.resolve(target);
 
                     return Promise.all(target.map((t, i) => {
-                        return this.getRepository<Entity>(t.constructor).persist((entity as Entity[])[i], options);
+                        return this.getRepository<Entity>(t.constructor).save((entity as Entity[])[i], options);
                     }));
                 } else {
-                    return this.getRepository<Entity>(target.constructor).persist(entity as Entity, options);
+                    return this.getRepository<Entity>(target.constructor).save(entity as Entity, options);
                 }
             }
         });
     }
 
     /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: Function, entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: string, entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: Function, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+
+    /**
+     * Persists (saves) all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    persist<Entity>(targetOrEntity: string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+
+    /**
+     * Persists (saves) a given entity in the database.
+     */
+    persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
+        return this.save(targetOrEntity as any, maybeEntity as any, options);
+    }
+
+    /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    async update<Entity>(target: Function|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void>;
+    async update<Entity>(target: Function|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given find options.
      */
-    async update<Entity>(target: Function|string, findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void>;
+    async update<Entity>(target: Function|string, findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    async update<Entity>(target: Function|string, conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void> {
+    async update<Entity>(target: Function|string, conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         return this.getRepository<Entity|Entity[]>(target as any)
             .update(conditionsOrFindOptions as any, partialEntity, options);
     }
@@ -134,7 +177,7 @@ export class EntityManager extends BaseEntityManager {
     /**
      * Updates entity partially. Entity will be found by a given id.
      */
-    async updateById<Entity>(target: Function|string, id: any, partialEntity: DeepPartial<Entity>, options?: PersistOptions): Promise<void> {
+    async updateById<Entity>(target: Function|string, id: any, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         return this.getRepository<Entity|Entity[]>(target as any)
             .updateById(id, partialEntity, options);
     }

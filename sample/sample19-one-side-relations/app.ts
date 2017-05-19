@@ -49,7 +49,7 @@ createConnection(options).then(connection => {
     post.categories = [category1, category2];
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved.");
             console.log(post);

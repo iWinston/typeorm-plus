@@ -24,7 +24,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         post1.title = "Hello Post #1";
 
         // persist
-        await connection.entityManager.persist(post1);
+        await connection.entityManager.save(post1);
 
         const loadedPosts1 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts1!).not.to.be.empty;
@@ -42,7 +42,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         post2.title = "Hello Post #1";
 
         // persist
-        await connection.entityManager.persist(post2);
+        await connection.entityManager.save(post2);
 
         const loadedPosts2 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts2!).not.to.be.empty;
@@ -60,7 +60,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         post3.title = "Hello Post #1";
 
         // persist
-        await connection.entityManager.persist(post3);
+        await connection.entityManager.save(post3);
 
         const loadedPosts3 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts3!).not.to.be.empty;

@@ -27,7 +27,7 @@ describe("embedded > basic functionality", () => {
         post.counters.favorites = 2;
         post.counters.likes = 1;
 
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         // now load it
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -43,7 +43,7 @@ describe("embedded > basic functionality", () => {
         // now update the post
         loadedPost.counters.favorites += 1;
 
-        await postRepository.persist(loadedPost);
+        await postRepository.save(loadedPost);
 
         // now check it
         const loadedPost2 = (await postRepository.findOneById(1))!;

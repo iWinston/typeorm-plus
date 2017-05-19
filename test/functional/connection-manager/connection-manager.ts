@@ -123,7 +123,7 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
@@ -146,7 +146,7 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post

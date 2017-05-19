@@ -27,7 +27,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         ticket.name = "ticket #1";
         ticket.request = request;
 
-        await connection.entityManager.persist(ticket);
+        await connection.entityManager.save(ticket);
 
         const loadedTicketWithRequest = await connection.entityManager.findOneById(Ticket, 1, {
             join: {
@@ -79,7 +79,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         authRequest.type = "authenticate";
         authRequest.success = true;
 
-        await connection.entityManager.persist(authRequest);
+        await connection.entityManager.save(authRequest);
 
         const request = new Request();
         request.owner = "somebody";
@@ -92,7 +92,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         ticket.request = request;
         request.ticket = ticket;
 
-        await connection.entityManager.persist(request);
+        await connection.entityManager.save(request);
 
         const loadedRequest = await connection.entityManager.findOneById(Request, 2, {
             join: {

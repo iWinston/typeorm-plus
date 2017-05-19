@@ -30,7 +30,7 @@ describe.skip("mongodb > array columns", () => {
             new Counters(3, "number #3"),
         ];
         post.other1 = [];
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         // check saved post
         const loadedPost = await postRepository.findOne({ title: "Post" });
@@ -78,7 +78,7 @@ describe.skip("mongodb > array columns", () => {
         post.other1 = [
             new Counters(0, "other"),
         ];
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         // now load updated post
         const loadedUpdatedPost = await postRepository.findOne({ title: "Post" });

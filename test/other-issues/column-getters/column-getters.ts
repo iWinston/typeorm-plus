@@ -20,7 +20,7 @@ describe("other issues > column with getter / setter should work", () => {
         const post = new Post();
         post.title = "Super title";
         post.text = "About this post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         const loadedPost = await connection
             .entityManager

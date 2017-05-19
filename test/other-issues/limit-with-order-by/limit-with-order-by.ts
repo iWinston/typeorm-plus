@@ -31,7 +31,7 @@ describe("other issues > using limit in conjunction with order by", () => {
                 category.name = "category #" + i;
                 post.categories.push(category);
             }
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.entityManager.save(post));
         }
 
         await Promise.all(promises);

@@ -31,12 +31,12 @@ describe.skip("mongodb > MongoRepository", () => {
         const firstPost = new Post();
         firstPost.title = "Post #1";
         firstPost.text = "Everything about post #1";
-        await postRepository.persist(firstPost);
+        await postRepository.save(firstPost);
 
         const secondPost = new Post();
         secondPost.title = "Post #2";
         secondPost.text = "Everything about post #2";
-        await postRepository.persist(secondPost);
+        await postRepository.save(secondPost);
 
         const cursor = postRepository.createEntityCursor({
             title: "Post #1"

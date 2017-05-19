@@ -51,7 +51,7 @@ describe("persistence > cascade operations", () => {
 
             // post1.category = category1;
             // post1.category.photos = [photo1, photo2];
-            await connection.entityManager.persist(post1);
+            await connection.entityManager.save(post1);
 
             console.log("********************************************************");
             console.log("updating: ", post1);
@@ -59,7 +59,7 @@ describe("persistence > cascade operations", () => {
 
             post1.title = "updated post #1";
             post1.oneCategory.name = "updated category";
-            await connection.entityManager.persist(post1);
+            await connection.entityManager.save(post1);
 
             console.log("********************************************************");
             console.log("removing: ", post1);
@@ -116,7 +116,7 @@ describe("persistence > cascade operations", () => {
             post1.title = "Hello Post #1";
             post1.category = category1;
 
-            await connection.entityManager.persist(post1);
+            await connection.entityManager.save(post1);
 
             // create second category and post and save them
             const category2 = new Category();
@@ -126,7 +126,7 @@ describe("persistence > cascade operations", () => {
             post2.title = "Hello Post #2";
             post2.category = category2;
 
-            await connection.entityManager.persist(post2);
+            await connection.entityManager.save(post2);
 
             // now check
             const posts = await connection.entityManager.find(Post, {
@@ -168,7 +168,7 @@ describe("persistence > cascade operations", () => {
             category1.name = "Category saved by cascades #1";
             category1.posts = [post1];
 
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             // create first post and category and save them
             const post2 = new Post();
@@ -178,7 +178,7 @@ describe("persistence > cascade operations", () => {
             category2.name = "Category saved by cascades #2";
             category2.posts = [post2];
 
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             // now check
             const posts = await connection.entityManager.find(Post, {

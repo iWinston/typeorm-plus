@@ -39,7 +39,7 @@ createConnection(options).then(connection => {
     };
     
     postRepository
-        .persist(post)
+        .save(post)
         .then(result => {
             console.log(result);
         })

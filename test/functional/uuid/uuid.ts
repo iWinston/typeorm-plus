@@ -33,7 +33,7 @@ describe("uuid type", () => {
         let recordRepo = connection.getRepository(Record);
         let record = new Record();
         record.id = "fd357b8f-8838-42f6-b7a2-ae027444e895";
-        let persistedRecord = await recordRepo.persist(record);
+        let persistedRecord = await recordRepo.save(record);
         let foundRecord = await recordRepo.findOneById(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;
         expect(foundRecord!.id).to.eq("fd357b8f-8838-42f6-b7a2-ae027444e895");

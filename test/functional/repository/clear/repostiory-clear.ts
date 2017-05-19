@@ -23,7 +23,7 @@ describe("repository > clear method", () => {
             const post = new Post();
             post.id = i;
             post.title = "post #" + i;
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.entityManager.save(post));
         }
         await Promise.all(promises);
 
@@ -48,7 +48,7 @@ describe("repository > clear method", () => {
             const post = new Post();
             post.id = i;
             post.title = "post #" + i;
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.entityManager.save(post));
         }
         await Promise.all(promises);
 

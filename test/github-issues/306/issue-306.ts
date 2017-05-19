@@ -25,7 +25,7 @@ describe("github issues > embeddeds with custom column name don't work", () => {
         race.duration.durationHours = 10;
         race.duration.durationMinutes = 30;
 
-        await connection.entityManager.persist(race);
+        await connection.entityManager.save(race);
 
         const loadedRace = await connection.entityManager.findOne(Race, { name: "National Race" });
         expect(loadedRace).to.be.not.empty;

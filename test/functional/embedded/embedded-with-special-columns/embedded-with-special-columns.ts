@@ -33,7 +33,7 @@ describe("embedded > embedded-with-special-columns", () => {
         post1.counters.likes = 3;
         post1.counters.subcounters = new Subcounters();
         post1.counters.subcounters.watches = 5;
-        await connection.getRepository(Post).persist(post1);
+        await connection.getRepository(Post).save(post1);
 
         const post2 = new Post();
         post2.id = 2;
@@ -44,7 +44,7 @@ describe("embedded > embedded-with-special-columns", () => {
         post2.counters.likes = 4;
         post2.counters.subcounters = new Subcounters();
         post2.counters.subcounters.watches = 10;
-        await connection.getRepository(Post).persist(post2);
+        await connection.getRepository(Post).save(post2);
 
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -73,7 +73,7 @@ describe("embedded > embedded-with-special-columns", () => {
         loadedPost!.title = "About cars #2";
 
         await sleep(1000);
-        await connection.getRepository(Post).persist(loadedPost!);
+        await connection.getRepository(Post).save(loadedPost!);
 
         loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")

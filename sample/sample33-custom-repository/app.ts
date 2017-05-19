@@ -33,7 +33,7 @@ createConnection(options).then(async connection => {
     await connection
         .entityManager
         .getCustomRepository(PostRepository)
-        .persist(post);
+        .save(post);
 
     const loadedPost = await connection
         .entityManager

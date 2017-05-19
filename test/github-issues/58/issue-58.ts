@@ -41,8 +41,8 @@ describe("github issues > #58 relations with multiple primary keys", () => {
         postCategory2.category = category2;
         postCategory2.post = post;
 
-        await connection.entityManager.persist(postCategory1);
-        await connection.entityManager.persist(postCategory2);
+        await connection.entityManager.save(postCategory1);
+        await connection.entityManager.save(postCategory2);
 
         // check that all persisted objects exist
         const loadedPost = await connection.entityManager

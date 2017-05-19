@@ -38,10 +38,10 @@ describe("repository > removeById and removeByIds methods", function() {
         newPost4.title = "Super post #4";
 
         await Promise.all([
-            postRepository.persist(newPost1),
-            postRepository.persist(newPost2),
-            postRepository.persist(newPost3),
-            postRepository.persist(newPost4)
+            postRepository.save(newPost1),
+            postRepository.save(newPost2),
+            postRepository.save(newPost3),
+            postRepository.save(newPost4)
         ]);
 
         // remove one
@@ -73,10 +73,10 @@ describe("repository > removeById and removeByIds methods", function() {
         newPost4.title = "Super post #4";
 
         await Promise.all([
-            postRepository.persist(newPost1),
-            postRepository.persist(newPost2),
-            postRepository.persist(newPost3),
-            postRepository.persist(newPost4)
+            postRepository.save(newPost1),
+            postRepository.save(newPost2),
+            postRepository.save(newPost3),
+            postRepository.save(newPost4)
         ]);
 
         // remove multiple

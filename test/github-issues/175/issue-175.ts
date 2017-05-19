@@ -20,16 +20,16 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
         const category1 = new Category();
         category1.name = "category #1";
-        await connection.entityManager.persist(category1);
+        await connection.entityManager.save(category1);
 
         const category2 = new Category();
         category2.name = "category #2";
-        await connection.entityManager.persist(category2);
+        await connection.entityManager.save(category2);
 
         const postWithCategories = new Post();
         postWithCategories.title = "post with categories";
         postWithCategories.categories = [category1, category2];
-        await connection.entityManager.persist(postWithCategories);
+        await connection.entityManager.save(postWithCategories);
 
         const loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")
@@ -55,16 +55,16 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
         const category1 = new Category();
         category1.name = "category #1";
-        await connection.entityManager.persist(category1);
+        await connection.entityManager.save(category1);
 
         const category2 = new Category();
         category2.name = "category #2";
-        await connection.entityManager.persist(category2);
+        await connection.entityManager.save(category2);
 
         const postWithoutCategories = new Post();
         postWithoutCategories.title = "post without categories";
         postWithoutCategories.categories = [];
-        await connection.entityManager.persist(postWithoutCategories);
+        await connection.entityManager.save(postWithoutCategories);
 
         const justPost = new Post();
         justPost.title = "just post";
@@ -87,15 +87,15 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
         const category1 = new Category();
         category1.name = "category #1";
-        await connection.entityManager.persist(category1);
+        await connection.entityManager.save(category1);
 
         const category2 = new Category();
         category2.name = "category #2";
-        await connection.entityManager.persist(category2);
+        await connection.entityManager.save(category2);
 
         const justPost = new Post();
         justPost.title = "just post";
-        await connection.entityManager.persist(justPost);
+        await connection.entityManager.save(justPost);
 
         const loadedPost = await connection.entityManager
             .createQueryBuilder(Post, "post")

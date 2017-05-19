@@ -65,7 +65,7 @@ describe("one-to-one", function() {
             newPost.text = "Hello post";
             newPost.title = "this is post title";
             newPost.details = details;
-            return postRepository.persist(newPost).then(post => savedPost = post as Post);
+            return postRepository.save(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -187,7 +187,7 @@ describe("one-to-one", function() {
             newPost.title = "this is post title";
             newPost.category = category;
 
-            return postRepository.persist(newPost).then(post => savedPost = post as Post);
+            return postRepository.save(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -265,13 +265,13 @@ describe("one-to-one", function() {
             newPost.details = details;
 
             return postRepository
-                .persist(newPost)
+                .save(newPost)
                 .then(post => savedPost = post as Post);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
             newPost.details.comment = "i am updated comment";
-            return postRepository.persist(newPost).then(updatedPost => {
+            return postRepository.save(newPost).then(updatedPost => {
                 updatedPost.details!.comment!.should.be.equal("i am updated comment");
                 return postRepository
                     .createQueryBuilder("post")
@@ -303,13 +303,13 @@ describe("one-to-one", function() {
             newPost.details = details;
 
             return postRepository
-                .persist(newPost)
+                .save(newPost)
                 .then(post => savedPost = post as Post);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
             delete newPost.details;
-            return postRepository.persist(newPost).then(updatedPost => {
+            return postRepository.save(newPost).then(updatedPost => {
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.details", "details")
@@ -337,11 +337,11 @@ describe("one-to-one", function() {
             newPost.title = "this is post title";
 
             return postImageRepository
-                .persist(newImage)
+                .save(newImage)
                 .then(image => {
                     savedImage = image as PostImage;
                     newPost.image = image as PostImage;
-                    return postRepository.persist(newPost);
+                    return postRepository.save(newPost);
 
                 }).then(post => {
                     newPost = post as Post;
@@ -354,7 +354,7 @@ describe("one-to-one", function() {
 
                 }).then(loadedPost => {
                     loadedPost!.image.url = "new-logo.png";
-                    return postRepository.persist(loadedPost!);
+                    return postRepository.save(loadedPost!);
 
                 }).then(() => {
                     return postRepository
@@ -386,11 +386,11 @@ describe("one-to-one", function() {
             newPost.title = "this is post title";
 
             return postMetadataRepository
-                .persist(newMetadata)
+                .save(newMetadata)
                 .then(metadata => {
                     savedMetadata = metadata as PostMetadata;
                     newPost.metadata = metadata as PostMetadata;
-                    return postRepository.persist(newPost);
+                    return postRepository.save(newPost);
 
                 }).then(post => {
                     newPost = post as Post;
@@ -403,7 +403,7 @@ describe("one-to-one", function() {
 
                 }).then(loadedPost => {
                     loadedPost!.metadata = null;
-                    return postRepository.persist(loadedPost!);
+                    return postRepository.save(loadedPost!);
 
                 }).then(() => {
                     return postRepository

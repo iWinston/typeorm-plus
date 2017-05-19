@@ -21,7 +21,7 @@ describe("github issues > #219 FindOptions should be able to resolve null values
             const post1 = new Post();
             post1.title = "post #" + i;
             post1.text = i > 5 ? "about post" : null;
-            promises.push(connection.entityManager.persist(post1));
+            promises.push(connection.entityManager.save(post1));
         }
         await Promise.all(promises);
 

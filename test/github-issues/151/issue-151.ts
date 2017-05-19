@@ -26,7 +26,7 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
         post.title = "Hello post";
         post.category = category;
 
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         const loadedPost = await connection.entityManager.findOneById(Post, 1, {
             join: {
@@ -58,11 +58,11 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
         post.title = "Hello post";
         post.category = category;
 
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         post.category = null;
 
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         const loadedPostWithCategory = await connection.entityManager.findOneById(Post, 1, {
             join: {
@@ -97,11 +97,11 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
         post.title = "Hello post";
         post.metadata = metadata;
 
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         post.metadata = null;
 
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         const loadedPostWithMetadata = await connection.entityManager.findOneById(Post, 1, {
             join: {

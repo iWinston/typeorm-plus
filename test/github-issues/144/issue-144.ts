@@ -24,7 +24,7 @@ describe.skip("github issues > #144 Class Table Inheritance doesn't seem to work
         student.lastName = "World";
         student.faculty = "University";
 
-        await studentRepository.persist(student);
+        await studentRepository.save(student);
 
 
     })));

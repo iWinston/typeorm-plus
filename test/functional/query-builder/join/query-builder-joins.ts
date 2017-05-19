@@ -28,49 +28,49 @@ describe("query builder > joins", () => {
 
             const user = new User();
             user.name = "Alex Messer";
-            await connection.entityManager.persist(user);
+            await connection.entityManager.save(user);
 
             const tag = new Tag();
             tag.name = "audi";
-            await connection.entityManager.persist(tag);
+            await connection.entityManager.save(tag);
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const image3 = new Image();
             image3.name = "image3";
-            await connection.entityManager.persist(image3);
+            await connection.entityManager.save(image3);
 
             const category1 = new Category();
             category1.name = "cars";
             category1.images = [image1, image2];
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const category3 = new Category();
             category3.name = "airplanes";
             category3.images = [image3];
-            await connection.entityManager.persist(category3);
+            await connection.entityManager.save(category3);
 
             const post1 = new Post();
             post1.title = "about BMW";
             post1.categories = [category1, category2];
             post1.tag = tag;
             post1.author = user;
-            await connection.entityManager.persist(post1);
+            await connection.entityManager.save(post1);
 
             const post2 = new Post();
             post2.title = "about Boeing";
             post2.categories = [category3];
-            await connection.entityManager.persist(post2);
+            await connection.entityManager.save(post2);
 
             const loadedPosts = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -127,25 +127,25 @@ describe("query builder > joins", () => {
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const category1 = new Category();
             category1.name = "cars";
             category1.images = [image1, image2];
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const post = new Post();
             post.title = "about BMW";
             post.categories = [category1, category2];
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -168,12 +168,12 @@ describe("query builder > joins", () => {
 
             const category = new Category();
             category.name = "cars";
-            await connection.entityManager.persist(category);
+            await connection.entityManager.save(category);
 
             const post = new Post();
             post.title = "about BMW";
             post.categories = [category];
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedRawPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -194,35 +194,35 @@ describe("query builder > joins", () => {
 
             const user = new User();
             user.name = "Alex Messer";
-            await connection.entityManager.persist(user);
+            await connection.entityManager.save(user);
 
             const tag = new Tag();
             tag.name = "audi";
-            await connection.entityManager.persist(tag);
+            await connection.entityManager.save(tag);
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const category1 = new Category();
             category1.name = "cars";
             category1.images = [image1, image2];
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const post = new Post();
             post.title = "about BMW";
             post.categories = [category1, category2];
             post.tag = tag;
             post.author = user;
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -248,25 +248,25 @@ describe("query builder > joins", () => {
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const category1 = new Category();
             category1.name = "cars";
             category1.images = [image1, image2];
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const post = new Post();
             post.title = "about BMW";
             post.categories = [category1, category2];
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -289,7 +289,7 @@ describe("query builder > joins", () => {
 
             const post = new Post();
             post.title = "about BMW";
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -309,33 +309,33 @@ describe("query builder > joins", () => {
 
             const user = new User();
             user.name = "Alex Messer";
-            await connection.entityManager.persist(user);
+            await connection.entityManager.save(user);
 
             const tag = new Tag();
             tag.name = "audi";
-            await connection.entityManager.persist(tag);
+            await connection.entityManager.save(tag);
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const post = new Post();
             post.title = "about BMW";
             post.tag = tag;
             post.author = user;
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -363,33 +363,33 @@ describe("query builder > joins", () => {
 
             const user = new User();
             user.name = "Alex Messer";
-            await connection.entityManager.persist(user);
+            await connection.entityManager.save(user);
 
             const tag = new Tag();
             tag.name = "audi";
-            await connection.entityManager.persist(tag);
+            await connection.entityManager.save(tag);
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const post = new Post();
             post.title = "about BMW";
             post.tag = tag;
             post.author = user;
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -417,19 +417,19 @@ describe("query builder > joins", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const category3 = new Category();
             category3.name = "bmw";
-            await connection.entityManager.persist(category3);
+            await connection.entityManager.save(category3);
 
             const post = new Post();
             post.title = "about BMW";
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -450,53 +450,53 @@ describe("query builder > joins", () => {
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const image3 = new Image();
             image3.name = "image3";
             image3.isRemoved = true;
-            await connection.entityManager.persist(image3);
+            await connection.entityManager.save(image3);
 
             const image4 = new Image();
             image4.name = "image4";
             image4.isRemoved = true;
-            await connection.entityManager.persist(image4);
+            await connection.entityManager.save(image4);
 
             const category1 = new Category();
             category1.name = "cars";
             category1.images = [image1, image2, image3, image4];
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
             category2.images = [image1, image2, image3, image4];
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const category3 = new Category();
             category3.name = "bmw";
             category3.isRemoved = true;
             category3.images = [image1, image3];
-            await connection.entityManager.persist(category3);
+            await connection.entityManager.save(category3);
 
             const category4 = new Category();
             category4.name = "citroen";
             category4.isRemoved = true;
             category4.images = [image2, image4];
-            await connection.entityManager.persist(category4);
+            await connection.entityManager.save(category4);
 
             const post = new Post();
             post.title = "about BMW";
             post.categories = [category1, category2, category3];
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const post2 = new Post();
             post2.title = "about Citroen";
             post2.categories = [category1, category4];
-            await connection.entityManager.persist(post2);
+            await connection.entityManager.save(post2);
 
             const loadedPosts = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -559,33 +559,33 @@ describe("query builder > joins", () => {
 
             const user = new User();
             user.name = "Alex Messer";
-            await connection.entityManager.persist(user);
+            await connection.entityManager.save(user);
 
             const tag = new Tag();
             tag.name = "audi";
-            await connection.entityManager.persist(tag);
+            await connection.entityManager.save(tag);
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const post = new Post();
             post.title = "about BMW";
             post.tag = tag;
             post.author = user;
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -613,33 +613,33 @@ describe("query builder > joins", () => {
 
             const user = new User();
             user.name = "Alex Messer";
-            await connection.entityManager.persist(user);
+            await connection.entityManager.save(user);
 
             const tag = new Tag();
             tag.name = "audi";
-            await connection.entityManager.persist(tag);
+            await connection.entityManager.save(tag);
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const post = new Post();
             post.title = "about BMW";
             post.tag = tag;
             post.author = user;
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -667,19 +667,19 @@ describe("query builder > joins", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const category3 = new Category();
             category3.name = "bmw";
-            await connection.entityManager.persist(category3);
+            await connection.entityManager.save(category3);
 
             const post = new Post();
             post.title = "about BMW";
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -700,53 +700,53 @@ describe("query builder > joins", () => {
 
             const image1 = new Image();
             image1.name = "image1";
-            await connection.entityManager.persist(image1);
+            await connection.entityManager.save(image1);
 
             const image2 = new Image();
             image2.name = "image2";
-            await connection.entityManager.persist(image2);
+            await connection.entityManager.save(image2);
 
             const image3 = new Image();
             image3.name = "image3";
             image3.isRemoved = true;
-            await connection.entityManager.persist(image3);
+            await connection.entityManager.save(image3);
 
             const image4 = new Image();
             image4.name = "image4";
             image4.isRemoved = true;
-            await connection.entityManager.persist(image4);
+            await connection.entityManager.save(image4);
 
             const category1 = new Category();
             category1.name = "cars";
             category1.images = [image1, image2, image3, image4];
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             const category2 = new Category();
             category2.name = "germany";
             category2.images = [image1, image2, image3, image4];
-            await connection.entityManager.persist(category2);
+            await connection.entityManager.save(category2);
 
             const category3 = new Category();
             category3.name = "bmw";
             category3.isRemoved = true;
             category3.images = [image1, image3];
-            await connection.entityManager.persist(category3);
+            await connection.entityManager.save(category3);
 
             const category4 = new Category();
             category4.name = "citroen";
             category4.isRemoved = true;
             category4.images = [image2, image4];
-            await connection.entityManager.persist(category4);
+            await connection.entityManager.save(category4);
 
             const post = new Post();
             post.title = "about BMW";
             post.categories = [category1, category2, category3];
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const post2 = new Post();
             post2.title = "about Citroen";
             post2.categories = [category1, category4];
-            await connection.entityManager.persist(post2);
+            await connection.entityManager.save(post2);
 
             const loadedPosts = await connection.entityManager
                 .createQueryBuilder(Post, "post")
@@ -805,7 +805,7 @@ describe("query builder > joins", () => {
 
             const post = new Post();
             post.title = "about BMW";
-            await connection.entityManager.persist(post);
+            await connection.entityManager.save(post);
 
             const loadedPost1 = await connection.entityManager
                 .createQueryBuilder(Post, "post")

@@ -32,27 +32,27 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             category1.id = 1;
             category1.code = 1;
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.id = 2;
             category2.code = 1;
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.id = 1;
             post1.authorId = 1;
             post1.title = "About BMW";
             post1.category = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.id = 2;
             post2.authorId = 1;
             post2.title = "About Boeing";
             post2.category = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -77,25 +77,25 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
 
             const image1 = new Image();
             image1.name = "Image #1";
-            await connection.manager.persist(image1);
+            await connection.manager.save(image1);
 
             const image2 = new Image();
             image2.name = "Image #2";
-            await connection.manager.persist(image2);
+            await connection.manager.save(image2);
 
             const category1 = new Category();
             category1.id = 1;
             category1.code = 1;
             category1.name = "cars";
             category1.image = image1;
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.id = 2;
             category2.code = 1;
             category2.name = "airplanes";
             category2.image = image2;
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
@@ -122,27 +122,27 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             category1.id = 1;
             category1.code = 1;
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.id = 2;
             category2.code = 1;
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.id = 1;
             post1.authorId = 1;
             post1.title = "About BMW";
             post1.subcategory = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.id = 2;
             post2.authorId = 1;
             post2.title = "About Boeing";
             post2.subcategory = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -167,39 +167,39 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
 
             const image1 = new Image();
             image1.name = "Image #1";
-            await connection.manager.persist(image1);
+            await connection.manager.save(image1);
 
             const image2 = new Image();
             image2.name = "Image #2";
-            await connection.manager.persist(image2);
+            await connection.manager.save(image2);
 
             const category1 = new Category();
             category1.id = 1;
             category1.code = 1;
             category1.name = "cars";
             category1.image = image1;
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.id = 2;
             category2.code = 1;
             category2.name = "airplanes";
             category2.image = image2;
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.id = 1;
             post1.authorId = 1;
             post1.title = "About BMW";
             post1.category = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.id = 2;
             post2.authorId = 1;
             post2.title = "About Boeing";
             post2.category = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -236,27 +236,27 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             post1.id = 1;
             post1.authorId = 1;
             post1.title = "About BMW";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.id = 2;
             post2.authorId = 1;
             post2.title = "About Boeing";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const category1 = new Category();
             category1.id = 1;
             category1.code = 1;
             category1.name = "cars";
             category1.post = post1;
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.id = 2;
             category2.code = 1;
             category2.name = "airplanes";
             category2.post = post2;
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
@@ -283,23 +283,23 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             category1.id = 1;
             category1.code = 1;
             category1.name = "category #1";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.id = 2;
             category2.code = 1;
             category2.name = "category #2";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const image1 = new Image();
             image1.name = "Image #1";
             image1.category = category1;
-            await connection.manager.persist(image1);
+            await connection.manager.save(image1);
 
             const image2 = new Image();
             image2.name = "Image #2";
             image2.category = category2;
-            await connection.manager.persist(image2);
+            await connection.manager.save(image2);
 
             const loadedImages = await connection.manager
                 .createQueryBuilder(Image, "image")
@@ -325,37 +325,37 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             post1.id = 1;
             post1.authorId = 1;
             post1.title = "About BMW";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.id = 2;
             post2.authorId = 1;
             post2.title = "About Boeing";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const category1 = new Category();
             category1.id = 1;
             category1.code = 1;
             category1.name = "cars";
             category1.post = post1;
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.id = 2;
             category2.code = 1;
             category2.name = "BMW";
             category2.post = post2;
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const image1 = new Image();
             image1.name = "Image #1";
             image1.category = category1;
-            await connection.manager.persist(image1);
+            await connection.manager.save(image1);
 
             const image2 = new Image();
             image2.name = "Image #2";
             image2.category = category2;
-            await connection.manager.persist(image2);
+            await connection.manager.save(image2);
 
             const loadedImages = await connection.manager
                 .createQueryBuilder(Image, "image")

@@ -29,7 +29,7 @@ describe.skip("mongodb > embedded columns", () => {
         post.counters.favorites = 10;
         // post.counters.information = new Information();
         // post.counters.information.description = "Hello post";
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         const loadedPost = await postRepository.findOne({ title: "Post" });
 
@@ -49,7 +49,7 @@ describe.skip("mongodb > embedded columns", () => {
         post.title = "Updated post";
         post.counters.comments = 2;
         // post.counters.information.description = "Hello updated post";
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         const loadedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
 

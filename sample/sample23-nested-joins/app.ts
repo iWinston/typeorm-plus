@@ -44,7 +44,7 @@ createConnection(options).then(connection => {
     author2.name = "Bakhrom";
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             return postRepository
                 .createQueryBuilder("post")
@@ -63,7 +63,7 @@ createConnection(options).then(connection => {
 
             post.author = author2;
             
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(updatedPost => {
             return postRepository
@@ -80,7 +80,7 @@ createConnection(options).then(connection => {
             console.log("updating with: ", author);
             loadedPost!.title = "Umed's post";
             loadedPost!.author = author;
-            return postRepository.persist(loadedPost!);
+            return postRepository.save(loadedPost!);
         })
         .then(updatedPost => {
             return postRepository
@@ -94,7 +94,7 @@ createConnection(options).then(connection => {
             console.log(loadedPost);
             console.log("Now lets remove post's author:");
             post.author = null;
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(updatedPost => {
             return postRepository
@@ -108,7 +108,7 @@ createConnection(options).then(connection => {
             console.log(loadedPost);
             console.log("Finally bakhrom's post:");
             post.author = author2;
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(updatedPost => {
             return postRepository

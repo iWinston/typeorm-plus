@@ -20,7 +20,7 @@ describe("other issues > entity change in listeners should affect persistence", 
         // insert a post
         const post = new Post();
         post.title = "hello";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         // check if it was inserted correctly
         const loadedPost = await connection.entityManager.findOne(Post);
@@ -29,7 +29,7 @@ describe("other issues > entity change in listeners should affect persistence", 
 
         // now update some property and let update listener trigger
         loadedPost!.active = true;
-        await connection.entityManager.persist(loadedPost!);
+        await connection.entityManager.save(loadedPost!);
 
         // check if update listener was triggered and entity was really updated by the changes in the listener
         const loadedUpdatedPost = await connection.entityManager.findOne(Post);
@@ -37,10 +37,10 @@ describe("other issues > entity change in listeners should affect persistence", 
         expect(loadedUpdatedPost).not.to.be.empty;
         loadedUpdatedPost!.title.should.be.equal("hello!");
 
-        await connection.entityManager.persist(loadedPost!);
-        await connection.entityManager.persist(loadedPost!);
-        await connection.entityManager.persist(loadedPost!);
-        await connection.entityManager.persist(loadedPost!);
+        await connection.entityManager.save(loadedPost!);
+        await connection.entityManager.save(loadedPost!);
+        await connection.entityManager.save(loadedPost!);
+        await connection.entityManager.save(loadedPost!);
 
     })));
 

@@ -19,7 +19,7 @@ describe("other issues > joining empty relations", () => {
 
         const post = new Post();
         post.title = "Hello Post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         // check if ordering by main object works correctly
 
@@ -41,7 +41,7 @@ describe("other issues > joining empty relations", () => {
 
         const post = new Post();
         post.title = "Hello Post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         // check if ordering by main object works correctly
 

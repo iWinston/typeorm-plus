@@ -24,7 +24,7 @@ describe("github issues > #363 Can't save 2 unrelated entity types in a single p
         const fruit = new Fruit();
         fruit.name = "Banana";
 
-        const [savedCar, savedFruit] = await connection.entityManager.persist([car, fruit]);
+        const [savedCar, savedFruit] = await connection.entityManager.save([car, fruit]);
 
         expect(savedFruit).to.have.property("name", "Banana");
         expect(savedFruit).to.be.instanceof(Fruit);
@@ -53,12 +53,12 @@ describe("github issues > #363 Can't save 2 unrelated entity types in a single p
         const fruit2 = new Fruit();
         fruit2.name = "Apple";
 
-        const [savedFruit] = await connection.entityManager.persist([fruit, fruit2]);
+        const [savedFruit] = await connection.entityManager.save([fruit, fruit2]);
 
         const car = new Car();
         car.name = "Ferrari";
 
-        const savedCar = await connection.entityManager.persist(car);
+        const savedCar = await connection.entityManager.save(car);
 
         await connection.entityManager.remove([savedCar, savedFruit]);
 

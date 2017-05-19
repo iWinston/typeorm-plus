@@ -25,55 +25,55 @@ describe("relations > multiple-primary-keys > other-cases", () => {
 
         const user1 = new User();
         user1.name = "Alice";
-        await connection.manager.persist(user1);
+        await connection.manager.save(user1);
 
         const user2 = new User();
         user2.name = "Bob";
-        await connection.manager.persist(user2);
+        await connection.manager.save(user2);
 
         const user3 = new User();
         user3.name = "Clara";
-        await connection.manager.persist(user3);
+        await connection.manager.save(user3);
 
         const person1 = new Person();
         person1.fullName = "Alice A";
         person1.user = user1;
-        await connection.manager.persist(person1);
+        await connection.manager.save(person1);
 
         const person2 = new Person();
         person2.fullName = "Bob B";
         person2.user = user2;
-        await connection.manager.persist(person2);
+        await connection.manager.save(person2);
 
         const event1 = new Event();
         event1.name = "Event #1";
         event1.author = person1;
-        await connection.manager.persist(event1);
+        await connection.manager.save(event1);
 
         const event2 = new Event();
         event2.name = "Event #2";
         event2.author = person2;
-        await connection.manager.persist(event2);
+        await connection.manager.save(event2);
 
         const eventMember1 = new EventMember();
         eventMember1.user = user1;
         eventMember1.event = event1;
-        await connection.manager.persist(eventMember1);
+        await connection.manager.save(eventMember1);
 
         const eventMember2 = new EventMember();
         eventMember2.user = user2;
         eventMember2.event = event1;
-        await connection.manager.persist(eventMember2);
+        await connection.manager.save(eventMember2);
 
         const eventMember3 = new EventMember();
         eventMember3.user = user1;
         eventMember3.event = event2;
-        await connection.manager.persist(eventMember3);
+        await connection.manager.save(eventMember3);
 
         const eventMember4 = new EventMember();
         eventMember4.user = user3;
         eventMember4.event = event2;
-        await connection.manager.persist(eventMember4);
+        await connection.manager.save(eventMember4);
 
         const loadedEvents = await connection.manager
             .createQueryBuilder(Event, "event")

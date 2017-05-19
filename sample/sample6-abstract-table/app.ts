@@ -54,14 +54,14 @@ createConnection(options).then(connection => {
     let blogRepository = connection.getRepository(Blog);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved");
             return postRepository.findOneById(post.id);
         })
         .then(loadedPost => {
             console.log("post is loaded: ", loadedPost);
-            return blogRepository.persist(blog);
+            return blogRepository.save(blog);
         })
         .then(blog => {
             console.log("Blog has been saved");
@@ -69,7 +69,7 @@ createConnection(options).then(connection => {
         })
         .then(loadedBlog => {
             console.log("blog is loaded: ", loadedBlog);
-            return blogRepository.persist(blog);
+            return blogRepository.save(blog);
         })
         .catch(error => console.log("Cannot save. Error: ", error.stack ? error.stack : error));
 

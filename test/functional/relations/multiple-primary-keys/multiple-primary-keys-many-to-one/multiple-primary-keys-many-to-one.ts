@@ -28,24 +28,24 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.type = "common-category";
             category1.code = 1;
             category1.version = 1;
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
             category2.type = "common-category";
             category2.code = 2;
             category2.version = 1;
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.category = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.category = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -79,24 +79,24 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.type = "common-category";
             category1.code = 1;
             category1.version = 1;
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
             category2.type = "common-category";
             category2.code = 2;
             category2.version = 1;
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryWithEmptyJoinColumn = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryWithEmptyJoinColumn = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -130,24 +130,24 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.type = "common-category";
             category1.code = 1;
             category1.version = 1;
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
             category2.type = "common-category";
             category2.code = 2;
             category2.version = 1;
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryWithOptions = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryWithOptions = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -182,7 +182,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.code = 1;
             category1.version = 1;
             category1.description = "category about cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -190,17 +190,17 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category2.code = 2;
             category2.version = 1;
             category2.description = "category about airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryWithNonPrimaryColumns = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryWithNonPrimaryColumns = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -236,15 +236,15 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Audi";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const post3 = new Post();
             post3.title = "About Boeing";
-            await connection.manager.persist(post3);
+            await connection.manager.save(post3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -252,7 +252,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.code = 1;
             category1.version = 1;
             category1.posts = [post1, post2];
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -260,7 +260,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category2.code = 2;
             category2.version = 1;
             category2.posts = [post3];
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
@@ -296,15 +296,15 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Audi";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const post3 = new Post();
             post3.title = "About Boeing";
-            await connection.manager.persist(post3);
+            await connection.manager.save(post3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -312,7 +312,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.code = 1;
             category1.version = 1;
             category1.postsWithEmptyJoinColumn = [post1, post2];
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -320,7 +320,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category2.code = 2;
             category2.version = 1;
             category2.postsWithEmptyJoinColumn = [post3];
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
@@ -356,15 +356,15 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Audi";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const post3 = new Post();
             post3.title = "About Boeing";
-            await connection.manager.persist(post3);
+            await connection.manager.save(post3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -372,7 +372,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.code = 1;
             category1.version = 1;
             category1.postsWithOptions = [post1, post2];
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -380,7 +380,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category2.code = 2;
             category2.version = 1;
             category2.postsWithOptions = [post3];
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
@@ -416,15 +416,15 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Audi";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const post3 = new Post();
             post3.title = "About Boeing";
-            await connection.manager.persist(post3);
+            await connection.manager.save(post3);
 
             const category1 = new Category();
             category1.name = "cars";
@@ -433,7 +433,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category1.version = 1;
             category1.description = "category of cars";
             category1.postsWithNonPrimaryColumns = [post1, post2];
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
@@ -442,7 +442,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
             category2.version = 1;
             category2.description = "category of airplanes";
             category2.postsWithNonPrimaryColumns = [post3];
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")

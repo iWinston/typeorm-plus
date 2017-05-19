@@ -32,7 +32,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             post1.counters.subcounters = new Subcounters();
             post1.counters.subcounters.version = 1;
             post1.counters.subcounters.watches = 5;
-            await connection.getRepository(Post).persist(post1);
+            await connection.getRepository(Post).save(post1);
 
             const post2 = new Post();
             post2.title = "About airplanes";
@@ -44,7 +44,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             post2.counters.subcounters = new Subcounters();
             post2.counters.subcounters.version = 1;
             post2.counters.subcounters.watches = 10;
-            await connection.getRepository(Post).persist(post2);
+            await connection.getRepository(Post).save(post2);
 
             const post3 = new Post();
             post3.title = "About horses";
@@ -56,17 +56,17 @@ describe("embedded > embedded-many-to-one-case2", () => {
             post3.counters.subcounters = new Subcounters();
             post3.counters.subcounters.version = 1;
             post3.counters.subcounters.watches = 30;
-            await connection.getRepository(Post).persist(post3);
+            await connection.getRepository(Post).save(post3);
 
             const user1 = new User();
             user1.name = "Alice";
             user1.likedPost = post1;
-            await connection.getRepository(User).persist(user1);
+            await connection.getRepository(User).save(user1);
 
             const user2 = new User();
             user2.name = "Bob";
             user2.likedPost = post2;
-            await connection.getRepository(User).persist(user2);
+            await connection.getRepository(User).save(user2);
 
             let loadedUsers = await connection.manager
                 .createQueryBuilder(User, "user")
@@ -144,7 +144,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
 
             loadedUser!.name = "Anna";
             loadedUser!.likedPost = post3;
-            await connection.getRepository(User).persist(loadedUser!);
+            await connection.getRepository(User).save(loadedUser!);
 
             loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
@@ -187,15 +187,15 @@ describe("embedded > embedded-many-to-one-case2", () => {
 
             const user1 = new User();
             user1.name = "Alice";
-            await connection.getRepository(User).persist(user1);
+            await connection.getRepository(User).save(user1);
 
             const user2 = new User();
             user2.name = "Bob";
-            await connection.getRepository(User).persist(user2);
+            await connection.getRepository(User).save(user2);
 
             const user3 = new User();
             user3.name = "Clara";
-            await connection.getRepository(User).persist(user3);
+            await connection.getRepository(User).save(user3);
 
             const post1 = new Post();
             post1.title = "About cars";
@@ -208,7 +208,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             post1.counters.subcounters = new Subcounters();
             post1.counters.subcounters.version = 1;
             post1.counters.subcounters.watches = 5;
-            await connection.getRepository(Post).persist(post1);
+            await connection.getRepository(Post).save(post1);
 
             const post2 = new Post();
             post2.title = "About airplanes";
@@ -221,7 +221,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             post2.counters.subcounters = new Subcounters();
             post2.counters.subcounters.version = 1;
             post2.counters.subcounters.watches = 10;
-            await connection.getRepository(Post).persist(post2);
+            await connection.getRepository(Post).save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -300,7 +300,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             loadedPost!.counters.favorites += 1;
             loadedPost!.counters.subcounters.watches += 1;
             loadedPost!.counters.likedUsers = [user1];
-            await connection.getRepository(Post).persist(loadedPost!);
+            await connection.getRepository(Post).save(loadedPost!);
 
             loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")

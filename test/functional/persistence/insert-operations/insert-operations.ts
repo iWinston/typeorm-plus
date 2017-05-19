@@ -40,8 +40,8 @@ describe.skip("persistence > insert operations", () => {
 
             // post1.category = category1;
             // post1.category.photos = [photo1, photo2];
-            await connection.entityManager.persist(post1);
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(post1);
+            await connection.entityManager.save(category1);
 
             console.log("********************************************************");
 

@@ -27,11 +27,11 @@ describe("persistence > cascade operations with custom name", () => {
             category1.name = "Category saved by cascades #1";
             category1.posts = [post1];
 
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             category1.posts = [];
 
-            await connection.entityManager.persist(category1);
+            await connection.entityManager.save(category1);
 
             // now check
             const posts = await connection.entityManager.find(Post, {

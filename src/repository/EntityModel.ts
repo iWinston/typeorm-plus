@@ -2,7 +2,7 @@ import {Repository} from "./Repository";
 import {getConnection} from "../index";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {DeepPartial} from "../common/DeepPartial";
-import {PersistOptions} from "./PersistOptions";
+import {SaveOptions} from "./SaveOptions";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {RemoveOptions} from "./RemoveOptions";
 import {FindManyOptions} from "../find-options/FindManyOptions";
@@ -39,7 +39,7 @@ export class EntityModel {
      * If entity does not exist in the database then inserts, otherwise updates.
      */
     save(): Promise<this> {
-        return (this.constructor as any).getRepository().persist(this);
+        return (this.constructor as any).getRepository().save(this);
     }
 
     /**
@@ -130,42 +130,42 @@ export class EntityModel {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    static save<T extends EntityModel = any>(entities: T[], options?: PersistOptions): Promise<T[]>;
+    static save<T extends EntityModel = any>(entities: T[], options?: SaveOptions): Promise<T[]>;
 
     /**
      * Saves a given entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
-    static save<T extends EntityModel = any>(entity: T, options?: PersistOptions): Promise<T>;
+    static save<T extends EntityModel = any>(entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves one or many given entities.
      */
-    static save<T extends EntityModel = any>(entityOrEntities: T|T[], options?: PersistOptions): Promise<T|T[]> {
-        return this.getRepository<T>().persist(entityOrEntities as any, options);
+    static save<T extends EntityModel = any>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return this.getRepository<T>().save(entityOrEntities as any, options);
     }
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends EntityModel = any>(conditions: Partial<T>, partialEntity: DeepPartial<T>, options?: PersistOptions): Promise<void>;
+    static update<T extends EntityModel = any>(conditions: Partial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given find options.
      */
-    static update<T extends EntityModel = any>(findOptions: FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: PersistOptions): Promise<void>;
+    static update<T extends EntityModel = any>(findOptions: FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends EntityModel = any>(conditionsOrFindOptions: Partial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: PersistOptions): Promise<void> {
+    static update<T extends EntityModel = any>(conditionsOrFindOptions: Partial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
         return this.getRepository<T>().update(conditionsOrFindOptions as any, partialEntity, options);
     }
 
     /**
      * Updates entity partially. Entity will be found by a given id.
      */
-    static updateById<T extends EntityModel = any>(id: any, partialEntity: DeepPartial<T>, options?: PersistOptions): Promise<void> {
+    static updateById<T extends EntityModel = any>(id: any, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
         return this.getRepository<T>().updateById(id, partialEntity, options);
     }
 

@@ -44,11 +44,11 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(EverythingEntity);
 
     postRepository
-        .persist(entity)
+        .save(entity)
         .then(entity => {
             console.log("EverythingEntity has been saved. Lets insert a new one to update it later");
             delete entity.id;
-            return postRepository.persist(entity);
+            return postRepository.save(entity);
         })
         .then(entity => {
             console.log("Second entity has been inserted. Lets update it");
@@ -72,13 +72,13 @@ createConnection(options).then(connection => {
             entity.jsonColumn = [{ olleh: "hello" }, { dlrow: "world" }];
             entity.alsoJson = { olleh: "hello", dlrow: "world" };
 
-            return postRepository.persist(entity);
+            return postRepository.save(entity);
         })
         .then(entity => {
             console.log("Entity has been updated. Persist once again to make find and remove then");
 
             delete entity.id;
-            return postRepository.persist(entity);
+            return postRepository.save(entity);
         })
         .then(entity => {
             return postRepository.findOneById(entity.id);

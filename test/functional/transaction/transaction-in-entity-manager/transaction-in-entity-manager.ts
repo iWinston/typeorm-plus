@@ -25,11 +25,11 @@ describe("transaction > transaction with entity manager", () => {
 
             const post = new Post();
             post.title = "Post #1";
-            await entityManager.persist(post);
+            await entityManager.save(post);
 
             const category = new Category();
             category.name = "Category #1";
-            await entityManager.persist(category);
+            await entityManager.save(category);
 
             postId = post.id;
             categoryId = category.id;
@@ -61,11 +61,11 @@ describe("transaction > transaction with entity manager", () => {
 
                 const post = new Post();
                 post.title = "Post #1";
-                await entityManager.persist(post);
+                await entityManager.save(post);
 
                 const category = new Category();
                 category.name = "Category #1";
-                await entityManager.persist(category);
+                await entityManager.save(category);
 
                 postId = post.id;
                 categoryId = category.id;
@@ -86,7 +86,7 @@ describe("transaction > transaction with entity manager", () => {
 
                 // now try to save post without title - it will fail and transaction will be reverted
                 const wrongPost = new Post();
-                await entityManager.persist(wrongPost);
+                await entityManager.save(wrongPost);
 
             });
         } catch (err) {

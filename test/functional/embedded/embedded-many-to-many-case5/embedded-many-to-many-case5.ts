@@ -26,19 +26,19 @@ describe("embedded > embedded-many-to-many-case5", () => {
             user1.id = 1;
             user1.personId = 1;
             user1.name = "Alice";
-            await connection.getRepository(User).persist(user1);
+            await connection.getRepository(User).save(user1);
 
             const user2 = new User();
             user2.id = 2;
             user2.personId = 2;
             user2.name = "Bob";
-            await connection.getRepository(User).persist(user2);
+            await connection.getRepository(User).save(user2);
 
             const user3 = new User();
             user3.id = 3;
             user3.personId = 3;
             user3.name = "Clara";
-            await connection.getRepository(User).persist(user3);
+            await connection.getRepository(User).save(user3);
 
             const post1 = new Post();
             post1.id = 1;
@@ -52,7 +52,7 @@ describe("embedded > embedded-many-to-many-case5", () => {
             post1.counters.subcounters = new Subcounters();
             post1.counters.subcounters.version = 1;
             post1.counters.subcounters.watches = 5;
-            await connection.getRepository(Post).persist(post1);
+            await connection.getRepository(Post).save(post1);
 
             const post2 = new Post();
             post2.id = 2;
@@ -66,7 +66,7 @@ describe("embedded > embedded-many-to-many-case5", () => {
             post2.counters.subcounters = new Subcounters();
             post2.counters.subcounters.version = 1;
             post2.counters.subcounters.watches = 10;
-            await connection.getRepository(Post).persist(post2);
+            await connection.getRepository(Post).save(post2);
 
             let loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -166,7 +166,7 @@ describe("embedded > embedded-many-to-many-case5", () => {
             loadedPost!.counters.favorites += 1;
             loadedPost!.counters.subcounters.watches += 1;
             loadedPost!.counters.likedUsers = [user1];
-            await connection.getRepository(Post).persist(loadedPost!);
+            await connection.getRepository(Post).save(loadedPost!);
 
             loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -222,7 +222,7 @@ describe("embedded > embedded-many-to-many-case5", () => {
             post1.counters.subcounters = new Subcounters();
             post1.counters.subcounters.version = 1;
             post1.counters.subcounters.watches = 5;
-            await connection.getRepository(Post).persist(post1);
+            await connection.getRepository(Post).save(post1);
 
             const post2 = new Post();
             post2.id = 2;
@@ -235,28 +235,28 @@ describe("embedded > embedded-many-to-many-case5", () => {
             post2.counters.subcounters = new Subcounters();
             post2.counters.subcounters.version = 1;
             post2.counters.subcounters.watches = 10;
-            await connection.getRepository(Post).persist(post2);
+            await connection.getRepository(Post).save(post2);
 
             const user1 = new User();
             user1.id = 1;
             user1.personId = 1;
             user1.name = "Alice";
             user1.likedPosts = [post1, post2];
-            await connection.getRepository(User).persist(user1);
+            await connection.getRepository(User).save(user1);
 
             const user2 = new User();
             user2.id = 2;
             user2.personId = 2;
             user2.name = "Bob";
             user2.likedPosts = [post1];
-            await connection.getRepository(User).persist(user2);
+            await connection.getRepository(User).save(user2);
 
             const user3 = new User();
             user3.id = 3;
             user3.personId = 3;
             user3.name = "Clara";
             user3.likedPosts = [post2];
-            await connection.getRepository(User).persist(user3);
+            await connection.getRepository(User).save(user3);
 
             let loadedUsers = await connection.manager
                 .createQueryBuilder(User, "user")
@@ -396,7 +396,7 @@ describe("embedded > embedded-many-to-many-case5", () => {
 
             loadedUser!.name = "Anna";
             loadedUser!.likedPosts = [post1];
-            await connection.getRepository(User).persist(loadedUser!);
+            await connection.getRepository(User).save(loadedUser!);
 
             loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")

@@ -21,14 +21,14 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
         for (let i = 0; i < 20; i++) {
             const category = new Category();
             category.name = "Category #" + i;
-            await connection.entityManager.persist(category);
+            await connection.entityManager.save(category);
         }
 
         const post = new Post();
         post.title = "SuperRace";
         post.categories = [new Category()];
         post.categories[0].name = "SuperCategory";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         const loadedPost = await connection
             .entityManager

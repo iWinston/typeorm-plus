@@ -26,21 +26,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.category = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.category = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -65,21 +65,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryWithEmptyJoinCol = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryWithEmptyJoinCol = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -103,21 +103,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryWithoutRefColName = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryWithoutRefColName = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -139,21 +139,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryWithoutColName = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryWithoutColName = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -177,21 +177,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryWithoutRefColName2 = category1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryWithoutRefColName2 = category2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -218,21 +218,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const category1 = new Category();
             category1.name = "cars";
-            await connection.manager.persist(category1);
+            await connection.manager.save(category1);
 
             const category2 = new Category();
             category2.name = "airplanes";
-            await connection.manager.persist(category2);
+            await connection.manager.save(category2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.categoryName = "cars";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.categoryName = "airplanes";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -262,21 +262,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const tag1 = new Tag();
             tag1.name = "tag #1";
-            await connection.manager.persist(tag1);
+            await connection.manager.save(tag1);
 
             const tag2 = new Tag();
             tag2.name = "tag #2";
-            await connection.manager.persist(tag2);
+            await connection.manager.save(tag2);
 
             const post1 = new Post();
             post1.title = "Post #1";
             post1.tag = tag1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "Post #2";
             post2.tag = tag2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -301,21 +301,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const tag1 = new Tag();
             tag1.name = "tag #1";
-            await connection.manager.persist(tag1);
+            await connection.manager.save(tag1);
 
             const tag2 = new Tag();
             tag2.name = "tag #2";
-            await connection.manager.persist(tag2);
+            await connection.manager.save(tag2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.tagWithEmptyJoinCol = tag1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.tagWithEmptyJoinCol = tag2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -339,21 +339,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const tag1 = new Tag();
             tag1.name = "tag #1";
-            await connection.manager.persist(tag1);
+            await connection.manager.save(tag1);
 
             const tag2 = new Tag();
             tag2.name = "tag #2";
-            await connection.manager.persist(tag2);
+            await connection.manager.save(tag2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.tagWithoutRefColName = tag1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.tagWithoutRefColName = tag2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -375,21 +375,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const tag1 = new Tag();
             tag1.name = "tag #1";
-            await connection.manager.persist(tag1);
+            await connection.manager.save(tag1);
 
             const tag2 = new Tag();
             tag2.name = "tag #2";
-            await connection.manager.persist(tag2);
+            await connection.manager.save(tag2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.tagWithoutColName = tag1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.tagWithoutColName = tag2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -413,21 +413,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const tag1 = new Tag();
             tag1.name = "tag #1";
-            await connection.manager.persist(tag1);
+            await connection.manager.save(tag1);
 
             const tag2 = new Tag();
             tag2.name = "tag #2";
-            await connection.manager.persist(tag2);
+            await connection.manager.save(tag2);
 
             const post1 = new Post();
             post1.title = "About BMW";
             post1.tagWithoutRefColName2 = tag1;
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
             post2.tagWithoutRefColName2 = tag2;
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -454,21 +454,21 @@ describe("relations > custom-referenced-column-name", () => {
 
             const tag1 = new Tag();
             tag1.name = "tag #1";
-            await connection.manager.persist(tag1);
+            await connection.manager.save(tag1);
 
             const tag2 = new Tag();
             tag2.name = "tag #2";
-            await connection.manager.persist(tag2);
+            await connection.manager.save(tag2);
 
             const post1 = new Post();
             post1.title = "Post #1";
             post1.tagName = "tag #1";
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "Post #2";
             post2.tagName = "tag #2";
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")

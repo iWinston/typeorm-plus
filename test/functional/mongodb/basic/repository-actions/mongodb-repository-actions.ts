@@ -57,7 +57,7 @@ describe.skip("mongodb > basic repository actions", () => {
         const post = new Post();
         post.title = "Post #1";
         post.text = "Everything about post!";
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         expect(post.id).not.to.be.empty;
     })));
@@ -67,7 +67,7 @@ describe.skip("mongodb > basic repository actions", () => {
         const post = new Post();
         post.title = "Post #1";
         post.text = "Everything about post!";
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         expect(post.id).not.to.be.empty;
         postRepository.hasId(post).should.be.true;
@@ -86,12 +86,12 @@ describe.skip("mongodb > basic repository actions", () => {
         const post1 = new Post();
         post1.title = "First Post";
         post1.text = "Everything about first post";
-        await postRepository.persist(post1);
+        await postRepository.save(post1);
 
         const post2 = new Post();
         post2.title = "Second Post";
         post2.text = "Everything about second post";
-        await postRepository.persist(post2);
+        await postRepository.save(post2);
 
         // save few posts
         const posts: Post[] = [];
@@ -101,7 +101,7 @@ describe.skip("mongodb > basic repository actions", () => {
             post.text = "Everything about post #" + i;
             posts.push(post);
         }
-        await postRepository.persist(posts);
+        await postRepository.save(posts);
 
         // assert findOneById method
         const loadedPost1 = await postRepository.findOneById(post1.id);
@@ -167,7 +167,7 @@ describe.skip("mongodb > basic repository actions", () => {
             post.text = "Everything about post #" + i;
             posts.push(post);
         }
-        await postRepository.persist(posts);
+        await postRepository.save(posts);
 
         const [loadedPosts, postsCount] = await postRepository.findAndCount();
         expect(postsCount).to.be.equal(50);
@@ -186,12 +186,12 @@ describe.skip("mongodb > basic repository actions", () => {
         const post1 = new Post();
         post1.title = "First Post";
         post1.text = "Everything about first post";
-        await postRepository.persist(post1);
+        await postRepository.save(post1);
 
         const post2 = new Post();
         post2.title = "Second Post";
         post2.text = "Everything about second post";
-        await postRepository.persist(post2);
+        await postRepository.save(post2);
 
         const loadedPost1 = await postRepository.findOneById(post1.id);
         await postRepository.remove(loadedPost1!);
@@ -213,7 +213,7 @@ describe.skip("mongodb > basic repository actions", () => {
             post.text = "Everything about post #" + i;
             posts.push(post);
         }
-        await postRepository.persist(posts);
+        await postRepository.save(posts);
 
         const [loadedPosts, postsCount] = await postRepository.findAndCount();
         expect(postsCount).to.be.equal(50);
@@ -233,7 +233,7 @@ describe.skip("mongodb > basic repository actions", () => {
         const postToSave = new Post();
         postToSave.title = "First Post";
         postToSave.text = "Everything about first post";
-        await postRepository.persist(postToSave);
+        await postRepository.save(postToSave);
 
         // now preload a post with setting
         const post = await postRepository.preload({

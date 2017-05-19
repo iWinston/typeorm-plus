@@ -13,7 +13,7 @@ export class AuthorRepository extends AbstractRepository<Author> {
         author.firstName = firstName;
         author.lastName = lastName;
 
-        return this.entityManager.persist(author);
+        return this.entityManager.save(author);
     }
 
     findMyAuthor() {

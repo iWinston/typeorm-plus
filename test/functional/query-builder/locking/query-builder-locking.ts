@@ -185,7 +185,7 @@ describe("query builder > locking", () => {
 
         const post = new PostWithoutVersionAndUpdateDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         return connection.entityManager.createQueryBuilder(PostWithoutVersionAndUpdateDate, "post")
            .setLock("optimistic", 1)
@@ -197,7 +197,7 @@ describe("query builder > locking", () => {
 
         const post = new PostWithVersion();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
        return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 2)
@@ -209,7 +209,7 @@ describe("query builder > locking", () => {
 
         const post = new PostWithVersion();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
        return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
@@ -221,7 +221,7 @@ describe("query builder > locking", () => {
 
         const post = new PostWithUpdateDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
        return connection.entityManager.createQueryBuilder(PostWithUpdateDate, "post")
            .setLock("optimistic", new Date(2017, 1, 1))
@@ -233,7 +233,7 @@ describe("query builder > locking", () => {
 
         const post = new PostWithUpdateDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
        return connection.entityManager.createQueryBuilder(PostWithUpdateDate, "post")
            .setLock("optimistic", post.updateDate)
@@ -245,7 +245,7 @@ describe("query builder > locking", () => {
 
         const post = new PostWithVersionAndUpdatedDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         return Promise.all([
             connection.entityManager.createQueryBuilder(PostWithVersionAndUpdatedDate, "post")

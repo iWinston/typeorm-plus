@@ -23,31 +23,31 @@ describe("decorators > relation-id > one-to-one", () => {
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const categoryByName1 = new Category();
         categoryByName1.name = "BMW";
-        await connection.manager.persist(categoryByName1);
+        await connection.manager.save(categoryByName1);
 
         const categoryByName2 = new Category();
         categoryByName2.name = "Boeing";
-        await connection.manager.persist(categoryByName2);
+        await connection.manager.save(categoryByName2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category = category1;
         post1.categoryByName = categoryByName1;
-        await connection.manager.persist(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Boeing";
         post2.category = category2;
         post2.categoryByName = categoryByName2;
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -78,21 +78,21 @@ describe("decorators > relation-id > one-to-one", () => {
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.manager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category2 = category1;
-        await connection.manager.persist(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Boeing";
         post2.category2 = category2;
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")

@@ -32,7 +32,7 @@ describe.skip("benchmark > bulk-save", () => {
             posts.push(post);
         }
 
-        await connection.manager.persist(posts);
+        await connection.manager.save(posts);
 
     })));
 

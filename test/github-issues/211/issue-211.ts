@@ -20,7 +20,7 @@ describe("github issues > #211 where in query issue", () => {
             const post1 = new Post();
             post1.title = "post #" + i;
             post1.text = "about post";
-            await connection.entityManager.persist(post1);
+            await connection.entityManager.save(post1);
         }
 
         const loadedPosts1 = await connection.entityManager

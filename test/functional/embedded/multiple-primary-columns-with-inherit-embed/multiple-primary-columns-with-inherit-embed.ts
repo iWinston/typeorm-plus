@@ -32,7 +32,7 @@ describe("embedded > multiple-primary-columns-with-inherit-embed", () => {
         post1.counters.subcounters = new Subcounters();
         post1.counters.subcounters.version = 1;
         post1.counters.subcounters.watches = 5;
-        await connection.getRepository(Post).persist(post1);
+        await connection.getRepository(Post).save(post1);
 
         const post2 = new Post();
         post2.id = 2;
@@ -45,7 +45,7 @@ describe("embedded > multiple-primary-columns-with-inherit-embed", () => {
         post2.counters.subcounters = new Subcounters();
         post2.counters.subcounters.version = 1;
         post2.counters.subcounters.watches = 10;
-        await postRepository.persist(post2);
+        await postRepository.save(post2);
 
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -105,7 +105,7 @@ describe("embedded > multiple-primary-columns-with-inherit-embed", () => {
 
         loadedPost.counters.favorites += 1;
         loadedPost.counters.subcounters.watches += 1;
-        await postRepository.persist(loadedPost);
+        await postRepository.save(loadedPost);
 
         const loadedPost2 = (await postRepository.findOneById({ id: 1, counters: { code: 1, subcounters: { version: 1 } } }))!;
         expect(loadedPost2.should.be.eql(

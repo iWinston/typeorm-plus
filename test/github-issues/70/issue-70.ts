@@ -30,7 +30,7 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         post.categories = [category1, category2];
 
         // persist post (other are persisted by cascades)
-        await connection.entityManager.persist(post);
+        await connection.entityManager.save(post);
 
         // check that all persisted objects exist
         const loadedPost = await connection.entityManager

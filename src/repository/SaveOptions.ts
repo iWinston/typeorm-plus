@@ -1,7 +1,7 @@
 /**
  * Special options passed to Repository#persist method.
  */
-export interface PersistOptions {
+export interface SaveOptions {
 
     /**
      * Additional data to be passed with persist method.

@@ -23,26 +23,26 @@ describe("decorators > relation-id > one-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.manager.persist(category);
+        await connection.manager.save(category);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category = category;
-        await connection.manager.persist(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.category = category;
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         const post3 = new Post();
         post3.title = "about Boeing";
         post3.category = category2;
-        await connection.manager.persist(post3);
+        await connection.manager.save(post3);
 
         let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
@@ -68,28 +68,28 @@ describe("decorators > relation-id > one-to-many", () => {
 
         const category = new Category();
         category.name = "cars";
-        await connection.manager.persist(category);
+        await connection.manager.save(category);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.manager.persist(category2);
+        await connection.manager.save(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.category = category;
-        await connection.manager.persist(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.category = category;
         post2.isRemoved = true;
-        await connection.manager.persist(post2);
+        await connection.manager.save(post2);
 
         const post3 = new Post();
         post3.title = "about Boeing";
         post3.category = category2;
         post3.isRemoved = true;
-        await connection.manager.persist(post3);
+        await connection.manager.save(post3);
 
         let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")

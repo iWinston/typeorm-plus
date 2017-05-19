@@ -23,7 +23,7 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
         post1.localDate = new Date(1484069886663); // stores "2017-01-10 22:38:06.000" into the database
 
         // persist
-        await connection.entityManager.persist(post1);
+        await connection.entityManager.save(post1);
 
         const loadedPosts1 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts1!).not.to.be.empty;

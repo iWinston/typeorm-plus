@@ -27,7 +27,7 @@ describe("relations > relation with primary key", () => {
             post1.title = "Hello Post #1";
             post1.category = category1;
 
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             // create second category and post and save them
             const category2 = new Category();
@@ -37,7 +37,7 @@ describe("relations > relation with primary key", () => {
             post2.title = "Hello Post #2";
             post2.category = category2;
 
-            await connection.manager.persist(post2);
+            await connection.manager.save(post2);
 
             // now check
             const posts = await connection.manager.find(Post, {
