@@ -44,8 +44,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
 
         // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
-        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+        const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.manager.connection.driver.escapeColumnName(column);
 
         const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.primaryColumns[0].databaseName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
         return this.createQueryBuilder(alias)
@@ -92,8 +92,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
 
         // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
-        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+        const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAliasName(alias);
+        const escapeColumn = (column: string) => this.manager.connection.driver.escapeColumnName(column);
 
         const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.primaryColumns[0].databaseName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
         return this.createQueryBuilder(alias)

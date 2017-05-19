@@ -51,7 +51,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeInsertEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastBeforeInsertEvent(manager: EntityManager, subject: Subject): Promise<void> {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(subject.entity))
@@ -60,7 +60,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeInsert)
             .map(subscriber => subscriber.beforeInsert!({
-                entityManager: entityManager,
+                manager: manager,
                 entity: subject.entity
             }));
 
@@ -73,7 +73,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeUpdateEvent(entityManager: EntityManager, subject: Subject): Promise<void> { // todo: send relations too?
+    async broadcastBeforeUpdateEvent(manager: EntityManager, subject: Subject): Promise<void> { // todo: send relations too?
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(subject.entity))
@@ -82,7 +82,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate!({
-                entityManager: entityManager,
+                manager: manager,
                 entity: subject.entity,
                 databaseEntity: subject.databaseEntity,
                 updatedColumns: subject.diffColumns,
@@ -98,7 +98,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeRemoveEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastBeforeRemoveEvent(manager: EntityManager, subject: Subject): Promise<void> {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(subject.entity))
@@ -107,7 +107,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove!({
-                entityManager: entityManager,
+                manager: manager,
                 entity: subject.hasEntity ? subject.entity : undefined,
                 databaseEntity: subject.databaseEntity,
                 entityId: subject.metadata.getEntityIdMixedMap(subject.databaseEntity)
@@ -122,7 +122,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterInsertEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastAfterInsertEvent(manager: EntityManager, subject: Subject): Promise<void> {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(subject.entity))
@@ -131,7 +131,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterInsert)
             .map(subscriber => subscriber.afterInsert!({
-                entityManager: entityManager,
+                manager: manager,
                 entity: subject.entity
             }));
 
@@ -144,7 +144,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterUpdateEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastAfterUpdateEvent(manager: EntityManager, subject: Subject): Promise<void> {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(subject.entity))
@@ -153,7 +153,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate!({
-                entityManager: entityManager,
+                manager: manager,
                 entity: subject.entity,
                 databaseEntity: subject.databaseEntity,
                 updatedColumns: subject.diffColumns,
@@ -169,7 +169,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterRemoveEvent(entityManager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastAfterRemoveEvent(manager: EntityManager, subject: Subject): Promise<void> {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(subject.entity))
@@ -178,7 +178,7 @@ export class Broadcaster {
         const subscribers = this.subscriberMetadatas
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove!({
-                entityManager: entityManager,
+                manager: manager,
                 entity: subject.hasEntity ? subject.entity : undefined,
                 databaseEntity: subject.databaseEntity,
                 entityId: subject.metadata.getEntityIdMixedMap(subject.databaseEntity)

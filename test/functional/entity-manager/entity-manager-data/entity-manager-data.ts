@@ -19,23 +19,23 @@ describe.skip("entity manager > custom data", () => {
     it("should set data into entity manager and retrieve it successfully", () => Promise.all(connections.map(async connection => {
 
         const user = { name: "Dima" };
-        connection.entityManager.setData("user", user);
-        expect(connection.entityManager.getData("user")).to.be.not.empty;
-        connection.entityManager.getData("user").should.be.equal(user);
+        connection.manager.setData("user", user);
+        expect(connection.manager.getData("user")).to.be.not.empty;
+        connection.manager.getData("user").should.be.equal(user);
 
     })));
 
     it("change in subscriber should update data set in entity manager", () => Promise.all(connections.map(async connection => {
 
         const user = { name: "Dima" };
-        connection.entityManager.setData("user", user);
+        connection.manager.setData("user", user);
 
         const post = new Post();
         post.title = "New post";
-        await connection.entityManager.save(post);
+        await connection.manager.save(post);
 
-        expect(connection.entityManager.getData("user")).to.be.not.empty;
-        connection.entityManager.getData("user").should.be.eql({ name: "Updated Dima" });
+        expect(connection.manager.getData("user")).to.be.not.empty;
+        connection.manager.getData("user").should.be.eql({ name: "Updated Dima" });
 
     })));
 

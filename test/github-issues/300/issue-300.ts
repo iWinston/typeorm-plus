@@ -20,9 +20,9 @@ describe("github issues > support of embeddeds that are not set", () => {
         const race = new Race();
         race.name = "National Race";
 
-        await connection.entityManager.save(race);
+        await connection.manager.save(race);
 
-        const loadedRace = await connection.entityManager.findOne(Race, { name: "National Race" });
+        const loadedRace = await connection.manager.findOne(Race, { name: "National Race" });
         expect(loadedRace).to.be.not.empty;
         expect(loadedRace!.id).to.be.not.empty;
         loadedRace!.name.should.be.equal("National Race");

@@ -20,7 +20,7 @@ describe.skip("mongodb > MongoRepository", () => {
     })));
 
     it("entity manager should return mongo repository when requested", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.entityManager.getMongoRepository(Post);
+        const postRepository = connection.manager.getMongoRepository(Post);
         postRepository.should.be.instanceOf(MongoRepository);
     })));
 

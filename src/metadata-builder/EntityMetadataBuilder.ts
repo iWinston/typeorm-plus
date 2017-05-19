@@ -236,10 +236,10 @@ export class EntityMetadataBuilder {
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
 
         entityMetadata.relationIds.forEach(relationId => relationId.build());
-        // entityMetadata.relationCounts.forEach(relationCount => relationCount.build());
+        entityMetadata.relationCounts.forEach(relationCount => relationCount.build());
         entityMetadata.embeddeds.forEach(embedded => {
             embedded.relationIdsFromTree.forEach(relationId => relationId.build());
-            // embedded.relationCountsFromTree.forEach(relationCount => relationCount.build());
+            embedded.relationCountsFromTree.forEach(relationCount => relationCount.build());
         });
     }
 

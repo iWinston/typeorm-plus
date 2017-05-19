@@ -23,7 +23,7 @@ const options: ConnectionOptions = {
 
 createConnection(options).then(connection => {
 
-    let entityManager = connection.entityManager;
+    let entityManager = connection.manager;
 
     let postRepository = connection.getRepository(Post);
     let authorRepository = connection.getRepository(Author);

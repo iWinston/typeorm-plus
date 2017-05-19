@@ -249,7 +249,7 @@ export function getConnection(connectionName: string = "default"): Connection {
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
 export function getEntityManager(connectionName: string = "default"): EntityManager {
-    return getConnectionManager().get(connectionName).entityManager;
+    return getConnectionManager().get(connectionName).manager;
 }
 
 /**

@@ -385,7 +385,7 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe.skip("transaction", function() {
+    /*describe.skip("transaction", function() {
 
         it("executed queries must success", () => Promise.all(connections.map(async connection => {
             const repository = connection.getRepository(Blog);
@@ -456,6 +456,6 @@ describe("repository > basic methods", () => {
             blogs.length.should.be.equal(1);
         })));
 
-    });
+    });*/
 
 });

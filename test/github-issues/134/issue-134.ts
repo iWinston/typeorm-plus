@@ -25,7 +25,7 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
         post.creationDate = currentDate;
 
         const savedPost = await postRepository.save(post);
-        const loadedPost = await connection.entityManager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .where("post.id=:id", { id: savedPost.id })
             .getOne();

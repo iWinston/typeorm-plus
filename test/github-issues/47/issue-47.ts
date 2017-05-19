@@ -35,13 +35,13 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
         post2.category = Promise.resolve(category2);
 
         // persist
-        await connection.entityManager.save(category1);
-        await connection.entityManager.save(post1);
-        await connection.entityManager.save(category2);
-        await connection.entityManager.save(post2);
+        await connection.manager.save(category1);
+        await connection.manager.save(post1);
+        await connection.manager.save(category2);
+        await connection.manager.save(post2);
 
         // check that all persisted objects exist
-        const loadedPost = await connection.entityManager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .getMany();
 

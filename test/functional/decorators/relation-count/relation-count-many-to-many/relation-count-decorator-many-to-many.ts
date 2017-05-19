@@ -24,42 +24,42 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.save(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
-        await connection.entityManager.save(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "Germany";
-        await connection.entityManager.save(category3);
+        await connection.manager.save(category3);
 
         const category4 = new Category();
         category4.name = "airplanes";
-        await connection.entityManager.save(category4);
+        await connection.manager.save(category4);
 
         const category5 = new Category();
         category5.name = "Boeing";
-        await connection.entityManager.save(category5);
+        await connection.manager.save(category5);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category1, category2, category3];
-        await connection.entityManager.save(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Boeing";
         post2.categories = [category4, category5];
-        await connection.entityManager.save(post2);
+        await connection.manager.save(post2);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .getMany();
 
         expect(loadedPosts![0].categoryCount).to.be.equal(3);
         expect(loadedPosts![1].categoryCount).to.be.equal(2);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .where("post.id = :id", { id: 1 })
             .getOne();
@@ -71,43 +71,43 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.save(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
-        await connection.entityManager.save(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "Germany";
-        await connection.entityManager.save(category3);
+        await connection.manager.save(category3);
 
         const category4 = new Category();
         category4.name = "airplanes";
-        await connection.entityManager.save(category4);
+        await connection.manager.save(category4);
 
         const category5 = new Category();
         category5.name = "Boeing";
-        await connection.entityManager.save(category5);
+        await connection.manager.save(category5);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category1, category2, category3];
-        await connection.entityManager.save(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Boeing";
         post2.categories = [category4, category5];
-        await connection.entityManager.save(post2);
+        await connection.manager.save(post2);
 
         const post3 = new Post();
         post3.title = "about Audi";
-        await connection.entityManager.save(post3);
+        await connection.manager.save(post3);
 
         const post4 = new Post();
         post4.title = "about Airbus";
-        await connection.entityManager.save(post4);
+        await connection.manager.save(post4);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .setOffset(0)
             .setLimit(2)
@@ -122,50 +122,50 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
         const image1 = new Image();
         image1.isRemoved = true;
         image1.name = "image #1";
-        await connection.entityManager.save(image1);
+        await connection.manager.save(image1);
 
         const image2 = new Image();
         image2.name = "image #2";
-        await connection.entityManager.save(image2);
+        await connection.manager.save(image2);
 
         const image3 = new Image();
         image3.name = "image #3";
-        await connection.entityManager.save(image3);
+        await connection.manager.save(image3);
 
         const category1 = new Category();
         category1.name = "cars";
         category1.isRemoved = true;
         category1.images = [image1, image2];
-        await connection.entityManager.save(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
-        await connection.entityManager.save(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "Germany";
-        await connection.entityManager.save(category3);
+        await connection.manager.save(category3);
 
         const category4 = new Category();
         category4.name = "airplanes";
         category4.images = [image3];
-        await connection.entityManager.save(category4);
+        await connection.manager.save(category4);
 
         const category5 = new Category();
         category5.name = "Boeing";
-        await connection.entityManager.save(category5);
+        await connection.manager.save(category5);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category1, category2, category3];
-        await connection.entityManager.save(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Boeing";
         post2.categories = [category4, category5];
-        await connection.entityManager.save(post2);
+        await connection.manager.save(post2);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .addOrderBy("post.id, categories.id")
@@ -180,7 +180,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
         expect(loadedPosts![1].categoryCount).to.be.equal(2);
         expect(loadedPosts![1].categories[0].imageCount).to.be.equal(1);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .where("post.id = :id", { id: 1 })
@@ -197,27 +197,27 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.save(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "BMW";
-        await connection.entityManager.save(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "Germany";
-        await connection.entityManager.save(category3);
+        await connection.manager.save(category3);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category1, category2, category3];
-        await connection.entityManager.save(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.categories = [category1, category3];
-        await connection.entityManager.save(post2);
+        await connection.manager.save(post2);
 
-        let loadedPosts = await connection.entityManager
+        let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .addOrderBy("post.id, categories.id")
@@ -231,7 +231,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
         expect(loadedPosts![1].categories[0].postCount).to.be.equal(2);
         expect(loadedPosts![1].categories[1].postCount).to.be.equal(2);
 
-        let loadedPost = await connection.entityManager
+        let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .where("post.id = :id", { id: 1 })
@@ -248,45 +248,45 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.save(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.entityManager.save(category2);
+        await connection.manager.save(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category1];
-        await connection.entityManager.save(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.categories = [category1];
-        await connection.entityManager.save(post2);
+        await connection.manager.save(post2);
 
         const post3 = new Post();
         post3.title = "about Mercedes";
         post3.categories = [category1];
-        await connection.entityManager.save(post3);
+        await connection.manager.save(post3);
 
         const post4 = new Post();
         post4.title = "about Boeing";
         post4.categories = [category2];
-        await connection.entityManager.save(post4);
+        await connection.manager.save(post4);
 
         const post5 = new Post();
         post5.title = "about Airbus";
         post5.categories = [category2];
-        await connection.entityManager.save(post5);
+        await connection.manager.save(post5);
 
-        let loadedCategories = await connection.entityManager
+        let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .getMany();
 
         expect(loadedCategories![0].postCount).to.be.equal(3);
         expect(loadedCategories![1].postCount).to.be.equal(2);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .where("category.id = :id", { id: 1 })
             .getOne();
@@ -298,46 +298,46 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.save(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.entityManager.save(category2);
+        await connection.manager.save(category2);
 
         const category3 = new Category();
         category3.name = "BMW";
-        await connection.entityManager.save(category3);
+        await connection.manager.save(category3);
 
         const category4 = new Category();
         category4.name = "Boeing";
-        await connection.entityManager.save(category4);
+        await connection.manager.save(category4);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.categories = [category1];
-        await connection.entityManager.save(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.categories = [category1];
-        await connection.entityManager.save(post2);
+        await connection.manager.save(post2);
 
         const post3 = new Post();
         post3.title = "about Mercedes";
         post3.categories = [category1];
-        await connection.entityManager.save(post3);
+        await connection.manager.save(post3);
 
         const post4 = new Post();
         post4.title = "about Boeing";
         post4.categories = [category2];
-        await connection.entityManager.save(post4);
+        await connection.manager.save(post4);
 
         const post5 = new Post();
         post5.title = "about Airbus";
         post5.categories = [category2];
-        await connection.entityManager.save(post5);
+        await connection.manager.save(post5);
 
-        let loadedCategories = await connection.entityManager
+        let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .setOffset(0)
             .setLimit(2)
@@ -351,40 +351,40 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         const category1 = new Category();
         category1.name = "cars";
-        await connection.entityManager.save(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "airplanes";
-        await connection.entityManager.save(category2);
+        await connection.manager.save(category2);
 
         const post1 = new Post();
         post1.title = "about BMW";
         post1.isRemoved = true;
         post1.categories = [category1];
-        await connection.entityManager.save(post1);
+        await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "about Audi";
         post2.isRemoved = true;
         post2.categories = [category1];
-        await connection.entityManager.save(post2);
+        await connection.manager.save(post2);
 
         const post3 = new Post();
         post3.title = "about Mercedes";
         post3.categories = [category1];
-        await connection.entityManager.save(post3);
+        await connection.manager.save(post3);
 
         const post4 = new Post();
         post4.title = "about Boeing";
         post4.categories = [category2];
-        await connection.entityManager.save(post4);
+        await connection.manager.save(post4);
 
         const post5 = new Post();
         post5.title = "about Airbus";
         post5.categories = [category2];
-        await connection.entityManager.save(post5);
+        await connection.manager.save(post5);
 
-        let loadedCategories = await connection.entityManager
+        let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .getMany();
 
@@ -392,7 +392,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
         expect(loadedCategories![0].removedPostCount).to.be.equal(2);
         expect(loadedCategories![1].postCount).to.be.equal(2);
 
-        let loadedCategory = await connection.entityManager
+        let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .where("category.id = :id", { id: 1 })
             .getOne();

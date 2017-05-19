@@ -14,7 +14,7 @@ describe("uuid type", () => {
         });
 
         await Promise.all(connections.map(connection => {
-            return connection.entityManager.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
+            return connection.manager.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
         }));
     });
     // beforeEach(() => reloadTestingDatabases(connections));

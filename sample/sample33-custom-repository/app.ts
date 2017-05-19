@@ -31,12 +31,12 @@ createConnection(options).then(async connection => {
     post.title = "Hello Repositories!";
 
     await connection
-        .entityManager
+        .manager
         .getCustomRepository(PostRepository)
         .save(post);
 
     const loadedPost = await connection
-        .entityManager
+        .manager
         .getCustomRepository(PostRepository)
         .findMyPost();
 

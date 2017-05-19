@@ -575,29 +575,13 @@ export class Connection {
 
         let entityRepositoryInstance: any = this.entityRepositories.find(entityRepository => entityRepository.constructor === customRepository);
         if (!entityRepositoryInstance) {
-            if (entityRepositoryMetadataArgs.useContainer) {
-                entityRepositoryInstance = getFromContainer(entityRepositoryMetadataArgs.target);
-
-                // if we get custom entity repository from container then there is a risk that it already was used
-                // in some different connection. If it was used there then we check it and throw an exception
-                // because we cant override its connection there again
-
-                if (entityRepositoryInstance instanceof AbstractRepository || entityRepositoryInstance instanceof Repository) {
-                    // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-                    // however we need these properties for internal work of the class
-                    if ((entityRepositoryInstance as any)["connection"] && (entityRepositoryInstance as any)["connection"] !== this)
-                        throw new CustomRepositoryReusedError(customRepository);
-                }
-
-            } else {
-                entityRepositoryInstance = new (entityRepositoryMetadataArgs.target as any)();
-            }
+            entityRepositoryInstance = new (entityRepositoryMetadataArgs.target as any)();
 
             if (entityRepositoryInstance instanceof AbstractRepository) {
                 // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
                 // however we need these properties for internal work of the class
-                if (!(entityRepositoryInstance as any)["connection"])
-                    (entityRepositoryInstance as any)["connection"] = this;
+                if (!(entityRepositoryInstance as any)["manager"])
+                    (entityRepositoryInstance as any)["manager"] = this.manager;
             }
             if (entityRepositoryInstance instanceof Repository) {
                 if (!entityRepositoryMetadataArgs.entity)
@@ -605,7 +589,7 @@ export class Connection {
 
                 // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
                 // however we need these properties for internal work of the class
-                (entityRepositoryInstance as any)["connection"] = this;
+                (entityRepositoryInstance as any)["manager"] = this.manager;
                 (entityRepositoryInstance as any)["metadata"] = this.getMetadata(entityRepositoryMetadataArgs.entity);
             }
 
@@ -616,19 +600,6 @@ export class Connection {
         return entityRepositoryInstance;
     }
 
-    /**
-     * Gets custom repository's managed entity.
-     * If given custom repository does not manage any entity then undefined will be returned.
-     */
-    getCustomRepositoryTarget<T>(customRepository: any): Function|string|undefined {
-        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
-            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
-        });
-        if (!entityRepositoryMetadataArgs)
-            throw new CustomRepositoryNotFoundError(customRepository);
-
-        return entityRepositoryMetadataArgs.entity;
-    }
 
     // -------------------------------------------------------------------------
     // Protected Methods

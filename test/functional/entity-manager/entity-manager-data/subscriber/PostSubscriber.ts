@@ -9,7 +9,7 @@ export class PostSubscriber implements EntitySubscriberInterface<any> {
      * Called before entity insertion.
      */
     beforeInsert(event: InsertEvent<any>) {
-        const user = event.entityManager.getData("user");
+        const user = event.manager.getData("user");
         user.name = "Updated Dima";
     }
 

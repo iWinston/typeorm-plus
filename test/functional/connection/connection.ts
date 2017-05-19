@@ -47,7 +47,7 @@ describe("Connection", () => {
         });
 
         it.skip("entity manager and reactive entity manager should not be accessible", () => {
-            expect(() => connection.entityManager).to.throw(CannotGetEntityManagerNotConnectedError);
+            expect(() => connection.manager).to.throw(CannotGetEntityManagerNotConnectedError);
             // expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
         });
 
@@ -118,7 +118,7 @@ describe("Connection", () => {
         }));
 
         it("entity manager and reactive entity manager should be accessible", () => connections.forEach(connection => {
-            expect(connection.entityManager).to.be.instanceOf(EntityManager);
+            expect(connection.manager).to.be.instanceOf(EntityManager);
             // expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
         }));
 

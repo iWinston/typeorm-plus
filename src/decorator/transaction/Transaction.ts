@@ -17,7 +17,7 @@ export function Transaction(connectionName: string = "default"): Function {
         // override method descriptor with proxy method
         descriptor.value = function(...args: any[]) {
             return getConnection(connectionName)
-                .entityManager
+                .manager
                 .transaction(entityManager => {
 
                     // gets all @TransactionEntityManager() decorator usages for this method

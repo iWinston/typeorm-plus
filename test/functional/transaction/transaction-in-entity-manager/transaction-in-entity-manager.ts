@@ -21,7 +21,7 @@ describe("transaction > transaction with entity manager", () => {
 
         let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
 
-        await connection.entityManager.transaction(async entityManager => {
+        await connection.manager.transaction(async entityManager => {
 
             const post = new Post();
             post.title = "Post #1";
@@ -36,14 +36,14 @@ describe("transaction > transaction with entity manager", () => {
 
         });
 
-        const post = await connection.entityManager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
         expect(post).not.to.be.empty;
         post!.should.be.eql({
             id: postId,
             title: "Post #1"
         });
 
-        const category = await connection.entityManager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
         expect(category).not.to.be.empty;
         category!.should.be.eql({
             id: categoryId,
@@ -57,7 +57,7 @@ describe("transaction > transaction with entity manager", () => {
         let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
 
         try {
-            await connection.entityManager.transaction(async entityManager => {
+            await connection.manager.transaction(async entityManager => {
 
                 const post = new Post();
                 post.title = "Post #1";
@@ -93,10 +93,10 @@ describe("transaction > transaction with entity manager", () => {
             /* skip error */
         }
 
-        const post = await connection.entityManager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
         expect(post).to.be.empty;
 
-        const category = await connection.entityManager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
         expect(category).to.be.empty;
 
     })));

@@ -466,7 +466,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     // todo: extra these methods into separate class
 
     protected get queryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver).queryRunner;
+        return (this.manager.connection.driver as MongoDriver).queryRunner;
     }
 
     protected convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions: FindOneOptions<Entity>|Partial<Entity>|undefined): ObjectLiteral|undefined {
