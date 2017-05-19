@@ -53,7 +53,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks if entity has an id.
-     * If entity contains compose ids, then it checks them all.
+     * If entity composite compose ids, it will check them all.
      */
     hasId(entity: Entity): boolean {
         return this.metadata.hasId(entity);
@@ -136,19 +136,19 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Persists (saves) all given entities in the database.
+     * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
     async persist(entities: Entity[], options?: PersistOptions): Promise<Entity[]>;
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Saves a given entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
     async persist(entity: Entity, options?: PersistOptions): Promise<Entity>;
 
     /**
-     * Persists one or many given entities.
+     * Saves one or many given entities.
      */
     async persist(entityOrEntities: Entity|Entity[], options?: PersistOptions): Promise<Entity|Entity[]> {
 
@@ -430,6 +430,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * use EntityManager.transaction method instead.
      *
      * Transactions are supported only by relational databases (MongoDB is not supported).
+     *
+     * @deprecated use entity manager's transaction method instead.
      */
     async transaction(runInTransaction: (repository: Repository<Entity>) => Promise<any>|any): Promise<any> {
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
