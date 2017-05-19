@@ -1,5 +1,5 @@
 import {Repository} from "./Repository";
-import {getConnection, getRepository} from "../index";
+import {getConnection} from "../index";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {DeepPartial} from "../common/DeepPartial";
 import {PersistOptions} from "./PersistOptions";

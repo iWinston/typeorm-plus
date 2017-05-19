@@ -18,9 +18,9 @@ each for its own `findOne*` or `find*` methods
 * table decorators were not removed in the release, however they will be removed in next. Be sure to replace them before that.
 * `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#skip`
 * `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
-* renamed `entityManager` to `manager`
+* renamed `entityManager` to `manager` in `Connection` object
+* renamed `persist` to `save` in `EntityManager` and `Repository` objects
 * `@AbstractEntity` is deprecated. Now there is no need to mark class with a decorator, it can extend any class with columns
-* 
 
 ### NEW FEATURES
 

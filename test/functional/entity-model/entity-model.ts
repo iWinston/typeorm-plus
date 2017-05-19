@@ -20,15 +20,15 @@ describe("entity-model", () => {
 
         const post = new Post();
         post.title = "About ActiveRecord";
-        post.text = "Huge description how good or bad ActiveRecord is.";
+        post.text = "Huge discussion how good or bad ActiveRecord is.";
         await post.save();
 
-        const loadedPost = await Post.findOneById(1);
+        const loadedPost = await Post.findOneById<Post>(1);
 
         loadedPost!.should.be.instanceOf(Post);
         loadedPost!.id.should.be.eql(1);
         loadedPost!.title.should.be.eql("About ActiveRecord");
-        loadedPost!.text.should.be.eql("Huge description how good or bad ActiveRecord is.");
+        loadedPost!.text.should.be.eql("Huge discussion how good or bad ActiveRecord is.");
     }));
 
 });
