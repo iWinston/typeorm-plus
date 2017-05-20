@@ -411,10 +411,14 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     protected buildPropertyPath(): string {
-        if (!this.embeddedMetadata || !this.embeddedMetadata.parentPropertyNames.length)
-            return this.propertyName;
+        let path = "";
+        if (this.embeddedMetadata && this.embeddedMetadata.parentPropertyNames.length)
+            path = this.embeddedMetadata.parentPropertyNames.join(".") + ".";
 
-        return this.embeddedMetadata.parentPropertyNames.join(".") + "." + this.propertyName;
+        if (this.referencedColumn)
+            path += this.referencedColumn.propertyName + ".";
+
+        return path + this.propertyName;
     }
 
     protected buildDatabaseName(namingStrategy: NamingStrategyInterface): string {
