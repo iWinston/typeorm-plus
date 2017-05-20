@@ -1439,14 +1439,18 @@ export class QueryBuilder<Entity> {
             alias.metadata.columns.forEach(column => {
                 const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =\)\,]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.databaseName) + "$2");
+                const expression2 = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyName + "([ =\)\,]|.{0}$)";
+                statement = statement.replace(new RegExp(expression2, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.databaseName) + "$2");
             });
-            alias.metadata.relationsWithJoinColumns.forEach(relation => {
-                relation.joinColumns.forEach(joinColumn => {
+            alias.metadata.relations.forEach(relation => {
+                [...relation.joinColumns, ...relation.inverseJoinColumns].forEach(joinColumn => {
                     const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =\)\,]|.{0}$)";
                     statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(joinColumn.databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
                 });
-                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =\)\,]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+                if (relation.joinColumns.length > 0) {
+                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =\)\,]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+                }
             });
         });
         return statement;

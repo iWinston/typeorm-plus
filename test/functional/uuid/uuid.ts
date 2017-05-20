@@ -4,7 +4,7 @@ import {Record} from "./entity/Record";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
-describe("uuid type", () => {
+describe.skip("uuid type", () => {
 
     let connections: Connection[];
     before(async () => {
