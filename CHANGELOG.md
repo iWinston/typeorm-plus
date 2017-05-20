@@ -24,6 +24,7 @@ each for its own `findOne*` or `find*` methods
 * `SpecificRepository` is deprecated for now
 * `transaction` method has been removed from `Repository`. Use `EntityManager#transaction` method instead
 * custom repositories do not support container anymore
+* added ActiveRecord support (by extending EntityModel) class
 
 
 ### NEW FEATURES
