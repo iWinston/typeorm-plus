@@ -7,6 +7,7 @@ import {FindOneOptions} from "../find-options/FindOneOptions";
 import {RemoveOptions} from "./RemoveOptions";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {Connection} from "../connection/Connection";
+import {ObjectType} from "../common/ObjectType";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -63,8 +64,8 @@ export class EntityModel {
     /**
      * Gets current entity's Repository.
      */
-    static getRepository<T extends EntityModel = any>(): Repository<T> {
-        const connection = this.usedConnection || getConnection();
+    static getRepository<T extends EntityModel>(this: ObjectType<T>, ): Repository<T> {
+        const connection: Connection = (this as any).usedConnection || getConnection();
         return connection.getRepository<T>(this);
     }
 
@@ -88,29 +89,29 @@ export class EntityModel {
     /**
      * Gets entity mixed id.
      */
-    static getId<T extends EntityModel = any>(entity: T): any {
-        return this.getRepository<T>().getId(entity);
+    static getId<T extends EntityModel>(this: ObjectType<T>, entity: T): any {
+        return (this as any).getRepository().getId(entity);
     }
 
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    static createQueryBuilder<T extends EntityModel = any>(alias: string): QueryBuilder<T> {
-        return this.getRepository<T>().createQueryBuilder(alias);
+    static createQueryBuilder<T extends EntityModel>(this: ObjectType<T>, alias: string): QueryBuilder<T> {
+        return (this as any).getRepository().createQueryBuilder(alias);
     }
 
     /**
      * Creates a new entity instance.
      */
-    static create<T extends EntityModel = any>(): T {
-        return this.getRepository<T>().create();
+    static create<T extends EntityModel>(this: ObjectType<T>): T {
+        return (this as any).getRepository().create();
     }
 
     /**
      * Merges multiple entities (or entity-like objects) into a given entity.
      */
-    static merge<T extends EntityModel = any>(mergeIntoEntity: T, ...entityLikes: DeepPartial<T>[]): T {
-        return this.getRepository<T>().merge(mergeIntoEntity, ...entityLikes);
+    static merge<T extends EntityModel>(this: ObjectType<T>, mergeIntoEntity: T, ...entityLikes: DeepPartial<T>[]): T {
+        return (this as any).getRepository().merge(mergeIntoEntity, ...entityLikes);
     }
 
     /**
@@ -122,109 +123,109 @@ export class EntityModel {
      * Note that given entity-like object must have an entity id / primary key to find entity by.
      * Returns undefined if entity with given id was not found.
      */
-    static preload<T extends EntityModel = any>(entityLike: DeepPartial<T>): Promise<T|undefined> {
-        return this.getRepository<T>().preload(entityLike);
+    static preload<T extends EntityModel>(this: ObjectType<T>, entityLike: DeepPartial<T>): Promise<T|undefined> {
+        return (this as any).getRepository().preload(entityLike);
     }
 
     /**
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    static save<T extends EntityModel = any>(entities: T[], options?: SaveOptions): Promise<T[]>;
+    static save<T extends EntityModel>(this: ObjectType<T>, entities: T[], options?: SaveOptions): Promise<T[]>;
 
     /**
      * Saves a given entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
-    static save<T extends EntityModel = any>(entity: T, options?: SaveOptions): Promise<T>;
+    static save<T extends EntityModel>(this: ObjectType<T>, entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves one or many given entities.
      */
-    static save<T extends EntityModel = any>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.getRepository<T>().save(entityOrEntities as any, options);
+    static save<T extends EntityModel>(this: ObjectType<T>, entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return (this as any).getRepository().save(entityOrEntities as any, options);
     }
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends EntityModel = any>(conditions: Partial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
+    static update<T extends EntityModel>(this: ObjectType<T>, conditions: Partial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given find options.
      */
-    static update<T extends EntityModel = any>(findOptions: FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
+    static update<T extends EntityModel>(this: ObjectType<T>, findOptions: FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends EntityModel = any>(conditionsOrFindOptions: Partial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
-        return this.getRepository<T>().update(conditionsOrFindOptions as any, partialEntity, options);
+    static update<T extends EntityModel>(this: ObjectType<T>, conditionsOrFindOptions: Partial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
+        return (this as any).getRepository().update(conditionsOrFindOptions as any, partialEntity, options);
     }
 
     /**
      * Updates entity partially. Entity will be found by a given id.
      */
-    static updateById<T extends EntityModel = any>(id: any, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
-        return this.getRepository<T>().updateById(id, partialEntity, options);
+    static updateById<T extends EntityModel>(this: ObjectType<T>, id: any, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
+        return (this as any).getRepository().updateById(id, partialEntity, options);
     }
 
     /**
      * Removes a given entities from the database.
      */
-    static remove<T extends EntityModel = any>(entities: T[], options?: RemoveOptions): Promise<T[]>;
+    static remove<T extends EntityModel>(this: ObjectType<T>, entities: T[], options?: RemoveOptions): Promise<T[]>;
 
     /**
      * Removes a given entity from the database.
      */
-    static remove<T extends EntityModel = any>(entity: T, options?: RemoveOptions): Promise<T>;
+    static remove<T extends EntityModel>(this: ObjectType<T>, entity: T, options?: RemoveOptions): Promise<T>;
 
     /**
      * Removes one or many given entities.
      */
-    static remove<T extends EntityModel = any>(entityOrEntities: T|T[], options?: RemoveOptions): Promise<T|T[]> {
-        return this.getRepository<T>().remove(entityOrEntities as any, options);
+    static remove<T extends EntityModel>(this: ObjectType<T>, entityOrEntities: T|T[], options?: RemoveOptions): Promise<T|T[]> {
+        return (this as any).getRepository().remove(entityOrEntities as any, options);
     }
 
     /**
      * Removes entity by a given entity id.
      */
-    static removeById<T extends EntityModel = any>(id: any, options?: RemoveOptions): Promise<void> {
-        return this.getRepository<T>().removeById(id, options);
+    static removeById<T extends EntityModel>(this: ObjectType<T>, id: any, options?: RemoveOptions): Promise<void> {
+        return (this as any).getRepository().removeById(id, options);
     }
 
     /**
      * Counts entities that match given options.
      */
-    static count<T extends EntityModel = any>(options?: FindManyOptions<T>): Promise<number>;
+    static count<T extends EntityModel>(this: ObjectType<T>, options?: FindManyOptions<T>): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
      */
-    static count<T extends EntityModel = any>(conditions?: DeepPartial<T>): Promise<number>;
+    static count<T extends EntityModel>(this: ObjectType<T>, conditions?: DeepPartial<T>): Promise<number>;
 
     /**
      * Counts entities that match given find options or conditions.
      */
-    static count<T extends EntityModel = any>(optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<number> {
-        return this.getRepository<T>().count(optionsOrConditions as any);
+    static count<T extends EntityModel>(this: ObjectType<T>, optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<number> {
+        return (this as any).getRepository().count(optionsOrConditions as any);
     }
 
     /**
      * Finds entities that match given options.
      */
-    static find<T extends EntityModel = any>(options?: FindManyOptions<T>): Promise<T[]>;
+    static find<T extends EntityModel>(this: ObjectType<T>, options?: FindManyOptions<T>): Promise<T[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    static find<T extends EntityModel = any>(conditions?: DeepPartial<T>): Promise<T[]>;
+    static find<T extends EntityModel>(this: ObjectType<T>, conditions?: DeepPartial<T>): Promise<T[]>;
 
     /**
      * Finds entities that match given find options or conditions.
      */
-    static find<T extends EntityModel = any>(optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<T[]> {
-        return this.getRepository<T>().find(optionsOrConditions as any);
+    static find<T extends EntityModel>(this: ObjectType<T>, optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<T[]> {
+        return (this as any).getRepository().find(optionsOrConditions as any);
     }
 
     /**
@@ -232,94 +233,94 @@ export class EntityModel {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    static findAndCount<T extends EntityModel = any>(options?: FindManyOptions<T>): Promise<[ T[], number ]>;
+    static findAndCount<T extends EntityModel>(this: ObjectType<T>, options?: FindManyOptions<T>): Promise<[ T[], number ]>;
 
     /**
      * Finds entities that match given conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    static findAndCount<T extends EntityModel = any>(conditions?: DeepPartial<T>): Promise<[ T[], number ]>;
+    static findAndCount<T extends EntityModel>(this: ObjectType<T>, conditions?: DeepPartial<T>): Promise<[ T[], number ]>;
 
     /**
      * Finds entities that match given find options or conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    static findAndCount<T extends EntityModel = any>(optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<[ T[], number ]> {
-        return this.getRepository<T>().findAndCount(optionsOrConditions as any);
+    static findAndCount<T extends EntityModel>(this: ObjectType<T>, optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<[ T[], number ]> {
+        return (this as any).getRepository().findAndCount(optionsOrConditions as any);
     }
 
     /**
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    static findByIds<T extends EntityModel = any>(ids: any[], options?: FindManyOptions<T>): Promise<T[]>;
+    static findByIds<T extends EntityModel>(this: ObjectType<T>, ids: any[], options?: FindManyOptions<T>): Promise<T[]>;
 
     /**
      * Finds entities by ids.
      * Optionally conditions can be applied.
      */
-    static findByIds<T extends EntityModel = any>(ids: any[], conditions?: DeepPartial<T>): Promise<T[]>;
+    static findByIds<T extends EntityModel>(this: ObjectType<T>, ids: any[], conditions?: DeepPartial<T>): Promise<T[]>;
 
     /**
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    static findByIds<T extends EntityModel = any>(ids: any[], optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<T[]> {
-        return this.getRepository<T>().findByIds(ids, optionsOrConditions as any);
+    static findByIds<T extends EntityModel>(this: ObjectType<T>, ids: any[], optionsOrConditions?: FindManyOptions<T>|DeepPartial<T>): Promise<T[]> {
+        return (this as any).getRepository().findByIds(ids, optionsOrConditions as any);
     }
 
     /**
      * Finds first entity that matches given options.
      */
-    static findOne<T extends EntityModel = any>(options?: FindOneOptions<T>): Promise<T|undefined>;
+    static findOne<T extends EntityModel>(this: ObjectType<T>, options?: FindOneOptions<T>): Promise<T|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    static findOne<T extends EntityModel = any>(conditions?: DeepPartial<T>): Promise<T|undefined>;
+    static findOne<T extends EntityModel>(this: ObjectType<T>, conditions?: DeepPartial<T>): Promise<T|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    static findOne<T extends EntityModel = any>(optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>): Promise<T|undefined> {
-        return this.getRepository<T>().findOne(optionsOrConditions as any);
+    static findOne<T extends EntityModel>(this: ObjectType<T>, optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>): Promise<T|undefined> {
+        return (this as any).getRepository().findOne(optionsOrConditions as any);
     }
 
     /**
      * Finds entity by given id.
      * Optionally find options can be applied.
      */
-    static findOneById<T extends EntityModel = any>(id: any, options?: FindOneOptions<T>): Promise<T|undefined>;
+    static findOneById<T extends EntityModel>(this: ObjectType<T>, id: any, options?: FindOneOptions<T>): Promise<T|undefined>;
 
     /**
      * Finds entity by given id.
      * Optionally conditions can be applied.
      */
-    static findOneById<T extends EntityModel = any>(id: any, conditions?: DeepPartial<T>): Promise<T|undefined>;
+    static findOneById<T extends EntityModel>(this: ObjectType<T>, id: any, conditions?: DeepPartial<T>): Promise<T|undefined>;
 
     /**
      * Finds entity by given id.
      * Optionally find options or conditions can be applied.
      */
-    static findOneById<T extends EntityModel = any>(id: any, optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>): Promise<T|undefined> {
-        return this.getRepository<T>().findOneById(id, optionsOrConditions as any);
+    static findOneById<T extends EntityModel>(this: ObjectType<T>, id: any, optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>): Promise<T|undefined> {
+        return (this as any).getRepository().findOneById(id, optionsOrConditions as any);
     }
 
     /**
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      */
-    static query<T extends EntityModel = any>(query: string, parameters?: any[]): Promise<any> {
-        return this.getRepository<T>().query(query, parameters);
+    static query<T extends EntityModel>(this: ObjectType<T>, query: string, parameters?: any[]): Promise<any> {
+        return (this as any).getRepository().query(query, parameters);
     }
 
     /**
      * Clears all the data from the given table/collection (truncates/drops it).
      */
-    static clear<T extends EntityModel = any>(): Promise<void> {
-        return this.getRepository<T>().clear();
+    static clear<T extends EntityModel>(this: ObjectType<T>, ): Promise<void> {
+        return (this as any).getRepository().clear();
     }
 
 }
