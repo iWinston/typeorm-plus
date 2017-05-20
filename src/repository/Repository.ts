@@ -19,7 +19,7 @@ export class Repository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by this repository.
+     * Entity Manager used by this repository.
      */
     protected manager: EntityManager;
 

@@ -34,6 +34,8 @@ import {
     CollStats
 } from "../driver/mongodb/typings";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -86,7 +88,8 @@ export class MongoEntityManager extends EntityManager {
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
     createCursor<Entity>(entityClassOrName: ObjectType<Entity>|string, query?: ObjectLiteral): Cursor<Entity> {
-        return this.getMongoRepository(entityClassOrName as any).createCursor(query);
+        const metadata = this.connection.getMetadata(entityClassOrName);
+        return this.queryRunner.cursor(metadata.tableName, query);
     }
 
     /**
@@ -329,6 +332,14 @@ export class MongoEntityManager extends EntityManager {
      */
     updateOne<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
         return this.getMongoRepository(entityClassOrName as any).updateOne(query, update, options);
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    protected get queryRunner(): MongoQueryRunner {
+        return (this.connection.driver as MongoDriver).queryRunner;
     }
 
 }

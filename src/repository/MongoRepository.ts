@@ -40,13 +40,21 @@ import {
     UnorderedBulkOperation,
     UpdateWriteOpResult
 } from "../driver/mongodb/typings";
+import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
  */
 export class MongoRepository<Entity extends ObjectLiteral> extends Repository<Entity> {
 
-    // todo: implement join from find options too
+    // -------------------------------------------------------------------------
+    // Protected Methods Set Dynamically
+    // -------------------------------------------------------------------------
+
+    /**
+     * Entity Manager used by this repository.
+     */
+    protected manager: MongoEntityManager;
 
     // -------------------------------------------------------------------------
     // Overridden Methods
@@ -58,14 +66,6 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      */
     query(query: string, parameters?: any[]): Promise<any> {
         throw new Error(`Queries aren't supported by MongoDB.`);
-    }
-
-    /**
-     * Transactions are not supported by MongoDB.
-     * Calling this method will return an error.
-     */
-    transaction(runInTransaction: (repository: Repository<Entity>) => Promise<any>|any): Promise<any> {
-        throw new Error(`Transactions aren't supported by MongoDB.`);
     }
 
     /**
@@ -122,7 +122,13 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      */
     async findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        query["_id"] = { $in: ids.map(id => id[this.metadata.objectIdColumn!.propertyName]) };
+        const objectIdInstance = require("mongodb").ObjectID;
+        query["_id"] = { $in: ids.map(id => {
+            if (id instanceof objectIdInstance)
+                return id;
+
+            return id[this.metadata.objectIdColumn!.propertyName];
+        }) };
 
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
@@ -174,7 +180,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
     createCursor(query?: ObjectLiteral): Cursor<Entity> {
-        return this.queryRunner.cursor(this.metadata.tableName, query);
+        return this.manager.createCursor(this.metadata.target, query);
     }
 
     /**
