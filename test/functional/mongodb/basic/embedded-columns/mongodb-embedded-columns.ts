@@ -6,7 +6,7 @@ import {Counters} from "./entity/Counters";
 import {Information} from "./entity/Information";
 import {expect} from "chai";
 
-describe.skip("mongodb > embedded columns", () => {
+describe("mongodb > embedded columns", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

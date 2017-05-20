@@ -32,18 +32,18 @@ export class DocumentToEntityTransformer {
         let hasData = false;
 
         // handle _id property the special way
-        if (metadata.objectIdColumn && document[metadata.objectIdColumn.databaseName]) {
+        if (metadata.objectIdColumn && document[metadata.objectIdColumn.databaseNameWithoutPrefixes]) {
             // todo: we can't use driver in this class
             // do we really need prepare hydrated value here? If no then no problem. If yes then think maybe prepareHydratedValue process should be extracted out of driver class?
             // entity[metadata.objectIdColumn.propertyName] = this.driver.prepareHydratedValue(document[metadata.objectIdColumn.name"], metadata.objectIdColumn);
-            entity[metadata.objectIdColumn.propertyName] = document[metadata.objectIdColumn.databaseName];
+            entity[metadata.objectIdColumn.propertyName] = document[metadata.objectIdColumn.databaseNameWithoutPrefixes];
             hasData = true;
         }
 
         // add special columns that contains relation ids
         if (this.enableRelationIdValues) {
             metadata.columns.filter(column => !!column.relationMetadata).forEach(column => {
-                const valueInObject = document[column.databaseName];
+                const valueInObject = document[column.databaseNameWithoutPrefixes];
                 if (valueInObject !== undefined && valueInObject !== null && column.propertyName) {
                     // todo: we can't use driver in this class
                     // const value = this.driver.prepareHydratedValue(valueInObject, column);
@@ -67,8 +67,8 @@ export class DocumentToEntityTransformer {
             });*/
 
         // get value from columns selections and put them into object
-        metadata.columns.forEach(column => {
-            const valueInObject = document[column.databaseName];
+        metadata.ownColumns.forEach(column => {
+            const valueInObject = document[column.databaseNameWithoutPrefixes];
             if (valueInObject !== undefined &&
                 valueInObject !== null &&
                 column.propertyName &&
@@ -91,14 +91,14 @@ export class DocumentToEntityTransformer {
                     entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map(subValue => {
                         const newItem = embedded.create();
                         embedded.columns.forEach(column => {
-                            newItem[column.propertyName] = subValue[column.databaseName];
+                            newItem[column.propertyName] = subValue[column.databaseNameWithoutPrefixes];
                         });
                         return newItem;
                     });
 
                 } else {
                     embedded.columns.forEach(column => {
-                        const value = document[embedded.prefix][column.databaseName];
+                        const value = document[embedded.prefix][column.databaseNameWithoutPrefixes];
                         if (!value) return;
 
                         if (!entity[embedded.propertyName])

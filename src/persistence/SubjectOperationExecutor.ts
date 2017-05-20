@@ -9,6 +9,7 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -458,6 +459,43 @@ export class SubjectOperationExecutor {
         }
     }
 
+    private collectColumns(columns: ColumnMetadata[], entity: ObjectLiteral, object: ObjectLiteral) {
+        columns.forEach(column => {
+            if (column.isVirtual || column.isParentId || column.isDiscriminator)
+                return;
+
+            const value = entity[column.propertyName];
+            if (value === undefined)
+                return;
+
+            object[column.databaseNameWithoutPrefixes] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
+        });
+    }
+
+    private collectEmbeds(embed: EmbeddedMetadata, entity: ObjectLiteral, object: ObjectLiteral) {
+
+        if (embed.isArray) {
+            if (entity[embed.propertyName] instanceof Array) {
+                if (!object[embed.prefix])
+                    object[embed.prefix] = [];
+
+                entity[embed.propertyName].forEach((subEntity: any, index: number) => {
+                    if (!object[embed.prefix][index])
+                        object[embed.prefix][index] = {};
+                    this.collectColumns(embed.columns, subEntity, object[embed.prefix][index]);
+                    embed.embeddeds.forEach(childEmbed => this.collectEmbeds(childEmbed, subEntity, object[embed.prefix][index]));
+                });
+            }
+        } else {
+            if (entity[embed.propertyName] !== undefined) {
+                if (!object[embed.prefix])
+                    object[embed.prefix] = {};
+                this.collectColumns(embed.columns, entity[embed.propertyName], object[embed.prefix]);
+                embed.embeddeds.forEach(childEmbed => this.collectEmbeds(childEmbed, entity[embed.propertyName], object[embed.prefix]));
+            }
+        }
+    }
+
     /**
      * Collects columns and values for the insert operation.
      */
@@ -465,16 +503,22 @@ export class SubjectOperationExecutor {
 
         const values: ObjectLiteral = {};
 
-        metadata.columns.forEach(column => {
-            if (column.isVirtual || column.isParentId || column.isDiscriminator)
-                return;
+        if (this.connection.driver instanceof MongoDriver) {
+            this.collectColumns(metadata.ownColumns, entity, values);
+            metadata.embeddeds.forEach(embed => this.collectEmbeds(embed, entity, values));
 
-            const value = column.getEntityValue(entity);
-            if (value === null || value === undefined)
-                return;
+        } else {
+            metadata.columns.forEach(column => {
+                if (column.isVirtual || column.isParentId || column.isDiscriminator)
+                    return;
 
-            values[column.databaseName] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
-        });
+                const value = column.getEntityValue(entity);
+                if (value === null || value === undefined) // todo: probably check for null should not be there
+                    return;
+
+                values[column.databaseName] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
+            });
+        }
 
         metadata.relationsWithJoinColumns.forEach(relation => {
             relation.joinColumns.forEach(joinColumn => {
@@ -675,13 +719,17 @@ export class SubjectOperationExecutor {
             if (!idMap)
                 throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
-            const value: ObjectLiteral = {};
+            /*const value: ObjectLiteral = {};
             subject.metadata.columns.forEach(column => {
                 const columnValue = column.getEntityValue(entity);
                 if (columnValue !== undefined)
                     value[column.databaseName] = columnValue;
-            });
+            });*/
             // addEmbeddedValuesRecursively(entity, value, subject.metadata.embeddeds);
+
+            const value: ObjectLiteral = {};
+            this.collectColumns(subject.metadata.ownColumns, entity, value);
+            subject.metadata.embeddeds.forEach(embed => this.collectEmbeds(embed, entity, value));
 
             // if number of updated columns = 0 no need to update updated date and version columns
             if (Object.keys(value).length === 0)
@@ -693,8 +741,6 @@ export class SubjectOperationExecutor {
             if (subject.metadata.versionColumn)
                 value[subject.metadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
 
-            // console.log(value);
-            // console.log("idMap:", idMap);
             return this.queryRunner.update(subject.metadata.tableName, value, idMap);
         }
 

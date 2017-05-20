@@ -229,9 +229,8 @@ export class MongoDriver implements Driver {
         const promises: Promise<any>[] = [];
         await Promise.all(entityMetadatas.map(metadata => {
             metadata.indices.forEach(index => {
-                // const columns = index.buildColumnsAsMap(1);
-                // const options = { name: index.name };
-                // promises.push(queryRunner.createCollectionIndex(metadata.tableName, columns, options));
+                const options = { name: index.name };
+                promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
             });
         }));
         await Promise.all(promises);

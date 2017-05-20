@@ -481,7 +481,12 @@ export class EntityMetadata {
             return undefined;
 
         const primaryColumns = this.parentEntityMetadata ? this.primaryColumns : this.primaryColumns;
-        const map = primaryColumns.reduce((map, column) => OrmUtils.mergeDeep(map, column.getEntityValueMap(entity)), {});
+        const map = primaryColumns.reduce((map, column) => {
+            if (column.isObjectId)
+                return Object.assign(map, column.getEntityValueMap(entity));
+
+            return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
+        }, {});
         return Object.keys(map).length > 0 ? map : undefined;
     }
 

@@ -55,16 +55,17 @@ export class OrmUtils {
 
             // remember that NaN === NaN returns false
             // and isNaN(undefined) returns true
-            if (isNaN(x) && isNaN(y) && typeof x === "number" && typeof y === "number") {
+            if (isNaN(x) && isNaN(y) && typeof x === "number" && typeof y === "number")
                 return true;
-            }
 
             // Compare primitives and functions.
             // Check if both arguments link to the same object.
             // Especially useful on the step where we compare prototypes
-            if (x === y) {
+            if (x === y)
                 return true;
-            }
+
+            if (x.equals instanceof Function && x.equals(y))
+                return true;
 
             // Works in case when functions are created in constructor.
             // Comparing dates is a common scenario. Another built-ins?
@@ -73,31 +74,25 @@ export class OrmUtils {
                 (x instanceof Date && y instanceof Date) ||
                 (x instanceof RegExp && y instanceof RegExp) ||
                 (x instanceof String && y instanceof String) ||
-                (x instanceof Number && y instanceof Number)) {
+                (x instanceof Number && y instanceof Number))
                 return x.toString() === y.toString();
-            }
 
             // At last checking prototypes as good as we can
-            if (!(x instanceof Object && y instanceof Object)) {
+            if (!(x instanceof Object && y instanceof Object))
                 return false;
-            }
 
-            if (x.isPrototypeOf(y) || y.isPrototypeOf(x)) {
+            if (x.isPrototypeOf(y) || y.isPrototypeOf(x))
                 return false;
-            }
 
-            if (x.constructor !== y.constructor) {
+            if (x.constructor !== y.constructor)
                 return false;
-            }
 
-            if (x.prototype !== y.prototype) {
+            if (x.prototype !== y.prototype)
                 return false;
-            }
 
             // Check for infinitive linking loops
-            if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1) {
+            if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1)
                 return false;
-            }
 
             // Quick checking of one object being a subset of another.
             // todo: cache the structure of arguments[0] for performance

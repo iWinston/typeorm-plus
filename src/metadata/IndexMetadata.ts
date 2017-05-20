@@ -54,6 +54,12 @@ export class IndexMetadata {
      */
     tableName: string;
 
+    /**
+     * Map of column names with order set.
+     * Used only by MongoDB driver.
+     */
+    columnNamesWithOrderingMap: { [key: string]: number } = {};
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -84,6 +90,8 @@ export class IndexMetadata {
      * Must be called after all entity metadata's properties map, columns and relations are built.
      */
     build(namingStrategy: NamingStrategyInterface): this {
+
+        const map: { [key: string]: number } = {};
         this.tableName = this.entityMetadata.tableName;
 
         // if columns already an array of string then simply return it
@@ -91,11 +99,17 @@ export class IndexMetadata {
             let columnPropertyNames: string[] = [];
             if (this.givenColumnNames instanceof Array) {
                 columnPropertyNames = this.givenColumnNames;
+                columnPropertyNames.forEach(name => map[name] = 1);
             } else {
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(this.entityMetadata.propertiesMap);
-                const columnsNamesFromFnResult = columnsFnResult instanceof Array ? columnsFnResult : Object.keys(columnsFnResult);
-                columnPropertyNames = columnsNamesFromFnResult.map((i: any) => String(i));
+                if (columnsFnResult instanceof Array) {
+                    columnPropertyNames = columnsFnResult.map((i: any) => String(i));
+                    columnPropertyNames.forEach(name => map[name] = 1);
+                } else {
+                    columnPropertyNames = Object.keys(columnsFnResult).map((i: any) => String(i));
+                    Object.keys(columnsFnResult).forEach(columnName => map[columnName] = columnsFnResult[columnName]);
+                }
             }
 
             const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyPath) !== -1);
@@ -115,9 +129,13 @@ export class IndexMetadata {
             this.columns = columns;
         }
 
+        this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
+            const column = this.entityMetadata.columns.find(column => column.propertyName === key)!;
+            updatedMap[column.databaseName] = map[key];
+            return updatedMap;
+        }, {} as { [key: string]: number });
         this.name = namingStrategy.indexName(this.givenName ? this.givenName : undefined, this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
         return this;
     }
-
 
 }

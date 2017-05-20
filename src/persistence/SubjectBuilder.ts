@@ -250,6 +250,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
             // if there no ids found (which means all entities are new and have generated ids) - then nothing to load there
             // console.log("allIds: ", allIds);
+            // console.log("subject.entity: ", subjectGroup.subjects);
+            // console.log("allIds: ", allIds);
             if (!allIds.length)
                 return;
             // console.log("Y");
@@ -260,6 +262,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // todo: also custom queryRunnerProvider is an issue
             let entities: any[];
             if (this.connection.driver instanceof MongoDriver) {
+
                 entities = await this.connection
                     .getMongoRepository<ObjectLiteral>(subjectGroup.target)
                     .findByIds(allIds);

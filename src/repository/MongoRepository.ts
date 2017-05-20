@@ -122,7 +122,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      */
     async findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        query["_id"] = { $in: ids };
+        query["_id"] = { $in: ids.map(id => id[this.metadata.objectIdColumn!.propertyName]) };
 
         const cursor = await this.createEntityCursor(query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {

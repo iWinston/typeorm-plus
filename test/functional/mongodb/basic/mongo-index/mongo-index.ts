@@ -4,7 +4,7 @@ import {createTestingConnections, closeTestingConnections, reloadTestingDatabase
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe.only("mongodb > indices", () => {
+describe("mongodb > indices", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
