@@ -678,6 +678,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                 .loadRelationIdAndMap("image.categoryIds", "image.categories")
                 .leftJoinAndSelect("image.categories", "category")
                 .loadRelationIdAndMap("category.postIds", "category.posts")
+                .orderBy("category.id")
                 .getMany();
 
             expect(loadedImages[0].categoryIds).to.not.be.empty;
@@ -707,6 +708,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                 .loadRelationIdAndMap("image.categoryIds", "image.categories")
                 .leftJoinAndSelect("image.categories", "category")
                 .loadRelationIdAndMap("category.postIds", "category.posts")
+                .orderBy("category.id")
                 .where("image.id = :id", { id: 1 })
                 .getOne();
 

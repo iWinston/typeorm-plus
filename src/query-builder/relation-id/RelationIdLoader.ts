@@ -143,11 +143,13 @@ export class RelationIdLoader {
                 const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
 
                 inverseJoinColumns.forEach(joinColumn => {
-                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName);
+                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)
+                    .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
                 });
 
                 joinColumns.forEach(joinColumn => {
-                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName);
+                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)
+                    .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
                 });
 
                 qb.fromTable(inverseSideTableName, inverseSideTableAlias)

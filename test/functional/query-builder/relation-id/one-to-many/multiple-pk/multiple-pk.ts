@@ -292,6 +292,7 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .leftJoinAndSelect("post.categories", "category")
             .loadRelationIdAndMap("category.imageIds", "category.images")
+            .orderBy("category.id")
             .getMany();
 
         expect(loadedPosts[0].categoryIds).to.not.be.empty;
@@ -323,6 +324,7 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
             .loadRelationIdAndMap("category.imageIds", "category.images")
             .where("post.id = :id", { id: 1 })
             .andWhere("post.authorId = :authorId", { authorId: 1 })
+            .orderBy("category.id")
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.empty;
