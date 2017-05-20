@@ -1449,7 +1449,7 @@ export class QueryBuilder<Entity> {
         }
 
         if (!conditions.length)
-            return "";
+            return this.expressionMap.extraAppendedAndWhereCondition ? " WHERE " + this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition) : "";
 
         if (this.expressionMap.extraAppendedAndWhereCondition)
             return " WHERE (" + conditions + ") AND " + this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition);
