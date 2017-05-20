@@ -4,7 +4,7 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe.skip("mongodb > basic repository actions", () => {
+describe("mongodb > basic repository actions", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -77,7 +77,6 @@ describe.skip("mongodb > basic repository actions", () => {
         const postRepository = connection.getRepository(Post);
         expect(() => postRepository.createQueryBuilder("post")).to.throw(Error);
         expect(() => postRepository.query("SELECT * FROM POSTS")).to.throw(Error);
-        // expect(() => postRepository.transaction(() => {})).to.throw(Error);
     })));
 
     it("should return persisted objects using find* methods", () => Promise.all(connections.map(async connection => {

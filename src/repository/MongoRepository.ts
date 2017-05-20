@@ -19,15 +19,14 @@ import {
     CollectionInsertOneOptions,
     CollectionOptions,
     CollStats,
-    CommandCursor,
-    Cursor,
+    CommandCursor, Cursor,
     CursorResult,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
     FindOneAndReplaceOption,
     GeoHaystackSearchOptions,
     GeoNearOptions,
-    IndexOptions,
+    MongodbIndexOptions,
     InsertOneWriteOpResult,
     InsertWriteOpResult,
     MapReduceOptions,
@@ -40,7 +39,7 @@ import {
     ReplaceOneOptions,
     UnorderedBulkOperation,
     UpdateWriteOpResult
-} from "mongodb";
+} from "../driver/mongodb/typings";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -185,9 +184,10 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     createEntityCursor(query?: ObjectLiteral): Cursor<Entity> {
         const cursor = this.createCursor(query);
         const repository = this;
+        const ParentCursor = require("mongodb").Cursor;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {
-                Cursor.prototype.toArray.call(this, (error: MongoError, results: Entity[]): void => {
+                ParentCursor.prototype.toArray.call(this, (error: MongoError, results: Entity[]): void => {
                     if (error) {
                         callback(error, results);
                         return;
@@ -197,7 +197,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
                     return callback(error, transformer.transformAll(results, repository.metadata));
                 });
             } else {
-                return Cursor.prototype.toArray.call(this).then((results: Entity[]) => {
+                return ParentCursor.prototype.toArray.call(this).then((results: Entity[]) => {
                     const transformer = new DocumentToEntityTransformer();
                     return transformer.transformAll(results, repository.metadata);
                 });
@@ -205,7 +205,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
         };
         cursor.next = function (callback?: MongoCallback<CursorResult>) {
             if (callback) {
-                Cursor.prototype.next.call(this, (error: MongoError, result: CursorResult): void => {
+                ParentCursor.prototype.next.call(this, (error: MongoError, result: CursorResult): void => {
                     if (error || !result) {
                         callback(error, result);
                         return;
@@ -215,7 +215,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
                     return callback(error, transformer.transform(result, repository.metadata));
                 });
             } else {
-                return Cursor.prototype.next.call(this).then((result: Entity) => {
+                return ParentCursor.prototype.next.call(this).then((result: Entity) => {
                     if (!result) return result;
                     const transformer = new DocumentToEntityTransformer();
                     return transformer.transform(result, repository.metadata);
@@ -249,7 +249,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Creates an index on the db and collection.
      */
-    async createCollectionIndex(fieldOrSpec: string|any, options?: IndexOptions): Promise<string> {
+    async createCollectionIndex(fieldOrSpec: string|any, options?: MongodbIndexOptions): Promise<string> {
         return await this.queryRunner.createCollectionIndex(this.metadata.tableName, fieldOrSpec, options);
     }
 

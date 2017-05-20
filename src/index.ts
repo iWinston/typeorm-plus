@@ -13,7 +13,7 @@ import {PlatformTools} from "./platform/PlatformTools";
 import {TreeRepository} from "./repository/TreeRepository";
 import {MongoRepository} from "./repository/MongoRepository";
 
-// -----------------------------------------------------------------   --------
+// -------------------------------------------------------------------------
 // Commonly Used exports
 // -------------------------------------------------------------------------
 
@@ -74,6 +74,7 @@ export * from "./schema-builder/schema/ForeignKeySchema";
 export * from "./schema-builder/schema/IndexSchema";
 export * from "./schema-builder/schema/PrimaryKeySchema";
 export * from "./schema-builder/schema/TableSchema";
+export * from "./driver/mongodb/typings";
 
 export {Connection} from "./connection/Connection";
 export {ConnectionManager} from "./connection/ConnectionManager";

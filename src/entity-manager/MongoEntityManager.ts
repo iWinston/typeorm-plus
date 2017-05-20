@@ -11,7 +11,7 @@ import {
     AggregationCursor,
     CollectionBluckWriteOptions,
     BulkWriteOpResultObject,
-    IndexOptions,
+    MongodbIndexOptions,
     CollectionOptions,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
@@ -32,7 +32,7 @@ import {
     ReplaceOneOptions,
     UpdateWriteOpResult,
     CollStats
-} from "mongodb";
+} from "../driver/mongodb/typings";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
@@ -121,7 +121,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Creates an index on the db and collection.
      */
-    createCollectionIndex<Entity>(entityClassOrName: ObjectType<Entity>|string, fieldOrSpec: string|any, options?: IndexOptions): Promise<string> {
+    createCollectionIndex<Entity>(entityClassOrName: ObjectType<Entity>|string, fieldOrSpec: string|any, options?: MongodbIndexOptions): Promise<string> {
         return this.getMongoRepository(entityClassOrName as any).createCollectionIndex(fieldOrSpec, options);
     }
 
