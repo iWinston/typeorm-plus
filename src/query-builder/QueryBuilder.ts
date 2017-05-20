@@ -985,8 +985,10 @@ export class QueryBuilder<Entity> {
                             condition = mainAliasName + "." + metadata.primaryColumns[0].propertyName + " IN (:ids)";
                         }
                     }
-                    const [queryWithIdsSql, queryWithIdsParameters] = this.clone({queryRunnerProvider: this.queryRunnerProvider})
-                        .andWhere(condition, parameters)
+                    const clonnedQb = this.clone({queryRunnerProvider: this.queryRunnerProvider});
+                    clonnedQb.expressionMap.extraAppendedAndWhereCondition = condition;
+                    const [queryWithIdsSql, queryWithIdsParameters] = clonnedQb
+                        .setParameters(parameters)
                         .getSqlWithParameters();
                     rawResults = await queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
                     const rawRelationIdResults = await relationIdLoader.load(rawResults);
@@ -1443,10 +1445,15 @@ export class QueryBuilder<Entity> {
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const mainMetadata = this.expressionMap.mainAlias!.metadata;
             if (mainMetadata.discriminatorColumn)
-                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${mainMetadata.discriminatorColumn.databaseName}=:discriminatorColumnValue`;
+                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${this.escapeColumn(mainMetadata.discriminatorColumn.databaseName)}=:discriminatorColumnValue`;
         }
 
-        if (!conditions.length) return "";
+        if (!conditions.length)
+            return "";
+
+        if (this.expressionMap.extraAppendedAndWhereCondition)
+            return " WHERE (" + conditions + ") AND " + this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition);
+
         return " WHERE " + conditions;
     }
 

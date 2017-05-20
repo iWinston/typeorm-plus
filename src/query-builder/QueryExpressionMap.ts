@@ -131,6 +131,12 @@ export class QueryExpressionMap {
      */
     enableRelationIdValues: boolean = false;
 
+    /**
+     * Extra where condition appended to the end of original where conditions with AND keyword.
+     * Original condition will be wrapped into brackets.
+     */
+    extraAppendedAndWhereCondition: string = "";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
