@@ -79,7 +79,6 @@ describe("query builder > relation-id > one-to-one > embedded", () => {
 
         expect(loadedPosts[0].should.be.eql(
             {
-                id: 1,
                 title: "About BMW",
                 counters: {
                     likes: 1,
@@ -87,6 +86,7 @@ describe("query builder > relation-id > one-to-one > embedded", () => {
                     favorites: 3,
                     categoryId: 1,
                     subcounters: {
+                        id: 1,
                         version: 1,
                         watches: 2,
                         watchedUserId: 1
@@ -96,7 +96,6 @@ describe("query builder > relation-id > one-to-one > embedded", () => {
         ));
         expect(loadedPosts[1].should.be.eql(
             {
-                id: 2,
                 title: "About Boeing",
                 counters: {
                     likes: 3,
@@ -104,6 +103,7 @@ describe("query builder > relation-id > one-to-one > embedded", () => {
                     favorites: 5,
                     categoryId: 2,
                     subcounters: {
+                        id: 2,
                         version: 1,
                         watches: 1,
                         watchedUserId: 2

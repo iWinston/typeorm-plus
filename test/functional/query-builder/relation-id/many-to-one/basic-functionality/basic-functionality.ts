@@ -110,7 +110,7 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
         expect(loadedPostCategory!.postId).to.be.equal(1);
     })));
 
-    it("should load ids when loadRelationIdAndMap used on inherit relation and target entity has multiple primary keys", () => Promise.all(connections.map(async connection => {
+    it("should load ids when loadRelationIdAndMap used on nested relation and target entity has multiple primary keys", () => Promise.all(connections.map(async connection => {
 
         const category = new Category();
         category.name = "cars";

@@ -6,7 +6,7 @@ import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Subcounters} from "./entity/Subcounters";
 
-describe("embedded > multiple-primary-columns-with-inherit-embed", () => {
+describe("embedded > multiple-primary-columns-with-nested-embed", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

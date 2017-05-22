@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
@@ -61,7 +61,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
         expect(loadedPost!.categoryCount).to.be.equal(2);
     })));
 
-    it("should load relation count on inherit relations", () => Promise.all(connections.map(async connection => {
+    it("should load relation count on nested relations", () => Promise.all(connections.map(async connection => {
 
         const image1 = new Image();
         image1.name = "image #1";

@@ -126,9 +126,12 @@ export class RelationIdLoader {
                 if (mappedColumns.length === 0)
                     return { relationIdAttribute: relationIdAttr, results: [] };
 
-                const joinColumnConditions = mappedColumns.map(mappedColumn => {
+                const parameters: ObjectLiteral = {};
+                const joinColumnConditions = mappedColumns.map((mappedColumn, index) => {
                     return Object.keys(mappedColumn).map(key => {
-                        return junctionAlias + "." + key + " = " + mappedColumn[key];
+                        const parameterName = key + index;
+                        parameters[parameterName] = mappedColumn[key];
+                        return junctionAlias + "." + key + " = :" + parameterName;
                     }).join(" AND ");
                 });
 
@@ -153,7 +156,8 @@ export class RelationIdLoader {
                 });
 
                 qb.fromTable(inverseSideTableName, inverseSideTableAlias)
-                    .innerJoin(junctionTableName, junctionAlias, condition);
+                    .innerJoin(junctionTableName, junctionAlias, condition)
+                    .setParameters(parameters);
 
                 // apply condition (custom query builder factory)
                 if (relationIdAttr.queryBuilderFactory)

@@ -91,7 +91,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         })));
 
-        it("should load ids when only one entity have multiple primary keys", () => Promise.all(connections.map(async connection => {
+        it("should load ids when only one entity have multiple primary key", () => Promise.all(connections.map(async connection => {
 
             const image1 = new Image();
             image1.name = "Image #1";
@@ -472,7 +472,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         })));
 
-        it("should load ids when only one entity have multiple primary keys", () => Promise.all(connections.map(async connection => {
+        it("should load ids when only one entity have multiple primary key", () => Promise.all(connections.map(async connection => {
 
             const category1 = new Category();
             category1.id = 1;

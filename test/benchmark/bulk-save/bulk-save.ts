@@ -1,10 +1,7 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Post} from "./entity/Post";
-
-const should = chai.should();
 
 describe.skip("benchmark > bulk-save", () => {
     
@@ -18,11 +15,11 @@ describe.skip("benchmark > bulk-save", () => {
     after(() => closeTestingConnections(connections));
 
 
-    it("testing bulk save of 100 objects", () => Promise.all(connections.map(async connection => {
+    it("testing bulk save of 1000 objects", () => Promise.all(connections.map(async connection => {
 
         const posts: Post[] = [];
 
-        for (let i = 1; i <= 100; i++) {
+        for (let i = 1; i <= 1000; i++) {
             const post = new Post();
             post.title = `Post #${i}`;
             post.text = `Post #${i} text`;

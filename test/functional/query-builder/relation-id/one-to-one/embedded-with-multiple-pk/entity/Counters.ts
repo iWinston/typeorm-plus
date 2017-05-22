@@ -1,10 +1,15 @@
 import {Column} from "../../../../../../../src/decorator/columns/Column";
 import {Embedded} from "../../../../../../../src/decorator/Embedded";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
+import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
+import {OneToOne} from "../../../../../../../src/decorator/relations/OneToOne";
+import {JoinColumn} from "../../../../../../../src/decorator/relations/JoinColumn";
 import {Category} from "./Category";
 import {Subcounters} from "./Subcounters";
 
 export class Counters {
+
+    @PrimaryColumn()
+    code: number;
 
     @Column()
     likes: number;
@@ -15,12 +20,13 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @ManyToOne(type => Category, category => category.posts)
+    @OneToOne(type => Category)
+    @JoinColumn()
     category: Category;
 
     @Embedded(() => Subcounters)
     subcounters: Subcounters;
 
-    categoryId: number;
+    categoryId: number[];
 
 }

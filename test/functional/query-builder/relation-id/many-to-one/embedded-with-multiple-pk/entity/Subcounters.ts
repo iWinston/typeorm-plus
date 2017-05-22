@@ -1,14 +1,11 @@
 import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
-import {PrimaryGeneratedColumn} from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
 import {User} from "./User";
+import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
 
 export class Subcounters {
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
+    @PrimaryColumn()
     version: number;
 
     @Column()

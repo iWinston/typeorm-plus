@@ -382,7 +382,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Details loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Details
                     // (example) and we need to compare details.id === post.detailsId
-                    return relation.entityMetadata.compareIds(relationIdInDatabaseEntity, relation.getEntityValue(relatedSubject.databaseEntity)); // relation.joinColumns[0].referencedColumn!.getEntityValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
+                    return relation.entityMetadata.compareIds(relationIdInDatabaseEntity, relation.getEntityValue(relatedSubject.databaseEntity));
                 });
 
                 // if not loaded yet then load it from the database

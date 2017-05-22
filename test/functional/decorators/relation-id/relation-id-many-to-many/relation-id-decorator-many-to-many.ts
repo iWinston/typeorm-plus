@@ -220,7 +220,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should load ids when RelationId decorator used on inherit relation", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on nested relation", () => Promise.all(connections.map(async connection => {
 
         const image1 = new Image();
         image1.name = "photo1";
@@ -300,7 +300,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should not load ids of inherit relations when RelationId decorator used on inherit relation and parent relation was not found", () => Promise.all(connections.map(async connection => {
+    it("should not load ids of nested relations when RelationId decorator used on inherit relation and parent relation was not found", () => Promise.all(connections.map(async connection => {
 
         const image1 = new Image();
         image1.name = "photo1";
@@ -332,7 +332,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     })));
 
-    it("should load ids when RelationId decorator used on inherit relation with additional conditions", () => Promise.all(connections.map(async connection => {
+    it("should load ids when RelationId decorator used on nested relation with additional conditions", () => Promise.all(connections.map(async connection => {
 
         const image1 = new Image();
         image1.name = "photo1";
