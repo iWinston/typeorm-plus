@@ -23,6 +23,16 @@ export class MetadataUtils {
     }
 
     /**
+     * Checks if this table is inherited from another table.
+     */
+    static isInherited(target1: Function, target2: Function) {
+        // we cannot use instanceOf in this method, because we need order of inherited tables, to ensure that
+        // properties get inherited in a right order. To achieve it we can only check a first parent of the class
+        // return this.target.prototype instanceof anotherTable.target;
+        return Object.getPrototypeOf(target1.prototype).constructor === target2;
+    }
+
+    /**
      * Filters given array of targets by a given classes.
      * If classes are not given, then it returns array itself.
      */

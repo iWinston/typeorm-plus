@@ -36,14 +36,12 @@ import {RelationCountMetadataToAttributeTransformer} from "./relation-count/Rela
 // todo: add selectAndMap
 
 // todo: tests for:
-// todo: entityOrProperty can be a table name. implement if its a table
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
 // todo: think about subselect in joins syntax
 // todo: create multiple representations of QueryBuilder: UpdateQueryBuilder, DeleteQueryBuilder
 // qb.update() returns UpdateQueryBuilder
 // qb.delete() returns DeleteQueryBuilder
 // qb.select() returns SelectQueryBuilder
-// todo: tests for leftJoinAndMap...
 // todo: COMPLETELY COVER QUERY BUILDER WITH TESTS
 
 // todo: SUBSELECT IMPLEMENTATION
@@ -51,8 +49,6 @@ import {RelationCountMetadataToAttributeTransformer} from "./relation-count/Rela
 // todo: also create qb.createSubQueryBuilder()
 // todo: check in persistment if id exist on object and throw exception (can be in partial selection?)
 // todo: STREAMING
-// todo: switch to embedded task?
-// todo: add test for @JoinColumn({ referencedColumnName })
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1312,10 +1308,11 @@ export class QueryBuilder<Entity> {
         const aliasName = this.expressionMap.mainAlias.name;
 
         if (this.expressionMap.mainAlias.hasMetadata) {
-            tableName = this.expressionMap.mainAlias.metadata.tableName;
+            const metadata = this.expressionMap.mainAlias.metadata;
+            tableName = metadata.tableName;
 
-            allSelects.push(...this.buildEscapedEntityColumnSelects(aliasName, this.expressionMap.mainAlias.metadata));
-            excludedSelects.push(...this.findEntityColumnSelects(aliasName, this.expressionMap.mainAlias.metadata));
+            allSelects.push(...this.buildEscapedEntityColumnSelects(aliasName, metadata));
+            excludedSelects.push(...this.findEntityColumnSelects(aliasName, metadata));
 
         } else { // if alias does not have metadata - selections will be from custom table
             tableName = this.expressionMap.mainAlias.tableName!;
@@ -1337,12 +1334,12 @@ export class QueryBuilder<Entity> {
             });
 
         if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias.hasMetadata) {
-            if (this.expressionMap.mainAlias!.metadata.parentEntityMetadata && this.expressionMap.mainAlias!.metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + ea(this.expressionMap.mainAlias!.metadata.parentEntityMetadata.tableName);
-                this.expressionMap.mainAlias!.metadata.parentEntityMetadata.columns.forEach(column => {
+            const metadata = this.expressionMap.mainAlias.metadata;
+            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
+                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
+                metadata.parentEntityMetadata.columns.forEach(column => {
                     // TODO implement partial select
-                    allSelects.push({ selection: ea(alias + "." + column.databaseName), aliasName: alias + "_" + column.databaseName });
-                    // allSelects.push(alias + "." + ec(column.fullName) + " AS " + alias + "_" + ea(column.fullName));
+                    allSelects.push({ selection: ea(alias) + "." + ec(column.databaseName), aliasName: alias + "_" + column.databaseName });
                 });
             }
         }
@@ -1445,7 +1442,7 @@ export class QueryBuilder<Entity> {
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const mainMetadata = this.expressionMap.mainAlias!.metadata;
             if (mainMetadata.discriminatorColumn)
-                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${this.escapeColumn(mainMetadata.discriminatorColumn.databaseName)}=:discriminatorColumnValue`;
+                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + mainMetadata.discriminatorColumn.databaseName)}=:discriminatorColumnValue`;
         }
 
         if (!conditions.length)
@@ -1563,7 +1560,6 @@ export class QueryBuilder<Entity> {
                     }).join(" AND ");
                 }
 
-
                 return " " + joinAttr.direction + " JOIN " + et(junctionTableName) + " " + ea(junctionAlias) + " ON " + this.replacePropertyNames(junctionCondition) +
                        " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
 
@@ -1572,13 +1568,13 @@ export class QueryBuilder<Entity> {
 
         if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentIdColumns) {
+            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
                 const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
-                const parentJoin = " JOIN " + et(metadata.parentEntityMetadata.tableName) + " " + ea(alias) + " ON " +
-                    metadata.parentIdColumns.map(parentIdColumn => {
-                        return this.expressionMap.mainAlias!.name + "." + parentIdColumn.databaseName + "=" + ea(alias) + "." + parentIdColumn.propertyName;
-                    });
-                joins.push(parentJoin);
+                const condition = metadata.parentIdColumns.map(parentIdColumn => {
+                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.databaseName + "=" + ea(alias) + "." + parentIdColumn.propertyName;
+                }).join(" AND ");
+                const join = " JOIN " + et(metadata.parentEntityMetadata.tableName) + " " + ea(alias) + " ON " + condition;
+                joins.push(join);
             }
         }
 

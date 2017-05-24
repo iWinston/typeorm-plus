@@ -62,7 +62,7 @@ export class EntityMetadataBuilder {
         const allTables = entityClasses ? this.metadataArgsStorage.filterTables(entityClasses) : this.metadataArgsStorage.tables;
 
         // filter out table metadata args for those we really create entity metadatas and tables in the db
-        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child");
+        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child" || table.type === "single-table-child");
 
         // create entity metadatas for a user defined entities (marked with @Entity decorator or loaded from entity schemas)
         const entityMetadatas = realTables.map(tableArgs => this.createEntityMetadata(tableArgs));
@@ -118,9 +118,27 @@ export class EntityMetadataBuilder {
                 entityMetadatas.push(closureJunctionEntityMetadata);
             });
 
+        // after all metadatas created we set parent entity metadata for class-table inheritance
+        entityMetadatas
+            .filter(metadata => metadata.tableType === "single-table-child")
+            .forEach(entityMetadata => {
+                const inheritanceTree: any[] = entityMetadata.target instanceof Function
+                    ? MetadataUtils.getInheritanceTree(entityMetadata.target)
+                    : [entityMetadata.target];
+    
+                const parentMetadata = entityMetadatas.find(metadata => {
+                    return inheritanceTree.find(inheritance => inheritance === metadata.target) && metadata.inheritanceType === "single-table";
+                });
+
+                if (parentMetadata) {
+                    entityMetadata.parentEntityMetadata = parentMetadata;
+                    entityMetadata.tableName = parentMetadata.tableName;
+                }
+        });
+
         // generate keys for tables with single-table inheritance
         entityMetadatas
-            .filter(metadata => metadata.inheritanceType === "single-table")
+            .filter(metadata => metadata.inheritanceType === "single-table" && metadata.discriminatorColumn)
             .forEach(entityMetadata => this.createKeysForTableInheritance(entityMetadata));
 
         // build all indices (need to do it after relations and their join columns are built)
@@ -155,11 +173,26 @@ export class EntityMetadataBuilder {
         // we take all "inheritance tree" from a target entity to collect all stored metadata args
         // (by decorators or inside entity schemas). For example for target Post < ContentModel < Unit
         // it will be an array of [Post, ContentModel, Unit] and we can then get all metadata args of those classes
-        const inheritanceTree = tableArgs.target instanceof Function
+        const inheritanceTree: any[] = tableArgs.target instanceof Function
             ? MetadataUtils.getInheritanceTree(tableArgs.target)
             : [tableArgs.target]; // todo: implement later here inheritance for string-targets
 
+        // if single table inheritance used, we need to copy all children columns in to parent table
+        const singleTableChildrenTargets: any[] = this.metadataArgsStorage
+            .filterSingleTableChildren(tableArgs.target)
+            .map(args => args.target)
+            .filter(target => target instanceof Function);
+
+        inheritanceTree.push(...singleTableChildrenTargets);
+
         const entityMetadata = new EntityMetadata({ connection: this.connection, args: tableArgs });
+
+        const inheritanceType = this.metadataArgsStorage.findInheritanceType(tableArgs.target);
+        entityMetadata.inheritanceType = inheritanceType ? inheritanceType.type : undefined;
+
+        const discriminatorValue = this.metadataArgsStorage.findDiscriminatorValue(tableArgs.target);
+        entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (tableArgs.target as any).name; // todo: pass this to naming strategy to generate a name
+
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(inheritanceTree));
         entityMetadata.ownColumns = this.metadataArgsStorage.filterColumns(inheritanceTree).map(args => {
             return new ColumnMetadata({ entityMetadata, args });

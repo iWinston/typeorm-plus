@@ -14,6 +14,7 @@ import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
 import {DiscriminatorValueMetadataArgs} from "./DiscriminatorValueMetadataArgs";
 import {EntityRepositoryMetadataArgs} from "./EntityRepositoryMetadataArgs";
 import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
+import {MetadataUtils} from "../metadata-builder/MetadataUtils";
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -147,4 +148,20 @@ export class MetadataArgsStorage {
         });
     }
 
+    filterSingleTableChildren(target: Function|string): TableMetadataArgs[] {
+        return this.tables.filter(table => {
+            return table.target instanceof Function
+                && target instanceof Function
+                && MetadataUtils.isInherited(table.target, target)
+                && table.type === "single-table-child";
+        });
+    }
+
+    findInheritanceType(target: Function|string): InheritanceMetadataArgs|undefined {
+        return this.inheritances.find(inheritance => inheritance.target === target)
+    }
+
+    findDiscriminatorValue(target: Function|string): DiscriminatorValueMetadataArgs|undefined {
+        return this.discriminatorValues.find(discriminatorValue => discriminatorValue.target === target)
+    }
 }
