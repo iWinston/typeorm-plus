@@ -134,6 +134,15 @@ export class EntityMetadataBuilder {
                     entityMetadata.parentEntityMetadata = parentMetadata;
                     entityMetadata.tableName = parentMetadata.tableName;
                 }
+            });
+
+        // after all metadatas created we set child entity metadatas for class-table inheritance
+        entityMetadatas.forEach(metadata => {
+            metadata.childEntityMetadatas = entityMetadatas.filter(childMetadata => {
+                return metadata.target instanceof Function
+                    && childMetadata.target instanceof Function
+                    && MetadataUtils.isInherited(childMetadata.target, metadata.target);
+            });
         });
 
         // generate keys for tables with single-table inheritance
@@ -195,8 +204,13 @@ export class EntityMetadataBuilder {
 
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(inheritanceTree));
         entityMetadata.ownColumns = this.metadataArgsStorage.filterColumns(inheritanceTree).map(args => {
-            return new ColumnMetadata({ entityMetadata, args });
+            const column = new ColumnMetadata({ entityMetadata, args });
+            // if single table inheritance used, we need to mark all inherit table columns as nullable
+            if (singleTableChildrenTargets.indexOf(args.target) !== -1)
+                column.isNullable = true;
+            return column;
         });
+
         entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(inheritanceTree).map(args => {
             return new RelationMetadata({ entityMetadata, args });
         });

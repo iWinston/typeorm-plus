@@ -67,7 +67,16 @@ export class RawSqlResultsToEntityTransformer {
      */
     protected transformRawResultsGroup(rawResults: any[], alias: Alias): ObjectLiteral|undefined {
         let hasColumns = false, hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false, hasRelations = false, hasRelationIds = false, hasRelationCounts = false;
-        const entity: any = alias.metadata.create();
+        let entity: any = alias.metadata.create();
+
+        if (alias.metadata.discriminatorColumn) {
+            const discriminatorValues = rawResults.map(result => result[alias.name + "_" + alias.metadata.discriminatorColumn!.databaseName]);
+            const metadata = alias.metadata.childEntityMetadatas.find(childEntityMetadata => {
+                return !!discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue);
+            });
+            if (metadata)
+                entity = metadata.create();
+        }
 
         // get value from columns selections and put them into newly created entity
         hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata.columns);

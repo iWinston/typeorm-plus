@@ -45,6 +45,11 @@ export class EntityMetadata {
     parentEntityMetadata: EntityMetadata;
 
     /**
+     * Children entity metadatas. Used in inheritance patterns.
+     */
+    childEntityMetadatas: EntityMetadata[] = [];
+
+    /**
      * Table type. Tables can be abstract, closure, junction, embedded, etc.
      */
     tableType: TableType = "regular";

@@ -816,8 +816,14 @@ export class QueryBuilder<Entity> {
 
         // add discriminator column parameter if it exist
         if (this.expressionMap.mainAlias!.hasMetadata) {
-            if (this.expressionMap.mainAlias!.metadata.discriminatorColumn)
-                parameters["discriminatorColumnValue"] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
+            const metadata = this.expressionMap.mainAlias!.metadata;
+            if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
+                const values = metadata.childEntityMetadatas
+                    .filter(childMetadata => childMetadata.discriminatorColumn)
+                    .map(childMetadata => childMetadata.discriminatorValue);
+                values.push(metadata.discriminatorValue);
+                parameters["discriminatorColumnValues"] = values;
+            }
         }
 
         return parameters;
@@ -1440,12 +1446,14 @@ export class QueryBuilder<Entity> {
         }).join(" ");
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
-            const mainMetadata = this.expressionMap.mainAlias!.metadata;
-            if (mainMetadata.discriminatorColumn)
-                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + mainMetadata.discriminatorColumn.databaseName)}=:discriminatorColumnValue`;
+            const metadata = this.expressionMap.mainAlias!.metadata;
+            if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
+                const condition = `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName)} IN (:discriminatorColumnValues)`;
+                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
+            }
         }
 
-        if (!conditions.length)
+        if (!conditions.length) // TODO copy in to discriminator condition
             return this.expressionMap.extraAppendedAndWhereCondition ? " WHERE " + this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition) : "";
 
         if (this.expressionMap.extraAppendedAndWhereCondition)
