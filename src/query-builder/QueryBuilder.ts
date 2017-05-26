@@ -1145,10 +1145,10 @@ export class QueryBuilder<Entity> {
 
         try {
             const results = await queryRunner.query(countQuerySql, countQueryParameters);
-            if (!results || !results[0] || !results[0]["cnt"])
+            if (!results || !results[0] || !results[0]["cnt"] || !results[0]["CNT"])
                 return 0;
 
-            return parseInt(results[0]["cnt"]);
+            return parseInt(results[0]["cnt"] ? results[0]["cnt"] : results[0]["CNT"]);
 
         } finally {
             if (this.hasOwnQueryRunner()) // means we created our own query runner
