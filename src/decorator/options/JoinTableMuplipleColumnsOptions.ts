@@ -9,16 +9,16 @@ export interface JoinTableMultipleColumnsOptions {
      * Name of the table that will be created to store values of the both tables (join table).
      * By default is auto generated.
      */
-    readonly name?: string;
+    name?: string;
 
     /**
      * First column of the join table.
      */
-    readonly joinColumns?: JoinColumnOptions[];
+    joinColumns?: JoinColumnOptions[];
 
     /**
      * Second (inverse) column of the join table.
      */
-    readonly inverseJoinColumns?: JoinColumnOptions[];
+    inverseJoinColumns?: JoinColumnOptions[];
 
 }

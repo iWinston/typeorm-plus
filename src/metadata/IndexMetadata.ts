@@ -112,7 +112,10 @@ export class IndexMetadata {
                 }
             }
 
+            // console.log("columnPropertyNames:", columnPropertyNames);
+            // console.log("this.entityMetadata.columns:", this.entityMetadata.columns);
             const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyPath) !== -1);
+            // console.log("columns:", columns);
             this.entityMetadata.relations
                 .filter(relation => relation.isWithJoinColumn && columnPropertyNames.indexOf(relation.propertyName) !== -1)
                 .forEach(relation => columns.push(...relation.joinColumns));
