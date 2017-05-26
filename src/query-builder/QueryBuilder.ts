@@ -1145,7 +1145,7 @@ export class QueryBuilder<Entity> {
 
         try {
             const results = await queryRunner.query(countQuerySql, countQueryParameters);
-            if (!results || !results[0] || !results[0]["cnt"] || !results[0]["CNT"])
+            if (!results || !results[0] || (!results[0]["cnt"] && !results[0]["CNT"]))
                 return 0;
 
             return parseInt(results[0]["cnt"] ? results[0]["cnt"] : results[0]["CNT"]);
