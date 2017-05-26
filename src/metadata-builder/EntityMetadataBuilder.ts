@@ -74,37 +74,39 @@ export class EntityMetadataBuilder {
         entityMetadatas.forEach(entityMetadata => this.computeInverseProperties(entityMetadata, entityMetadatas));
 
         // go through all entity metadatas and create foreign keys / junction entity metadatas for their relations
-        entityMetadatas.forEach(entityMetadata => {
+        entityMetadatas
+            .filter(entityMetadata => entityMetadata.tableType !== "single-table-child")
+            .forEach(entityMetadata => {
 
-            // create entity's relations join columns (for many-to-one and one-to-one owner)
-            entityMetadata.relations.filter(relation => relation.isOneToOne || relation.isManyToOne).forEach(relation => {
-                const joinColumns = this.metadataArgsStorage.filterJoinColumns(relation.target, relation.propertyName);
-                const foreignKey = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
-                if (foreignKey) {
-                    relation.registerForeignKeys(foreignKey); // push it to the relation and thus register there a join column
-                    entityMetadata.foreignKeys.push(foreignKey);
-                }
-            });
+                // create entity's relations join columns (for many-to-one and one-to-one owner)
+                entityMetadata.relations.filter(relation => relation.isOneToOne || relation.isManyToOne).forEach(relation => {
+                    const joinColumns = this.metadataArgsStorage.filterJoinColumns(relation.target, relation.propertyName);
+                    const foreignKey = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
+                    if (foreignKey) {
+                        relation.registerForeignKeys(foreignKey); // push it to the relation and thus register there a join column
+                        entityMetadata.foreignKeys.push(foreignKey);
+                    }
+                });
 
-            // create junction entity metadatas for entity many-to-many relations
-            entityMetadata.relations.filter(relation => relation.isManyToMany).forEach(relation => {
-                const joinTable = this.metadataArgsStorage.findJoinTable(relation.target, relation.propertyName);
-                if (!joinTable) return; // no join table set - no need to do anything (it means this is many-to-many inverse side)
+                // create junction entity metadatas for entity many-to-many relations
+                entityMetadata.relations.filter(relation => relation.isManyToMany).forEach(relation => {
+                    const joinTable = this.metadataArgsStorage.findJoinTable(relation.target, relation.propertyName);
+                    if (!joinTable) return; // no join table set - no need to do anything (it means this is many-to-many inverse side)
 
-                // here we create a junction entity metadata for a new junction table of many-to-many relation
-                const junctionEntityMetadata = this.junctionEntityMetadataBuilder.build(relation, joinTable);
-                relation.registerForeignKeys(...junctionEntityMetadata.foreignKeys);
-                relation.registerJunctionEntityMetadata(junctionEntityMetadata);
+                    // here we create a junction entity metadata for a new junction table of many-to-many relation
+                    const junctionEntityMetadata = this.junctionEntityMetadataBuilder.build(relation, joinTable);
+                    relation.registerForeignKeys(...junctionEntityMetadata.foreignKeys);
+                    relation.registerJunctionEntityMetadata(junctionEntityMetadata);
 
-                // compute new entity metadata properties and push it to entity metadatas pool
-                this.computeEntityMetadata(junctionEntityMetadata);
-                this.computeInverseProperties(junctionEntityMetadata, entityMetadatas);
-                entityMetadatas.push(junctionEntityMetadata);
-            });
+                    // compute new entity metadata properties and push it to entity metadatas pool
+                    this.computeEntityMetadata(junctionEntityMetadata);
+                    this.computeInverseProperties(junctionEntityMetadata, entityMetadatas);
+                    entityMetadatas.push(junctionEntityMetadata);
+                });
 
-            // update entity metadata depend properties
-            entityMetadata.relationsWithJoinColumns = entityMetadata.relations.filter(relation => relation.isWithJoinColumn);
-            entityMetadata.hasNonNullableRelations = entityMetadata.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
+                // update entity metadata depend properties
+                entityMetadata.relationsWithJoinColumns = entityMetadata.relations.filter(relation => relation.isWithJoinColumn);
+                entityMetadata.hasNonNullableRelations = entityMetadata.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
         });
 
         // generate closure junction tables for all closure tables
@@ -125,7 +127,7 @@ export class EntityMetadataBuilder {
                 const inheritanceTree: any[] = entityMetadata.target instanceof Function
                     ? MetadataUtils.getInheritanceTree(entityMetadata.target)
                     : [entityMetadata.target];
-    
+
                 const parentMetadata = entityMetadatas.find(metadata => {
                     return inheritanceTree.find(inheritance => inheritance === metadata.target) && metadata.inheritanceType === "single-table";
                 });

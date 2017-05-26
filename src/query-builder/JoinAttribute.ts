@@ -119,7 +119,10 @@ export class JoinAttribute {
             return undefined;
 
         const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
-        const relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+        const metadata = relationOwnerSelection.metadata.parentEntityMetadata
+            ? relationOwnerSelection.metadata.parentEntityMetadata
+            : relationOwnerSelection.metadata;
+        const relation = metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
         if (!relation)
             throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
         return relation;

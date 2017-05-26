@@ -111,10 +111,20 @@ export class RawSqlResultsToEntityTransformer {
      */
     protected transformJoins(rawResults: any[], entity: ObjectLiteral, alias: Alias) {
         let hasData = false;
+        let discriminatorValue: string = "";
+
+        if (alias.metadata.discriminatorColumn)
+            discriminatorValue = rawResults[0][alias.name + "_" + alias.metadata.discriminatorColumn!.databaseName];
+
         this.joinAttributes.forEach(join => {
 
             // skip joins without metadata
             if (!join.metadata)
+                return;
+
+            // this check need to avoid setting properties than not belong to entity when single table inheritance used.
+            const metadata = alias.metadata.childEntityMetadatas.find(childEntityMetadata => discriminatorValue === childEntityMetadata.discriminatorValue);
+            if (metadata && join.relation && metadata.target !== join.relation.target)
                 return;
 
             // some checks to make sure this join is for current alias

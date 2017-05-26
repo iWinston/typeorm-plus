@@ -751,8 +751,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      */
     private async buildJunctionOperations(options: { insert: boolean, remove: boolean }): Promise<void> {
         const promises = this.operateSubjects.filter(subject => subject.hasEntity).map(subject => {
-            const promises = subject.metadata.manyToManyRelations.map(async relation => {
-
+            const metadata = subject.metadata.parentEntityMetadata ? subject.metadata.parentEntityMetadata : subject.metadata;
+            const promises = metadata.manyToManyRelations.map(async relation => {
                 // if subject marked to be removed then all its junctions must be removed
                 if (subject.mustBeRemoved && options.remove) {
                     // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
