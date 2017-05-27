@@ -44,9 +44,8 @@ export class EntityManager {
 
     /**
      * Stores all registered repositories.
-     * Used when custom queryRunnerProvider is provided.
      */
-    private readonly repositoryAggregators: RepositoryAggregator[] = [];
+    private repositoryAggregators: RepositoryAggregator[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -66,6 +65,7 @@ export class EntityManager {
 
     /**
      * Gets user data by a given key.
+     * Used get stored data stored in a transactional entity manager.
      */
     getData(key: string): any {
         return this.data[key];
@@ -73,9 +73,11 @@ export class EntityManager {
 
     /**
      * Sets value for the given key in user data.
+     * Used to store data in a transactional entity manager which can be accessed in subscribers then.
      */
-    setData(key: string, value: any) {
+    setData(key: string, value: any): this {
         this.data[key] = value;
+        return this;
     }
 
     /**
@@ -119,7 +121,7 @@ export class EntityManager {
     }
 
     /**
-     * Creates a new query builder that can be used to build an sql query.
+     * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
         const metadata = this.connection.getMetadata(entityClass);
@@ -239,41 +241,55 @@ export class EntityManager {
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
+     *
+     * @deprecated
      */
     persist<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
+     *
+     * @deprecated
      */
     persist<Entity>(targetOrEntity: Function, entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
+     *
+     * @deprecated
      */
     persist<Entity>(targetOrEntity: string, entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
+     *
+     * @deprecated
      */
     persist<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
+     *
+     * @deprecated
      */
     persist<Entity>(targetOrEntity: Function, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Persists (saves) all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
+     *
+     * @deprecated
      */
     persist<Entity>(targetOrEntity: string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Persists (saves) a given entity in the database.
+     *
+     * @deprecated
      */
     persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
         return this.save(targetOrEntity as any, maybeEntity as any, options);
@@ -639,6 +655,8 @@ export class EntityManager {
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
+     *
+     * @deprecated Don't use specific repository - it will be refactored or removed
      */
     getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
 
@@ -647,6 +665,8 @@ export class EntityManager {
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
+     *
+     * @deprecated Don't use specific repository - it will be refactored or removed
      */
     getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
 
@@ -655,6 +675,8 @@ export class EntityManager {
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
+     *
+     * @deprecated Don't use specific repository - it will be refactored or removed
      */
     getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
 
