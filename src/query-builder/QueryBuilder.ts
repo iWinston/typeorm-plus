@@ -978,7 +978,7 @@ export class QueryBuilder<Entity> {
                         }).join(" OR ");
                     } else {
                         const ids = rawResults.map(result => result["ids_" + metadata.primaryColumns[0].propertyName]);
-                        const areAllNumbers = ids.map((id: any) => typeof id === "number");
+                        const areAllNumbers = ids.every((id: any) => typeof id === "number");
                         if (areAllNumbers) {
                             // fixes #190. if all numbers then its safe to perform query without parameter
                             condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyName} IN (${ids.join(", ")})`;
