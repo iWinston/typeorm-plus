@@ -255,6 +255,9 @@ export class PostgresDriver implements Driver {
             case ColumnTypes.DATETIME:
                 return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
+            case ColumnTypes.DATE:
+                return DataTransformationUtils.mixedDateToDateString(value);
+
             case ColumnTypes.TIME:
                 return DataTransformationUtils.mixedTimeToString(value);
 
