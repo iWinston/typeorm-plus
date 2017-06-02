@@ -1129,7 +1129,7 @@ export class QueryBuilder<Entity> {
                 } else {
                     return `${distinctAlias}.${propertyName})`;
                 }
-            }).join(", ") + ") as cnt";
+            }).join(", ") + ") as \"cnt\"";
 
         const countQuery = this
             .clone({
