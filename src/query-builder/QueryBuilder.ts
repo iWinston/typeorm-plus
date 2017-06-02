@@ -1129,7 +1129,7 @@ export class QueryBuilder<Entity> {
                 } else {
                     return `${distinctAlias}.${propertyName})`;
                 }
-            }).join(", ") + ") as cnt";
+            }).join(", ") + ") as \"cnt\"";
 
         const countQuery = this
             .clone({
@@ -1145,10 +1145,10 @@ export class QueryBuilder<Entity> {
 
         try {
             const results = await queryRunner.query(countQuerySql, countQueryParameters);
-            if (!results || !results[0] || (!results[0]["cnt"] && !results[0]["CNT"]))
+            if (!results || !results[0] || !results[0]["cnt"])
                 return 0;
 
-            return parseInt(results[0]["cnt"] ? results[0]["cnt"] : results[0]["CNT"]);
+            return parseInt(results[0]["cnt"]);
 
         } finally {
             if (this.hasOwnQueryRunner()) // means we created our own query runner
