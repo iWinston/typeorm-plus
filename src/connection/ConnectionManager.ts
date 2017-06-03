@@ -359,7 +359,8 @@ export class ConnectionManager {
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
     protected async createFromConfigAndConnectToAll(path?: string): Promise<Connection[]> {
-        const optionsArray: ConnectionOptions[] = PlatformTools.load(path || (PlatformTools.load("app-root-path").path + "/ormconfig.json"));
+        let optionsArray: ConnectionOptions[] = PlatformTools.load(path || (PlatformTools.load("app-root-path").path + "/ormconfig.json"));
+        if (!(optionsArray instanceof Array)) optionsArray = [optionsArray]; // cast options to array if ormconfig contains a single connection options object
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
 
@@ -377,7 +378,8 @@ export class ConnectionManager {
      * If path is not given, then ormconfig.json file will be searched near node_modules directory.
      */
     protected async createFromConfigAndConnect(connectionName: string, path?: string): Promise<Connection> {
-        const optionsArray: ConnectionOptions[] = PlatformTools.load(path || (PlatformTools.load("app-root-path").path + "/ormconfig.json"));
+        let optionsArray: ConnectionOptions[] = PlatformTools.load(path || (PlatformTools.load("app-root-path").path + "/ormconfig.json"));
+        if (!(optionsArray instanceof Array)) optionsArray = [optionsArray]; // cast options to array if ormconfig contains a single connection options object
         if (!optionsArray)
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
 
