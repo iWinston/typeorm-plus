@@ -158,10 +158,11 @@ export class MetadataArgsStorage {
     }
 
     findInheritanceType(target: Function|string): InheritanceMetadataArgs|undefined {
-        return this.inheritances.find(inheritance => inheritance.target === target)
+        return this.inheritances.find(inheritance => inheritance.target === target);
     }
 
     findDiscriminatorValue(target: Function|string): DiscriminatorValueMetadataArgs|undefined {
-        return this.discriminatorValues.find(discriminatorValue => discriminatorValue.target === target)
+        return this.discriminatorValues.find(discriminatorValue => discriminatorValue.target === target);
     }
+
 }
