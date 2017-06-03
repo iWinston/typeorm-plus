@@ -13,7 +13,7 @@ import {PlatformTools} from "./platform/PlatformTools";
 import {TreeRepository} from "./repository/TreeRepository";
 import {MongoRepository} from "./repository/MongoRepository";
 
-// -----------------------------------------------------------------   --------
+// -------------------------------------------------------------------------
 // Commonly Used exports
 // -------------------------------------------------------------------------
 
@@ -74,6 +74,7 @@ export * from "./schema-builder/schema/ForeignKeySchema";
 export * from "./schema-builder/schema/IndexSchema";
 export * from "./schema-builder/schema/PrimaryKeySchema";
 export * from "./schema-builder/schema/TableSchema";
+export * from "./driver/mongodb/typings";
 
 export {Connection} from "./connection/Connection";
 export {ConnectionManager} from "./connection/ConnectionManager";
@@ -96,6 +97,7 @@ export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
+export {EntityModel} from "./repository/EntityModel";
 
 // -------------------------------------------------------------------------
 // Deprecated
@@ -249,7 +251,7 @@ export function getConnection(connectionName: string = "default"): Connection {
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
 export function getEntityManager(connectionName: string = "default"): EntityManager {
-    return getConnectionManager().get(connectionName).entityManager;
+    return getConnectionManager().get(connectionName).manager;
 }
 
 /**

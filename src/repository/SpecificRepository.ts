@@ -6,9 +6,12 @@ import {Subject} from "../persistence/Subject";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Repository for more specific operations.
+ *
+ * @deprecated Don't use it yet
  */
 export class SpecificRepository<Entity extends ObjectLiteral> {
 
@@ -44,26 +47,27 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async setRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async setRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
         //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
         if (relation.isManyToMany)
             throw new Error(`Many-to-many relation is not supported for this operation. Use #addToRelation method for many-to-many relations.`);
 
+        // todo: fix issues with joinColumns[0]
+
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
-            table = relation.entityMetadata.table.name;
-            values[relation.name] = relatedEntityId;
-            conditions[relation.joinColumn.referencedColumn.fullName] = entityId;
+            table = relation.entityMetadata.tableName;
+            values[relation.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
+            conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         } else {
-            table = relation.inverseEntityMetadata.table.name;
-            values[relation.inverseRelation.name] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumn.referencedColumn.fullName] = entityId;
+            table = relation.inverseEntityMetadata.tableName;
+            values[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
+            conditions[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = entityId;
         }
 
 
@@ -93,12 +97,12 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async setInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async setInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        // todo: fix issues with joinColumns[0]
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
         //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
         if (relation.isManyToMany)
@@ -106,13 +110,13 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         let table: string, values: any = {}, conditions: any = {};
         if (relation.isOwning) {
-            table = relation.inverseEntityMetadata.table.name;
-            values[relation.inverseRelation.name] = relatedEntityId;
-            conditions[relation.inverseRelation.joinColumn.referencedColumn.fullName] = entityId;
+            table = relation.inverseEntityMetadata.tableName;
+            values[relation.inverseRelation!.joinColumns[0].databaseName] = relatedEntityId;
+            conditions[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = entityId;
         } else {
-            table = relation.entityMetadata.table.name;
-            values[relation.name] = relatedEntityId;
-            conditions[relation.joinColumn.referencedColumn.fullName] = entityId;
+            table = relation.entityMetadata.tableName;
+            values[relation.joinColumns[0].databaseName] = relatedEntityId;
+            conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         }
 
         const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
@@ -141,28 +145,27 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently add a relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async addToRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async addToRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
             const values: any = {};
             if (relation.isOwning) {
-                values[relation.junctionEntityMetadata.columns[0].fullName] = entityId;
-                values[relation.junctionEntityMetadata.columns[1].fullName] = relatedEntityId;
+                values[relation.junctionEntityMetadata!.columns[0].databaseName] = entityId;
+                values[relation.junctionEntityMetadata!.columns[1].databaseName] = relatedEntityId;
             } else {
-                values[relation.junctionEntityMetadata.columns[1].fullName] = entityId;
-                values[relation.junctionEntityMetadata.columns[0].fullName] = relatedEntityId;
+                values[relation.junctionEntityMetadata!.columns[1].databaseName] = entityId;
+                values[relation.junctionEntityMetadata!.columns[0].databaseName] = relatedEntityId;
             }
 
-            return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
+            return queryRunner.insert(relation.junctionEntityMetadata!.tableName, values);
         });
         await Promise.all(insertPromises);
 
@@ -189,15 +192,13 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently add a relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async addToInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async addToInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
-
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
         const queryRunner = await queryRunnerProvider.provide();
@@ -205,14 +206,14 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             const insertPromises = entityIds.map(entityId => {
                 const values: any = {};
                 if (relation.isOwning) {
-                    values[relation.junctionEntityMetadata.columns[0].fullName] = entityId;
-                    values[relation.junctionEntityMetadata.columns[1].fullName] = relatedEntityId;
+                    values[relation.junctionEntityMetadata!.columns[0].databaseName] = entityId;
+                    values[relation.junctionEntityMetadata!.columns[1].databaseName] = relatedEntityId;
                 } else {
-                    values[relation.junctionEntityMetadata.columns[1].fullName] = entityId;
-                    values[relation.junctionEntityMetadata.columns[0].fullName] = relatedEntityId;
+                    values[relation.junctionEntityMetadata!.columns[1].databaseName] = entityId;
+                    values[relation.junctionEntityMetadata!.columns[0].databaseName] = relatedEntityId;
                 }
 
-                return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
+                return queryRunner.insert(relation.junctionEntityMetadata!.tableName, values);
             });
             await Promise.all(insertPromises);
 
@@ -241,14 +242,13 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async removeFromRelation(relationName: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async removeFromRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         // check if given relation entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
         if (!relatedEntityIds || !relatedEntityIds.length)
@@ -256,10 +256,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
-            .fromTable(relation.junctionEntityMetadata.table.name, "junctionEntity");
+            .fromTable(relation.junctionEntityMetadata!.tableName, "junctionEntity");
 
-        const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[0].fullName : relation.junctionEntityMetadata.columns[1].fullName);
-        const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[1].fullName : relation.junctionEntityMetadata.columns[0].fullName);
+        const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName);
+        const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName);
 
         relatedEntityIds.forEach((relatedEntityId, index) => {
             qb.orWhere(`(${firstColumnName}=:entityId AND ${secondColumnName}=:relatedEntity_${index})`)
@@ -290,14 +290,13 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
-    async removeFromInverseRelation(relationName: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
-        const propertyName = this.metadata.computePropertyName(relationName);
-        if (!this.metadata.hasRelationWithPropertyName(propertyName))
-            throw new Error(`Relation ${propertyName} was not found in the ${this.metadata.name} entity.`);
-
-        const relation = this.metadata.findRelationWithPropertyName(propertyName);
+    async removeFromInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
+        const propertyPath = this.metadata.computePropertyPath(relationProperty);
+        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
         if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
+            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
         // check if given entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
         if (!entityIds || !entityIds.length)
@@ -305,10 +304,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
             .delete()
-            .from(relation.junctionEntityMetadata.table.name, "junctionEntity");
+            .from(relation.junctionEntityMetadata!.tableName, "junctionEntity");
 
-        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].fullName : relation.junctionEntityMetadata.columns[0].fullName;
-        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].fullName : relation.junctionEntityMetadata.columns[1].fullName;
+        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName;
+        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName;
 
         entityIds.forEach((entityId, index) => {
             qb.orWhere(`(${firstColumnName}=:relatedEntityId AND ${secondColumnName}=:entity_${index})`)
@@ -375,7 +374,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async removeById(id: any): Promise<void> {
-        const alias = this.metadata.table.name;
+        const alias = this.metadata.tableName;
         const parameters: ObjectLiteral = {};
         let condition = "";
 
@@ -386,7 +385,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             }).join(" AND ");
 
         } else {
-            condition = alias + "." + this.metadata.firstPrimaryColumn.propertyName + "=:id";
+            condition = alias + "." + this.metadata.primaryColumns[0].propertyName + "=:id";
             parameters["id"] = id;
         }
 
@@ -402,7 +401,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
      */
     async removeByIds(ids: any[]): Promise<void> {
-        const alias = this.metadata.table.name;
+        const alias = this.metadata.tableName;
         const parameters: ObjectLiteral = {};
         let condition = "";
 
@@ -414,7 +413,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
                 }).join(" AND ");
             }).join(" OR ");
         } else {
-            condition = alias + "." + this.metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+            condition = alias + "." + this.metadata.primaryColumns[0].propertyName + " IN (:ids)";
             parameters["ids"] = ids;
         }
 
@@ -432,12 +431,12 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         const relation = this.convertMixedRelationToMetadata(relationOrName);
         if (!(entityOrEntities instanceof Array)) entityOrEntities = [entityOrEntities];
+        const entityReferencedColumns = relation.isOwning ? relation.joinColumns.map(joinColumn => joinColumn.referencedColumn!) : relation.inverseRelation!.inverseJoinColumns.map(joinColumn => joinColumn.referencedColumn!);
+        const ownerEntityColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.inverseJoinColumns;
+        const inverseEntityColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
+        const inverseEntityColumnNames = relation.isOwning ? relation.inverseJoinColumns.map(joinColumn => joinColumn.databaseName) : relation.inverseRelation!.joinColumns.map(joinColumn => joinColumn.databaseName);
 
-        const entityReferencedColumn = relation.isOwning ? relation.joinTable.referencedColumn : relation.inverseRelation.joinTable.inverseReferencedColumn;
-        const ownerEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[0] : relation.junctionEntityMetadata.columns[1];
-        const inverseEntityColumn = relation.isOwning ? relation.junctionEntityMetadata.columns[1] : relation.junctionEntityMetadata.columns[0];
-
-        let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumn, entityOrEntities);
+        let entityIds = this.convertEntityOrEntitiesToIdOrIds(entityReferencedColumns, entityOrEntities);
         if (!(entityIds instanceof Array)) entityIds = [entityIds];
 
         // filter out empty entity ids
@@ -448,25 +447,44 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             return [];
 
         // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
-        const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+        const ea = (alias: string) => this.connection.driver.escapeAliasName(alias);
+        const ec = (column: string) => this.connection.driver.escapeColumnName(column);
 
-        const ids: any[] = [];
+        let ids: any[] = [];
+        // console.log("entityOrEntities:", entityOrEntities);
+        // console.log("entityIds:", entityIds);
         const promises = (entityIds as any[]).map((entityId: any) => {
-            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
-                .select(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " AS " + escapeColumn("id"))
-                .fromTable(relation.junctionEntityMetadata.table.name, "junction")
-                .andWhere(escapeAlias("junction") + "." + escapeColumn(ownerEntityColumn.fullName) + "=:entityId", {entityId: entityId});
+            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
+            inverseEntityColumnNames.forEach(columnName => {
+                qb.select(ea("junction") + "." + ec(columnName) + " AS " + ea(columnName));
+            });
+            qb.fromTable(relation.junctionEntityMetadata!.tableName, "junction");
+            Object.keys(entityId).forEach((columnName) => {
+                const junctionColumnName = ownerEntityColumns.find(joinColumn => joinColumn.referencedColumn!.databaseName === columnName);
+                qb.andWhere(ea("junction") + "." + ec(junctionColumnName!.databaseName) + "=:" + junctionColumnName!.databaseName + "_entityId", {[junctionColumnName!.databaseName + "_entityId"]: entityId[columnName]});
+            });
+            // ownerEntityColumnNames.forEach(columnName => {
+            //     qb.andWhere(ea("junction") + "." + ec(columnName) + "=:" + columnName + "_entityId", {[columnName + "_entityId"]: entityId});
+            // });
 
-            if (inIds && inIds.length > 0)
-                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " IN (:inIds)", {inIds: inIds});
+            // todo: fix inIds
+            // if (inIds && inIds.length > 0)
+            //     qb.andWhere(ea("junction") + "." + ec(inverseEntityColumnNames.fullName) + " IN (:inIds)", {inIds: inIds});
+            //
+            // if (notInIds && notInIds.length > 0)
+            //     qb.andWhere(ea("junction") + "." + ec(inverseEntityColumnNames.fullName) + " NOT IN (:notInIds)", {notInIds: notInIds});
 
-            if (notInIds && notInIds.length > 0)
-                qb.andWhere(escapeAlias("junction") + "." + escapeColumn(inverseEntityColumn.fullName) + " NOT IN (:notInIds)", {notInIds: notInIds});
-
+            // console.log(qb.getSql());
             return qb.getRawMany()
-                .then((results: { id: any }[]) => {
-                    results.forEach(result => ids.push(result.id)); // todo: prepare result?
+                .then((results: any[]) => {
+                    // console.log(results);
+                    results.forEach(result => {
+                        ids.push(Object.keys(result).reduce((id, key) => {
+                            const junctionColumnName = inverseEntityColumns.find(joinColumn => joinColumn.databaseName === key)!;
+                            OrmUtils.mergeDeep(id, junctionColumnName.referencedColumn!.createValueMap(result[key]));
+                            return id;
+                        }, {} as ObjectLiteral));
+                    }); // todo: prepare result?
                 });
         });
 
@@ -481,13 +499,16 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     /**
      * Converts entity or entities to id or ids map.
      */
-    protected convertEntityOrEntitiesToIdOrIds(column: ColumnMetadata, entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
+    protected convertEntityOrEntitiesToIdOrIds(columns: ColumnMetadata[], entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
         if (entityOrEntities instanceof Array) {
-            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(column, entity));
+            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(columns, entity));
 
         } else {
             if (entityOrEntities instanceof Object) {
-                return entityOrEntities[column.propertyName];
+                return columns.reduce((ids, column) => {
+                    ids[column.databaseName] = column.getEntityValue(entityOrEntities);
+                    return ids;
+                }, {} as ObjectLiteral);
             } else {
                 return entityOrEntities;
             }
@@ -501,8 +522,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (relationOrName instanceof RelationMetadata)
             return relationOrName;
 
-        const relationName = relationOrName instanceof Function ? relationOrName(this.metadata.createPropertiesMap()) : relationOrName;
-        return this.metadata.findRelationWithPropertyName(relationName);
+        const relationPropertyPath = relationOrName instanceof Function ? relationOrName(this.metadata.propertiesMap) : relationOrName;
+        const relation = this.metadata.findRelationWithPropertyPath(relationPropertyPath);
+        if (!relation)
+            throw new Error(`Relation with property path ${relationPropertyPath} in entity was not found.`);
+        return relation;
     }
 
     /**
@@ -512,7 +536,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const promises = metadata.relations.map(relation => {
             const relMetadata = relation.inverseEntityMetadata;
 
-            const value = relation.isLazy ? entity["__" + relation.propertyName + "__"] : entity[relation.propertyName];
+            const value = relation.getEntityValue(entity);
             if (!value)
                 return undefined;
 

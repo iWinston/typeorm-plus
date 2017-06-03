@@ -28,12 +28,12 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
     
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log(`Post has been saved: `, post);
             console.log(`Post's version is ${post.version}. Lets change post's text and update it:`);
             post.title = "updating title";
-            return postRepository.persist(post);
+            return postRepository.save(post);
             
         }).then(post => {
             console.log(`Post has been updated. Post's version is ${post.version}`);

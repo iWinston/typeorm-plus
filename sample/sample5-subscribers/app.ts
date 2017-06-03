@@ -40,7 +40,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved");
             return postRepository.findOneById(post.id);
@@ -60,7 +60,7 @@ createConnection(options).then(connection => {
             console.log("load finished. Now lets update entity");
             loadedPost!.text = "post updated";
             loadedPost!.author.name = "Bakha";
-            return postRepository.persist(loadedPost!);
+            return postRepository.save(loadedPost!);
         })
         .then(loadedPost => {
             console.log("---------------------------");

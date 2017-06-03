@@ -33,7 +33,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
         platform.slug = "windows";
         platform.games = [battlefront, republicCommando];
 
-        await connection.entityManager.persist(platform);
+        await connection.manager.save(platform);
 
         const loadedPlatform = await connection
             .getRepository(Platform)
@@ -45,7 +45,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
         jediAcademy.platforms = [loadedPlatform!];
         jediAcademy.isReviewed = false;
 
-        await connection.entityManager.persist(jediAcademy);
+        await connection.manager.save(jediAcademy);
 
         const completePlatform = await connection
             .getRepository(Platform)

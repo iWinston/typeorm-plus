@@ -46,7 +46,7 @@ createConnection(options).then(connection => {
     post.images.push(image);
     post.categories = [category1, category2];
     
-    postRepository.persist(post).then(result => {
+    postRepository.save(post).then(result => {
 
         /*const qb = postRepository.createQueryBuilder("post")
             .leftJoinAndSelect("post.details", "details")

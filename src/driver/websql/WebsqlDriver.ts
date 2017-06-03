@@ -12,6 +12,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -31,6 +32,11 @@ export class WebsqlDriver implements Driver {
      * Naming strategy used in the connection where this driver is used.
      */
     namingStrategy: NamingStrategyInterface;
+
+    /**
+     * Used to wrap lazy relations to be able to perform lazy loadings.
+     */
+    lazyRelationsWrapper: LazyRelationsWrapper;
 
     /**
      * Driver connection options.
@@ -217,6 +223,9 @@ export class WebsqlDriver implements Driver {
 
             case ColumnTypes.DATETIME:
                 return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+
+            case ColumnTypes.DATE:
+                return DataTransformationUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
                 return DataTransformationUtils.mixedTimeToString(value);

@@ -33,7 +33,7 @@ createConnection(options).then(async connection => {
 
     let postRepository = connection.getRepository(Post);
 
-    await postRepository.persist(post);
+    await postRepository.save(post);
     console.log("Database schema was created and data has been inserted into the database.");
 
     // close connection now

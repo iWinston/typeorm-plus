@@ -68,7 +68,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             mode: "regular",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

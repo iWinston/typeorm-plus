@@ -49,7 +49,7 @@ createConnection(options).then(connection => {
         .skip(5)
         .take(10);
 
-    Promise.all(posts.map(post => postRepository.persist(post)))
+    Promise.all(posts.map(post => postRepository.save(post)))
         .then(savedPosts => {
             console.log("Posts has been saved. Lets try to load some posts");
             return qb.getMany();

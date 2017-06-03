@@ -23,7 +23,7 @@ createConnection(options).then(async connection => {
     post.title = "hello";
     post.likesCount = 100;
 
-    await connection.getRepository(Post).persist(post);
+    await connection.getRepository(Post).save(post);
     console.log("Post has been saved: ", post);
 
     const loadedPost = await connection.getRepository(Post).findOne({

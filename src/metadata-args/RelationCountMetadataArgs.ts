@@ -1,3 +1,4 @@
+import {QueryBuilder} from "../query-builder/QueryBuilder";
 /**
  * Arguments for RelationCountMetadata class.
  */
@@ -17,5 +18,15 @@ export interface RelationCountMetadataArgs {
      * Target's relation which it should count.
      */
     readonly relation: string|((object: any) => any);
+
+    /**
+     * Alias of the joined (destination) table.
+     */
+    readonly alias?: string;
+
+    /**
+     * Extra condition applied to "ON" section of join.
+     */
+    readonly queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
 
 }

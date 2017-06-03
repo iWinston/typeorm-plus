@@ -29,7 +29,7 @@ export function VersionColumn(options?: ColumnOptions): Function {
             mode: "version",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

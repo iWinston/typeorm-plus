@@ -39,7 +39,7 @@ createConnection(options).then(async connection => {
 
     let postRepository = connection.getRepository(Post);
 
-    await postRepository.persist(post);
+    await postRepository.save(post);
     console.log("Post has been saved");
 
 }).catch(error => console.log("Error: ", error));

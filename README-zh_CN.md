@@ -362,7 +362,7 @@ createConnection(/*...*/).then(connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    connection.entityManager
+    connection.manager
             .persist(photo)
             .then(photo => {
                 console.log("Photo has been saved");
@@ -388,7 +388,7 @@ createConnection(/*...*/).then(async connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    await connection.entityManager.persist(photo);
+    await connection.manager.persist(photo);
     console.log("Photo has been saved");
 
 }).catch(error => console.log(error));
@@ -405,7 +405,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let savedPhotos = await connection.entityManager.find(Photo);
+    let savedPhotos = await connection.manager.find(Photo);
     console.log("All photos from the db: ", savedPhotos);
 
 }).catch(error => console.log(error));

@@ -38,7 +38,7 @@ createConnection(options).then(async connection => {
     employee.salary = 200000;
 
     console.log("saving the employee: ");
-    await employeeRepository.persist(employee);
+    await employeeRepository.save(employee);
     console.log("employee has been saved: ", employee);
 
     console.log("now loading the employee: ");
@@ -55,7 +55,7 @@ createConnection(options).then(async connection => {
     homesitter.numberOfKids = 5;
 
     console.log("saving the homesitter: ");
-    await homesitterRepository.persist(homesitter);
+    await homesitterRepository.save(homesitter);
     console.log("homesitter has been saved: ", homesitter);
 
     console.log("now loading the homesitter: ");
@@ -72,7 +72,7 @@ createConnection(options).then(async connection => {
     student.faculty = "computer science";
 
     console.log("saving the student: ");
-    await studentRepository.persist(student);
+    await studentRepository.save(student);
     console.log("student has been saved: ", student);
 
     console.log("now loading the student: ");

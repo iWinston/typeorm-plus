@@ -3,10 +3,9 @@ import {Repository} from "../repository/Repository";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {ObjectType} from "../common/ObjectType";
-import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
-import {getMetadataArgsStorage, getFromContainer} from "../index";
+import {getFromContainer, getMetadataArgsStorage} from "../index";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
@@ -39,6 +38,8 @@ import {CustomRepositoryCannotInheritRepositoryError} from "../repository/error/
 import {MongoRepository} from "../repository/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
+import {EntitySchemaTransformer} from "../entity-schema/EntitySchemaTransformer";
+import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidator";
 
 /**
  * Connection is a single database connection to a specific database of a database management system.
@@ -82,7 +83,7 @@ export class Connection {
     /**
      * Gets EntityManager of this connection.
      */
-    private readonly _entityManager: EntityManager;
+    readonly manager: EntityManager;
 
     /**
      * Stores all registered repositories.
@@ -93,11 +94,6 @@ export class Connection {
      * Stores all entity repository instances.
      */
     private readonly entityRepositories: Object[] = [];
-
-    /**
-     * Entity listeners that are registered for this connection.
-     */
-    private readonly entityListeners: EntityListenerMetadata[] = [];
 
     /**
      * Entity subscribers that are registered for this connection.
@@ -147,7 +143,7 @@ export class Connection {
         this.name = name;
         this.driver = driver;
         this.logger = logger;
-        this._entityManager = this.createEntityManager();
+        this.manager = this.createEntityManager();
         this.broadcaster = this.createBroadcaster();
     }
 
@@ -164,12 +160,11 @@ export class Connection {
 
     /**
      * Gets entity manager that allows to perform repository operations with any entity in this connection.
+     *
+     * @deprecated use manager instead.
      */
     get entityManager(): EntityManager {
-        // if (!this.isConnected)
-        //     throw new CannotGetEntityManagerNotConnectedError(this.name);
-
-        return this._entityManager;
+        return this.manager;
     }
 
     /**
@@ -177,10 +172,10 @@ export class Connection {
      * with any entity in this connection.
      */
     get mongoEntityManager(): MongoEntityManager {
-        if (!(this._entityManager instanceof MongoEntityManager))
+        if (!(this.manager instanceof MongoEntityManager))
             throw new Error(`MongoEntityManager is only available for MongoDB databases.`);
 
-        return this._entityManager as MongoEntityManager;
+        return this.manager as MongoEntityManager;
     }
 
     // -------------------------------------------------------------------------
@@ -572,67 +567,7 @@ export class Connection {
      * Gets custom entity repository marked with @EntityRepository decorator.
      */
     getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.toArray().find(repository => {
-            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
-        });
-        if (!entityRepositoryMetadataArgs)
-            throw new CustomRepositoryNotFoundError(customRepository);
-
-        let entityRepositoryInstance: any = this.entityRepositories.find(entityRepository => entityRepository.constructor === customRepository);
-        if (!entityRepositoryInstance) {
-            if (entityRepositoryMetadataArgs.useContainer) {
-                entityRepositoryInstance = getFromContainer(entityRepositoryMetadataArgs.target);
-
-                // if we get custom entity repository from container then there is a risk that it already was used
-                // in some different connection. If it was used there then we check it and throw an exception
-                // because we cant override its connection there again
-
-                if (entityRepositoryInstance instanceof AbstractRepository || entityRepositoryInstance instanceof Repository) {
-                    // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-                    // however we need these properties for internal work of the class
-                    if ((entityRepositoryInstance as any)["connection"] && (entityRepositoryInstance as any)["connection"] !== this)
-                        throw new CustomRepositoryReusedError(customRepository);
-                }
-
-            } else {
-                entityRepositoryInstance = new (entityRepositoryMetadataArgs.target as any)();
-            }
-
-            if (entityRepositoryInstance instanceof AbstractRepository) {
-                // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-                // however we need these properties for internal work of the class
-                if (!(entityRepositoryInstance as any)["connection"])
-                    (entityRepositoryInstance as any)["connection"] = this;
-            }
-            if (entityRepositoryInstance instanceof Repository) {
-                if (!entityRepositoryMetadataArgs.entity)
-                    throw new CustomRepositoryCannotInheritRepositoryError(customRepository);
-
-                // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-                // however we need these properties for internal work of the class
-                (entityRepositoryInstance as any)["connection"] = this;
-                (entityRepositoryInstance as any)["metadata"] = this.getMetadata(entityRepositoryMetadataArgs.entity);
-            }
-
-            // register entity repository
-            this.entityRepositories.push(entityRepositoryInstance);
-        }
-
-        return entityRepositoryInstance;
-    }
-
-    /**
-     * Gets custom repository's managed entity.
-     * If given custom repository does not manage any entity then undefined will be returned.
-     */
-    getCustomRepositoryTarget<T>(customRepository: any): Function|string|undefined {
-        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.toArray().find(repository => {
-            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
-        });
-        if (!entityRepositoryMetadataArgs)
-            throw new CustomRepositoryNotFoundError(customRepository);
-
-        return entityRepositoryMetadataArgs.entity;
+        return this.manager.getCustomRepository(customRepository);
     }
 
     // -------------------------------------------------------------------------
@@ -660,40 +595,30 @@ export class Connection {
     /**
      * Builds all registered metadatas.
      */
-    protected buildMetadatas() {
+    public buildMetadatas() {
 
         this.entitySubscribers.length = 0;
-        this.entityListeners.length = 0;
         this.repositoryAggregators.length = 0;
         this.entityMetadatas.length = 0;
 
-        const namingStrategy = this.createNamingStrategy();
-        this.driver.namingStrategy = namingStrategy;
-        const lazyRelationsWrapper = this.createLazyRelationsWrapper();
+        this.driver.namingStrategy = this.createNamingStrategy(); // todo: why they are in the driver
+        this.driver.lazyRelationsWrapper = this.createLazyRelationsWrapper(); // todo: why they are in the driver
+        const entityMetadataValidator = new EntityMetadataValidator();
 
         // take imported event subscribers
         if (this.subscriberClasses && this.subscriberClasses.length && !PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
             getMetadataArgsStorage()
-                .entitySubscribers
-                .filterByTargets(this.subscriberClasses)
-                .toArray()
+                .filterSubscribers(this.subscriberClasses)
                 .map(metadata => getFromContainer(metadata.target))
                 .forEach(subscriber => this.entitySubscribers.push(subscriber));
         }
 
         // take imported entity listeners
         if (this.entityClasses && this.entityClasses.length) {
-            getMetadataArgsStorage()
-                .entityListeners
-                .filterByTargets(this.entityClasses)
-                .toArray()
-                .forEach(metadata => this.entityListeners.push(new EntityListenerMetadata(metadata)));
-        }
 
-        // build entity metadatas from metadata args storage (collected from decorators)
-        if (this.entityClasses && this.entityClasses.length) {
-            getFromContainer(EntityMetadataBuilder)
-                .buildFromMetadataArgsStorage(this.driver, lazyRelationsWrapper, namingStrategy, this.entityClasses)
+            // build entity metadatas from metadata args storage (collected from decorators)
+            new EntityMetadataBuilder(this, getMetadataArgsStorage())
+                .build(this.entityClasses)
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
@@ -702,13 +627,16 @@ export class Connection {
 
         // build entity metadatas from given entity schemas
         if (this.entitySchemas && this.entitySchemas.length) {
-            getFromContainer(EntityMetadataBuilder)
-                .buildFromSchemas(this.driver, lazyRelationsWrapper, namingStrategy, this.entitySchemas)
+            const metadataArgsStorage = getFromContainer(EntitySchemaTransformer).transform(this.entitySchemas);
+            new EntityMetadataBuilder(this, metadataArgsStorage)
+                .build()
                 .forEach(metadata => {
                     this.entityMetadatas.push(metadata);
                     this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
                 });
         }
+
+        entityMetadataValidator.validateMany(this.entityMetadatas);
     }
 
     /**
@@ -722,9 +650,7 @@ export class Connection {
 
         // try to find used naming strategy in the list of loaded naming strategies
         const namingMetadata = getMetadataArgsStorage()
-            .namingStrategies
-            .filterByTargets(this.namingStrategyClasses)
-            .toArray()
+            .filterNamingStrategies(this.namingStrategyClasses)
             .find(strategy => {
                 if (typeof this.usedNamingStrategy === "string") {
                     return strategy.name === this.usedNamingStrategy;
@@ -755,7 +681,7 @@ export class Connection {
      * Creates a new entity broadcaster using in this connection.
      */
     protected createBroadcaster() {
-        return new Broadcaster(this, this.entitySubscribers, this.entityListeners);
+        return new Broadcaster(this, this.entitySubscribers);
     }
 
     /**

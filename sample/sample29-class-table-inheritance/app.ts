@@ -38,13 +38,13 @@ createConnection(options).then(async connection => {
     employee.salary = 300000;
 
     console.log("saving the employee: ");
-    await employeeRepository.persist(employee);
+    await employeeRepository.save(employee);
     console.log("employee has been saved: ", employee);
 
     console.log("updating the employee: ");
     employee.firstName = "zuma";
     employee.lastName += "a";
-    await employeeRepository.persist(employee);
+    await employeeRepository.save(employee);
     console.log("employee has been updated: ", employee);
 
     console.log("now loading the employee: ");
@@ -52,7 +52,7 @@ createConnection(options).then(async connection => {
     console.log("loaded employee: ", loadedEmployee);
 
     loadedEmployee.firstName = "dima";
-    await employeeRepository.persist(loadedEmployee);
+    await employeeRepository.save(loadedEmployee);
 
     const allEmployees = await employeeRepository.findAndCount();
     console.log("all employees: ", allEmployees);

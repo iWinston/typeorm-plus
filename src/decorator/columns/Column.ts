@@ -76,6 +76,6 @@ export function Column(typeOrOptions?: ColumnType|ColumnOptions, options?: Colum
             mode: "regular",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }

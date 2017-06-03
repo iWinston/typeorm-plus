@@ -7,8 +7,7 @@ import {Guest as GuestV2} from "./entity/v2/Guest";
 import {Comment as CommentV2} from "./entity/v2/Comment";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
-import {createConnection} from "../../../src/index";
+import {closeTestingConnections, createTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {Repository} from "../../../src/repository/Repository";
@@ -39,7 +38,7 @@ describe("Connection", () => {
         after(() => {
             if (connection.isConnected)
                 return connection.close();
-            
+
             return Promise.resolve();
         });
 
@@ -48,23 +47,23 @@ describe("Connection", () => {
         });
 
         it.skip("entity manager and reactive entity manager should not be accessible", () => {
-            expect(() => connection.entityManager).to.throw(CannotGetEntityManagerNotConnectedError);
+            expect(() => connection.manager).to.throw(CannotGetEntityManagerNotConnectedError);
             // expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
         });
 
         // todo: they aren't promises anymore
         /*it("import entities, entity schemas, subscribers and naming strategies should work", () => {
-            return Promise.all([
-                connection.importEntities([Post]).should.be.fulfilled,
-                connection.importEntitySchemas([]).should.be.fulfilled,
-                connection.importSubscribers([]).should.be.fulfilled,
-                connection.importNamingStrategies([]).should.be.fulfilled,
-                connection.importEntitiesFromDirectories([]).should.be.fulfilled,
-                connection.importEntitySchemaFromDirectories([]).should.be.fulfilled,
-                connection.importSubscribersFromDirectories([]).should.be.fulfilled,
-                connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled
-            ]);
-        });*/
+         return Promise.all([
+         connection.importEntities([Post]).should.be.fulfilled,
+         connection.importEntitySchemas([]).should.be.fulfilled,
+         connection.importSubscribers([]).should.be.fulfilled,
+         connection.importNamingStrategies([]).should.be.fulfilled,
+         connection.importEntitiesFromDirectories([]).should.be.fulfilled,
+         connection.importEntitySchemaFromDirectories([]).should.be.fulfilled,
+         connection.importSubscribersFromDirectories([]).should.be.fulfilled,
+         connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled
+         ]);
+         });*/
 
         it("should not be able to close", () => {
             return connection.close().should.be.rejected; // CannotCloseNotConnectedError
@@ -119,7 +118,7 @@ describe("Connection", () => {
         }));
 
         it("entity manager and reactive entity manager should be accessible", () => connections.forEach(connection => {
-            expect(connection.entityManager).to.be.instanceOf(EntityManager);
+            expect(connection.manager).to.be.instanceOf(EntityManager);
             // expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
         }));
 
@@ -201,7 +200,7 @@ describe("Connection", () => {
             const postRepository = connection.getRepository(Post);
             const post = new Post();
             post.title = "new post";
-            await postRepository.persist(post);
+            await postRepository.save(post);
             const loadedPost = await postRepository.findOneById(post.id);
             expect(loadedPost).to.be.eql(post);
             await connection.syncSchema(true);
@@ -219,7 +218,7 @@ describe("Connection", () => {
             connections = all;
             return Promise.all(connections.map(connection => connection.close()));
         }));
-        
+
         it("should not be able to close already closed connection", () => connections.forEach(connection => {
             return connection.close().should.be.rejected; // CannotCloseNotConnectedError
         }));
@@ -346,7 +345,7 @@ describe("Connection", () => {
             connection.importNamingStrategies([FirstCustomNamingStrategy]);
             connection.useNamingStrategy(FirstCustomNamingStrategy);
             await connection.connect();
-            connection.getMetadata(Post).table.name.should.be.equal("POST");
+            connection.getMetadata(Post).tableName.should.be.equal("POST");
         });
 
         it("should use naming strategy when its name passed to useNamingStrategy method", async () => {
@@ -354,7 +353,7 @@ describe("Connection", () => {
             connection.importNamingStrategies([SecondCustomNamingStrategy]);
             connection.useNamingStrategy("secondCustomNamingStrategy");
             await connection.connect();
-            connection.getMetadata(Category).table.name.should.be.equal("category");
+            connection.getMetadata(Category).tableName.should.be.equal("category");
         });
 
         it("should throw an error if not registered naming strategy was used (assert by name)", () => {
@@ -387,31 +386,31 @@ describe("Connection", () => {
 
     });
 
-    describe("Different names of the same content of the schema", () => {
+    describe("different names of the same content of the schema", () => {
 
         let connections: Connection[];
         beforeEach(async () => {
-            const [connection1] = await createTestingConnections({
+            const connections1 = await createTestingConnections({
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "test-schema",
                 dropSchemaOnConnection: true,
             });
-            const [connection2] = await createTestingConnections({
+            const connections2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "another-schema",
                 dropSchemaOnConnection: true
             });
-            connections = [connection1, connection2];
+            connections = [...connections1, ...connections2];
         });
         after(() => closeTestingConnections(connections));
         it("should not interfere with each other", async () => {
             await Promise.all(connections.map(c => c.syncSchema()));
             await closeTestingConnections(connections);
-            const [connection1] = await createTestingConnections({
+            const connections1 = await createTestingConnections({
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
@@ -419,7 +418,7 @@ describe("Connection", () => {
                 dropSchemaOnConnection: false,
                 schemaCreate: true
             });
-            const [connection2] = await createTestingConnections({
+            const connections2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
@@ -427,30 +426,30 @@ describe("Connection", () => {
                 dropSchemaOnConnection: false,
                 schemaCreate: true
             });
-            connections = [connection1, connection2];
+            connections = [...connections1, ...connections2];
         });
     });
 
-    describe("Can change postgres default schema name", () => {
+    describe("can change postgres default schema name", () => {
         let connections: Connection[];
         beforeEach(async () => {
-            const [connection1] = await createTestingConnections({
+            const connections1 = await createTestingConnections({
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "test-schema",
                 dropSchemaOnConnection: true,
             });
-            const [connection2] = await createTestingConnections({
+            const connections2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schemaName: "another-schema",
                 dropSchemaOnConnection: true
             });
-            connections = [connection1, connection2];
+            connections = [...connections1, ...connections2];
         });
-        afterEach(() => closeTestingConnections(connections));        
+        afterEach(() => closeTestingConnections(connections));
 
         it("schema name can be set", () => {
             return Promise.all(connections.map(async connection => {
@@ -461,13 +460,13 @@ describe("Connection", () => {
                 comment.context = `To ${schemaName}`;
 
                 const commentRepo = connection.getRepository(CommentV1);
-                await commentRepo.persist(comment);
+                await commentRepo.save(comment);
 
                 const query = await connection.driver.createQueryRunner();
                 const rows = await query.query(`select * from "${schemaName}"."comment" where id = $1`, [comment.id]);
                 expect(rows[0]["context"]).to.be.eq(comment.context);
             }));
-            
+
         });
 
     });

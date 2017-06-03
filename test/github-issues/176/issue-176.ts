@@ -23,9 +23,9 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
         post1.localDate = new Date(1484069886663); // stores "2017-01-10 22:38:06.000" into the database
 
         // persist
-        await connection.entityManager.persist(post1);
+        await connection.manager.save(post1);
 
-        const loadedPosts1 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts1 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts1!).not.to.be.empty;
 
         loadedPosts1!.date.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");
@@ -33,7 +33,7 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
 
         // also make sure that local date really was saved as a local date (including timezone)
 
-        const rawPost = await connection.entityManager
+        const rawPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .where("post.title = :title", { title: "Hello Post #1" })
             .getRawOne();

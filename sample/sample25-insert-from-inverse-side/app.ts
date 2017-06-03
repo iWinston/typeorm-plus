@@ -29,7 +29,7 @@ createConnection(options).then(connection => {
         if (!author) {
             author = new Author();
             author.name = "Umed";
-            return authorRepository.persist(author).then(savedAuthor => {
+            return authorRepository.save(author).then(savedAuthor => {
                 return authorRepository.findOneById(1);
             });
         }
@@ -41,7 +41,7 @@ createConnection(options).then(connection => {
             post = new Post();
             post.title = "Hello post";
             post.text = "This is post contents";
-            return postRepository.persist(post).then(savedPost => {
+            return postRepository.save(post).then(savedPost => {
                 return postRepository.findOneById(1);
             });
         }
@@ -52,7 +52,7 @@ createConnection(options).then(connection => {
         .then(results => {
             const [author, post] = results;
             author.posts = [post];
-            return authorRepository.persist(author);
+            return authorRepository.save(author);
         })
         .then(savedAuthor => {
             console.log("Author has been saved: ", savedAuthor);
