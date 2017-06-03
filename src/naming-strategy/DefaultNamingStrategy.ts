@@ -42,7 +42,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
             return customName;
 
         const key = "ind_" + tableName + "_" + columns.join("_");
-        return "ind_" + RandomGenerator.sha1(key).substr(0, 27);
+        return "ind_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
     joinColumnName(relationName: string, referencedColumnName: string): string {

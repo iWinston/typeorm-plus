@@ -39,6 +39,7 @@
     "@types/chai": "^3.5.2",
     "@types/chai-as-promised": "0.0.30",
     "@types/mocha": "^2.2.41",
+    "@types/mongodb": "^2.1.41",
     "@types/node": "^7.0.16",
     "@types/promises-a-plus": "0.0.27",
     "@types/sinon": "^2.2.0",

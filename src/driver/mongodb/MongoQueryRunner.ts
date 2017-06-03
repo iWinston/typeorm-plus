@@ -436,6 +436,13 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Drops the table.
+     */
+    async dropTable(tableName: string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(collectionName: string, columnName: string): Promise<boolean> {

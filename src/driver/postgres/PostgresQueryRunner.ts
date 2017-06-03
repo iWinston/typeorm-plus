@@ -375,6 +375,14 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
     }
 
     /**
+     * Drops the table.
+     */
+    async dropTable(tableName: string): Promise<void> {
+        let sql = `DROP TABLE "${tableName}"`;
+        await this.query(sql);
+    }
+
+    /**
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableName: string, columnName: string): Promise<boolean> {

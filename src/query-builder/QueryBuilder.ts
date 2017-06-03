@@ -1050,7 +1050,7 @@ export class QueryBuilder<Entity> {
                 } else {
                     return `${distinctAlias}.${propertyName})`;
                 }
-            }).join(", ") + ") as cnt";
+            }).join(", ") + ") as \"cnt\"";
 
         const countQueryBuilder = this
             .clone({ queryRunnerProvider: this.queryRunnerProvider })
