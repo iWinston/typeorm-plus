@@ -4,21 +4,19 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {Student} from "./entity/Student";
 import {Teacher} from "./entity/Teacher";
 import {Accountant} from "./entity/Accountant";
-import {Employee} from "./entity/Employee";
-import {Person} from "./entity/Person";
 
-describe.skip("table-inheritance > single-table > basic-functionality", () => {
+describe.skip("table-inheritance > class-table > basic-functionality", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,        
+        dropSchemaOnConnection: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly insert, update and delete data with single-table-inheritance pattern", () => Promise.all(connections.map(async connection => {
+    it("should correctly insert, update and delete data with class-table-inheritance pattern", () => Promise.all(connections.map(async connection => {
 
         // -------------------------------------------------------------------------
         // Create
@@ -64,6 +62,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedStudents = await connection.manager
             .createQueryBuilder(Student, "students")
+            // .orderBy("students.id")
             .getMany();
 
         loadedStudents[0].should.have.all.keys("id", "name", "faculty");
@@ -113,6 +112,8 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
             .createQueryBuilder(Student, "student")
             .where("student.name = :name", { name: "Bob" })
             .getOne();
+
+        console.log(loadedStudent);
 
         loadedStudent!.faculty = "Chemistry";
         await connection.getRepository(Student).persist(loadedStudent!);
@@ -169,7 +170,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
         // Delete
         // -------------------------------------------------------------------------
 
-        await connection.getRepository(Student).remove(loadedStudent!);
+        /*await connection.getRepository(Student).remove(loadedStudent!);
 
         loadedStudents = await connection.manager
             .createQueryBuilder(Student, "students")
@@ -205,13 +206,13 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
         loadedAccountants[0].id.should.equal(5);
         loadedAccountants[0].name.should.equal("Mr. Burns");
         loadedAccountants[0].department.should.equal("Bookkeeping");
-        loadedAccountants[0].salary.should.equal(3000);
+        loadedAccountants[0].salary.should.equal(3000);*/
 
         // -------------------------------------------------------------------------
         // Select parent objects
         // -------------------------------------------------------------------------
 
-        const loadedEmployees = await connection.manager
+        /*const loadedEmployees = await connection.manager
             .createQueryBuilder(Employee, "employees")
             .getMany();
 
@@ -248,7 +249,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
         loadedPersons[2].id.should.equal(5);
         loadedPersons[2].name.should.equal("Mr. Burns");
         (loadedPersons[2] as Accountant).department = "Bookkeeping";
-        (loadedPersons[2] as Accountant).salary.should.equal(3000);
+        (loadedPersons[2] as Accountant).salary.should.equal(3000);*/
 
     })));
 

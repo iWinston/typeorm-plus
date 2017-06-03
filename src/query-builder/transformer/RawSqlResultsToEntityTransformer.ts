@@ -7,6 +7,7 @@ import {JoinAttribute} from "../JoinAttribute";
 import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -79,11 +80,7 @@ export class RawSqlResultsToEntityTransformer {
         }
 
         // get value from columns selections and put them into newly created entity
-        hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata.columns);
-
-        // add columns tables metadata
-        if (alias.metadata.parentEntityMetadata)
-            hasParentColumns = this.transformColumns(rawResults, alias, entity, alias.metadata.parentEntityMetadata.columns);
+        hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata);
 
         hasRelations = this.transformJoins(rawResults, entity, alias);
         hasRelationIds = this.transformRelationIds(rawResults, alias, entity);
@@ -93,9 +90,9 @@ export class RawSqlResultsToEntityTransformer {
     }
 
     // get value from columns selections and put them into object
-    protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, columns: ColumnMetadata[]): boolean {
+    protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, metadata: EntityMetadata): boolean {
         let hasData = false;
-        columns.forEach(column => {
+        metadata.columns.forEach(column => {
             const value = rawResults[0][alias.name + "_" + column.databaseName];
             if (value === undefined || value === null || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
@@ -103,11 +100,22 @@ export class RawSqlResultsToEntityTransformer {
             column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
             hasData = true;
         });
+
+        if (alias.metadata.parentEntityMetadata) {
+            alias.metadata.parentEntityMetadata.columns.forEach(column => {
+                const value = rawResults[0]["parentIdColumn_" + alias.metadata.parentEntityMetadata.tableName + "_" + column.databaseName];
+                if (value === undefined || value === null || column.isVirtual || column.isParentId || column.isDiscriminator)
+                    return;
+
+                column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
+                hasData = true;
+            });
+        }
         return hasData;
     }
 
     /**
-     * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity,l
+     * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity
      */
     protected transformJoins(rawResults: any[], entity: ObjectLiteral, alias: Alias) {
         let hasData = false;

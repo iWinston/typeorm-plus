@@ -571,6 +571,7 @@ export class EntityMetadata {
     registerColumn(column: ColumnMetadata) {
         this.ownColumns.push(column);
         this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
+        this.parentIdColumns = this.columns.filter(column => column.isParentId);
         this.primaryColumns = this.columns.filter(column => column.isPrimary);
         this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
         this.propertiesMap = this.createPropertiesMap();

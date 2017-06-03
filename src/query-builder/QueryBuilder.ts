@@ -1579,9 +1579,9 @@ export class QueryBuilder<Entity> {
             if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
                 const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
                 const condition = metadata.parentIdColumns.map(parentIdColumn => {
-                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.databaseName + "=" + ea(alias) + "." + parentIdColumn.propertyName;
+                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + alias + "." + parentIdColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
-                const join = " JOIN " + et(metadata.parentEntityMetadata.tableName) + " " + ea(alias) + " ON " + condition;
+                const join = " JOIN " + et(metadata.parentEntityMetadata.tableName) + " " + ea(alias) + " ON " + this.replacePropertyNames(condition);
                 joins.push(join);
             }
         }
@@ -1698,9 +1698,9 @@ export class QueryBuilder<Entity> {
                     whereSubStrings.push(ea(alias) + "." + ec(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
                     parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
                 });
-                metadata.parentIdColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(ea(alias) + "." + ec(id[primaryColumn.databaseName]) + "=:parentId_" + index + "_" + secondIndex);
-                    parameters["parentId_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
+                metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
+                    whereSubStrings.push(ea(alias) + "." + ec(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
+                    parameters["parentId_" + index + "_" + secondIndex] = parentIdColumn.getEntityValue(id);
                 });
             // } else {
             //     if (metadata.primaryColumns.length > 0) {

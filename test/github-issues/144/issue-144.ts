@@ -1,10 +1,9 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Student} from "./entity/Student";
 
-// unskip once table inheritance is back
-describe.skip("github issues > #144 Class Table Inheritance doesn't seem to work", () => {
+describe("github issues > #144 Class Table Inheritance doesn't seem to work", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
