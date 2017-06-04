@@ -25,6 +25,7 @@ import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationId
 import {RelationCountLoadResult} from "./relation-count/RelationCountLoadResult";
 import {RelationCountLoader} from "./relation-count/RelationCountLoader";
 import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
+import { OracleDriver } from "../driver/oracle/OracleDriver";
 
 
 // todo: fix problem with long aliases eg getMaxIdentifierLength
@@ -843,6 +844,7 @@ export class QueryBuilder<Entity> {
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         sql += this.createLockExpression();
+        sql = this.createSpecificExpression(sql);
         [sql] = this.connection.driver.escapeQueryWithParameters(sql, this.expressionMap.parameters);
         return sql.trim();
     }
@@ -860,6 +862,7 @@ export class QueryBuilder<Entity> {
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         sql += this.createLockExpression();
+        sql = this.createSpecificExpression(sql);
         return sql.trim();
     }
 
@@ -877,6 +880,7 @@ export class QueryBuilder<Entity> {
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         sql += this.createLockExpression();
+        sql = this.createSpecificExpression(sql);
         return this.connection.driver.escapeQueryWithParameters(sql, this.getParameters());
     }
 
@@ -1397,6 +1401,9 @@ export class QueryBuilder<Entity> {
         switch (this.expressionMap.queryType) {
             case "select":
                 const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + ea(select.aliasName) : "")).join(", ");
+                if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
+                    return "SELECT ROWNUM \"RN\"," + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
+                }
                 return "SELECT " + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
             case "delete":
                 return "DELETE FROM " + et(tableName);
@@ -1639,13 +1646,26 @@ export class QueryBuilder<Entity> {
         return "";
     }
 
+    createSpecificExpression(sql: string): string {
+         if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
+             sql = 'SELECT * FROM ('+sql+') WHERE ';
+             if (this.expressionMap.offset) {
+                 sql += "\"RN\" > " + this.expressionMap.offset;
+             }
+             if (this.expressionMap.limit) {
+                 sql += (this.expressionMap.offset ? " AND " : "") + "\"RN\" < " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
+             }
+         }
+         return sql;
+    }
+
     protected createLimitExpression(): string {
-        if (!this.expressionMap.limit) return "";
+        if (!this.expressionMap.limit || this.connection.driver instanceof OracleDriver) return "";
         return " LIMIT " + this.expressionMap.limit;
     }
 
     protected createOffsetExpression(): string {
-        if (!this.expressionMap.offset) return "";
+        if (!this.expressionMap.offset || this.connection.driver instanceof OracleDriver) return "";
         return " OFFSET " + this.expressionMap.offset;
     }
 
