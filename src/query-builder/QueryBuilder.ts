@@ -1648,7 +1648,7 @@ export class QueryBuilder<Entity> {
 
     createSpecificExpression(sql: string): string {
          if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
-             sql = 'SELECT * FROM ('+sql+') WHERE ';
+             sql = "SELECT * FROM ("+sql+") WHERE ";
              if (this.expressionMap.offset) {
                  sql += "\"RN\" > " + this.expressionMap.offset;
              }
