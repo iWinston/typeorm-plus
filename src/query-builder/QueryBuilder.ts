@@ -1599,7 +1599,7 @@ export class QueryBuilder<Entity> {
                     return object;
                 }, {});
                 this.setParameters(params);
-                return "UPDATE " + tableName + " " + (alias ? this.escapeAlias(alias) : "") + " SET " + updateSet;
+                return "UPDATE " + this.escapeTable(tableName) + " " + (alias ? this.escapeAlias(alias) : "") + " SET " + updateSet;
         }
 
         throw new Error("No query builder type is specified.");
