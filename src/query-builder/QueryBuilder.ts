@@ -1409,7 +1409,7 @@ export class QueryBuilder<Entity> {
                     return object;
                 }, {} as ObjectLiteral);
                 this.setParameters(params);
-                return "UPDATE " + tableName + " " + (aliasName ? ea(aliasName) : "") + " SET " + updateSet;
+                return "UPDATE " + this.escapeTable(tableName) + " " + (aliasName ? ea(aliasName) : "") + " SET " + updateSet;
         }
 
         throw new Error("No query builder type is specified.");
