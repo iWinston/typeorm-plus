@@ -1402,7 +1402,7 @@ export class QueryBuilder<Entity> {
             case "select":
                 const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + ea(select.aliasName) : "")).join(", ");
                 if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
-                    return "SELECT ROWNUM \"RN\"," + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
+                    return "SELECT ROWNUM " + this.escapeAlias("RN") + "," + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
                 }
                 return "SELECT " + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
             case "delete":
