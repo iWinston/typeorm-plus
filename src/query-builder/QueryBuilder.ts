@@ -844,7 +844,7 @@ export class QueryBuilder<Entity> {
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createSpecificExpression(sql);
+        sql = this.createLimitOffsetSpecificExpression(sql);
         [sql] = this.connection.driver.escapeQueryWithParameters(sql, this.expressionMap.parameters);
         return sql.trim();
     }
@@ -862,7 +862,7 @@ export class QueryBuilder<Entity> {
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createSpecificExpression(sql);
+        sql = this.createLimitOffsetSpecificExpression(sql);
         return sql.trim();
     }
 
@@ -880,7 +880,7 @@ export class QueryBuilder<Entity> {
         sql += this.createLimitExpression();
         sql += this.createOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createSpecificExpression(sql);
+        sql = this.createLimitOffsetSpecificExpression(sql);
         return this.connection.driver.escapeQueryWithParameters(sql, this.getParameters());
     }
 
@@ -1646,14 +1646,14 @@ export class QueryBuilder<Entity> {
         return "";
     }
 
-    createSpecificExpression(sql: string): string {
+    protected createLimitOffsetSpecificExpression(sql: string): string {
          if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
              sql = "SELECT * FROM (" + sql + ") WHERE ";
              if (this.expressionMap.offset) {
-                 sql += "\"RN\" > " + this.expressionMap.offset;
+                 sql += this.escapeAlias("RN") + " >= " + this.expressionMap.offset;
              }
              if (this.expressionMap.limit) {
-                 sql += (this.expressionMap.offset ? " AND " : "") + "\"RN\" < " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
+                 sql += (this.expressionMap.offset ? " AND " : "") + this.escapeAlias("RN") + " <= " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
              }
          }
          return sql;
