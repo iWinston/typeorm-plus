@@ -28,7 +28,7 @@ describe("jsonb type", () => {
         let recordRepo = connection.getRepository(Record);
         let record = new Record();
         record.data = { foo: "bar" };
-        let persistedRecord = await recordRepo.persist(record);
+        let persistedRecord = await recordRepo.save(record);
         let foundRecord = await recordRepo.findOneById(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;
         expect(foundRecord!.data.foo).to.eq("bar");
@@ -38,7 +38,7 @@ describe("jsonb type", () => {
         let recordRepo = connection.getRepository(Record);
         let record = new Record();
         record.data = "foo";
-        let persistedRecord = await recordRepo.persist(record);
+        let persistedRecord = await recordRepo.save(record);
         let foundRecord = await recordRepo.findOneById(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;
         expect(foundRecord!.data).to.be.a("string");
@@ -49,7 +49,7 @@ describe("jsonb type", () => {
         let recordRepo = connection.getRepository(Record);
         let record = new Record();
         record.data = [1, "2", { a: 3 }];
-        let persistedRecord = await recordRepo.persist(record);
+        let persistedRecord = await recordRepo.save(record);
         let foundRecord = await recordRepo.findOneById(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;
         expect(foundRecord!.data).to.deep.include.members([1, "2", { a: 3 }]);

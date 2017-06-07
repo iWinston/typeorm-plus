@@ -16,6 +16,6 @@ export function Entity(name?: string, options?: EntityOptions) {
             engine: options && options.engine ? options.engine : undefined,
             skipSchemaSync: !!(options && options.skipSchemaSync === true)
         };
-        getMetadataArgsStorage().tables.add(args);
+        getMetadataArgsStorage().tables.push(args);
     };
 }

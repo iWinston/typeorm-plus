@@ -18,7 +18,7 @@ import {
     AggregationCursor,
     CollectionBluckWriteOptions,
     BulkWriteOpResultObject,
-    IndexOptions,
+    MongodbIndexOptions,
     CollectionOptions,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
@@ -39,7 +39,7 @@ import {
     ReplaceOneOptions,
     UpdateWriteOpResult,
     CollStats
-} from "mongodb";
+} from "./typings";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -90,7 +90,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates an index on the db and collection.
      */
-    async createCollectionIndex(collectionName: string, fieldOrSpec: string|any, options?: IndexOptions): Promise<string> {
+    async createCollectionIndex(collectionName: string, fieldOrSpec: string|any, options?: MongodbIndexOptions): Promise<string> {
         return await this.getCollection(collectionName).createIndex(fieldOrSpec, options);
     }
 

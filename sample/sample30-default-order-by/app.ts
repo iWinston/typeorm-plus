@@ -42,7 +42,7 @@ createConnection(options).then(async connection => {
     ]);
 
     console.log("saving posts");
-    await postRepository.persist([post1, post2, post3, post4]);
+    await postRepository.save([post1, post2, post3, post4]);
 
     console.log("loading the post. pay attention on order: ");
     const allPosts = await postRepository.find();

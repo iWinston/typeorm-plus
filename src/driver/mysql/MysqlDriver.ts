@@ -14,6 +14,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -28,6 +29,11 @@ export class MysqlDriver implements Driver {
      * Naming strategy used in the connection where this driver is used.
      */
     namingStrategy: NamingStrategyInterface;
+
+    /**
+     * Used to wrap lazy relations to be able to perform lazy loadings.
+     */
+    lazyRelationsWrapper: LazyRelationsWrapper;
 
     /**
      * Driver connection options.
@@ -253,6 +259,9 @@ export class MysqlDriver implements Driver {
 
             case ColumnTypes.DATETIME:
                 return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+
+            case ColumnTypes.DATE:
+                return DataTransformationUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
                 return DataTransformationUtils.mixedTimeToString(value);

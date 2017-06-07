@@ -65,7 +65,7 @@ describe("many-to-many", function() {
             newPost.details = [];
             newPost.details.push(details);
             
-            return postRepository.persist(newPost).then(post => savedPost = post as Post);
+            return postRepository.save(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -190,7 +190,7 @@ describe("many-to-many", function() {
             newPost.categories = [];
             newPost.categories.push(category);
 
-            return postRepository.persist(newPost).then(post => savedPost = post as Post);
+            return postRepository.save(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -270,13 +270,13 @@ describe("many-to-many", function() {
             newPost.details.push(details);
 
             return postRepository
-                .persist(newPost)
+                .save(newPost)
                 .then(post => savedPost = post as Post);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
             newPost.details[0].comment = "i am updated comment";
-            return postRepository.persist(newPost).then((updatedPost: any) => { // temporary
+            return postRepository.save(newPost).then((updatedPost: any) => { // temporary
                 updatedPost!.details![0]!.comment!.should.be.equal("i am updated comment");
                 return postRepository
                     .createQueryBuilder("post")
@@ -309,13 +309,13 @@ describe("many-to-many", function() {
             newPost.details.push(details);
 
             return postRepository
-                .persist(newPost)
+                .save(newPost)
                 .then(post => savedPost = post as Post);
         });
 
         it("should remove relation however should not remove details itself", function () {
             newPost.details = [];
-            return postRepository.persist(newPost).then(updatedPost => {
+            return postRepository.save(newPost).then(updatedPost => {
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.details", "details")
@@ -353,12 +353,12 @@ describe("many-to-many", function() {
             newPost.title = "this is post title";
 
             return postImageRepository
-                .persist(newImage)
+                .save(newImage)
                 .then(image => {
                     savedImage = image as PostImage;
                     newPost.images = [];
                     newPost.images.push(image as PostImage);
-                    return postRepository.persist(newPost);
+                    return postRepository.save(newPost);
 
                 }).then(post => {
                     newPost = post as Post;
@@ -371,7 +371,7 @@ describe("many-to-many", function() {
 
                 }).then(loadedPost => {
                     loadedPost!.images[0].url = "new-logo.png";
-                    return postRepository.persist(loadedPost!);
+                    return postRepository.save(loadedPost!);
 
                 }).then(() => {
                     return postRepository
@@ -403,12 +403,12 @@ describe("many-to-many", function() {
             newPost.title = "this is post title";
 
             return postMetadataRepository
-                .persist(newMetadata)
+                .save(newMetadata)
                 .then(metadata => {
                     savedMetadata = metadata as PostMetadata;
                     newPost.metadatas = [];
                     newPost.metadatas.push(metadata as PostMetadata);
-                    return postRepository.persist(newPost);
+                    return postRepository.save(newPost);
 
                 }).then(post => {
                     newPost = post as Post;
@@ -421,7 +421,7 @@ describe("many-to-many", function() {
 
                 }).then(loadedPost => {
                     loadedPost!.metadatas = [];
-                    return postRepository.persist(loadedPost as Post);
+                    return postRepository.save(loadedPost as Post);
 
                 }).then(() => {
                     return postRepository
@@ -453,7 +453,7 @@ describe("many-to-many", function() {
             details.posts = [];
             details.posts.push(newPost);
 
-            return postDetailsRepository.persist(details).then(details => savedDetails = details as PostDetails);
+            return postDetailsRepository.save(details).then(details => savedDetails = details as PostDetails);
         });
 
         it("should return the same post instance after its created", function () {
@@ -524,7 +524,7 @@ describe("many-to-many", function() {
             newPost.details.push(details);
 
             return postRepository
-                .persist(newPost) // first save
+                .save(newPost) // first save
                 .then(savedPost => {
                     savedPostId = (savedPost as Post).id;
                     savedDetailsId = details.id;

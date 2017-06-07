@@ -12,6 +12,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Organizes communication with MongoDB.
@@ -26,6 +27,11 @@ export class MongoDriver implements Driver {
      * Naming strategy used in the connection where this driver is used.
      */
     namingStrategy: NamingStrategyInterface;
+
+    /**
+     * Used to wrap lazy relations to be able to perform lazy loadings.
+     */
+    lazyRelationsWrapper: LazyRelationsWrapper;
 
     /**
      * Mongodb does not require to dynamically create query runner each time,
@@ -223,9 +229,8 @@ export class MongoDriver implements Driver {
         const promises: Promise<any>[] = [];
         await Promise.all(entityMetadatas.map(metadata => {
             metadata.indices.forEach(index => {
-                const columns = index.buildColumnsAsMap(1);
                 const options = { name: index.name };
-                promises.push(queryRunner.createCollectionIndex(metadata.table.name, columns, options));
+                promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
             });
         }));
         await Promise.all(promises);

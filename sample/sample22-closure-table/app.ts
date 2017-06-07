@@ -42,7 +42,7 @@ createConnection(options).then(connection => {
     category1.childCategories = [childCategory1, childCategory2];
 
     return categoryRepository
-        .persist(category1)
+        .save(category1)
         .then(category => {
             console.log("Categories has been saved. Lets now load it and all its descendants:");
             return categoryRepository.findDescendants(category1);

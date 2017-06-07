@@ -192,3 +192,22 @@ export function setupConnection(callback: (connection: Connection) => any, entit
             });
     };
 }
+
+/**
+ * Generates random text array with custom length.
+ */
+export function generateRandomText(length: number): string {
+    let text = "";
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for (let i = 0; i <= length; i++ )
+        text += characters.charAt(Math.floor(Math.random() * characters.length));
+
+    return text;
+}
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise<void>(ok => {
+        setTimeout(ok, ms);
+    });
+}

@@ -32,7 +32,7 @@ describe("query builder > locking", () => {
         if (connection.driver instanceof SqliteDriver || connection.driver instanceof OracleDriver)
             return;
 
-        const sql = connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+        const sql = connection.manager.createQueryBuilder(PostWithVersion, "post")
             .where("post.id = :id", { id: 1 })
             .getSql();
 
@@ -52,12 +52,12 @@ describe("query builder > locking", () => {
             return;
 
         return Promise.all([
-            connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+            connection.manager.createQueryBuilder(PostWithVersion, "post")
                 .setLock("pessimistic_read")
                 .where("post.id = :id", { id: 1 })
                 .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError),
 
-            connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+            connection.manager.createQueryBuilder(PostWithVersion, "post")
                 .setLock("pessimistic_write")
                 .where("post.id = :id", { id: 1 })
                 .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError)
@@ -68,7 +68,7 @@ describe("query builder > locking", () => {
         if (connection.driver instanceof SqliteDriver || connection.driver instanceof OracleDriver)
             return;
 
-        return connection.entityManager.transaction(entityManager => {
+        return connection.manager.transaction(entityManager => {
             return Promise.all([
                 entityManager.createQueryBuilder(PostWithVersion, "post")
                     .setLock("pessimistic_read")
@@ -87,7 +87,7 @@ describe("query builder > locking", () => {
         if (connection.driver instanceof SqliteDriver || connection.driver instanceof OracleDriver)
             return;
 
-        const sql = connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+        const sql = connection.manager.createQueryBuilder(PostWithVersion, "post")
             .setLock("pessimistic_read")
             .where("post.id = :id", { id: 1 })
             .getSql();
@@ -107,7 +107,7 @@ describe("query builder > locking", () => {
         if (connection.driver instanceof SqliteDriver || connection.driver instanceof OracleDriver)
             return;
 
-        const sql = connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+        const sql = connection.manager.createQueryBuilder(PostWithVersion, "post")
             .where("post.id = :id", { id: 1 })
             .getSql();
 
@@ -123,7 +123,7 @@ describe("query builder > locking", () => {
         if (connection.driver instanceof SqliteDriver || connection.driver instanceof OracleDriver)
             return;
 
-        const sql = connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+        const sql = connection.manager.createQueryBuilder(PostWithVersion, "post")
             .setLock("pessimistic_write")
             .where("post.id = :id", { id: 1 })
             .getSql();
@@ -139,35 +139,35 @@ describe("query builder > locking", () => {
 
     it("should throw error if optimistic lock used with getMany method", () => Promise.all(connections.map(async connection => {
 
-       return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+       return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
            .getMany().should.be.rejectedWith(OptimisticLockCanNotBeUsedError);
     })));
 
     it("should throw error if optimistic lock used with getCount method", () => Promise.all(connections.map(async connection => {
 
-        return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+        return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
            .getCount().should.be.rejectedWith(OptimisticLockCanNotBeUsedError);
     })));
 
     it("should throw error if optimistic lock used with getManyAndCount method", () => Promise.all(connections.map(async connection => {
 
-       return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+       return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
            .getManyAndCount().should.be.rejectedWith(OptimisticLockCanNotBeUsedError);
     })));
 
     it("should throw error if optimistic lock used with getRawMany method", () => Promise.all(connections.map(async connection => {
 
-       return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+       return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
            .getRawMany().should.be.rejectedWith(OptimisticLockCanNotBeUsedError);
     })));
 
     it("should throw error if optimistic lock used with getRawOne method", () => Promise.all(connections.map(async connection => {
 
-       return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+       return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
            .where("post.id = :id", { id: 1 })
            .getRawOne().should.be.rejectedWith(OptimisticLockCanNotBeUsedError);
@@ -175,7 +175,7 @@ describe("query builder > locking", () => {
 
     it("should not throw error if optimistic lock used with getOne method", () => Promise.all(connections.map(async connection => {
 
-       return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+       return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
            .where("post.id = :id", { id: 1 })
            .getOne().should.not.be.rejected;
@@ -185,9 +185,9 @@ describe("query builder > locking", () => {
 
         const post = new PostWithoutVersionAndUpdateDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
-        return connection.entityManager.createQueryBuilder(PostWithoutVersionAndUpdateDate, "post")
+        return connection.manager.createQueryBuilder(PostWithoutVersionAndUpdateDate, "post")
            .setLock("optimistic", 1)
            .where("post.id = :id", { id: 1 })
            .getOne().should.be.rejectedWith(NoVersionOrUpdateDateColumnError);
@@ -197,9 +197,9 @@ describe("query builder > locking", () => {
 
         const post = new PostWithVersion();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
-       return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+       return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 2)
            .where("post.id = :id", { id: 1 })
            .getOne().should.be.rejectedWith(OptimisticLockVersionMismatchError);
@@ -209,9 +209,9 @@ describe("query builder > locking", () => {
 
         const post = new PostWithVersion();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
-       return connection.entityManager.createQueryBuilder(PostWithVersion, "post")
+       return connection.manager.createQueryBuilder(PostWithVersion, "post")
            .setLock("optimistic", 1)
            .where("post.id = :id", { id: 1 })
            .getOne().should.not.be.rejected;
@@ -221,9 +221,9 @@ describe("query builder > locking", () => {
 
         const post = new PostWithUpdateDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
-       return connection.entityManager.createQueryBuilder(PostWithUpdateDate, "post")
+       return connection.manager.createQueryBuilder(PostWithUpdateDate, "post")
            .setLock("optimistic", new Date(2017, 1, 1))
            .where("post.id = :id", { id: 1 })
            .getOne().should.be.rejectedWith(OptimisticLockVersionMismatchError);
@@ -233,9 +233,9 @@ describe("query builder > locking", () => {
 
         const post = new PostWithUpdateDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
-       return connection.entityManager.createQueryBuilder(PostWithUpdateDate, "post")
+       return connection.manager.createQueryBuilder(PostWithUpdateDate, "post")
            .setLock("optimistic", post.updateDate)
            .where("post.id = :id", { id: 1 })
            .getOne().should.not.be.rejected;
@@ -245,15 +245,15 @@ describe("query builder > locking", () => {
 
         const post = new PostWithVersionAndUpdatedDate();
         post.title = "New post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         return Promise.all([
-            connection.entityManager.createQueryBuilder(PostWithVersionAndUpdatedDate, "post")
+            connection.manager.createQueryBuilder(PostWithVersionAndUpdatedDate, "post")
                 .setLock("optimistic", post.updateDate)
                 .where("post.id = :id", { id: 1 })
                 .getOne().should.not.be.rejected,
 
-            connection.entityManager.createQueryBuilder(PostWithVersionAndUpdatedDate, "post")
+            connection.manager.createQueryBuilder(PostWithVersionAndUpdatedDate, "post")
                 .setLock("optimistic", 1)
                 .where("post.id = :id", { id: 1 })
                 .getOne().should.not.be.rejected
@@ -262,7 +262,7 @@ describe("query builder > locking", () => {
 
     it("should throw error if pessimistic locking not supported by given driver", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof SqliteDriver || connection.driver instanceof OracleDriver)
-            return connection.entityManager.transaction(entityManager => {
+            return connection.manager.transaction(entityManager => {
                 return Promise.all([
                     entityManager.createQueryBuilder(PostWithVersion, "post")
                         .setLock("pessimistic_read")

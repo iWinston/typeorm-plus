@@ -14,6 +14,6 @@ export function NamingStrategy(name?: string): Function {
             target: target,
             name: strategyName
         };
-        getMetadataArgsStorage().namingStrategies.add(args);
+        getMetadataArgsStorage().namingStrategies.push(args);
     };
 }

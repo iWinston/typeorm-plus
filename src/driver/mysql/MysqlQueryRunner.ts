@@ -570,11 +570,11 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         if (!tableSchema.hasGeneratedColumn)
-            await this.query(`ALTER TABLE ${tableSchema.name} DROP PRIMARY KEY`);
+            await this.query(`ALTER TABLE \`${tableSchema.name}\` DROP PRIMARY KEY`);
 
         const primaryColumnNames = tableSchema.columns.filter(column => column.isPrimary && !column.isGenerated).map(column => "`" + column.name + "`");
         if (primaryColumnNames.length > 0)
-            await this.query(`ALTER TABLE ${tableSchema.name} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+            await this.query(`ALTER TABLE \`${tableSchema.name}\` ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
 
     /**
@@ -620,7 +620,6 @@ export class MysqlQueryRunner implements QueryRunner {
     async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
-
         const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableSchemaOrName as any, foreignKey));
         await Promise.all(promises);
     }

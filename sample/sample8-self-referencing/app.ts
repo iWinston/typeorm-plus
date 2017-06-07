@@ -27,7 +27,7 @@ createConnection(options).then(connection => {
     mainCategory.manyCategories.push(category1);
     mainCategory.oneManyCategory = category1;
 
-    categoryRepository.persist(mainCategory)
+    categoryRepository.save(mainCategory)
         .then(savedCategory => {
             console.log("saved category: ", savedCategory);
         })

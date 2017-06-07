@@ -123,12 +123,12 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = (await connection.entityManager.findOneById(Post, 1))!;
+            const loadedPost = (await connection.manager.findOneById(Post, 1))!;
             loadedPost.should.be.instanceof(Post);
             loadedPost.should.be.eql({ id: 1, title: "Hello post" });
             await connection.close();
@@ -146,12 +146,12 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();
          });
@@ -168,12 +168,12 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.persist(post);
             await connection.close();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
 
             await connection.close();
@@ -191,12 +191,12 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.persist(post);
             await connection.close();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();
          });*/

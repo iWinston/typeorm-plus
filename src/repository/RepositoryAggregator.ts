@@ -45,10 +45,10 @@ export class RepositoryAggregator {
 
         const factory = getFromContainer(RepositoryFactory);
 
-        if (metadata.table.isClosure) {
-            this.repository = this.treeRepository = factory.createTreeRepository(connection, metadata, queryRunnerProvider);
+        if (metadata.isClosure) {
+            this.repository = this.treeRepository = factory.createTreeRepository(connection.manager, metadata, queryRunnerProvider);
         } else {
-            this.repository = factory.createRepository(connection, metadata, queryRunnerProvider);
+            this.repository = factory.createRepository(connection.manager, metadata, queryRunnerProvider);
         }
 
         this.specificRepository = factory.createSpecificRepository(connection, metadata, queryRunnerProvider);
