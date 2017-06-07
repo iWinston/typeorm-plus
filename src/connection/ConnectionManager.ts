@@ -384,13 +384,47 @@ export class ConnectionManager {
             throw new Error(`Configuration ${path || "ormconfig.json"} was not found. Add connection configuration inside ormconfig.json file.`);
 
         const environmentLessOptions = optionsArray.filter(options => (options.name || "default") === connectionName);
-        const options = environmentLessOptions.filter(options => !options.environment || options.environment === PlatformTools.getEnvVariable("NODE_ENV")); // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
+        const options = environmentLessOptions.find(options => !options.environment || options.environment === PlatformTools.getEnvVariable("NODE_ENV")); // skip connection creation if environment is set in the options, and its not equal to the value in the NODE_ENV variable
 
-        if (!options.length)
+        if (!options)
             throw new Error(`Connection "${connectionName}" ${PlatformTools.getEnvVariable("NODE_ENV") ? "for the environment " + PlatformTools.getEnvVariable("NODE_ENV") + " " : ""}was not found in the json configuration file.` +
                 (environmentLessOptions.length ? ` However there are such configurations for other environments: ${environmentLessOptions.map(options => options.environment).join(", ")}.` : ""));
 
-        return this.createAndConnectByConnectionOptions(options[0]);
+        // normalize directory paths
+        if (options.entities) {
+            options.entities = (options.entities as any[]).map(entity => {
+                if (typeof entity === "string" || entity.substr(0, 1) !== "/")
+                    return PlatformTools.load("app-root-path").path + "/" + entity;
+
+                return entity;
+            });
+        }
+        if (options.subscribers) {
+            options.subscribers = (options.subscribers as any[]).map(subscriber => {
+                if (typeof subscriber === "string" || subscriber.substr(0, 1) !== "/")
+                    return PlatformTools.load("app-root-path").path + "/" + subscriber;
+
+                return subscriber;
+            });
+        }
+        if (options.migrations) {
+            options.migrations = (options.migrations as any[]).map(migration => {
+                if (typeof migration === "string" || migration.substr(0, 1) !== "/")
+                    return PlatformTools.load("app-root-path").path + "/" + migration;
+
+                return migration;
+            });
+        }
+        if (options.namingStrategies) {
+            options.namingStrategies = (options.namingStrategies as any[]).map(namingStrategy => {
+                if (typeof namingStrategy === "string" || namingStrategy.substr(0, 1) !== "/")
+                    return PlatformTools.load("app-root-path").path + "/" + namingStrategy;
+
+                return namingStrategy;
+            });
+        }
+
+        return this.createAndConnectByConnectionOptions(options);
     }
 
     /**
