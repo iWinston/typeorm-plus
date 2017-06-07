@@ -342,9 +342,9 @@ export class EntityMetadata {
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
-        const namingStrategy = options.connection.driver.namingStrategy;
+        const namingStrategy = options.connection.namingStrategy;
         const tablesPrefix = options.connection.driver.options.tablesPrefix;
-        this.lazyRelationsWrapper = options.connection.driver.lazyRelationsWrapper;
+        this.lazyRelationsWrapper = options.connection.lazyRelationsWrapper;
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.target = options.args.target;
         this.tableType = options.args.type;

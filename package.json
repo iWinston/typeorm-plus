@@ -75,10 +75,13 @@
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
+    "dotenv": "^4.0.0",
     "glob": "^7.1.1",
+    "js-yaml": "^3.8.4",
     "reflect-metadata": "^0.1.10",
     "yargonaut": "^1.1.2",
-    "yargs": "^8.0.1"
+    "yargs": "^8.0.1",
+    "xml2js": "^0.4.17"
   },
   "scripts": {
     "test": "node_modules/.bin/gulp tests"

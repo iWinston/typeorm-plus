@@ -65,7 +65,6 @@ export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/Index";
-export * from "./decorator/NamingStrategy";
 export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
 export * from "./decorator/EntityRepository";

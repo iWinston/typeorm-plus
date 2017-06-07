@@ -1,7 +1,4 @@
-/**
- * Driver type.
- */
-export type DriverType = "mysql"|"postgres"|"mariadb"|"sqlite"|"oracle"|"mssql"|"websql"|"mongodb";
+import {DriverType} from "./DriverType";
 
 /**
  * Connectivity options used to connect to the database, and other database-driver-specific options.
@@ -11,52 +8,52 @@ export interface DriverOptions {
     /**
      * Database type. This value is required.
      */
-    readonly type: DriverType;
+    type: DriverType;
 
     /**
      * Connection url to where perform connection to.
      */
-    readonly url?: string;
+    url?: string;
 
     /**
      * Database host.
      */
-    readonly host?: string;
+    host?: string;
 
     /**
      * Database host port.
      */
-    readonly port?: number;
+    port?: number;
 
     /**
      * Database username.
      */
-    readonly username?: string;
+    username?: string;
 
     /**
      * Database password.
      */
-    readonly password?: string;
+    password?: string;
 
     /**
      * Database name to connect to.
      */
-    readonly database?: string;
+    database?: string;
 
     /**
      * Schema name. By default is "public" (used only in Postgres databases).
      */
-    readonly schemaName?: string;
+    schemaName?: string;
 
     /**
      * Connection SID (used for Oracle databases).
      */
-    readonly sid?: string;
+    sid?: string;
 
     /**
      * Storage type or path to the storage (used for SQLite databases).
      */
-    readonly storage?: string;
+    storage?: string;
 
     /**
      * Indicates if connection pooling should be used or not.
@@ -65,18 +62,18 @@ export interface DriverOptions {
      *
      * @todo: rename to disablePool? What about mongodb pool?
      */
-    readonly usePool?: boolean;
+    usePool?: boolean;
 
     /**
      * Extra connection options to be passed to the underlying driver.
      */
-    readonly extra?: any;
+    extra?: any;
 
     /**
      * Prefix to use on all tables (collections) of this connection in the database.
      *
      * @todo: rename to entityPrefix
      */
-    readonly tablesPrefix?: string;
+    tablesPrefix?: string;
 
 }

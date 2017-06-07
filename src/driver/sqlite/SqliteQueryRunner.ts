@@ -14,6 +14,7 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {RandomGenerator} from "../../util/RandomGenerator";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -316,7 +317,10 @@ export class SqliteQueryRunner implements QueryRunner {
                 const columnForeignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
                     .map(foreignKey => {
-                        const keyName = this.driver.namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
+                        // const keyName = this.driver.namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
+                        // todo: figure out solution here, name should be same as naming strategy generates!
+                        const key = `${dbTable["name"]}_${[foreignKey["from"]].join("_")}_${foreignKey["table"]}_${[foreignKey["to"]].join("_")}`;
+                        const keyName = "fk_" + RandomGenerator.sha1(key).substr(0, 27);
                         return new ForeignKeySchema(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
                     });
                 tableSchema.addForeignKeys(columnForeignKeys);

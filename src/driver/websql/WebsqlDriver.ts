@@ -29,16 +29,6 @@ export class WebsqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Naming strategy used in the connection where this driver is used.
-     */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
      * Driver connection options.
      */
     readonly options: DriverOptions;

@@ -26,6 +26,9 @@ each for its own `findOne*` or `find*` methods
 * custom repositories do not support container anymore
 * added ActiveRecord support (by extending EntityModel) class
 * controller / subscriber / migrations from options tsconfig now appended with a project root directory
+* removed naming strategy decorator, naming strategy by name functionality. 
+Now naming strategy should be registered by passing naming strategy instance directly
+* driver options now deprecated in connection options
 
 
 ### NEW FEATURES

@@ -65,7 +65,7 @@ export class ConnectionManager {
     create(options: ConnectionOptions): Connection {
 
         const logger = new Logger(options.logging || {});
-        const driver = this.createDriver(options.driver, logger);
+        const driver = this.createDriver(options.driver || {} as DriverOptions, logger); //  || {} is temporary
         const connection = this.createConnection(options.name || "default", driver, logger);
 
         // import entity schemas
@@ -92,14 +92,6 @@ export class ConnectionManager {
                 .importSubscribersFromDirectories(directories);
         }
 
-        // import naming strategies
-        if (options.namingStrategies) {
-            const [directories, classes] = this.splitStringsAndClasses(options.namingStrategies);
-            connection
-                .importNamingStrategies(classes)
-                .importNamingStrategiesFromDirectories(directories);
-        }
-
         // import migrations
         if (options.migrations) {
             const [directories, classes] = this.splitStringsAndClasses(options.migrations);
@@ -109,8 +101,8 @@ export class ConnectionManager {
         }
 
         // set naming strategy to be used for this connection
-        if (options.usedNamingStrategy)
-            connection.useNamingStrategy(options.usedNamingStrategy as any);
+        if (options.namingStrategy)
+            connection.useNamingStrategy(options.namingStrategy);
 
         return connection;
     }
@@ -341,8 +333,6 @@ export class ConnectionManager {
             entities: PlatformTools.getEnvVariable("TYPEORM_ENTITIES") ? PlatformTools.getEnvVariable("TYPEORM_ENTITIES").split(",") : [],
             subscribers: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS") ? PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS").split(",") : [],
             entitySchemas: PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS") ? PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS").split(",") : [],
-            namingStrategies: PlatformTools.getEnvVariable("TYPEORM_NAMING_STRATEGIES") ? PlatformTools.getEnvVariable("TYPEORM_NAMING_STRATEGIES").split(",") : [],
-            usedNamingStrategy: PlatformTools.getEnvVariable("TYPEORM_USED_NAMING_STRATEGY"),
             logging: {
                 logQueries: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_QUERIES")),
                 logFailedQueryError: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_FAILED_QUERIES")),
@@ -413,14 +403,6 @@ export class ConnectionManager {
                     return PlatformTools.load("app-root-path").path + "/" + migration;
 
                 return migration;
-            });
-        }
-        if (options.namingStrategies) {
-            options.namingStrategies = (options.namingStrategies as any[]).map(namingStrategy => {
-                if (typeof namingStrategy === "string" || namingStrategy.substr(0, 1) !== "/")
-                    return PlatformTools.load("app-root-path").path + "/" + namingStrategy;
-
-                return namingStrategy;
             });
         }
 

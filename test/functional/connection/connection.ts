@@ -22,6 +22,7 @@ import {Blog} from "./modules/blog/entity/Blog";
 import {Question} from "./modules/question/entity/Question";
 import {Video} from "./modules/video/entity/Video";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
+import {DefaultNamingStrategy} from "../../../src/naming-strategy/DefaultNamingStrategy";
 
 describe("Connection", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/connection/";
@@ -127,11 +128,9 @@ describe("Connection", () => {
             expect(() => connection.importEntities([Post])).to.throw(Error); // CannotImportAlreadyConnectedError
             expect(() => connection.importEntitySchemas([])).to.throw(Error); // CannotImportAlreadyConnectedError
             expect(() => connection.importSubscribers([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importNamingStrategies([])).to.throw(Error); // CannotImportAlreadyConnectedError
             expect(() => connection.importEntitiesFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
             expect(() => connection.importEntitySchemaFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
             expect(() => connection.importSubscribersFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importNamingStrategiesFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
         }));
 
         it("should not be able to connect again", () => connections.forEach(connection => {
@@ -139,7 +138,7 @@ describe("Connection", () => {
         }));
 
         it("should not be able to change used naming strategy", () => connections.forEach(connection => {
-            expect(() => connection.useNamingStrategy("something")).to.throw(Error); // CannotUseNamingStrategyNotConnectedError
+            expect(() => connection.useNamingStrategy(new DefaultNamingStrategy())).to.throw(Error); // CannotUseNamingStrategyNotConnectedError
         }));
 
         it("should be able to close a connection", async () => Promise.all(connections.map(connection => {
@@ -295,7 +294,6 @@ describe("Connection", () => {
         it("should successfully load entities / entity schemas / subscribers / naming strategies from directories", async () => {
             connection.importEntitiesFromDirectories([__dirname + "/entity/*"]);
             connection.importEntitySchemaFromDirectories([resourceDir + "/schema/*"]);
-            connection.importNamingStrategiesFromDirectories([__dirname + "/naming-strategy/*"]);
             connection.importSubscribersFromDirectories([__dirname + "/subscriber/*"]);
             await connection.connect();
             connection.getRepository(Post).should.be.instanceOf(Repository);
@@ -311,7 +309,6 @@ describe("Connection", () => {
         it("should successfully load entities / entity schemas / subscribers / naming strategies from glob-patterned directories", async () => {
             connection.importEntitiesFromDirectories([__dirname + "/modules/**/entity/*"]);
             connection.importEntitySchemaFromDirectories([resourceDir + "/modules/**/schema/*"]);
-            connection.importNamingStrategiesFromDirectories([__dirname + "/modules/**/naming-strategy/*"]);
             connection.importSubscribersFromDirectories([__dirname + "/modules/**/subscriber/*"]);
             await connection.connect();
             connection.getRepository(Blog).should.be.instanceOf(Repository);
@@ -327,49 +324,6 @@ describe("Connection", () => {
             connection.getRepository("VideoCategory").should.be.instanceOf(Repository);
             connection.getRepository("VideoCategory").target.should.be.equal("VideoCategory");
         });
-    });
-
-    describe("using naming strategy", function() {
-
-        let connection: Connection;
-        beforeEach(async () => {
-            connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
-                name: "default",
-                entities: []
-            }));
-        });
-        afterEach(() => connection.isConnected ? connection.close() : {});
-
-        it("should use naming strategy when its class passed to useNamingStrategy method", async () => {
-            connection.importEntities([Post]);
-            connection.importNamingStrategies([FirstCustomNamingStrategy]);
-            connection.useNamingStrategy(FirstCustomNamingStrategy);
-            await connection.connect();
-            connection.getMetadata(Post).tableName.should.be.equal("POST");
-        });
-
-        it("should use naming strategy when its name passed to useNamingStrategy method", async () => {
-            connection.importEntities([Category]);
-            connection.importNamingStrategies([SecondCustomNamingStrategy]);
-            connection.useNamingStrategy("secondCustomNamingStrategy");
-            await connection.connect();
-            connection.getMetadata(Category).tableName.should.be.equal("category");
-        });
-
-        it("should throw an error if not registered naming strategy was used (assert by name)", () => {
-            connection.importEntities([Category]);
-            connection.importNamingStrategies([FirstCustomNamingStrategy]);
-            connection.useNamingStrategy("secondCustomNamingStrategy");
-            return connection.connect().should.be.rejected; // NamingStrategyNotFoundError
-        });
-
-        it("should throw an error if not registered naming strategy was used (assert by Function)", () => {
-            connection.importEntities([Category]);
-            connection.importNamingStrategies([SecondCustomNamingStrategy]);
-            connection.useNamingStrategy(FirstCustomNamingStrategy);
-            return connection.connect().should.be.rejected; // NamingStrategyNotFoundError
-        });
-
     });
 
     describe("skip schema generation when skipSchemaSync option is used", function() {

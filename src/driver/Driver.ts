@@ -11,16 +11,6 @@ import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 export interface Driver {
 
     /**
-     * Naming strategy used in the connection where this driver is used.
-     */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
      * Driver options contains connectivity options used to connection to the database.
      */
     readonly options: DriverOptions;

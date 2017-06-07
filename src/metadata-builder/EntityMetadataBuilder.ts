@@ -157,7 +157,7 @@ export class EntityMetadataBuilder {
 
         // build all indices (need to do it after relations and their join columns are built)
         entityMetadatas.forEach(entityMetadata => {
-            entityMetadata.indices.forEach(index => index.build(this.connection.driver.namingStrategy));
+            entityMetadata.indices.forEach(index => index.build(this.connection.namingStrategy));
         });
 
         entityMetadatas
@@ -165,7 +165,7 @@ export class EntityMetadataBuilder {
             .forEach(metadata => {
                 const parentPrimaryColumns = metadata.parentEntityMetadata.primaryColumns;
                 const parentRelationColumns = parentPrimaryColumns.map(parentPrimaryColumn => {
-                    const columnName = this.connection.driver.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentPrimaryColumn.propertyPath);
+                    const columnName = this.connection.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentPrimaryColumn.propertyPath);
                     const column = new ColumnMetadata({
                         entityMetadata: metadata,
                         referencedColumn: parentPrimaryColumn,
@@ -183,7 +183,7 @@ export class EntityMetadataBuilder {
                         }
                     });
                     metadata.registerColumn(column);
-                    column.build(this.connection.driver.namingStrategy);
+                    column.build(this.connection.namingStrategy);
                     return column;
                 });
 
@@ -191,7 +191,7 @@ export class EntityMetadataBuilder {
                     new ForeignKeyMetadata({
                         entityMetadata: metadata,
                         referencedEntityMetadata: metadata.parentEntityMetadata,
-                        namingStrategy: this.connection.driver.namingStrategy,
+                        namingStrategy: this.connection.namingStrategy,
                         columns: parentRelationColumns,
                         referencedColumns: parentPrimaryColumns,
                         onDelete: "CASCADE"
@@ -206,7 +206,7 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter(relation => relation.isLazy)
                     .forEach(relation => {
-                        this.connection.driver.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                        this.connection.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
                     });
             });
 
@@ -307,12 +307,12 @@ export class EntityMetadataBuilder {
      * Computes all entity metadata's computed properties, and all its sub-metadatas (relations, columns, embeds, etc).
      */
     protected computeEntityMetadata(entityMetadata: EntityMetadata) {
-        entityMetadata.embeddeds.forEach(embedded => embedded.build(this.connection.driver.namingStrategy));
+        entityMetadata.embeddeds.forEach(embedded => embedded.build(this.connection.namingStrategy));
         entityMetadata.embeddeds.forEach(embedded => {
-            embedded.columnsFromTree.forEach(column => column.build(this.connection.driver.namingStrategy));
+            embedded.columnsFromTree.forEach(column => column.build(this.connection.namingStrategy));
             embedded.relationsFromTree.forEach(relation => relation.build());
         });
-        entityMetadata.ownColumns.forEach(column => column.build(this.connection.driver.namingStrategy));
+        entityMetadata.ownColumns.forEach(column => column.build(this.connection.namingStrategy));
         entityMetadata.ownRelations.forEach(relation => relation.build());
         entityMetadata.relations = entityMetadata.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), entityMetadata.ownRelations);
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(relation => relation.isOneToOne);
@@ -334,7 +334,7 @@ export class EntityMetadataBuilder {
         entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.isTreeLevel);
         entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.isParentId);
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);
-        entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.driver.namingStrategy));
+        entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
         entityMetadata.relationIds.forEach(relationId => relationId.build());
         entityMetadata.relationCounts.forEach(relationCount => relationCount.build());
