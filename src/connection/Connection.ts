@@ -181,7 +181,7 @@ export class Connection {
     async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
 
         if (!this.isConnected)
-            return Promise.reject(new CannotSyncNotConnectedError(this.name));
+            throw new CannotCloseNotConnectedError(this.name);
 
         if (dropBeforeSync)
             await this.dropDatabase();
@@ -212,7 +212,7 @@ export class Connection {
     async runMigrations(): Promise<void> {
 
         if (!this.isConnected)
-            return Promise.reject(new CannotRunMigrationNotConnectedError(this.name));
+            throw new CannotCloseNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
         await migrationExecutor.executePendingMigrations();
@@ -225,7 +225,7 @@ export class Connection {
     async undoLastMigration(): Promise<void> {
 
         if (!this.isConnected)
-            return Promise.reject(new CannotRunMigrationNotConnectedError(this.name));
+            throw new CannotCloseNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
         await migrationExecutor.undoLastMigration();
@@ -235,28 +235,14 @@ export class Connection {
      * Checks if entity metadata exist for the given entity class, target name or table name.
      */
     hasMetadata(target: Function|string): boolean {
-        return !!this.entityMetadatas.find(metadata => {
-            if (metadata.target === target)
-                return true;
-            if (typeof target === "string")
-                return metadata.name === target || metadata.tableName === target;
-
-            return false;
-        });
+        return !!this.findMetadata(target);
     }
 
     /**
      Gets entity metadata for the given entity class or schema name.
      */
     getMetadata(target: Function|string): EntityMetadata {
-        const metadata = this.entityMetadatas.find(metadata => {
-            if (metadata.target === target)
-                return true;
-            if (typeof target === "string")
-                return metadata.name === target || metadata.tableName === target;
-
-            return false;
-        });
+        const metadata = this.findMetadata(target);
         if (!metadata)
             throw new EntityMetadataNotFound(target);
 
@@ -457,10 +443,27 @@ export class Connection {
     // -------------------------------------------------------------------------
 
     /**
+     * Finds entity metadata exist for the given entity class, target name or table name.
+     */
+    protected findMetadata(target: Function|string): EntityMetadata|undefined {
+        return this.entityMetadatas.find(metadata => {
+            if (metadata.target === target)
+                return true;
+            if (typeof target === "string")
+                return metadata.name === target || metadata.tableName === target;
+
+            return false;
+        });
+    }
+
+    /**
      * Builds all registered metadatas.
      */
     protected buildMetadatas(): void {
+
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(this);
+        const repositoryFactory = new RepositoryFactory();
+        const entityMetadataValidator = new EntityMetadataValidator();
 
         // build subscribers if they are not disallowed from high-level (for example they can disallowed from migrations run process)
         if (!PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
@@ -478,12 +481,11 @@ export class Connection {
 
         // initialize repositories for all entity metadatas
         this.entityMetadatas.forEach(metadata => {
-            metadata.repository = new RepositoryFactory().createRepository(this, metadata);
-            metadata.specificRepository = new RepositoryFactory().createSpecificRepository(this, metadata);
+            metadata.repository = repositoryFactory.createRepository(this, metadata);
+            metadata.specificRepository = repositoryFactory.createSpecificRepository(this, metadata);
         });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
-        const entityMetadataValidator = new EntityMetadataValidator();
         entityMetadataValidator.validateMany(this.entityMetadatas);
     }
 
