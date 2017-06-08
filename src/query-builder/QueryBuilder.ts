@@ -937,9 +937,9 @@ export class QueryBuilder<Entity> {
                 idsQuery += metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escapeAlias(mainAliasName + "_" + primaryColumn.databaseName);
                     if (index === 0) {
-                        return `DISTINCT(${distinctAlias}.${propertyName}) as ids_${primaryColumn.databaseName}`;
+                        return `DISTINCT(${distinctAlias}.${propertyName}) as "ids_${primaryColumn.databaseName}"`;
                     } else {
-                        return `${distinctAlias}.${propertyName}) as ids_${primaryColumn.databaseName}`;
+                        return `${distinctAlias}.${propertyName}) as "ids_${primaryColumn.databaseName}"`;
                     }
                 }).join(", ");
                 if (selects.length > 0)
