@@ -17,6 +17,7 @@ import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInter
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -46,21 +47,24 @@ export class MysqlDriver implements Driver {
      * Pool of database connections.
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
+    
+    protected options: MysqlConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-
+    
     constructor(protected connection: Connection) {
+        this.options = connection.options as MysqlConnectionOptions;
 
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
-        if (!(connection.options.host || (connection.options.extra && connection.options.extra.socketPath)))
+        if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)))
             throw new DriverOptionNotSetError("socketPath and host");
-        if (!connection.options.username)
+        if (!this.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!connection.options.database)
+        if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
         // load mysql package
@@ -80,30 +84,17 @@ export class MysqlDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            host: this.connection.options.host,
-            user: this.connection.options.username,
-            password: this.connection.options.password,
-            database: this.connection.options.database,
-            port: this.connection.options.port
-        }, this.connection.options.extra || {});
+            host: this.options.host,
+            user: this.options.username,
+            password: this.options.password,
+            database: this.options.database,
+            port: this.options.port
+        }, this.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.connection.options.usePool === undefined || this.connection.options.usePool === true) {
-            this.pool = this.mysql.createPool(options);
-            return Promise.resolve();
-
-        } else {
-            return new Promise<void>((ok, fail) => {
-                const connection = this.mysql.createConnection(options);
-                this.databaseConnection = {
-                    id: 1,
-                    connection: connection,
-                    isTransactionActive: false
-                };
-                this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
-            });
-        }
+        this.pool = this.mysql.createPool(options);
+        return Promise.resolve();
     }
 
     /**

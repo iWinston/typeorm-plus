@@ -30,6 +30,9 @@ each for its own `findOne*` or `find*` methods
 Now naming strategy should be registered by passing naming strategy instance directly
 * `driver` section in connection options now deprecated. All settings should go directly to connection options root.
 * removed `fromTable` from the `QueryBuilder`. Now use regular `from` to select from tables
+* removed `usePool` option from the connection options
+* connection options interface has changed and now each platform has its own set of connection options
+* `storage` in sqlite options has been renamed to `database`
 
 ### OTHER API CHANGES
 

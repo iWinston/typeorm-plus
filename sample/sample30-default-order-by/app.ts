@@ -4,10 +4,8 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "sqlite",
-        storage: "temp/sqlitedb.db"
-    },
+    type: "sqlite",
+    database: "temp/sqlitedb.db",
     logging: {
         logQueries: true,
         logSchemaCreation: true

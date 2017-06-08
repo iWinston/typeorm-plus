@@ -7,14 +7,12 @@ import {EverythingSubscriber} from "./subscriber/EverythingSubscriber";
 
 // first create a connection
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     entities: [Post, PostAuthor, PostCategory],
     subscribers: [EverythingSubscriber]

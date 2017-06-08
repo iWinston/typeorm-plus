@@ -9,14 +9,12 @@ import {UserRepository} from "./repository/UserRepository";
 import {User} from "./entity/User";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     logging: {
         logQueries: true,

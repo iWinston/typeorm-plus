@@ -13,6 +13,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {WebSqlConnectionOptions} from "./WebSqlConnectionOptions";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -32,6 +33,8 @@ export class WebsqlDriver implements Driver {
      * Connection to database.
      */
     protected databaseConnection: DatabaseConnection|undefined;
+    
+    protected options: WebSqlConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -39,6 +42,7 @@ export class WebsqlDriver implements Driver {
 
     constructor(protected connection: Connection) {
 
+        this.options = connection.options as WebSqlConnectionOptions;
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
@@ -46,7 +50,7 @@ export class WebsqlDriver implements Driver {
         //     throw new DriverOptionNotSetError("host");
         // if (!this.options.username)
         //     throw new DriverOptionNotSetError("username");
-        if (!connection.options.database)
+        if (!this.options.database)
             throw new DriverOptionNotSetError("database");
         // todo: what about extra options: version, description, size
     }
@@ -64,8 +68,8 @@ export class WebsqlDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            database: this.connection.options.database,
-        }, this.connection.options.extra || {});
+            database: this.options.database,
+        }, this.options.extra || {});
 
         return new Promise<void>((ok, fail) => {
             const connection = openDatabase(

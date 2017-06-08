@@ -4,14 +4,12 @@ import {Post} from "./entity/Post";
 import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     entities: [Post, PostAuthor]
 };

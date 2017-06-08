@@ -1,4 +1,4 @@
-import {DriverType} from "./DriverType";
+import {DatabaseType} from "./DatabaseType";
 
 /**
  * Connectivity options used to connect to the database, and other database-driver-specific options.
@@ -10,7 +10,7 @@ export interface DriverOptions {
     /**
      * Database type. This value is required.
      */
-    type?: DriverType;
+    type?: DatabaseType;
 
     /**
      * Connection url to where perform connection to.

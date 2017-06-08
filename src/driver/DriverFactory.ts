@@ -18,7 +18,8 @@ export class DriverFactory {
      * Creates a new driver depend on a given connection's driver type.
      */
     create(connection: Connection): Driver {
-        switch (connection.options.type) {
+        const type = connection.options.type;
+        switch (type) {
             case "mysql":
                 return new MysqlDriver(connection);
             case "postgres":
@@ -36,7 +37,7 @@ export class DriverFactory {
             case "mongodb":
                 return new MongoDriver(connection);
             default:
-                throw new MissingDriverError(connection.options.type!);
+                throw new MissingDriverError(type);
         }
     }
 

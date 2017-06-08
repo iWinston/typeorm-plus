@@ -5,11 +5,9 @@ import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "sqlite",
-        storage: "temp/sqlitedb.db",
-        tablesPrefix: "samples_" // pay attention on this prefix
-    },
+    type: "sqlite",
+    database: "temp/sqlitedb.db",
+    tablesPrefix: "samples_", // pay attention on this prefix
     autoSchemaSync: true,
     logging: {
         logQueries: true,

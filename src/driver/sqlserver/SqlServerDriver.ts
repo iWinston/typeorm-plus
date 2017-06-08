@@ -17,6 +17,7 @@ import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInter
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -51,25 +52,23 @@ export class SqlServerDriver implements Driver {
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
+    protected options: SqlServerConnectionOptions;
+    
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection) {
 
+        this.options = connection.options as SqlServerConnectionOptions;
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
-        if (!connection.options.host)
+        if (!this.options.host)
             throw new DriverOptionNotSetError("host");
-        if (!connection.options.username)
+        if (!this.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!connection.options.database)
+        if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
         // load mssql package
@@ -89,12 +88,12 @@ export class SqlServerDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            server: this.connection.options.host,
-            user: this.connection.options.username,
-            password: this.connection.options.password,
-            database: this.connection.options.database,
-            port: this.connection.options.port
-        }, this.connection.options.extra || {});
+            server: this.options.host,
+            user: this.options.username,
+            password: this.options.password,
+            database: this.options.database,
+            port: this.options.port
+        }, this.options.extra || {});
 
         // set default useUTC option if it hasn't been set
         if (!options.options) options.options = { useUTC: false };
@@ -106,13 +105,6 @@ export class SqlServerDriver implements Driver {
             const connection = new this.mssql.Connection(options).connect((err: any) => {
                 if (err) return fail(err);
                 this.connectionPool = connection;
-                if (this.connection.options.usePool === false) {
-                    this.databaseConnection = {
-                        id: 1,
-                        connection: new this.mssql.Request(connection),
-                        isTransactionActive: false
-                    };
-                }
                 ok();
             });
         });

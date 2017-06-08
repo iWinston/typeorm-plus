@@ -15,6 +15,7 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
+import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -776,7 +777,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.connection.options.database as string;
+        return (this.connection.options as MysqlConnectionOptions).database as string;
     }
 
     /**

@@ -6,14 +6,12 @@ import {PostAuthor} from "./entity/PostAuthor";
 import {Blog} from "./entity/Blog";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     logging: {
         logOnlyFailedQueries: true,
         logFailedQueryError: true

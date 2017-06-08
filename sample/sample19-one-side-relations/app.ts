@@ -6,14 +6,12 @@ import {Category} from "./entity/Category";
 import {PostMetadata} from "./entity/PostMetadata";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     logging: {
         logOnlyFailedQueries: true,
         logFailedQueryError: true

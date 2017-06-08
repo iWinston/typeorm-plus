@@ -9,19 +9,17 @@ import {PostInformation} from "./entity/PostInformation";
 import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
-    driver: {
-        // type: "mssql",
-        // host: "192.168.1.10",
-        // username: "sa",
-        // password: "admin12345",
-        // database: "test",
-        type: "oracle",
-        host: "localhost",
-        username: "system",
-        password: "oracle",
-        port: 1521,
-        sid: "xe.oracle.docker",
-    },
+    // type: "mssql",
+    // host: "192.168.1.10",
+    // username: "sa",
+    // password: "admin12345",
+    // database: "test",
+    type: "oracle",
+    host: "localhost",
+    username: "system",
+    password: "oracle",
+    port: 1521,
+    sid: "xe.oracle.docker",
     autoSchemaSync: true,
     logging: {
         logQueries: true,

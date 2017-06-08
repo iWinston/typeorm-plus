@@ -3,11 +3,9 @@ import {createConnection, ConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mongodb",
-        host: "localhost",
-        database: "test",
-    },
+    type: "mongodb",
+    host: "localhost",
+    database: "test",
     logging: {
         logQueries: true,
         logSchemaCreation: true

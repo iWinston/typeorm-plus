@@ -14,6 +14,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
 import {OracleDriver} from "./OracleDriver";
+import {OracleConnectionOptions} from "./OracleConnectionOptions";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -847,7 +848,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.connection.options.schemaName as string;
+        return (this.connection.options as OracleConnectionOptions).schemaName as string;
     }
 
     /**

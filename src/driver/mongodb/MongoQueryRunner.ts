@@ -673,13 +673,6 @@ export class MongoQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Database name shortcut.
-     */
-    protected get dbName(): string {
-        return this.connection.options.database as string;
-    }
-
-    /**
      * Gets collection from the database with a given name.
      */
     protected getCollection(collectionName: string): Collection {

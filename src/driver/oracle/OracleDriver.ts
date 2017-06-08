@@ -17,6 +17,7 @@ import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInter
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {OracleConnectionOptions} from "./OracleConnectionOptions";
 
 /**
  * Organizes communication with Oracle DBMS.
@@ -49,6 +50,8 @@ export class OracleDriver implements Driver {
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
+    protected options: OracleConnectionOptions;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -57,12 +60,14 @@ export class OracleDriver implements Driver {
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
+        this.options = connection.options as OracleConnectionOptions;
+
         // validate options to make sure everything is set
-        if (!connection.options.host)
+        if (!this.options.host)
             throw new DriverOptionNotSetError("host");
-        if (!connection.options.username)
+        if (!this.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!connection.options.sid)
+        if (!this.options.sid)
             throw new DriverOptionNotSetError("sid");
 
         // load oracle package
@@ -83,39 +88,22 @@ export class OracleDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            user: this.connection.options.username,
-            password: this.connection.options.password,
-            connectString: this.connection.options.host + ":" + this.connection.options.port + "/" + this.connection.options.sid,
-        }, this.connection.options.extra || {});
+            user: this.options.username,
+            password: this.options.password,
+            connectString: this.options.host + ":" + this.options.port + "/" + this.options.sid,
+        }, this.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.connection.options.usePool === undefined || this.connection.options.usePool === true) {
-            return new Promise<void>((ok, fail) => {
-                this.oracle.createPool(options, (err: any, pool: any) => {
-                    if (err)
-                        return fail(err);
+        return new Promise<void>((ok, fail) => {
+            this.oracle.createPool(options, (err: any, pool: any) => {
+                if (err)
+                    return fail(err);
 
-                    this.pool = pool;
-                    ok();
-                });
+                this.pool = pool;
+                ok();
             });
-
-        } else {
-            return new Promise<void>((ok, fail) => {
-                this.oracle.getConnection(options, (err: any, connection: any) => {
-                    if (err)
-                        return fail(err);
-
-                    this.databaseConnection = {
-                        id: 1,
-                        connection: connection,
-                        isTransactionActive: false
-                    };
-                    this.databaseConnection.connection.connect((err: any) => err ? fail(err) : ok());
-                });
-            });
-        }
+        });
     }
 
     /**

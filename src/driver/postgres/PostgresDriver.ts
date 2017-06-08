@@ -17,6 +17,7 @@ import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInter
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 
 // todo(tests):
 // check connection with url
@@ -63,21 +64,25 @@ export class PostgresDriver implements Driver {
      */
     public schemaName?: string;
 
+    protected options: PostgresConnectionOptions;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection) {
 
-        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
-        this.schemaName = connection.options.schemaName || "public";
+        this.options = connection.options as PostgresConnectionOptions;
+
+        Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        this.schemaName = this.options.schemaName || "public";
 
         // validate options to make sure everything is set
-        if (!connection.options.host)
+        if (!this.options.host)
             throw new DriverOptionNotSetError("host");
-        if (!connection.options.username)
+        if (!this.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!connection.options.database)
+        if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
         // load postgres package
@@ -97,43 +102,17 @@ export class PostgresDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            host: this.connection.options.host,
-            user: this.connection.options.username,
-            password: this.connection.options.password,
-            database: this.connection.options.database,
-            port: this.connection.options.port
-        }, this.connection.options.extra || {});
+            host: this.options.host,
+            user: this.options.username,
+            password: this.options.password,
+            database: this.options.database,
+            port: this.options.port
+        }, this.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.connection.options.usePool === undefined || this.connection.options.usePool === true) {
-            this.pool = new this.postgres.Pool(options);
-            return Promise.resolve();
-
-        } else {
-            return new Promise<void>((ok, fail) => {
-                this.databaseConnection = {
-                    id: 1,
-                    connection: new this.postgres.Client(options),
-                    isTransactionActive: false
-                };
-                this.databaseConnection.connection.connect((err: any) => {
-                    if (err) {
-                        fail(err);
-                    } else {
-                        this.databaseConnection!.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any, result: any) => {
-                            if (err) {
-                                this.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                                this.connection.logger.logQueryError(err);
-                                fail(err);
-                            } else {
-                                ok();
-                            }
-                        });
-                    }
-                });
-            });
-        }
+        this.pool = new this.postgres.Pool(options);
+        return Promise.resolve();
     }
 
     /**

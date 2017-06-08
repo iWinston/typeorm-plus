@@ -92,12 +92,10 @@ describe("Connection", () => {
         it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
             expect(() => {
                 connection = getConnectionManager().create(<ConnectionOptions>{
-                    driver: {
-                        "type": "mysql",
-                        "username": "test",
-                        "password": "test",
-                        "database": "test",
-                    },
+                    type: "mysql",
+                    username: "test",
+                    password: "test",
+                    database: "test",
                     entities: [],
                     entitySchemas: [],
                     dropSchemaOnConnection: false,

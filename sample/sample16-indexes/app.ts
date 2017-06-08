@@ -4,14 +4,12 @@ import {Post} from "./entity/Post";
 import {BasePost} from "./entity/BasePost";
 
 const options: ConnectionOptions = {
-    driver: {
-        "type": "mysql",
-        "host": "localhost",
-        "port": 3306,
-        "username": "test",
-        "password": "test",
-        "database": "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
     logging: {
         logQueries: true,
         logFailedQueryError: true,

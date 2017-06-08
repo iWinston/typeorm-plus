@@ -15,6 +15,7 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
+import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -39,7 +40,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
     constructor(protected connection: Connection,
                 protected databaseConnection: DatabaseConnection) {
-        this.schemaName = connection.options.schemaName || "public";
+        this.schemaName = (connection.options as PostgresConnectionOptions).schemaName || "public";
     }
 
     // -------------------------------------------------------------------------
@@ -848,7 +849,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.connection.options.database as string;
+        return (this.connection.options as PostgresConnectionOptions).database as string;
     }
 
     /**

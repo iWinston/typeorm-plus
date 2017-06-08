@@ -279,19 +279,15 @@ export class ConnectionManager {
      */
     protected async createFromEnvAndConnect(): Promise<Connection> {
         return this.createAndConnectByConnectionOptions({
-            driver: {
-                type: PlatformTools.getEnvVariable("TYPEORM_DRIVER_TYPE"),
-                url: PlatformTools.getEnvVariable("TYPEORM_URL"),
-                host: PlatformTools.getEnvVariable("TYPEORM_HOST"),
-                port: PlatformTools.getEnvVariable("TYPEORM_PORT"),
-                username: PlatformTools.getEnvVariable("TYPEORM_USERNAME"),
-                password: PlatformTools.getEnvVariable("TYPEORM_PASSWORD"),
-                database: PlatformTools.getEnvVariable("TYPEORM_DATABASE"),
-                sid: PlatformTools.getEnvVariable("TYPEORM_SID"),
-                storage: PlatformTools.getEnvVariable("TYPEORM_STORAGE"),
-                usePool: PlatformTools.getEnvVariable("TYPEORM_USE_POOL") !== undefined ? OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_USE_POOL")) : undefined, // special check for defined is required here
-                extra: PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA")) : undefined
-            },
+            type: PlatformTools.getEnvVariable("TYPEORM_DRIVER_TYPE"),
+            url: PlatformTools.getEnvVariable("TYPEORM_URL"),
+            host: PlatformTools.getEnvVariable("TYPEORM_HOST"),
+            port: PlatformTools.getEnvVariable("TYPEORM_PORT"),
+            username: PlatformTools.getEnvVariable("TYPEORM_USERNAME"),
+            password: PlatformTools.getEnvVariable("TYPEORM_PASSWORD"),
+            database: PlatformTools.getEnvVariable("TYPEORM_DATABASE"),
+            sid: PlatformTools.getEnvVariable("TYPEORM_SID"),
+            extra: PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA")) : undefined,
             autoSchemaSync: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_AUTO_SCHEMA_SYNC")),
             entities: PlatformTools.getEnvVariable("TYPEORM_ENTITIES") ? PlatformTools.getEnvVariable("TYPEORM_ENTITIES").split(",") : [],
             subscribers: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS") ? PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS").split(",") : [],

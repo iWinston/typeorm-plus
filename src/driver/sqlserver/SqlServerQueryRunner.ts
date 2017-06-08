@@ -16,6 +16,8 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
 import {MysqlDriver} from "../mysql/MysqlDriver";
+import {SqliteConnectionOptions} from "../sqlite/SqliteConnectionOptions";
+import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -881,7 +883,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.connection.options.database as string;
+        return (this.connection.options as SqlServerConnectionOptions).database as string;
     }
 
     /**
