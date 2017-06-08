@@ -1,21 +1,10 @@
 import {Connection} from "./Connection";
 import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ConnectionOptions} from "./ConnectionOptions";
-import {DriverOptions} from "../driver/DriverOptions";
-import {Driver} from "../driver/Driver";
-import {MissingDriverError} from "./error/MissingDriverError";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
-import {Logger} from "../logger/Logger";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OrmUtils} from "../util/OrmUtils";
 import {CannotDetermineConnectionOptionsError} from "./error/CannotDetermineConnectionOptionsError";
 import {PlatformTools} from "../platform/PlatformTools";
-import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**
  * ConnectionManager is used to store and manage all these different connections.
@@ -64,46 +53,20 @@ export class ConnectionManager {
      */
     create(options: ConnectionOptions): Connection {
 
-        const logger = new Logger(options.logging || {});
-        const driver = this.createDriver(options.driver || {} as DriverOptions, logger); //  || {} is temporary
-        const connection = this.createConnection(options.name || "default", driver, logger);
+        // (backward compatibility) if options are set in the driver section of connection options then merge them into the option
+        if (options.driver)
+            Object.assign(options, options.driver);
 
-        // import entity schemas
-        if (options.entitySchemas) {
-            const [directories, classes] = this.splitStringsAndClasses(options.entitySchemas);
-            connection
-                .importEntitySchemas(classes)
-                .importEntitySchemaFromDirectories(directories);
+        const existConnection = this.connections.find(connection => connection.name === (options.name || "default"));
+        if (existConnection) {
+            if (existConnection.isConnected)
+                throw new AlreadyHasActiveConnectionError(options.name || "default");
+
+            this.connections.splice(this.connections.indexOf(existConnection), 1);
         }
 
-        // import entities
-        if (options.entities) {
-            const [directories, classes] = this.splitStringsAndClasses(options.entities);
-            connection
-                .importEntities(classes)
-                .importEntitiesFromDirectories(directories);
-        }
-
-        // import subscriber
-        if (options.subscribers) {
-            const [directories, classes] = this.splitStringsAndClasses(options.subscribers);
-            connection
-                .importSubscribers(classes)
-                .importSubscribersFromDirectories(directories);
-        }
-
-        // import migrations
-        if (options.migrations) {
-            const [directories, classes] = this.splitStringsAndClasses(options.migrations);
-            connection
-                .importMigrations(classes)
-                .importMigrationsFromDirectories(directories);
-        }
-
-        // set naming strategy to be used for this connection
-        if (options.namingStrategy)
-            connection.useNamingStrategy(options.namingStrategy);
-
+        const connection = new Connection(options);
+        this.connections.push(connection);
         return connection;
     }
 
@@ -380,30 +343,34 @@ export class ConnectionManager {
             throw new Error(`Connection "${connectionName}" ${PlatformTools.getEnvVariable("NODE_ENV") ? "for the environment " + PlatformTools.getEnvVariable("NODE_ENV") + " " : ""}was not found in the json configuration file.` +
                 (environmentLessOptions.length ? ` However there are such configurations for other environments: ${environmentLessOptions.map(options => options.environment).join(", ")}.` : ""));
 
+        let connectionOptions: ConnectionOptions = Object.assign({}, options);
         // normalize directory paths
         if (options.entities) {
-            options.entities = (options.entities as any[]).map(entity => {
+            const entities = (options.entities as any[]).map(entity => {
                 if (typeof entity === "string" || entity.substr(0, 1) !== "/")
                     return PlatformTools.load("app-root-path").path + "/" + entity;
 
                 return entity;
             });
+            Object.assign(connectionOptions, { entities: entities });
         }
         if (options.subscribers) {
-            options.subscribers = (options.subscribers as any[]).map(subscriber => {
+            const subscribers = (options.subscribers as any[]).map(subscriber => {
                 if (typeof subscriber === "string" || subscriber.substr(0, 1) !== "/")
                     return PlatformTools.load("app-root-path").path + "/" + subscriber;
 
                 return subscriber;
             });
+            Object.assign(connectionOptions, { subscribers: subscribers });
         }
         if (options.migrations) {
-            options.migrations = (options.migrations as any[]).map(migration => {
+            const migrations = (options.migrations as any[]).map(migration => {
                 if (typeof migration === "string" || migration.substr(0, 1) !== "/")
                     return PlatformTools.load("app-root-path").path + "/" + migration;
 
                 return migration;
             });
+            Object.assign(connectionOptions, { migrations: migrations });
         }
 
         return this.createAndConnectByConnectionOptions(options);
@@ -430,59 +397,6 @@ export class ConnectionManager {
         if (options.autoMigrationsRun && !PlatformTools.getEnvVariable("SKIP_MIGRATIONS_RUN"))
             await connection.runMigrations();
 
-        return connection;
-    }
-
-    /**
-     * Splits given array of mixed strings and / or functions into two separate array of string and array of functions.
-     */
-    protected splitStringsAndClasses<T>(strAndClses: string[]|T[]): [string[], T[]] {
-        return [
-            (strAndClses as string[]).filter(str => typeof str === "string"),
-            (strAndClses as T[]).filter(cls => typeof cls !== "string"),
-        ];
-    }
-
-    /**
-     * Creates a new driver based on the given driver type and options.
-     */
-    protected createDriver(options: DriverOptions, logger: Logger): Driver {
-        switch (options.type) {
-            case "mysql":
-                return new MysqlDriver(options, logger, undefined);
-            case "postgres":
-                return new PostgresDriver(options, logger);
-            case "mariadb":
-                return new MysqlDriver(options, logger);
-            case "sqlite":
-                return new SqliteDriver(options, logger);
-            case "oracle":
-                return new OracleDriver(options, logger);
-            case "mssql":
-                return new SqlServerDriver(options, logger);
-            case "websql":
-                return new WebsqlDriver(options, logger);
-            case "mongodb":
-                return new MongoDriver(options, logger);
-            default:
-                throw new MissingDriverError(options.type);
-        }
-    }
-
-    /**
-     * Creates a new connection and registers it in the connection manager.
-     */
-    protected createConnection(name: string, driver: Driver, logger: Logger) {
-        const existConnection = this.connections.find(connection => connection.name === name);
-        if (existConnection) {
-            if (existConnection.isConnected)
-                throw new AlreadyHasActiveConnectionError(name);
-
-            this.connections.splice(this.connections.indexOf(existConnection), 1);
-        }
-
-        const connection = new Connection(name, driver, logger);
-        this.connections.push(connection);
         return connection;
     }
 

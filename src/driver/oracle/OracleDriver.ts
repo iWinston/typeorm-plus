@@ -15,6 +15,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with Oracle DBMS.
@@ -65,11 +66,10 @@ export class OracleDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, oracle?: any) {
+    constructor(connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(options, { useSid: true });
-        this.logger = logger;
-        this.oracle = oracle;
+        this.options = connection.options;
+        this.logger = connection.logger;
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -79,10 +79,8 @@ export class OracleDriver implements Driver {
         if (!this.options.sid)
             throw new DriverOptionNotSetError("sid");
 
-        // if oracle package instance was not set explicitly then try to load it
-        if (!oracle)
-            this.loadDependencies();
-
+        // load oracle package
+        this.loadDependencies();
         this.oracle.outFormat = this.oracle.OBJECT;
     }
 

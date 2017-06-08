@@ -13,6 +13,7 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with MongoDB.
@@ -57,18 +58,15 @@ export class MongoDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mongodb?: any) {
+    constructor(connection: Connection) {
 
         // validate options to make sure everything is correct and driver will be able to establish connection
-        this.validateOptions(options);
+        this.validateOptions(connection.options);
 
-        // if mongodb package instance was not set explicitly then try to load it
-        if (!mongodb)
-            mongodb = this.loadDependencies();
-
-        this.options = options;
-        this.logger = logger;
-        this.mongodb = mongodb;
+        // load mongodb package
+        this.options = connection.options;
+        this.logger = connection.logger;
+        this.mongodb = this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------

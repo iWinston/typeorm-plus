@@ -10,6 +10,7 @@ import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -111,7 +112,8 @@ export class SubjectOperationExecutor {
             }
 
             // broadcast "before" events before we start updating
-            await this.connection.broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+            const broadcaster = new Broadcaster(this.connection);
+            await broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
             // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
             this.updateSubjects.forEach(subject => subject.recompute());
@@ -133,7 +135,7 @@ export class SubjectOperationExecutor {
 
             // finally broadcast "after" events
             // note that we are broadcasting events after commit because we want to have ids of the entities inside them to be available in subscribers
-            await this.connection.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+            await broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         } catch (error) {
 

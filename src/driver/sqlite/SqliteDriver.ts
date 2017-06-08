@@ -14,6 +14,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -52,19 +53,17 @@ export class SqliteDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, sqlite?: any) {
+    constructor(connection: Connection) {
 
-        this.options = connectionOptions;
-        this.logger = logger;
-        this.sqlite = sqlite;
+        this.options = connection.options;
+        this.logger = connection.logger;
 
         // validate options to make sure everything is set
         if (!this.options.storage)
             throw new DriverOptionNotSetError("storage");
 
-        // if sqlite package instance was not set explicitly then try to load it
-        if (!sqlite)
-            this.loadDependencies();
+        // load sqlite package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------

@@ -35,6 +35,19 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {EntitySchemaTransformer} from "../entity-schema/EntitySchemaTransformer";
 import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidator";
+import {ConnectionOptions} from "./ConnectionOptions";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
+import {MissingDriverError} from "../driver/error/MissingDriverError";
+import {OrmUtils} from "../util/OrmUtils";
+import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
+import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {DriverFactory} from "../driver/DriverFactory";
+import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 
 /**
  * Connection is a single database ORM connection to a specific DBMS database.
@@ -53,6 +66,11 @@ export class Connection {
     readonly name: string;
 
     /**
+     * Connection options.
+     */
+    readonly options: ConnectionOptions;
+
+    /**
      * Indicates if connection is initialized or not.
      */
     readonly isConnected = false;
@@ -63,9 +81,14 @@ export class Connection {
     readonly driver: Driver;
 
     /**
-     * Gets EntityManager of this connection.
+     * EntityManager of this connection.
      */
     readonly manager: EntityManager;
+
+    /**
+     * Naming strategy used in the connection.
+     */
+    readonly namingStrategy: NamingStrategyInterface;
 
     /**
      * Logger used to log orm events.
@@ -73,24 +96,14 @@ export class Connection {
     readonly logger: Logger;
 
     /**
-     * Naming strategy used in the connection.
+     * Migration instances that are registered for this connection.
      */
-    readonly namingStrategy = new DefaultNamingStrategy();
+    readonly migrations: MigrationInterface[] = [];
 
     /**
-     * All entity metadatas that are registered for this connection.
+     * Entity subscriber instances that are registered for this connection.
      */
-    readonly entityMetadatas: EntityMetadata[] = [];
-
-    /**
-     * Used to broadcast connection events.
-     */
-    readonly broadcaster: Broadcaster;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    readonly lazyRelationsWrapper = new LazyRelationsWrapper(this);
+    readonly subscribers: EntitySubscriberInterface<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Private Properties
@@ -102,40 +115,21 @@ export class Connection {
     private repositoryAggregators: RepositoryAggregator[] = [];
 
     /**
-     * Entity subscribers that are registered for this connection.
+     * All entity metadatas that are registered for this connection.
      */
-    private entitySubscribers: EntitySubscriberInterface<any>[] = [];
-
-    /**
-     * Registered entity classes to be used for this connection.
-     */
-    private entityClasses: Function[] = [];
-
-    /**
-     * Registered entity schemas to be used for this connection.
-     */
-    private entitySchemas: EntitySchema[] = [];
-
-    /**
-     * Registered subscriber classes to be used for this connection.
-     */
-    private subscriberClasses: Function[] = [];
-
-    /**
-     * Registered migration classes to be used for this connection.
-     */
-    private migrationClasses: Function[] = [];
+    private entityMetadatas: EntityMetadata[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, driver: Driver, logger: Logger) {
-        this.name = name;
-        this.driver = driver;
-        this.logger = logger;
-        this.broadcaster = new Broadcaster(this, this.entitySubscribers);
-        this.manager = this.createEntityManager();
+    constructor(options: ConnectionOptions) {
+        this.name = options.name || "default";
+        this.options = options;
+        this.logger = new Logger(options.logging || {});
+        this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
+        this.driver = new DriverFactory().create(this);
+        this.manager = new EntityManagerFactory().create(this);
     }
 
     // -------------------------------------------------------------------------
@@ -204,6 +198,7 @@ export class Connection {
 
     /**
      * Creates database schema for all entities registered in this connection.
+     * Can be used only after connection to the database is established.
      *
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
      */
@@ -227,6 +222,7 @@ export class Connection {
     /**
      * Drops the database and all its data.
      * Be careful with this method on production since this method will erase all your database tables and data inside them.
+     * Can be used only after connection to the database is established.
      */
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.driver.createQueryRunner();
@@ -235,6 +231,7 @@ export class Connection {
 
     /**
      * Runs all pending migrations.
+     * Can be used only after connection to the database is established.
      */
     async runMigrations(): Promise<void> {
 
@@ -247,6 +244,7 @@ export class Connection {
 
     /**
      * Reverts last executed migration.
+     * Can be used only after connection to the database is established.
      */
     async undoLastMigration(): Promise<void> {
 
@@ -258,91 +256,44 @@ export class Connection {
     }
 
     /**
-     * Imports entities from the given paths (directories) and registers them in the current connection.
+     * Creates a new entity manager with a single opened connection to the database.
+     * This may be useful if you want to perform all db queries within one connection.
+     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
      */
-    importEntitiesFromDirectories(paths: string[]): this {
-        this.importEntities(importClassesFromDirectories(paths));
-        return this;
+    createIsolatedManager(queryRunnerProvider?: QueryRunnerProvider): EntityManager {
+        if (!queryRunnerProvider)
+            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+
+        return new EntityManager(this, queryRunnerProvider);
     }
 
     /**
-     * Imports entity schemas from the given paths (directories) and registers them in the current connection.
+     * Checks if entity metadata exist for the given entity class.
      */
-    importEntitySchemaFromDirectories(paths: string[]): this {
-        this.importEntitySchemas(importJsonsFromDirectories(paths));
-        return this;
-    }
+    hasMetadata(target: Function): boolean;
 
     /**
-     * Imports subscribers from the given paths (directories) and registers them in the current connection.
+     * Checks if entity metadata exist for the given entity target name or table name.
      */
-    importSubscribersFromDirectories(paths: string[]): this {
-        this.importSubscribers(importClassesFromDirectories(paths));
-        return this;
-    }
+    hasMetadata(target: string): boolean;
 
     /**
-     * Imports migrations from the given paths (directories) and registers them in the current connection.
+     * Checks if entity metadata exist for the given entity class, target name or table name.
      */
-    importMigrationsFromDirectories(paths: string[]): this {
-        this.importMigrations(importClassesFromDirectories(paths));
-        return this;
-    }
+    hasMetadata(target: Function|string): boolean;
 
     /**
-     * Imports entities and registers them in the current connection.
+     * Checks if entity metadata exist for the given entity class, target name or table name.
      */
-    importEntities(entities: Function[]): this {
-        if (this.isConnected)
-            throw new CannotImportAlreadyConnectedError("entities", this.name);
+    hasMetadata(target: Function|string): boolean {
+        return !!this.entityMetadatas.find(metadata => {
+            if (metadata.target === target)
+                return true;
+            if (typeof target === "string")
+                return metadata.name === target || metadata.tableName === target;
 
-        entities.forEach(cls => this.entityClasses.push(cls));
-        return this;
-    }
-
-    /**
-     * Imports schemas and registers them in the current connection.
-     */
-    importEntitySchemas(schemas: EntitySchema[]): this {
-        if (this.isConnected)
-            throw new CannotImportAlreadyConnectedError("schemas", this.name);
-
-        schemas.forEach(schema => this.entitySchemas.push(schema));
-        return this;
-    }
-
-    /**
-     * Imports subscribers and registers them in the current connection.
-     */
-    importSubscribers(subscriberClasses: Function[]): this {
-        if (this.isConnected)
-            throw new CannotImportAlreadyConnectedError("entity subscribers", this.name);
-
-        subscriberClasses.forEach(cls => this.subscriberClasses.push(cls));
-        return this;
-    }
-
-    /**
-     * Imports migrations and registers them in the current connection.
-     */
-    importMigrations(migrations: Function[]): this {
-        if (this.isConnected)
-            throw new CannotImportAlreadyConnectedError("migrations", this.name);
-
-        migrations.forEach(cls => this.migrationClasses.push(cls));
-        return this;
-    }
-
-    /**
-     * Sets given naming strategy to be used.
-     * Naming strategy must be set to be used before connection is established.
-     */
-    useNamingStrategy(namingStrategy: NamingStrategyInterface): this {
-        if (this.isConnected)
-            throw new CannotUseNamingStrategyNotConnectedError(this.name);
-
-        Object.assign(this, { namingStrategy: namingStrategy });
-        return this;
+            return false;
+        });
     }
 
     /**
@@ -364,7 +315,14 @@ export class Connection {
      Gets entity metadata for the given entity class or schema name.
      */
     getMetadata(target: Function|string): EntityMetadata {
-        const metadata = this.entityMetadatas.find(metadata => metadata.target === target || (typeof target === "string" && metadata.targetName === target));
+        const metadata = this.entityMetadatas.find(metadata => {
+            if (metadata.target === target)
+                return true;
+            if (typeof target === "string")
+                return metadata.name === target || metadata.tableName === target;
+
+            return false;
+        });
         if (!metadata)
             throw new EntityMetadataNotFound(target);
 
@@ -455,73 +413,95 @@ export class Connection {
     }
 
     /**
-     * Gets specific repository for the given entity class.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @experimental
-     */
-    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity name.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @experimental
-     */
-    getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity class or name.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @experimental
-     */
-    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity class or name.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @experimental
-     */
-    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
-        return this.findRepositoryAggregator(entityClassOrName).specificRepository;
-    }
-
-    /**
-     * Creates a new entity manager with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
-     */
-    createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider?: QueryRunnerProvider): EntityManager {
-        if (!queryRunnerProvider)
-            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
-
-        return new EntityManager(this, queryRunnerProvider);
-    }
-
-    /**
-     * Gets migration instances that are registered for this connection.
-     */
-    getMigrations(): MigrationInterface[] {
-        if (this.migrationClasses && this.migrationClasses.length) {
-            return this.migrationClasses.map(migrationClass => {
-                return getFromContainer<MigrationInterface>(migrationClass);
-            });
-        }
-
-        return [];
-    }
-
-    /**
      * Gets custom entity repository marked with @EntityRepository decorator.
      */
     getCustomRepository<T>(customRepository: ObjectType<T>): T {
         return this.manager.getCustomRepository(customRepository);
     }
 
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
+     */
+    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>,
+                      queryRunnerProvider?: QueryRunnerProvider): Promise<any> {
+        if (this instanceof MongoEntityManager)
+            throw new Error(`Transactions aren't supported by MongoDB.`);
+
+        if (queryRunnerProvider && queryRunnerProvider.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError();
+
+        const usedQueryRunnerProvider = queryRunnerProvider || new QueryRunnerProvider(this.driver, true);
+        const queryRunner = await usedQueryRunnerProvider.provide();
+        const transactionEntityManager = new EntityManager(this, usedQueryRunnerProvider);
+
+        try {
+            await queryRunner.beginTransaction();
+            const result = await runInTransaction(transactionEntityManager);
+            await queryRunner.commitTransaction();
+            return result;
+
+        } catch (err) {
+            await queryRunner.rollbackTransaction();
+            throw err;
+
+        } finally {
+            await usedQueryRunnerProvider.release(queryRunner);
+            if (!queryRunnerProvider) // if we used a new query runner provider then release it
+                await usedQueryRunnerProvider.releaseReused(); // todo: why we don't do same in query method?
+        }
+    }
+
+    /**
+     * Executes raw SQL query and returns raw database results.
+     */
+    async query(query: string, parameters?: any[], queryRunnerProvider?: QueryRunnerProvider): Promise<any> {
+        if (this instanceof MongoEntityManager)
+            throw new Error(`Queries aren't supported by MongoDB.`);
+
+        if (queryRunnerProvider && queryRunnerProvider.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError();
+
+        const usedQueryRunnerProvider = queryRunnerProvider || new QueryRunnerProvider(this.driver);
+        const queryRunner = await usedQueryRunnerProvider.provide();
+
+        try {
+            return await queryRunner.query(query, parameters);  // await is needed here because we are using finally
+
+        } finally {
+            await usedQueryRunnerProvider.release(queryRunner);
+        }
+    }
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity>;
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder(queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<any>;
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|Function|string|QueryRunnerProvider, alias?: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
+        if (this instanceof MongoEntityManager)
+            throw new Error(`Query Builder is not supported by MongoDB.`);
+
+        if (alias) {
+            const metadata = this.getMetadata(entityClass as Function|string);
+            return new QueryBuilder(this, queryRunnerProvider)
+                .select(alias)
+                .from(metadata.target, alias);
+        } else {
+            return new QueryBuilder(this, entityClass as QueryRunnerProvider|undefined);
+        }
+    }
+
     // -------------------------------------------------------------------------
-    // Deprecated
+    // Deprecated Public Methods
     // -------------------------------------------------------------------------
 
     /**
@@ -533,6 +513,40 @@ export class Connection {
         return this.manager;
     }
 
+    /**
+     * Gets specific repository for the given entity class.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
+     *
+     * @deprecated don't use it, it will be refactored or removed in the future versions
+     */
+    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity name.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
+     *
+     * @deprecated don't use it, it will be refactored or removed in the future versions
+     */
+    getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity class or name.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
+     *
+     * @deprecated don't use it, it will be refactored or removed in the future versions
+     */
+    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity>;
+
+    /**
+     * Gets specific repository for the given entity class or name.
+     * SpecificRepository is a special repository that contains specific and non standard repository methods.
+     *
+     * @deprecated don't use it, it will be refactored or removed in the future versions
+     */
+    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
+        return this.findRepositoryAggregator(entityClassOrName).specificRepository;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -541,10 +555,7 @@ export class Connection {
      * Finds repository aggregator of the given entity class or name.
      */
     protected findRepositoryAggregator(entityClassOrName: ObjectType<any>|string): RepositoryAggregator {
-        // if (!this.isConnected)
-        //     throw new NoConnectionForRepositoryError(this.name);
-
-        if (!this.entityMetadatas.find(metadata => metadata.target === entityClassOrName || (typeof entityClassOrName === "string" && metadata.targetName === entityClassOrName)))
+        if (!this.hasMetadata(entityClassOrName))
             throw new RepositoryNotFoundError(this.name, entityClassOrName);
 
         const metadata = this.getMetadata(entityClassOrName);
@@ -560,56 +571,59 @@ export class Connection {
      */
     public buildMetadatas() {
 
-        this.entitySubscribers.length = 0;
+        // import entity schemas
+        const [entitySchemaDirectories, entitySchemaClasses] = OrmUtils.splitStringsAndClasses(this.options.entitySchemas || []);
+        entitySchemaClasses.push(...importJsonsFromDirectories(entitySchemaDirectories));
+
+        const [entityDirectories, entityClasses] = OrmUtils.splitStringsAndClasses(this.options.entities || []);
+        entityClasses.push(...importClassesFromDirectories(entityDirectories));
+
+        const [subscriberDirectories, subscriberClasses] = OrmUtils.splitStringsAndClasses(this.options.subscribers || []);
+        subscriberClasses.push(...importClassesFromDirectories(subscriberDirectories));
+
+        const [migrationDirectories, migrationClasses] = OrmUtils.splitStringsAndClasses(this.options.migrations || []);
+        migrationClasses.push(...importClassesFromDirectories(migrationDirectories));
+
+        // create migration instances
+        const migrations = migrationClasses.map(migrationClass => {
+            return getFromContainer<MigrationInterface>(migrationClass);
+        });
+        Object.assign(this, { migrations });
+
+        this.subscribers.length = 0;
         this.repositoryAggregators.length = 0;
         this.entityMetadatas.length = 0;
 
         const entityMetadataValidator = new EntityMetadataValidator();
 
         // take imported event subscribers
-        if (this.subscriberClasses &&
-            this.subscriberClasses.length &&
-            !PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
+        if (!PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
             getMetadataArgsStorage()
-                .filterSubscribers(this.subscriberClasses)
+                .filterSubscribers(subscriberClasses)
                 .map(metadata => getFromContainer(metadata.target))
-                .forEach(subscriber => this.entitySubscribers.push(subscriber));
+                .forEach(subscriber => this.subscribers.push(subscriber));
         }
 
         // take imported entity listeners
-        if (this.entityClasses && this.entityClasses.length) {
-
-            // build entity metadatas from metadata args storage (collected from decorators)
-            new EntityMetadataBuilder(this, getMetadataArgsStorage())
-                .build(this.entityClasses)
-                .forEach(metadata => {
-                    this.entityMetadatas.push(metadata);
-                    this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
-                });
-        }
+        // build entity metadatas from metadata args storage (collected from decorators)
+        new EntityMetadataBuilder(this, getMetadataArgsStorage())
+            .build(entityClasses)
+            .forEach(metadata => {
+                this.entityMetadatas.push(metadata);
+                this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
+            });
 
         // build entity metadatas from given entity schemas
-        if (this.entitySchemas && this.entitySchemas.length) {
-            const metadataArgsStorage = getFromContainer(EntitySchemaTransformer).transform(this.entitySchemas);
-            new EntityMetadataBuilder(this, metadataArgsStorage)
-                .build()
-                .forEach(metadata => {
-                    this.entityMetadatas.push(metadata);
-                    this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
-                });
-        }
+        const metadataArgsStorage = getFromContainer(EntitySchemaTransformer)
+            .transform(entitySchemaClasses);
+        new EntityMetadataBuilder(this, metadataArgsStorage)
+            .build()
+            .forEach(metadata => {
+                this.entityMetadatas.push(metadata);
+                this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
+            });
 
         entityMetadataValidator.validateMany(this.entityMetadatas);
-    }
-
-    /**
-     * Creates a new default entity manager without single connection setup.
-     */
-    protected createEntityManager() {
-        if (this.driver instanceof MongoDriver)
-            return new MongoEntityManager(this);
-
-        return new EntityManager(this);
     }
 
 }

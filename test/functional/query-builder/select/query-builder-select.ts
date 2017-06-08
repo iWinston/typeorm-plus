@@ -30,7 +30,7 @@ describe("query builder > select", () => {
     })));
 
     it("should append all entity mapped columns from both main selection and join selections to select statement", () => Promise.all(connections.map(async connection => {
-        const sql = connection.manager.createQueryBuilder(Post, "post")
+        const sql = connection.createQueryBuilder(Post, "post")
             .leftJoinAndSelect("category", "category")
             .disableEscaping()
             .getSql();
@@ -49,7 +49,7 @@ describe("query builder > select", () => {
     })));
 
     it("should append entity mapped columns from both main alias and join aliases to select statement", () => Promise.all(connections.map(async connection => {
-        const sql = connection.manager.createQueryBuilder(Post, "post")
+        const sql = connection.createQueryBuilder(Post, "post")
             .select("post.id")
             .addSelect("category.name")
             .leftJoin("category", "category")
@@ -62,7 +62,7 @@ describe("query builder > select", () => {
     })));
 
     it("should append entity mapped columns to select statement, if they passed as array", () => Promise.all(connections.map(async connection => {
-        const sql = connection.manager.createQueryBuilder(Post, "post")
+        const sql = connection.createQueryBuilder(Post, "post")
             .select(["post.id", "post.title"])
             .disableEscaping()
             .getSql();
@@ -71,7 +71,7 @@ describe("query builder > select", () => {
     })));
 
     it("should append raw sql to select statement", () => Promise.all(connections.map(async connection => {
-        const sql = connection.manager.createQueryBuilder(Post, "post")
+        const sql = connection.createQueryBuilder(Post, "post")
             .select("COUNT(*) as cnt")
             .disableEscaping()
             .getSql();
@@ -80,7 +80,7 @@ describe("query builder > select", () => {
     })));
 
     it("should append raw sql and entity mapped column to select statement", () => Promise.all(connections.map(async connection => {
-        const sql = connection.manager.createQueryBuilder(Post, "post")
+        const sql = connection.createQueryBuilder(Post, "post")
             .select(["COUNT(*) as cnt", "post.title"])
             .disableEscaping()
             .getSql();
@@ -89,7 +89,7 @@ describe("query builder > select", () => {
     })));
 
     it("should not create alias for selection, which is not entity mapped column", () => Promise.all(connections.map(async connection => {
-        const sql = connection.manager.createQueryBuilder(Post, "post")
+        const sql = connection.createQueryBuilder(Post, "post")
             .select("post.name")
             .disableEscaping()
             .getSql();

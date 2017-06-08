@@ -128,7 +128,7 @@ export function setupTestingConnections(options?: TestingOptions) {
                 return false;
 
             if (options && options.enabledDrivers && options.enabledDrivers.length)
-                return options.enabledDrivers.indexOf(connectionOptions.driver!.type) !== -1; // ! is temporary
+                return options.enabledDrivers.indexOf(connectionOptions.driver!.type!) !== -1; // ! is temporary
 
             if (connectionOptions.disabledIfNotEnabledImplicitly === true)
                 return false;

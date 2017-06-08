@@ -3,6 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {Connection} from "../connection/Connection";
+import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Creates EntityMetadata for junction tables of the closure entities.

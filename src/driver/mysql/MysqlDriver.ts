@@ -15,6 +15,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -63,11 +64,10 @@ export class MysqlDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mysql?: any) {
+    constructor(connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = logger;
-        this.mysql = mysql;
+        this.options = DriverUtils.buildDriverOptions(connection.options);
+        this.logger = connection.logger;
 
         // validate options to make sure everything is set
         if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)))
@@ -77,9 +77,8 @@ export class MysqlDriver implements Driver {
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
-        // if mysql package instance was not set explicitly then try to load it
-        if (!mysql)
-            this.loadDependencies();
+        // load mysql package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------

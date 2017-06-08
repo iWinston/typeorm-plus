@@ -64,6 +64,43 @@ export class EntityManager {
     // -------------------------------------------------------------------------
 
     /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
+     */
+    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
+        return this.connection.transaction(runInTransaction, this.queryRunnerProvider);
+    }
+
+    /**
+     * Executes raw SQL query and returns raw database results.
+     */
+    async query(query: string, parameters?: any[]): Promise<any> {
+        return this.connection.query(query, parameters, this.queryRunnerProvider);
+    }
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity>;
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder(queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<any>;
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|Function|string|QueryRunnerProvider, alias?: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
+        if (alias) {
+            return this.connection.createQueryBuilder(entityClass as Function|string, alias, queryRunnerProvider || this.queryRunnerProvider);
+
+        } else {
+            return this.connection.createQueryBuilder(entityClass as QueryRunnerProvider|undefined || this.queryRunnerProvider);
+        }
+    }
+
+    /**
      * Gets user data by a given key.
      * Used get stored data stored in a transactional entity manager.
      */
@@ -118,16 +155,6 @@ export class EntityManager {
         const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;
         const metadata = this.connection.getMetadata(target);
         return metadata.getEntityIdMixedMap(entity);
-    }
-
-    /**
-     * Creates a new query builder that can be used to build a sql query.
-     */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
-        const metadata = this.connection.getMetadata(entityClass);
-        return new QueryBuilder(this.connection, queryRunnerProvider || this.queryRunnerProvider)
-            .select(alias)
-            .from(metadata.target, alias);
     }
 
     /**
@@ -532,53 +559,6 @@ export class EntityManager {
     }
 
     /**
-     * Executes raw SQL query and returns raw database results.
-     */
-    async query(query: string, parameters?: any[]): Promise<any> {
-        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
-        const queryRunner = await queryRunnerProvider.provide();
-
-        try {
-            return await queryRunner.query(query, parameters);  // await is needed here because we are using finally
-
-        } finally {
-            await queryRunnerProvider.release(queryRunner);
-        }
-    }
-
-    /**
-     * Wraps given function execution (and all operations made there) in a transaction.
-     * All database operations must be executed using provided entity manager.
-     */
-    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
-        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
-        const queryRunner = await queryRunnerProvider.provide();
-        const transactionEntityManager = new EntityManager(this.connection, queryRunnerProvider);
-
-        try {
-            await queryRunner.beginTransaction();
-            const result = await runInTransaction(transactionEntityManager);
-            await queryRunner.commitTransaction();
-            return result;
-
-        } catch (err) {
-            await queryRunner.rollbackTransaction();
-            throw err;
-
-        } finally {
-            await queryRunnerProvider.release(queryRunner);
-            if (!this.queryRunnerProvider) // if we used a new query runner provider then release it
-                await queryRunnerProvider.releaseReused();
-        }
-    }
-
-    /**
      * Clears all the data from the given table (truncates/drops it).
      */
     async clear<Entity>(entityClass: ObjectType<Entity>|string): Promise<void> {
@@ -741,7 +721,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(target);
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
-            const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
+            const transactionEntityManager = this.connection.createIsolatedManager(queryRunnerProvider);
             // transactionEntityManager.data =
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
@@ -763,7 +743,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(target);
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
-            const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
+            const transactionEntityManager = this.connection.createIsolatedManager(queryRunnerProvider);
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
             await databaseEntityLoader.remove(entity, metadata);

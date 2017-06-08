@@ -343,8 +343,8 @@ export class EntityMetadata {
         args: TableMetadataArgs
     }) {
         const namingStrategy = options.connection.namingStrategy;
-        const tablesPrefix = options.connection.driver.options.tablesPrefix;
-        this.lazyRelationsWrapper = options.connection.lazyRelationsWrapper;
+        const tablesPrefix = options.connection.options.tablesPrefix;
+        this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.target = options.args.target;
         this.tableType = options.args.type;

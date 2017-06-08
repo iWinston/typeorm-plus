@@ -4,6 +4,8 @@ import {Driver} from "../driver/Driver";
 /**
  * Represents functionality to provide a new query runners, and release old ones.
  * Also can provide always same query runner.
+ *
+ * todo: rename to QueryExecutor ?
  */
 export class QueryRunnerProvider {
 

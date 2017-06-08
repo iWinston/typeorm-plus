@@ -13,6 +13,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -51,10 +52,10 @@ export class WebsqlDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger) {
+    constructor(connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = logger;
+        this.options = DriverUtils.buildDriverOptions(connection.options);
+        this.logger = connection.logger;
 
         // validate options to make sure everything is set
         // if (!this.options.host)

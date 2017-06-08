@@ -2,13 +2,15 @@ import {DriverType} from "./DriverType";
 
 /**
  * Connectivity options used to connect to the database, and other database-driver-specific options.
+ *
+ * @deprecated
  */
 export interface DriverOptions {
 
     /**
      * Database type. This value is required.
      */
-    type: DriverType;
+    type?: DriverType;
 
     /**
      * Connection url to where perform connection to.

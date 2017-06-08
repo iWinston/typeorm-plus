@@ -16,6 +16,7 @@ import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
+import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -45,7 +46,9 @@ export class EntityMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection, private metadataArgsStorage: MetadataArgsStorage) {
+    constructor(private connection: Connection,
+                private metadataArgsStorage: MetadataArgsStorage) {
+
         this.junctionEntityMetadataBuilder = new JunctionEntityMetadataBuilder(connection);
         this.closureJunctionEntityMetadataBuilder = new ClosureJunctionEntityMetadataBuilder(connection);
         this.relationJoinColumnBuilder = new RelationJoinColumnBuilder(connection);
@@ -206,7 +209,8 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter(relation => relation.isLazy)
                     .forEach(relation => {
-                        this.connection.lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                        const lazyRelationsWrapper = new LazyRelationsWrapper(this.connection);
+                        lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
                     });
             });
 
@@ -248,7 +252,10 @@ export class EntityMetadataBuilder {
             });
         }
 
-        const entityMetadata = new EntityMetadata({ connection: this.connection, args: tableArgs });
+        const entityMetadata = new EntityMetadata({
+            connection: this.connection,
+            args: tableArgs
+        });
 
         const inheritanceType = this.metadataArgsStorage.findInheritanceType(tableArgs.target);
         entityMetadata.inheritanceType = inheritanceType ? inheritanceType.type : undefined;

@@ -77,7 +77,7 @@ export class RelationIdLoader {
 
                 // generate query:
                 // SELECT category.id, category.postId FROM category category ON category.postId = :postId
-                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
 
                 joinColumns.forEach(joinColumn => {
                     qb.addSelect(tableAlias + "." + joinColumn.propertyPath, joinColumn.databaseName);
@@ -143,7 +143,7 @@ export class RelationIdLoader {
                     return "(" + condition + " AND " + inverseJoinColumnCondition + ")";
                 }).join(" OR ");
 
-                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
 
                 inverseJoinColumns.forEach(joinColumn => {
                     qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)
@@ -155,7 +155,7 @@ export class RelationIdLoader {
                     .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
                 });
 
-                qb.fromTable(inverseSideTableName, inverseSideTableAlias)
+                qb.from(inverseSideTableName, inverseSideTableAlias)
                     .innerJoin(junctionTableName, junctionAlias, condition)
                     .setParameters(parameters);
 

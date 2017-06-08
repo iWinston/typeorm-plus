@@ -15,6 +15,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -63,11 +64,10 @@ export class SqlServerDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mssql?: any) {
+    constructor(connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = logger;
-        this.mssql = mssql;
+        this.options = DriverUtils.buildDriverOptions(connection.options);
+        this.logger = connection.logger;
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -77,9 +77,8 @@ export class SqlServerDriver implements Driver {
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
-        // if mssql package instance was not set explicitly then try to load it
-        if (!mssql)
-            this.loadDependencies();
+        // load mssql package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------

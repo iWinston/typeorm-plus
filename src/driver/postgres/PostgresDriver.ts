@@ -15,6 +15,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 // todo(tests):
 // check connection with url
@@ -75,12 +76,11 @@ export class PostgresDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, postgres?: any) {
+    constructor(connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(connectionOptions);
-        this.logger = logger;
-        this.postgres = postgres;
-        this.schemaName = connectionOptions.schemaName || "public";
+        this.options = DriverUtils.buildDriverOptions(connection.options);
+        this.logger = connection.logger;
+        this.schemaName = connection.options.schemaName || "public";
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -90,9 +90,8 @@ export class PostgresDriver implements Driver {
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
-        // if postgres package instance was not set explicitly then try to load it
-        if (!postgres)
-            this.loadDependencies();
+        // load postgres package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------
