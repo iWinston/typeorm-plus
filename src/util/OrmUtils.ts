@@ -2,10 +2,10 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export class OrmUtils {
 
-    static splitStringsAndClasses<T>(strAndClses: string[]|T[]): [string[], T[]] {
+    static splitClassesAndStrings<T>(clsesAndStrings: T[]|string[]): [T[], string[]] {
         return [
-            (strAndClses as string[]).filter(str => typeof str === "string"),
-            (strAndClses as T[]).filter(cls => typeof cls !== "string"),
+            (clsesAndStrings as T[]).filter(cls => typeof cls !== "string"),
+            (clsesAndStrings as string[]).filter(str => typeof str === "string"),
         ];
     }
 

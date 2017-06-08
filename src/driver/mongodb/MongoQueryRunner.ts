@@ -1,8 +1,6 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {Logger} from "../../logger/Logger";
-import {MongoDriver} from "./MongoDriver";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
@@ -40,6 +38,7 @@ import {
     UpdateWriteOpResult,
     CollStats
 } from "./typings";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -50,9 +49,8 @@ export class MongoQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected databaseConnection: DatabaseConnection,
-                protected driver: MongoDriver,
-                protected logger: Logger) {
+    constructor(protected connection: Connection,
+                protected databaseConnection: DatabaseConnection) {
     }
 
     // -------------------------------------------------------------------------
@@ -678,7 +676,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.driver.options.database as string;
+        return this.connection.options.database as string;
     }
 
     /**

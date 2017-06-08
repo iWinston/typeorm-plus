@@ -8,13 +8,11 @@ import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {SaveOptions} from "../repository/SaveOptions";
-import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {MongoRepository} from "../repository/MongoRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {Repository} from "../repository/Repository";
-import {RepositoryNotTreeError} from "../connection/error/RepositoryNotTreeError";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {SubjectBuilder} from "../persistence/SubjectBuilder";
@@ -41,11 +39,6 @@ export class EntityManager {
      * Useful for sharing data with subscribers.
      */
     private data: ObjectLiteral = {};
-
-    /**
-     * Stores all registered repositories.
-     */
-    private repositoryAggregators: RepositoryAggregator[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -582,8 +575,12 @@ export class EntityManager {
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunnerProvider)
-            return this.obtainRepositoryAggregator(entityClassOrName as any).repository;
+        if (this.queryRunnerProvider) {
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
+
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunnerProvider);
+        }
 
         return this.connection.getRepository<Entity>(entityClassOrName as any);
     }
@@ -598,11 +595,10 @@ export class EntityManager {
 
         // if single db connection is used then create its own repository with reused query runner
         if (this.queryRunnerProvider) {
-            const treeRepository = this.obtainRepositoryAggregator(entityClassOrName).treeRepository;
-            if (!treeRepository)
-                throw new RepositoryNotTreeError(entityClassOrName);
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
 
-            return treeRepository;
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunnerProvider) as TreeRepository<Entity>;
         }
 
         return this.connection.getTreeRepository<Entity>(entityClassOrName as any);
@@ -624,8 +620,12 @@ export class EntityManager {
     getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunnerProvider)
-            return this.obtainRepositoryAggregator(entityClassOrName as any).repository as MongoRepository<Entity>;
+        if (this.queryRunnerProvider) {
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
+
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunnerProvider) as MongoRepository<Entity>;
+        }
 
         return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
     }
@@ -661,8 +661,12 @@ export class EntityManager {
     getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunnerProvider)
-            return this.obtainRepositoryAggregator(entityClassOrName).specificRepository;
+        if (this.queryRunnerProvider) {
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
+
+            return this.connection.createIsolatedSpecificRepository(entityClassOrName, this.queryRunnerProvider);
+        }
 
         return this.connection.getSpecificRepository<Entity>(entityClassOrName as any);
     }
@@ -755,27 +759,6 @@ export class EntityManager {
             if (!this.queryRunnerProvider) // release it only if its created by this method
                 await queryRunnerProvider.releaseReused();
         }
-    }
-
-    /**
-     * Gets, or if does not exist yet, creates and returns a repository aggregator for a particular entity target.
-     */
-    protected obtainRepositoryAggregator<Entity>(entityClassOrName: ObjectType<Entity>|string): RepositoryAggregator {
-        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        const metadata = this.connection.getMetadata(entityClassOrName);
-        let repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
-        if (!repositoryAggregator) {
-            repositoryAggregator = new RepositoryAggregator(
-                this.connection,
-                this.connection.getMetadata(entityClassOrName as any),
-                this.queryRunnerProvider
-            );
-            this.repositoryAggregators.push(repositoryAggregator); // todo: check isnt memory leak here?
-        }
-
-        return repositoryAggregator;
     }
 
 }

@@ -3,6 +3,9 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {DriverType} from "../driver/DriverType";
+import {LoggerFactory} from "../logger/LoggerFactory";
+import {DriverFactory} from "../driver/DriverFactory";
+import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 
 /**
  * ConnectionOptions is an interface with settings and options for specific connection.
@@ -189,6 +192,29 @@ export interface ConnectionOptions {
          * Directory where subscribers should be created by default.
          */
         readonly subscribersDir?: string;
+
+    };
+
+    /**
+     * Special factories used to override default connection objects behaviour.
+     * Advanced functionality.
+     */
+    readonly factories?: {
+
+        /**
+         * Logger factory creates logger used to log events in the connection.
+         */
+        readonly logger?: LoggerFactory;
+
+        /**
+         * Driver factory creates database driver based on the connection driver type.
+         */
+        readonly driver?: DriverFactory;
+
+        /**
+         * Creates EntityManager instances used in the connection.
+         */
+        readonly entityManager?: EntityManagerFactory;
 
     };
 

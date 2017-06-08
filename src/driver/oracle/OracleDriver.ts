@@ -25,15 +25,6 @@ import {Connection} from "../../connection/Connection";
 export class OracleDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
-
-    // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
@@ -57,26 +48,20 @@ export class OracleDriver implements Driver {
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
+    constructor(protected connection: Connection) {
 
-        this.options = connection.options;
-        this.logger = connection.logger;
+        // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
-        if (!this.options.host)
+        if (!connection.options.host)
             throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
+        if (!connection.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!this.options.sid)
+        if (!connection.options.sid)
             throw new DriverOptionNotSetError("sid");
 
         // load oracle package
@@ -97,14 +82,14 @@ export class OracleDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            user: this.options.username,
-            password: this.options.password,
-            connectString: this.options.host + ":" + this.options.port + "/" + this.options.sid,
-        }, this.options.extra || {});
+            user: this.connection.options.username,
+            password: this.connection.options.password,
+            connectString: this.connection.options.host + ":" + this.connection.options.port + "/" + this.connection.options.sid,
+        }, this.connection.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.options.usePool === undefined || this.options.usePool === true) {
+        if (this.connection.options.usePool === undefined || this.connection.options.usePool === true) {
             return new Promise<void>((ok, fail) => {
                 this.oracle.createPool(options, (err: any, pool: any) => {
                     if (err)
@@ -165,7 +150,7 @@ export class OracleDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("oracle"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new OracleQueryRunner(databaseConnection, this, this.logger);
+        return new OracleQueryRunner(this.connection, databaseConnection);
     }
 
     /**

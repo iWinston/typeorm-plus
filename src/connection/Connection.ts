@@ -4,23 +4,14 @@ import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface
 import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {ObjectType} from "../common/ObjectType";
 import {EntityManager} from "../entity-manager/EntityManager";
-import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
-import {getFromContainer, getMetadataArgsStorage} from "../index";
-import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
-import {CannotImportAlreadyConnectedError} from "./error/CannotImportAlreadyConnectedError";
 import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
 import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
 import {TreeRepository} from "../repository/TreeRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
-import {EntitySchema} from "../entity-schema/EntitySchema";
 import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
-import {CannotUseNamingStrategyNotConnectedError} from "./error/CannotUseNamingStrategyNotConnectedError";
-import {Broadcaster} from "../subscriber/Broadcaster";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {SpecificRepository} from "../repository/SpecificRepository";
-import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {Logger} from "../logger/Logger";
@@ -33,21 +24,15 @@ import {PlatformTools} from "../platform/PlatformTools";
 import {MongoRepository} from "../repository/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
-import {EntitySchemaTransformer} from "../entity-schema/EntitySchemaTransformer";
 import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidator";
 import {ConnectionOptions} from "./ConnectionOptions";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
-import {MissingDriverError} from "../driver/error/MissingDriverError";
-import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
-import {DriverFactory} from "../driver/DriverFactory";
 import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
+import {LoggerFactory} from "../logger/LoggerFactory";
+import {RepositoryFactory} from "../repository/RepositoryFactory";
+import {DriverFactory} from "../driver/DriverFactory";
+import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 
 /**
  * Connection is a single database ORM connection to a specific DBMS database.
@@ -105,19 +90,10 @@ export class Connection {
      */
     readonly subscribers: EntitySubscriberInterface<any>[] = [];
 
-    // -------------------------------------------------------------------------
-    // Private Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Stores all registered repositories.
-     */
-    private repositoryAggregators: RepositoryAggregator[] = [];
-
     /**
      * All entity metadatas that are registered for this connection.
      */
-    private entityMetadatas: EntityMetadata[] = [];
+    readonly entityMetadatas: EntityMetadata[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -126,14 +102,14 @@ export class Connection {
     constructor(options: ConnectionOptions) {
         this.name = options.name || "default";
         this.options = options;
-        this.logger = new Logger(options.logging || {});
+        this.logger = this.createLogger();
+        this.driver = this.createDriver();
+        this.manager = this.createEntityManager();
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
-        this.driver = new DriverFactory().create(this);
-        this.manager = new EntityManagerFactory().create(this);
     }
 
     // -------------------------------------------------------------------------
-    // Accessors
+    // Public Accessors
     // -------------------------------------------------------------------------
 
     /**
@@ -256,18 +232,6 @@ export class Connection {
     }
 
     /**
-     * Creates a new entity manager with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
-     */
-    createIsolatedManager(queryRunnerProvider?: QueryRunnerProvider): EntityManager {
-        if (!queryRunnerProvider)
-            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
-
-        return new EntityManager(this, queryRunnerProvider);
-    }
-
-    /**
      * Checks if entity metadata exist for the given entity class.
      */
     hasMetadata(target: Function): boolean;
@@ -348,40 +312,40 @@ export class Connection {
      * Gets repository for the given entity class or name.
      */
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        return this.findRepositoryAggregator(entityClassOrName).repository;
+        return this.getMetadata(entityClassOrName).repository;
     }
 
     /**
      * Gets tree repository for the given entity class.
-     * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureEntity decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class.
-     * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureEntity decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class.
-     * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureEntity decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class or name.
-     * Only tree-type entities can have a TreeRepository,
-     * like ones decorated with @ClosureEntity decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
-        // todo: add checks if tree repository is supported by driver (not supported by mongodb at least)
+        if (this.driver instanceof MongoDriver)
+            throw new Error(`You cannot use getTreeRepository for MongoDB connections.`);
 
-        const repository = this.findRepositoryAggregator(entityClassOrName).treeRepository;
-        if (!repository)
+        if (!this.hasMetadata(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
+        const repository = this.getMetadata(entityClassOrName).repository;
+        if (!(repository instanceof TreeRepository))
             throw new RepositoryNotTreeError(entityClassOrName);
 
         return repository;
@@ -409,7 +373,10 @@ export class Connection {
         if (!(this.driver instanceof MongoDriver))
             throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
 
-        return this.findRepositoryAggregator(entityClassOrName).repository as MongoRepository<Entity>;
+        if (!this.hasMetadata(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
+        return this.getMetadata(entityClassOrName).repository as MongoRepository<Entity>;
     }
 
     /**
@@ -500,6 +467,42 @@ export class Connection {
         }
     }
 
+    /**
+     * Creates a new entity manager with a single opened connection to the database.
+     * This may be useful if you want to perform all db queries within one connection.
+     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     */
+    createIsolatedManager(queryRunnerProvider?: QueryRunnerProvider): EntityManager {
+        if (!queryRunnerProvider)
+            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+
+        return new EntityManagerFactory().create(this, queryRunnerProvider);
+    }
+
+    /**
+     * Creates a new repository with a single opened connection to the database.
+     * This may be useful if you want to perform all db queries within one connection.
+     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     */
+    createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunnerProvider?: QueryRunnerProvider): Repository<Entity> {
+        if (!queryRunnerProvider)
+            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+
+        return new RepositoryFactory().createRepository(this, this.getMetadata(entityClassOrName), queryRunnerProvider);
+    }
+
+    /**
+     * Creates a new specific repository with a single opened connection to the database.
+     * This may be useful if you want to perform all db queries within one connection.
+     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     */
+    createIsolatedSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<Entity> {
+        if (!queryRunnerProvider)
+            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+
+        return new RepositoryFactory().createSpecificRepository(this, this.getMetadata(entityClassOrName), queryRunnerProvider);
+    }
+
     // -------------------------------------------------------------------------
     // Deprecated Public Methods
     // -------------------------------------------------------------------------
@@ -544,7 +547,10 @@ export class Connection {
      * @deprecated don't use it, it will be refactored or removed in the future versions
      */
     getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
-        return this.findRepositoryAggregator(entityClassOrName).specificRepository;
+        if (!this.hasMetadata(entityClassOrName))
+            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+
+        return this.getMetadata(entityClassOrName).specificRepository;
     }
 
     // -------------------------------------------------------------------------
@@ -552,77 +558,63 @@ export class Connection {
     // -------------------------------------------------------------------------
 
     /**
-     * Finds repository aggregator of the given entity class or name.
+     * Creates connection's Logger.
      */
-    protected findRepositoryAggregator(entityClassOrName: ObjectType<any>|string): RepositoryAggregator {
-        if (!this.hasMetadata(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+    protected createLogger(): Logger {
+        if (this.options.factories && this.options.factories.logger)
+            return this.options.factories.logger.create(this.options.logging || {});
 
-        const metadata = this.getMetadata(entityClassOrName);
-        const repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
-        if (!repositoryAggregator)
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+        return new LoggerFactory().create(this.options.logging || {});
+    }
 
-        return repositoryAggregator;
+    /**
+     * Creates connection's Driver.
+     */
+    protected createDriver(): Driver {
+        if (this.options.factories && this.options.factories.driver)
+            return this.options.factories.driver.create(this);
+
+        return new DriverFactory().create(this);
+    }
+
+    /**
+     * Creates EntityManager using its factory.
+     */
+    protected createEntityManager(): EntityManager {
+        if (this.options.factories && this.options.factories.entityManager)
+            return this.options.factories.entityManager.create(this);
+
+        return new EntityManagerFactory().create(this);
     }
 
     /**
      * Builds all registered metadatas.
      */
-    public buildMetadatas() {
+    protected buildMetadatas(): void {
+        const connectionMetadataBuilder = new ConnectionMetadataBuilder(this);
 
-        // import entity schemas
-        const [entitySchemaDirectories, entitySchemaClasses] = OrmUtils.splitStringsAndClasses(this.options.entitySchemas || []);
-        entitySchemaClasses.push(...importJsonsFromDirectories(entitySchemaDirectories));
-
-        const [entityDirectories, entityClasses] = OrmUtils.splitStringsAndClasses(this.options.entities || []);
-        entityClasses.push(...importClassesFromDirectories(entityDirectories));
-
-        const [subscriberDirectories, subscriberClasses] = OrmUtils.splitStringsAndClasses(this.options.subscribers || []);
-        subscriberClasses.push(...importClassesFromDirectories(subscriberDirectories));
-
-        const [migrationDirectories, migrationClasses] = OrmUtils.splitStringsAndClasses(this.options.migrations || []);
-        migrationClasses.push(...importClassesFromDirectories(migrationDirectories));
-
-        // create migration instances
-        const migrations = migrationClasses.map(migrationClass => {
-            return getFromContainer<MigrationInterface>(migrationClass);
-        });
-        Object.assign(this, { migrations });
-
-        this.subscribers.length = 0;
-        this.repositoryAggregators.length = 0;
-        this.entityMetadatas.length = 0;
-
-        const entityMetadataValidator = new EntityMetadataValidator();
-
-        // take imported event subscribers
+        // build subscribers if they are not disallowed from high-level (for example they can disallowed from migrations run process)
         if (!PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
-            getMetadataArgsStorage()
-                .filterSubscribers(subscriberClasses)
-                .map(metadata => getFromContainer(metadata.target))
-                .forEach(subscriber => this.subscribers.push(subscriber));
+            const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
+            Object.assign(this, { subscribers: subscribers });
         }
 
-        // take imported entity listeners
-        // build entity metadatas from metadata args storage (collected from decorators)
-        new EntityMetadataBuilder(this, getMetadataArgsStorage())
-            .build(entityClasses)
-            .forEach(metadata => {
-                this.entityMetadatas.push(metadata);
-                this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
-            });
+        // build entity metadatas
+        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || [], this.options.entitySchemas || []);
+        Object.assign(this, { entityMetadatas: entityMetadatas });
 
-        // build entity metadatas from given entity schemas
-        const metadataArgsStorage = getFromContainer(EntitySchemaTransformer)
-            .transform(entitySchemaClasses);
-        new EntityMetadataBuilder(this, metadataArgsStorage)
-            .build()
-            .forEach(metadata => {
-                this.entityMetadatas.push(metadata);
-                this.repositoryAggregators.push(new RepositoryAggregator(this, metadata));
-            });
+        // create migration instances
+        const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
+        Object.assign(this, { migrations: migrations });
 
+        // initialize repositories for all entity metadatas
+        this.entityMetadatas.forEach(metadata => {
+            metadata.repository = new RepositoryFactory().createRepository(this, metadata);
+            metadata.specificRepository = new RepositoryFactory().createSpecificRepository(this, metadata);
+        });
+
+        // validate all created entity metadatas to make sure user created entities are valid and correct
+        const entityMetadataValidator = new EntityMetadataValidator();
         entityMetadataValidator.validateMany(this.entityMetadatas);
     }
 

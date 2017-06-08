@@ -1,5 +1,5 @@
-import { EventEmitter } from "events";
-import { Readable, Writable } from "stream";
+import {EventEmitter} from "events";
+import {Readable, Writable} from "stream";
 
 /**
  * Creates a new MongoClient instance.

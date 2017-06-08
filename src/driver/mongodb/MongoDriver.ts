@@ -3,16 +3,13 @@ import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {MongoQueryRunner} from "./MongoQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 
 /**
@@ -30,11 +27,6 @@ export class MongoDriver implements Driver {
      */
     queryRunner: MongoQueryRunner;
 
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
-
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -49,23 +41,16 @@ export class MongoDriver implements Driver {
      */
     protected pool: any;
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
+    constructor(protected connection: Connection) {
 
         // validate options to make sure everything is correct and driver will be able to establish connection
         this.validateOptions(connection.options);
 
         // load mongodb package
-        this.options = connection.options;
-        this.logger = connection.logger;
         this.mongodb = this.loadDependencies();
     }
 
@@ -78,7 +63,7 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.mongodb.MongoClient.connect(this.buildConnectionUrl(), this.options.extra, (err: any, database: any) => {
+            this.mongodb.MongoClient.connect(this.buildConnectionUrl(), this.connection.options!.extra, (err: any, database: any) => {
                 if (err) return fail(err);
 
                 this.pool = database;
@@ -87,7 +72,7 @@ export class MongoDriver implements Driver {
                     connection: this.pool,
                     isTransactionActive: false
                 };
-                this.queryRunner = new MongoQueryRunner(databaseConnection, this, this.logger);
+                this.queryRunner = new MongoQueryRunner(this.connection, databaseConnection);
                 ok();
             });
         });
@@ -254,10 +239,10 @@ export class MongoDriver implements Driver {
      * Builds connection url that is passed to underlying driver to perform connection to the mongodb database.
      */
     protected buildConnectionUrl(): string {
-        if (this.options.url)
-            return this.options.url;
+        if (this.connection.options.url)
+            return this.connection.options.url;
 
-        return `mongodb://${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`;
+        return `mongodb://${this.connection.options.host || "127.0.0.1"}:${this.connection.options.port || "27017"}/${this.connection.options.database}`;
     }
 
 }

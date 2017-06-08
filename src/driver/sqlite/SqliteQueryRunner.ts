@@ -15,6 +15,7 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {RandomGenerator} from "../../util/RandomGenerator";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -38,9 +39,8 @@ export class SqliteQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected databaseConnection: DatabaseConnection,
-                protected driver: SqliteDriver,
-                protected logger: Logger) {
+    constructor(protected connection: Connection,
+                protected databaseConnection: DatabaseConnection) {
     }
 
     // -------------------------------------------------------------------------
@@ -139,11 +139,11 @@ export class SqliteQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise<any[]>((ok, fail) => {
-            this.logger.logQuery(query, parameters);
+            this.connection.logger.logQuery(query, parameters);
             this.databaseConnection.connection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.logger.logFailedQuery(query, parameters);
-                    this.logger.logQueryError(err);
+                    this.connection.logger.logFailedQuery(query, parameters);
+                    this.connection.logger.logQueryError(err);
                     fail(err);
                 } else {
                     ok(result);
@@ -160,18 +160,18 @@ export class SqliteQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => this.connection.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = columns.length > 0 ? (`INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES`;
+        const sql = columns.length > 0 ? (`INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
 
         return new Promise<any[]>((ok, fail) => {
-            this.logger.logQuery(sql, parameters);
+            this.connection.logger.logQuery(sql, parameters);
             const __this = this;
             this.databaseConnection.connection.run(sql, parameters, function (err: any): void {
                 if (err) {
-                    __this.logger.logFailedQuery(sql, parameters);
-                    __this.logger.logQueryError(err);
+                    __this.connection.logger.logFailedQuery(sql, parameters);
+                    __this.connection.logger.logQueryError(err);
                     fail(err);
                 } else {
                     if (generatedColumn)
@@ -192,7 +192,7 @@ export class SqliteQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE ${this.connection.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -219,7 +219,7 @@ export class SqliteQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.connection.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -232,12 +232,12 @@ export class SqliteQueryRunner implements QueryRunner {
 
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
@@ -317,7 +317,7 @@ export class SqliteQueryRunner implements QueryRunner {
                 const columnForeignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
                     .map(foreignKey => {
-                        // const keyName = this.driver.namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
+                        // const keyName = this.connection.driver.namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
                         // todo: figure out solution here, name should be same as naming strategy generates!
                         const key = `${dbTable["name"]}_${[foreignKey["from"]].join("_")}_${foreignKey["table"]}_${[foreignKey["to"]].join("_")}`;
                         const keyName = "fk_" + RandomGenerator.sha1(key).substr(0, 27);
@@ -815,7 +815,7 @@ export class SqliteQueryRunner implements QueryRunner {
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`DELETE FROM ${this.driver.escapeTableName(tableName)}`);
+        await this.query(`DELETE FROM ${this.connection.driver.escapeTableName(tableName)}`);
     }
 
     // -------------------------------------------------------------------------
@@ -826,7 +826,7 @@ export class SqliteQueryRunner implements QueryRunner {
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
+        return Object.keys(objectLiteral).map((key, index) => this.connection.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
     }
 
     /**

@@ -14,6 +14,8 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
+import {Repository} from "../repository/Repository";
+import {SpecificRepository} from "../repository/SpecificRepository";
 
 /**
  * Contains all entity metadata.
@@ -23,6 +25,16 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
     // Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Repository used for this entity metadata.
+     */
+    repository: Repository<any>;
+
+    /**
+     * Specific repository used for this entity metadata.
+     */
+    specificRepository: SpecificRepository<any>;
 
     /**
      * Used to wrap lazy relations.

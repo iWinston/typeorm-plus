@@ -27,11 +27,6 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
-
-    /**
      * SQL Server library.
      */
     public mssql: any;
@@ -48,7 +43,7 @@ export class SqlServerDriver implements Driver {
     /**
      * SQL Server pool.
      */
-    protected connection: any;
+    protected connectionPool: any;
 
     /**
      * Pool of database connections.
@@ -64,17 +59,16 @@ export class SqlServerDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
+    constructor(protected connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(connection.options);
-        this.logger = connection.logger;
+        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
-        if (!this.options.host)
+        if (!connection.options.host)
             throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
+        if (!connection.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
+        if (!connection.options.database)
             throw new DriverOptionNotSetError("database");
 
         // load mssql package
@@ -94,12 +88,12 @@ export class SqlServerDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            server: this.options.host,
-            user: this.options.username,
-            password: this.options.password,
-            database: this.options.database,
-            port: this.options.port
-        }, this.options.extra || {});
+            server: this.connection.options.host,
+            user: this.connection.options.username,
+            password: this.connection.options.password,
+            database: this.connection.options.database,
+            port: this.connection.options.port
+        }, this.connection.options.extra || {});
 
         // set default useUTC option if it hasn't been set
         if (!options.options) options.options = { useUTC: false };
@@ -110,8 +104,8 @@ export class SqlServerDriver implements Driver {
         return new Promise<void>((ok, fail) => {
             const connection = new this.mssql.Connection(options).connect((err: any) => {
                 if (err) return fail(err);
-                this.connection = connection;
-                if (this.options.usePool === false) {
+                this.connectionPool = connection;
+                if (this.connection.options.usePool === false) {
                     this.databaseConnection = {
                         id: 1,
                         connection: new this.mssql.Request(connection),
@@ -127,11 +121,11 @@ export class SqlServerDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.connection)
+        if (!this.connectionPool)
             throw new ConnectionIsNotSetError("mssql");
 
-        this.connection.close();
-        this.connection = undefined;
+        this.connectionPool.close();
+        this.connectionPool = undefined;
         this.databaseConnection = undefined;
         this.databaseConnectionPool = [];
     }
@@ -140,11 +134,11 @@ export class SqlServerDriver implements Driver {
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.connection)
+        if (!this.connectionPool)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqlServerQueryRunner(databaseConnection, this, this.logger);
+        return new SqlServerQueryRunner(this.connection, databaseConnection);
     }
 
     /**
@@ -154,7 +148,7 @@ export class SqlServerDriver implements Driver {
         return {
             driver: this.mssql,
             connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
-            pool: this.connection
+            pool: this.connectionPool
         };
     }
 
@@ -275,7 +269,7 @@ export class SqlServerDriver implements Driver {
      */
     protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
 
-        if (!this.connection)
+        if (!this.connectionPool)
             throw new ConnectionIsNotSetError("mssql");
 
         return new Promise((ok, fail) => {
@@ -298,7 +292,7 @@ export class SqlServerDriver implements Driver {
             // if (!dbConnection) {
             let dbConnection: DatabaseConnection = {
                 id: this.databaseConnectionPool.length,
-                connection: this.connection,
+                connection: this.connectionPool,
                 isTransactionActive: false
             };
             dbConnection.releaseCallback = () => {

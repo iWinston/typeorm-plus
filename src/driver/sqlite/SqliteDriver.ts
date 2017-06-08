@@ -22,15 +22,6 @@ import {Connection} from "../../connection/Connection";
 export class SqliteDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
-
-    // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
@@ -44,22 +35,14 @@ export class SqliteDriver implements Driver {
      */
     protected databaseConnection: DatabaseConnection|undefined;
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
-
-        this.options = connection.options;
-        this.logger = connection.logger;
+    constructor(protected connection: Connection) {
 
         // validate options to make sure everything is set
-        if (!this.options.storage)
+        if (!connection.options.storage)
             throw new DriverOptionNotSetError("storage");
 
         // load sqlite package
@@ -75,7 +58,7 @@ export class SqliteDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            const connection = new this.sqlite.Database(this.options.storage, (err: any) => {
+            const connection = new this.sqlite.Database(this.connection.options.storage, (err: any) => {
                 if (err)
                     return fail(err);
 
@@ -115,7 +98,7 @@ export class SqliteDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("sqlite"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqliteQueryRunner(databaseConnection, this, this.logger);
+        return new SqliteQueryRunner(this.connection, databaseConnection);
     }
 
     /**
