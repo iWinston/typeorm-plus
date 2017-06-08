@@ -772,17 +772,9 @@ export class SqliteQueryRunner implements QueryRunner {
             case "date":
                 return "date";
             case "time":
-                if (typeOptions.timezone) {
-                    return "time with time zone";
-                } else {
-                    return "time without time zone";
-                }
+                return "text";
             case "datetime":
-                if (typeOptions.timezone) {
-                    return "timestamp with time zone";
-                } else {
-                    return "timestamp without time zone";
-                }
+              return "datetime";
             case "json":
                 return "json";
             case "simple_array":
