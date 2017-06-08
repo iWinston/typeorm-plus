@@ -15,6 +15,7 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
+import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -88,6 +89,14 @@ export class SqliteDriver implements Driver {
                 return fail(new ConnectionIsNotSetError("sqlite"));
             this.databaseConnection.connection.close(handler);
         });
+    }
+
+    /**
+     * Synchronizes database schema (creates tables, indices, etc).
+     */
+    syncSchema(): Promise<void> {
+        const schemaBuilder = new SchemaBuilder(this.connection);
+        return schemaBuilder.build();
     }
 
     /**

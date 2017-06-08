@@ -196,11 +196,13 @@ export class MongoDriver implements Driver {
         return value;
     }
 
-    // todo: make better abstraction
-    async syncSchema(entityMetadatas: EntityMetadata[]): Promise<void> {
+    /**
+     * Synchronizes database schema (creates indices).
+     */
+    async syncSchema(): Promise<void> {
         const queryRunner = await this.createQueryRunner() as MongoQueryRunner;
         const promises: Promise<any>[] = [];
-        await Promise.all(entityMetadatas.map(metadata => {
+        await Promise.all(this.connection.entityMetadatas.map(metadata => {
             metadata.indices.forEach(index => {
                 const options = { name: index.name };
                 promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));

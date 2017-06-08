@@ -5,21 +5,18 @@ import {RepositoryNotFoundError} from "./error/RepositoryNotFoundError";
 import {ObjectType} from "../common/ObjectType";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
-import {CannotCloseNotConnectedError} from "./error/CannotCloseNotConnectedError";
+import {CannotExecuteNotConnectedError} from "./error/CannotExecuteNotConnectedError";
 import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyConnectedError";
 import {TreeRepository} from "../repository/TreeRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
-import {CannotSyncNotConnectedError} from "./error/CannotSyncNotConnectedError";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {Logger} from "../logger/Logger";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFound";
 import {MigrationInterface} from "../migration/MigrationInterface";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
-import {CannotRunMigrationNotConnectedError} from "./error/CannotRunMigrationNotConnectedError";
 import {PlatformTools} from "../platform/PlatformTools";
 import {MongoRepository} from "../repository/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
@@ -42,7 +39,7 @@ import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 export class Connection {
 
     // -------------------------------------------------------------------------
-    // Public Readonly properties
+    // Public Readonly Properties
     // -------------------------------------------------------------------------
 
     /**
@@ -166,7 +163,7 @@ export class Connection {
      */
     async close(): Promise<void> {
         if (!this.isConnected)
-            throw new CannotCloseNotConnectedError(this.name);
+            throw new CannotExecuteNotConnectedError(this.name);
 
         await this.driver.disconnect();
         Object.assign(this, { isConnected: false });
@@ -181,23 +178,17 @@ export class Connection {
     async syncSchema(dropBeforeSync: boolean = false): Promise<void> {
 
         if (!this.isConnected)
-            throw new CannotCloseNotConnectedError(this.name);
+            throw new CannotExecuteNotConnectedError(this.name);
 
         if (dropBeforeSync)
             await this.dropDatabase();
 
-        if (this.driver instanceof MongoDriver) { // todo: temporary
-            await this.driver.syncSchema(this.entityMetadatas);
-
-        } else {
-            const schemaBuilder = new SchemaBuilder(this.driver, this.logger, this.entityMetadatas);
-            await schemaBuilder.build();
-        }
+        await this.driver.syncSchema();
     }
 
     /**
      * Drops the database and all its data.
-     * Be careful with this method on production since this method will erase all your database tables and data inside them.
+     * Be careful with this method on production since this method will erase all your database tables and their data.
      * Can be used only after connection to the database is established.
      */
     async dropDatabase(): Promise<void> {
@@ -212,7 +203,7 @@ export class Connection {
     async runMigrations(): Promise<void> {
 
         if (!this.isConnected)
-            throw new CannotCloseNotConnectedError(this.name);
+            throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
         await migrationExecutor.executePendingMigrations();
@@ -225,7 +216,7 @@ export class Connection {
     async undoLastMigration(): Promise<void> {
 
         if (!this.isConnected)
-            throw new CannotCloseNotConnectedError(this.name);
+            throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
         await migrationExecutor.undoLastMigration();
@@ -239,7 +230,7 @@ export class Connection {
     }
 
     /**
-     Gets entity metadata for the given entity class or schema name.
+     * Gets entity metadata for the given entity class or schema name.
      */
     getMetadata(target: Function|string): EntityMetadata {
         const metadata = this.findMetadata(target);
@@ -276,6 +267,7 @@ export class Connection {
 
     /**
      * Gets mongodb-specific repository for the given entity class or name.
+     * Works only if connection is mongodb-specific.
      */
     getMongoRepository<Entity>(target: ObjectType<Entity>|string): MongoRepository<Entity> {
         if (!(this.driver instanceof MongoDriver))
@@ -295,7 +287,7 @@ export class Connection {
     }
 
     /**
-     * Wraps given function execution (and all operations made there) in a transaction.
+     * Wraps given function execution (and all operations made there) into a transaction.
      * All database operations must be executed using provided entity manager.
      */
     async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>,

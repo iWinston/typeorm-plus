@@ -16,6 +16,7 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
+import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 
 /**
  * Organizes communication with Oracle DBMS.
@@ -140,6 +141,14 @@ export class OracleDriver implements Driver {
                 this.databaseConnection = undefined;
             }
         });
+    }
+
+    /**
+     * Synchronizes database schema (creates tables, indices, etc).
+     */
+    syncSchema(): Promise<void> {
+        const schemaBuilder = new SchemaBuilder(this.connection);
+        return schemaBuilder.build();
     }
 
     /**

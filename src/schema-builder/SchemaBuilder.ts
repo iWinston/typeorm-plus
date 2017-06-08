@@ -11,6 +11,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {PromiseUtils} from "../util/PromiseUtils";
+import {Connection} from "../connection/Connection";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -46,14 +47,7 @@ export class SchemaBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    /**
-     * @param driver Driver needs to create a query runner
-     * @param logger Used to log schema creation events
-     * @param entityMetadatas All entities to create schema for
-     */
-    constructor(protected driver: Driver,
-                protected logger: Logger,
-                protected entityMetadatas: EntityMetadata[]) {
+    constructor(protected connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -64,7 +58,7 @@ export class SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async build(): Promise<void> {
-        this.queryRunner = await this.driver.createQueryRunner();
+        this.queryRunner = await this.connection.driver.createQueryRunner();
         this.tableSchemas = await this.loadTableSchemas();
 
         await this.queryRunner.beginTransaction();
@@ -90,11 +84,11 @@ export class SchemaBuilder {
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods
+    // Protected Methods
     // -------------------------------------------------------------------------
 
     protected get entityToSyncMetadatas(): EntityMetadata[] {
-        return this.entityMetadatas.filter(metadata => !metadata.skipSchemaSync && metadata.tableType !== "single-table-child");
+        return this.connection.entityMetadatas.filter(metadata => !metadata.skipSchemaSync && metadata.tableType !== "single-table-child");
     }
 
     /**
@@ -122,7 +116,7 @@ export class SchemaBuilder {
             if (foreignKeySchemasToDrop.length === 0)
                 return;
 
-            this.logger.logSchemaBuild(`dropping old foreign keys of ${tableSchema.name}: ${foreignKeySchemasToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
+            this.connection.logger.logSchemaBuild(`dropping old foreign keys of ${tableSchema.name}: ${foreignKeySchemasToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
 
             // remove foreign keys from the table schema
             tableSchema.removeForeignKeys(foreignKeySchemasToDrop);
@@ -144,7 +138,7 @@ export class SchemaBuilder {
             if (existTableSchema)
                 return;
 
-            this.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);
+            this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);
 
             // create a new table schema and sync it in the database
             const tableSchema = new TableSchema(metadata.tableName, this.metadataColumnsToColumnSchemas(metadata.columns), true);
@@ -179,7 +173,7 @@ export class SchemaBuilder {
                 return this.dropColumnReferencedIndices(metadata.tableName, droppedColumnSchema.name);
             }));
 
-            this.logger.logSchemaBuild(`columns dropped in ${tableSchema.name}: ` + droppedColumnSchemas.map(column => column.name).join(", "));
+            this.connection.logger.logSchemaBuild(`columns dropped in ${tableSchema.name}: ` + droppedColumnSchemas.map(column => column.name).join(", "));
 
             // remove columns from the table schema and primary keys of it if its used in the primary keys
             tableSchema.removeColumns(droppedColumnSchemas);
@@ -207,7 +201,7 @@ export class SchemaBuilder {
             if (newColumnMetadatas.length === 0)
                 return;
 
-            this.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
+            this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
 
             // create columns in the database
             const newColumnSchemas = this.metadataColumnsToColumnSchemas(newColumnMetadatas);
@@ -230,7 +224,7 @@ export class SchemaBuilder {
             if (updatedColumnSchemas.length === 0)
                 return;
 
-            this.logger.logSchemaBuild(`columns changed in ${tableSchema.name}. updating: ` + updatedColumnSchemas.map(column => column.name).join(", "));
+            this.connection.logger.logSchemaBuild(`columns changed in ${tableSchema.name}. updating: ` + updatedColumnSchemas.map(column => column.name).join(", "));
 
             // drop all foreign keys that point to this column
             const dropRelatedForeignKeysPromises = updatedColumnSchemas
@@ -287,7 +281,7 @@ export class SchemaBuilder {
             if (addedKeys.length === 0 && droppedKeys.length === 0)
                 return;
 
-            this.logger.logSchemaBuild(`primary keys of ${tableSchema.name} has changed: dropped - ${droppedKeys.map(key => key.columnName).join(", ") || "nothing"}; added - ${addedKeys.map(key => key.columnName).join(", ") || "nothing"}`);
+            this.connection.logger.logSchemaBuild(`primary keys of ${tableSchema.name} has changed: dropped - ${droppedKeys.map(key => key.columnName).join(", ") || "nothing"}; added - ${addedKeys.map(key => key.columnName).join(", ") || "nothing"}`);
             tableSchema.addPrimaryKeys(addedKeys);
             tableSchema.removePrimaryKeys(droppedKeys);
             await this.queryRunner.updatePrimaryKeys(tableSchema);
@@ -310,7 +304,7 @@ export class SchemaBuilder {
                 return;
 
             const dbForeignKeys = newKeys.map(foreignKeyMetadata => ForeignKeySchema.create(foreignKeyMetadata));
-            this.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
+            this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
             await this.queryRunner.createForeignKeys(tableSchema, dbForeignKeys);
             tableSchema.addForeignKeys(dbForeignKeys);
         });
@@ -321,7 +315,7 @@ export class SchemaBuilder {
      * but does not exist in the metadata anymore.
      */
     protected createIndices() {
-        // return Promise.all(this.entityMetadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
+        // return Promise.all(this.connection.entityMetadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
         return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const tableSchema = this.tableSchemas.find(table => table.name === metadata.tableName);
             if (!tableSchema)
@@ -331,7 +325,7 @@ export class SchemaBuilder {
             const dropQueries = tableSchema.indices
                 .filter(indexSchema => !metadata.indices.find(indexMetadata => indexMetadata.name === indexSchema.name))
                 .map(async indexSchema => {
-                    this.logger.logSchemaBuild(`dropping an index: ${indexSchema.name}`);
+                    this.connection.logger.logSchemaBuild(`dropping an index: ${indexSchema.name}`);
                     tableSchema.removeIndex(indexSchema);
                     await this.queryRunner.dropIndex(metadata.tableName, indexSchema.name);
                 });
@@ -342,7 +336,7 @@ export class SchemaBuilder {
                 .map(async indexMetadata => {
                     const indexSchema = IndexSchema.create(indexMetadata);
                     tableSchema.indices.push(indexSchema);
-                    this.logger.logSchemaBuild(`adding new index: ${indexSchema.name}`);
+                    this.connection.logger.logSchemaBuild(`adding new index: ${indexSchema.name}`);
                     await this.queryRunner.createIndex(indexSchema.tableName, indexSchema);
                 });
 
@@ -355,7 +349,7 @@ export class SchemaBuilder {
      */
     protected async dropColumnReferencedIndices(tableName: string, columnName: string): Promise<void> {
 
-        const allIndexMetadatas = this.entityMetadatas.reduce(
+        const allIndexMetadatas = this.connection.entityMetadatas.reduce(
             (all, metadata) => all.concat(metadata.indices),
             [] as IndexMetadata[]
         );
@@ -377,7 +371,7 @@ export class SchemaBuilder {
         if (dependIndicesInTable.length === 0)
             return;
 
-        this.logger.logSchemaBuild(`dropping related indices of ${tableName}#${columnName}: ${dependIndicesInTable.map(index => index.name).join(", ")}`);
+        this.connection.logger.logSchemaBuild(`dropping related indices of ${tableName}#${columnName}: ${dependIndicesInTable.map(index => index.name).join(", ")}`);
 
         const dropPromises = dependIndicesInTable.map(index => {
             tableSchema.removeIndex(index);
@@ -392,7 +386,7 @@ export class SchemaBuilder {
      */
     protected async dropColumnReferencedForeignKeys(tableName: string, columnName: string): Promise<void> {
 
-        const allForeignKeyMetadatas = this.entityMetadatas.reduce(
+        const allForeignKeyMetadatas = this.connection.entityMetadatas.reduce(
             (all, metadata) => all.concat(metadata.foreignKeys),
             [] as ForeignKeyMetadata[]
         );
@@ -423,7 +417,7 @@ export class SchemaBuilder {
         if (dependForeignKeyInTable.length === 0)
             return;
 
-        this.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
+        this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
         const foreignKeySchemas = dependForeignKeyInTable.map(foreignKeyMetadata => ForeignKeySchema.create(foreignKeyMetadata));
         tableSchema.removeForeignKeys(foreignKeySchemas);
         await this.queryRunner.dropForeignKeys(tableSchema, foreignKeySchemas);

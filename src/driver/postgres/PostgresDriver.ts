@@ -16,6 +16,7 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
+import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 
 // todo(tests):
 // check connection with url
@@ -163,6 +164,14 @@ export class PostgresDriver implements Driver {
 
             ok();
         });
+    }
+
+    /**
+     * Synchronizes database schema (creates tables, indices, etc).
+     */
+    syncSchema(): Promise<void> {
+        const schemaBuilder = new SchemaBuilder(this.connection);
+        return schemaBuilder.build();
     }
 
     /**

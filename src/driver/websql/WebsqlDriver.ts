@@ -12,6 +12,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";
+import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -94,6 +95,14 @@ export class WebsqlDriver implements Driver {
             // todo: find out how to close connection
             ok();
         });
+    }
+
+    /**
+     * Synchronizes database schema (creates tables, indices, etc).
+     */
+    syncSchema(): Promise<void> {
+        const schemaBuilder = new SchemaBuilder(this.connection);
+        return schemaBuilder.build();
     }
 
     /**

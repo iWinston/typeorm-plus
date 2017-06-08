@@ -16,6 +16,7 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
+import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -128,6 +129,14 @@ export class SqlServerDriver implements Driver {
         this.connectionPool = undefined;
         this.databaseConnection = undefined;
         this.databaseConnectionPool = [];
+    }
+
+    /**
+     * Synchronizes database schema (creates tables, indices, etc).
+     */
+    syncSchema(): Promise<void> {
+        const schemaBuilder = new SchemaBuilder(this.connection);
+        return schemaBuilder.build();
     }
 
     /**

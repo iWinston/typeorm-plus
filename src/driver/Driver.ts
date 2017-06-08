@@ -23,6 +23,11 @@ export interface Driver {
     disconnect(): Promise<void>;
 
     /**
+     * Synchronizes database schema (creates tables, indices, etc).
+     */
+    syncSchema(): Promise<void>;
+
+    /**
      * Access to the native implementation of the database.
      */
     nativeInterface(): any;
