@@ -14,6 +14,8 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
+import {Repository} from "../repository/Repository";
+import {SpecificRepository} from "../repository/SpecificRepository";
 
 /**
  * Contains all entity metadata.
@@ -23,6 +25,16 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
     // Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Repository used for this entity metadata.
+     */
+    repository: Repository<any>;
+
+    /**
+     * Specific repository used for this entity metadata.
+     */
+    specificRepository: SpecificRepository<any>;
 
     /**
      * Used to wrap lazy relations.
@@ -342,9 +354,9 @@ export class EntityMetadata {
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
-        const namingStrategy = options.connection.driver.namingStrategy;
-        const tablesPrefix = options.connection.driver.options.tablesPrefix;
-        this.lazyRelationsWrapper = options.connection.driver.lazyRelationsWrapper;
+        const namingStrategy = options.connection.namingStrategy;
+        const tablesPrefix = options.connection.options.tablesPrefix;
+        this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.target = options.args.target;
         this.tableType = options.args.type;

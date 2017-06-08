@@ -59,7 +59,7 @@ export class RelationJoinColumnBuilder {
         return new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
-            namingStrategy: this.connection.driver.namingStrategy,
+            namingStrategy: this.connection.namingStrategy,
             columns: columns,
             referencedColumns: referencedColumns,
             onDelete: relation.onDelete,
@@ -102,7 +102,7 @@ export class RelationJoinColumnBuilder {
                 return (!joinColumn.referencedColumnName || joinColumn.referencedColumnName === referencedColumn.propertyName) &&
                     !!joinColumn.name;
             });
-            const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.connection.driver.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
+            const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.connection.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
 
             let relationalColumn = relation.entityMetadata.ownColumns.find(column => column.databaseName === joinColumnName);
             if (!relationalColumn) {
@@ -125,7 +125,7 @@ export class RelationJoinColumnBuilder {
             relationalColumn.referencedColumn = referencedColumn; // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type; // also since types of relational column and join column must be equal we override user defined column type
             relationalColumn.relationMetadata = relation;
-            relationalColumn.build(this.connection.driver.namingStrategy);
+            relationalColumn.build(this.connection.namingStrategy);
             return relationalColumn;
         });
     }

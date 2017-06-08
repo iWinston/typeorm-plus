@@ -14,6 +14,8 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {Connection} from "../../connection/Connection";
+import {MysqlDriver} from "../mysql/MysqlDriver";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -34,11 +36,9 @@ export class SqlServerQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected databaseConnection: DatabaseConnection,
-                protected driver: SqlServerDriver,
-                protected logger: Logger) {
+    constructor(protected connection: Connection,
+                protected databaseConnection: DatabaseConnection) {
     }
-
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -98,12 +98,12 @@ export class SqlServerQueryRunner implements QueryRunner {
         //
         // return new Promise<void>((ok, fail) => {
         //
-        //     const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
+        //     const request = new this.connection.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
         //     request.multiple = true;
         //     request.query(allQueries, (err: any, result: any) => {
         //         if (err) {
-        //             this.logger.logFailedQuery(allQueries);
-        //             this.logger.logQueryError(err);
+        //             this.connection.logger.logFailedQuery(allQueries);
+        //             this.connection.logger.logQueryError(err);
         //             return fail(err);
         //         }
         //
@@ -195,8 +195,8 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         return new Promise((ok, fail) => {
 
-            this.logger.logQuery(query, parameters);
-            const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
+            this.connection.logger.logQuery(query, parameters);
+            const request = new (this.connection.driver as SqlServerDriver).mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
                     request.input(index, parameters![index]);
@@ -204,8 +204,8 @@ export class SqlServerQueryRunner implements QueryRunner {
             }
             request.query(query, (err: any, result: any) => {
                 if (err) {
-                    this.logger.logFailedQuery(query, parameters);
-                    this.logger.logQueryError(err);
+                    this.connection.logger.logFailedQuery(query, parameters);
+                    this.connection.logger.logQueryError(err);
                     return fail(err);
                 }
 
@@ -222,13 +222,13 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => this.connection.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "@" + index).join(",");
         const parameters = keys.map(key => keyValues[key]);
 
         const sql = columns.length > 0
-            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.databaseName + " " : "" }VALUES (${values})`
-            : `INSERT INTO ${this.driver.escapeTableName(tableName)} ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.databaseName + " " : "" }DEFAULT VALUES `;
+            ? `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.databaseName + " " : "" }VALUES (${values})`
+            : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.databaseName + " " : "" }DEFAULT VALUES `;
 
         const result = await this.query(sql, parameters);
         return generatedColumn ? result instanceof Array ? result[0][generatedColumn.databaseName] : result[generatedColumn.databaseName] : undefined;
@@ -247,7 +247,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, updateParams.length).join(" AND ");
-        const sql = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const sql = `UPDATE ${this.connection.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
 
         await this.query(sql, allParameters);
     }
@@ -272,7 +272,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.connection.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -285,16 +285,16 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         let sql = "";
         if (hasLevel) {
-            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql =   `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                     `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                    `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql =   `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                    `SELECT ancestor, ${newEntityId} FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                     `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -870,7 +870,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
+        await this.query(`TRUNCATE TABLE ${this.connection.driver.escapeTableName(tableName)}`);
     }
 
     // -------------------------------------------------------------------------
@@ -881,7 +881,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.driver.options.database as string;
+        return this.connection.options.database as string;
     }
 
     /**
@@ -889,7 +889,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      */
     protected parametrize(objectLiteral: ObjectLiteral, startFrom: number = 0): string[] {
         return Object.keys(objectLiteral).map((key, index) => {
-            return this.driver.escapeColumnName(key) + "=@" + (startFrom + index);
+            return this.connection.driver.escapeColumnName(key) + "=@" + (startFrom + index);
         });
     }
 

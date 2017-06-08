@@ -37,7 +37,7 @@ export class MigrationExecutor {
      */
     async executePendingMigrations(): Promise<void> {
         const queryRunner = await this.queryRunnerProvider.provide();
-        const entityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(this.queryRunnerProvider);
+        const entityManager = this.connection.createIsolatedManager(this.queryRunnerProvider);
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist();
@@ -116,7 +116,7 @@ export class MigrationExecutor {
      */
     async undoLastMigration(): Promise<void> {
         const queryRunner = await this.queryRunnerProvider.provide();
-        const entityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(this.queryRunnerProvider);
+        const entityManager = this.connection.createIsolatedManager(this.queryRunnerProvider);
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist();
@@ -207,9 +207,10 @@ export class MigrationExecutor {
      * Loads all migrations that were executed and saved into the database.
      */
     protected async loadExecutedMigrations(): Promise<Migration[]> {
-        const migrationsRaw: ObjectLiteral[] = await new QueryBuilder(this.connection, this.queryRunnerProvider)
+        const migrationsRaw: ObjectLiteral[] = await this.connection.manager
+            .createQueryBuilder(this.queryRunnerProvider)
             .select()
-            .fromTable("migrations", "migrations")
+            .from("migrations", "migrations")
             .getRawMany();
 
         return migrationsRaw.map(migrationRaw => {
@@ -221,7 +222,7 @@ export class MigrationExecutor {
      * Gets all migrations that setup for this connection.
      */
     protected getMigrations(): Migration[] {
-        const migrations = this.connection.getMigrations().map(migration => {
+        const migrations = this.connection.migrations.map(migration => {
             const migrationClassName = (migration.constructor as any).name;
             const migrationTimestamp = parseInt(migrationClassName.substr(-13));
             if (!migrationTimestamp)

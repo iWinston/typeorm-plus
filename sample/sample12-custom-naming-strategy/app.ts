@@ -13,9 +13,8 @@ const options: ConnectionOptions = {
         database: "test"
     },
     autoSchemaSync: true,
-    usedNamingStrategy: "custom_strategy",
-    entities: [Post],
-    namingStrategies: [CustomNamingStrategy]
+    namingStrategy: new CustomNamingStrategy(),
+    entities: [Post]
 };
 
 createConnection(options).then(connection => {

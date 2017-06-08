@@ -65,29 +65,6 @@ export class MongoEntityManager extends EntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Executes raw SQL query and returns raw database results.
-     */
-    query(query: string, parameters?: any[]): Promise<any> {
-        throw new Error(`Queries aren't supported by MongoDB.`);
-    }
-
-    /**
-     * Wraps given function execution (and all operations made there) in a transaction.
-     * All database operations must be executed using provided entity manager.
-     */
-    transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
-        throw new Error(`Transactions aren't supported by MongoDB.`);
-    }
-
-    /**
-     * Using Query Builder with MongoDB is not supported yet.
-     * Calling this method will return an error.
-     */
-    createQueryBuilder<Entity>(entityClassOrName: ObjectType<Entity>|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
-        throw new Error(`Query Builder is not supported by MongoDB.`);
-    }
-
-    /**
      * Finds entities that match given find options or conditions.
      */
     async find<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {

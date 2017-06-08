@@ -100,7 +100,8 @@ export class LazyRelationsWrapper {
             return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn!.propertyName}`;
         }).join(" AND ");
 
-        const qb = new QueryBuilder(this.connection)
+        const qb = this.connection
+            .createQueryBuilder()
             .select(relation.propertyName) // category
             .from(relation.type, relation.propertyName) // Category, category
             .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, conditions);
@@ -120,7 +121,8 @@ export class LazyRelationsWrapper {
      * WHERE post.[joinColumn.name] = entity[joinColumn.referencedColumn]
      */
     protected loadOneToManyOrOneToOneNotOwner(relation: RelationMetadata, entity: ObjectLiteral): Promise<any> {
-        const qb = new QueryBuilder(this.connection)
+        const qb = this.connection
+            .createQueryBuilder()
             .select(relation.propertyName)
             .from(relation.inverseRelation!.entityMetadata.target, relation.propertyName);
 
@@ -154,7 +156,8 @@ export class LazyRelationsWrapper {
             return parameters;
         }, {} as ObjectLiteral);
 
-        return new QueryBuilder(this.connection)
+        return this.connection
+            .createQueryBuilder()
             .select(mainAlias)
             .from(relation.type, mainAlias)
             .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))
@@ -185,7 +188,8 @@ export class LazyRelationsWrapper {
             return parameters;
         }, {} as ObjectLiteral);
 
-        return new QueryBuilder(this.connection)
+        return this.connection
+            .createQueryBuilder()
             .select(mainAlias)
             .from(relation.type, mainAlias)
             .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))

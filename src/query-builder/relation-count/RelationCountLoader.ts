@@ -49,7 +49,7 @@ export class RelationCountLoader {
 
                 // generate query:
                 // SELECT category.post as parentId, COUNT(category.id) AS cnt FROM category category WHERE category.post IN (1, 2) GROUP BY category.post
-                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
                 qb.select(inverseSideTableAlias + "." + inverseSidePropertyName, "parentId")
                     .addSelect("COUNT(" + qb.escapeAlias(inverseSideTableAlias) + "." + qb.escapeColumn(referenceColumnName) + ")", "cnt")
                     .from(inverseSideTable, inverseSideTableAlias)
@@ -106,10 +106,10 @@ export class RelationCountLoader {
                 const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
                     " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 
-                const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
                 qb.select(junctionAlias + "." + firstJunctionColumn.propertyName, "parentId")
                     .addSelect("COUNT(" + qb.escapeAlias(inverseSideTableAlias) + "." + qb.escapeColumn(inverseJoinColumnName) + ")", "cnt")
-                    .fromTable(inverseSideTableName, inverseSideTableAlias)
+                    .from(inverseSideTableName, inverseSideTableAlias)
                     .innerJoin(junctionTableName, junctionAlias, condition)
                     .addGroupBy(junctionAlias + "." + firstJunctionColumn.propertyName);
 

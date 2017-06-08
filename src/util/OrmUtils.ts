@@ -2,6 +2,13 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export class OrmUtils {
 
+    static splitClassesAndStrings<T>(clsesAndStrings: T[]|string[]): [T[], string[]] {
+        return [
+            (clsesAndStrings as T[]).filter(cls => typeof cls !== "string"),
+            (clsesAndStrings as string[]).filter(str => typeof str === "string"),
+        ];
+    }
+
     static groupBy<T, R>(array: T[], propertyCallback: (item: T) => R): { id: R, items: T[] }[] {
         return array.reduce((groupedArray, value) => {
             const key = propertyCallback(value);

@@ -254,9 +254,10 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relatedEntityIds || !relatedEntityIds.length)
             return Promise.resolve();
 
-        const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+        const qb = this.connection.manager
+            .createQueryBuilder(this.queryRunnerProvider)
             .delete()
-            .fromTable(relation.junctionEntityMetadata!.tableName, "junctionEntity");
+            .from(relation.junctionEntityMetadata!.tableName, "junctionEntity");
 
         const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName);
         const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName);
@@ -302,7 +303,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!entityIds || !entityIds.length)
             return Promise.resolve();
 
-        const qb = new QueryBuilder(this.connection, this.queryRunnerProvider)
+        const qb = this.connection.manager
+            .createQueryBuilder(this.queryRunnerProvider)
             .delete()
             .from(relation.junctionEntityMetadata!.tableName, "junctionEntity");
 
@@ -389,7 +391,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             parameters["id"] = id;
         }
 
-        await new QueryBuilder(this.connection, this.queryRunnerProvider)
+        await this.connection.manager
+            .createQueryBuilder(this.queryRunnerProvider)
             .delete()
             .from(this.metadata.target, alias)
             .where(condition, parameters)
@@ -417,7 +420,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             parameters["ids"] = ids;
         }
 
-        await new QueryBuilder(this.connection, this.queryRunnerProvider)
+        await this.connection.manager
+            .createQueryBuilder(this.queryRunnerProvider)
             .delete()
             .from(this.metadata.target, alias)
             .where(condition, parameters)
@@ -454,11 +458,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         // console.log("entityOrEntities:", entityOrEntities);
         // console.log("entityIds:", entityIds);
         const promises = (entityIds as any[]).map((entityId: any) => {
-            const qb = new QueryBuilder(this.connection, this.queryRunnerProvider);
+            const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
             inverseEntityColumnNames.forEach(columnName => {
                 qb.select(ea("junction") + "." + ec(columnName) + " AS " + ea(columnName));
             });
-            qb.fromTable(relation.junctionEntityMetadata!.tableName, "junction");
+            qb.from(relation.junctionEntityMetadata!.tableName, "junction");
             Object.keys(entityId).forEach((columnName) => {
                 const junctionColumnName = ownerEntityColumns.find(joinColumn => joinColumn.referencedColumn!.databaseName === columnName);
                 qb.andWhere(ea("junction") + "." + ec(junctionColumnName!.databaseName) + "=:" + junctionColumnName!.databaseName + "_entityId", {[junctionColumnName!.databaseName + "_entityId"]: entityId[columnName]});

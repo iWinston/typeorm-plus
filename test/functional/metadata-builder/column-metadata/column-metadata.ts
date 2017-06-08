@@ -1,7 +1,10 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
-import {setupTestingConnections} from "../../../utils/test-utils";
+import {
+    closeTestingConnections, createTestingConnections, reloadTestingDatabases,
+    setupTestingConnections
+} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
@@ -11,16 +14,15 @@ import {getConnectionManager} from "../../../../src/index";
 const should = chai.should();
 
 describe("metadata-builder > ColumnMetadata", () => {
-    
+
     let connections: Connection[];
-    before(() => {
-        connections = setupTestingConnections({ entities: [__dirname + "/entity/*{.js,.ts}"] })
-            .map(options => getConnectionManager().create(options))
-            .map(connection => {
-                connection.buildMetadatas();
-                return connection;
-            });
-    });
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
     it("getValue", () => Promise.all(connections.map(async connection => {
         const post = new Post();

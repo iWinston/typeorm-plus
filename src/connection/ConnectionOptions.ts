@@ -1,6 +1,11 @@
 import {DriverOptions} from "../driver/DriverOptions";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {DriverType} from "../driver/DriverType";
+import {LoggerFactory} from "../logger/LoggerFactory";
+import {DriverFactory} from "../driver/DriverFactory";
+import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 
 /**
  * ConnectionOptions is an interface with settings and options for specific connection.
@@ -10,20 +15,93 @@ import {LoggerOptions} from "../logger/LoggerOptions";
 export interface ConnectionOptions {
 
     /**
-     * Database options of this connection.
-     */
-    readonly driver: DriverOptions;
-
-    /**
      * Connection name. If connection name is not given then it will be called "default".
      * Different connections must have different names.
      */
     readonly name?: string;
 
     /**
-     * Name of the naming strategy or target class of the naming strategy to be used for this connection.
+     * Database options of this connection.
+     *
+     * @deprecated Define options right in the connection options section.
      */
-    readonly usedNamingStrategy?: string|Function;
+    readonly driver?: DriverOptions;
+
+    /**
+     * Database type. This value is required.
+     */
+    readonly type?: DriverType;
+
+    /**
+     * Connection url to where perform connection to.
+     */
+    readonly url?: string;
+
+    /**
+     * Database host.
+     */
+    readonly host?: string;
+
+    /**
+     * Database host port.
+     */
+    readonly port?: number;
+
+    /**
+     * Database username.
+     */
+    readonly username?: string;
+
+    /**
+     * Database password.
+     */
+    readonly password?: string;
+
+    /**
+     * Database name to connect to.
+     */
+    readonly database?: string;
+
+    /**
+     * Schema name. By default is "public" (used only in Postgres databases).
+     */
+    readonly schemaName?: string;
+
+    /**
+     * Connection SID (used for Oracle databases).
+     */
+    readonly sid?: string;
+
+    /**
+     * Storage type or path to the storage (used for SQLite databases).
+     */
+    readonly storage?: string;
+
+    /**
+     * Indicates if connection pooling should be used or not.
+     * Be default it is enabled if its supported by a platform.
+     * Set to false to disable it.
+     *
+     * @todo: rename to disablePool? What about mongodb pool?
+     */
+    readonly usePool?: boolean;
+
+    /**
+     * Extra connection options to be passed to the underlying driver.
+     */
+    readonly extra?: any;
+
+    /**
+     * Prefix to use on all tables (collections) of this connection in the database.
+     *
+     * @todo: rename to entityPrefix
+     */
+    readonly tablesPrefix?: string;
+
+    /**
+     * Naming strategy to be used to name tables and columns in the database.
+     */
+    readonly namingStrategy?: NamingStrategyInterface;
 
     /**
      * Entities to be loaded for this connection.
@@ -38,13 +116,6 @@ export interface ConnectionOptions {
      * Directories support glob patterns.
      */
     readonly subscribers?: Function[]|string[];
-
-    /**
-     * Naming strategies to be loaded for this connection.
-     * Accepts both naming strategy classes and directories where from naming strategies need to be loaded.
-     * Directories support glob patterns.
-     */
-    readonly namingStrategies?: Function[]|string[];
 
     /**
      * Entity schemas to be loaded for this connection.

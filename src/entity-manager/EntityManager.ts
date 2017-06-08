@@ -8,13 +8,11 @@ import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {SaveOptions} from "../repository/SaveOptions";
-import {RepositoryAggregator} from "../repository/RepositoryAggregator";
 import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {MongoRepository} from "../repository/MongoRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {Repository} from "../repository/Repository";
-import {RepositoryNotTreeError} from "../connection/error/RepositoryNotTreeError";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {SubjectBuilder} from "../persistence/SubjectBuilder";
@@ -42,11 +40,6 @@ export class EntityManager {
      */
     private data: ObjectLiteral = {};
 
-    /**
-     * Stores all registered repositories.
-     */
-    private repositoryAggregators: RepositoryAggregator[] = [];
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -62,6 +55,43 @@ export class EntityManager {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
+     */
+    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
+        return this.connection.transaction(runInTransaction, this.queryRunnerProvider);
+    }
+
+    /**
+     * Executes raw SQL query and returns raw database results.
+     */
+    async query(query: string, parameters?: any[]): Promise<any> {
+        return this.connection.query(query, parameters, this.queryRunnerProvider);
+    }
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity>;
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder(queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<any>;
+
+    /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|Function|string|QueryRunnerProvider, alias?: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
+        if (alias) {
+            return this.connection.createQueryBuilder(entityClass as Function|string, alias, queryRunnerProvider || this.queryRunnerProvider);
+
+        } else {
+            return this.connection.createQueryBuilder(entityClass as QueryRunnerProvider|undefined || this.queryRunnerProvider);
+        }
+    }
 
     /**
      * Gets user data by a given key.
@@ -118,16 +148,6 @@ export class EntityManager {
         const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;
         const metadata = this.connection.getMetadata(target);
         return metadata.getEntityIdMixedMap(entity);
-    }
-
-    /**
-     * Creates a new query builder that can be used to build a sql query.
-     */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
-        const metadata = this.connection.getMetadata(entityClass);
-        return new QueryBuilder(this.connection, queryRunnerProvider || this.queryRunnerProvider)
-            .select(alias)
-            .from(metadata.target, alias);
     }
 
     /**
@@ -532,53 +552,6 @@ export class EntityManager {
     }
 
     /**
-     * Executes raw SQL query and returns raw database results.
-     */
-    async query(query: string, parameters?: any[]): Promise<any> {
-        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver);
-        const queryRunner = await queryRunnerProvider.provide();
-
-        try {
-            return await queryRunner.query(query, parameters);  // await is needed here because we are using finally
-
-        } finally {
-            await queryRunnerProvider.release(queryRunner);
-        }
-    }
-
-    /**
-     * Wraps given function execution (and all operations made there) in a transaction.
-     * All database operations must be executed using provided entity manager.
-     */
-    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
-        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
-        const queryRunner = await queryRunnerProvider.provide();
-        const transactionEntityManager = new EntityManager(this.connection, queryRunnerProvider);
-
-        try {
-            await queryRunner.beginTransaction();
-            const result = await runInTransaction(transactionEntityManager);
-            await queryRunner.commitTransaction();
-            return result;
-
-        } catch (err) {
-            await queryRunner.rollbackTransaction();
-            throw err;
-
-        } finally {
-            await queryRunnerProvider.release(queryRunner);
-            if (!this.queryRunnerProvider) // if we used a new query runner provider then release it
-                await queryRunnerProvider.releaseReused();
-        }
-    }
-
-    /**
      * Clears all the data from the given table (truncates/drops it).
      */
     async clear<Entity>(entityClass: ObjectType<Entity>|string): Promise<void> {
@@ -602,8 +575,12 @@ export class EntityManager {
     getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunnerProvider)
-            return this.obtainRepositoryAggregator(entityClassOrName as any).repository;
+        if (this.queryRunnerProvider) {
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
+
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunnerProvider);
+        }
 
         return this.connection.getRepository<Entity>(entityClassOrName as any);
     }
@@ -618,11 +595,10 @@ export class EntityManager {
 
         // if single db connection is used then create its own repository with reused query runner
         if (this.queryRunnerProvider) {
-            const treeRepository = this.obtainRepositoryAggregator(entityClassOrName).treeRepository;
-            if (!treeRepository)
-                throw new RepositoryNotTreeError(entityClassOrName);
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
 
-            return treeRepository;
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunnerProvider) as TreeRepository<Entity>;
         }
 
         return this.connection.getTreeRepository<Entity>(entityClassOrName as any);
@@ -644,8 +620,12 @@ export class EntityManager {
     getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunnerProvider)
-            return this.obtainRepositoryAggregator(entityClassOrName as any).repository as MongoRepository<Entity>;
+        if (this.queryRunnerProvider) {
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
+
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunnerProvider) as MongoRepository<Entity>;
+        }
 
         return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
     }
@@ -681,8 +661,12 @@ export class EntityManager {
     getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunnerProvider)
-            return this.obtainRepositoryAggregator(entityClassOrName).specificRepository;
+        if (this.queryRunnerProvider) {
+            if (this.queryRunnerProvider.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
+
+            return this.connection.createIsolatedSpecificRepository(entityClassOrName, this.queryRunnerProvider);
+        }
 
         return this.connection.getSpecificRepository<Entity>(entityClassOrName as any);
     }
@@ -741,7 +725,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(target);
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
-            const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
+            const transactionEntityManager = this.connection.createIsolatedManager(queryRunnerProvider);
             // transactionEntityManager.data =
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
@@ -763,7 +747,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(target);
         const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
         try {
-            const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
+            const transactionEntityManager = this.connection.createIsolatedManager(queryRunnerProvider);
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunnerProvider);
             await databaseEntityLoader.remove(entity, metadata);
@@ -775,27 +759,6 @@ export class EntityManager {
             if (!this.queryRunnerProvider) // release it only if its created by this method
                 await queryRunnerProvider.releaseReused();
         }
-    }
-
-    /**
-     * Gets, or if does not exist yet, creates and returns a repository aggregator for a particular entity target.
-     */
-    protected obtainRepositoryAggregator<Entity>(entityClassOrName: ObjectType<Entity>|string): RepositoryAggregator {
-        if (this.queryRunnerProvider && this.queryRunnerProvider.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        const metadata = this.connection.getMetadata(entityClassOrName);
-        let repositoryAggregator = this.repositoryAggregators.find(repositoryAggregate => repositoryAggregate.metadata === metadata);
-        if (!repositoryAggregator) {
-            repositoryAggregator = new RepositoryAggregator(
-                this.connection,
-                this.connection.getMetadata(entityClassOrName as any),
-                this.queryRunnerProvider
-            );
-            this.repositoryAggregators.push(repositoryAggregator); // todo: check isnt memory leak here?
-        }
-
-        return repositoryAggregator;
     }
 
 }

@@ -25,7 +25,8 @@ import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationId
 import {RelationCountLoadResult} from "./relation-count/RelationCountLoadResult";
 import {RelationCountLoader} from "./relation-count/RelationCountLoader";
 import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
-import { OracleDriver } from "../driver/oracle/OracleDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 
 // todo: fix problem with long aliases eg getMaxIdentifierLength
@@ -197,31 +198,19 @@ export class QueryBuilder<Entity> {
      * Also sets a main string alias of the selection data.
      */
     from(entityTarget: Function|string, aliasName: string): this {
-        this.expressionMap.createMainAlias({
-            name: aliasName,
-            target: entityTarget
-        });
-        return this;
-    }
-
-    /**
-     * Specifies FROM which table select/update/delete will be executed.
-     * Also sets a main string alias of the selection data.
-     */
-    fromTable(tableName: string, aliasName: string) {
 
         // if table has a metadata then find it to properly escape its properties
-        const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
-        if (metadata) {
+        // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
+        if (entityTarget instanceof Function || this.connection.hasMetadata(entityTarget)) {
             this.expressionMap.createMainAlias({
                 name: aliasName,
-                metadata: metadata,
+                metadata: this.connection.getMetadata(entityTarget),
             });
 
         } else {
             this.expressionMap.createMainAlias({
                 name: aliasName,
-                tableName: tableName,
+                tableName: entityTarget,
             });
         }
         return this;
@@ -904,6 +893,7 @@ export class QueryBuilder<Entity> {
      */
     async getEntitiesAndRawResults(): Promise<{ entities: Entity[], rawResults: any[] }> {
         const queryRunner = await this.getQueryRunner();
+        const broadcaster = new Broadcaster(this.connection);
         const relationIdLoader = new RelationIdLoader(this.connection, this.queryRunnerProvider, this.expressionMap.relationIdAttributes);
         const relationCountLoader = new RelationCountLoader(this.connection, this.queryRunnerProvider, this.expressionMap.relationCountAttributes);
         const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(this.expressionMap);
@@ -1000,8 +990,9 @@ export class QueryBuilder<Entity> {
                     const rawRelationIdResults = await relationIdLoader.load(rawResults);
                     const rawRelationCountResults = await relationCountLoader.load(rawResults);
                     entities = this.rawResultsToEntities(rawResults, rawRelationIdResults, rawRelationCountResults);
-                    if (this.expressionMap.mainAlias.hasMetadata)
-                        await this.connection.broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
+                    if (this.expressionMap.mainAlias.hasMetadata) {
+                        await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
+                    }
 
                 }
                 return {
@@ -1019,7 +1010,7 @@ export class QueryBuilder<Entity> {
                 const rawRelationCountResults = await relationCountLoader.load(rawResults);
                 const entities = this.rawResultsToEntities(rawResults, rawRelationIdResults, rawRelationCountResults);
                 if (this.expressionMap.mainAlias.hasMetadata)
-                    await this.connection.broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
+                    await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
 
                 return {
                     entities: entities,
@@ -1156,7 +1147,7 @@ export class QueryBuilder<Entity> {
      * Clones query builder as it is.
      */
     clone(options?: { queryRunnerProvider?: QueryRunnerProvider }): QueryBuilder<Entity> {
-        const qb = new QueryBuilder(this.connection, options ? options.queryRunnerProvider : undefined);
+        const qb = this.connection.createQueryBuilder(options ? options.queryRunnerProvider : undefined);
         qb.expressionMap = this.expressionMap.clone();
         return qb;
     }
@@ -1412,11 +1403,11 @@ export class QueryBuilder<Entity> {
                 const updateSet = Object.keys(this.expressionMap.updateSet).map(key => key + "=:updateSet__" + key);
                 const params = Object.keys(this.expressionMap.updateSet).reduce((object, key) => {
                     // todo: map propertyNames to names ?
-                    object["updateSet_" + key] = this.expressionMap.updateSet![key];
+                    object["updateSet__" + key] = this.expressionMap.updateSet![key];
                     return object;
                 }, {} as ObjectLiteral);
                 this.setParameters(params);
-                return "UPDATE " + tableName + " " + (aliasName ? ea(aliasName) : "") + " SET " + updateSet;
+                return "UPDATE " + this.escapeTable(tableName) + " " + (aliasName ? ea(aliasName) : "") + " SET " + updateSet;
         }
 
         throw new Error("No query builder type is specified.");

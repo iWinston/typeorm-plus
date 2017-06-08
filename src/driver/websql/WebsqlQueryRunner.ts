@@ -13,6 +13,7 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {WebsqlDriver} from "./WebsqlDriver";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Runs queries on a single websql database connection.
@@ -33,9 +34,8 @@ export class WebsqlQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected databaseConnection: DatabaseConnection,
-                protected driver: WebsqlDriver,
-                protected logger: Logger) {
+    constructor(protected connection: Connection,
+                protected databaseConnection: DatabaseConnection) {
     }
 
     // -------------------------------------------------------------------------
@@ -139,7 +139,7 @@ export class WebsqlQueryRunner implements QueryRunner {
 
         return new Promise((ok, fail) => {
 
-            this.logger.logQuery(query, parameters);
+            this.connection.logger.logQuery(query, parameters);
             const db = this.databaseConnection.connection;
             // todo: check if transaction is not active
             db.transaction((tx: any) => {
@@ -151,8 +151,8 @@ export class WebsqlQueryRunner implements QueryRunner {
                     ok(rows);
 
                 }, (tx: any, err: any) => {
-                    this.logger.logFailedQuery(query, parameters);
-                    this.logger.logQueryError(err);
+                    this.connection.logger.logFailedQuery(query, parameters);
+                    this.connection.logger.logQueryError(err);
                     return fail(err);
                 });
             });
@@ -167,13 +167,13 @@ export class WebsqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => this.connection.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = columns.length > 0 ? (`INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES`;
+        const sql = columns.length > 0 ? (`INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
 
         return new Promise<any[]>((ok, fail) => {
-            this.logger.logQuery(sql, parameters);
+            this.connection.logger.logQuery(sql, parameters);
 
             const db = this.databaseConnection.connection;
             // todo: check if transaction is not active
@@ -184,8 +184,8 @@ export class WebsqlQueryRunner implements QueryRunner {
                     ok();
 
                 }, (tx: any, err: any) => {
-                    this.logger.logFailedQuery(sql, parameters);
-                    this.logger.logQueryError(err);
+                    this.connection.logger.logFailedQuery(sql, parameters);
+                    this.connection.logger.logQueryError(err);
                     return fail(err);
                 });
             });
@@ -201,7 +201,7 @@ export class WebsqlQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE ${this.connection.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -228,7 +228,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.connection.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -241,12 +241,12 @@ export class WebsqlQueryRunner implements QueryRunner {
 
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
@@ -821,7 +821,7 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`DELETE FROM ${this.driver.escapeTableName(tableName)}`);
+        await this.query(`DELETE FROM ${this.connection.driver.escapeTableName(tableName)}`);
     }
 
     // -------------------------------------------------------------------------
@@ -832,7 +832,7 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
+        return Object.keys(objectLiteral).map((key, index) => this.connection.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
     }
 
     /**

@@ -15,6 +15,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with Oracle DBMS.
@@ -22,25 +23,6 @@ import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
  * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
 export class OracleDriver implements Driver {
-
-    // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Naming strategy used in the connection where this driver is used.
-     */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -66,33 +48,24 @@ export class OracleDriver implements Driver {
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, oracle?: any) {
+    constructor(protected connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(options, { useSid: true });
-        this.logger = logger;
-        this.oracle = oracle;
+        // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
-        if (!this.options.host)
+        if (!connection.options.host)
             throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
+        if (!connection.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!this.options.sid)
+        if (!connection.options.sid)
             throw new DriverOptionNotSetError("sid");
 
-        // if oracle package instance was not set explicitly then try to load it
-        if (!oracle)
-            this.loadDependencies();
-
+        // load oracle package
+        this.loadDependencies();
         this.oracle.outFormat = this.oracle.OBJECT;
     }
 
@@ -109,14 +82,14 @@ export class OracleDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            user: this.options.username,
-            password: this.options.password,
-            connectString: this.options.host + ":" + this.options.port + "/" + this.options.sid,
-        }, this.options.extra || {});
+            user: this.connection.options.username,
+            password: this.connection.options.password,
+            connectString: this.connection.options.host + ":" + this.connection.options.port + "/" + this.connection.options.sid,
+        }, this.connection.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.options.usePool === undefined || this.options.usePool === true) {
+        if (this.connection.options.usePool === undefined || this.connection.options.usePool === true) {
             return new Promise<void>((ok, fail) => {
                 this.oracle.createPool(options, (err: any, pool: any) => {
                     if (err)
@@ -177,7 +150,7 @@ export class OracleDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("oracle"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new OracleQueryRunner(databaseConnection, this, this.logger);
+        return new OracleQueryRunner(this.connection, databaseConnection);
     }
 
     /**

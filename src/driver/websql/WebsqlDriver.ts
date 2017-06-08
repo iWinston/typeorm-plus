@@ -11,8 +11,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -25,25 +24,6 @@ declare function openDatabase(...params: any[]): any;
 export class WebsqlDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Naming strategy used in the connection where this driver is used.
-     */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
-
-    // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
@@ -52,26 +32,20 @@ export class WebsqlDriver implements Driver {
      */
     protected databaseConnection: DatabaseConnection|undefined;
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger) {
+    constructor(protected connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = logger;
+        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
         // if (!this.options.host)
         //     throw new DriverOptionNotSetError("host");
         // if (!this.options.username)
         //     throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
+        if (!connection.options.database)
             throw new DriverOptionNotSetError("database");
         // todo: what about extra options: version, description, size
     }
@@ -89,8 +63,8 @@ export class WebsqlDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            database: this.options.database,
-        }, this.options.extra || {});
+            database: this.connection.options.database,
+        }, this.connection.options.extra || {});
 
         return new Promise<void>((ok, fail) => {
             const connection = openDatabase(
@@ -130,7 +104,7 @@ export class WebsqlDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("websql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new WebsqlQueryRunner(databaseConnection, this, this.logger);
+        return new WebsqlQueryRunner(this.connection, databaseConnection);
     }
 
     /**

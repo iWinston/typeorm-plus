@@ -1,8 +1,8 @@
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {createConnection, createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
-import {DriverType} from "../../src/driver/DriverOptions";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
+import {DriverType} from "../../src/driver/DriverType";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -128,7 +128,7 @@ export function setupTestingConnections(options?: TestingOptions) {
                 return false;
 
             if (options && options.enabledDrivers && options.enabledDrivers.length)
-                return options.enabledDrivers.indexOf(connectionOptions.driver.type) !== -1;
+                return options.enabledDrivers.indexOf(connectionOptions.driver!.type!) !== -1; // ! is temporary
 
             if (connectionOptions.disabledIfNotEnabledImplicitly === true)
                 return false;

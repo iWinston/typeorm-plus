@@ -14,30 +14,12 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with sqlite DBMS.
  */
 export class SqliteDriver implements Driver {
-
-    // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Naming strategy used in the connection where this driver is used.
-     */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -53,28 +35,18 @@ export class SqliteDriver implements Driver {
      */
     protected databaseConnection: DatabaseConnection|undefined;
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, sqlite?: any) {
-
-        this.options = connectionOptions;
-        this.logger = logger;
-        this.sqlite = sqlite;
+    constructor(protected connection: Connection) {
 
         // validate options to make sure everything is set
-        if (!this.options.storage)
+        if (!connection.options.storage)
             throw new DriverOptionNotSetError("storage");
 
-        // if sqlite package instance was not set explicitly then try to load it
-        if (!sqlite)
-            this.loadDependencies();
+        // load sqlite package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------
@@ -86,7 +58,7 @@ export class SqliteDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            const connection = new this.sqlite.Database(this.options.storage, (err: any) => {
+            const connection = new this.sqlite.Database(this.connection.options.storage, (err: any) => {
                 if (err)
                     return fail(err);
 
@@ -126,7 +98,7 @@ export class SqliteDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("sqlite"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqliteQueryRunner(databaseConnection, this, this.logger);
+        return new SqliteQueryRunner(this.connection, databaseConnection);
     }
 
     /**

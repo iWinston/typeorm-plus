@@ -15,8 +15,7 @@ export class Broadcaster {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection,
-                private subscriberMetadatas: EntitySubscriberInterface<any>[]) {
+    constructor(private connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -57,7 +56,7 @@ export class Broadcaster {
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]()); // getValue() ?
 
-        const subscribers = this.subscriberMetadatas
+        const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeInsert)
             .map(subscriber => subscriber.beforeInsert!({
                 manager: manager,
@@ -79,7 +78,7 @@ export class Broadcaster {
             .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
-        const subscribers = this.subscriberMetadatas
+        const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate!({
                 manager: manager,
@@ -104,7 +103,7 @@ export class Broadcaster {
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.databaseEntity[entityListener.propertyName]());
 
-        const subscribers = this.subscriberMetadatas
+        const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove!({
                 manager: manager,
@@ -128,7 +127,7 @@ export class Broadcaster {
             .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
-        const subscribers = this.subscriberMetadatas
+        const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterInsert)
             .map(subscriber => subscriber.afterInsert!({
                 manager: manager,
@@ -150,7 +149,7 @@ export class Broadcaster {
             .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
-        const subscribers = this.subscriberMetadatas
+        const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate!({
                 manager: manager,
@@ -175,7 +174,7 @@ export class Broadcaster {
             .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(subject.entity))
             .map(entityListener => subject.entity[entityListener.propertyName]());
 
-        const subscribers = this.subscriberMetadatas
+        const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove!({
                 manager: manager,
@@ -226,7 +225,7 @@ export class Broadcaster {
             .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD && listener.isAllowed(entity))
             .map(listener => entity[listener.propertyName]());
 
-        const subscribers = this.subscriberMetadatas
+        const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, target) && subscriber.afterLoad)
             .map(subscriber => subscriber.afterLoad!(entity));
 

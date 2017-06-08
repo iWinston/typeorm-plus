@@ -15,30 +15,12 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Organizes communication with MySQL DBMS.
  */
 export class MysqlDriver implements Driver {
-
-    // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Naming strategy used in the connection where this driver is used.
-     */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -64,32 +46,24 @@ export class MysqlDriver implements Driver {
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mysql?: any) {
+    constructor(protected connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = logger;
-        this.mysql = mysql;
+        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
-        if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)))
+        if (!(connection.options.host || (connection.options.extra && connection.options.extra.socketPath)))
             throw new DriverOptionNotSetError("socketPath and host");
-        if (!this.options.username)
+        if (!connection.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
+        if (!connection.options.database)
             throw new DriverOptionNotSetError("database");
 
-        // if mysql package instance was not set explicitly then try to load it
-        if (!mysql)
-            this.loadDependencies();
+        // load mysql package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------
@@ -105,16 +79,16 @@ export class MysqlDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            host: this.options.host,
-            user: this.options.username,
-            password: this.options.password,
-            database: this.options.database,
-            port: this.options.port
-        }, this.options.extra || {});
+            host: this.connection.options.host,
+            user: this.connection.options.username,
+            password: this.connection.options.password,
+            database: this.connection.options.database,
+            port: this.connection.options.port
+        }, this.connection.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.options.usePool === undefined || this.options.usePool === true) {
+        if (this.connection.options.usePool === undefined || this.connection.options.usePool === true) {
             this.pool = this.mysql.createPool(options);
             return Promise.resolve();
 
@@ -164,7 +138,7 @@ export class MysqlDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new MysqlQueryRunner(databaseConnection, this, this.logger);
+        return new MysqlQueryRunner(this.connection, databaseConnection);
     }
 
     /**

@@ -3,7 +3,10 @@ import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
-import {setupTestingConnections} from "../../utils/test-utils";
+import {
+    closeTestingConnections, createTestingConnections, reloadTestingDatabases,
+    setupTestingConnections
+} from "../../utils/test-utils";
 import {Subcounters} from "./entity/Subcounters";
 import {User} from "./entity/User";
 import {getConnectionManager} from "../../../src/index";
@@ -11,14 +14,13 @@ import {getConnectionManager} from "../../../src/index";
 describe("entity-metadata > property-map", () => {
 
     let connections: Connection[];
-    before(() => {
-        connections = setupTestingConnections({ entities: [__dirname + "/entity/*{.js,.ts}"] })
-            .map(options => getConnectionManager().create(options))
-            .map(connection => {
-                connection.buildMetadatas();
-                return connection;
-            });
-    });
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
     it("should create correct property map object", () => Promise.all(connections.map(async connection => {
 

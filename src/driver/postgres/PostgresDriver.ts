@@ -15,6 +15,7 @@ import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
+import {Connection} from "../../connection/Connection";
 
 // todo(tests):
 // check connection with url
@@ -25,25 +26,6 @@ import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
  * Organizes communication with PostgreSQL DBMS.
  */
 export class PostgresDriver implements Driver {
-
-    // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Naming strategy used in the connection where this driver is used.
-     */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Used to wrap lazy relations to be able to perform lazy loadings.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -79,30 +61,26 @@ export class PostgresDriver implements Driver {
      * default: "public"
      */
     public schemaName?: string;
-    
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, postgres?: any) {
+    constructor(protected connection: Connection) {
 
-        this.options = DriverUtils.buildDriverOptions(connectionOptions);
-        this.logger = logger;
-        this.postgres = postgres;
-        this.schemaName = connectionOptions.schemaName || "public";
+        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        this.schemaName = connection.options.schemaName || "public";
 
         // validate options to make sure everything is set
-        if (!this.options.host)
+        if (!connection.options.host)
             throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
+        if (!connection.options.username)
             throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
+        if (!connection.options.database)
             throw new DriverOptionNotSetError("database");
 
-        // if postgres package instance was not set explicitly then try to load it
-        if (!postgres)
-            this.loadDependencies();
+        // load postgres package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------
@@ -118,16 +96,16 @@ export class PostgresDriver implements Driver {
 
         // build connection options for the driver
         const options = Object.assign({}, {
-            host: this.options.host,
-            user: this.options.username,
-            password: this.options.password,
-            database: this.options.database,
-            port: this.options.port
-        }, this.options.extra || {});
+            host: this.connection.options.host,
+            user: this.connection.options.username,
+            password: this.connection.options.password,
+            database: this.connection.options.database,
+            port: this.connection.options.port
+        }, this.connection.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
-        if (this.options.usePool === undefined || this.options.usePool === true) {
+        if (this.connection.options.usePool === undefined || this.connection.options.usePool === true) {
             this.pool = new this.postgres.Pool(options);
             return Promise.resolve();
 
@@ -144,8 +122,8 @@ export class PostgresDriver implements Driver {
                     } else {
                         this.databaseConnection!.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any, result: any) => {
                             if (err) {
-                                this.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                                this.logger.logQueryError(err);
+                                this.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
+                                this.connection.logger.logQueryError(err);
                                 fail(err);
                             } else {
                                 ok();
@@ -195,7 +173,7 @@ export class PostgresDriver implements Driver {
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new PostgresQueryRunner(databaseConnection, this, this.logger);
+        return new PostgresQueryRunner(this.connection, databaseConnection);
     }
 
     /**
@@ -356,8 +334,8 @@ export class PostgresDriver implements Driver {
                     };
                     dbConnection.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
                         if (err) {
-                            this.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                            this.logger.logQueryError(err);
+                            this.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
+                            this.connection.logger.logQueryError(err);
                             fail(err);
                         } else {
                             ok(dbConnection);
