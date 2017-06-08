@@ -102,9 +102,9 @@ export class Connection {
     constructor(options: ConnectionOptions) {
         this.name = options.name || "default";
         this.options = options;
-        this.logger = this.createLogger();
-        this.driver = this.createDriver();
-        this.manager = this.createEntityManager();
+        this.logger = new LoggerFactory().create(this.options.logging || {});
+        this.driver = new DriverFactory().create(this);
+        this.manager = new EntityManagerFactory().create(this);
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
     }
 
@@ -232,21 +232,6 @@ export class Connection {
     }
 
     /**
-     * Checks if entity metadata exist for the given entity class.
-     */
-    hasMetadata(target: Function): boolean;
-
-    /**
-     * Checks if entity metadata exist for the given entity target name or table name.
-     */
-    hasMetadata(target: string): boolean;
-
-    /**
-     * Checks if entity metadata exist for the given entity class, target name or table name.
-     */
-    hasMetadata(target: Function|string): boolean;
-
-    /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
      */
     hasMetadata(target: Function|string): boolean {
@@ -259,21 +244,6 @@ export class Connection {
             return false;
         });
     }
-
-    /**
-     * Gets the entity metadata of the given entity class.
-     */
-    getMetadata(target: Function): EntityMetadata;
-
-    /**
-     * Gets the entity metadata of the given entity name.
-     */
-    getMetadata(target: string): EntityMetadata;
-
-    /**
-     * Gets the entity metadata of the given entity class or schema name.
-     */
-    getMetadata(target: Function|string): EntityMetadata;
 
     /**
      Gets entity metadata for the given entity class or schema name.
@@ -294,89 +264,41 @@ export class Connection {
     }
 
     /**
-     * Gets repository for the given entity class.
+     * Gets repository for the given entity.
      */
-    getRepository<Entity>(entityClass: ObjectType<Entity>): Repository<Entity>;
-
-    /**
-     * Gets repository for the given entity name.
-     */
-    getRepository<Entity>(entityName: string): Repository<Entity>;
-
-    /**
-     * Gets repository for the given entity name.
-     */
-    getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity>;
-
-    /**
-     * Gets repository for the given entity class or name.
-     */
-    getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        return this.getMetadata(entityClassOrName).repository;
+    getRepository<Entity>(target: ObjectType<Entity>|string): Repository<Entity> {
+        return this.getMetadata(target).repository;
     }
-
-    /**
-     * Gets tree repository for the given entity class.
-     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
-     */
-    getTreeRepository<Entity>(entityClass: ObjectType<Entity>): TreeRepository<Entity>;
-
-    /**
-     * Gets tree repository for the given entity class.
-     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
-     */
-    getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity>;
-
-    /**
-     * Gets tree repository for the given entity class.
-     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
-     */
-    getTreeRepository<Entity>(entityName: string): TreeRepository<Entity>;
 
     /**
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
      */
-    getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
+    getTreeRepository<Entity>(target: ObjectType<Entity>|string): TreeRepository<Entity> {
         if (this.driver instanceof MongoDriver)
             throw new Error(`You cannot use getTreeRepository for MongoDB connections.`);
 
-        if (!this.hasMetadata(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+        if (!this.hasMetadata(target))
+            throw new RepositoryNotFoundError(this.name, target);
 
-        const repository = this.getMetadata(entityClassOrName).repository;
+        const repository = this.getMetadata(target).repository;
         if (!(repository instanceof TreeRepository))
-            throw new RepositoryNotTreeError(entityClassOrName);
+            throw new RepositoryNotTreeError(target);
 
         return repository;
     }
 
     /**
-     * Gets mongodb-specific repository for the given entity class.
-     */
-    getMongoRepository<Entity>(entityClass: ObjectType<Entity>): MongoRepository<Entity>;
-
-    /**
-     * Gets mongodb-specific repository for the given entity name.
-     */
-    getMongoRepository<Entity>(entityName: string): MongoRepository<Entity>;
-
-    /**
-     * Gets mongodb-specific repository for the given entity name.
-     */
-    getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity>;
-
-    /**
      * Gets mongodb-specific repository for the given entity class or name.
      */
-    getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
+    getMongoRepository<Entity>(target: ObjectType<Entity>|string): MongoRepository<Entity> {
         if (!(this.driver instanceof MongoDriver))
             throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
 
-        if (!this.hasMetadata(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
+        if (!this.hasMetadata(target))
+            throw new RepositoryNotFoundError(this.name, target);
 
-        return this.getMetadata(entityClassOrName).repository as MongoRepository<Entity>;
+        return this.getMetadata(target).repository as MongoRepository<Entity>;
     }
 
     /**
@@ -462,6 +384,7 @@ export class Connection {
             return new QueryBuilder(this, queryRunnerProvider)
                 .select(alias)
                 .from(metadata.target, alias);
+
         } else {
             return new QueryBuilder(this, entityClass as QueryRunnerProvider|undefined);
         }
@@ -517,30 +440,6 @@ export class Connection {
     }
 
     /**
-     * Gets specific repository for the given entity class.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @deprecated don't use it, it will be refactored or removed in the future versions
-     */
-    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity name.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @deprecated don't use it, it will be refactored or removed in the future versions
-     */
-    getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity class or name.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @deprecated don't use it, it will be refactored or removed in the future versions
-     */
-    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity>;
-
-    /**
      * Gets specific repository for the given entity class or name.
      * SpecificRepository is a special repository that contains specific and non standard repository methods.
      *
@@ -556,36 +455,6 @@ export class Connection {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Creates connection's Logger.
-     */
-    protected createLogger(): Logger {
-        if (this.options.factories && this.options.factories.logger)
-            return this.options.factories.logger.create(this.options.logging || {});
-
-        return new LoggerFactory().create(this.options.logging || {});
-    }
-
-    /**
-     * Creates connection's Driver.
-     */
-    protected createDriver(): Driver {
-        if (this.options.factories && this.options.factories.driver)
-            return this.options.factories.driver.create(this);
-
-        return new DriverFactory().create(this);
-    }
-
-    /**
-     * Creates EntityManager using its factory.
-     */
-    protected createEntityManager(): EntityManager {
-        if (this.options.factories && this.options.factories.entityManager)
-            return this.options.factories.entityManager.create(this);
-
-        return new EntityManagerFactory().create(this);
-    }
 
     /**
      * Builds all registered metadatas.

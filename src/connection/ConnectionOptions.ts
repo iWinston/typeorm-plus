@@ -195,27 +195,4 @@ export interface ConnectionOptions {
 
     };
 
-    /**
-     * Special factories used to override default connection objects behaviour.
-     * Advanced functionality.
-     */
-    readonly factories?: {
-
-        /**
-         * Logger factory creates logger used to log events in the connection.
-         */
-        readonly logger?: LoggerFactory;
-
-        /**
-         * Driver factory creates database driver based on the connection driver type.
-         */
-        readonly driver?: DriverFactory;
-
-        /**
-         * Creates EntityManager instances used in the connection.
-         */
-        readonly entityManager?: EntityManagerFactory;
-
-    };
-
 }

@@ -142,7 +142,7 @@ export class Photo {
     id: number;
     name: string;
     description: string;
-    fileName: string;
+    filename: string;
     views: number;
 }
 ````
@@ -159,7 +159,7 @@ export class Photo {
     id: number;
     name: string;
     description: string;
-    fileName: string;
+    filename: string;
     views: number;
     isPublished: boolean;
 }
@@ -187,7 +187,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -222,7 +222,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -253,7 +253,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -286,7 +286,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -321,7 +321,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column("int")
     views: number;
