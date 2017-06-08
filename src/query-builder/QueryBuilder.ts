@@ -1405,7 +1405,7 @@ export class QueryBuilder<Entity> {
                 const updateSet = Object.keys(this.expressionMap.updateSet).map(key => key + "=:updateSet__" + key);
                 const params = Object.keys(this.expressionMap.updateSet).reduce((object, key) => {
                     // todo: map propertyNames to names ?
-                    object["updateSet_" + key] = this.expressionMap.updateSet![key];
+                    object["updateSet__" + key] = this.expressionMap.updateSet![key];
                     return object;
                 }, {} as ObjectLiteral);
                 this.setParameters(params);
