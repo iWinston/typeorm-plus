@@ -23,6 +23,7 @@ import {Question} from "./modules/question/entity/Question";
 import {Video} from "./modules/video/entity/Video";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {DefaultNamingStrategy} from "../../../src/naming-strategy/DefaultNamingStrategy";
+import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
 
 describe("Connection", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/connection/";
@@ -294,7 +295,7 @@ describe("Connection", () => {
         it("schema name can be set", () => {
             return Promise.all(connections.map(async connection => {
                 await connection.syncSchema(true);
-                const schemaName = (connection.driver as PostgresDriver).schemaName;
+                const schemaName = (connection.options as PostgresConnectionOptions).schemaName;
                 const comment = new CommentV1();
                 comment.title = "Change SchemaName";
                 comment.context = `To ${schemaName}`;

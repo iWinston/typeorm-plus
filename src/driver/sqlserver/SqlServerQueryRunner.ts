@@ -3,8 +3,6 @@ import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {Logger} from "../../logger/Logger";
-import {SqlServerDriver} from "./SqlServerDriver";
 import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -15,8 +13,6 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
-import {MysqlDriver} from "../mysql/MysqlDriver";
-import {SqliteConnectionOptions} from "../sqlite/SqliteConnectionOptions";
 import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 
 /**
@@ -198,7 +194,8 @@ export class SqlServerQueryRunner implements QueryRunner {
         return new Promise((ok, fail) => {
 
             this.connection.logger.logQuery(query, parameters);
-            const request = new (this.connection.driver as SqlServerDriver).mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
+            const mssql = this.connection.driver.nativeInterface().driver;
+            const request = new mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
                     request.input(index, parameters![index]);

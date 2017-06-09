@@ -1,6 +1,5 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
@@ -11,18 +10,11 @@ import {Logger} from "../../logger/Logger";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
-
-// todo(tests):
-// check connection with url
-// check if any of required option is not set exception to be thrown
-//
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -34,17 +26,17 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Postgres library.
+     * Connection options.
+     */
+    protected options: PostgresConnectionOptions;
+
+    /**
+     * Postgres underlying library.
      */
     protected postgres: any;
 
     /**
-     * Connection to postgres database.
-     */
-    protected databaseConnection: DatabaseConnection|undefined;
-
-    /**
-     * Postgres pool.
+     * Database connection pool created by underlying driver.
      */
     protected pool: any;
 
@@ -52,19 +44,6 @@ export class PostgresDriver implements Driver {
      * Pool of database connections.
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
-
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
-
-    /**
-     * Schema name. (Only used in Postgres)
-     * default: "public"
-     */
-    public schemaName?: string;
-
-    protected options: PostgresConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -75,7 +54,6 @@ export class PostgresDriver implements Driver {
         this.options = connection.options as PostgresConnectionOptions;
 
         Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
-        this.schemaName = this.options.schemaName || "public";
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -119,28 +97,20 @@ export class PostgresDriver implements Driver {
      * Closes connection with database.
      */
     disconnect(): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
+        if (!this.pool)
             throw new ConnectionIsNotSetError("postgres");
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
 
-            if (this.databaseConnection) {
-                this.databaseConnection.connection.end(/*handler*/); // todo: check if it can emit errors
-                this.databaseConnection = undefined;
-            }
-
-            if (this.pool) {
-                this.databaseConnectionPool.forEach(dbConnection => {
-                    if (dbConnection && dbConnection.releaseCallback) {
-                        dbConnection.releaseCallback();
-                    }
-                });
-                this.pool.end(handler);
-                this.pool = undefined;
-                this.databaseConnectionPool = [];
-            }
-
+            this.databaseConnectionPool.forEach(dbConnection => {
+                if (dbConnection && dbConnection.releaseCallback) {
+                    dbConnection.releaseCallback();
+                }
+            });
+            this.pool.end(handler);
+            this.pool = undefined;
+            this.databaseConnectionPool = [];
             ok();
         });
     }
@@ -157,7 +127,7 @@ export class PostgresDriver implements Driver {
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection && !this.pool)
+        if (!this.pool)
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
@@ -170,7 +140,6 @@ export class PostgresDriver implements Driver {
     nativeInterface() {
         return {
             driver: this.postgres,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
     }
@@ -187,16 +156,16 @@ export class PostgresDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataUtils.mixedDateToTimeString(value);
 
             case ColumnTypes.DATETIME:
                 if (column.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                    return DataUtils.mixedDateToDatetimeString(value);
                 } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                    return DataUtils.mixedDateToUtcDatetimeString(value);
                 }
 
             case ColumnTypes.JSON:
@@ -204,7 +173,7 @@ export class PostgresDriver implements Driver {
                 return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+                return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -219,13 +188,13 @@ export class PostgresDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+                return DataUtils.mixedTimeToString(value);
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
@@ -234,7 +203,7 @@ export class PostgresDriver implements Driver {
                 return value;
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+                return DataUtils.stringToSimpleArray(value);
         }
 
         return value;
@@ -296,47 +265,40 @@ export class PostgresDriver implements Driver {
      * Otherwise active connection will be returned.
      */
     protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.pool) {
-            return new Promise((ok, fail) => {
-                this.pool.connect((err: any, connection: any, release: Function) => {
-                    if (err) {
-                        fail(err);
-                        return;
-                    }
+        return new Promise((ok, fail) => {
+            this.pool.connect((err: any, connection: any, release: Function) => {
+                if (err) {
+                    fail(err);
+                    return;
+                }
 
-                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                    if (!dbConnection) {
-                        dbConnection = {
-                            id: this.databaseConnectionPool.length,
-                            connection: connection,
-                            isTransactionActive: false
-                        };
-                        this.databaseConnectionPool.push(dbConnection);
-                    }
-                    dbConnection.releaseCallback = () => {
-                        if (dbConnection) {
-                            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                        }
-                        release();
-                        return Promise.resolve();
+                let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
+                if (!dbConnection) {
+                    dbConnection = {
+                        id: this.databaseConnectionPool.length,
+                        connection: connection,
+                        isTransactionActive: false
                     };
-                    dbConnection.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
-                        if (err) {
-                            this.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                            this.connection.logger.logQueryError(err);
-                            fail(err);
-                        } else {
-                            ok(dbConnection);
-                        }
-                    });
+                    this.databaseConnectionPool.push(dbConnection);
+                }
+                dbConnection.releaseCallback = () => {
+                    if (dbConnection) {
+                        this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+                    }
+                    release();
+                    return Promise.resolve();
+                };
+                dbConnection.connection.query(`SET search_path TO '${this.options.schemaName || "default"}', 'public';`, (err: any) => {
+                    if (err) {
+                        this.connection.logger.logFailedQuery(`SET search_path TO '${this.options.schemaName || "default"}', 'public';`);
+                        this.connection.logger.logQueryError(err);
+                        fail(err);
+                    } else {
+                        ok(dbConnection);
+                    }
                 });
             });
-        }
-
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("postgres");
+        });
     }
 
     /**

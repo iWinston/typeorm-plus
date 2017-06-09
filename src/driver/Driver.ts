@@ -1,9 +1,6 @@
-import {DriverOptions} from "./DriverOptions";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -12,13 +9,12 @@ export interface Driver {
 
     /**
      * Performs connection to the database.
-     * Based on pooling options, it can either create connection immediately,
-     * either create a pool and create connection when needed.
+     * Depend on driver type it may create a connection pool.
      */
     connect(): Promise<void>;
 
     /**
-     * Closes connection with database.
+     * Closes connection with database and releases all resourc.
      */
     disconnect(): Promise<void>;
 

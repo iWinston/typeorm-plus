@@ -13,7 +13,6 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
-import {OracleDriver} from "./OracleDriver";
 import {OracleConnectionOptions} from "./OracleConnectionOptions";
 
 /**
@@ -180,7 +179,7 @@ export class OracleQueryRunner implements QueryRunner {
             : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         if (generatedColumn) {
             const sql2 = `declare lastId number; begin ${insertSql} returning "id" into lastId; dbms_output.enable; dbms_output.put_line(lastId); dbms_output.get_line(:ln, :st); end;`;
-            const oracle = (this.connection.driver as OracleDriver).oracle;
+            const oracle = this.connection.driver.nativeInterface().driver;
             const saveResult = await this.query(sql2, parameters.concat([
                 { dir: oracle.BIND_OUT, type: oracle.STRING, maxSize: 32767 },
                 { dir: oracle.BIND_OUT, type: oracle.NUMBER }

@@ -1,19 +1,15 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Logger} from "../../logger/Logger";
 import {SqliteQueryRunner} from "./SqliteQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
@@ -28,7 +24,12 @@ export class SqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * SQLite library.
+     * Connection options.
+     */
+    protected options: SqliteConnectionOptions;
+
+    /**
+     * SQLite underlying library.
      */
     protected sqlite: any;
 
@@ -36,8 +37,6 @@ export class SqliteDriver implements Driver {
      * Connection to SQLite database.
      */
     protected databaseConnection: DatabaseConnection|undefined;
-
-    protected options: SqliteConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -137,23 +136,23 @@ export class SqliteDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataUtils.mixedDateToTimeString(value);
 
             case ColumnTypes.DATETIME:
                 if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                    return DataUtils.mixedDateToDatetimeString(value);
                 } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                    return DataUtils.mixedDateToUtcDatetimeString(value);
                 }
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+                return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -168,19 +167,19 @@ export class SqliteDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+                return DataUtils.mixedTimeToString(value);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+                return DataUtils.stringToSimpleArray(value);
         }
 
         return value;

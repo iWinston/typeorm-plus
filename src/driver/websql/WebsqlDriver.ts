@@ -1,15 +1,13 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverUtils} from "../DriverUtils";
-import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DataUtils} from "../../util/DataUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
@@ -30,11 +28,14 @@ export class WebsqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Connection options.
+     */
+    protected options: WebSqlConnectionOptions;
+
+    /**
      * Connection to database.
      */
     protected databaseConnection: DatabaseConnection|undefined;
-    
-    protected options: WebSqlConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -178,23 +179,23 @@ export class WebsqlDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataUtils.mixedDateToTimeString(value);
 
             case ColumnTypes.DATETIME:
                 if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                    return DataUtils.mixedDateToDatetimeString(value);
                 } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                    return DataUtils.mixedDateToUtcDatetimeString(value);
                 }
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+                return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -209,19 +210,19 @@ export class WebsqlDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+                return DataUtils.mixedTimeToString(value);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+                return DataUtils.stringToSimpleArray(value);
         }
 
         return value;

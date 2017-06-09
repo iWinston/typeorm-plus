@@ -1,26 +1,21 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {DriverUtils} from "../DriverUtils";
-import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {OracleQueryRunner} from "./OracleQueryRunner";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {OracleConnectionOptions} from "./OracleConnectionOptions";
 
 /**
- * Organizes communication with Oracle DBMS.
+ * Organizes communication with Oracle RDBMS.
  *
  * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
@@ -31,17 +26,17 @@ export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Oracle library.
+     * Connection options.
      */
-    oracle: any;
+    protected options: OracleConnectionOptions;
 
     /**
-     * Connection to oracle database.
+     * Underlying oracle library.
      */
-    protected databaseConnection: DatabaseConnection|undefined;
+    protected oracle: any;
 
     /**
-     * Oracle pool.
+     * Database connection pool created by underlying driver.
      */
     protected pool: any;
 
@@ -49,8 +44,6 @@ export class OracleDriver implements Driver {
      * Pool of database connections.
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
-
-    protected options: OracleConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -72,6 +65,8 @@ export class OracleDriver implements Driver {
 
         // load oracle package
         this.loadDependencies();
+
+        // extra oracle setup
         this.oracle.outFormat = this.oracle.OBJECT;
     }
 
@@ -110,24 +105,16 @@ export class OracleDriver implements Driver {
      * Closes connection with the database.
      */
     disconnect(): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
+        if (!this.pool)
             throw new ConnectionIsNotSetError("oracle");
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
 
             // if pooling is used, then disconnect from it
-            if (this.pool) {
-                this.pool.close(handler);
-                this.pool = undefined;
-                this.databaseConnectionPool = [];
-            }
-
-            // if single connection is opened, then close it
-            if (this.databaseConnection) {
-                this.databaseConnection.connection.close(handler);
-                this.databaseConnection = undefined;
-            }
+            this.pool.close(handler);
+            this.pool = undefined;
+            this.databaseConnectionPool = [];
         });
     }
 
@@ -143,7 +130,7 @@ export class OracleDriver implements Driver {
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection && !this.pool)
+        if (!this.pool)
             return Promise.reject(new ConnectionIsNotSetError("oracle"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
@@ -156,7 +143,6 @@ export class OracleDriver implements Driver {
     nativeInterface() {
         return {
             driver: this.oracle,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
     }
@@ -181,7 +167,7 @@ export class OracleDriver implements Driver {
      * Escapes a column name.
      */
     escapeColumnName(columnName: string): string {
-        return `"${columnName}"`; // "`" + columnName + "`";
+        return `"${columnName}"`;
     }
 
     /**
@@ -210,23 +196,23 @@ export class OracleDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataUtils.mixedDateToTimeString(value);
 
             case ColumnTypes.DATETIME:
                 if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                    return DataUtils.mixedDateToDatetimeString(value);
                 } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                    return DataUtils.mixedDateToUtcDatetimeString(value);
                 }
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+                return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -241,19 +227,19 @@ export class OracleDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+                return DataUtils.mixedTimeToString(value);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+                return DataUtils.stringToSimpleArray(value);
         }
 
         return value;
@@ -269,54 +255,46 @@ export class OracleDriver implements Driver {
      * Otherwise active connection will be returned.
      */
     protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
+        return new Promise((ok, fail) => {
+            this.pool.getConnection((err: any, connection: any) => {
+                if (err)
+                    return fail(err);
 
-        if (this.pool) {
-            return new Promise((ok, fail) => {
-                this.pool.getConnection((err: any, connection: any) => {
-                    if (err)
-                        return fail(err);
+                let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
+                if (!dbConnection) {
+                    dbConnection = {
+                        id: this.databaseConnectionPool.length,
+                        connection: connection,
+                        isTransactionActive: false
+                    };
+                    dbConnection.releaseCallback = () => {
+                        return new Promise<void>((ok, fail) => {
+                            connection.close((err: any) => {
+                                if (err)
+                                    return fail(err);
 
-                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                    if (!dbConnection) {
-                        dbConnection = {
-                            id: this.databaseConnectionPool.length,
-                            connection: connection,
-                            isTransactionActive: false
-                        };
-                        dbConnection.releaseCallback = () => {
-                            return new Promise<void>((ok, fail) => {
-                                connection.close((err: any) => {
-                                    if (err)
-                                        return fail(err);
-
-                                    if (this.pool && dbConnection) {
-                                        this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                                    }
-                                    ok();
-                                });
+                                if (this.pool && dbConnection) {
+                                    this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+                                }
+                                ok();
                             });
-                        };
-                        this.databaseConnectionPool.push(dbConnection);
-                    }
-                    ok(dbConnection);
-                });
+                        });
+                    };
+                    this.databaseConnectionPool.push(dbConnection);
+                }
+                ok(dbConnection);
             });
-        }
-
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("oracle");
+        });
     }
 
     /**
-     * If driver dependency is not given explicitly, then try to load it via "require".
+     * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
         try {
             this.oracle = PlatformTools.load("oracledb");
 
-        } catch (e) { // todo: better error for browser env
+        } catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb");
         }
     }

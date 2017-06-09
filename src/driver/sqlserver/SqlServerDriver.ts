@@ -1,20 +1,16 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
-import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {SqlServerQueryRunner} from "./SqlServerQueryRunner";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
@@ -25,22 +21,18 @@ import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 export class SqlServerDriver implements Driver {
 
     // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * SQL Server library.
-     */
-    public mssql: any;
-
-    // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection to mssql database.
+     * Connection options.
      */
-    protected databaseConnection: DatabaseConnection|undefined;
+    protected options: SqlServerConnectionOptions;
+
+    /**
+     * SQL Server library.
+     */
+    protected mssql: any;
 
     /**
      * SQL Server pool.
@@ -51,15 +43,12 @@ export class SqlServerDriver implements Driver {
      * Pool of database connections.
      */
     protected databaseConnectionPool: DatabaseConnection[] = [];
-
-    protected options: SqlServerConnectionOptions;
     
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection) {
-
         this.options = connection.options as SqlServerConnectionOptions;
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
@@ -119,7 +108,6 @@ export class SqlServerDriver implements Driver {
 
         this.connectionPool.close();
         this.connectionPool = undefined;
-        this.databaseConnection = undefined;
         this.databaseConnectionPool = [];
     }
 
@@ -148,7 +136,6 @@ export class SqlServerDriver implements Driver {
     nativeInterface() {
         return {
             driver: this.mssql,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.connectionPool
         };
     }
@@ -210,23 +197,23 @@ export class SqlServerDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataUtils.mixedDateToTimeString(value);
 
             case ColumnTypes.DATETIME:
                 if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                    return DataUtils.mixedDateToDatetimeString(value);
                 } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                    return DataUtils.mixedDateToUtcDatetimeString(value);
                 }
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+                return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -241,19 +228,19 @@ export class SqlServerDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+                return DataUtils.mixedTimeToString(value);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+                return DataUtils.stringToSimpleArray(value);
         }
 
         return value;
@@ -274,32 +261,12 @@ export class SqlServerDriver implements Driver {
             throw new ConnectionIsNotSetError("mssql");
 
         return new Promise((ok, fail) => {
-            if (this.databaseConnection)
-                return ok(this.databaseConnection);
-            // let dbConnection: DatabaseConnection|undefined;
-            // const connection = this.pool.connect((err: any) => {
-            //     if (err)
-            //         return fail(err);
-            //     ok(dbConnection);
-            // });
-            //
-            // console.log(connection);
-            // console.log(this.pool);
-            // console.log(this.pool === connection);
-
-            // const request = new this.mssql.Request(this.connection);
-            // console.log("request:", request);
-            // let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-            // if (!dbConnection) {
             let dbConnection: DatabaseConnection = {
                 id: this.databaseConnectionPool.length,
                 connection: this.connectionPool,
                 isTransactionActive: false
             };
             dbConnection.releaseCallback = () => {
-                // }
-                // if (this.connection && dbConnection) {
-                // request.release();
                 this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
                 return Promise.resolve();
             };

@@ -3,7 +3,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {DataTransformationUtils} from "../util/DataTransformationUtils";
+import {DataUtils} from "../util/DataUtils";
 
 /**
  * Holds information about insert operation into junction table.
@@ -327,18 +327,18 @@ export class Subject {
             // normalize special values to make proper comparision
             if (entityValue !== null && entityValue !== undefined) {
                 if (column.type === ColumnTypes.DATE) {
-                    entityValue = DataTransformationUtils.mixedDateToDateString(entityValue);
+                    entityValue = DataUtils.mixedDateToDateString(entityValue);
 
                 } else if (column.type === ColumnTypes.TIME) {
-                    entityValue = DataTransformationUtils.mixedDateToTimeString(entityValue);
+                    entityValue = DataUtils.mixedDateToTimeString(entityValue);
 
                 } else if (column.type === ColumnTypes.DATETIME) {
                     // if (column.loadInLocalTimezone) {
                     //     entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
                     //     databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
                     // } else {
-                        entityValue = DataTransformationUtils.mixedDateToUtcDatetimeString(entityValue);
-                        databaseValue = DataTransformationUtils.mixedDateToUtcDatetimeString(databaseValue);
+                        entityValue = DataUtils.mixedDateToUtcDatetimeString(entityValue);
+                        databaseValue = DataUtils.mixedDateToUtcDatetimeString(databaseValue);
                     // }
 
                 } else if (column.type === ColumnTypes.JSON) {
@@ -347,8 +347,8 @@ export class Subject {
                         databaseValue = JSON.stringify(databaseValue);
 
                 } else if (column.type === ColumnTypes.SIMPLE_ARRAY) {
-                    entityValue = DataTransformationUtils.simpleArrayToString(entityValue);
-                    databaseValue = DataTransformationUtils.simpleArrayToString(databaseValue);
+                    entityValue = DataUtils.simpleArrayToString(entityValue);
+                    databaseValue = DataUtils.simpleArrayToString(databaseValue);
                 }
             }
             // todo: this mechanism does not get in count embeddeds in embeddeds

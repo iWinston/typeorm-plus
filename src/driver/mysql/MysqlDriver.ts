@@ -1,20 +1,16 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
-import {Logger} from "../../logger/Logger";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {MysqlQueryRunner} from "./MysqlQueryRunner";
 import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-import {LazyRelationsWrapper} from "../../lazy-loading/LazyRelationsWrapper";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
@@ -29,26 +25,24 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Mysql library.
+     * Connection options.
+     */
+    protected options: MysqlConnectionOptions;
+
+    /**
+     * Mysql underlying library.
      */
     protected mysql: any;
 
     /**
-     * Connection to mysql database.
-     */
-    protected databaseConnection: DatabaseConnection|undefined;
-
-    /**
-     * Mysql pool.
+     * Database connection pool created by underlying driver.
      */
     protected pool: any;
 
     /**
      * Pool of database connections.
      */
-    protected databaseConnectionPool: DatabaseConnection[] = [];
-    
-    protected options: MysqlConnectionOptions;
+    protected databaseConnections: DatabaseConnection[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -77,10 +71,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Performs connection to the database.
-     * Based on pooling options, it can either create connection immediately,
-     * either create a pool and create connection when needed.
      */
-    connect(): Promise<void> {
+    async connect(): Promise<void> {
 
         // build connection options for the driver
         const options = Object.assign({}, {
@@ -91,34 +83,21 @@ export class MysqlDriver implements Driver {
             port: this.options.port
         }, this.options.extra || {});
 
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
         this.pool = this.mysql.createPool(options);
-        return Promise.resolve();
     }
 
     /**
      * Closes connection with the database.
      */
     disconnect(): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
+        if (!this.pool)
             throw new ConnectionIsNotSetError("mysql");
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
-
-            // if pooling is used, then disconnect from it
-            if (this.pool) {
-                this.pool.end(handler);
-                this.pool = undefined;
-                this.databaseConnectionPool = [];
-            }
-
-            // if single connection is opened, then close it
-            if (this.databaseConnection) {
-                this.databaseConnection.connection.end(handler);
-                this.databaseConnection = undefined;
-            }
+            this.pool.end(handler);
+            this.pool = undefined;
+            this.databaseConnections = [];
         });
     }
 
@@ -126,6 +105,9 @@ export class MysqlDriver implements Driver {
      * Synchronizes database schema (creates tables, indices, etc).
      */
     syncSchema(): Promise<void> {
+        if (!this.pool)
+            throw new ConnectionIsNotSetError("mysql");
+
         const schemaBuilder = new SchemaBuilder(this.connection);
         return schemaBuilder.build();
     }
@@ -134,7 +116,7 @@ export class MysqlDriver implements Driver {
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection && !this.pool)
+        if (!this.pool)
             return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
@@ -147,7 +129,6 @@ export class MysqlDriver implements Driver {
     nativeInterface() {
         return {
             driver: this.mysql,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
             pool: this.pool
         };
     }
@@ -159,6 +140,7 @@ export class MysqlDriver implements Driver {
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, []];
+
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
@@ -201,23 +183,23 @@ export class MysqlDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataUtils.mixedDateToTimeString(value);
 
             case ColumnTypes.DATETIME:
                 if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
+                    return DataUtils.mixedDateToDatetimeString(value);
                 } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
+                    return DataUtils.mixedDateToUtcDatetimeString(value);
                 }
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+                return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -232,19 +214,19 @@ export class MysqlDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataUtils.mixedDateToDateString(value);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+                return DataUtils.mixedTimeToString(value);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+                return DataUtils.stringToSimpleArray(value);
         }
 
         return value;
@@ -260,42 +242,35 @@ export class MysqlDriver implements Driver {
      * Otherwise active connection will be returned.
      */
     protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
+        return new Promise((ok, fail) => {
+            this.pool.getConnection((err: any, connection: any) => {
+                if (err)
+                    return fail(err);
 
-        if (this.pool) {
-            return new Promise((ok, fail) => {
-                this.pool.getConnection((err: any, connection: any) => {
-                    if (err)
-                        return fail(err);
-
-                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                    if (!dbConnection) {
-                        dbConnection = {
-                            id: this.databaseConnectionPool.length,
-                            connection: connection,
-                            isTransactionActive: false
-                        };
-                        dbConnection.releaseCallback = () => {
-                            if (this.pool && dbConnection) {
+                let dbConnection = this.databaseConnections.find(dbConnection => dbConnection.connection === connection);
+                if (!dbConnection) {
+                    const driver = this;
+                    dbConnection = {
+                        id: this.databaseConnections.length,
+                        connection: connection,
+                        isTransactionActive: false,
+                        releaseCallback: function() {
+                            if (driver.pool) {
                                 connection.release();
-                                this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
+                                driver.databaseConnections.splice(driver.databaseConnections.indexOf(this), 1);
                             }
                             return Promise.resolve();
-                        };
-                        this.databaseConnectionPool.push(dbConnection);
-                    }
-                    ok(dbConnection);
-                });
+                        }
+                    };
+                    this.databaseConnections.push(dbConnection);
+                }
+                ok(dbConnection);
             });
-        }
-
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("mysql");
+        });
     }
 
     /**
-     * If driver dependency is not given explicitly, then try to load it via "require".
+     * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
         try {
