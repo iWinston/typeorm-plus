@@ -6,12 +6,12 @@ export interface DatabaseConnection {
     /**
      * Id of the connection.
      */
-    readonly id: number;
+    id: number;
 
     /**
      * Native driver's connection object.
      */
-    readonly connection: any;
+    connection: any;
 
     /**
      * Connection's transaction instance.

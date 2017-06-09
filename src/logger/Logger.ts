@@ -3,6 +3,8 @@ import {PlatformTools} from "../platform/PlatformTools";
 
 /**
  * Performs logging of the events in TypeORM.
+ *
+ * todo: implement logging of too long running queries (there should be option to control max query execution time)
  */
 export class Logger {
 

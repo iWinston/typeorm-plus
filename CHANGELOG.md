@@ -36,6 +36,7 @@ Now naming strategy should be registered by passing naming strategy instance dir
 * env variable names for connection were changed (`TYPEORM_DRIVER_TYPE` has been renamed to `TYPEORM_CONNECTION`, some other renaming).
 More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * some api changes in `ConnectionManager` and `createConnection` / `createConnections` methods of typeorm main entrypoint
+* `usePool` option has been removed from connection options. Now connections are working only with connection pooling
 
 ### OTHER API CHANGES
 
