@@ -1,5 +1,5 @@
-import * as fs from "fs";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {CommandUtils} from "./CommandUtils";
 
 /**
  * Generates a new entity.
@@ -45,21 +45,12 @@ export class EntityCreateCommand {
             } catch (err) { }
         }
 
-        await EntityCreateCommand.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
+        await CommandUtils.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------
     // Protected Static Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Creates a file with the given content in the given path.
-     */
-    protected static createFile(path: string, content: string): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            fs.writeFile(path, content, err => err ? fail(err) : ok());
-        });
-    }
 
     /**
      * Gets contents of the entity file.

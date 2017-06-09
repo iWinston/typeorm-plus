@@ -35,6 +35,11 @@ export class ConnectionOptionsEnvReader {
                 logQueries: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_QUERIES")),
                 logFailedQueryError: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_FAILED_QUERIES")),
                 logOnlyFailedQueries: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_LOGGING_ONLY_FAILED_QUERIES")),
+            },
+            cli: {
+                entitiesDir: PlatformTools.getEnvVariable("TYPEORM_ENTITIES_DIR"),
+                migrationsDir: PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_DIR"),
+                subscribersDir: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS_DIR"),
             }
         };
     }

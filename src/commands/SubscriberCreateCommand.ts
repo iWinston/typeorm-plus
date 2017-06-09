@@ -1,6 +1,7 @@
 import * as fs from "fs";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {CommandUtils} from "./CommandUtils";
+const mkdirp = require("mkdirp");
 
 /**
  * Generates a new subscriber.
@@ -46,21 +47,12 @@ export class SubscriberCreateCommand {
             } catch (err) { }
         }
 
-        await SubscriberCreateCommand.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
+        await CommandUtils.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------
     // Protected Static Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Creates a file with the given content in the given path.
-     */
-    protected static createFile(path: string, content: string): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            fs.writeFile(path, content, err => err ? fail(err) : ok());
-        });
-    }
 
     /**
      * Gets contents of the entity file.
