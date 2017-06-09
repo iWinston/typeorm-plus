@@ -10,6 +10,9 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
 
+/**
+ * Builds migration instances, subscriber instances and entity metadatas for the given classes.
+ */
 export class ConnectionMetadataBuilder {
 
     // -------------------------------------------------------------------------
@@ -23,12 +26,18 @@ export class ConnectionMetadataBuilder {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Builds migration instances for the given classes or directories.
+     */
     buildMigrations(migrations: Function[]|string[]): MigrationInterface[] {
         const [migrationClasses, migrationDirectories] = OrmUtils.splitClassesAndStrings(migrations);
         const allMigrationClasses = [...migrationClasses, ...importClassesFromDirectories(migrationDirectories)];
         return allMigrationClasses.map(migrationClass => getFromContainer<MigrationInterface>(migrationClass));
     }
 
+    /**
+     * Builds subscriber instances for the given classes or directories.
+     */
     buildSubscribers(subscribers: Function[]|string[]): EntitySubscriberInterface<any>[] {
         const [subscriberClasses, subscriberDirectories] = OrmUtils.splitClassesAndStrings(subscribers || []);
         const allSubscriberClasses = [...subscriberClasses, ...importClassesFromDirectories(subscriberDirectories)];
@@ -37,6 +46,9 @@ export class ConnectionMetadataBuilder {
             .map(metadata => getFromContainer<EntitySubscriberInterface<any>>(metadata.target));
     }
 
+    /**
+     * Builds entity metadatas for the given classes or directories.
+     */
     buildEntityMetadatas(entities: Function[]|string[], schemas: EntitySchema[]|string[]): EntityMetadata[] {
         const [entityClasses, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
         const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(entityDirectories)];

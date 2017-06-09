@@ -142,9 +142,22 @@ export class Connection {
         // set connected status for the current connection
         Object.assign(this, { isConnected: true });
 
-        // build all metadatas registered in the current connection
         try {
+
+            // build all metadatas registered in the current connection
             this.buildMetadatas();
+
+            // if option is set - drop schema once connection is done
+            if (this.options.dropSchemaOnConnection && !PlatformTools.getEnvVariable("SKIP_SCHEMA_CREATION"))
+                await this.dropDatabase();
+
+            // if option is set - automatically synchronize a schema
+            if (this.options.autoSchemaSync && !PlatformTools.getEnvVariable("SKIP_SCHEMA_CREATION"))
+                await this.syncSchema();
+
+            // if option is set - automatically synchronize a schema
+            if (this.options.autoMigrationsRun && !PlatformTools.getEnvVariable("SKIP_MIGRATIONS_RUN"))
+                await this.runMigrations();
 
         } catch (error) {
 
@@ -300,7 +313,7 @@ export class Connection {
 
         const usedQueryRunnerProvider = queryRunnerProvider || new QueryRunnerProvider(this.driver, true);
         const queryRunner = await usedQueryRunnerProvider.provide();
-        const transactionEntityManager = new EntityManager(this, usedQueryRunnerProvider);
+        const transactionEntityManager = new EntityManagerFactory().create(this, usedQueryRunnerProvider);
 
         try {
             await queryRunner.beginTransaction();
@@ -371,7 +384,7 @@ export class Connection {
     /**
      * Creates a new entity manager with a single opened connection to the database.
      * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
     createIsolatedManager(queryRunnerProvider?: QueryRunnerProvider): EntityManager {
         if (!queryRunnerProvider)
@@ -383,7 +396,7 @@ export class Connection {
     /**
      * Creates a new repository with a single opened connection to the database.
      * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
     createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunnerProvider?: QueryRunnerProvider): Repository<Entity> {
         if (!queryRunnerProvider)
@@ -395,7 +408,7 @@ export class Connection {
     /**
      * Creates a new specific repository with a single opened connection to the database.
      * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it, to release connection back to pool.
+     * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
     createIsolatedSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<Entity> {
         if (!queryRunnerProvider)
@@ -435,7 +448,7 @@ export class Connection {
     // -------------------------------------------------------------------------
 
     /**
-     * Finds entity metadata exist for the given entity class, target name or table name.
+     * Finds exist entity metadata by the given entity class, target name or table name.
      */
     protected findMetadata(target: Function|string): EntityMetadata|undefined {
         return this.entityMetadatas.find(metadata => {
@@ -449,7 +462,7 @@ export class Connection {
     }
 
     /**
-     * Builds all registered metadatas.
+     * Builds metadatas for all registered classes inside this connection.
      */
     protected buildMetadatas(): void {
 
@@ -457,7 +470,7 @@ export class Connection {
         const repositoryFactory = new RepositoryFactory();
         const entityMetadataValidator = new EntityMetadataValidator();
 
-        // build subscribers if they are not disallowed from high-level (for example they can disallowed from migrations run process)
+        // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
         if (!PlatformTools.getEnvVariable("SKIP_SUBSCRIBERS_LOADING")) {
             const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
             Object.assign(this, { subscribers: subscribers });

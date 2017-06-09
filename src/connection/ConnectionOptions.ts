@@ -11,7 +11,8 @@ import {MongoConnectionOptions} from "../driver/mongodb/MongoConnectionOptions";
  * Options contain database and other connection-related settings.
  * Consumer must provide connection options for each of your connections.
  */
-export type ConnectionOptions = MysqlConnectionOptions|
+export type ConnectionOptions =
+    MysqlConnectionOptions|
     PostgresConnectionOptions|
     SqliteConnectionOptions|
     SqlServerConnectionOptions|

@@ -1,4 +1,5 @@
 import {createConnection} from "../index";
+import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 
 /**
  * Runs migration command.
@@ -17,7 +18,7 @@ export class MigrationRunCommand {
             })
             .option("cf", {
                 alias: "config",
-                default: "ormconfig.json",
+                default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
     }
@@ -27,7 +28,10 @@ export class MigrationRunCommand {
         try {
             process.env.SKIP_SCHEMA_CREATION = true;
             process.env.SKIP_SUBSCRIBERS_LOADING = true;
-            const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
+            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            const connection = await createConnection(connectionOptions);
+
             try {
                 await connection.runMigrations();
 

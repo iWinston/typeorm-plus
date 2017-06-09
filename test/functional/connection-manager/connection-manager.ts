@@ -54,7 +54,7 @@ describe("ConnectionManager", () => {
 
     });
 
-    describe("createAndConnect", function() {
+    /*describe("createAndConnect", function() {
 
         it("should create a mysql connection when mysql driver is specified AND connect to it", async () => {
             const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
@@ -69,7 +69,7 @@ describe("ConnectionManager", () => {
             await connection.close();
         });
 
-    /*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
+    /!*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
             const options: ConnectionOptions = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
@@ -80,9 +80,9 @@ describe("ConnectionManager", () => {
             connection.driver.should.be.instanceOf(PostgresDriver);
             connection.isConnected.should.be.true;
             await connection.close();
-        });*/
+        });*!/
 
-    });
+    });*/
 
     describe("get", function() {
 
@@ -121,13 +121,13 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection
-            let connection = await connectionManager.createAndConnect(options);
+            let connection = await connectionManager.create(options).connect();
             const post = new Post(1, "Hello post");
             await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
-            connection = await connectionManager.createAndConnect(options);
+            connection = await connectionManager.create(options).connect();
             const loadedPost = (await connection.manager.findOneById(Post, 1))!;
             loadedPost.should.be.instanceof(Post);
             loadedPost.should.be.eql({ id: 1, title: "Hello post" });
@@ -144,13 +144,13 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection
-            let connection = await connectionManager.createAndConnect(options);
+            let connection = await connectionManager.create(options).connect();
             const post = new Post(1, "Hello post");
             await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
-            connection = await connectionManager.createAndConnect(options);
+            connection = await connectionManager.create(options).connect();
             const loadedPost = await connection.manager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();

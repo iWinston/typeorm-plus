@@ -1,5 +1,6 @@
 import {createConnections, createConnection} from "../index";
 import {Connection} from "../connection/Connection";
+import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 
 /**
  * Drops all tables of the database from the given connection.
@@ -18,7 +19,7 @@ export class SchemaDropCommand {
             })
             .option("cf", {
                 alias: "config",
-                default: "ormconfig.json",
+                default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
     }
@@ -29,12 +30,16 @@ export class SchemaDropCommand {
         try {
             process.env.LOGGER_CLI_SCHEMA_SYNC = true;
             process.env.SKIP_SCHEMA_CREATION = true;
+
+            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             if (argv.connection) {
-                connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
+                const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                connection = await createConnection(connectionOptions);
                 await connection.dropDatabase();
 
             } else {
-                connections = await createConnections();
+                const connectionOptions = await connectionOptionsReader.all();
+                connections = await createConnections(connectionOptions);
                 await Promise.all(connections.map(connection => connection.dropDatabase()));
             }
 
