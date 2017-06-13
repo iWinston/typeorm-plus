@@ -25,6 +25,11 @@ export interface QueryRunner {
     readonly isTransactionActive: boolean;
 
     /**
+     * Creates/uses connection from the connection pool to perform further operations.
+     */
+    connect(): Promise<void>;
+
+    /**
      * Releases database connection. This is needed when using connection pooling.
      * If connection is not from a pool, it should not be released.
      * You cannot use this class's methods after its released.

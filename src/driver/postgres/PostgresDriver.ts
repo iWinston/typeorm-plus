@@ -1,7 +1,6 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -107,12 +106,7 @@ export class PostgresDriver implements Driver {
     /**
      * Database connection pool created by underlying driver.
      */
-    protected pool: any;
-
-    /**
-     * Pool of database connections.
-     */
-    protected databaseConnectionPool: DatabaseConnection[] = [];
+    pool: any;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -172,14 +166,14 @@ export class PostgresDriver implements Driver {
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
 
-            this.databaseConnectionPool.forEach(dbConnection => {
+            // todo: do we really needed this code:
+            /*this.databaseConnectionPool.forEach(dbConnection => {
                 if (dbConnection && dbConnection.releaseCallback) {
                     dbConnection.releaseCallback();
                 }
-            });
+            });*/
             this.pool.end(handler);
             this.pool = undefined;
-            this.databaseConnectionPool = [];
             ok();
         });
     }
@@ -199,8 +193,9 @@ export class PostgresDriver implements Driver {
         if (!this.pool)
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new PostgresQueryRunner(this.connection, databaseConnection);
+        const queryRunner = new PostgresQueryRunner(this.connection);
+        await queryRunner.connect();
+        return queryRunner;
     }
 
     /**
@@ -317,46 +312,6 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        return new Promise((ok, fail) => {
-            this.pool.connect((err: any, connection: any, release: Function) => {
-                if (err) {
-                    fail(err);
-                    return;
-                }
-
-                let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                if (!dbConnection) {
-                    dbConnection = {
-                        connection: connection
-                    };
-                    this.databaseConnectionPool.push(dbConnection);
-                }
-                dbConnection.releaseCallback = () => {
-                    if (dbConnection) {
-                        this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                    }
-                    release();
-                    return Promise.resolve();
-                };
-                dbConnection.connection.query(`SET search_path TO '${this.options.schemaName || "default"}', 'public';`, (err: any) => {
-                    if (err) {
-                        this.connection.logger.logFailedQuery(`SET search_path TO '${this.options.schemaName || "default"}', 'public';`);
-                        this.connection.logger.logQueryError(err);
-                        fail(err);
-                    } else {
-                        ok(dbConnection);
-                    }
-                });
-            });
-        });
-    }
 
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".

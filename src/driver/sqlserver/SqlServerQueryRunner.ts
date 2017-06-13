@@ -1,9 +1,7 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
@@ -11,10 +9,9 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
 import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
-import {ColumnOptions} from "../../decorator/options/ColumnOptions";
+import {SqlServerDriver} from "./SqlServerDriver";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -36,16 +33,37 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     isTransactionActive = false;
 
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    databaseConnection: any;
+
+    /**
+     * Transaction instance opened for this query executor.
+     */
+    transaction: any;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected databaseConnection: DatabaseConnection) {
+    constructor(protected connection: Connection) {
     }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Creates/uses connection from the connection pool to perform further operations.
+     */
+    connect(): Promise<any> {
+        return new Promise((ok, fail) => {
+            const driver = this.connection.driver as SqlServerDriver;
+            this.databaseConnection = driver.connectionPool; // todo: fix it
+            ok(this.databaseConnection);
+        });
+    }
 
     /**
      * Releases database connection. This is needed when using connection pooling.
@@ -53,11 +71,8 @@ export class SqlServerQueryRunner implements QueryRunner {
      * You cannot use this class's methods after its released.
      */
     release(): Promise<void> {
-        if (this.databaseConnection.releaseCallback) {
-            this.isReleased = true;
-            return this.databaseConnection.releaseCallback();
-        }
-
+        this.isReleased = true;
+        // todo
         return Promise.resolve();
     }
 
@@ -134,8 +149,8 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         return new Promise<void>((ok, fail) => {
             this.isTransactionActive = true;
-            this.databaseConnection.transaction = this.databaseConnection.connection.transaction();
-            this.databaseConnection.transaction.begin((err: any) => {
+            this.transaction = this.databaseConnection.transaction();
+            this.transaction.begin((err: any) => {
                 if (err) {
                     this.isTransactionActive = false;
                     return fail(err);
@@ -156,7 +171,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.transaction.commit((err: any) => {
+            this.transaction.commit((err: any) => {
                 if (err) return fail(err);
                 this.isTransactionActive = false;
                 ok();
@@ -175,7 +190,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.transaction.rollback((err: any) => {
+            this.transaction.rollback((err: any) => {
                 if (err) return fail(err);
                 this.isTransactionActive = false;
                 ok();
@@ -194,7 +209,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
             this.connection.logger.logQuery(query, parameters);
             const mssql = this.connection.driver.nativeInterface().driver;
-            const request = new mssql.Request(this.isTransactionActive ? this.databaseConnection.transaction : this.databaseConnection.connection);
+            const request = new mssql.Request(this.isTransactionActive ? this.transaction : this.databaseConnection);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
                     request.input(index, parameters![index]);

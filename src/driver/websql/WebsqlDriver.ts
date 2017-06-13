@@ -1,6 +1,4 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverUtils} from "../DriverUtils";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
@@ -13,11 +11,6 @@ import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {WebSqlConnectionOptions} from "./WebSqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
-
-/**
- * Declare a global function that is only available in browsers that support WebSQL.
- */
-declare function openDatabase(...params: any[]): any;
 
 /**
  * Organizes communication with WebSQL in the browser.
@@ -86,12 +79,7 @@ export class WebsqlDriver implements Driver {
     /**
      * Connection options.
      */
-    protected options: WebSqlConnectionOptions;
-
-    /**
-     * Connection to database.
-     */
-    protected databaseConnection: DatabaseConnection|undefined;
+    options: WebSqlConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -122,38 +110,22 @@ export class WebsqlDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     connect(): Promise<void> {
-
-        // build connection options for the driver
-        const options = Object.assign({}, {
-            database: this.options.database,
-        }, this.options.extra || {});
-
-        return new Promise<void>((ok, fail) => {
-            const connection = openDatabase(
-                options.database,
-                options.version,
-                options.description,
-                options.size,
-            );
-            this.databaseConnection = {
-                connection: connection
-            };
-            ok();
-        });
+        return Promise.resolve();
     }
 
     /**
      * Closes connection with the database.
      */
     disconnect(): Promise<void> {
-        if (!this.databaseConnection)
-            throw new ConnectionIsNotSetError("websql");
+        return Promise.resolve();
+        // if (!this.databaseConnection)
+        //     throw new ConnectionIsNotSetError("websql");
 
-        return new Promise<void>((ok, fail) => {
+        // return new Promise<void>((ok, fail) => {
             // const handler = (err: any) => err ? fail(err) : ok();
             // todo: find out how to close connection
-            ok();
-        });
+            // ok();
+        // });
     }
 
     /**
@@ -168,11 +140,12 @@ export class WebsqlDriver implements Driver {
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection)
-            return Promise.reject(new ConnectionIsNotSetError("websql"));
+        // if (!this.databaseConnection)
+        //     return Promise.reject(new ConnectionIsNotSetError("websql"));
 
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new WebsqlQueryRunner(this.connection, databaseConnection);
+        const queryRunner = new WebsqlQueryRunner(this.connection);
+        await queryRunner.connect();
+        return queryRunner;
     }
 
     /**
@@ -180,7 +153,7 @@ export class WebsqlDriver implements Driver {
      */
     nativeInterface() {
         return {
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined
+            // connection: this.databaseConnection ? this.databaseConnection.connection : undefined
         };
     }
 
@@ -274,21 +247,6 @@ export class WebsqlDriver implements Driver {
         }
 
         return value;
-    }
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("websql");
     }
 
 }

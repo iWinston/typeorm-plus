@@ -1,6 +1,5 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -88,12 +87,12 @@ export class MysqlDriver implements Driver {
     /**
      * Database connection pool created by underlying driver.
      */
-    protected pool: any;
+    pool: any;
 
     /**
      * Pool of database connections.
      */
-    protected databaseConnections: DatabaseConnection[] = [];
+    databaseConnections: any[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -170,8 +169,9 @@ export class MysqlDriver implements Driver {
         if (!this.pool)
             return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new MysqlQueryRunner(this.connection, databaseConnection);
+        const queryRunner = new MysqlQueryRunner(this.connection);
+        await queryRunner.connect();
+        return queryRunner;
     }
 
     /**
@@ -280,37 +280,6 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        return new Promise((ok, fail) => {
-            this.pool.getConnection((err: any, connection: any) => {
-                if (err)
-                    return fail(err);
-
-                let dbConnection = this.databaseConnections.find(dbConnection => dbConnection.connection === connection);
-                if (!dbConnection) {
-                    const driver = this;
-                    dbConnection = {
-                        connection: connection,
-                        releaseCallback: function() {
-                            if (driver.pool) {
-                                connection.release();
-                                driver.databaseConnections.splice(driver.databaseConnections.indexOf(this), 1);
-                            }
-                            return Promise.resolve();
-                        }
-                    };
-                    this.databaseConnections.push(dbConnection);
-                }
-                ok(dbConnection);
-            });
-        });
-    }
 
     /**
      * Loads all driver dependencies.

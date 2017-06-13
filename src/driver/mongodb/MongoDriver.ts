@@ -1,7 +1,6 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {MongoQueryRunner} from "./MongoQueryRunner";
@@ -27,7 +26,7 @@ export class MongoDriver implements Driver {
      * Mongodb does not require to dynamically create query runner each time,
      * because it does not have a regular connection pool as RDBMS systems have.
      */
-    queryRunner: MongoQueryRunner;
+    queryRunner?: MongoQueryRunner;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -64,11 +63,6 @@ export class MongoDriver implements Driver {
      */
     protected mongodb: any;
 
-    /**
-     * Connection to mongodb database provided by native driver.
-     */
-    protected databaseConnection: any;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -95,11 +89,7 @@ export class MongoDriver implements Driver {
             this.mongodb.MongoClient.connect(this.buildConnectionUrl(), this.options.extra, (err: any, dbConnection: any) => {
                 if (err) return fail(err);
 
-                this.databaseConnection = dbConnection;
-                const databaseConnection: DatabaseConnection = {
-                    connection: dbConnection
-                };
-                this.queryRunner = new MongoQueryRunner(this.connection, databaseConnection);
+                this.queryRunner = new MongoQueryRunner(this.connection, dbConnection);
                 ok();
             });
         });
@@ -109,13 +99,13 @@ export class MongoDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.databaseConnection)
-            throw new ConnectionIsNotSetError("mongodb");
-
         return new Promise<void>((ok, fail) => {
+            if (!this.queryRunner)
+                return fail(new ConnectionIsNotSetError("mongodb"));
+
             const handler = (err: any) => err ? fail(err) : ok();
-            this.databaseConnection.close(handler);
-            this.databaseConnection = undefined;
+            this.queryRunner.databaseConnection.close(handler);
+            this.queryRunner = undefined;
         });
     }
 
@@ -123,14 +113,14 @@ export class MongoDriver implements Driver {
      * Synchronizes database schema (creates indices).
      */
     async syncSchema(): Promise<void> {
-        if (!this.databaseConnection)
+        if (!this.queryRunner)
             throw new ConnectionIsNotSetError("mongodb");
 
         const promises: Promise<any>[] = [];
         this.connection.entityMetadatas.forEach(metadata => {
             metadata.indices.forEach(index => {
                 const options = { name: index.name };
-                promises.push(this.queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
+                promises.push(this.queryRunner!.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
             });
         });
         await Promise.all(promises);
@@ -140,7 +130,7 @@ export class MongoDriver implements Driver {
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection)
+        if (!this.queryRunner)
             return Promise.reject(new ConnectionIsNotSetError("mongodb"));
 
         return this.queryRunner;
@@ -149,10 +139,10 @@ export class MongoDriver implements Driver {
     /**
      * Access to the native implementation of the database.
      */
-    nativeInterface() {
+    nativeInterface(): any {
         return {
             driver: this.mongodb,
-            connection: this.databaseConnection
+            connection: this.queryRunner ? this.queryRunner.databaseConnection : undefined
         };
     }
 

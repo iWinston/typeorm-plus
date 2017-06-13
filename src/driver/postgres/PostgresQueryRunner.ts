@@ -1,9 +1,7 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
@@ -11,10 +9,9 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
-import {ColumnOptions} from "../../decorator/options/ColumnOptions";
+import {PostgresDriver} from "./PostgresDriver";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -36,35 +33,63 @@ export class PostgresQueryRunner implements QueryRunner {
      */
     isTransactionActive = false;
 
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    databaseConnection: any;
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
-    protected schemaName: string;
+    protected releaseCallback: Function;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected databaseConnection: DatabaseConnection) {
-        this.schemaName = (connection.options as PostgresConnectionOptions).schemaName || "public";
+    constructor(protected connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
+    protected get schemaName() {
+        return (this.connection.options as PostgresConnectionOptions).schemaName || "default";
+    }
+
+    /**
+     * Creates/uses connection from the connection pool to perform further operations.
+     */
+    connect(): Promise<any> {
+        return new Promise((ok, fail) => {
+            const driver = this.connection.driver as PostgresDriver;
+            driver.pool.connect((err: any, connection: any, release: Function) => {
+                this.databaseConnection = connection;
+                this.releaseCallback = release;
+
+                connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
+                    if (err) {
+                        this.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
+                        this.connection.logger.logQueryError(err);
+                        fail(err);
+                    } else {
+                        ok(connection);
+                    }
+                });
+
+            });
+        });
+    }
+
     /**
      * Releases database connection. This is needed when using connection pooling.
      * If connection is not from a pool, it should not be released.
      */
     release(): Promise<void> {
-        if (this.databaseConnection.releaseCallback) {
-            this.isReleased = true;
-            return this.databaseConnection.releaseCallback();
-        }
-
+        this.isReleased = true;
+        this.releaseCallback();
         return Promise.resolve();
     }
 
@@ -142,7 +167,7 @@ export class PostgresQueryRunner implements QueryRunner {
         // console.log("parameters: ", parameters);
         return new Promise<any[]>((ok, fail) => {
             this.connection.logger.logQuery(query, parameters);
-            this.databaseConnection.connection.query(query, parameters, (err: any, result: any) => {
+            this.databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.connection.logger.logFailedQuery(query, parameters);
                     this.connection.logger.logQueryError(err);

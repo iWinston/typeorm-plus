@@ -1,7 +1,5 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {SqliteQueryRunner} from "./SqliteQueryRunner";
@@ -87,12 +85,7 @@ export class SqliteDriver implements Driver {
     /**
      * SQLite underlying library.
      */
-    protected sqlite: any;
-
-    /**
-     * Connection to SQLite database.
-     */
-    protected databaseConnection: DatabaseConnection|undefined;
+    sqlite: any;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -118,35 +111,21 @@ export class SqliteDriver implements Driver {
      * Performs connection to the database.
      */
     connect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const connection = new this.sqlite.Database(this.options.database, (err: any) => {
-                if (err)
-                    return fail(err);
-
-                this.databaseConnection = {
-                    connection: connection
-                };
-
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                connection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                    ok();
-                });
-            });
-        });
+        return Promise.resolve();
     }
 
     /**
      * Closes connection with database.
      */
     disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-
-            if (!this.databaseConnection)
-                return fail(new ConnectionIsNotSetError("sqlite"));
-            this.databaseConnection.connection.close(handler);
-        });
+        return Promise.resolve();
+        // todo: what to do with this function?
+        // return new Promise<void>((ok, fail) => {
+            // const handler = (err: any) => err ? fail(err) : ok();
+            // if (!this.databaseConnection)
+            //     return fail(new ConnectionIsNotSetError("sqlite"));
+            // this.databaseConnection.connection.close(handler);
+        // });
     }
 
     /**
@@ -161,11 +140,12 @@ export class SqliteDriver implements Driver {
      * Creates a query runner used for common queries.
      */
     async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection)
-            return Promise.reject(new ConnectionIsNotSetError("sqlite"));
-
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqliteQueryRunner(this.connection, databaseConnection);
+        // if (!this.databaseConnection)
+        //     return Promise.reject(new ConnectionIsNotSetError("sqlite"));
+        // const databaseConnection = await this.retrieveDatabaseConnection();
+        const queryRunner = new SqliteQueryRunner(this.connection);
+        await queryRunner.connect();
+        return queryRunner;
     }
 
     /**
@@ -174,7 +154,7 @@ export class SqliteDriver implements Driver {
     nativeInterface() {
         return {
             driver: this.sqlite,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined
+            // connection: this.databaseConnection ? this.databaseConnection.connection : undefined
         };
     }
 
@@ -282,18 +262,6 @@ export class SqliteDriver implements Driver {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("sqlite");
-    }
 
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".

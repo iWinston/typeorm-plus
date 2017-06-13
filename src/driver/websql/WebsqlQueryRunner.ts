@@ -1,18 +1,20 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
-import {ColumnOptions} from "../../decorator/options/ColumnOptions";
+import {WebsqlDriver} from "./WebsqlDriver";
+
+/**
+ * Declare a global function that is only available in browsers that support WebSQL.
+ */
+declare function openDatabase(...params: any[]): any;
 
 /**
  * Runs queries on a single websql database connection.
@@ -34,12 +36,16 @@ export class WebsqlQueryRunner implements QueryRunner {
      */
     isTransactionActive = false;
 
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    databaseConnection: any;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected databaseConnection: DatabaseConnection) {
+    constructor(protected connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
@@ -47,16 +53,33 @@ export class WebsqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Creates/uses connection from the connection pool to perform further operations.
+     */
+    connect(): Promise<any> {
+        const driver = this.connection.driver as WebsqlDriver;
+        const options = Object.assign({}, {
+            database: driver.options.database,
+        }, driver.options.extra || {});
+
+        return new Promise<void>((ok, fail) => {
+            this.databaseConnection = openDatabase(
+                options.database,
+                options.version,
+                options.description,
+                options.size,
+            );
+            ok();
+        });
+    }
+
+    /**
      * Releases database connection. This is needed when using connection pooling.
      * If connection is not from a pool, it should not be released.
      * You cannot use this class's methods after its released.
      */
     release(): Promise<void> {
-        if (this.databaseConnection.releaseCallback) {
-            this.isReleased = true;
-            return this.databaseConnection.releaseCallback();
-        }
-
+        this.isReleased = true;
+        // todo: implement closing
         return Promise.resolve();
     }
 
@@ -137,8 +160,8 @@ export class WebsqlQueryRunner implements QueryRunner {
         return new Promise((ok, fail) => {
 
             this.connection.logger.logQuery(query, parameters);
-            const db = this.databaseConnection.connection;
-            // todo: check if transaction is not active
+            const db = this.databaseConnection;
+            // todo(dima): check if transaction is not active
             db.transaction((tx: any) => {
                 tx.executeSql(query, parameters, (tx: any, result: any) => {
                     const rows = Object
@@ -172,7 +195,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         return new Promise<any[]>((ok, fail) => {
             this.connection.logger.logQuery(sql, parameters);
 
-            const db = this.databaseConnection.connection;
+            const db = this.databaseConnection;
             // todo: check if transaction is not active
             db.transaction((tx: any) => {
                 tx.executeSql(sql, parameters, (tx: any, result: any) => {

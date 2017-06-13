@@ -1,9 +1,7 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
@@ -11,10 +9,9 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../types/ColumnTypes";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {Connection} from "../../connection/Connection";
-import {ColumnOptions} from "../../decorator/options/ColumnOptions";
+import {SqliteDriver} from "./SqliteDriver";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -39,12 +36,16 @@ export class SqliteQueryRunner implements QueryRunner {
      */
     isTransactionActive = false;
 
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    databaseConnection: any;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected databaseConnection: DatabaseConnection) {
+    constructor(protected connection: Connection) { // logically it seems better to pass driver here
     }
 
     // -------------------------------------------------------------------------
@@ -52,16 +53,39 @@ export class SqliteQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Creates/uses connection from the connection pool to perform further operations.
+     */
+    connect(): Promise<any> {
+        return new Promise<void>((ok, fail) => {
+            const driver = this.connection.driver as SqliteDriver;
+            this.databaseConnection = new driver.sqlite.Database(this.connection.options.database, (err: any) => {
+                if (err) {
+                    this.databaseConnection = null;
+                    return fail(err);
+                }
+
+                // we need to enable foreign keys in sqlite to make sure all foreign key related features
+                // working properly. this also makes onDelete to work with sqlite.
+                this.databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
+                    if (err)
+                        return fail(err);
+
+                    ok(this.databaseConnection);
+                });
+            });
+        });
+    }
+
+    /**
      * Releases database connection. This is needed when using connection pooling.
      * If connection is not from a pool, it should not be released.
      */
     release(): Promise<void> {
-        if (this.databaseConnection.releaseCallback) {
+        return new Promise<void>((ok, fail) => {
+            const handler = (err: any) => err ? fail(err) : ok();
+            this.databaseConnection.close(handler);
             this.isReleased = true;
-            return this.databaseConnection.releaseCallback();
-        }
-
-        return Promise.resolve();
+        });
     }
 
     /**
@@ -84,8 +108,8 @@ export class SqliteQueryRunner implements QueryRunner {
             throw error;
 
         } finally {
-            await this.release();
             await this.query(`PRAGMA foreign_keys = ON;`);
+            await this.release();
         }
     }
 
@@ -137,7 +161,7 @@ export class SqliteQueryRunner implements QueryRunner {
 
         return new Promise<any[]>((ok, fail) => {
             this.connection.logger.logQuery(query, parameters);
-            this.databaseConnection.connection.all(query, parameters, (err: any, result: any) => {
+            this.databaseConnection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.connection.logger.logFailedQuery(query, parameters);
                     this.connection.logger.logQueryError(err);
@@ -165,7 +189,7 @@ export class SqliteQueryRunner implements QueryRunner {
         return new Promise<any[]>((ok, fail) => {
             this.connection.logger.logQuery(sql, parameters);
             const __this = this;
-            this.databaseConnection.connection.run(sql, parameters, function (err: any): void {
+            this.databaseConnection.run(sql, parameters, function (err: any): void {
                 if (err) {
                     __this.connection.logger.logFailedQuery(sql, parameters);
                     __this.connection.logger.logQueryError(err);

@@ -64,6 +64,7 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 
 * moved `query`, `transaction` and `createQueryBuilder` to the `Connection`. 
 `EntityManager` now simply use them from the connection.
+* refactored how query runner (now query executor) works
 
 ### BUG FIXES
 

@@ -1,6 +1,5 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -96,12 +95,7 @@ export class SqlServerDriver implements Driver {
     /**
      * SQL Server pool.
      */
-    protected connectionPool: any;
-
-    /**
-     * Pool of database connections.
-     */
-    protected databaseConnectionPool: DatabaseConnection[] = [];
+    connectionPool: any;
     
     // -------------------------------------------------------------------------
     // Constructor
@@ -167,7 +161,6 @@ export class SqlServerDriver implements Driver {
 
         this.connectionPool.close();
         this.connectionPool = undefined;
-        this.databaseConnectionPool = [];
     }
 
     /**
@@ -185,8 +178,9 @@ export class SqlServerDriver implements Driver {
         if (!this.connectionPool)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqlServerQueryRunner(this.connection, databaseConnection);
+        const queryRunner = new SqlServerQueryRunner(this.connection);
+        await queryRunner.connect();
+        return queryRunner;
     }
 
     /**
@@ -301,30 +295,6 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-
-        if (!this.connectionPool)
-            throw new ConnectionIsNotSetError("mssql");
-
-        return new Promise((ok, fail) => {
-            let dbConnection: DatabaseConnection = {
-                connection: this.connectionPool
-            };
-            dbConnection.releaseCallback = () => {
-                this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                return Promise.resolve();
-            };
-            this.databaseConnectionPool.push(dbConnection);
-            ok(dbConnection);
-            // }
-        });
-    }
 
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".

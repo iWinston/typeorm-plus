@@ -498,7 +498,7 @@ export class MongoEntityManager extends EntityManager {
     // -------------------------------------------------------------------------
 
     protected get queryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver).queryRunner;
+        return (this.connection.driver as MongoDriver).queryRunner!;
     }
 
     protected convertFindManyOptionsOrConditionsToMongodbQuery<Entity>(optionsOrConditions: FindOneOptions<Entity>|Partial<Entity>|undefined): ObjectLiteral|undefined {

@@ -1,12 +1,10 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
-import {ColumnType} from "../types/ColumnTypes";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
@@ -62,12 +60,17 @@ export class MongoQueryRunner implements QueryRunner {
      */
     isTransactionActive = false;
 
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    databaseConnection: Db;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected databaseConnection: DatabaseConnection) {
+    constructor(protected connection: Connection, databaseConnection: Db) {
+        this.databaseConnection = databaseConnection;
     }
 
     // -------------------------------------------------------------------------
@@ -319,6 +322,12 @@ export class MongoQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * For MongoDB database we don't create connection, because its single connection already created by a driver.
+     */
+    async connect(): Promise<any> {
+    }
+
+    /**
      * For MongoDB database we don't release connection, because its single connection.
      */
     async release(): Promise<void> {
@@ -331,7 +340,7 @@ export class MongoQueryRunner implements QueryRunner {
      * (because it can clear all your database).
      */
     async clearDatabase(): Promise<void> {
-        await this.databaseConnection.connection.dropDatabase();
+        await this.databaseConnection.dropDatabase();
     }
 
     /**
@@ -367,7 +376,6 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async insert(collectionName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         const results = await this.databaseConnection
-            .connection
             .collection(collectionName)
             .insertOne(keyValues);
 
@@ -379,7 +387,6 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
         await this.databaseConnection
-            .connection
             .collection(collectionName)
             .updateOne(conditions, valuesMap);
     }
@@ -402,7 +409,6 @@ export class MongoQueryRunner implements QueryRunner {
             throw new Error(`String condition is not supported by MongoDB driver.`);
 
         await this.databaseConnection
-            .connection
             .collection(collectionName)
             .deleteOne(conditions);
     }
@@ -674,7 +680,6 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async truncate(collectionName: string): Promise<void> {
         await this.databaseConnection
-            .connection
             .dropCollection(collectionName);
     }
 
@@ -686,7 +691,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Gets collection from the database with a given name.
      */
     protected getCollection(collectionName: string): Collection {
-        return (this.databaseConnection.connection as Db).collection(collectionName);
+        return this.databaseConnection.collection(collectionName);
     }
 
 }
