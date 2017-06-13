@@ -19,7 +19,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Embedded(() => Subcounters)
+    @Column(() => Subcounters)
     subcounters: Subcounters;
 
     @ManyToOne(type => User)

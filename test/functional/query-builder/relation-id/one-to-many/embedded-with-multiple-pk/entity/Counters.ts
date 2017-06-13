@@ -22,7 +22,7 @@ export class Counters {
     @OneToMany(type => Category, category => category.post)
     categories: Category[];
 
-    @Embedded(() => Subcounters)
+    @Column(() => Subcounters)
     subcounters: Subcounters;
 
     categoryIds: number[];

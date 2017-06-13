@@ -56,6 +56,7 @@ export class JunctionEntityMetadataBuilder {
             const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.propertyName, referencedColumn.databaseName);
 
             return new ColumnMetadata({
+                connection: this.connection,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
                 args: {
@@ -82,6 +83,7 @@ export class JunctionEntityMetadataBuilder {
             const columnName = joinColumn && joinColumn.name ? joinColumn.name : this.connection.namingStrategy.joinTableColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.propertyName, inverseReferencedColumn.databaseName);
 
             return new ColumnMetadata({
+                connection: this.connection,
                 entityMetadata: entityMetadata,
                 referencedColumn: inverseReferencedColumn,
                 args: {

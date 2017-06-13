@@ -14,7 +14,7 @@ export function Entity(name?: string, options?: EntityOptions) {
             type: "regular",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
             engine: options && options.engine ? options.engine : undefined,
-            skipSchemaSync: !!(options && options.skipSchemaSync === true)
+            skipSync: !!(options && options.skipSync === true)
         };
         getMetadataArgsStorage().tables.push(args);
     };

@@ -118,7 +118,7 @@ export class EntityMetadata {
     /**
      * Indicates if schema sync is skipped for this entity.
      */
-    skipSchemaSync: boolean;
+    skipSync: boolean;
 
     /**
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
@@ -362,7 +362,7 @@ export class EntityMetadata {
         this.tableType = options.args.type;
         this.engine = options.args.engine;
         this.givenTableName = options.args.name;
-        this.skipSchemaSync = options.args.skipSchemaSync || false;
+        this.skipSync = options.args.skipSync || false;
         this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
         this.tableNameWithoutPrefix = this.tableType === "closure-junction" ? namingStrategy.closureJunctionTableName(this.givenTableName!) : namingStrategy.tableName(this.targetName, this.givenTableName);
         this.tableName = tablesPrefix ? namingStrategy.prefixTableName(tablesPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;

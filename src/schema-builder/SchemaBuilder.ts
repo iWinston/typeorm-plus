@@ -88,7 +88,7 @@ export class SchemaBuilder {
     // -------------------------------------------------------------------------
 
     protected get entityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => !metadata.skipSchemaSync && metadata.tableType !== "single-table-child");
+        return this.connection.entityMetadatas.filter(metadata => !metadata.skipSync && metadata.tableType !== "single-table-child");
     }
 
     /**

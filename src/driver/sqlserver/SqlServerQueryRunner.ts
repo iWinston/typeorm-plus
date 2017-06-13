@@ -11,9 +11,10 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
 import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
+import {ColumnOptions} from "../../decorator/options/ColumnOptions";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -798,56 +799,42 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
-        switch (typeOptions.type) {
-            case "string":
-                if (typeOptions.fixedLength) {
-                    return "nchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-                } else {
-                    return "nvarchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-                }
-            case "text":
-                return "ntext";
-            case "boolean":
-                return "bit";
-            case "integer":
-            case "int":
-                return "int";
-            case "smallint":
-                return "smallint";
-            case "bigint":
-                return "bigint";
-            case "float":
-                return "float";
-            case "double":
-            case "number":
-                return "real";
-            case "decimal":
-                // if (column.precision && column.scale) {
-                //     return `decimal(${column.precision},${column.scale})`;
-                //
-                // } else if (column.scale) {
-                //     return `decimal(${column.scale})`;
-                //
-                // } else if (column.precision) {
-                //     return `decimal(${column.precision})`;
-                //
-                // } else {
-                    return "decimal";
-                // }
-            case "date":
-                return "date";
-            case "time":
-                return "time";
-            case "datetime":
-                return "datetime";
-            case "json":
-                return "text";
-            case "simple_array":
-                return typeOptions.length ? "nvarchar(" + typeOptions.length + ")" : "text";
-        }
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "int";
 
-        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "SQLServer");
+        } else if (column.type === String) {
+            type += "nvarchar";
+
+        } else if (column.type === Date) {
+            type += "datetime";
+
+        } else if (column.type === Boolean) {
+            type += "bit";
+
+        } else if (column.type === Object) {
+            type += "ntext";
+
+        } else if (column.type === "simple-array") {
+            type += "ntext";
+
+        } else {
+            type += column.type;
+        }
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+        return type;
     }
 
     /**

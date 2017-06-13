@@ -1,5 +1,4 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
@@ -16,7 +15,7 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
         if (!options) options = {} as ColumnOptions;
 
         // implicitly set a type, because this column's type cannot be anything else except date
-        options = Object.assign({ type: ColumnTypes.DATETIME } as ColumnOptions, options);
+        // options = Object.assign({ type: Date } as ColumnOptions, options);
 
         // create and register a new column metadata
         const args: ColumnMetadataArgs = {

@@ -4,9 +4,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Logger} from "../../logger/Logger";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
@@ -15,11 +13,82 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
  */
 export class PostgresDriver implements Driver {
+
+    // -------------------------------------------------------------------------
+    // Public Implemented Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets list of supported column data types by a driver.
+     *
+     * @see https://www.tutorialspoint.com/postgresql/postgresql_data_types.htm
+     * @see https://www.postgresql.org/docs/9.2/static/datatype.html
+     */
+    supportedDataTypes: ColumnType[] = [
+        "smallint",
+        "integer",
+        "bigint",
+        "decimal",
+        "numeric",
+        "real",
+        "double precision",
+        "smallserial",
+        "serial",
+        "bigserial",
+        "money",
+        "character varying",
+        "varchar",
+        "character",
+        "char",
+        "text",
+        "bytea",
+        "timestamp",
+        "timestamp without time zone",
+        "timestamp with time zone",
+        "date",
+        "time",
+        "time without time zone",
+        "time with time zone",
+        "interval",
+        "boolean",
+        "enum",
+        "point",
+        "line",
+        "lseg",
+        "box",
+        "path",
+        "polygon",
+        "circle",
+        "cidr",
+        "inet",
+        "macaddr",
+        "tsvector",
+        "tsquery",
+        "uuid",
+        "xml",
+        "json",
+        "jsonb"
+    ];
+
+    /**
+     * Orm has special columns and we need to know what database column types should be for those types.
+     * Column types are driver dependant.
+     */
+    mappedDataTypes: MappedColumnTypes = {
+        createDate: "timestamp",
+        updateDate: "timestamp",
+        version: "int",
+        treeLevel: "int",
+        migrationName: "varchar",
+        migrationTimestamp: "timestamp",
+    };
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -147,33 +216,29 @@ export class PostgresDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, column: ColumnMetadata): any {
+    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return null;
+            return value;
 
-        switch (column.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
+        if (columnMetadata.type === Boolean) {
+            return value === true ? 1 : 0;
 
-            case ColumnTypes.DATE:
-                return DataUtils.mixedDateToDateString(value);
+        } else if (columnMetadata.type === "date") {
+            return DataUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.TIME:
-                return DataUtils.mixedDateToTimeString(value);
+        } else if (columnMetadata.type === "time") {
+            return DataUtils.mixedDateToTimeString(value);
 
-            case ColumnTypes.DATETIME:
-                if (column.localTimezone) {
-                    return DataUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataUtils.mixedDateToUtcDatetimeString(value);
-                }
+        } else if (columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamp with time zone"
+            || columnMetadata.type === "timestamp without time zone") {
+            return DataUtils.mixedDateToUtcDatetimeString(value);
 
-            case ColumnTypes.JSON:
-            case ColumnTypes.JSONB:
-                return JSON.stringify(value);
+        } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
+            return JSON.stringify(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataUtils.simpleArrayToString(value);
+        } else if (columnMetadata.type === "simple-array") {
+            return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -183,32 +248,26 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
+        if (columnMetadata.type === Boolean) {
+            return value ? true : false;
 
-            case ColumnTypes.DATETIME:
-                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+        } else if (columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamp with time zone"
+            || columnMetadata.type === "timestamp without time zone") {
+            return DataUtils.normalizeHydratedDate(value);
 
-            case ColumnTypes.DATE:
-                return DataUtils.mixedDateToDateString(value);
+        } else if (columnMetadata.type === "date") {
+            return DataUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.TIME:
-                return DataUtils.mixedTimeToString(value);
+        } else if (columnMetadata.type === "time") {
+            return DataUtils.mixedTimeToString(value);
 
-            case ColumnTypes.JSON:
-            case ColumnTypes.JSONB:
-                // pg(pg-types) have done JSON.parse conversion
-                // https://github.com/brianc/node-pg-types/blob/ed2d0e36e33217b34530727a98d20b325389e73a/lib/textParsers.js#L170
-                return value;
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataUtils.stringToSimpleArray(value);
+        } else if (columnMetadata.type === "simple-array") {
+            return DataUtils.stringToSimpleArray(value);
         }
 
         return value;
     }
-
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.

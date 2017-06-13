@@ -1,5 +1,5 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnType, ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../../driver/types/ColumnTypes";
 import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
 import {getMetadataArgsStorage} from "../../index";
 import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
@@ -39,7 +39,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
         if (!type) {
             const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
             if (reflectMetadataType)
-                type = ColumnTypes.determineTypeFromFunction(reflectMetadataType);
+                type = reflectMetadataType;
         }
 
         // if column options are not given then create a new empty options

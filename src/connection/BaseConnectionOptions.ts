@@ -2,7 +2,7 @@ import {DriverOptions} from "../driver/DriverOptions";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {DatabaseType} from "../driver/DatabaseType";
+import {DatabaseType} from "../driver/types/DatabaseType";
 
 /**
  * BaseConnectionOptions is set of connection options shared by all database types.

@@ -21,6 +21,6 @@ export interface EntityOptions {
     /**
      * Specifies if this table will be skipped during schema synchronization.
      */
-    skipSchemaSync?: boolean;
+    skipSync?: boolean;
 
 }

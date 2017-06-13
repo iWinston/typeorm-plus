@@ -14,7 +14,7 @@ export class Post {
     @Column()
     title: string;
 
-    @Embedded(type => Counters)
+    @Column(type => Counters)
     counters: Counters[];
 
     @Column()
@@ -26,10 +26,10 @@ export class Post {
     @Column()
     booleans: boolean[];
 
-    @Embedded(type => Counters)
+    @Column(type => Counters)
     other1: Counters[];
 
-    @Embedded(type => Counters)
+    @Column(type => Counters)
     other2: Counters[];
 
 }

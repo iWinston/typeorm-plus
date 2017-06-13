@@ -15,7 +15,7 @@ export class Post {
     @Column()
     title: string;
 
-    @Embedded(() => Counters)
+    @Column(() => Counters)
     counters: Counters;
 
 }

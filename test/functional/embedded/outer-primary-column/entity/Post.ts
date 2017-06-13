@@ -12,7 +12,7 @@ export class Post {
     @Column()
     text: string;
 
-    @Embedded(() => Counters, { prefix: "cnt" })
+    @Column(() => Counters, { prefix: "cnt" })
     counters: Counters;
 
 }

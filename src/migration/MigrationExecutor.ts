@@ -1,7 +1,5 @@
 import {TableSchema} from "../schema-builder/schema/TableSchema";
 import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
-import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {Connection} from "../connection/Connection";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {Migration} from "./Migration";
@@ -186,17 +184,13 @@ export class MigrationExecutor {
             await queryRunner.createTable(new TableSchema("migrations", [
                 new ColumnSchema({
                     name: "timestamp",
-                    type: queryRunner.normalizeType({
-                        type: ColumnTypes.NUMBER
-                    }),
+                    type: this.connection.driver.mappedDataTypes.migrationTimestamp as string,
                     isPrimary: true,
                     isNullable: false
                 }),
                 new ColumnSchema({
                     name: "name",
-                    type: queryRunner.normalizeType({
-                        type: ColumnTypes.STRING
-                    }),
+                    type: this.connection.driver.mappedDataTypes.migrationName as string,
                     isNullable: false
                 }),
             ]));

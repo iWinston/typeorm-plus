@@ -3,7 +3,6 @@ import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverUtils} from "../DriverUtils";
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
@@ -12,6 +11,8 @@ import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";
 import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
 import {WebSqlConnectionOptions} from "./WebSqlConnectionOptions";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -22,6 +23,61 @@ declare function openDatabase(...params: any[]): any;
  * Organizes communication with WebSQL in the browser.
  */
 export class WebsqlDriver implements Driver {
+
+    // -------------------------------------------------------------------------
+    // Public Implemented Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets list of supported column data types by a driver.
+     *
+     * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm
+     * @see https://sqlite.org/datatype3.html
+     */
+    supportedDataTypes: ColumnType[] = [
+        "int",
+        "integer",
+        "tinyint",
+        "smallint",
+        "mediumint",
+        "bigint",
+        "int2",
+        "int8",
+        "integer",
+        "character",
+        "varchar",
+        "varying character",
+        "nchar",
+        "native character",
+        "nvarchar",
+        "text",
+        "clob",
+        "text",
+        "blob",
+        "real",
+        "double",
+        "double precision",
+        "float",
+        "real",
+        "numeric",
+        "decimal",
+        "boolean",
+        "date",
+        "datetime",
+    ];
+
+    /**
+     * Orm has special columns and we need to know what database column types should be for those types.
+     * Column types are driver dependant.
+     */
+    mappedDataTypes: MappedColumnTypes = {
+        createDate: "datetime",
+        updateDate: "datetime",
+        version: "number",
+        treeLevel: "number",
+        migrationName: "varchar",
+        migrationTimestamp: "timestamp",
+    };
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -172,30 +228,25 @@ export class WebsqlDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return null;
+            return value;
 
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
+        if (columnMetadata.type === Boolean) {
+            return value === true ? 1 : 0;
 
-            case ColumnTypes.DATE:
-                return DataUtils.mixedDateToDateString(value);
+        } else if (columnMetadata.type === "date") {
+            return DataUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.TIME:
-                return DataUtils.mixedDateToTimeString(value);
+        } else if (columnMetadata.type === "time") {
+            return DataUtils.mixedDateToTimeString(value);
 
-            case ColumnTypes.DATETIME:
-                if (columnMetadata.localTimezone) {
-                    return DataUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataUtils.mixedDateToUtcDatetimeString(value);
-                }
+        } else if (columnMetadata.type === "datetime") {
+            return DataUtils.mixedDateToUtcDatetimeString(value);
 
-            case ColumnTypes.JSON:
-                return JSON.stringify(value);
+        } else if (columnMetadata.type === "json") {
+            return JSON.stringify(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataUtils.simpleArrayToString(value);
+        } else if (columnMetadata.type === "simple-array") {
+            return DataUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -205,29 +256,27 @@ export class WebsqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
+        if (columnMetadata.type === Boolean) {
+            return value ? true : false;
 
-            case ColumnTypes.DATETIME:
-                return DataUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+        } else if (columnMetadata.type === "datetime") {
+            return DataUtils.normalizeHydratedDate(value);
 
-            case ColumnTypes.DATE:
-                return DataUtils.mixedDateToDateString(value);
+        } else if (columnMetadata.type === "date") {
+            return DataUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.TIME:
-                return DataUtils.mixedTimeToString(value);
+        } else if (columnMetadata.type === "time") {
+            return DataUtils.mixedTimeToString(value);
 
-            case ColumnTypes.JSON:
-                return JSON.parse(value);
+        } else if (columnMetadata.type === "json") {
+            return JSON.parse(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataUtils.stringToSimpleArray(value);
+        } else if (columnMetadata.type === "simple-array") {
+            return DataUtils.stringToSimpleArray(value);
         }
 
         return value;
     }
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

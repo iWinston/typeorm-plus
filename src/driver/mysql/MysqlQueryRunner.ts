@@ -11,9 +11,10 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
 import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
+import {ColumnOptions} from "../../decorator/options/ColumnOptions";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -691,58 +692,66 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "int";
 
-        switch (typeOptions.type) {
-            case "string":
-                if (typeOptions.fixedLength) {
-                    return "char(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-                } else {
-                    return "varchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-                }
-            case "text":
-                return "text";
-            case "boolean":
-                return "tinyint(1)";
-            case "integer":
-            case "int":
-                return "int(" + (typeOptions.length ? typeOptions.length : 11) + ")";
-            case "smallint":
-                return "smallint(" + (typeOptions.length ? typeOptions.length : 11) + ")";
-            case "bigint":
-                return "bigint(" + (typeOptions.length ? typeOptions.length : 11) + ")";
-            case "float":
-                return "float";
-            case "double":
-            case "number":
-                return "double";
-            case "decimal":
-                if (typeOptions.precision && typeOptions.scale) {
-                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
+        } else if (column.type === String) {
+            type += "varchar";
 
-                } else if (typeOptions.scale) {
-                    return `decimal(${typeOptions.scale})`;
+        } else if (column.type === Date) {
+            type += "datetime";
 
-                } else if (typeOptions.precision) {
-                    return `decimal(${typeOptions.precision})`;
+        } else if (column.type === Boolean) {
+            type += "tinyint(1)";
 
-                } else {
-                    return "decimal";
+        } else if (column.type === Object) {
+            type += "text";
 
-                }
-            case "date":
-                return "date";
-            case "time":
-                return "time";
-            case "datetime":
-                return "datetime";
-            case "json":
-                return "text";
-            case "simple_array":
-                return typeOptions.length ? "varchar(" + typeOptions.length + ")" : "text";
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
         }
 
-        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "MySQL/MariaDB");
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+
+        // set default required length if those were not specified
+        if (type === "varchar")
+            type += "(255)";
+
+        if (type === "int")
+            type += "(11)";
+
+        if (type === "tinyint")
+            type += "(4)";
+
+        if (type === "smallint")
+            type += "(5)";
+
+        if (type === "mediumint")
+            type += "(9)";
+
+        if (type === "bigint")
+            type += "(20)";
+
+        if (type === "year")
+            type += "(4)";
+
+        return type;
     }
 
     /**

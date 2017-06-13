@@ -1,5 +1,5 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../../driver/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 

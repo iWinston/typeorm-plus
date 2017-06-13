@@ -2,7 +2,7 @@ import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {createConnection, createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
-import {DatabaseType} from "../../src/driver/DatabaseType";
+import {DatabaseType} from "../../src/driver/types/DatabaseType";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.

@@ -11,9 +11,10 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
 import {Connection} from "../../connection/Connection";
 import {OracleConnectionOptions} from "./OracleConnectionOptions";
+import {ColumnOptions} from "../../decorator/options/ColumnOptions";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -749,72 +750,42 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
-        switch (typeOptions.type) {
-            case "string":
-                if (typeOptions.fixedLength) {
-                    return "char(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-                } else {
-                    return "varchar2(" + (typeOptions.length ? typeOptions.length : 255) + ")";                    
-                }
-            case "text":
-                return "clob";
-            case "boolean":
-                return "number(1)";
-            case "integer":
-            case "int":
-                // if (column.isGenerated)
-                //     return `number(22)`;
-                if (typeOptions.precision && typeOptions.scale)
-                    return `number(${typeOptions.precision},${typeOptions.scale})`;
-                if (typeOptions.precision)
-                    return `number(${typeOptions.precision},0)`;
-                if (typeOptions.scale)
-                    return `number(0,${typeOptions.scale})`;
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "integer";
 
-                return "number(10,0)";
-            case "smallint":
-                return "number(5)";
-            case "bigint":
-                return "number(20)";
-            case "float":
-                if (typeOptions.precision && typeOptions.scale)
-                    return `float(${typeOptions.precision},${typeOptions.scale})`;
-                if (typeOptions.precision)
-                    return `float(${typeOptions.precision},0)`;
-                if (typeOptions.scale)
-                    return `float(0,${typeOptions.scale})`;
+        } else if (column.type === String) {
+            type += "nvarchar2";
 
-                return `float(126)`;
-            case "double":
-            case "number":
-                return "float(126)";
-            case "decimal":
-                if (typeOptions.precision && typeOptions.scale) {
-                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
+        } else if (column.type === Date) {
+            type += "timestamp(0)";
 
-                } else if (typeOptions.scale) {
-                    return `decimal(0,${typeOptions.scale})`;
+        } else if (column.type === Boolean) {
+            type += "number(1)";
 
-                } else if (typeOptions.precision) {
-                    return `decimal(${typeOptions.precision})`;
+        } else if (column.type === Object) {
+            type += "text";
 
-                } else {
-                    return "decimal";
-                }
-            case "date":
-                return "date";
-            case "time":
-                return "date";
-            case "datetime":
-                return "timestamp(0)";
-            case "json":
-                return "clob";
-            case "simple_array":
-                return typeOptions.length ? "varchar2(" + typeOptions.length + ")" : "text";
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
         }
+        if (column.length) {
+            type += "(" + column.length + ")";
 
-        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "Oracle");
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+        return type;
     }
 
     /**

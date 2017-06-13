@@ -13,7 +13,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Embedded(type => Information)
+    @Column(type => Information)
     information: Information;
 
 }

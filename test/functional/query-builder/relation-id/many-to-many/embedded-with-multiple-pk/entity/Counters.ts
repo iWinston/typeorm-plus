@@ -24,7 +24,7 @@ export class Counters {
     @JoinTable()
     categories: Category[];
 
-    @Embedded(() => Subcounters)
+    @Column(() => Subcounters)
     subcounters: Subcounters;
 
     categoryIds: number[];

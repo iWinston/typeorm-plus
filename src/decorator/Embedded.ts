@@ -8,6 +8,8 @@ import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
  * embedded will be mapped to it from the single table.
  *
  * Array option works only in monogodb.
+ *
+ * @deprecated use @Column(type => EmbeddedModel) instead
  */
 export function Embedded<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { prefix?: string|boolean, array?: boolean }) {
     return function (object: Object, propertyName: string) {

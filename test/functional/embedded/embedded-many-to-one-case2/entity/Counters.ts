@@ -18,7 +18,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Embedded(() => Subcounters)
+    @Column(() => Subcounters)
     subcounters: Subcounters;
 
     @OneToMany(type => User, user => user.likedPost)

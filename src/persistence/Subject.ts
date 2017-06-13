@@ -2,7 +2,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {DataUtils} from "../util/DataUtils";
 
 /**
@@ -324,29 +323,24 @@ export class Subject {
             if (entityValue === undefined)
                 return false;
 
-            // normalize special values to make proper comparision
+            // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
             if (entityValue !== null && entityValue !== undefined) {
-                if (column.type === ColumnTypes.DATE) {
+                if (column.type === "date") {
                     entityValue = DataUtils.mixedDateToDateString(entityValue);
 
-                } else if (column.type === ColumnTypes.TIME) {
+                } else if (column.type === "time") {
                     entityValue = DataUtils.mixedDateToTimeString(entityValue);
 
-                } else if (column.type === ColumnTypes.DATETIME) {
-                    // if (column.loadInLocalTimezone) {
-                    //     entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
-                    //     databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
-                    // } else {
-                        entityValue = DataUtils.mixedDateToUtcDatetimeString(entityValue);
-                        databaseValue = DataUtils.mixedDateToUtcDatetimeString(databaseValue);
-                    // }
+                } else if (column.type === "datetime" || column.type === Date) {
+                    entityValue = DataUtils.mixedDateToUtcDatetimeString(entityValue);
+                    databaseValue = DataUtils.mixedDateToUtcDatetimeString(databaseValue);
 
-                } else if (column.type === ColumnTypes.JSON) {
+                } else if (column.type === "json" || column.type === "jsonb" || column.type === Object) {
                     entityValue = JSON.stringify(entityValue);
                     if (databaseValue !== null && databaseValue !== undefined)
                         databaseValue = JSON.stringify(databaseValue);
 
-                } else if (column.type === ColumnTypes.SIMPLE_ARRAY) {
+                } else if (column.type === "sample-array") {
                     entityValue = DataUtils.simpleArrayToString(entityValue);
                     databaseValue = DataUtils.simpleArrayToString(databaseValue);
                 }

@@ -11,6 +11,8 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
 import {MongoConnectionOptions} from "./MongoConnectionOptions";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
 
 /**
  * Organizes communication with MongoDB.
@@ -26,6 +28,27 @@ export class MongoDriver implements Driver {
      * because it does not have a regular connection pool as RDBMS systems have.
      */
     queryRunner: MongoQueryRunner;
+
+    // -------------------------------------------------------------------------
+    // Public Implemented Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Mongodb does not need to have column types because they are not used in schema sync.
+     */
+    supportedDataTypes: ColumnType[] = [];
+
+    /**
+     * Mongodb does not need to have a strong defined mapped column types because they are not used in schema sync.
+     */
+    mappedDataTypes: MappedColumnTypes = {
+        createDate: "int",
+        updateDate: "int",
+        version: "int",
+        treeLevel: "int",
+        migrationName: "int",
+        migrationTimestamp: "int",
+    };
 
     // -------------------------------------------------------------------------
     // Protected Properties

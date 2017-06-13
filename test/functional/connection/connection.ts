@@ -213,7 +213,7 @@ describe("Connection", () => {
 
     });
 
-    describe("skip schema generation when skipSchemaSync option is used", function() {
+    describe("skip schema generation when skipSync option is used", function() {
 
         let connections: Connection[];
         beforeEach(() => createTestingConnections({ entities: [View], dropSchemaOnConnection: true }).then(all => connections = all));

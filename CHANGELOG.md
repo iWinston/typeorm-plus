@@ -37,11 +37,18 @@ Now naming strategy should be registered by passing naming strategy instance dir
 More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * some api changes in `ConnectionManager` and `createConnection` / `createConnections` methods of typeorm main entrypoint
 * `usePool` option has been removed from connection options. Now connections are working only with connection pooling
+* `simple_array` column type now is called `simple-array`
+* some column types were removed. Now orm uses directly column types of underlying database
+* now `number` type in column definitions (like `@Column() likes: number`) maps to `integer` instead of `double` as before.
+ This is more programmatic design. If you need to store float-pointing values there define a type explicitly
+* `fixedLength` in column options has been removed. Now actual column types can be used, e.g. `@Column("char")` or `@Column("varchar")`
+* `timezone` option has been removed from column options. Now corresponding database types can be used instead
+* `localTimezone` has been removed from the column options
+* `skipSchemaSync` in entity options has been renamed to `skipSync`
 
-### OTHER API CHANGES
+### DEPRECATIONS
 
-* moved `query`, `transaction` and `createQueryBuilder` to the `Connection`. 
-`EntityManager` now simply use them from the connection.
+* `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead now
 
 ### NEW FEATURES
 
@@ -52,6 +59,11 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * now relations are supported inside embeds
 * now relations for multiple primary keys are generated properly
 * now ormconfig is read from `.env`, `.js`, `.json`, `.yml`, `.xml` formats
+
+### OTHER API CHANGES
+
+* moved `query`, `transaction` and `createQueryBuilder` to the `Connection`. 
+`EntityManager` now simply use them from the connection.
 
 ### BUG FIXES
 

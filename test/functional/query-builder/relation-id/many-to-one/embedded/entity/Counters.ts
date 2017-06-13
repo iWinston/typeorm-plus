@@ -18,7 +18,7 @@ export class Counters {
     @ManyToOne(type => Category, category => category.posts)
     category: Category;
 
-    @Embedded(() => Subcounters)
+    @Column(() => Subcounters)
     subcounters: Subcounters;
 
     categoryId: number;

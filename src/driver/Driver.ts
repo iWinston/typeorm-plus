@@ -1,11 +1,24 @@
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {ColumnType} from "./types/ColumnTypes";
+import {MappedColumnTypes} from "./types/MappedColumnTypes";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
  */
 export interface Driver {
+
+    /**
+     * Gets list of supported column data types by a driver.
+     */
+    supportedDataTypes: ColumnType[];
+
+    /**
+     * Orm has special columns and we need to know what database column types should be for those types.
+     * Column types are driver dependant.
+     */
+    mappedDataTypes: MappedColumnTypes;
 
     /**
      * Performs connection to the database.
@@ -60,14 +73,8 @@ export interface Driver {
     preparePersistentValue(value: any, column: ColumnMetadata): any;
 
     /**
-     * Prepares given value to a value to be persisted, based on its column metadata.
-     */
-    prepareHydratedValue(value: any, type: ColumnMetadata): any;
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type.
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any;
-
 
 }

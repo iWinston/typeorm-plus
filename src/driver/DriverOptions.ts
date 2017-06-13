@@ -1,4 +1,4 @@
-import {DatabaseType} from "./DatabaseType";
+import {DatabaseType} from "./types/DatabaseType";
 
 /**
  * Connectivity options used to connect to the database, and other database-driver-specific options.

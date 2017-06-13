@@ -11,9 +11,10 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {Connection} from "../../connection/Connection";
+import {ColumnOptions} from "../../decorator/options/ColumnOptions";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -737,61 +738,50 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
-        switch (typeOptions.type) {
-            case "string":
-                return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-            case "text":
-                return "text";
-            case "boolean":
-                return "boolean";
-            case "integer":
-            case "int":
-                return "integer";
-            case "smallint":
-                return "smallint";
-            case "bigint":
-                return "bigint";
-            case "float":
-                return "real";
-            case "double":
-            case "number":
-                return "double precision";
-            case "decimal":
-                if (typeOptions.precision && typeOptions.scale) {
-                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number || column.type === "int") {
+            type += "integer";
 
-                } else if (typeOptions.scale) {
-                    return `decimal(${typeOptions.scale})`;
+        } else if (column.type === String) {
+            type += "varchar";
 
-                } else if (typeOptions.precision) {
-                    return `decimal(${typeOptions.precision})`;
+        } else if (column.type === Date) {
+            type += "datetime";
 
-                } else {
-                    return "decimal";
+        } else if (column.type === Boolean) {
+            type += "boolean";
 
-                }
-            case "date":
-                return "date";
-            case "time":
-                if (typeOptions.timezone) {
-                    return "time with time zone";
-                } else {
-                    return "time without time zone";
-                }
-            case "datetime":
-                if (typeOptions.timezone) {
-                    return "timestamp with time zone";
-                } else {
-                    return "timestamp without time zone";
-                }
-            case "json":
-                return "json";
-            case "simple_array":
-                return typeOptions.length ? "character varying(" + typeOptions.length + ")" : "text";
+        } else if (column.type === Object) {
+            type += "text";
+
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
+        }
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
         }
 
-        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "SQLite");
+        // set default required length if those were not specified
+        if (type === "varchar")
+            type += "(255)";
+
+        if (type === "int")
+            type += "(11)";
+
+        return type;
     }
 
     /**
@@ -843,6 +833,7 @@ export class SqliteQueryRunner implements QueryRunner {
             c += " UNIQUE";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " PRIMARY KEY AUTOINCREMENT";
+
         if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
             if (typeof column.default === "number") {
                 c += " DEFAULT " + column.default + "";

@@ -1,10 +1,11 @@
-import {ColumnType} from "./types/ColumnTypes";
+import {ColumnType} from "../driver/types/ColumnTypes";
 import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
+import {Connection} from "../connection/Connection";
 
 /**
  * This metadata contains all information about entity's column.
@@ -93,24 +94,9 @@ export class ColumnMetadata {
     scale?: number;
 
     /**
-     * Indicates if date column will contain a timezone.
-     * Used only for date-typed column types.
-     * Note that timezone option is not supported by all databases (only postgres for now).
+     * Array of possible enumerated values.
      */
-    timezone: boolean = false;
-
-    /**
-     * Indicates if date object must be stored in given date's timezone.
-     * By default date is saved in UTC timezone.
-     * Works only with "datetime" columns.
-     */
-    localTimezone: boolean = false;
-
-    /**
-     * Indicates if column's type will be set as a fixed-length data type.
-     * Works only with "string" columns.
-     */
-    fixedLength: boolean = false;
+    enum?: any[];
 
     /**
      * Gets full path to this column property (including column property name).
@@ -186,6 +172,7 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
+        connection: Connection,
         entityMetadata: EntityMetadata,
         embeddedMetadata?: EmbeddedMetadata,
         referencedColumn?: ColumnMetadata,
@@ -208,6 +195,8 @@ export class ColumnMetadata {
             this.isGenerated = options.args.options.generated;
         if (options.args.options.unique)
             this.isUnique = options.args.options.unique;
+        if (options.args.options.default === null) // to make sure default: null is the same as nullable: true
+            this.isNullable = true;
         if (options.args.options.nullable)
             this.isNullable = options.args.options.nullable;
         if (options.args.options.comment)
@@ -218,12 +207,8 @@ export class ColumnMetadata {
             this.scale = options.args.options.scale;
         if (options.args.options.precision)
             this.precision = options.args.options.precision;
-        if (options.args.options.timezone)
-            this.timezone = options.args.options.timezone;
-        if (options.args.options.localTimezone)
-            this.localTimezone = options.args.options.localTimezone;
-        if (options.args.options.fixedLength)
-            this.fixedLength = options.args.options.fixedLength;
+        if (options.args.options.enum)
+            this.enum = options.args.options.enum;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
             this.isParentId = options.args.mode === "parentId";
@@ -234,6 +219,14 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
+        if (this.isTreeLevel)
+            this.type = options.connection.driver.mappedDataTypes.treeLevel;
+        if (this.isCreateDate)
+            this.type = options.connection.driver.mappedDataTypes.createDate;
+        if (this.isUpdateDate)
+            this.type = options.connection.driver.mappedDataTypes.updateDate;
+        if (this.isVersion)
+            this.type = options.connection.driver.mappedDataTypes.version;
     }
 
     // ---------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../../driver/types/ColumnTypes";
 
 /**
  * Describes all column's options.
@@ -22,8 +22,8 @@ export interface ColumnOptions {
     length?: string|number;
 
     /**
-     * Indicates if this column is PRIMARY.
-     * Same can be achieved if @PrimaryColumn decorator will be used.
+     * Indicates if this column is a primary key.
+     * Same can be achieved when @PrimaryColumn decorator is used.
      */
     primary?: boolean;
 
@@ -45,7 +45,7 @@ export interface ColumnOptions {
     nullable?: boolean;
 
     /**
-     * Column comment.
+     * Column comment. Not supported by all database types.
      */
     comment?: string;
 
@@ -67,23 +67,8 @@ export interface ColumnOptions {
     scale?: number;
 
     /**
-     * Indicates if this date column will contain a timezone.
-     * Used only for date-typed column types.
-     * Note that timezone option is not supported by all databases (only postgres for now).
+     * Array of possible enumerated values.
      */
-    timezone?: boolean;
-
-    /**
-     * Indicates if date object must be stored in given date's timezone.
-     * By default date is saved in UTC timezone.
-     * Works only with "datetime" columns.
-     */
-    localTimezone?: boolean;
-
-    /**
-     * Indicates if column's type will be set as a fixed-length data type.
-     * Works only with "string" columns.
-     */
-    fixedLength?: boolean;
+    enum?: any[];
 
 }

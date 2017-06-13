@@ -107,6 +107,7 @@ export class RelationJoinColumnBuilder {
             let relationalColumn = relation.entityMetadata.ownColumns.find(column => column.databaseName === joinColumnName);
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
+                    connection: this.connection,
                     entityMetadata: relation.entityMetadata,
                     args: {
                         target: "",

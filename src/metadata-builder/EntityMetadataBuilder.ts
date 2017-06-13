@@ -170,6 +170,7 @@ export class EntityMetadataBuilder {
                 const parentRelationColumns = parentPrimaryColumns.map(parentPrimaryColumn => {
                     const columnName = this.connection.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentPrimaryColumn.propertyPath);
                     const column = new ColumnMetadata({
+                        connection: this.connection,
                         entityMetadata: metadata,
                         referencedColumn: parentPrimaryColumn,
                         args: {
@@ -265,7 +266,7 @@ export class EntityMetadataBuilder {
 
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(inheritanceTree));
         entityMetadata.ownColumns = this.metadataArgsStorage.filterColumns(inheritanceTree).map(args => {
-            const column = new ColumnMetadata({ entityMetadata, args });
+            const column = new ColumnMetadata({ connection: this.connection, entityMetadata, args });
             // console.log(column.propertyName);
             // if single table inheritance used, we need to mark all inherit table columns as nullable
             if (singleTableChildrenTargets && singleTableChildrenTargets.indexOf(args.target) !== -1)
@@ -299,7 +300,7 @@ export class EntityMetadataBuilder {
         return embeddedArgs.map(embeddedArgs => {
             const embeddedMetadata = new EmbeddedMetadata({ entityMetadata: entityMetadata, args: embeddedArgs });
             embeddedMetadata.columns = this.metadataArgsStorage.filterColumns(embeddedMetadata.type).map(args => {
-                return new ColumnMetadata({ entityMetadata, embeddedMetadata, args});
+                return new ColumnMetadata({ connection: this.connection, entityMetadata, embeddedMetadata, args});
             });
             embeddedMetadata.relations = this.metadataArgsStorage.filterRelations(embeddedMetadata.type).map(args => {
                 return new RelationMetadata({ entityMetadata, embeddedMetadata, args });

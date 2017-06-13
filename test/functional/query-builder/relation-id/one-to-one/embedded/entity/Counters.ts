@@ -20,7 +20,7 @@ export class Counters {
     @JoinColumn()
     category: Category;
 
-    @Embedded(() => Subcounters)
+    @Column(() => Subcounters)
     subcounters: Subcounters;
 
     categoryId: number;
