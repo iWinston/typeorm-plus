@@ -79,7 +79,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (!queryRunner.isTransactionActive()) {
+        if (!queryRunner.isTransactionActive) {
             await queryRunner.beginTransaction();
             transactionStartedByUs = true;
         }
@@ -148,7 +148,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (!queryRunner.isTransactionActive()) {
+        if (!queryRunner.isTransactionActive) {
             await queryRunner.beginTransaction();
             transactionStartedByUs = true;
         }

@@ -298,7 +298,6 @@ export class MysqlDriver implements Driver {
                     dbConnection = {
                         id: this.databaseConnections.length,
                         connection: connection,
-                        isTransactionActive: false,
                         releaseCallback: function() {
                             if (driver.pool) {
                                 connection.release();

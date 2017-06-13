@@ -46,6 +46,23 @@ import {Connection} from "../../connection/Connection";
 export class MongoQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
+    // Public Implemented Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Indicates if connection for this query runner is released.
+     * Once its released, query runner cannot run queries anymore.
+     * Always false for mongodb since mongodb has a single query executor instance.
+     */
+    isReleased = false;
+
+    /**
+     * Indicates if transaction is active in this query executor.
+     * Always false for mongodb since mongodb does not support transactions.
+     */
+    isTransactionActive = false;
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
@@ -336,13 +353,6 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async rollbackTransaction(): Promise<void> {
         // transactions are not supported by mongodb driver, so simply don't do anything here
-    }
-
-    /**
-     * Checks if transaction is in progress.
-     */
-    isTransactionActive(): boolean {
-        return this.databaseConnection.isTransactionActive;
     }
 
     /**

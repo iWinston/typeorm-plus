@@ -106,7 +106,7 @@ export class SubjectOperationExecutor {
             this.queryRunner = await this.queryRunnerProvider.provide();
 
             // open transaction if its not opened yet
-            if (!this.queryRunner.isTransactionActive()) {
+            if (!this.queryRunner.isTransactionActive) {
                 isTransactionStartedByItself = true;
                 await this.queryRunner.beginTransaction();
             }

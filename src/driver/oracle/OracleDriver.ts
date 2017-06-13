@@ -314,7 +314,6 @@ export class OracleDriver implements Driver {
                     dbConnection = {
                         id: this.databaseConnectionPool.length,
                         connection: connection,
-                        isTransactionActive: false
                     };
                     dbConnection.releaseCallback = () => {
                         return new Promise<void>((ok, fail) => {

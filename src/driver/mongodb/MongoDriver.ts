@@ -98,8 +98,7 @@ export class MongoDriver implements Driver {
                 this.databaseConnection = dbConnection;
                 const databaseConnection: DatabaseConnection = {
                     id: 1,
-                    connection: dbConnection,
-                    isTransactionActive: false
+                    connection: dbConnection
                 };
                 this.queryRunner = new MongoQueryRunner(this.connection, databaseConnection);
                 ok();

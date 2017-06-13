@@ -22,14 +22,19 @@ import {ColumnOptions} from "../../decorator/options/ColumnOptions";
 export class SqlServerQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Public Implemented Properties
     // -------------------------------------------------------------------------
 
     /**
      * Indicates if connection for this query runner is released.
      * Once its released, query runner cannot run queries anymore.
      */
-    protected isReleased = false;
+    isReleased = false;
+
+    /**
+     * Indicates if transaction is active in this query executor.
+     */
+    isTransactionActive = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -124,15 +129,15 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (this.databaseConnection.isTransactionActive)
+        if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.isTransactionActive = true;
+            this.isTransactionActive = true;
             this.databaseConnection.transaction = this.databaseConnection.connection.transaction();
             this.databaseConnection.transaction.begin((err: any) => {
                 if (err) {
-                    this.databaseConnection.isTransactionActive = false;
+                    this.isTransactionActive = false;
                     return fail(err);
                 }
                 ok();
@@ -147,13 +152,13 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
             this.databaseConnection.transaction.commit((err: any) => {
                 if (err) return fail(err);
-                this.databaseConnection.isTransactionActive = false;
+                this.isTransactionActive = false;
                 ok();
             });
         });
@@ -166,23 +171,16 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
             this.databaseConnection.transaction.rollback((err: any) => {
                 if (err) return fail(err);
-                this.databaseConnection.isTransactionActive = false;
+                this.isTransactionActive = false;
                 ok();
             });
         });
-    }
-
-    /**
-     * Checks if transaction is in progress.
-     */
-    isTransactionActive(): boolean {
-        return this.databaseConnection.isTransactionActive;
     }
 
     /**
@@ -196,7 +194,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
             this.connection.logger.logQuery(query, parameters);
             const mssql = this.connection.driver.nativeInterface().driver;
-            const request = new mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
+            const request = new mssql.Request(this.isTransactionActive ? this.databaseConnection.transaction : this.databaseConnection.connection);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
                     request.input(index, parameters![index]);

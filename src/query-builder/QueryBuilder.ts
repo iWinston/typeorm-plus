@@ -905,7 +905,7 @@ export class QueryBuilder<Entity> {
             if (!this.expressionMap.mainAlias)
                 throw new Error(`Alias is not set. Looks like nothing is selected. Use select*, delete, update method to set an alias.`);
 
-            if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write") && !queryRunner.isTransactionActive())
+            if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write") && !queryRunner.isTransactionActive)
                 throw new PessimisticLockTransactionRequiredError();
 
             if (this.expressionMap.lockMode === "optimistic") {

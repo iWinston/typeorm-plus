@@ -315,8 +315,7 @@ export class SqlServerDriver implements Driver {
         return new Promise((ok, fail) => {
             let dbConnection: DatabaseConnection = {
                 id: this.databaseConnectionPool.length,
-                connection: this.connectionPool,
-                isTransactionActive: false
+                connection: this.connectionPool
             };
             dbConnection.releaseCallback = () => {
                 this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);

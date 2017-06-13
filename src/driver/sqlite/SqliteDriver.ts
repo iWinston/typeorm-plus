@@ -125,8 +125,7 @@ export class SqliteDriver implements Driver {
 
                 this.databaseConnection = {
                     id: 1,
-                    connection: connection,
-                    isTransactionActive: false
+                    connection: connection
                 };
 
                 // we need to enable foreign keys in sqlite to make sure all foreign key related features

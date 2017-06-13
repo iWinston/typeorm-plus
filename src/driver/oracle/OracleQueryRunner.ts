@@ -24,14 +24,19 @@ import {ColumnOptions} from "../../decorator/options/ColumnOptions";
 export class OracleQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Public Implemented Properties
     // -------------------------------------------------------------------------
 
     /**
      * Indicates if connection for this query runner is released.
      * Once its released, query runner cannot run queries anymore.
      */
-    protected isReleased = false;
+    isReleased = false;
+
+    /**
+     * Indicates if transaction is active in this query executor.
+     */
+    isTransactionActive = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -96,11 +101,11 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (this.databaseConnection.isTransactionActive)
+        if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
         // await this.query("START TRANSACTION");
-        this.databaseConnection.isTransactionActive = true;
+        this.isTransactionActive = true;
     }
 
     /**
@@ -110,11 +115,11 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         await this.query("COMMIT");
-        this.databaseConnection.isTransactionActive = false;
+        this.isTransactionActive = false;
     }
 
     /**
@@ -124,18 +129,11 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         await this.query("ROLLBACK");
-        this.databaseConnection.isTransactionActive = false;
-    }
-
-    /**
-     * Checks if transaction is in progress.
-     */
-    isTransactionActive(): boolean {
-        return this.databaseConnection.isTransactionActive;
+        this.isTransactionActive = false;
     }
 
     /**
@@ -157,7 +155,7 @@ export class OracleQueryRunner implements QueryRunner {
                 ok(result.rows || result.outBinds);
             };
             const executionOptions = {
-                autoCommit: this.databaseConnection.isTransactionActive ? false : true
+                autoCommit: this.isTransactionActive ? false : true
             };
             this.databaseConnection.connection.execute(query, parameters || {}, executionOptions, handler);
         });

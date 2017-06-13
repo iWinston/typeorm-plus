@@ -137,8 +137,7 @@ export class WebsqlDriver implements Driver {
             );
             this.databaseConnection = {
                 id: 1,
-                connection: connection,
-                isTransactionActive: false
+                connection: connection
             };
             ok();
         });

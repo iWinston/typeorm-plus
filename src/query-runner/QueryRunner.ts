@@ -14,6 +14,17 @@ import {ColumnOptions} from "../decorator/options/ColumnOptions";
 export interface QueryRunner {
 
     /**
+     * Indicates if connection for this query runner is released.
+     * Once its released, query runner cannot run queries anymore.
+     */
+    readonly isReleased: boolean;
+
+    /**
+     * Checks if transaction is in progress.
+     */
+    readonly isTransactionActive: boolean;
+
+    /**
      * Releases database connection. This is needed when using connection pooling.
      * If connection is not from a pool, it should not be released.
      * You cannot use this class's methods after its released.
@@ -41,11 +52,6 @@ export interface QueryRunner {
      * Ends transaction.
      */
     rollbackTransaction(): Promise<void>;
-
-    /**
-     * Checks if transaction is in progress.
-     */
-    isTransactionActive(): boolean;
 
     /**
      * Executes a given SQL query and returns raw database results.

@@ -19,11 +19,6 @@ export interface DatabaseConnection {
     transaction?: any;
 
     /**
-     * Indicates if transaction is active for this connection.
-     */
-    isTransactionActive: boolean;
-
-    /**
      * Special function that holds a connection release logic.
      * Releases connection when its called.
      * After releasing connection cannot be used anymore.
