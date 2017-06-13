@@ -124,7 +124,6 @@ export class SqliteDriver implements Driver {
                     return fail(err);
 
                 this.databaseConnection = {
-                    id: 1,
                     connection: connection
                 };
 

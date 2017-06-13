@@ -136,7 +136,6 @@ export class WebsqlDriver implements Driver {
                 options.size,
             );
             this.databaseConnection = {
-                id: 1,
                 connection: connection
             };
             ok();

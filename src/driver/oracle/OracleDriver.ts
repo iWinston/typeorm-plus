@@ -312,7 +312,6 @@ export class OracleDriver implements Driver {
                 let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
                 if (!dbConnection) {
                     dbConnection = {
-                        id: this.databaseConnectionPool.length,
                         connection: connection,
                     };
                     dbConnection.releaseCallback = () => {

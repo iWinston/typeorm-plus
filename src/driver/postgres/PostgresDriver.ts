@@ -334,7 +334,6 @@ export class PostgresDriver implements Driver {
                 let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
                 if (!dbConnection) {
                     dbConnection = {
-                        id: this.databaseConnectionPool.length,
                         connection: connection
                     };
                     this.databaseConnectionPool.push(dbConnection);

@@ -4,11 +4,6 @@
 export interface DatabaseConnection {
 
     /**
-     * Id of the connection.
-     */
-    id: number;
-
-    /**
      * Native driver's connection object.
      */
     connection: any;

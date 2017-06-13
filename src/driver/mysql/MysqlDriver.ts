@@ -296,7 +296,6 @@ export class MysqlDriver implements Driver {
                 if (!dbConnection) {
                     const driver = this;
                     dbConnection = {
-                        id: this.databaseConnections.length,
                         connection: connection,
                         releaseCallback: function() {
                             if (driver.pool) {
