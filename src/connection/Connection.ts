@@ -326,7 +326,6 @@ export class Connection {
             throw err;
 
         } finally {
-            await usedQueryRunnerProvider.release(queryRunner);
             if (!queryRunnerProvider) // if we used a new query runner provider then release it
                 await usedQueryRunnerProvider.releaseReused(); // todo: why we don't do same in query method?
         }
@@ -349,7 +348,8 @@ export class Connection {
             return await queryRunner.query(query, parameters);  // await is needed here because we are using finally
 
         } finally {
-            await usedQueryRunnerProvider.release(queryRunner);
+            if (!queryRunnerProvider)
+                await usedQueryRunnerProvider.releaseReused();
         }
     }
 

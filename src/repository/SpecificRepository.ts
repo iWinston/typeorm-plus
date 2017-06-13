@@ -75,7 +75,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const queryRunner = await queryRunnerProvider.provide();
         await queryRunner.update(table, values, conditions);
         if (!this.queryRunnerProvider) // means created by this method
-            await queryRunnerProvider.release(queryRunner);
+            await queryRunnerProvider.releaseReused();
     }
 
     /**
@@ -123,7 +123,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         const queryRunner = await queryRunnerProvider.provide();
         await queryRunner.update(table, values, conditions);
         if (!this.queryRunnerProvider) // means created by this method
-            await queryRunnerProvider.release(queryRunner);
+            await queryRunnerProvider.releaseReused();
     }
 
     /**
@@ -170,7 +170,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         await Promise.all(insertPromises);
 
         if (!this.queryRunnerProvider) // means created by this method
-            await queryRunnerProvider.release(queryRunner);
+            await queryRunnerProvider.releaseReused();
     }
 
     /**
@@ -219,7 +219,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
 
         } finally {
             if (!this.queryRunnerProvider) // means created by this method
-                await queryRunnerProvider.release(queryRunner);
+                await queryRunnerProvider.releaseReused();
         }
     }
 

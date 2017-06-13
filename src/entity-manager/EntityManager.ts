@@ -562,7 +562,8 @@ export class EntityManager {
             return await queryRunner.truncate(metadata.tableName); // await is needed here because we are using finally
 
         } finally {
-            await queryRunnerProvider.release(queryRunner);
+            if (!this.queryRunnerProvider)
+                await queryRunnerProvider.releaseReused();
         }
     }
 
