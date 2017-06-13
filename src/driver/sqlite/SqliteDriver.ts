@@ -139,13 +139,13 @@ export class SqliteDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
+    createQueryRunner(): QueryRunner {
         // if (!this.databaseConnection)
         //     return Promise.reject(new ConnectionIsNotSetError("sqlite"));
         // const databaseConnection = await this.retrieveDatabaseConnection();
-        const queryRunner = new SqliteQueryRunner(this.connection);
-        await queryRunner.connect();
-        return queryRunner;
+        return new SqliteQueryRunner(this.connection);
+        // await queryRunner.connect();
+        // return queryRunner;
     }
 
     /**

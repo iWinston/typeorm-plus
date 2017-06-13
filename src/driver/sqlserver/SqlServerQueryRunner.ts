@@ -43,6 +43,8 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     transaction: any;
 
+    protected databaseConnectionCreatePromise: Promise<any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -58,11 +60,19 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Creates/uses connection from the connection pool to perform further operations.
      */
     connect(): Promise<any> {
-        return new Promise((ok, fail) => {
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        if (this.databaseConnectionCreatePromise)
+            return this.databaseConnectionCreatePromise;
+
+        this.databaseConnectionCreatePromise = new Promise((ok, fail) => {
             const driver = this.connection.driver as SqlServerDriver;
             this.databaseConnection = driver.connectionPool; // todo: fix it
             ok(this.databaseConnection);
         });
+
+        return this.databaseConnectionCreatePromise;
     }
 
     /**
@@ -147,9 +157,10 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        return new Promise<void>((ok, fail) => {
+        return new Promise<void>(async (ok, fail) => {
             this.isTransactionActive = true;
-            this.transaction = this.databaseConnection.transaction();
+            const dbConnection = await this.connect();
+            this.transaction = dbConnection.transaction();
             this.transaction.begin((err: any) => {
                 if (err) {
                     this.isTransactionActive = false;
@@ -205,11 +216,12 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise((ok, fail) => {
+        return new Promise(async (ok, fail) => {
 
             this.connection.logger.logQuery(query, parameters);
             const mssql = this.connection.driver.nativeInterface().driver;
-            const request = new mssql.Request(this.isTransactionActive ? this.transaction : this.databaseConnection);
+            const dbConnection = await this.connect();
+            const request = new mssql.Request(this.isTransactionActive ? this.transaction : dbConnection);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
                     request.input(index, parameters![index]);

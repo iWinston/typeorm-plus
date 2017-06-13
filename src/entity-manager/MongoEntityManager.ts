@@ -1,7 +1,5 @@
 import {Connection} from "../connection/Connection";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {EntityManager} from "./EntityManager";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {ObjectType} from "../common/ObjectType";
 import {
     AggregationCursor,
@@ -43,6 +41,7 @@ import {DocumentToEntityTransformer} from "../query-builder/transformer/Document
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {FindOneOptions} from "../find-options/FindOneOptions";
+import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -56,8 +55,8 @@ export class MongoEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, queryRunnerProvider?: QueryRunnerProvider) {
-        super(connection, queryRunnerProvider);
+    constructor(connection: Connection, queryRunner?: QueryRunner) {
+        super(connection, queryRunner);
     }
 
     // -------------------------------------------------------------------------

@@ -13,7 +13,6 @@ import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
 import {SpecificRepository} from "../repository/SpecificRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Logger} from "../logger/Logger";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFound";
 import {MigrationInterface} from "../migration/MigrationInterface";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
@@ -30,6 +29,7 @@ import {LoggerFactory} from "../logger/LoggerFactory";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {DriverFactory} from "../driver/DriverFactory";
 import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
+import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
  * Connection is a single database ORM connection to a specific DBMS database.
@@ -303,81 +303,78 @@ export class Connection {
      * Wraps given function execution (and all operations made there) into a transaction.
      * All database operations must be executed using provided entity manager.
      */
-    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>,
-                      queryRunnerProvider?: QueryRunnerProvider): Promise<any> {
+    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>, queryRunner?: QueryRunner): Promise<any> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Transactions aren't supported by MongoDB.`);
 
-        if (queryRunnerProvider && queryRunnerProvider.isReleased)
+        if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunnerProvider = queryRunnerProvider || new QueryRunnerProvider(this.driver, true);
-        const queryRunner = await usedQueryRunnerProvider.provide();
-        const transactionEntityManager = new EntityManagerFactory().create(this, usedQueryRunnerProvider);
+        const usedQueryRunner = queryRunner || this.driver.createQueryRunner();
+        const transactionEntityManager = new EntityManagerFactory().create(this, usedQueryRunner);
 
         try {
-            await queryRunner.beginTransaction();
+            await usedQueryRunner.beginTransaction();
             const result = await runInTransaction(transactionEntityManager);
-            await queryRunner.commitTransaction();
+            await usedQueryRunner.commitTransaction();
             return result;
 
         } catch (err) {
-            await queryRunner.rollbackTransaction();
+            await usedQueryRunner.rollbackTransaction();
             throw err;
 
         } finally {
-            if (!queryRunnerProvider) // if we used a new query runner provider then release it
-                await usedQueryRunnerProvider.releaseReused(); // todo: why we don't do same in query method?
+            if (!queryRunner) // if we used a new query runner provider then release it
+                await usedQueryRunner.release();
         }
     }
 
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string, parameters?: any[], queryRunnerProvider?: QueryRunnerProvider): Promise<any> {
+    async query(query: string, parameters?: any[], queryRunner?: QueryRunner): Promise<any> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Queries aren't supported by MongoDB.`);
 
-        if (queryRunnerProvider && queryRunnerProvider.isReleased)
+        if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunnerProvider = queryRunnerProvider || new QueryRunnerProvider(this.driver);
-        const queryRunner = await usedQueryRunnerProvider.provide();
+        const usedQueryRunner = queryRunner || this.driver.createQueryRunner();
 
         try {
-            return await queryRunner.query(query, parameters);  // await is needed here because we are using finally
+            return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally
 
         } finally {
-            if (!queryRunnerProvider)
-                await usedQueryRunnerProvider.releaseReused();
+            if (!queryRunner)
+                await usedQueryRunner.release();
         }
     }
 
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity>;
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunner?: QueryRunner): QueryBuilder<Entity>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder(queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<any>;
+    createQueryBuilder(queryRunner?: QueryRunner): QueryBuilder<any>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|Function|string|QueryRunnerProvider, alias?: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
+    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|Function|string|QueryRunner, alias?: string, queryRunner?: QueryRunner): QueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Builder is not supported by MongoDB.`);
 
         if (alias) {
             const metadata = this.getMetadata(entityClass as Function|string);
-            return new QueryBuilder(this, queryRunnerProvider)
+            return new QueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias);
 
         } else {
-            return new QueryBuilder(this, entityClass as QueryRunnerProvider|undefined);
+            return new QueryBuilder(this, entityClass as QueryRunner|undefined);
         }
     }
 
@@ -386,11 +383,11 @@ export class Connection {
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
-    createIsolatedManager(queryRunnerProvider?: QueryRunnerProvider): EntityManager {
-        if (!queryRunnerProvider)
-            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+    createIsolatedManager(queryRunner?: QueryRunner): EntityManager {
+        if (!queryRunner)
+            queryRunner = this.driver.createQueryRunner();
 
-        return new EntityManagerFactory().create(this, queryRunnerProvider);
+        return new EntityManagerFactory().create(this, queryRunner);
     }
 
     /**
@@ -398,11 +395,11 @@ export class Connection {
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
-    createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunnerProvider?: QueryRunnerProvider): Repository<Entity> {
-        if (!queryRunnerProvider)
-            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+    createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): Repository<Entity> {
+        if (!queryRunner)
+            queryRunner = this.driver.createQueryRunner();
 
-        return new RepositoryFactory().createRepository(this, this.getMetadata(entityClassOrName), queryRunnerProvider);
+        return new RepositoryFactory().createRepository(this, this.getMetadata(entityClassOrName), queryRunner);
     }
 
     /**
@@ -410,11 +407,11 @@ export class Connection {
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
-    createIsolatedSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<Entity> {
-        if (!queryRunnerProvider)
-            queryRunnerProvider = new QueryRunnerProvider(this.driver, true);
+    createIsolatedSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): SpecificRepository<Entity> {
+        if (!queryRunner)
+            queryRunner = this.driver.createQueryRunner();
 
-        return new RepositoryFactory().createSpecificRepository(this, this.getMetadata(entityClassOrName), queryRunnerProvider);
+        return new RepositoryFactory().createSpecificRepository(this, this.getMetadata(entityClassOrName), queryRunner);
     }
 
     // -------------------------------------------------------------------------

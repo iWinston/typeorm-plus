@@ -2,9 +2,9 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {OrmUtils} from "../util/OrmUtils";
+import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -76,8 +76,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected queryRunnerProvider: QueryRunnerProvider) {
+    constructor(protected connection: Connection, protected queryRunner: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
@@ -270,7 +269,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             } else {
                 entities = await this.connection
                     .getRepository<ObjectLiteral>(subjectGroup.target)
-                    .createQueryBuilder("operateSubject", this.queryRunnerProvider)
+                    .createQueryBuilder("operateSubject", this.queryRunner)
                     .andWhereInIds(allIds)
                     .enableAutoRelationIdsLoad()
                     .getMany();
@@ -391,7 +390,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) we need to load a details where details.id = post.details
                     const qb = this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .enableAutoRelationIdsLoad();
 
                     const condition = relation.joinColumns.map(joinColumn => {
@@ -479,7 +478,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) we need to load a post where post.detailsId = details.id
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id") // TODO relation.inverseRelation.joinColumns
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
                         .enableAutoRelationIdsLoad()
@@ -580,7 +579,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
@@ -611,7 +610,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .enableAutoRelationIdsLoad()
@@ -628,7 +627,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
                         .enableAutoRelationIdsLoad()
@@ -669,7 +668,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                 if (id) { // if there is no id (for newly inserted) then we cant load
                                     const databaseEntity = await this.connection
                                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                                         .andWhereInIds([id])
                                         .enableAutoRelationIdsLoad()
                                         .getOne();

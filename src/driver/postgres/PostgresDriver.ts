@@ -189,13 +189,13 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("postgres"));
+    createQueryRunner(): QueryRunner {
+        // if (!this.pool)
+        //     return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
-        const queryRunner = new PostgresQueryRunner(this.connection);
-        await queryRunner.connect();
-        return queryRunner;
+        return new PostgresQueryRunner(this.connection);
+        // await queryRunner.connect();
+        // return queryRunner;
     }
 
     /**

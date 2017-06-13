@@ -1,9 +1,8 @@
 import {RelationIdAttribute} from "./RelationIdAttribute";
-import {QueryBuilder} from "../QueryBuilder";
 import {Connection} from "../../connection/Connection";
-import {QueryRunnerProvider} from "../../query-runner/QueryRunnerProvider";
 import {RelationIdLoadResult} from "./RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 
 export class RelationIdLoader {
 
@@ -12,7 +11,7 @@ export class RelationIdLoader {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-                protected queryRunnerProvider: QueryRunnerProvider|undefined,
+                protected queryRunner: QueryRunner|undefined,
                 protected relationIdAttributes: RelationIdAttribute[]) {
     }
 
@@ -77,7 +76,7 @@ export class RelationIdLoader {
 
                 // generate query:
                 // SELECT category.id, category.postId FROM category category ON category.postId = :postId
-                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunner);
 
                 joinColumns.forEach(joinColumn => {
                     qb.addSelect(tableAlias + "." + joinColumn.propertyPath, joinColumn.databaseName);
@@ -143,7 +142,7 @@ export class RelationIdLoader {
                     return "(" + condition + " AND " + inverseJoinColumnCondition + ")";
                 }).join(" OR ");
 
-                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunner);
 
                 inverseJoinColumns.forEach(joinColumn => {
                     qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)

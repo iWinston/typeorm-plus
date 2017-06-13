@@ -2,12 +2,12 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
 import {SaveOptions} from "./SaveOptions";
 import {RemoveOptions} from "./RemoveOptions";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -31,7 +31,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Query runner provider used for this repository.
      */
-    protected queryRunnerProvider?: QueryRunnerProvider;
+    protected queryRunner?: QueryRunner;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -64,8 +64,8 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder(alias: string, queryRunnerProvider?: QueryRunnerProvider): QueryBuilder<Entity> {
-        return this.manager.createQueryBuilder(this.metadata.target, alias, queryRunnerProvider);
+    createQueryBuilder(alias: string, queryRunner?: QueryRunner): QueryBuilder<Entity> {
+        return this.manager.createQueryBuilder(this.metadata.target, alias, queryRunner || this.queryRunner);
     }
 
     /**

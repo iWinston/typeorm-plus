@@ -40,6 +40,8 @@ export class OracleQueryRunner implements QueryRunner {
      */
     databaseConnection: any;
 
+    protected databaseConnectionCreatePromise: Promise<any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -55,13 +57,21 @@ export class OracleQueryRunner implements QueryRunner {
      * Creates/uses connection from the connection pool to perform further operations.
      */
     connect(): Promise<any> {
-        return new Promise((ok, fail) => {
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        if (this.databaseConnectionCreatePromise)
+            return this.databaseConnectionCreatePromise;
+
+        this.databaseConnectionCreatePromise = new Promise((ok, fail) => {
             const driver = this.connection.driver as OracleDriver;
             driver.pool.getConnection((err: any, connection: any) => {
                 this.databaseConnection = connection;
                 err ? fail(err) : ok(connection);
             });
         });
+
+        return this.databaseConnectionCreatePromise;
     }
 
     /**
@@ -71,13 +81,15 @@ export class OracleQueryRunner implements QueryRunner {
      */
     release(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.close((err: any) => {
-                if (err)
-                    return fail(err);
+            this.isReleased = true;
+            if (this.databaseConnection) {
+                this.databaseConnection.close((err: any) => {
+                    if (err)
+                        return fail(err);
 
-                this.isReleased = true;
-                ok();
-            });
+                    ok();
+                });
+            }
         });
     }
 
@@ -160,7 +172,7 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise((ok, fail) => {
+        return new Promise(async (ok, fail) => {
             this.connection.logger.logQuery(query, parameters);
             const handler = (err: any, result: any) => {
                 if (err) {
@@ -174,7 +186,9 @@ export class OracleQueryRunner implements QueryRunner {
             const executionOptions = {
                 autoCommit: this.isTransactionActive ? false : true
             };
-            this.databaseConnection.execute(query, parameters || {}, executionOptions, handler);
+
+            const databaseConnection = await this.connect();
+            databaseConnection.execute(query, parameters || {}, executionOptions, handler);
         });
     }
 

@@ -165,13 +165,13 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("mysql"));
+    createQueryRunner(): QueryRunner {
+        // if (!this.pool)
+        //     return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
-        const queryRunner = new MysqlQueryRunner(this.connection);
-        await queryRunner.connect();
-        return queryRunner;
+        return new MysqlQueryRunner(this.connection);
+        // await queryRunner.connect();
+        // return queryRunner;
     }
 
     /**

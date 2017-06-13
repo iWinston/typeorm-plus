@@ -1,9 +1,8 @@
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {QueryBuilder} from "../QueryBuilder";
 import {Connection} from "../../connection/Connection";
-import {QueryRunnerProvider} from "../../query-runner/QueryRunnerProvider";
 import {RelationCountAttribute} from "./RelationCountAttribute";
 import {RelationCountLoadResult} from "./RelationCountLoadResult";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 
 export class RelationCountLoader {
 
@@ -12,7 +11,7 @@ export class RelationCountLoader {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-                protected queryRunnerProvider: QueryRunnerProvider|undefined,
+                protected queryRunner: QueryRunner|undefined,
                 protected relationCountAttributes: RelationCountAttribute[]) {
     }
 
@@ -49,7 +48,7 @@ export class RelationCountLoader {
 
                 // generate query:
                 // SELECT category.post as parentId, COUNT(category.id) AS cnt FROM category category WHERE category.post IN (1, 2) GROUP BY category.post
-                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunner);
                 qb.select(inverseSideTableAlias + "." + inverseSidePropertyName, "parentId")
                     .addSelect("COUNT(" + qb.escapeAlias(inverseSideTableAlias) + "." + qb.escapeColumn(referenceColumnName) + ")", "cnt")
                     .from(inverseSideTable, inverseSideTableAlias)
@@ -106,7 +105,7 @@ export class RelationCountLoader {
                 const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
                     " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 
-                const qb = this.connection.createQueryBuilder(this.queryRunnerProvider);
+                const qb = this.connection.createQueryBuilder(this.queryRunner);
                 qb.select(junctionAlias + "." + firstJunctionColumn.propertyName, "parentId")
                     .addSelect("COUNT(" + qb.escapeAlias(inverseSideTableAlias) + "." + qb.escapeColumn(inverseJoinColumnName) + ")", "cnt")
                     .from(inverseSideTableName, inverseSideTableAlias)

@@ -48,25 +48,25 @@ export class QueryRunnerProvider {
      * Provides a new query runner used to run repository queries.
      * If use useSingleQueryRunner mode is enabled then reusable query runner will be provided instead.
      */
-    provide(): Promise<QueryRunner> {
-        if (this.useSingleQueryRunner) {
-            if (!this.reusableQueryRunner) {
-                if (!this.reusableQueryRunnerPromise) {
-                    // we do this because this method can be created multiple times
-                    // this will lead to multiple query runner creations
-                    this.reusableQueryRunnerPromise = this.driver
-                        .createQueryRunner()
-                        .then(reusableQueryRunner => {
-                            this.reusableQueryRunner = reusableQueryRunner;
-                            return reusableQueryRunner;
-                        });
-                }
-                return this.reusableQueryRunnerPromise;
-            }
-            return Promise.resolve(this.reusableQueryRunner);
-        }
-        return this.driver.createQueryRunner();
-    }
+    // provide(): Promise<QueryRunner> {
+        // if (this.useSingleQueryRunner) {
+        //     if (!this.reusableQueryRunner) {
+        //         if (!this.reusableQueryRunnerPromise) {
+        //             // we do this because this method can be created multiple times
+        //             // this will lead to multiple query runner creations
+        //             this.reusableQueryRunnerPromise = this.driver
+        //                 .createQueryRunner()
+        //                 .then(reusableQueryRunner => {
+        //                     this.reusableQueryRunner = reusableQueryRunner;
+        //                     return reusableQueryRunner;
+        //                 });
+        //         }
+        //         return this.reusableQueryRunnerPromise;
+        //     }
+        //     return Promise.resolve(this.reusableQueryRunner);
+        // }
+        // return this.driver.createQueryRunner();
+    // }
 
     /**
      * Releases reused query runner.

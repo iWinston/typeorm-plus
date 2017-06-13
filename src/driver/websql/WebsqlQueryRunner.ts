@@ -41,6 +41,8 @@ export class WebsqlQueryRunner implements QueryRunner {
      */
     databaseConnection: any;
 
+    protected databaseConnectionCreatePromise: Promise<any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -56,20 +58,28 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Creates/uses connection from the connection pool to perform further operations.
      */
     connect(): Promise<any> {
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        if (this.databaseConnectionCreatePromise)
+            return this.databaseConnectionCreatePromise;
+
         const driver = this.connection.driver as WebsqlDriver;
         const options = Object.assign({}, {
             database: driver.options.database,
         }, driver.options.extra || {});
 
-        return new Promise<void>((ok, fail) => {
+        this.databaseConnectionCreatePromise = new Promise<void>((ok, fail) => {
             this.databaseConnection = openDatabase(
                 options.database,
                 options.version,
                 options.description,
                 options.size,
             );
-            ok();
+            ok(this.databaseConnection);
         });
+
+        return this.databaseConnectionCreatePromise;
     }
 
     /**
@@ -157,10 +167,10 @@ export class WebsqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise((ok, fail) => {
+        return new Promise(async (ok, fail) => {
 
             this.connection.logger.logQuery(query, parameters);
-            const db = this.databaseConnection;
+            const db = await this.connect();
             // todo(dima): check if transaction is not active
             db.transaction((tx: any) => {
                 tx.executeSql(query, parameters, (tx: any, result: any) => {
@@ -192,10 +202,10 @@ export class WebsqlQueryRunner implements QueryRunner {
         const sql = columns.length > 0 ? (`INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
 
-        return new Promise<any[]>((ok, fail) => {
+        return new Promise<any[]>(async (ok, fail) => {
             this.connection.logger.logQuery(sql, parameters);
 
-            const db = this.databaseConnection;
+            const db = await this.connect();
             // todo: check if transaction is not active
             db.transaction((tx: any) => {
                 tx.executeSql(sql, parameters, (tx: any, result: any) => {

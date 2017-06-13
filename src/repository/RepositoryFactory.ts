@@ -3,10 +3,9 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 import {Repository} from "./Repository";
 import {SpecificRepository} from "./SpecificRepository";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoRepository} from "./MongoRepository";
-import {EntityManager} from "../entity-manager/EntityManager";
+import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
  * Factory used to create different types of repositories.
@@ -20,7 +19,7 @@ export class RepositoryFactory {
     /**
      * Creates a regular repository.
      */
-    createRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): Repository<any> {
+    createRepository(connection: Connection, metadata: EntityMetadata, queryRunner?: QueryRunner): Repository<any> {
 
         if (metadata.isClosure) {
             // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
@@ -28,7 +27,7 @@ export class RepositoryFactory {
             const repository = new TreeRepository<any>();
             (repository as any)["manager"] = connection.manager;
             (repository as any)["metadata"] = metadata;
-            (repository as any)["queryRunnerProvider"] = queryRunnerProvider;
+            (repository as any)["queryRunner"] = queryRunner;
             return repository;
 
         } else {
@@ -42,7 +41,7 @@ export class RepositoryFactory {
             }
             (repository as any)["manager"] = connection.manager;
             (repository as any)["metadata"] = metadata;
-            (repository as any)["queryRunnerProvider"] = queryRunnerProvider;
+            (repository as any)["queryRunner"] = queryRunner;
 
             return repository;
         }
@@ -51,8 +50,8 @@ export class RepositoryFactory {
     /**
      * Creates a specific repository.
      */
-    createSpecificRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<any> {
-        return new SpecificRepository(connection, metadata, queryRunnerProvider);
+    createSpecificRepository(connection: Connection, metadata: EntityMetadata, queryRunner?: QueryRunner): SpecificRepository<any> {
+        return new SpecificRepository(connection, metadata, queryRunner);
     }
 
 }

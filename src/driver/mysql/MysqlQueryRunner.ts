@@ -38,6 +38,8 @@ export class MysqlQueryRunner implements QueryRunner {
      */
     databaseConnection: any;
 
+    protected databaseConnectionCreatePromise: Promise<any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -53,13 +55,21 @@ export class MysqlQueryRunner implements QueryRunner {
      * Creates/uses connection from the connection pool to perform further operations.
      */
     connect(): Promise<any> {
-        return new Promise((ok, fail) => {
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        if (this.databaseConnectionCreatePromise)
+            return this.databaseConnectionCreatePromise;
+
+        this.databaseConnectionCreatePromise = new Promise((ok, fail) => {
             const driver = this.connection.driver as MysqlDriver;
             driver.pool.getConnection((err: any, connection: any) => {
                 this.databaseConnection = connection;
                 err ? fail(err) : ok(connection);
             });
         });
+
+        return this.databaseConnectionCreatePromise;
     }
 
     /**
@@ -69,7 +79,8 @@ export class MysqlQueryRunner implements QueryRunner {
      */
     release(): Promise<void> {
         this.isReleased = true;
-        this.databaseConnection.release();
+        if (this.databaseConnection)
+            this.databaseConnection.release();
         return Promise.resolve();
     }
 
@@ -153,9 +164,10 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise((ok, fail) => {
+        return new Promise(async (ok, fail) => {
             this.connection.logger.logQuery(query, parameters);
-            this.databaseConnection.query(query, parameters, (err: any, result: any) => {
+            const databaseConnection = await this.connect();
+            databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.connection.logger.logFailedQuery(query, parameters);
                     this.connection.logger.logQueryError(err);

@@ -41,6 +41,8 @@ export class SqliteQueryRunner implements QueryRunner {
      */
     databaseConnection: any;
 
+    protected databaseConnectionCreatePromise: Promise<any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -56,7 +58,13 @@ export class SqliteQueryRunner implements QueryRunner {
      * Creates/uses connection from the connection pool to perform further operations.
      */
     connect(): Promise<any> {
-        return new Promise<void>((ok, fail) => {
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        if (this.databaseConnectionCreatePromise)
+            return this.databaseConnectionCreatePromise;
+
+        this.databaseConnectionCreatePromise = new Promise<void>((ok, fail) => {
             const driver = this.connection.driver as SqliteDriver;
             this.databaseConnection = new driver.sqlite.Database(this.connection.options.database, (err: any) => {
                 if (err) {
@@ -74,6 +82,8 @@ export class SqliteQueryRunner implements QueryRunner {
                 });
             });
         });
+
+        return this.databaseConnectionCreatePromise;
     }
 
     /**
@@ -83,7 +93,8 @@ export class SqliteQueryRunner implements QueryRunner {
     release(): Promise<void> {
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
-            this.databaseConnection.close(handler);
+            if (this.databaseConnection)
+                this.databaseConnection.close(handler);
             this.isReleased = true;
         });
     }
@@ -159,9 +170,10 @@ export class SqliteQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<any[]>((ok, fail) => {
+        return new Promise<any[]>(async (ok, fail) => {
             this.connection.logger.logQuery(query, parameters);
-            this.databaseConnection.all(query, parameters, (err: any, result: any) => {
+            const databaseConnection = await this.connect();
+            databaseConnection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.connection.logger.logFailedQuery(query, parameters);
                     this.connection.logger.logQueryError(err);
@@ -186,10 +198,11 @@ export class SqliteQueryRunner implements QueryRunner {
         const sql = columns.length > 0 ? (`INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
 
-        return new Promise<any[]>((ok, fail) => {
+        return new Promise<any[]>(async (ok, fail) => {
             this.connection.logger.logQuery(sql, parameters);
             const __this = this;
-            this.databaseConnection.run(sql, parameters, function (err: any): void {
+            const databaseConnection = await this.connect();
+            databaseConnection.run(sql, parameters, function (err: any): void {
                 if (err) {
                     __this.connection.logger.logFailedQuery(sql, parameters);
                     __this.connection.logger.logQueryError(err);
