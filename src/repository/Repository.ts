@@ -278,7 +278,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Optionally find options can be applied.
      */
     findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
-        return this.manager.findByIds(this.metadata.target, optionsOrConditions as any);
+        return this.manager.findByIds(this.metadata.target, ids, optionsOrConditions as any);
     }
 
     /**
