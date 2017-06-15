@@ -60,7 +60,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
       });
 
       // Expect "time" type to translate to SQLite type "TEXT"
-      columnType.should.equal("text");
+      columnType.should.equal("time");
     })));
 
     it("should persist correct type in datetime column in sqlite", () => Promise.all(connections.map(async connection => {
