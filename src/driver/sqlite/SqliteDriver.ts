@@ -11,6 +11,7 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -35,6 +36,16 @@ export class SqliteDriver implements Driver {
      * SQLite underlying library.
      */
     sqlite: any;
+
+    /**
+     * Sqlite has a single QueryRunner because it works on a single database connection.
+     */
+    queryRunner?: QueryRunner;
+
+    /**
+     * Real database connection with sqlite database.
+     */
+    databaseConnection: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -114,22 +125,18 @@ export class SqliteDriver implements Driver {
     /**
      * Performs connection to the database.
      */
-    connect(): Promise<void> {
-        return Promise.resolve();
+    async connect(): Promise<void> {
+        this.databaseConnection = await this.createDatabaseConnection();
     }
 
     /**
      * Closes connection with database.
      */
-    disconnect(): Promise<void> {
-        return Promise.resolve();
-        // todo: what to do with this function?
-        // return new Promise<void>((ok, fail) => {
-            // const handler = (err: any) => err ? fail(err) : ok();
-            // if (!this.databaseConnection)
-            //     return fail(new ConnectionIsNotSetError("sqlite"));
-            // this.databaseConnection.connection.close(handler);
-        // });
+    async disconnect(): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            this.queryRunner = undefined;
+            this.databaseConnection.close((err: any) => err ? fail(err) : ok());
+        });
     }
 
     /**
@@ -143,7 +150,10 @@ export class SqliteDriver implements Driver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner() {
-        return new SqliteQueryRunner(this);
+        if (!this.queryRunner)
+            this.queryRunner = new SqliteQueryRunner(this);
+
+        return this.queryRunner;
     }
 
     /**
@@ -301,13 +311,31 @@ export class SqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Creates connection with the database.
+     */
+    protected createDatabaseConnection() {
+        return new Promise<void>((ok, fail) => {
+            const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
+                if (err) return fail(err);
+
+                // we need to enable foreign keys in sqlite to make sure all foreign key related features
+                // working properly. this also makes onDelete to work with sqlite.
+                databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
+                    if (err) return fail(err);
+                    ok(databaseConnection);
+                });
+            });
+        });
+    }
+
+    /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
         try {
             this.sqlite = PlatformTools.load("sqlite3").verbose();
 
-        } catch (e) { // todo: better error for browser env
+        } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3");
         }
     }

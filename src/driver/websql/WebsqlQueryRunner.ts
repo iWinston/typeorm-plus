@@ -117,8 +117,6 @@ export class WebsqlQueryRunner implements QueryRunner {
             await this.rollbackTransaction();
             throw error;
 
-        } finally {
-            await this.release();
             // await this.query(`PRAGMA foreign_keys = ON;`);
         }
     }

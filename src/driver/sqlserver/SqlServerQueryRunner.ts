@@ -41,14 +41,13 @@ export class SqlServerQueryRunner implements QueryRunner {
     protected databaseConnection: any;
 
     /**
-     * Transaction instance opened for this query executor.
+     * Last executed query in a transaction.
+     * This is needed because in transaction mode mssql cannot execute parallel queries,
+     * that's why we store last executed query promise to wait it when we execute next query.
+     *
+     * @see https://github.com/patriksimek/node-mssql/issues/491
      */
-    protected transaction: any;
-
-    /**
-     * Special callback provided by a driver used to release a created connection.
-     */
-    protected databaseConnectionPromise: Promise<any>;
+    protected queryResponsibilityChain: Promise<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -66,19 +65,7 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Returns obtained database connection.
      */
     connect(): Promise<any> {
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        if (this.databaseConnectionPromise)
-            return this.databaseConnectionPromise;
-
-        this.databaseConnectionPromise = new Promise((ok, fail) => {
-            const driver = this.driver as SqlServerDriver;
-            this.databaseConnection = driver.connectionPool; // todo: fix it
-            ok(this.databaseConnection);
-        });
-
-        return this.databaseConnectionPromise;
+        return Promise.resolve();
     }
 
     /**
@@ -87,7 +74,6 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     release(): Promise<void> {
         this.isReleased = true;
-        // todo
         return Promise.resolve();
     }
 
@@ -120,36 +106,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         } catch (error) {
             await this.rollbackTransaction();
             throw error;
-
-        } finally {
-            await this.release();
         }
-
-        // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '"' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
-        // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        // const allQueries = [`EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"`]
-        //     .concat(dropQueries.map(q => this.query(q["query"])).join("; "));
-        //
-        // return new Promise<void>((ok, fail) => {
-        //
-        //     const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
-        //     request.multiple = true;
-        //     request.query(allQueries, (err: any, result: any) => {
-        //         if (err) {
-        //             this.connection.logger.logFailedQuery(allQueries);
-        //             this.connection.logger.logQueryError(err);
-        //             return fail(err);
-        //         }
-        //
-        //         ok();
-        //     });
-        // });
-
-        // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '";' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
-        // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        // await this.query(`EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"`);
-        // await Promise.all(dropQueries.map(q => this.query(q["query"])));
-        // await this.query(`EXEC sp_msforeachtable 'drop table [?]'`);
     }
 
     /**
@@ -164,9 +121,8 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         return new Promise<void>(async (ok, fail) => {
             this.isTransactionActive = true;
-            const dbConnection = await this.connect();
-            this.transaction = dbConnection.transaction();
-            this.transaction.begin((err: any) => {
+            this.databaseConnection = this.driver.connectionPool.transaction();
+            this.databaseConnection.begin((err: any) => {
                 if (err) {
                     this.isTransactionActive = false;
                     return fail(err);
@@ -188,9 +144,10 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.transaction.commit((err: any) => {
+            this.databaseConnection.commit((err: any) => {
                 if (err) return fail(err);
                 this.isTransactionActive = false;
+                this.databaseConnection = null;
                 ok();
             });
         });
@@ -208,9 +165,10 @@ export class SqlServerQueryRunner implements QueryRunner {
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.transaction.rollback((err: any) => {
+            this.databaseConnection.rollback((err: any) => {
                 if (err) return fail(err);
                 this.isTransactionActive = false;
+                this.databaseConnection = null;
                 ok();
             });
         });
@@ -219,31 +177,54 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[]): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise(async (ok, fail) => {
+        let waitingOkay: Function;
+        const waitingPromise = new Promise((ok) => waitingOkay = ok);
+        if (this.queryResponsibilityChain.length) {
+            const otherWaitingPromises = [...this.queryResponsibilityChain];
+            this.queryResponsibilityChain.push(waitingPromise);
+            await Promise.all(otherWaitingPromises);
+        }
+
+        const promise = new Promise(async (ok, fail) => {
 
             this.driver.connection.logger.logQuery(query, parameters);
-            const mssql = this.driver.mssql;
-            const dbConnection = await this.connect();
-            const request = new mssql.Request(this.isTransactionActive ? this.transaction : dbConnection);
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
                     request.input(index, parameters![index]);
                 });
             }
             request.query(query, (err: any, result: any) => {
+
+                const resolveChain = () => {
+                    if (promiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(promiseIndex, 1);
+                    if (waitingPromiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
+                    waitingOkay();
+                };
+
+                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
+                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
                     this.driver.connection.logger.logFailedQuery(query, parameters);
                     this.driver.connection.logger.logQueryError(err);
+                    resolveChain();
                     return fail(err);
                 }
 
-                ok(result);
+                ok(result.recordset);
+                resolveChain();
             });
         });
+        if (this.isTransactionActive)
+            this.queryResponsibilityChain.push(promise);
+
+        return promise;
     }
 
     /**

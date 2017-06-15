@@ -121,9 +121,6 @@ export class OracleQueryRunner implements QueryRunner {
         } catch (error) {
             await this.rollbackTransaction();
             throw error;
-
-        } finally {
-            await this.release();
         }
 
     }

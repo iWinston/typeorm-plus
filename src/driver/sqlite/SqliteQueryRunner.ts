@@ -65,44 +65,15 @@ export class SqliteQueryRunner implements QueryRunner {
      * Returns obtained database connection.
      */
     connect(): Promise<any> {
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        if (this.databaseConnectionPromise)
-            return this.databaseConnectionPromise;
-
-        this.databaseConnectionPromise = new Promise<void>((ok, fail) => {
-            this.databaseConnection = new this.driver.sqlite.Database(this.driver.options.database, (err: any) => {
-                if (err) {
-                    this.databaseConnection = null;
-                    return fail(err);
-                }
-
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                this.databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                    if (err)
-                        return fail(err);
-
-                    ok(this.databaseConnection);
-                });
-            });
-        });
-
-        return this.databaseConnectionPromise;
+        return Promise.resolve(this.driver.databaseConnection);
     }
 
     /**
      * Releases used database connection.
-     * You cannot use query runner methods once its released.
+     * We don't do anything here because sqlite do not support multiple connections thus query runners.
      */
     release(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-            if (this.databaseConnection)
-                this.databaseConnection.close(handler);
-            this.isReleased = true;
-        });
+        return Promise.resolve();
     }
 
     /**
@@ -126,7 +97,6 @@ export class SqliteQueryRunner implements QueryRunner {
 
         } finally {
             await this.query(`PRAGMA foreign_keys = ON;`);
-            await this.release();
         }
     }
 

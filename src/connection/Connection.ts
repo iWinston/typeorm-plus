@@ -208,6 +208,7 @@ export class Connection {
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.driver.createQueryRunner();
         await queryRunner.clearDatabase();
+        await queryRunner.release();
     }
 
     /**

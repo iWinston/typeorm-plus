@@ -48,6 +48,7 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * `setLimit` and `setOffset` in `QueryBuilder` were renamed into `limit` and `offset`
 * `nativeInterface` has been removed from a driver interface and implementations. 
 Now 
+* now typeorm works with the latest version of mssql (version 4)
 
 ### DEPRECATIONS
 
@@ -69,6 +70,7 @@ Now
 * moved `query`, `transaction` and `createQueryBuilder` to the `Connection`. 
 `EntityManager` now simply use them from the connection.
 * refactored how query runner works, removed query runner provider
+* fixed some issues with sqlite, sqlite now strongly works on a single connection 
 
 ### BUG FIXES
 
