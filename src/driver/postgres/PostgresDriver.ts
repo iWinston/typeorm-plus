@@ -5,12 +5,11 @@ import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalled
 import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
-import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
@@ -19,6 +18,30 @@ import {ColumnType} from "../types/ColumnTypes";
  * Organizes communication with PostgreSQL DBMS.
  */
 export class PostgresDriver implements Driver {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by driver.
+     */
+    connection: Connection;
+
+    /**
+     * Connection options.
+     */
+    options: PostgresConnectionOptions;
+
+    /**
+     * Postgres underlying library.
+     */
+    postgres: any;
+
+    /**
+     * Database connection pool created by underlying driver.
+     */
+    pool: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -90,30 +113,11 @@ export class PostgresDriver implements Driver {
     };
 
     // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Connection options.
-     */
-    protected options: PostgresConnectionOptions;
-
-    /**
-     * Postgres underlying library.
-     */
-    protected postgres: any;
-
-    /**
-     * Database connection pool created by underlying driver.
-     */
-    pool: any;
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
-
+    constructor(connection: Connection) {
+        this.connection = connection;
         this.options = connection.options as PostgresConnectionOptions;
 
         Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
@@ -161,7 +165,7 @@ export class PostgresDriver implements Driver {
      */
     disconnect(): Promise<void> {
         if (!this.pool)
-            throw new ConnectionIsNotSetError("postgres");
+            return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
@@ -179,33 +183,17 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Synchronizes database schema (creates tables, indices, etc).
+     * Creates a schema builder used to build and sync a schema.
      */
-    syncSchema(): Promise<void> {
-        const schemaBuilder = new SchemaBuilder(this.connection);
-        return schemaBuilder.build();
+    createSchemaBuilder() {
+        return new RdbmsSchemaBuilder(this.connection);
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(): QueryRunner {
-        // if (!this.pool)
-        //     return Promise.reject(new ConnectionIsNotSetError("postgres"));
-
-        return new PostgresQueryRunner(this.connection);
-        // await queryRunner.connect();
-        // return queryRunner;
-    }
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    nativeInterface() {
-        return {
-            driver: this.postgres,
-            pool: this.pool
-        };
+    createQueryRunner() {
+        return new PostgresQueryRunner(this);
     }
 
     /**
@@ -307,6 +295,47 @@ export class PostgresDriver implements Driver {
      */
     escapeTableName(tableName: string): string {
         return "\"" + tableName + "\"";
+    }
+
+    /**
+     * Creates a database type from a given column metadata.
+     */
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "integer";
+
+        } else if (column.type === String) {
+            type += "character varying";
+
+        } else if (column.type === Date) {
+            type += "timestamp";
+
+        } else if (column.type === Boolean) {
+            type += "boolean";
+
+        } else if (column.type === Object) {
+            type += "text";
+
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
+        }
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+        return type;
     }
 
     // -------------------------------------------------------------------------

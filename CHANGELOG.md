@@ -45,6 +45,7 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * `timezone` option has been removed from column options. Now corresponding database types can be used instead
 * `localTimezone` has been removed from the column options
 * `skipSchemaSync` in entity options has been renamed to `skipSync`
+* `setLimit` and `setOffset` in `QueryBuilder` were renamed into `limit` and `offset`
 
 ### DEPRECATIONS
 
@@ -59,6 +60,7 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * now relations are supported inside embeds
 * now relations for multiple primary keys are generated properly
 * now ormconfig is read from `.env`, `.js`, `.json`, `.yml`, `.xml` formats
+* all database-specific types are supported now
 
 ### OTHER API CHANGES
 

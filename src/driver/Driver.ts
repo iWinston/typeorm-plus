@@ -3,6 +3,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnType} from "./types/ColumnTypes";
 import {MappedColumnTypes} from "./types/MappedColumnTypes";
+import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -34,12 +35,7 @@ export interface Driver {
     /**
      * Synchronizes database schema (creates tables, indices, etc).
      */
-    syncSchema(): Promise<void>;
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    nativeInterface(): any;
+    createSchemaBuilder(): SchemaBuilder;
 
     /**
      * Creates a query runner used for common queries.
@@ -76,5 +72,10 @@ export interface Driver {
      * Prepares given value to a value to be persisted, based on its column type.
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any;
+
+    /**
+     * Converts a column type of the metadata to the database column's type.
+     */
+    normalizeType(column: ColumnMetadata): string;
 
 }

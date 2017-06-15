@@ -196,7 +196,8 @@ export class Connection {
         if (dropBeforeSync)
             await this.dropDatabase();
 
-        await this.driver.syncSchema();
+        const schemaBuilder = this.driver.createSchemaBuilder();
+        await schemaBuilder.build();
     }
 
     /**
@@ -314,7 +315,7 @@ export class Connection {
         const transactionEntityManager = new EntityManagerFactory().create(this, usedQueryRunner);
 
         try {
-            await usedQueryRunner.beginTransaction();
+            await usedQueryRunner.startTransaction();
             const result = await runInTransaction(transactionEntityManager);
             await usedQueryRunner.commitTransaction();
             return result;

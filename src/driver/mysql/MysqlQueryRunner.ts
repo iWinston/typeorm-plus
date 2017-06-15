@@ -9,8 +9,6 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {Connection} from "../../connection/Connection";
-import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MysqlDriver} from "./MysqlDriver";
 
 /**
@@ -29,22 +27,29 @@ export class MysqlQueryRunner implements QueryRunner {
     isReleased = false;
 
     /**
-     * Indicates if transaction is active in this query executor.
+     * Indicates if transaction is in progress.
      */
     isTransactionActive = false;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
 
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: any;
+    protected databaseConnection: any;
 
-    protected databaseConnectionCreatePromise: Promise<any>;
+    /**
+     * Promise used to obtain a database connection for a first time.
+     */
+    protected databaseConnectionPromise: Promise<any>;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(protected driver: MysqlDriver) {
     }
 
     // -------------------------------------------------------------------------
@@ -52,30 +57,29 @@ export class MysqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates/uses connection from the connection pool to perform further operations.
+     * Creates/uses database connection from the connection pool to perform further operations.
+     * Returns obtained database connection.
      */
     connect(): Promise<any> {
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
-        if (this.databaseConnectionCreatePromise)
-            return this.databaseConnectionCreatePromise;
+        if (this.databaseConnectionPromise)
+            return this.databaseConnectionPromise;
 
-        this.databaseConnectionCreatePromise = new Promise((ok, fail) => {
-            const driver = this.connection.driver as MysqlDriver;
-            driver.pool.getConnection((err: any, connection: any) => {
-                this.databaseConnection = connection;
-                err ? fail(err) : ok(connection);
+        this.databaseConnectionPromise = new Promise((ok, fail) => {
+            this.driver.pool.getConnection((err: any, dbConnection: any) => {
+                this.databaseConnection = dbConnection;
+                err ? fail(err) : ok(dbConnection);
             });
         });
 
-        return this.databaseConnectionCreatePromise;
+        return this.databaseConnectionPromise;
     }
 
     /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     * You cannot use this class's methods after its released.
+     * Releases used database connection.
+     * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
         this.isReleased = true;
@@ -93,7 +97,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        await this.beginTransaction();
+        await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
             const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
@@ -116,9 +120,9 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Starts transaction.
+     * Starts transaction on the current connection.
      */
-    async beginTransaction(): Promise<void> {
+    async startTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -131,6 +135,7 @@ export class MysqlQueryRunner implements QueryRunner {
 
     /**
      * Commits transaction.
+     * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
         if (this.isReleased)
@@ -145,6 +150,7 @@ export class MysqlQueryRunner implements QueryRunner {
 
     /**
      * Rollbacks transaction.
+     * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
         if (this.isReleased)
@@ -158,19 +164,19 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Executes a given SQL query.
+     * Executes a raw SQL query.
      */
     query(query: string, parameters?: any[]): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            this.connection.logger.logQuery(query, parameters);
+            this.driver.connection.logger.logQuery(query, parameters);
             const databaseConnection = await this.connect();
             databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.connection.logger.logFailedQuery(query, parameters);
-                    this.connection.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters);
+                    this.driver.connection.logger.logQueryError(err);
                     return fail(err);
                 }
 
@@ -180,17 +186,19 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Insert a new row with given values into given table.
+     * Insert a new row with given values into the given table.
+     * Returns value of the generated column if given and generate column exist in the table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.connection.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map(key => "?").join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const sql = `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
+        const escapedTableName = this.driver.escapeTableName(tableName);
+        const sql = `INSERT INTO ${escapedTableName}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
         return generatedColumn ? result.insertId : undefined;
     }
@@ -204,22 +212,13 @@ export class MysqlQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
-        const sql = `UPDATE ${this.connection.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const escapedTableName = this.driver.escapeTableName(tableName);
+        const sql = `UPDATE ${escapedTableName} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
         await this.query(sql, allParameters);
     }
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
 
     /**
      * Deletes from the given table by a given conditions.
@@ -231,7 +230,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.connection.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -242,18 +241,21 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        let sql = "";
+        // todo: escape column names as well
         if (hasLevel) {
-            sql =   `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+            await this.query(
+                `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`
+            );
         } else {
-            sql =   `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                    `SELECT ancestor, ${newEntityId} FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+            await this.query(
+                `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`
+            );
         }
-        await this.query(sql);
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -375,7 +377,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
         if (primaryKeyColumns.length > 0)
             sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
-        sql += `) ENGINE=InnoDB;`; // todo: remove engine from here
+        sql += `) ENGINE=${table.engine || "InnoDB"};`; // todo: remove engine from here - todo: why?
 
         await this.query(sql);
     }
@@ -400,16 +402,6 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(tableName: string, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
-    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
     async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
@@ -422,16 +414,6 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new columns from the column schema in the table.
      */
-    async addColumns(tableName: string, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
-    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
     async addColumns(tableSchemaOrName: TableSchema|string, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
@@ -439,16 +421,6 @@ export class MysqlQueryRunner implements QueryRunner {
         const queries = columns.map(column => this.addColumn(tableSchemaOrName as any, column));
         await Promise.all(queries);
     }
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -485,16 +457,6 @@ export class MysqlQueryRunner implements QueryRunner {
 
         return this.changeColumn(tableSchema, oldColumn, newColumn);
     }
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
 
     /**
      * Changes a column in the table.
@@ -546,31 +508,11 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableName: string, columnName: string): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
     async dropColumn(tableSchemaOrName: TableSchema|string, columnSchemaOrName: ColumnSchema|string): Promise<void> {
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const columnName = columnSchemaOrName instanceof ColumnSchema ? columnSchemaOrName.name : columnSchemaOrName;
         return this.query(`ALTER TABLE \`${tableName}\` DROP \`${columnName}\``);
     }
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableName: string, columnNames: string[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
 
     /**
      * Drops the columns in the table.
@@ -601,16 +543,6 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
-    async createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
     async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
@@ -628,32 +560,12 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
-    async createForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
     async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
         const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableSchemaOrName as any, foreignKey));
         await Promise.all(promises);
     }
-
-    /**
-     * Drops a foreign key from the table.
-     */
-    async dropForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
-    async dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
 
     /**
      * Drops a foreign key from the table.
@@ -665,16 +577,6 @@ export class MysqlQueryRunner implements QueryRunner {
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         return this.query(`ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${foreignKey.name}\``);
     }
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
@@ -711,90 +613,10 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a database type from a given column metadata.
-     */
-    normalizeType(column: ColumnMetadata): string {
-        let type = "";
-        if (column.type === Number) {
-            type += "int";
-
-        } else if (column.type === String) {
-            type += "varchar";
-
-        } else if (column.type === Date) {
-            type += "datetime";
-
-        } else if (column.type === Boolean) {
-            type += "tinyint(1)";
-
-        } else if (column.type === Object) {
-            type += "text";
-
-        } else if (column.type === "simple-array") {
-            type += "text";
-
-        } else {
-            type += column.type;
-        }
-
-        if (column.length) {
-            type += "(" + column.length + ")";
-
-        } else if (column.precision && column.scale) {
-            type += "(" + column.precision + "," + column.scale + ")";
-
-        } else if (column.precision) {
-            type += "(" + column.precision + ")";
-
-        } else if (column.scale) {
-            type += "(" + column.scale + ")";
-        }
-
-        // set default required length if those were not specified
-        if (type === "varchar")
-            type += "(255)";
-
-        if (type === "int")
-            type += "(11)";
-
-        if (type === "tinyint")
-            type += "(4)";
-
-        if (type === "smallint")
-            type += "(5)";
-
-        if (type === "mediumint")
-            type += "(9)";
-
-        if (type === "bigint")
-            type += "(20)";
-
-        if (type === "year")
-            type += "(4)";
-
-        return type;
-    }
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
-
-        if (typeof columnMetadataValue === "number")
-            return columnMetadataValue === parseInt(databaseValue);
-        if (typeof columnMetadataValue === "boolean")
-            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
-        if (typeof columnMetadataValue === "function")
-            return columnMetadataValue() === databaseValue;
-
-        return columnMetadataValue === databaseValue;
-    }
-
-    /**
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.connection.driver.escapeTableName(tableName)}`);
+        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
     }
 
     // -------------------------------------------------------------------------
@@ -805,14 +627,14 @@ export class MysqlQueryRunner implements QueryRunner {
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return (this.connection.options as MysqlConnectionOptions).database as string;
+        return this.driver.options.database!;
     }
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map(key => this.connection.driver.escapeColumnName(key) + "=?");
+        return Object.keys(objectLiteral).map(key => this.driver.escapeColumnName(key) + "=?");
     }
 
     /**

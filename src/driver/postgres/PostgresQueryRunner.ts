@@ -9,8 +9,6 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {Connection} from "../../connection/Connection";
-import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {PostgresDriver} from "./PostgresDriver";
 
 /**
@@ -29,58 +27,60 @@ export class PostgresQueryRunner implements QueryRunner {
     isReleased = false;
 
     /**
-     * Indicates if transaction is active in this query executor.
+     * Indicates if transaction is in progress.
      */
     isTransactionActive = false;
-
-    /**
-     * Real database connection from a connection pool used to perform queries.
-     */
-    databaseConnection: any;
-
-    protected databaseConnectionCreatePromise: Promise<any>;
 
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    protected databaseConnection: any;
+
+    /**
+     * Promise used to obtain a database connection for a first time.
+     */
+    protected databaseConnectionPromise: Promise<any>;
+
+    /**
+     * Special callback provided by a driver used to release a created connection.
+     */
     protected releaseCallback: Function;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(protected driver: PostgresDriver) {
     }
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
-    protected get schemaName() {
-        return (this.connection.options as PostgresConnectionOptions).schemaName || "default";
-    }
-
     /**
-     * Creates/uses connection from the connection pool to perform further operations.
+     * Creates/uses database connection from the connection pool to perform further operations.
+     * Returns obtained database connection.
      */
     connect(): Promise<any> {
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
-        if (this.databaseConnectionCreatePromise)
-            return this.databaseConnectionCreatePromise;
+        if (this.databaseConnectionPromise)
+            return this.databaseConnectionPromise;
 
-        this.databaseConnectionCreatePromise = new Promise((ok, fail) => {
-            const driver = this.connection.driver as PostgresDriver;
-            driver.pool.connect((err: any, connection: any, release: Function) => {
+        this.databaseConnectionPromise = new Promise((ok, fail) => {
+            this.driver.pool.connect((err: any, connection: any, release: Function) => {
                 this.databaseConnection = connection;
                 this.releaseCallback = release;
 
                 connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
                     if (err) {
-                        this.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                        this.connection.logger.logQueryError(err);
+                        this.driver.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
+                        this.driver.connection.logger.logQueryError(err);
                         fail(err);
                     } else {
                         ok(connection);
@@ -90,12 +90,12 @@ export class PostgresQueryRunner implements QueryRunner {
             });
         });
 
-        return this.databaseConnectionCreatePromise;
+        return this.databaseConnectionPromise;
     }
 
     /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
+     * Releases used database connection.
+     * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
         this.isReleased = true;
@@ -111,7 +111,7 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        await this.beginTransaction();
+        await this.startTransaction();
         try {
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname = '${this.schemaName}'`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
@@ -131,7 +131,7 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Starts transaction.
      */
-    async beginTransaction(): Promise<void> {
+    async startTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
         if (this.isTransactionActive)
@@ -143,6 +143,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
     /**
      * Commits transaction.
+     * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
         if (this.isReleased)
@@ -156,6 +157,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
     /**
      * Rollbacks transaction.
+     * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
         if (this.isReleased)
@@ -177,12 +179,12 @@ export class PostgresQueryRunner implements QueryRunner {
         // console.log("query: ", query);
         // console.log("parameters: ", parameters);
         return new Promise<any[]>(async (ok, fail) => {
-            this.connection.logger.logQuery(query, parameters);
+            this.driver.connection.logger.logQuery(query, parameters);
             const databaseConnection = await this.connect();
             databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.connection.logger.logFailedQuery(query, parameters);
-                    this.connection.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters);
+                    this.driver.connection.logger.logQueryError(err);
                     fail(err);
                 } else {
                     ok(result.rows);
@@ -192,18 +194,19 @@ export class PostgresQueryRunner implements QueryRunner {
     }
 
     /**
-     * Insert a new row into given table.
+     * Insert a new row with given values into the given table.
+     * Returns value of the generated column if given and generate column exist in the table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.connection.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
         const sql = columns.length > 0
-            ? `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.connection.driver.escapeColumnName(generatedColumn.databaseName) : "" }`
-            : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} DEFAULT VALUES ${ generatedColumn ? " RETURNING " + this.connection.driver.escapeColumnName(generatedColumn.databaseName) : "" }`;
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.databaseName) : "" }`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.databaseName) : "" }`;
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
         if (generatedColumn)
@@ -221,7 +224,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE ${this.connection.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -248,7 +251,7 @@ export class PostgresQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.connection.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -261,12 +264,12 @@ export class PostgresQueryRunner implements QueryRunner {
 
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
@@ -790,66 +793,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
     }
 
     /**
-     * Creates a database type from a given column metadata.
-     */
-    normalizeType(column: ColumnMetadata): string {
-        let type = "";
-        if (column.type === Number) {
-            type += "integer";
-
-        } else if (column.type === String) {
-            type += "character varying";
-
-        } else if (column.type === Date) {
-            type += "timestamp";
-
-        } else if (column.type === Boolean) {
-            type += "boolean";
-
-        } else if (column.type === Object) {
-            type += "text";
-
-        } else if (column.type === "simple-array") {
-            type += "text";
-
-        } else {
-            type += column.type;
-        }
-        if (column.length) {
-            type += "(" + column.length + ")";
-
-        } else if (column.precision && column.scale) {
-            type += "(" + column.precision + "," + column.scale + ")";
-
-        } else if (column.precision) {
-            type += "(" + column.precision + ")";
-
-        } else if (column.scale) {
-            type += "(" + column.scale + ")";
-        }
-        return type;
-    }
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
-
-        if (typeof columnMetadataValue === "number")
-            return columnMetadataValue === parseInt(databaseValue);
-        if (typeof columnMetadataValue === "boolean")
-            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
-        if (typeof columnMetadataValue === "function")
-            return columnMetadataValue() === databaseValue;
-
-        return columnMetadataValue === databaseValue;
-    }
-
-    /**
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.connection.driver.escapeTableName(tableName)}`);
+        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
     }
 
     // -------------------------------------------------------------------------
@@ -860,14 +807,21 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return (this.connection.options as PostgresConnectionOptions).database as string;
+        return this.driver.options.database!;
+    }
+
+    /**
+     * Schema name shortcut.
+     */
+    protected get schemaName() {
+        return this.driver.options.schemaName || "default";
     }
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => this.connection.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
+        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
     }
 
     /**

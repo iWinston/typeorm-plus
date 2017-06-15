@@ -20,19 +20,19 @@ export interface QueryRunner {
     readonly isReleased: boolean;
 
     /**
-     * Checks if transaction is in progress.
+     * Indicates if transaction is in progress.
      */
     readonly isTransactionActive: boolean;
 
     /**
-     * Creates/uses connection from the connection pool to perform further operations.
+     * Creates/uses database connection from the connection pool to perform further operations.
+     * Returns obtained database connection.
      */
     connect(): Promise<void>;
 
     /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     * You cannot use this class's methods after its released.
+     * Releases used database connection.
+     * You cannot use this query runner methods after connection is released.
      */
     release(): Promise<void>;
 
@@ -46,15 +46,17 @@ export interface QueryRunner {
     /**
      * Starts transaction.
      */
-    beginTransaction(): Promise<void>;
+    startTransaction(): Promise<void>;
 
     /**
      * Commits transaction.
+     * Error will be thrown if transaction was not started.
      */
     commitTransaction(): Promise<void>;
 
     /**
      * Ends transaction.
+     * Error will be thrown if transaction was not started.
      */
     rollbackTransaction(): Promise<void>;
 
@@ -64,14 +66,15 @@ export interface QueryRunner {
     query(query: string, parameters?: any[]): Promise<any>;
 
     /**
+     * Insert a new row with given values into the given table.
+     * Returns value of the generated column if given and generate column exist in the table.
+     */
+    insert(tableName: string, valuesMap: Object, generatedColumn?: ColumnMetadata): Promise<any>;
+
+    /**
      * Updates rows that match given simple conditions in the given table.
      */
     update(tableName: string, valuesMap: Object, conditions: Object): Promise<void>;
-
-    /**
-     * Inserts a new row into given table.
-     */
-    insert(tableName: string, valuesMap: Object, generatedColumn?: ColumnMetadata): Promise<any>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
@@ -87,18 +90,6 @@ export interface QueryRunner {
      * Inserts new values into closure table.
      */
     insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
-
-    /**
-     * Converts a column type of the metadata to the database column's type.
-     *
-     * todo: move to driver?
-     */
-    normalizeType(column: ColumnMetadata): string;
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean;
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.

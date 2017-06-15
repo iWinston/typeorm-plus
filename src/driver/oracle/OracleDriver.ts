@@ -1,7 +1,6 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {OracleQueryRunner} from "./OracleQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -9,7 +8,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
-import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {OracleConnectionOptions} from "./OracleConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
@@ -20,6 +19,30 @@ import {ColumnType} from "../types/ColumnTypes";
  * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
 export class OracleDriver implements Driver {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by driver.
+     */
+    connection: Connection;
+
+    /**
+     * Connection options.
+     */
+    options: OracleConnectionOptions;
+
+    /**
+     * Underlying oracle library.
+     */
+    oracle: any;
+
+    /**
+     * Database connection pool created by underlying driver.
+     */
+    pool: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -76,34 +99,11 @@ export class OracleDriver implements Driver {
     };
 
     // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Connection options.
-     */
-    protected options: OracleConnectionOptions;
-
-    /**
-     * Underlying oracle library.
-     */
-    protected oracle: any;
-
-    /**
-     * Database connection pool created by underlying driver.
-     */
-    pool: any;
-
-    /**
-     * Pool of database connections.
-     */
-    databaseConnectionPool: any[] = [];
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(connection: Connection) {
+        this.connection = connection;
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
@@ -160,7 +160,7 @@ export class OracleDriver implements Driver {
      */
     disconnect(): Promise<void> {
         if (!this.pool)
-            throw new ConnectionIsNotSetError("oracle");
+            return Promise.reject(new ConnectionIsNotSetError("oracle"));
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
@@ -168,38 +168,21 @@ export class OracleDriver implements Driver {
             // if pooling is used, then disconnect from it
             this.pool.close(handler);
             this.pool = undefined;
-            this.databaseConnectionPool = [];
         });
     }
 
     /**
-     * Synchronizes database schema (creates tables, indices, etc).
+     * Creates a schema builder used to build and sync a schema.
      */
-    syncSchema(): Promise<void> {
-        const schemaBuilder = new SchemaBuilder(this.connection);
-        return schemaBuilder.build();
+    createSchemaBuilder() {
+        return new RdbmsSchemaBuilder(this.connection);
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(): QueryRunner {
-        // if (!this.pool)
-        //     return Promise.reject(new ConnectionIsNotSetError("oracle"));
-
-        return new OracleQueryRunner(this.connection);
-        // await queryRunner.connect();
-        // return queryRunner;
-    }
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    nativeInterface() {
-        return {
-            driver: this.oracle,
-            pool: this.pool
-        };
+    createQueryRunner() {
+        return new OracleQueryRunner(this);
     }
 
     /**
@@ -292,6 +275,47 @@ export class OracleDriver implements Driver {
         }
 
         return value;
+    }
+
+    /**
+     * Creates a database type from a given column metadata.
+     */
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "integer";
+
+        } else if (column.type === String) {
+            type += "nvarchar2";
+
+        } else if (column.type === Date) {
+            type += "timestamp(0)";
+
+        } else if (column.type === Boolean) {
+            type += "number(1)";
+
+        } else if (column.type === Object) {
+            type += "text";
+
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
+        }
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+        return type;
     }
 
     // -------------------------------------------------------------------------

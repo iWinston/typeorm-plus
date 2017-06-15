@@ -100,7 +100,7 @@ export class SubjectOperationExecutor {
             // open transaction if its not opened yet
             if (!this.queryRunner.isTransactionActive) {
                 isTransactionStartedByItself = true;
-                await this.queryRunner.beginTransaction();
+                await this.queryRunner.startTransaction();
             }
 
             // broadcast "before" events before we start updating

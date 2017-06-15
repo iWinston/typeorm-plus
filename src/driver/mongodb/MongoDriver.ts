@@ -2,7 +2,6 @@ import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {MongoQueryRunner} from "./MongoQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -12,6 +11,7 @@ import {Connection} from "../../connection/Connection";
 import {MongoConnectionOptions} from "./MongoConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
+import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 
 /**
  * Organizes communication with MongoDB.
@@ -110,40 +110,17 @@ export class MongoDriver implements Driver {
     }
 
     /**
-     * Synchronizes database schema (creates indices).
+     * Creates a schema builder used to build and sync a schema.
      */
-    async syncSchema(): Promise<void> {
-        if (!this.queryRunner)
-            throw new ConnectionIsNotSetError("mongodb");
-
-        const promises: Promise<any>[] = [];
-        this.connection.entityMetadatas.forEach(metadata => {
-            metadata.indices.forEach(index => {
-                const options = { name: index.name };
-                promises.push(this.queryRunner!.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
-            });
-        });
-        await Promise.all(promises);
+    createSchemaBuilder() {
+        return new MongoSchemaBuilder(this.connection);
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(): QueryRunner {
-        // if (!this.queryRunner)
-        //     return Promise.reject(new ConnectionIsNotSetError("mongodb"));
-
+    createQueryRunner() {
         return this.queryRunner!;
-    }
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    nativeInterface(): any {
-        return {
-            driver: this.mongodb,
-            connection: this.queryRunner ? this.queryRunner.databaseConnection : undefined
-        };
     }
 
     /**
@@ -187,6 +164,13 @@ export class MongoDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         return value;
+    }
+
+    /**
+     * Creates a database type from a given column metadata.
+     */
+    normalizeType(column: ColumnMetadata): string {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     // -------------------------------------------------------------------------

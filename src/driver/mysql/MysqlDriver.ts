@@ -2,7 +2,6 @@ import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {MysqlQueryRunner} from "./MysqlQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -10,7 +9,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
-import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
@@ -19,6 +18,30 @@ import {ColumnType} from "../types/ColumnTypes";
  * Organizes communication with MySQL DBMS.
  */
 export class MysqlDriver implements Driver {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by driver.
+     */
+    connection: Connection;
+
+    /**
+     * Connection options.
+     */
+    options: MysqlConnectionOptions;
+
+    /**
+     * Mysql underlying library.
+     */
+    mysql: any;
+
+    /**
+     * Database connection pool created by underlying driver.
+     */
+    pool: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -71,34 +94,11 @@ export class MysqlDriver implements Driver {
     };
 
     // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Connection options.
-     */
-    protected options: MysqlConnectionOptions;
-
-    /**
-     * Mysql underlying library.
-     */
-    protected mysql: any;
-
-    /**
-     * Database connection pool created by underlying driver.
-     */
-    pool: any;
-
-    /**
-     * Pool of database connections.
-     */
-    databaseConnections: any[] = [];
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
     
-    constructor(protected connection: Connection) {
+    constructor(connection: Connection) {
+        this.connection = connection;
         this.options = connection.options as MysqlConnectionOptions;
 
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
@@ -141,47 +141,27 @@ export class MysqlDriver implements Driver {
      */
     disconnect(): Promise<void> {
         if (!this.pool)
-            throw new ConnectionIsNotSetError("mysql");
+            return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
         return new Promise<void>((ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
             this.pool.end(handler);
             this.pool = undefined;
-            this.databaseConnections = [];
         });
     }
 
     /**
-     * Synchronizes database schema (creates tables, indices, etc).
+     * Creates a schema builder used to build and sync a schema.
      */
-    syncSchema(): Promise<void> {
-        if (!this.pool)
-            throw new ConnectionIsNotSetError("mysql");
-
-        const schemaBuilder = new SchemaBuilder(this.connection);
-        return schemaBuilder.build();
+    createSchemaBuilder() {
+        return new RdbmsSchemaBuilder(this.connection);
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(): QueryRunner {
-        // if (!this.pool)
-        //     return Promise.reject(new ConnectionIsNotSetError("mysql"));
-
-        return new MysqlQueryRunner(this.connection);
-        // await queryRunner.connect();
-        // return queryRunner;
-    }
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    nativeInterface() {
-        return {
-            driver: this.mysql,
-            pool: this.pool
-        };
+    createQueryRunner() {
+        return new MysqlQueryRunner(this);
     }
 
     /**
@@ -275,6 +255,71 @@ export class MysqlDriver implements Driver {
         }
 
         return value;
+    }
+
+    /**
+     * Creates a database type from a given column metadata.
+     */
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "int";
+
+        } else if (column.type === String) {
+            type += "varchar";
+
+        } else if (column.type === Date) {
+            type += "datetime";
+
+        } else if (column.type === Boolean) {
+            type += "tinyint(1)";
+
+        } else if (column.type === Object) {
+            type += "text";
+
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
+        }
+
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+
+        // set default required length if those were not specified
+        if (type === "varchar")
+            type += "(255)";
+
+        if (type === "int")
+            type += "(11)";
+
+        if (type === "tinyint")
+            type += "(4)";
+
+        if (type === "smallint")
+            type += "(5)";
+
+        if (type === "mediumint")
+            type += "(9)";
+
+        if (type === "bigint")
+            type += "(20)";
+
+        if (type === "year")
+            type += "(4)";
+
+        return type;
     }
 
     // -------------------------------------------------------------------------

@@ -2,7 +2,6 @@ import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {SqlServerQueryRunner} from "./SqlServerQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -10,7 +9,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataUtils} from "../../util/DataUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
-import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
@@ -19,6 +18,30 @@ import {ColumnType} from "../types/ColumnTypes";
  * Organizes communication with SQL Server DBMS.
  */
 export class SqlServerDriver implements Driver {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by driver.
+     */
+    connection: Connection;
+
+    /**
+     * Connection options.
+     */
+    options: SqlServerConnectionOptions;
+
+    /**
+     * SQL Server library.
+     */
+    mssql: any;
+
+    /**
+     * SQL Server pool.
+     */
+    connectionPool: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -77,31 +100,13 @@ export class SqlServerDriver implements Driver {
         migrationName: "varchar",
         migrationTimestamp: "timestamp",
     };
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Connection options.
-     */
-    protected options: SqlServerConnectionOptions;
-
-    /**
-     * SQL Server library.
-     */
-    protected mssql: any;
-
-    /**
-     * SQL Server pool.
-     */
-    connectionPool: any;
     
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(connection: Connection) {
+        this.connection = connection;
         this.options = connection.options as SqlServerConnectionOptions;
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
@@ -157,40 +162,24 @@ export class SqlServerDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         if (!this.connectionPool)
-            throw new ConnectionIsNotSetError("mssql");
+            return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
         this.connectionPool.close();
         this.connectionPool = undefined;
     }
 
     /**
-     * Synchronizes database schema (creates tables, indices, etc).
+     * Creates a schema builder used to build and sync a schema.
      */
-    syncSchema(): Promise<void> {
-        const schemaBuilder = new SchemaBuilder(this.connection);
-        return schemaBuilder.build();
+    createSchemaBuilder() {
+        return new RdbmsSchemaBuilder(this.connection);
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(): QueryRunner {
-        // if (!this.connectionPool)
-        //     return Promise.reject(new ConnectionIsNotSetError("mssql"));
-
-        return new SqlServerQueryRunner(this.connection);
-        // await queryRunner.connect();
-        // return queryRunner;
-    }
-
-    /**
-     * Access to the native implementation of the database.
-     */
-    nativeInterface() {
-        return {
-            driver: this.mssql,
-            pool: this.connectionPool
-        };
+    createQueryRunner() {
+        return new SqlServerQueryRunner(this);
     }
 
     /**
@@ -292,6 +281,53 @@ export class SqlServerDriver implements Driver {
 
         return value;
     }
+
+    /**
+     * Creates a database type from a given column metadata.
+     */
+    normalizeType(column: ColumnMetadata): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "int";
+
+        } else if (column.type === String) {
+            type += "nvarchar";
+
+        } else if (column.type === Date) {
+            type += "datetime";
+
+        } else if (column.type === Boolean) {
+            type += "bit";
+
+        } else if (column.type === Object) {
+            type += "ntext";
+
+        } else if (column.type === "simple-array") {
+            type += "ntext";
+
+        } else {
+            type += column.type;
+        }
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+
+        // set default required length if those were not specified
+        if (type === "varchar" || type === "nvarchar")
+            type += "(255)";
+
+        return type;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

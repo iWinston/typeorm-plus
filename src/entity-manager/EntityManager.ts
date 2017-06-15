@@ -31,24 +31,37 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 export class EntityManager {
 
     // -------------------------------------------------------------------------
-    // Private properties
+    // Public Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection to be used in this entity manager.
+     */
+    connection: Connection;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Custom query runner to be used for operations in this entity manager.
+     */
+    protected queryRunner: QueryRunner;
 
     /**
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
      */
-    private data: ObjectLiteral = {};
+    protected data: ObjectLiteral = {};
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    /**
-     * @param connection Connection to be used in this entity manager
-     * @param queryRunner Custom query runner to be used for operations in this entity manager
-     */
-    constructor(public connection: Connection, protected queryRunner?: QueryRunner) {
+    constructor(connection: Connection, queryRunner?: QueryRunner) {
+        this.connection = connection;
+        if (queryRunner)
+            this.queryRunner = queryRunner;
     }
 
     // -------------------------------------------------------------------------

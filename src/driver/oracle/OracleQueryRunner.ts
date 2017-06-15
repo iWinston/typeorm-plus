@@ -9,8 +9,6 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {Connection} from "../../connection/Connection";
-import {OracleConnectionOptions} from "./OracleConnectionOptions";
 import {OracleDriver} from "./OracleDriver";
 
 /**
@@ -31,22 +29,29 @@ export class OracleQueryRunner implements QueryRunner {
     isReleased = false;
 
     /**
-     * Indicates if transaction is active in this query executor.
+     * Indicates if transaction is in progress.
      */
     isTransactionActive = false;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
 
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: any;
+    protected databaseConnection: any;
 
-    protected databaseConnectionCreatePromise: Promise<any>;
+    /**
+     * Promise used to obtain a database connection for a first time.
+     */
+    protected databaseConnectionPromise: Promise<any>;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(protected driver: OracleDriver) {
     }
 
     // -------------------------------------------------------------------------
@@ -54,30 +59,30 @@ export class OracleQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates/uses connection from the connection pool to perform further operations.
+     * Creates/uses database connection from the connection pool to perform further operations.
+     * Returns obtained database connection.
      */
     connect(): Promise<any> {
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
-        if (this.databaseConnectionCreatePromise)
-            return this.databaseConnectionCreatePromise;
+        if (this.databaseConnectionPromise)
+            return this.databaseConnectionPromise;
 
-        this.databaseConnectionCreatePromise = new Promise((ok, fail) => {
-            const driver = this.connection.driver as OracleDriver;
+        this.databaseConnectionPromise = new Promise((ok, fail) => {
+            const driver = this.driver as OracleDriver;
             driver.pool.getConnection((err: any, connection: any) => {
                 this.databaseConnection = connection;
                 err ? fail(err) : ok(connection);
             });
         });
 
-        return this.databaseConnectionCreatePromise;
+        return this.databaseConnectionPromise;
     }
 
     /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     * You cannot use this class's methods after its released.
+     * Releases used database connection.
+     * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
         return new Promise<void>((ok, fail) => {
@@ -100,7 +105,7 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        await this.beginTransaction();
+        await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
             const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
@@ -126,7 +131,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Starts transaction.
      */
-    async beginTransaction(): Promise<void> {
+    async startTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -139,6 +144,7 @@ export class OracleQueryRunner implements QueryRunner {
 
     /**
      * Commits transaction.
+     * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
         if (this.isReleased)
@@ -153,6 +159,7 @@ export class OracleQueryRunner implements QueryRunner {
 
     /**
      * Rollbacks transaction.
+     * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
         if (this.isReleased)
@@ -173,11 +180,11 @@ export class OracleQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            this.connection.logger.logQuery(query, parameters);
+            this.driver.connection.logger.logQuery(query, parameters);
             const handler = (err: any, result: any) => {
                 if (err) {
-                    this.connection.logger.logFailedQuery(query, parameters);
-                    this.connection.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters);
+                    this.driver.connection.logger.logQueryError(err);
                     return fail(err);
                 }
 
@@ -193,26 +200,26 @@ export class OracleQueryRunner implements QueryRunner {
     }
 
     /**
-     * Insert a new row with given values into given table.
+     * Insert a new row with given values into the given table.
+     * Returns value of the generated column if given and generate column exist in the table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.connection.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map(key => ":" + key).join(", ");
         const parameters = keys.map(key => keyValues[key]);
 
         const insertSql = columns.length > 0
-            ? `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`
-            : `INSERT INTO ${this.connection.driver.escapeTableName(tableName)} DEFAULT VALUES`;
+            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`
+            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES`;
         if (generatedColumn) {
             const sql2 = `declare lastId number; begin ${insertSql} returning "id" into lastId; dbms_output.enable; dbms_output.put_line(lastId); dbms_output.get_line(:ln, :st); end;`;
-            const oracle = this.connection.driver.nativeInterface().driver;
             const saveResult = await this.query(sql2, parameters.concat([
-                { dir: oracle.BIND_OUT, type: oracle.STRING, maxSize: 32767 },
-                { dir: oracle.BIND_OUT, type: oracle.NUMBER }
+                { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.STRING, maxSize: 32767 },
+                { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.NUMBER }
             ]));
             return parseInt(saveResult[0]);
         } else {
@@ -229,7 +236,7 @@ export class OracleQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
-        const sql = `UPDATE ${this.connection.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const sql = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -256,7 +263,7 @@ export class OracleQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.connection.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -269,16 +276,16 @@ export class OracleQueryRunner implements QueryRunner {
 
         let sql = "";
         if (hasLevel) {
-            sql =   `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                     `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql =   `INSERT INTO ${this.connection.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                    `SELECT ancestor, ${newEntityId} FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+                    `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                     `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.connection.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -777,66 +784,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
-     * Creates a database type from a given column metadata.
-     */
-    normalizeType(column: ColumnMetadata): string {
-        let type = "";
-        if (column.type === Number) {
-            type += "integer";
-
-        } else if (column.type === String) {
-            type += "nvarchar2";
-
-        } else if (column.type === Date) {
-            type += "timestamp(0)";
-
-        } else if (column.type === Boolean) {
-            type += "number(1)";
-
-        } else if (column.type === Object) {
-            type += "text";
-
-        } else if (column.type === "simple-array") {
-            type += "text";
-
-        } else {
-            type += column.type;
-        }
-        if (column.length) {
-            type += "(" + column.length + ")";
-
-        } else if (column.precision && column.scale) {
-            type += "(" + column.precision + "," + column.scale + ")";
-
-        } else if (column.precision) {
-            type += "(" + column.precision + ")";
-
-        } else if (column.scale) {
-            type += "(" + column.scale + ")";
-        }
-        return type;
-    }
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
-
-        if (typeof columnMetadataValue === "number")
-            return columnMetadataValue === parseInt(databaseValue);
-        if (typeof columnMetadataValue === "boolean")
-            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
-        if (typeof columnMetadataValue === "function")
-            return columnMetadataValue() === databaseValue;
-
-        return columnMetadataValue === databaseValue;
-    }
-
-    /**
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.connection.driver.escapeTableName(tableName)}`);
+        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
     }
 
     // -------------------------------------------------------------------------
@@ -847,14 +798,14 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return (this.connection.options as OracleConnectionOptions).schemaName as string;
+        return this.driver.options.schemaName as string;
     }
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map(key => this.connection.driver.escapeColumnName(key) + "=:" + key);
+        return Object.keys(objectLiteral).map(key => this.driver.escapeColumnName(key) + "=:" + key);
     }
 
     /**

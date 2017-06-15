@@ -346,7 +346,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Starts transaction.
      */
-    async beginTransaction(): Promise<void> {
+    async startTransaction(): Promise<void> {
         // transactions are not supported by mongodb driver, so simply don't do anything here
     }
 
@@ -372,7 +372,8 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Insert a new row with given values into given table.
+     * Insert a new row with given values into the given table.
+     * Returns value of inserted object id.
      */
     async insert(collectionName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         const results = await this.databaseConnection
@@ -658,20 +659,6 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops an index from the table.
      */
     async dropIndex(collectionName: string, indexName: string): Promise<void> {
-        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
-    }
-
-    /**
-     * Creates a database type from a given column metadata.
-     */
-    normalizeType(column: ColumnMetadata): string {
-        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
-    }
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

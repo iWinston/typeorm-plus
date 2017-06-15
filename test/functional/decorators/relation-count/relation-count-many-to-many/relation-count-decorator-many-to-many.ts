@@ -109,8 +109,9 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .setOffset(0)
-            .setLimit(2)
+            .orderBy("post.id")
+            .offset(0)
+            .limit(2)
             .getMany();
 
         expect(loadedPosts![0].categoryCount).to.be.equal(3);
@@ -339,8 +340,9 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
-            .setOffset(0)
-            .setLimit(2)
+            .orderBy("category.id")
+            .offset(0)
+            .limit(2)
             .getMany();
 
         expect(loadedCategories![0].postCount).to.be.equal(3);

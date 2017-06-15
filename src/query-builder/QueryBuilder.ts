@@ -702,7 +702,7 @@ export class QueryBuilder<Entity> {
      * If you want to implement pagination, and you are having join in your query,
      * then use instead take method instead.
      */
-    setLimit(limit?: number): this {
+    limit(limit?: number): this {
         this.expressionMap.limit = limit;
         return this;
     }
@@ -713,7 +713,7 @@ export class QueryBuilder<Entity> {
      * If you want to implement pagination, and you are having join in your query,
      * then use instead skip method instead.
      */
-    setOffset(offset?: number): this {
+    offset(offset?: number): this {
         this.expressionMap.offset = offset;
         return this;
     }
@@ -828,10 +828,9 @@ export class QueryBuilder<Entity> {
         sql += this.createGroupByExpression();
         sql += this.createHavingExpression();
         sql += this.createOrderByExpression();
-        sql += this.createLimitExpression();
-        sql += this.createOffsetExpression();
+        sql += this.createLimitOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createLimitOffsetSpecificExpression(sql);
+        sql = this.createLimitOffsetOracleSpecificExpression(sql);
         [sql] = this.connection.driver.escapeQueryWithParameters(sql, this.expressionMap.parameters);
         return sql.trim();
     }
@@ -846,10 +845,9 @@ export class QueryBuilder<Entity> {
         sql += this.createGroupByExpression();
         sql += this.createHavingExpression();
         sql += this.createOrderByExpression();
-        sql += this.createLimitExpression();
-        sql += this.createOffsetExpression();
+        sql += this.createLimitOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createLimitOffsetSpecificExpression(sql);
+        sql = this.createLimitOffsetOracleSpecificExpression(sql);
         return sql.trim();
     }
 
@@ -864,10 +862,9 @@ export class QueryBuilder<Entity> {
         sql += this.createHavingExpression();
         if (!options || !options.skipOrderBy)
             sql += this.createOrderByExpression();
-        sql += this.createLimitExpression();
-        sql += this.createOffsetExpression();
+        sql += this.createLimitOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createLimitOffsetSpecificExpression(sql);
+        sql = this.createLimitOffsetOracleSpecificExpression(sql);
         return this.connection.driver.escapeQueryWithParameters(sql, this.getParameters());
     }
 
@@ -1048,8 +1045,8 @@ export class QueryBuilder<Entity> {
         const countQueryBuilder = this
             .clone({ queryRunner: this.queryRunner })
             .orderBy(undefined)
-            .setOffset(undefined)
-            .setLimit(undefined)
+            .offset(undefined)
+            .limit(undefined)
             .select(countSql);
         countQueryBuilder.expressionMap.ignoreParentTablesJoins = true;
 
@@ -1635,7 +1632,7 @@ export class QueryBuilder<Entity> {
         return "";
     }
 
-    protected createLimitOffsetSpecificExpression(sql: string): string {
+    protected createLimitOffsetOracleSpecificExpression(sql: string): string {
          if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
              sql = "SELECT * FROM (" + sql + ") WHERE ";
              if (this.expressionMap.offset) {
@@ -1648,14 +1645,29 @@ export class QueryBuilder<Entity> {
          return sql;
     }
 
-    protected createLimitExpression(): string {
-        if (!this.expressionMap.limit || this.connection.driver instanceof OracleDriver) return "";
-        return " LIMIT " + this.expressionMap.limit;
-    }
+    protected createLimitOffsetExpression(): string {
+        if (this.connection.driver instanceof OracleDriver)
+            return "";
 
-    protected createOffsetExpression(): string {
-        if (!this.expressionMap.offset || this.connection.driver instanceof OracleDriver) return "";
-        return " OFFSET " + this.expressionMap.offset;
+        if (this.connection.driver instanceof SqlServerDriver) {
+
+            if (this.expressionMap.limit && this.expressionMap.offset)
+                return " OFFSET " + this.expressionMap.offset + " ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
+            if (this.expressionMap.limit)
+                return " OFFSET 0 ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
+            if (this.expressionMap.offset)
+                return " OFFSET " + this.expressionMap.offset + " ROWS";
+
+        } else {
+            if (this.expressionMap.limit && this.expressionMap.offset)
+                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
+            if (this.expressionMap.limit)
+                return " LIMIT " + this.expressionMap.limit;
+            if (this.expressionMap.offset)
+                return " OFFSET " + this.expressionMap.offset;
+        }
+
+        return "";
     }
 
     protected createLockExpression(): string {
