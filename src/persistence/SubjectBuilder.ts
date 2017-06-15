@@ -551,8 +551,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let databaseEntities: ObjectLiteral[] = [];
 
                 // create shortcuts for better readability
-                const ea = (alias: string) => this.connection.driver.escapeAliasName(alias);
-                const ec = (column: string) => this.connection.driver.escapeColumnName(column);
+                const ea = (alias: string) => this.connection.driver.escapeAlias(alias);
+                const ec = (column: string) => this.connection.driver.escapeColumn(column);
 
                 if (relation.isManyToManyOwner) {
 

@@ -229,21 +229,21 @@ export class SqliteDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumnName(columnName: string): string {
+    escapeColumn(columnName: string): string {
         return "\"" + columnName + "\"";
     }
 
     /**
      * Escapes an alias.
      */
-    escapeAliasName(aliasName: string): string {
+    escapeAlias(aliasName: string): string {
         return "\"" + aliasName + "\"";
     }
 
     /**
      * Escapes a table name.
      */
-    escapeTableName(tableName: string): string {
+    escapeTable(tableName: string): string {
         return "\"" + tableName + "\"";
     }
 

@@ -1161,7 +1161,7 @@ export class QueryBuilder<Entity> {
     escapeAlias(name: string) {
         if (!this.expressionMap.disableEscaping)
             return name;
-        return this.connection.driver.escapeAliasName(name);
+        return this.connection.driver.escapeAlias(name);
     }
 
     /**
@@ -1170,7 +1170,7 @@ export class QueryBuilder<Entity> {
     escapeColumn(name: string) {
         if (!this.expressionMap.disableEscaping)
             return name;
-        return this.connection.driver.escapeColumnName(name);
+        return this.connection.driver.escapeColumn(name);
     }
 
     /**
@@ -1179,7 +1179,7 @@ export class QueryBuilder<Entity> {
     escapeTable(name: string) {
         if (!this.expressionMap.disableEscaping)
             return name;
-        return this.connection.driver.escapeTableName(name);
+        return this.connection.driver.escapeTable(name);
     }
 
     /**

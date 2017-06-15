@@ -254,8 +254,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             .delete()
             .from(relation.junctionEntityMetadata!.tableName, "junctionEntity");
 
-        const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName);
-        const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName);
+        const firstColumnName = this.connection.driver.escapeColumn(relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName);
+        const secondColumnName = this.connection.driver.escapeColumn(relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName);
 
         relatedEntityIds.forEach((relatedEntityId, index) => {
             qb.orWhere(`(${firstColumnName}=:entityId AND ${secondColumnName}=:relatedEntity_${index})`)
@@ -446,8 +446,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             return [];
 
         // create shortcuts for better readability
-        const ea = (alias: string) => this.connection.driver.escapeAliasName(alias);
-        const ec = (column: string) => this.connection.driver.escapeColumnName(column);
+        const ea = (alias: string) => this.connection.driver.escapeAlias(alias);
+        const ec = (column: string) => this.connection.driver.escapeColumn(column);
 
         let ids: any[] = [];
         // console.log("entityOrEntities:", entityOrEntities);

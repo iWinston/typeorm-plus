@@ -46,6 +46,8 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * `localTimezone` has been removed from the column options
 * `skipSchemaSync` in entity options has been renamed to `skipSync`
 * `setLimit` and `setOffset` in `QueryBuilder` were renamed into `limit` and `offset`
+* `nativeInterface` has been removed from a driver interface and implementations. 
+Now 
 
 ### DEPRECATIONS
 

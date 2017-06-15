@@ -22,8 +22,9 @@ describe("uuid type", () => {
 
     it("should make correct schema with Postgres' uuid type", () => Promise.all(connections.map(async connection => {
         await connection.syncSchema(true);
-        const queryRunner = await connection.driver.createQueryRunner();
+        const queryRunner = connection.driver.createQueryRunner();
         let schema = await queryRunner.loadTableSchema("record");
+        await queryRunner.release();
         expect(schema).not.to.be.empty;
         expect(schema!.columns.find(columnSchema => columnSchema.name === "id" && columnSchema.type === "uuid" && columnSchema.isGenerated)).to.be.not.empty;
     })));

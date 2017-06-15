@@ -194,11 +194,10 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => `\`${key}\``).join(", ");
         const values = keys.map(key => "?").join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const escapedTableName = this.driver.escapeTableName(tableName);
-        const sql = `INSERT INTO ${escapedTableName}(${columns}) VALUES (${values})`;
+        const sql = `INSERT INTO \`${tableName}\`(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
         return generatedColumn ? result.insertId : undefined;
     }
@@ -212,8 +211,7 @@ export class MysqlQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
-        const escapedTableName = this.driver.escapeTableName(tableName);
-        const sql = `UPDATE ${escapedTableName} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const sql = `UPDATE \`${tableName}\` SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -230,7 +228,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM \`${tableName}\` WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -244,18 +242,18 @@ export class MysqlQueryRunner implements QueryRunner {
         // todo: escape column names as well
         if (hasLevel) {
             await this.query(
-                `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `INSERT INTO \`${tableName}\`(\`ancestor\`, \`descendant\`, \`level\`) ` +
+                `SELECT \`ancestor\`, ${newEntityId}, \`level\` + 1 FROM \`${tableName}\` WHERE \`descendant\` = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`
             );
         } else {
             await this.query(
-                `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+                `INSERT INTO \`${tableName}\`(\`ancestor\`, \`descendant\`) ` +
+                `SELECT \`ancestor\`, ${newEntityId} FROM \`${tableName}\` WHERE \`descendant\` = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`
             );
         }
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM \`${tableName}\` WHERE \`descendant\` = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -616,7 +614,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
+        await this.query(`TRUNCATE TABLE \`${tableName}\``);
     }
 
     // -------------------------------------------------------------------------
@@ -634,7 +632,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map(key => this.driver.escapeColumnName(key) + "=?");
+        return Object.keys(objectLiteral).map(key => `\`${key}\`=?`);
     }
 
     /**

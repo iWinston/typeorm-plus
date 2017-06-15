@@ -17,14 +17,14 @@ describe("github issues > #512 Table name escaping in UPDATE in QueryBuilder", (
 
     it("should escape table name using driver's escape function in UPDATE", () => Promise.all(connections.map(async connection => {
         const driver = connection.driver;
-        const queryBuilder = connection.entityManager.createQueryBuilder(Post, "post");
+        const queryBuilder = connection.manager.createQueryBuilder(Post, "post");
         const query = queryBuilder
             .update({
                 title: "Some Title",
             })
             .getSql();
 
-        return query.should.contain(driver.escapeTableName("Posts"));
+        return query.should.contain(driver.escapeTable("Posts"));
     })));
 
 });

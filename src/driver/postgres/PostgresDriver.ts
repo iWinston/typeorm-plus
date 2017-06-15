@@ -13,6 +13,7 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -42,6 +43,11 @@ export class PostgresDriver implements Driver {
      * Database connection pool created by underlying driver.
      */
     pool: any;
+
+    /**
+     * We store all created query runners because we need to release them.
+     */
+    connectedQueryRunners: QueryRunner[] = [];
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -167,15 +173,11 @@ export class PostgresDriver implements Driver {
         if (!this.pool)
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
-        return new Promise<void>((ok, fail) => {
+        return new Promise<void>(async (ok, fail) => {
             const handler = (err: any) => err ? fail(err) : ok();
 
-            // todo: do we really needed this code:
-            /*this.databaseConnectionPool.forEach(dbConnection => {
-                if (dbConnection && dbConnection.releaseCallback) {
-                    dbConnection.releaseCallback();
-                }
-            });*/
+            // this is checked fact that postgres.pool.end do not release all non released connections
+            // await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
             this.pool.end(handler);
             this.pool = undefined;
             ok();
@@ -279,21 +281,21 @@ export class PostgresDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumnName(columnName: string): string {
+    escapeColumn(columnName: string): string {
         return "\"" + columnName + "\"";
     }
 
     /**
      * Escapes an alias.
      */
-    escapeAliasName(aliasName: string): string {
+    escapeAlias(aliasName: string): string {
         return "\"" + aliasName + "\"";
     }
 
     /**
      * Escapes a table name.
      */
-    escapeTableName(tableName: string): string {
+    escapeTable(tableName: string): string {
         return "\"" + tableName + "\"";
     }
 

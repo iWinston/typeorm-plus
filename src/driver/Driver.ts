@@ -51,17 +51,17 @@ export interface Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumnName(columnName: string): string;
+    escapeColumn(columnName: string): string;
 
     /**
      * Escapes an alias.
      */
-    escapeAliasName(aliasName: string): string;
+    escapeAlias(aliasName: string): string;
 
     /**
      * Escapes a table name.
      */
-    escapeTableName(tableName: string): string;
+    escapeTable(tableName: string): string;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
@@ -74,7 +74,7 @@ export interface Driver {
     prepareHydratedValue(value: any, column: ColumnMetadata): any;
 
     /**
-     * Converts a column type of the metadata to the database column's type.
+     * Transforms type of the given column to a database column type.
      */
     normalizeType(column: ColumnMetadata): string;
 
