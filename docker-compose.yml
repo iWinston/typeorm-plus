@@ -44,7 +44,7 @@ services:
       - "1433:1433"
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "test"
+      SA_PASSWORD: "admin12345"
 
   # mongodb
   mongodb:

@@ -41,7 +41,7 @@
     "type": "mssql",
     "host": "localhost",
     "username": "sa",
-    "password": "test",
+    "password": "admin12345",
     "database": "test"
   },
   {
