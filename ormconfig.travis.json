@@ -36,15 +36,6 @@
     "database": "test"
   },
   {
-    "skip": false,
-    "name": "mssql",
-    "type": "mssql",
-    "host": "localhost",
-    "username": "sa",
-    "password": "admin12345",
-    "database": "test"
-  },
-  {
     "skip": true,
     "name": "oracle",
     "type": "oracle",
