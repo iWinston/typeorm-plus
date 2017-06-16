@@ -36,12 +36,12 @@
     "database": "test"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
-    "host": "192.168.1.10",
+    "host": "localhost",
     "username": "sa",
-    "password": "admin12345",
+    "password": "test",
     "database": "test"
   },
   {
