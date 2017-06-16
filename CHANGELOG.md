@@ -49,10 +49,11 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * `nativeInterface` has been removed from a driver interface and implementations. 
 Now 
 * now typeorm works with the latest version of mssql (version 4)
+* fixed how orm creates default values for SqlServer - now it creates constraints for it as well
 
 ### DEPRECATIONS
 
-* `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead now
+* `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead
 
 ### NEW FEATURES
 
@@ -76,6 +77,7 @@ Now
 
 * fixes [#285](https://github.com/typeorm/typeorm/issues/285) - issue when cli commands rise `CannotCloseNotConnectedError`
 * fixes [#309](https://github.com/typeorm/typeorm/issues/309) - issue when `andHaving` didn't work without calling `having` on `QueryBuilder`
+* fixes issues with default value being updated by schema sync
 
 # 0.0.10
 

@@ -100,8 +100,11 @@ export class MigrationExecutor {
                 await this.queryRunner.commitTransaction();
 
         } catch (err) { // rollback transaction if we started it
-            if (transactionStartedByUs)
-                await this.queryRunner.rollbackTransaction();
+            if (transactionStartedByUs) {
+                try { // we throw original error even if rollback thrown an error
+                    await this.queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
 
             throw err;
         }
@@ -161,8 +164,11 @@ export class MigrationExecutor {
                 await this.queryRunner.commitTransaction();
 
         } catch (err) { // rollback transaction if we started it
-            if (transactionStartedByUs)
-                await this.queryRunner.rollbackTransaction();
+            if (transactionStartedByUs) {
+                try { // we throw original error even if rollback thrown an error
+                    await this.queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
 
             throw err;
         }

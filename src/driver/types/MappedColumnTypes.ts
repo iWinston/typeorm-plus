@@ -12,9 +12,19 @@ export interface MappedColumnTypes {
     createDate: ColumnType;
 
     /**
+     * Default value should be used by a database for "created date" column.
+     */
+    createDateDefault: string;
+
+    /**
      * Column type for the update date column.
      */
     updateDate: ColumnType;
+
+    /**
+     * Default value should be used by a database for "updated date" column.
+     */
+    updateDateDefault: string;
 
     /**
      * Column type for the version column.

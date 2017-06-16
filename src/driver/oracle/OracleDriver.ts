@@ -91,7 +91,9 @@ export class OracleDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "datetime",
+        createDateDefault: "CURRENT_TIMESTAMP",
         updateDate: "datetime",
+        updateDateDefault: "CURRENT_TIMESTAMP",
         version: "number",
         treeLevel: "number",
         migrationName: "varchar",
@@ -316,6 +318,27 @@ export class OracleDriver implements Driver {
             type += "(" + column.scale + ")";
         }
         return type;
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "true" : "false";
+
+        } else if (typeof column.default === "function") {
+            return column.default();
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else {
+            return column.default;
+        }
     }
 
     // -------------------------------------------------------------------------

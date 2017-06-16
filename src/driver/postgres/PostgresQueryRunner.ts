@@ -74,6 +74,8 @@ export class PostgresQueryRunner implements QueryRunner {
 
         this.databaseConnectionPromise = new Promise((ok, fail) => {
             this.driver.pool.connect((err: any, connection: any, release: Function) => {
+                if (err) return fail(err);
+
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
                 this.releaseCallback = release;
@@ -125,7 +127,9 @@ export class PostgresQueryRunner implements QueryRunner {
             await this.commitTransaction();
 
         } catch (error) {
-            await this.rollbackTransaction();
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
             throw error;
         }
     }
@@ -340,7 +344,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["column_name"];
                     columnSchema.type = columnType;
-                    columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"] : undefined;
+                    columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;
                     columnSchema.isNullable = dbColumn["is_nullable"] === "YES";
                     // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
                     columnSchema.isGenerated = isGenerated;
@@ -608,6 +612,16 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
 
             }
         }
+
+        if (newColumn.default !== oldColumn.default) {
+            if (newColumn.default !== null && newColumn.default !== undefined) {
+                await this.query(`ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
+
+            } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                await this.query(`ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+
+            }
+        }
     }
 
     /**
@@ -627,40 +641,18 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableName: string, columnName: string): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchemaOrName: TableSchema|string, columnSchemaOrName: ColumnSchema|string): Promise<void> {
-        const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
-        const columnName = columnSchemaOrName instanceof ColumnSchema ? columnSchemaOrName.name : columnSchemaOrName;
-        return this.query(`ALTER TABLE "${tableName}" DROP "${columnName}"`);
+    async dropColumn(table: TableSchema, column: ColumnSchema): Promise<void> {
+        return this.query(`ALTER TABLE "${table.name}" DROP "${column.name}"`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(tableName: string, columnNames: string[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchemaOrName: TableSchema|string, columnSchemasOrNames: ColumnSchema[]|string[]): Promise<void> {
+    async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const dropPromises = (columnSchemasOrNames as any[]).map(column => this.dropColumn(tableSchemaOrName as any, column as any));
+        const dropPromises = columns.map(column => this.dropColumn(table, column));
         await Promise.all(dropPromises);
     }
 
@@ -840,17 +832,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (column.isGenerated)
             c += " PRIMARY KEY";
         if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
-            if (typeof column.default === "number") {
-                c += " DEFAULT " + column.default + "";
-            } else if (typeof column.default === "boolean") {
-                c += " DEFAULT " + (column.default === true ? "TRUE" : "FALSE") + "";
-            } else if (typeof column.default === "function") {
-                c += " DEFAULT " + column.default() + "";
-            } else if (typeof column.default === "string") {
-                c += " DEFAULT '" + column.default + "'";
-            } else {
-                c += " DEFAULT " + column.default + "";
-            }
+            c += " DEFAULT " + column.default;
         }
         if (column.isGenerated && column.type === "uuid" && !column.default)
             c += " DEFAULT uuid_generate_v4()";

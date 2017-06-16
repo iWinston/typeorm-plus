@@ -92,7 +92,9 @@ export class SqliteQueryRunner implements QueryRunner {
             await this.commitTransaction();
 
         } catch (error) {
-            await this.rollbackTransaction();
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
             throw error;
 
         } finally {
@@ -581,51 +583,18 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableName: string, columnName: string): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchemaOrName: TableSchema|string, columnSchemaOrName: ColumnSchema|string): Promise<void> {
-        return this.dropColumns(tableSchemaOrName as any, [columnSchemaOrName as any]);
+    async dropColumn(table: TableSchema, column: ColumnSchema): Promise<void> {
+        return this.dropColumns(table, [column]);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(tableName: string, columnNames: string[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchemaOrName: TableSchema|string, columnSchemasOrNames: ColumnSchema[]|string[]): Promise<void> {
+    async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const tableSchema = await this.getTableSchema(tableSchemaOrName);
-        const updatingTableSchema = tableSchema.clone();
-        const columns = (columnSchemasOrNames as any[]).map(columnSchemasOrName => {
-            if (typeof columnSchemasOrName === "string") {
-                const column = tableSchema.columns.find(column => column.name === columnSchemasOrName);
-                if (!column)
-                    throw new Error(`Cannot drop a column - column "${columnSchemasOrName}" was not found in the "${tableSchema.name}" table.`);
-
-                return column;
-
-            } else {
-                return columnSchemasOrName as ColumnSchema;
-            }
-        });
+        const updatingTableSchema = table.clone();
         updatingTableSchema.removeColumns(columns);
         return this.recreateTable(updatingTableSchema);
     }
@@ -785,17 +754,7 @@ export class SqliteQueryRunner implements QueryRunner {
             c += " PRIMARY KEY AUTOINCREMENT";
 
         if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
-            if (typeof column.default === "number") {
-                c += " DEFAULT " + column.default + "";
-            } else if (typeof column.default === "boolean") {
-                c += " DEFAULT " + (column.default === true ? "1" : "0") + "";
-            } else if (typeof column.default === "function") {
-                c += " DEFAULT " + column.default() + "";
-            } else if (typeof column.default === "string") {
-                c += " DEFAULT '" + column.default + "'";
-            } else {
-                c += " DEFAULT " + column.default + "";
-            }
+            c += " DEFAULT (" + column.default + ")";
         }
 
         return c;

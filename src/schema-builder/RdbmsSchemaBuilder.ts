@@ -74,7 +74,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.commitTransaction();
 
         } catch (error) {
-            await this.queryRunner.rollbackTransaction();
+
+            try { // we throw original error even if rollback thrown an error
+                await this.queryRunner.rollbackTransaction();
+            } catch (rollbackError) { }
             throw error;
 
         } finally {
@@ -244,7 +247,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // generate a map of new/old columns
             const newAndOldColumnSchemas = updatedColumnSchemas.map(changedColumnSchema => {
                 const columnMetadata = metadata.columns.find(column => column.databaseName === changedColumnSchema.name);
-                const newColumnSchema = ColumnSchema.create(columnMetadata!, this.connection.driver.normalizeType(columnMetadata!));
+                const newColumnSchema = ColumnSchema.create(columnMetadata!, this.connection.driver.normalizeType(columnMetadata!), this.connection.driver.normalizeDefault(columnMetadata!));
                 tableSchema.replaceColumn(changedColumnSchema, newColumnSchema);
 
                 return {
@@ -427,7 +430,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected metadataColumnsToColumnSchemas(columns: ColumnMetadata[]): ColumnSchema[] {
         return columns.map(columnMetadata => {
-            return ColumnSchema.create(columnMetadata, this.connection.driver.normalizeType(columnMetadata));
+            return ColumnSchema.create(
+                columnMetadata,
+                this.connection.driver.normalizeType(columnMetadata),
+                this.connection.driver.normalizeDefault(columnMetadata),
+            );
         });
     }
 

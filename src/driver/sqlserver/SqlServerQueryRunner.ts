@@ -104,7 +104,9 @@ export class SqlServerQueryRunner implements QueryRunner {
             await this.commitTransaction();
 
         } catch (error) {
-            await this.rollbackTransaction();
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
             throw error;
         }
     }
@@ -212,7 +214,7 @@ export class SqlServerQueryRunner implements QueryRunner {
                 let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
                     this.driver.connection.logger.logFailedQuery(query, parameters);
-                    this.driver.connection.logger.logQueryError(err);
+                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err);
                     resolveChain();
                     return fail(err);
                 }
@@ -363,7 +365,6 @@ export class SqlServerQueryRunner implements QueryRunner {
             tableSchema.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === tableSchema.name)
                 .map(dbColumn => {
-
                     const isPrimary = !!dbConstraints.find(dbConstraint => {
                         return  dbConstraint["TABLE_NAME"] === tableSchema.name &&
                                 dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] &&
@@ -446,7 +447,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false, true)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
@@ -479,22 +480,12 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(tableName: string, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
-    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
     async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
-        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column)}`;
+        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column, false, true)}`;
         return this.query(sql);
     }
 
@@ -605,10 +596,10 @@ export class SqlServerQueryRunner implements QueryRunner {
         // to update an identy column we have to drop column and recreate it again
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
             await this.query(`ALTER TABLE "${tableSchema.name}" DROP COLUMN "${newColumn.name}"`);
-            await this.query(`ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(newColumn)}`);
+            await this.query(`ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(newColumn, false, false)}`);
         }
 
-        const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(newColumn, true)}`; // todo: CHANGE OR MODIFY COLUMN ????
+        const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(newColumn, true, false)}`; // todo: CHANGE OR MODIFY COLUMN ????
         await this.query(sql);
 
         if (newColumn.isUnique !== oldColumn.isUnique) {
@@ -617,6 +608,16 @@ export class SqlServerQueryRunner implements QueryRunner {
 
             } else if (newColumn.isUnique === false) {
                 await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${newColumn.name}"`);
+
+            }
+        }
+        if (newColumn.default !== oldColumn.default) {
+            if (newColumn.default !== null && newColumn.default !== undefined) {
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "df_${newColumn.name}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`);
+
+            } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${newColumn.name}"`);
 
             }
         }
@@ -639,40 +640,24 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableName: string, columnName: string): Promise<void>;
+    async dropColumn(table: TableSchema, column: ColumnSchema): Promise<void> {
 
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
+        // drop depend constraints
+        if (column.default)
+            await this.query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "df_${column.name}"`);
 
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchemaOrName: TableSchema|string, columnSchemaOrName: ColumnSchema|string): Promise<void> {
-        const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
-        const columnName = columnSchemaOrName instanceof ColumnSchema ? columnSchemaOrName.name : columnSchemaOrName;
-        return this.query(`ALTER TABLE "${tableName}" DROP COLUMN "${columnName}"`);
+        // drop column itself
+        await this.query(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(tableName: string, columnNames: string[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchemaOrName: TableSchema|string, columnSchemasOrNames: ColumnSchema[]|string[]): Promise<void> {
+    async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const dropPromises = (columnSchemasOrNames as any[]).map(column => this.dropColumn(tableSchemaOrName as any, column as any));
+        const dropPromises = columns.map(column => this.dropColumn(table, column));
         await Promise.all(dropPromises);
     }
 
@@ -840,7 +825,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema, skipIdentity: boolean = false) {
+    protected buildCreateColumnSql(column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
         let c = `"${column.name}" ${column.type}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
@@ -850,17 +835,9 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         //     c += " PRIMARY KEY";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
-        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
-            if (typeof column.default === "number") {
-                c += " DEFAULT " + column.default + "";
-            } else if (typeof column.default === "boolean") {
-                c += " DEFAULT " + (column.default === true ? "1" : "0") + "";
-            } else if (typeof column.default === "function") {
-                c += " DEFAULT " + column.default() + "";
-            } else if (typeof column.default === "string") {
-                c += " DEFAULT '" + column.default + "'";
-            } else {
-                c += " DEFAULT " + column.default + "";
+        if (createDefault) {
+            if (column.default !== undefined && column.default !== null) {
+                c += ` CONSTRAINT "df_${column.name}" DEFAULT ${column.default}`;
             }
         }
         return c;

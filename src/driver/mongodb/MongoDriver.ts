@@ -42,7 +42,9 @@ export class MongoDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "int",
+        createDateDefault: "",
         updateDate: "int",
+        updateDateDefault: "",
         version: "int",
         treeLevel: "int",
         migrationName: "int",
@@ -170,6 +172,13 @@ export class MongoDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: ColumnMetadata): string {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 

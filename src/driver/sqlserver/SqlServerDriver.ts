@@ -94,7 +94,9 @@ export class SqlServerDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "datetime",
+        createDateDefault: "getdate()",
         updateDate: "datetime",
+        updateDateDefault: "getdate()",
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",
@@ -308,6 +310,11 @@ export class SqlServerDriver implements Driver {
         } else {
             type += column.type;
         }
+
+        // make sure aliases to have original type names
+        if (type === "integer")
+            type = "int";
+
         if (column.length) {
             type += "(" + column.length + ")";
 
@@ -326,6 +333,27 @@ export class SqlServerDriver implements Driver {
             type += "(255)";
 
         return type;
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "1" : "0";
+
+        } else if (typeof column.default === "function") {
+            return "(" + column.default() + ")";
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else {
+            return column.default;
+        }
     }
 
     // -------------------------------------------------------------------------

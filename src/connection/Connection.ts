@@ -322,7 +322,9 @@ export class Connection {
             return result;
 
         } catch (err) {
-            await usedQueryRunner.rollbackTransaction();
+            try { // we throw original error even if rollback thrown an error
+                await usedQueryRunner.rollbackTransaction();
+            } catch (rollbackError) { }
             throw err;
 
         } finally {

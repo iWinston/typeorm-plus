@@ -111,7 +111,9 @@ export class PostgresDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "timestamp",
+        createDateDefault: "now()",
         updateDate: "timestamp",
+        updateDateDefault: "now()",
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",
@@ -325,6 +327,15 @@ export class PostgresDriver implements Driver {
         } else {
             type += column.type;
         }
+
+        // normalize shortcuts
+        if (type === "int") {
+            type = "integer";
+
+        } else if (type === "timestamp") {
+            type = "timestamp without time zone";
+        }
+
         if (column.length) {
             type += "(" + column.length + ")";
 
@@ -338,6 +349,27 @@ export class PostgresDriver implements Driver {
             type += "(" + column.scale + ")";
         }
         return type;
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "true" : "false";
+
+        } else if (typeof column.default === "function") {
+            return column.default();
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else {
+            return column.default;
+        }
     }
 
     // -------------------------------------------------------------------------

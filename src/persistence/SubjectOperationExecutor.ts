@@ -135,9 +135,7 @@ export class SubjectOperationExecutor {
             if (isTransactionStartedByItself) {
                 try {
                     await this.queryRunner.rollbackTransaction();
-
-                } catch (secondaryError) {
-                }
+                } catch (rollbackError) { }
             }
 
             throw error;

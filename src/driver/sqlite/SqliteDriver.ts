@@ -95,7 +95,9 @@ export class SqliteDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "datetime",
+        createDateDefault: "datetime('now')",
         updateDate: "datetime",
+        updateDateDefault: "datetime('now')",
         version: "integer",
         treeLevel: "integer",
         migrationName: "varchar",
@@ -304,6 +306,27 @@ export class SqliteDriver implements Driver {
             type += "(11)";
 
         return type;
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "1" : "0";
+
+        } else if (typeof column.default === "function") {
+            return column.default();
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else {
+            return column.default;
+        }
     }
 
     // -------------------------------------------------------------------------

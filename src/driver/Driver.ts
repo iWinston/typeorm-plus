@@ -78,4 +78,9 @@ export interface Driver {
      */
     normalizeType(column: ColumnMetadata): string;
 
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string;
+
 }

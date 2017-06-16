@@ -102,10 +102,10 @@ export class ColumnSchema {
     /**
      * Creates a new column based on the given column metadata.
      */
-    static create(columnMetadata: ColumnMetadata, normalizedType: string): ColumnSchema {
+    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string): ColumnSchema {
         const columnSchema = new ColumnSchema();
         columnSchema.name = columnMetadata.databaseName;
-        columnSchema.default = columnMetadata.default;
+        columnSchema.default = normalizedDefault;
         columnSchema.comment = columnMetadata.comment;
         columnSchema.isGenerated = columnMetadata.isGenerated;
         columnSchema.isNullable = columnMetadata.isNullable;

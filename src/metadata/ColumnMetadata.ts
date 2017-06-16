@@ -221,10 +221,16 @@ export class ColumnMetadata {
         }
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
-        if (this.isCreateDate)
+        if (this.isCreateDate) {
             this.type = options.connection.driver.mappedDataTypes.createDate;
-        if (this.isUpdateDate)
+            if (!this.default)
+                this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
+        }
+        if (this.isUpdateDate) {
             this.type = options.connection.driver.mappedDataTypes.updateDate;
+            if (!this.default)
+                this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
+        }
         if (this.isVersion)
             this.type = options.connection.driver.mappedDataTypes.version;
     }

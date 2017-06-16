@@ -78,7 +78,9 @@ export class WebsqlDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "datetime",
+        createDateDefault: "DATETIME()",
         updateDate: "datetime",
+        updateDateDefault: "DATETIME()",
         version: "number",
         treeLevel: "number",
         migrationName: "varchar",
@@ -277,6 +279,27 @@ export class WebsqlDriver implements Driver {
             type += "(" + column.scale + ")";
         }
         return type;
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "1" : "0";
+
+        } else if (typeof column.default === "function") {
+            return column.default();
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else {
+            return column.default;
+        }
     }
 
 }
