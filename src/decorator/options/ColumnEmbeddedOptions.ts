@@ -8,9 +8,4 @@ export interface ColumnEmbeddedOptions {
      */
     prefix?: string;
 
-    /**
-     * Indicates if this embedded column is an array.
-     */
-    array?: boolean;
-
 }
