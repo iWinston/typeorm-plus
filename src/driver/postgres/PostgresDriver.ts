@@ -6,7 +6,7 @@ import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataUtils} from "../../util/DataUtils";
+import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
@@ -211,21 +211,21 @@ export class PostgresDriver implements Driver {
             return value === true ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
-            return DataUtils.mixedDateToDateString(value);
+            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DataUtils.mixedDateToTimeString(value);
+            return DateUtils.mixedDateToTimeString(value);
 
         } else if (columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
-            return DataUtils.mixedDateToUtcDatetimeString(value);
+            return DateUtils.mixedDateToUtcDatetimeString(value);
 
         } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DataUtils.simpleArrayToString(value);
+            return DateUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -241,16 +241,16 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
-            return DataUtils.normalizeHydratedDate(value);
+            return DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DataUtils.mixedDateToDateString(value);
+            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DataUtils.mixedTimeToString(value);
+            return DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DataUtils.stringToSimpleArray(value);
+            return DateUtils.stringToSimpleArray(value);
         }
 
         return value;
@@ -348,6 +348,11 @@ export class PostgresDriver implements Driver {
         } else if (column.scale) {
             type += "(" + column.scale + ")";
         }
+
+        if (column.array) {
+            type += " ARRAY" + (typeof column.array === "string" ? column.array : "");
+        }
+
         return type;
     }
 

@@ -99,6 +99,13 @@ export class ColumnMetadata {
     enum?: any[];
 
     /**
+     * Indicates if this column is an array.
+     * Can be simply set to true or array length can be specified.
+     * Supported only by postgres.
+     */
+    array?: boolean|string;
+
+    /**
      * Gets full path to this column property (including column property name).
      * Full path is relevant when column is used in embeds (one or multiple nested).
      * For example it will return "counters.subcounters.likes".
@@ -209,6 +216,8 @@ export class ColumnMetadata {
             this.precision = options.args.options.precision;
         if (options.args.options.enum)
             this.enum = options.args.options.enum;
+        if (options.args.options.array)
+            this.array = options.args.options.array;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
             this.isParentId = options.args.mode === "parentId";

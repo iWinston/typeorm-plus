@@ -1,7 +1,7 @@
 /**
  * Provides utilities to transform hydrated and persisted data.
  */
-export class DataUtils {
+export class DateUtils {
 
     // -------------------------------------------------------------------------
     // Public Static Methods

@@ -119,7 +119,7 @@ export type SimpleColumnType =
     |"tsquery" // postgres
     |"uuid" // postgres
     |"xml" // mssql, postgres
-    |"json" // postgres
+    |"json" // mysql, postgres
     |"jsonb" // postgres
     |"varbinary" // mssql
     |"cursor" // mssql

@@ -4,7 +4,7 @@ import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalled
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {SqliteQueryRunner} from "./SqliteQueryRunner";
 import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataUtils} from "../../util/DataUtils";
+import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
@@ -169,19 +169,19 @@ export class SqliteDriver implements Driver {
             return value === true ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
-            return DataUtils.mixedDateToDateString(value);
+            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DataUtils.mixedDateToTimeString(value);
+            return DateUtils.mixedDateToTimeString(value);
 
         } else if (columnMetadata.type === "datetime") {
-            return DataUtils.mixedDateToUtcDatetimeString(value);
+            return DateUtils.mixedDateToUtcDatetimeString(value);
 
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DataUtils.simpleArrayToString(value);
+            return DateUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -195,19 +195,19 @@ export class SqliteDriver implements Driver {
             return value ? true : false;
 
         } else if (columnMetadata.type === "datetime") {
-            return DataUtils.normalizeHydratedDate(value);
+            return DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DataUtils.mixedDateToDateString(value);
+            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DataUtils.mixedTimeToString(value);
+            return DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "json") {
             return JSON.parse(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DataUtils.stringToSimpleArray(value);
+            return DateUtils.stringToSimpleArray(value);
         }
 
         return value;

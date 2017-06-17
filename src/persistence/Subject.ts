@@ -2,7 +2,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {DataUtils} from "../util/DataUtils";
+import {DateUtils} from "../util/DateUtils";
 
 /**
  * Holds information about insert operation into junction table.
@@ -326,14 +326,14 @@ export class Subject {
             // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
             if (entityValue !== null && entityValue !== undefined) {
                 if (column.type === "date") {
-                    entityValue = DataUtils.mixedDateToDateString(entityValue);
+                    entityValue = DateUtils.mixedDateToDateString(entityValue);
 
                 } else if (column.type === "time") {
-                    entityValue = DataUtils.mixedDateToTimeString(entityValue);
+                    entityValue = DateUtils.mixedDateToTimeString(entityValue);
 
                 } else if (column.type === "datetime" || column.type === Date) {
-                    entityValue = DataUtils.mixedDateToUtcDatetimeString(entityValue);
-                    databaseValue = DataUtils.mixedDateToUtcDatetimeString(databaseValue);
+                    entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
+                    databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
 
                 } else if (column.type === "json" || column.type === "jsonb" || column.type === Object) {
                     entityValue = JSON.stringify(entityValue);
@@ -341,8 +341,8 @@ export class Subject {
                         databaseValue = JSON.stringify(databaseValue);
 
                 } else if (column.type === "sample-array") {
-                    entityValue = DataUtils.simpleArrayToString(entityValue);
-                    databaseValue = DataUtils.simpleArrayToString(databaseValue);
+                    entityValue = DateUtils.simpleArrayToString(entityValue);
+                    databaseValue = DateUtils.simpleArrayToString(databaseValue);
                 }
             }
             // todo: this mechanism does not get in count embeddeds in embeddeds

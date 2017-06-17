@@ -71,4 +71,11 @@ export interface ColumnOptions {
      */
     enum?: any[];
 
+    /**
+     * Indicates if this column is an array.
+     * Can be simply set to true or array length can be specified.
+     * Supported only by postgres.
+     */
+    array?: boolean|string;
+
 }

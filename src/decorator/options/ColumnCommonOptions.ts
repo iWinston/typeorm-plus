@@ -34,4 +34,11 @@ export interface ColumnCommonOptions {
      */
     comment?: string;
 
+    /**
+     * Indicates if this column is an array.
+     * Can be simply set to true or array length can be specified.
+     * Supported only by postgres.
+     */
+    array?: boolean|string;
+
 }
