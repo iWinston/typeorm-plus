@@ -1395,7 +1395,7 @@ export class QueryBuilder<Entity> {
                 return "DELETE FROM " + et(tableName);
                 // return "DELETE " + (alias ? ea(alias) : "") + " FROM " + this.escapeTable(tableName) + " " + (alias ? ea(alias) : ""); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names
             case "update":
-                const updateSet = Object.keys(this.expressionMap.updateSet).map(key => key + "=:updateSet__" + key);
+                const updateSet = Object.keys(this.expressionMap.updateSet).map(key => ea(key) + "=:updateSet__" + key);
                 const params = Object.keys(this.expressionMap.updateSet).reduce((object, key) => {
                     // todo: map propertyNames to names ?
                     object["updateSet__" + key] = this.expressionMap.updateSet![key];
