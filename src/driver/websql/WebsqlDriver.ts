@@ -78,13 +78,13 @@ export class WebsqlDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "datetime",
-        createDateDefault: "DATETIME()",
+        createDateDefault: "datetime('now')",
         updateDate: "datetime",
-        updateDateDefault: "DATETIME()",
-        version: "number",
-        treeLevel: "number",
+        updateDateDefault: "datetime('now')",
+        version: "int",
+        treeLevel: "int",
         migrationName: "varchar",
-        migrationTimestamp: "timestamp",
+        migrationTimestamp: "bigint",
     };
 
     // -------------------------------------------------------------------------
@@ -243,7 +243,7 @@ export class WebsqlDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";

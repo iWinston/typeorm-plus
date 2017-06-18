@@ -100,7 +100,7 @@ export class SqlServerDriver implements Driver {
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",
-        migrationTimestamp: "timestamp",
+        migrationTimestamp: "bigint",
     };
     
     // -------------------------------------------------------------------------
@@ -287,7 +287,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "int";

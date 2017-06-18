@@ -101,7 +101,7 @@ export class SqliteDriver implements Driver {
         version: "integer",
         treeLevel: "integer",
         migrationName: "varchar",
-        migrationTimestamp: "timestamp",
+        migrationTimestamp: "bigint",
     };
 
     // -------------------------------------------------------------------------
@@ -262,7 +262,7 @@ export class SqliteDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: ColumnMetadata): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number || column.type === "int") {
             type += "integer";

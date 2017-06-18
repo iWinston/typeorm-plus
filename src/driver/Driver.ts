@@ -76,7 +76,7 @@ export interface Driver {
     /**
      * Transforms type of the given column to a database column type.
      */
-    normalizeType(column: ColumnMetadata): string;
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string;
 
     /**
      * Normalizes "default" value of the column.

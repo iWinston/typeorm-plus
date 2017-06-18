@@ -187,13 +187,13 @@ export class MigrationExecutor {
             await this.queryRunner.createTable(new TableSchema("migrations", [
                 new ColumnSchema({
                     name: "timestamp",
-                    type: this.connection.driver.mappedDataTypes.migrationTimestamp as string,
+                    type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }),
                     isPrimary: true,
                     isNullable: false
                 }),
                 new ColumnSchema({
                     name: "name",
-                    type: this.connection.driver.mappedDataTypes.migrationName as string,
+                    type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }),
                     isNullable: false
                 }),
             ]));
