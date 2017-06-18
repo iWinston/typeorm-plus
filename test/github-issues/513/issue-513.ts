@@ -4,6 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {ObjectLiteral} from "../../../src/common/ObjectLiteral";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
+import {DateUtils} from "../../../src/util/DateUtils";
 
 describe("github issues > #513 Incorrect time/datetime types for SQLite", () => {
 
@@ -75,7 +76,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
       const storedPost = await connection.entityManager.findOneById(Post, post.id);
       expect(storedPost).to.not.be.null;
 
-      const expectedTimeString = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds(); 
+        const expectedTimeString = DateUtils.mixedTimeToString(now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds());
       storedPost!.timeColumn.toString().should.equal(expectedTimeString);
     })));
 
