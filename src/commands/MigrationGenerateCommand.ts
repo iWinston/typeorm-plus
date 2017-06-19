@@ -58,7 +58,7 @@ export class MigrationGenerateCommand {
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             connection = await createConnection(connectionOptions);
             const sqls = await connection.logSyncSchema();
-            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, sqls);
+            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, sqls, connection);
             await CommandUtils.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
 
         } catch (err) {
@@ -79,13 +79,14 @@ export class MigrationGenerateCommand {
     /**
      * Gets contents of the migration file.
      */
-    protected static getTemplate(name: string, timestamp: number, sqlQueries: string[]): string {
+    protected static getTemplate(name: string, timestamp: number, sqlQueries: string[], connection: Connection): string {
         return `import {Connection, EntityManager, MigrationInterface, QueryRunner} from "typeorm";
 
 export class ${name}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
-        ${sqlQueries.map(query => "queryRunner.query(" + query + ")\r\n")}
+        ${sqlQueries.map(query => "queryRunner.query(`" + query.replace("`", "\\`") + `\`);
+`)}
     }
 
     public async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
