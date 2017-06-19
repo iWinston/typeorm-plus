@@ -12,7 +12,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {OracleDriver} from "./OracleDriver";
 
 /**
- * Runs queries on a single mysql database connection.
+ * Runs queries on a single oracle database connection.
  *
  * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
@@ -99,35 +99,6 @@ export class OracleQueryRunner implements QueryRunner {
     }
 
     /**
-     * Removes all tables from the currently connected database.
-     */
-    async clearDatabase(): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        await this.startTransaction();
-        try {
-            const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
-            const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
-
-            await this.query(disableForeignKeysCheckQuery);
-            const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
-            await Promise.all(dropQueries.map(query => this.query(query["query"])));
-            await this.query(enableForeignKeysCheckQuery);
-
-            await this.commitTransaction();
-
-        } catch (error) {
-            try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
-            } catch (rollbackError) { }
-            throw error;
-        }
-
-    }
-
-    /**
      * Starts transaction.
      */
     async startTransaction(): Promise<void> {
@@ -146,9 +117,6 @@ export class OracleQueryRunner implements QueryRunner {
      * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -161,9 +129,6 @@ export class OracleQueryRunner implements QueryRunner {
      * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
@@ -203,9 +168,6 @@ export class OracleQueryRunner implements QueryRunner {
      * Returns value of the generated column if given and generate column exist in the table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `"${key}"`).join(", ");
         const values = keys.map(key => ":" + key).join(", ");
@@ -230,9 +192,6 @@ export class OracleQueryRunner implements QueryRunner {
      * Updates rows that match given conditions in the given table.
      */
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
         const sql = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
@@ -245,20 +204,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
     async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
@@ -270,9 +216,6 @@ export class OracleQueryRunner implements QueryRunner {
      * Inserts rows into the closure table.
      */
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         let sql = "";
         if (hasLevel) {
             sql =   `INSERT INTO "${tableName}"("ancestor", "descendant", "level") ` +
@@ -300,9 +243,6 @@ export class OracleQueryRunner implements QueryRunner {
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
     async loadTableSchemas(tableNames: string[]): Promise<TableSchema[]> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         // if no tables given then no need to proceed
         if (!tableNames || !tableNames.length)
             return [];
@@ -412,9 +352,6 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
@@ -444,20 +381,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(tableName: string, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
-    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
     async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column)}`;
         return this.query(sql);
@@ -466,33 +390,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new columns from the column schema in the table.
      */
-    async addColumns(tableName: string, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
-    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
     async addColumns(tableSchemaOrName: TableSchema|string, columns: ColumnSchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const queries = columns.map(column => this.addColumn(tableSchemaOrName as any, column));
         await Promise.all(queries);
     }
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -533,19 +434,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Changes a column in the table.
      */
-    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
     async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
 
         let tableSchema: TableSchema|undefined = undefined;
         if (tableSchemaOrName instanceof TableSchema) {
@@ -604,9 +493,6 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Changes a column in the table.
      */
     async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const updatePromises = changedColumns.map(async changedColumn => {
             return this.changeColumn(tableSchema, changedColumn.oldColumn, changedColumn.newColumn);
         });
@@ -624,9 +510,6 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Drops the columns in the table.
      */
     async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const dropPromises = columns.map(column => this.dropColumn(table, column));
         await Promise.all(dropPromises);
     }
@@ -635,9 +518,6 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "\"" + primaryKey.columnName + "\"");
         // console.log(dbTable.primaryKeys);
         if (dbTable.primaryKeys.length > 0 && dbTable.primaryKeys[0].name)
@@ -649,20 +529,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
-    async createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
     async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const columnNames = foreignKey.columnNames.map(column => "\"" + column + "\"").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "\"" + column + "\"").join(",");
@@ -676,20 +543,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
-    async createForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
     async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableSchemaOrName as any, foreignKey));
         await Promise.all(promises);
     }
@@ -697,20 +551,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
-    async dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
     async dropForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKey.name}"`;
         return this.query(sql);
@@ -719,20 +560,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
     async dropForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableSchemaOrName as any, foreignKey));
         await Promise.all(promises);
     }
@@ -741,9 +569,6 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Creates a new index.
      */
     async createIndex(tableName: string, index: IndexSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
         const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"(${columns})`;
         await this.query(sql);
@@ -753,9 +578,6 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Drops an index from the table.
      */
     async dropIndex(tableName: string, indexName: string): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const sql = `ALTER TABLE "${tableName}" DROP INDEX "${indexName}"`;
         await this.query(sql);
     }
@@ -765,6 +587,32 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      */
     async truncate(tableName: string): Promise<void> {
         await this.query(`TRUNCATE TABLE "${tableName}"`);
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    async clearDatabase(): Promise<void> {
+        await this.startTransaction();
+        try {
+            const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
+            const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+
+            await this.query(disableForeignKeysCheckQuery);
+            const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
+            await Promise.all(dropQueries.map(query => this.query(query["query"])));
+            await this.query(enableForeignKeysCheckQuery);
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
+            throw error;
+        }
+
     }
 
     // -------------------------------------------------------------------------

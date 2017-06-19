@@ -115,7 +115,7 @@ export class Connection {
      *
      * Available only in mongodb connections.
      */
-    get mongoEntityManager(): MongoEntityManager {
+    get mongoManager(): MongoEntityManager {
         if (!(this.manager instanceof MongoEntityManager))
             throw new Error(`MongoEntityManager is only available for MongoDB databases.`);
 

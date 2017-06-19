@@ -322,6 +322,15 @@ export class MongoQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Removes all collections from the currently connected database.
+     * Be careful with using this method and avoid using it in production or migrations
+     * (because it can clear all your database).
+     */
+    async clearDatabase(): Promise<void> {
+        await this.databaseConnection.dropDatabase();
+    }
+
+    /**
      * For MongoDB database we don't create connection, because its single connection already created by a driver.
      */
     async connect(): Promise<any> {
@@ -332,15 +341,6 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async release(): Promise<void> {
         // releasing connection are not supported by mongodb driver, so simply don't do anything here
-    }
-
-    /**
-     * Removes all collections from the currently connected database.
-     * Be careful with using this method and avoid using it in production or migrations
-     * (because it can clear all your database).
-     */
-    async clearDatabase(): Promise<void> {
-        await this.databaseConnection.dropDatabase();
     }
 
     /**
@@ -391,16 +391,6 @@ export class MongoQueryRunner implements QueryRunner {
             .collection(collectionName)
             .updateOne(conditions, valuesMap);
     }
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(collectionName: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(collectionName: string, conditions: ObjectLiteral): Promise<void>;
 
     /**
      * Deletes from the given table by a given conditions.
@@ -467,29 +457,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(collectionName: string, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
-    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
     async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
-    async addColumns(collectionName: string, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
-    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
 
     /**
      * Creates a new columns from the column schema in the table.
@@ -501,29 +471,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Renames column in the given table.
      */
-    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(collectionName: string, oldColumnName: string, newColumnName: string): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
     async renameColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
 
     /**
      * Changes a column in the table.
@@ -563,29 +513,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(collectionName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
-    async createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
     async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
-
-    /**
-     * Creates a new foreign keys.
-     */
-    async createForeignKeys(collectionName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
-    async createForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
 
     /**
      * Creates a new foreign keys.
@@ -597,29 +527,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(collectionName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
-    async dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
     async dropForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(collectionName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
