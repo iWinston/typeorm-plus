@@ -9,20 +9,13 @@ import {View} from "./entity/View";
 import {Category} from "./entity/Category";
 import {closeTestingConnections, createTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
 import {getConnectionManager} from "../../../src/index";
 import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
-import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStrategy";
-import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
 import {EntityManager} from "../../../src/entity-manager/EntityManager";
 import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/error/CannotGetEntityManagerNotConnectedError";
-import {Blog} from "./modules/blog/entity/Blog";
-import {Question} from "./modules/question/entity/Question";
-import {Video} from "./modules/video/entity/Video";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
-import {DefaultNamingStrategy} from "../../../src/naming-strategy/DefaultNamingStrategy";
 import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
 
 describe("Connection", () => {
@@ -190,6 +183,21 @@ describe("Connection", () => {
             await connection.syncSchema(true);
             const againLoadedPost = await postRepository.findOneById(post.id);
             expect(againLoadedPost).to.be.empty;
+        })));
+
+    });
+
+    describe.only("log a schema when connection.logSyncSchema is called", function() {
+
+        let connections: Connection[];
+        before(async () => connections = await createTestingConnections({
+            entities: [Post]
+        }));
+        after(() => closeTestingConnections(connections));
+
+        it("should return sql log properly", () => Promise.all(connections.map(async connection => {
+            const sql = await connection.logSyncSchema();
+            console.log(sql);
         })));
 
     });

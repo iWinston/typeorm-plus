@@ -560,6 +560,32 @@ export class MongoQueryRunner implements QueryRunner {
             .dropCollection(collectionName);
     }
 
+    /**
+     * Enables special query runner mode in which sql queries won't be executed,
+     * instead they will be memorized into a special variable inside query runner.
+     * You can get memorized sql using getMemorySql() method.
+     */
+    enableSqlMemory(): void {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Disables special query runner mode in which sql queries won't be executed
+     * started by calling enableSqlMemory() method.
+     *
+     * Previously memorized sql will be flushed.
+     */
+    disableSqlMemory(): void {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Gets sql stored in the memory. Parameters in the sql are already replaced.
+     */
+    getMemorySql(): string[] {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

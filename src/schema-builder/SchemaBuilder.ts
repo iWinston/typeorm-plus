@@ -8,4 +8,9 @@ export interface SchemaBuilder {
      */
     build(): Promise<void>;
 
+    /**
+     * Returns queries to be executed by schema builder.
+     */
+    log(): Promise<string[]>;
+
 }

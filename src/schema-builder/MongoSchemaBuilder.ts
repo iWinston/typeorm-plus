@@ -45,4 +45,11 @@ export class MongoSchemaBuilder implements SchemaBuilder {
         await Promise.all(promises);
     }
 
+    /**
+     * Returns query to be executed by schema builder.
+     */
+    log(): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
 }

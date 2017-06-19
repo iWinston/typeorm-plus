@@ -62,15 +62,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         await this.queryRunner.startTransaction();
         try {
-            await this.dropOldForeignKeys();
-            // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
-            await this.createNewTables();
-            await this.dropRemovedColumns();
-            await this.addNewColumns();
-            await this.updateExistColumns();
-            await this.updatePrimaryKeys();
-            await this.createIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
-            await this.createForeignKeys();
+            await this.executeSchemaSyncOperationsInProperOrder();
             await this.queryRunner.commitTransaction();
 
         } catch (error) {
@@ -85,13 +77,29 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         }
     }
 
+    /**
+     * Returns sql queries to be executed by schema builder.
+     */
+    async log(): Promise<string[]> {
+        this.queryRunner = await this.connection.createQueryRunner();
+        try {
+            this.tableSchemas = await this.loadTableSchemas();
+            this.queryRunner.enableSqlMemory();
+            await this.executeSchemaSyncOperationsInProperOrder();
+            return this.queryRunner.getMemorySql();
+
+        } finally {
+            // its important to disable this mode despite the fact we are release query builder
+            // because there exist drivers which reuse same query runner. Also its important to disable
+            // sql memory after call of getMemorySql() method because last one flushes sql memory.
+            this.queryRunner.disableSqlMemory();
+            await this.queryRunner.release();
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    protected get entityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => !metadata.skipSync && metadata.tableType !== "single-table-child");
-    }
 
     /**
      * Loads all table schemas from the database.
@@ -99,6 +107,29 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected loadTableSchemas(): Promise<TableSchema[]> {
         const tableNames = this.entityToSyncMetadatas.map(metadata => metadata.tableName);
         return this.queryRunner.loadTableSchemas(tableNames);
+    }
+
+    /**
+     * Returns only entities that should be synced in the database.
+     */
+    protected get entityToSyncMetadatas(): EntityMetadata[] {
+        return this.connection.entityMetadatas.filter(metadata => !metadata.skipSync && metadata.tableType !== "single-table-child");
+    }
+
+    /**
+     * Executes schema sync operations in a proper order.
+     * Order of operations matter here.
+     */
+    protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
+        await this.dropOldForeignKeys();
+        // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
+        await this.createNewTables();
+        await this.dropRemovedColumns();
+        await this.addNewColumns();
+        await this.updateExistColumns();
+        await this.updatePrimaryKeys();
+        await this.createIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
+        await this.createForeignKeys();
     }
 
     /**

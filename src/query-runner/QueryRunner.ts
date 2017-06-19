@@ -3,8 +3,6 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableSchema} from "../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../schema-builder/schema/IndexSchema";
-import {ColumnType} from "../driver/types/ColumnTypes";
-import {ColumnOptions} from "../decorator/options/ColumnOptions";
 
 /**
  * Runs queries on a single database connection.
@@ -232,5 +230,25 @@ export interface QueryRunner {
      * todo: probably this should be renamed to drop or clear?
      */
     truncate(tableName: string): Promise<void>;
+
+    /**
+     * Enables special query runner mode in which sql queries won't be executed,
+     * instead they will be memorized into a special variable inside query runner.
+     * You can get memorized sql using getMemorySql() method.
+     */
+    enableSqlMemory(): void;
+
+    /**
+     * Disables special query runner mode in which sql queries won't be executed
+     * started by calling enableSqlMemory() method.
+     *
+     * Previously memorized sql will be flushed.
+     */
+    disableSqlMemory(): void;
+
+    /**
+     * Gets sql stored in the memory. Parameters in the sql are already replaced.
+     */
+    getMemorySql(): string[];
 
 }

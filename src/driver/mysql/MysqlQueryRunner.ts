@@ -45,6 +45,16 @@ export class MysqlQueryRunner implements QueryRunner {
      */
     protected databaseConnectionPromise: Promise<any>;
 
+    /**
+     * Indicates if special query runner mode in which sql queries won't be executed is enabled.
+     */
+    protected sqlMemoryMode: boolean = false;
+
+    /**
+     * Sql-s stored if "sql in memory" mode is enabled.
+     */
+    protected sqlsInMemory: string[] = [];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -129,6 +139,12 @@ export class MysqlQueryRunner implements QueryRunner {
     query(query: string, parameters?: any[]): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
+
+        // if sql-in-memory mode is enabled then simply store sql in memory and return
+        if (this.sqlMemoryMode === true) {
+            this.sqlsInMemory.push(query);
+            return Promise.resolve() as Promise<any>;
+        }
 
         return new Promise(async (ok, fail) => {
             this.driver.connection.logger.logQuery(query, parameters);
@@ -547,6 +563,33 @@ export class MysqlQueryRunner implements QueryRunner {
             } catch (rollbackError) { }
             throw error;
         }
+    }
+
+    /**
+     * Enables special query runner mode in which sql queries won't be executed,
+     * instead they will be memorized into a special variable inside query runner.
+     * You can get memorized sql using getMemorySql() method.
+     */
+    enableSqlMemory(): void {
+        this.sqlMemoryMode = true;
+    }
+
+    /**
+     * Disables special query runner mode in which sql queries won't be executed
+     * started by calling enableSqlMemory() method.
+     *
+     * Previously memorized sql will be flushed.
+     */
+    disableSqlMemory(): void {
+        this.sqlsInMemory = [];
+        this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Gets sql stored in the memory. Parameters in the sql are already replaced.
+     */
+    getMemorySql(): string[] {
+        return this.sqlsInMemory;
     }
 
     // -------------------------------------------------------------------------
