@@ -2,6 +2,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 const mkdirp = require("mkdirp");
 
 /**
@@ -51,15 +52,27 @@ export class MigrationGenerateCommand {
 
         let connection: Connection|undefined = undefined;
         try {
-            process.env.LOGGER_CLI_SCHEMA_SYNC = true;
+            process.env.LOGGER_CLI_SCHEMA_SYNC = false;
             process.env.SKIP_SCHEMA_CREATION = true;
 
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             connection = await createConnection(connectionOptions);
-            const sqls = await connection.logSyncSchema();
-            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, sqls, connection);
-            await CommandUtils.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
+            const sqlQueries = await connection.logSyncSchema();
+            let contentSqls: string[] = [];
+
+            // mysql is exceptional here because it uses ` character in to escape names in queries, thats why for mysql
+            // we are using simple quoted string instead of template string sytax
+            if (connection.driver instanceof MysqlDriver) {
+                contentSqls = sqlQueries.map(query => "        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+            } else {
+                contentSqls = sqlQueries.map(query => "        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+            }
+            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, contentSqls);
+            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            await CommandUtils.createFile(path, fileContent);
+
+            console.log(`Migration ${path} has been generated successfully.`);
 
         } catch (err) {
             if (connection)
@@ -79,13 +92,13 @@ export class MigrationGenerateCommand {
     /**
      * Gets contents of the migration file.
      */
-    protected static getTemplate(name: string, timestamp: number, sqlQueries: string[], connection: Connection): string {
+    protected static getTemplate(name: string, timestamp: number, sqls: string[]): string {
         return `import {Connection, EntityManager, MigrationInterface, QueryRunner} from "typeorm";
 
 export class ${name}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
-        ${sqlQueries.map(query => "queryRunner.query(`" + query.replace("`", "\\`") + `\`);
+${sqls.join(`
 `)}
     }
 
