@@ -187,7 +187,7 @@ describe("Connection", () => {
 
     });
 
-    describe.only("log a schema when connection.logSyncSchema is called", function() {
+    describe("log a schema when connection.logSyncSchema is called", function() {
 
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
@@ -197,7 +197,7 @@ describe("Connection", () => {
 
         it("should return sql log properly", () => Promise.all(connections.map(async connection => {
             const sql = await connection.logSyncSchema();
-            console.log(sql);
+            // console.log(sql);
         })));
 
     });
