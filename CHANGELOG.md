@@ -72,6 +72,7 @@ Now
 `EntityManager` now simply use them from the connection.
 * refactored how query runner works, removed query runner provider
 * fixed some issues with sqlite, sqlite now strongly works on a single connection 
+* `Connection` how has `createQueryRunner` that can be used to control database connection and its transaction state
 
 ### BUG FIXES
 

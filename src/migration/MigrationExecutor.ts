@@ -22,7 +22,7 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection, queryRunner?: QueryRunner) {
-        this.queryRunner = queryRunner || connection.driver.createQueryRunner();
+        this.queryRunner = queryRunner || connection.createQueryRunner();
     }
 
     // -------------------------------------------------------------------------

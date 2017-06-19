@@ -1746,7 +1746,7 @@ export class QueryBuilder<Entity> {
             return this.queryRunner;
 
         } else { // means its empty
-            return this.connection.driver.createQueryRunner();
+            return this.connection.createQueryRunner();
         }
     }
 

@@ -16,7 +16,7 @@ describe("jsonb type", () => {
 
     it("should make correct schema with Postgres' jsonb type", () => Promise.all(connections.map(async connection => {
         await connection.syncSchema(true);
-        const queryRunner = connection.driver.createQueryRunner();
+        const queryRunner = connection.createQueryRunner();
         let schema = await queryRunner.loadTableSchema("record");
         await queryRunner.release();
         expect(schema).not.to.be.empty;

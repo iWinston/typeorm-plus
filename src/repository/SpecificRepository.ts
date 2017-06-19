@@ -70,7 +70,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         }
 
 
-        const usedQueryRunner = this.queryRunner || this.connection.driver.createQueryRunner();
+        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
         await usedQueryRunner.update(table, values, conditions);
         if (!this.queryRunner) // means created by this method
             await usedQueryRunner.release();
@@ -117,7 +117,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
         }
 
-        const usedQueryRunner = this.queryRunner || this.connection.driver.createQueryRunner();
+        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
         await usedQueryRunner.update(table, values, conditions);
         if (!this.queryRunner) // means created by this method
             await usedQueryRunner.release();
@@ -150,7 +150,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
-        const usedQueryRunner = this.queryRunner || this.connection.driver.createQueryRunner();
+        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
             const values: any = {};
             if (relation.isOwning) {
@@ -196,7 +196,7 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
 
-        const usedQueryRunner = this.queryRunner || this.connection.driver.createQueryRunner();
+        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
             const insertPromises = entityIds.map(entityId => {
                 const values: any = {};

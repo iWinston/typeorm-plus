@@ -31,7 +31,7 @@ export class QueryCommand {
 
         let queryRunner: QueryRunner|undefined = undefined;
         try {
-            queryRunner = await connection.driver.createQueryRunner();
+            queryRunner = await connection.createQueryRunner();
             const queryResult = await queryRunner.query(argv._[1]);
             connection.logger.log("info", "Query executed. Result: " + JSON.stringify(queryResult));
 

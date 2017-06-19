@@ -220,7 +220,7 @@ describe("Connection", () => {
         afterEach(() => closeTestingConnections(connections));
         it("database should be empty after schema sync", () => Promise.all(connections.map(async connection => {
             await connection.syncSchema(true);
-            const queryRunner = connection.driver.createQueryRunner();
+            const queryRunner = connection.createQueryRunner();
             let schema = await queryRunner.loadTableSchemas(["view"]);
             await queryRunner.release();
             expect(schema.some(table => table.name === "view")).to.be.false;
@@ -304,7 +304,7 @@ describe("Connection", () => {
                 const commentRepo = connection.getRepository(CommentV1);
                 await commentRepo.save(comment);
 
-                const queryRunner = connection.driver.createQueryRunner();
+                const queryRunner = connection.createQueryRunner();
                 const rows = await queryRunner.query(`select * from "${schemaName}"."comment" where id = $1`, [comment.id]);
                 await queryRunner.release();
                 expect(rows[0]["context"]).to.be.eq(comment.context);

@@ -568,7 +568,7 @@ export class EntityManager {
      */
     async clear<Entity>(entityClass: ObjectType<Entity>|string): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass);
-        const queryRunner = this.queryRunner || this.connection.driver.createQueryRunner();
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
             return await queryRunner.truncate(metadata.tableName); // await is needed here because we are using finally
 
@@ -735,7 +735,7 @@ export class EntityManager {
      */
     protected async saveOne(target: Function|string, entity: any, options?: SaveOptions): Promise<void> {
         const metadata = this.connection.getMetadata(target);
-        const queryRunner = this.queryRunner || this.connection.driver.createQueryRunner();
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
             const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
             // transactionEntityManager.data =
@@ -757,7 +757,7 @@ export class EntityManager {
      */
     protected async removeOne(target: Function|string, entity: any, options?: RemoveOptions): Promise<void> {
         const metadata = this.connection.getMetadata(target);
-        const queryRunner = this.queryRunner || this.connection.driver.createQueryRunner();
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
             const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
 

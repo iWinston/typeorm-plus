@@ -206,7 +206,7 @@ export class Connection {
      * Can be used only after connection to the database is established.
      */
     async dropDatabase(): Promise<void> {
-        const queryRunner = await this.driver.createQueryRunner();
+        const queryRunner = await this.createQueryRunner();
         await queryRunner.clearDatabase();
         await queryRunner.release();
     }
@@ -312,7 +312,7 @@ export class Connection {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunner = queryRunner || this.driver.createQueryRunner();
+        const usedQueryRunner = queryRunner || this.createQueryRunner();
         const transactionEntityManager = new EntityManagerFactory().create(this, usedQueryRunner);
 
         try {
@@ -343,7 +343,7 @@ export class Connection {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunner = queryRunner || this.driver.createQueryRunner();
+        const usedQueryRunner = queryRunner || this.createQueryRunner();
 
         try {
             return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally
@@ -383,13 +383,22 @@ export class Connection {
     }
 
     /**
+     * Creates a query runner used for perform queries on a single database connection.
+     * Using query runners you can control your queries to execute using single database connection and
+     * manually control your database transaction.
+     */
+    createQueryRunner(): QueryRunner {
+        return this.driver.createQueryRunner();
+    }
+
+    /**
      * Creates a new entity manager with a single opened connection to the database.
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
     createIsolatedManager(queryRunner?: QueryRunner): EntityManager {
         if (!queryRunner)
-            queryRunner = this.driver.createQueryRunner();
+            queryRunner = this.createQueryRunner();
 
         return new EntityManagerFactory().create(this, queryRunner);
     }
@@ -401,7 +410,7 @@ export class Connection {
      */
     createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): Repository<Entity> {
         if (!queryRunner)
-            queryRunner = this.driver.createQueryRunner();
+            queryRunner = this.createQueryRunner();
 
         return new RepositoryFactory().createRepository(this, this.getMetadata(entityClassOrName), queryRunner);
     }
@@ -413,7 +422,7 @@ export class Connection {
      */
     createIsolatedSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): SpecificRepository<Entity> {
         if (!queryRunner)
-            queryRunner = this.driver.createQueryRunner();
+            queryRunner = this.createQueryRunner();
 
         return new RepositoryFactory().createSpecificRepository(this, this.getMetadata(entityClassOrName), queryRunner);
     }
