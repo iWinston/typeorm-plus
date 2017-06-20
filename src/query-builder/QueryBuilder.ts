@@ -599,6 +599,7 @@ export abstract class QueryBuilder<Entity> {
                         }).join(",") + ")";
                 }).join(", ");
 
+                this.setParameters(params);
                 return `INSERT INTO ${this.escapeTable(tableName)}(${columns}) VALUES ${values}`;
         }
 
