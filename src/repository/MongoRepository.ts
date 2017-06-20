@@ -35,6 +35,7 @@ import {
 } from "../driver/mongodb/typings";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -66,7 +67,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Using Query Builder with MongoDB is not supported yet.
      * Calling this method will return an error.
      */
-    createQueryBuilder(alias: string, queryRunner?: QueryRunner): QueryBuilder<Entity> {
+    createQueryBuilder(alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         throw new Error(`Query Builder is not supported by MongoDB.`);
     }
 

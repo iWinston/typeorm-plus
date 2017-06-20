@@ -3,6 +3,7 @@ import {QueryBuilderUtils} from "../QueryBuilderUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryBuilder} from "../QueryBuilder";
 import {QueryExpressionMap} from "../QueryExpressionMap";
+import {SelectQueryBuilder} from "../SelectQueryBuilder";
 
 /**
  * Stores all join relation id attributes which will be used to build a JOIN query.
@@ -31,7 +32,7 @@ export class RelationIdAttribute {
     /**
      * Extra condition applied to "ON" section of join.
      */
-    queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
+    queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>;
 
     /**
      * Indicates if relation id should NOT be loaded as id map.

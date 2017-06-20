@@ -2,6 +2,7 @@ import {RelationIdMetadataArgs} from "../metadata-args/RelationIdMetadataArgs";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {EntityMetadata} from "./EntityMetadata";
 import {RelationMetadata} from "./RelationMetadata";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Contains all information about entity's relation count.
@@ -45,7 +46,7 @@ export class RelationIdMetadata {
     /**
      * Extra condition applied to "ON" section of join.
      */
-    queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
+    queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>;
 
     // ---------------------------------------------------------------------
     // Constructor

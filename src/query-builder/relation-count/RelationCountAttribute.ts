@@ -3,6 +3,7 @@ import {QueryBuilderUtils} from "../QueryBuilderUtils";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
 import {QueryBuilder} from "../QueryBuilder";
+import {SelectQueryBuilder} from "../SelectQueryBuilder";
 
 export class RelationCountAttribute {
 
@@ -24,7 +25,7 @@ export class RelationCountAttribute {
     /**
      * Extra condition applied to "ON" section of join.
      */
-    queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
+    queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>;
 
     // -------------------------------------------------------------------------
     // Constructor

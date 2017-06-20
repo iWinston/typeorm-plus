@@ -1,5 +1,6 @@
 import {Repository} from "./Repository";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Repository with additional functions to work with trees.
@@ -41,7 +42,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     /**
      * Creates a query builder used to get descendants of the entities in a tree.
      */
-    createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
+    createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
 
         // create shortcuts for better readability
         const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAlias(alias);
@@ -89,7 +90,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     /**
      * Creates a query builder used to get ancestors of the entities in the tree.
      */
-    createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): QueryBuilder<Entity> {
+    createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
 
         // create shortcuts for better readability
         const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAlias(alias);

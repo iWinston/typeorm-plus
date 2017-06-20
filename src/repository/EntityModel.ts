@@ -8,6 +8,7 @@ import {RemoveOptions} from "./RemoveOptions";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {Connection} from "../connection/Connection";
 import {ObjectType} from "../common/ObjectType";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -96,7 +97,7 @@ export class EntityModel {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    static createQueryBuilder<T extends EntityModel>(this: ObjectType<T>, alias: string): QueryBuilder<T> {
+    static createQueryBuilder<T extends EntityModel>(this: ObjectType<T>, alias: string): SelectQueryBuilder<T> {
         return (this as any).getRepository().createQueryBuilder(alias);
     }
 

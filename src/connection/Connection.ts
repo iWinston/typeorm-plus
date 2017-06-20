@@ -30,6 +30,7 @@ import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {DriverFactory} from "../driver/DriverFactory";
 import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Connection is a single database ORM connection to a specific DBMS database.
@@ -368,28 +369,28 @@ export class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunner?: QueryRunner): QueryBuilder<Entity>;
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder(queryRunner?: QueryRunner): QueryBuilder<any>;
+    createQueryBuilder(queryRunner?: QueryRunner): SelectQueryBuilder<any>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|Function|string|QueryRunner, alias?: string, queryRunner?: QueryRunner): QueryBuilder<Entity> {
+    createQueryBuilder<Entity>(entityOrRunner?: ObjectType<Entity>|Function|string|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Builder is not supported by MongoDB.`);
 
         if (alias) {
-            const metadata = this.getMetadata(entityClass as Function|string);
-            return new QueryBuilder(this, queryRunner)
+            const metadata = this.getMetadata(entityOrRunner as Function|string);
+            return new SelectQueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias);
 
         } else {
-            return new QueryBuilder(this, entityClass as QueryRunner|undefined);
+            return new SelectQueryBuilder(this, entityOrRunner as QueryRunner|undefined);
         }
     }
 

@@ -1,4 +1,5 @@
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 /**
  * Arguments for RelationCountMetadata class.
  */
@@ -27,6 +28,6 @@ export interface RelationCountMetadataArgs {
     /**
      * Extra condition applied to "ON" section of join.
      */
-    readonly queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>;
+    readonly queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>;
 
 }

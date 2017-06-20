@@ -1,11 +1,12 @@
 import {getMetadataArgsStorage} from "../../index";
 import {RelationCountMetadataArgs} from "../../metadata-args/RelationCountMetadataArgs";
 import {QueryBuilder} from "../../query-builder/QueryBuilder";
+import {SelectQueryBuilder} from "../../query-builder/SelectQueryBuilder";
 
 /**
  * Holds a number of children in the closure table of the column.
  */
-export function RelationCount<T>(relation: string|((object: T) => any), alias?: string, queryBuilderFactory?: (qb: QueryBuilder<any>) => QueryBuilder<any>): Function {
+export function RelationCount<T>(relation: string|((object: T) => any), alias?: string, queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>): Function {
     return function (object: Object, propertyName: string) {
         const args: RelationCountMetadataArgs = {
             target: object.constructor,

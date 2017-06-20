@@ -8,6 +8,7 @@ import {SaveOptions} from "./SaveOptions";
 import {RemoveOptions} from "./RemoveOptions";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -64,7 +65,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder(alias: string, queryRunner?: QueryRunner): QueryBuilder<Entity> {
+    createQueryBuilder(alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         return this.manager.createQueryBuilder(this.metadata.target, alias, queryRunner || this.queryRunner);
     }
 
