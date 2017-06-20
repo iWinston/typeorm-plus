@@ -816,7 +816,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             .select(countSql);
         countQueryBuilder.expressionMap.ignoreParentTablesJoins = true;
 
-        const [countQuerySql, countQueryParameters] = countQueryBuilder.getSqlWithParameters();
+        const [countQuerySql, countQueryParameters] = countQueryBuilder.getSqlAndParameters();
 
         try {
             const results = await this.queryRunner.query(countQuerySql, countQueryParameters);
@@ -861,7 +861,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.skip || this.expressionMap.take) {
                 // we are skipping order by here because its not working in subqueries anyway
                 // to make order by working we need to apply it on a distinct query
-                const [sql, parameters] = this.getSqlWithParameters({ skipOrderBy: true });
+                const [sql, parameters] = this.getSqlAndParameters({ skipOrderBy: true });
                 const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
 
                 const distinctAlias = this.escapeTable("distinctAlias");
@@ -928,7 +928,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     clonnedQb.expressionMap.extraAppendedAndWhereCondition = condition;
                     const [queryWithIdsSql, queryWithIdsParameters] = clonnedQb
                         .setParameters(parameters)
-                        .getSqlWithParameters();
+                        .getSqlAndParameters();
                     rawResults = await this.queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
                     const rawRelationIdResults = await relationIdLoader.load(rawResults);
                     const rawRelationCountResults = await relationCountLoader.load(rawResults);
@@ -945,7 +945,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             } else {
 
-                const [sql, parameters] = this.getSqlWithParameters();
+                const [sql, parameters] = this.getSqlAndParameters();
 
                 const rawResults = await this.queryRunner.query(sql, parameters);
 

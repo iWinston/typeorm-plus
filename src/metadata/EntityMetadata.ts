@@ -444,6 +444,13 @@ export class EntityMetadata {
     }
 
     /**
+     * Finds column with a given property name.
+     */
+    findColumnWithPropertyName(propertyName: string) {
+        return this.columns.find(column => column.propertyName === propertyName);
+    }
+
+    /**
      * Finds relation with the given name.
      */
     findRelationWithDbName(dbName: string): RelationMetadata|undefined {
@@ -603,5 +610,4 @@ export class EntityMetadata {
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
     }
-
 }

@@ -11,8 +11,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
-     * Specifies FROM which entity's table select/update/delete will be executed.
-     * Also sets a main string alias of the selection data.
+     * Specifies INTO which entity's table insertion will be executed.
      */
     into(entityTarget: Function|string): this {
         return this.setMainAlias(entityTarget);
