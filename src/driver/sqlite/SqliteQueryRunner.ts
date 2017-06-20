@@ -11,6 +11,8 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {SqliteDriver} from "./SqliteDriver";
+import {EntityManager} from "../../entity-manager/EntityManager";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -23,6 +25,16 @@ export class SqliteQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by this query runner.
+     */
+    connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -54,6 +66,8 @@ export class SqliteQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(protected driver: SqliteDriver) {
+        this.connection = driver.connection;
+        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------

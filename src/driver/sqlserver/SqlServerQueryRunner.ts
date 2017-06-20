@@ -10,6 +10,8 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {SqlServerDriver} from "./SqlServerDriver";
+import {EntityManager} from "../../entity-manager/EntityManager";
+import {Connection} from "../../connection/Connection";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -19,6 +21,16 @@ export class SqlServerQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by this query runner.
+     */
+    connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -64,6 +76,8 @@ export class SqlServerQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(protected driver: SqlServerDriver) {
+        this.connection = driver.connection;
+        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------

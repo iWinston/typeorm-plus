@@ -3,6 +3,8 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableSchema} from "../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../schema-builder/schema/IndexSchema";
+import {Connection} from "../connection/Connection";
+import {EntityManager} from "../entity-manager/EntityManager";
 
 /**
  * Runs queries on a single database connection.
@@ -10,6 +12,16 @@ import {IndexSchema} from "../schema-builder/schema/IndexSchema";
  * todo: extract schema build operations out of query runner.
  */
 export interface QueryRunner {
+
+    /**
+     * Connection used by this query runner.
+     */
+    readonly connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    readonly manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.

@@ -9,6 +9,8 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
 import {WebsqlDriver} from "./WebsqlDriver";
+import {Connection} from "../../connection/Connection";
+import {EntityManager} from "../../entity-manager/EntityManager";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -23,6 +25,16 @@ export class WebsqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by this query runner.
+     */
+    connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -64,6 +76,8 @@ export class WebsqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(protected driver: WebsqlDriver) {
+        this.connection = driver.connection;
+        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------

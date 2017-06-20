@@ -37,6 +37,7 @@ import {
     UpdateWriteOpResult
 } from "./typings";
 import {Connection} from "../../connection/Connection";
+import {EntityManager} from "../../entity-manager/EntityManager";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -46,6 +47,16 @@ export class MongoQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by this query runner.
+     */
+    connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -69,7 +80,9 @@ export class MongoQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection, databaseConnection: Db) {
+    constructor(connection: Connection, databaseConnection: Db) {
+        this.connection = connection;
+        this.manager = connection.manager;
         this.databaseConnection = databaseConnection;
     }
 

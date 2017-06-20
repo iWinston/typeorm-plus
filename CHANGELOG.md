@@ -47,9 +47,10 @@ More env variable names you can find in `ConnectionOptionsEnvReader` class.
 * `skipSchemaSync` in entity options has been renamed to `skipSync`
 * `setLimit` and `setOffset` in `QueryBuilder` were renamed into `limit` and `offset`
 * `nativeInterface` has been removed from a driver interface and implementations. 
-Now 
 * now typeorm works with the latest version of mssql (version 4)
 * fixed how orm creates default values for SqlServer - now it creates constraints for it as well
+* migrations interface has changed - now `up` and `down` accept only `QueryRunner`. To use `Connection` and `EntityManager` use properties
+of `QueryRunner`, e.g. `queryRunner.connection` and `queryRunner.manager`
 
 ### DEPRECATIONS
 
@@ -65,6 +66,7 @@ Now
 * now relations for multiple primary keys are generated properly
 * now ormconfig is read from `.env`, `.js`, `.json`, `.yml`, `.xml` formats
 * all database-specific types are supported now
+* now migrations generation is supported. Use `typeorm migrations:generate` command
 
 ### OTHER API CHANGES
 

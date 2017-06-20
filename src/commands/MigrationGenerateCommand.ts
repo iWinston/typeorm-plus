@@ -81,11 +81,11 @@ export class MigrationGenerateCommand {
                         downSqls.push("        await queryRunner.query(`" + query.down.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
             }
-            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls);
+            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
             const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
             await CommandUtils.createFile(path, fileContent);
 
-            if (!upSqls.length) {
+            if (upSqls.length) {
                 console.log(`Migration ${path} has been generated successfully.`);
             } else {
                 console.error(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`);
@@ -112,12 +112,12 @@ export class MigrationGenerateCommand {
 
 export class ${name}${timestamp} implements MigrationInterface {
 
-    public async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+    public async up(queryRunner: QueryRunner): Promise<any> {
 ${upSqls.join(`
 `)}
     }
 
-    public async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+    public async down(queryRunner: QueryRunner): Promise<any> {
 ${downSqls.join(`
 `)}
     }

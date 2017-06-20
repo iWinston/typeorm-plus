@@ -408,10 +408,14 @@ export class Connection {
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
     createIsolatedManager(queryRunner?: QueryRunner): EntityManager {
+        if (queryRunner && queryRunner.manager && queryRunner.manager !== this.manager)
+            return queryRunner.manager;
+
         if (!queryRunner)
             queryRunner = this.createQueryRunner();
 
-        return new EntityManagerFactory().create(this, queryRunner);
+        Object.assign(queryRunner, { manager: new EntityManagerFactory().create(this, queryRunner) });
+        return queryRunner.manager;
     }
 
     /**
@@ -420,10 +424,7 @@ export class Connection {
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
     createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): Repository<Entity> {
-        if (!queryRunner)
-            queryRunner = this.createQueryRunner();
-
-        return new RepositoryFactory().createRepository(this, this.getMetadata(entityClassOrName), queryRunner);
+        return this.createIsolatedManager(queryRunner).getRepository(entityClassOrName);
     }
 
     /**

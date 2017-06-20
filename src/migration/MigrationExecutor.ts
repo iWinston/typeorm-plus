@@ -86,7 +86,7 @@ export class MigrationExecutor {
         // run all pending migrations in a sequence
         try {
             await PromiseUtils.runInSequence(pendingMigrations, migration => {
-                return migration.instance!.up(this.queryRunner, this.connection, entityManager)
+                return migration.instance!.up(this.queryRunner)
                     .then(() => { // now when migration is executed we need to insert record about it into the database
                         return this.insertExecutedMigration(migration);
                     })
@@ -155,7 +155,7 @@ export class MigrationExecutor {
         }
 
         try {
-            await migrationToRevert.instance!.down(this.queryRunner, this.connection, entityManager);
+            await migrationToRevert.instance!.down(this.queryRunner);
             await this.deleteExecutedMigration(migrationToRevert);
             this.connection.logger.log("info", `Migration ${migrationToRevert.name} has been reverted successfully.`);
 
