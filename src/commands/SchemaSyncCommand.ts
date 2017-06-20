@@ -44,9 +44,8 @@ export class SchemaSyncCommand {
             }
 
         } catch (err) {
-            if (connection)
-                (connection as Connection).logger.log("error", err);
-            throw err;
+            console.error(err);
+            // throw err;
 
         } finally {
             if (connection)

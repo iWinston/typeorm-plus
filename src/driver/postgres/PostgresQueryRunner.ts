@@ -106,8 +106,8 @@ export class PostgresQueryRunner implements QueryRunner {
 
                 connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
                     if (err) {
-                        this.driver.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                        this.driver.connection.logger.logQueryError(err);
+                        this.driver.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`, [], this);
+                        this.driver.connection.logger.logQueryError(err, this);
                         fail(err);
                     } else {
                         ok(connection);
@@ -180,12 +180,12 @@ export class PostgresQueryRunner implements QueryRunner {
         // console.log("query: ", query);
         // console.log("parameters: ", parameters);
         return new Promise<any[]>(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(query, parameters);
+            this.driver.connection.logger.logQuery(query, parameters, this);
             const databaseConnection = await this.connect();
             databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters);
-                    this.driver.connection.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError(err, this);
                     fail(err);
                 } else {
                     ok(result.rows);

@@ -36,7 +36,7 @@ export class MigrationRevertCommand {
                 await connection.undoLastMigration();
 
             } catch (err) {
-                connection.logger.log("error", err);
+                console.error(err);
 
             } finally {
                 await connection.close();
@@ -44,7 +44,7 @@ export class MigrationRevertCommand {
 
         } catch (err) {
             console.error(err);
-            throw err;
+            // throw err;
         }
     }
 

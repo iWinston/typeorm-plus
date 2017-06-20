@@ -34,7 +34,6 @@ export class MigrationExecutor {
      * thus not saved in the database.
      */
     async executePendingMigrations(): Promise<void> {
-        const entityManager = this.connection.createIsolatedManager(this.queryRunner);
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist();
@@ -115,7 +114,6 @@ export class MigrationExecutor {
      * Reverts last migration that were run.
      */
     async undoLastMigration(): Promise<void> {
-        const entityManager = this.connection.createIsolatedManager(this.queryRunner);
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist();

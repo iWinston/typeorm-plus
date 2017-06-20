@@ -49,7 +49,9 @@ export class MigrationCreateCommand {
             } catch (err) { }
         }
 
-        await CommandUtils.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
+        const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+        await CommandUtils.createFile(path, fileContent);
+        console.log(`Migration "${path}" has been generated successfully.`);
     }
 
     // -------------------------------------------------------------------------

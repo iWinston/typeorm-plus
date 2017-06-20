@@ -738,7 +738,8 @@ export class EntityManager {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
             const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
-            // transactionEntityManager.data =
+            if (options && options.data)
+                transactionEntityManager.data = options.data;
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
             await databaseEntityLoader.persist(entity, metadata);
@@ -760,6 +761,8 @@ export class EntityManager {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
             const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
+            if (options && options.data)
+                transactionEntityManager.data = options.data;
 
             const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
             await databaseEntityLoader.remove(entity, metadata);

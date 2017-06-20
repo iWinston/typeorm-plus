@@ -36,7 +36,7 @@ export class MigrationRunCommand {
                 await connection.runMigrations();
 
             } catch (err) {
-                connection.logger.log("error", err);
+                console.error(err);
 
             } finally {
                 await connection.close();
@@ -44,7 +44,7 @@ export class MigrationRunCommand {
 
         } catch (err) {
             console.error(err);
-            throw err;
+            // throw err;
         }
     }
 

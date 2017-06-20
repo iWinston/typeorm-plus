@@ -133,12 +133,12 @@ export class SqliteQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise<any[]>(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(query, parameters);
+            this.driver.connection.logger.logQuery(query, parameters, this);
             const databaseConnection = await this.connect();
             databaseConnection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters);
-                    this.driver.connection.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError(err, this);
                     fail(err);
                 } else {
                     ok(result);
@@ -159,13 +159,13 @@ export class SqliteQueryRunner implements QueryRunner {
         const parameters = keys.map(key => keyValues[key]);
 
         return new Promise<any[]>(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(sql, parameters);
+            this.driver.connection.logger.logQuery(sql, parameters, this);
             const __this = this;
             const databaseConnection = await this.connect();
             databaseConnection.run(sql, parameters, function (err: any): void {
                 if (err) {
-                    __this.driver.connection.logger.logFailedQuery(sql, parameters);
-                    __this.driver.connection.logger.logQueryError(err);
+                    __this.driver.connection.logger.logFailedQuery(sql, parameters, this);
+                    __this.driver.connection.logger.logQueryError(err, this);
                     fail(err);
                 } else {
                     if (generatedColumn)

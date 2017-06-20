@@ -45,7 +45,9 @@ export class EntityCreateCommand {
             } catch (err) { }
         }
 
-        await CommandUtils.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
+        const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+        await CommandUtils.createFile(path, fileContent);
+        console.log(`Entity "${path}" has been created successfully.`);
     }
 
     // -------------------------------------------------------------------------

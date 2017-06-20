@@ -168,11 +168,11 @@ export class OracleQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(query, parameters);
+            this.driver.connection.logger.logQuery(query, parameters, this);
             const handler = (err: any, result: any) => {
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters);
-                    this.driver.connection.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError(err, this);
                     return fail(err);
                 }
 

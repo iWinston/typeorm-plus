@@ -86,13 +86,14 @@ export class MigrationGenerateCommand {
             await CommandUtils.createFile(path, fileContent);
 
             if (upSqls.length) {
-                console.log(`Migration ${path} has been generated successfully.`);
+                console.log(`Migration "${path}" has been generated successfully.`);
             } else {
                 console.error(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`);
             }
 
         } catch (err) {
             console.error(err);
+            // throw err;
 
         } finally {
             if (connection)

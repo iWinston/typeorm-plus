@@ -33,11 +33,11 @@ export class QueryCommand {
         try {
             queryRunner = await connection.createQueryRunner();
             const queryResult = await queryRunner.query(argv._[1]);
-            connection.logger.log("info", "Query executed. Result: " + JSON.stringify(queryResult));
+            console.log("Query executed. Result: " + JSON.stringify(queryResult));
 
         } catch (err) {
-            connection.logger.log("error", err);
-            throw err;
+            console.error(err);
+            // throw err;
 
         } finally {
             if (queryRunner)

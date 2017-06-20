@@ -183,7 +183,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         const promise = new Promise(async (ok, fail) => {
 
-            this.driver.connection.logger.logQuery(query, parameters);
+            this.driver.connection.logger.logQuery(query, parameters, this);
             const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
@@ -203,8 +203,8 @@ export class SqlServerQueryRunner implements QueryRunner {
                 let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                 let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters);
-                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err, this);
                     resolveChain();
                     return fail(err);
                 }
