@@ -424,7 +424,9 @@ export class Connection {
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
     createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): Repository<Entity> {
-        return this.createIsolatedManager(queryRunner).getRepository(entityClassOrName);
+        if (!queryRunner)
+            queryRunner = this.createQueryRunner();
+        return new RepositoryFactory().createRepository(this, this.getMetadata(entityClassOrName), queryRunner);
     }
 
     /**
