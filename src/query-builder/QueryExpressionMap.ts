@@ -39,8 +39,9 @@ export class QueryExpressionMap {
 
     /**
      * If update query was used, it needs "update set" - properties which will be updated by this query.
+     * If insert query was used, it needs "insert set" - values that needs to be inserted.
      */
-    updateSet?: ObjectLiteral;
+    valuesSet?: ObjectLiteral|ObjectLiteral[];
 
     /**
      * JOIN queries.
@@ -151,26 +152,6 @@ export class QueryExpressionMap {
     /**
      * Creates a main alias and adds it to the current expression map.
      */
-    createMainAlias(options: { name: string }): Alias;
-
-    /**
-     * Creates a main alias and adds it to the current expression map.
-     */
-    createMainAlias(options: { name: string, metadata: EntityMetadata }): Alias;
-
-    /**
-     * Creates a main alias and adds it to the current expression map.
-     */
-    createMainAlias(options: { name?: string, target: Function|string }): Alias;
-
-    /**
-     * Creates a main alias and adds it to the current expression map.
-     */
-    createMainAlias(options: { name?: string, tableName: string }): Alias;
-
-    /**
-     * Creates a main alias and adds it to the current expression map.
-     */
     createMainAlias(options: { name?: string, target?: Function|string, tableName?: string, metadata?: EntityMetadata }): Alias {
         const alias = this.createAlias(options as any);
 
@@ -253,7 +234,7 @@ export class QueryExpressionMap {
         map.selects = this.selects.map(select => select);
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
         map.mainAlias = this.mainAlias;
-        map.updateSet = this.updateSet;
+        map.valuesSet = this.valuesSet;
         map.joinAttributes = this.joinAttributes.map(join => new JoinAttribute(this.connection, this, join));
         map.relationIdAttributes = this.relationIdAttributes.map(relationId => new RelationIdAttribute(this, relationId));
         map.relationCountAttributes = this.relationCountAttributes.map(relationCount => new RelationCountAttribute(this, relationCount));

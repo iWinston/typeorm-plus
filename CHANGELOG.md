@@ -75,7 +75,7 @@ of `QueryRunner`, e.g. `queryRunner.connection` and `queryRunner.manager`
 * refactored how query runner works, removed query runner provider
 * fixed some issues with sqlite, sqlite now strongly works on a single connection 
 * `Connection` how has `createQueryRunner` that can be used to control database connection and its transaction state
-* `QueryBuilder` is abtract now and all different kinds of query builders were created for different query types - 
+* `QueryBuilder` is abstract now and all different kinds of query builders were created for different query types - 
 `SelectQueryBuilder`, `UpdateQueryBuilder`, `InsertQueryBuilder` and `DeleteQueryBuilder` with individual method available.
 
 ### BUG FIXES

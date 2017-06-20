@@ -232,19 +232,11 @@ export abstract class QueryBuilder<Entity> {
     update(entityOrTableNameUpdateSet?: string|Function|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<Entity> {
         const updateSet = maybeUpdateSet ? maybeUpdateSet : entityOrTableNameUpdateSet as ObjectLiteral|undefined;
 
-        if (entityOrTableNameUpdateSet instanceof Function) { // entityOrTableNameUpdateSet is entity class
-            this.expressionMap.createMainAlias({
-                target: entityOrTableNameUpdateSet
-            });
-
-        } else if (typeof entityOrTableNameUpdateSet === "string") { // todo: check if entityOrTableNameUpdateSet is entity target string
-            this.expressionMap.createMainAlias({
-                tableName: entityOrTableNameUpdateSet
-            });
-        }
+        if (entityOrTableNameUpdateSet instanceof Function || typeof entityOrTableNameUpdateSet === "string")
+            this.setMainAlias(entityOrTableNameUpdateSet);
 
         this.expressionMap.queryType = "update";
-        this.expressionMap.updateSet = updateSet;
+        this.expressionMap.valuesSet = updateSet;
 
         // loading it dynamically because of circular issue
         const UpdateQueryBuilderCls = require("./UpdateQueryBuilder").UpdateQueryBuilder;
@@ -266,29 +258,6 @@ export abstract class QueryBuilder<Entity> {
             return this as any;
 
         return new DeleteQueryBuilderCls(this);
-    }
-
-    /**
-     * Specifies FROM which entity's table select/update/delete will be executed.
-     * Also sets a main string alias of the selection data.
-     */
-    from(entityTarget: Function|string, aliasName: string): this {
-
-        // if table has a metadata then find it to properly escape its properties
-        // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
-        if (entityTarget instanceof Function || this.connection.hasMetadata(entityTarget)) {
-            this.expressionMap.createMainAlias({
-                name: aliasName,
-                metadata: this.connection.getMetadata(entityTarget),
-            });
-
-        } else {
-            this.expressionMap.createMainAlias({
-                name: aliasName,
-                tableName: entityTarget,
-            });
-        }
-        return this;
     }
 
     /**
@@ -434,6 +403,29 @@ export abstract class QueryBuilder<Entity> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Specifies FROM which entity's table select/update/delete will be executed.
+     * Also sets a main string alias of the selection data.
+     */
+    protected setMainAlias(entityTarget: Function|string, aliasName?: string): this {
+
+        // if table has a metadata then find it to properly escape its properties
+        // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
+        if (entityTarget instanceof Function || this.connection.hasMetadata(entityTarget)) {
+            this.expressionMap.createMainAlias({
+                name: aliasName,
+                metadata: this.connection.getMetadata(entityTarget),
+            });
+
+        } else {
+            this.expressionMap.createMainAlias({
+                name: aliasName,
+                tableName: entityTarget,
+            });
+        }
+        return this;
+    }
+
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
 
@@ -575,14 +567,39 @@ export abstract class QueryBuilder<Entity> {
                 return "DELETE FROM " + et(tableName);
                 // return "DELETE " + (alias ? ea(alias) : "") + " FROM " + this.escapeTable(tableName) + " " + (alias ? ea(alias) : ""); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names
             case "update":
-                const updateSet = Object.keys(this.expressionMap.updateSet).map(key => ea(key) + "=:updateSet__" + key);
-                const params = Object.keys(this.expressionMap.updateSet).reduce((object, key) => {
+                let valuesSet = this.expressionMap.valuesSet as ObjectLiteral;
+                if (!valuesSet)
+                    throw new Error(`Cannot perform update query because updation values are not defined.`);
+
+                const updateSet = Object.keys(valuesSet).map(key => ea(key) + "=:updateSet__" + key);
+                const params = Object.keys(valuesSet).reduce((object, key) => {
                     // todo: map propertyNames to names ?
-                    object["updateSet__" + key] = this.expressionMap.updateSet![key];
+                    object["updateSet__" + key] = valuesSet[key];
                     return object;
                 }, {} as ObjectLiteral);
                 this.setParameters(params);
                 return "UPDATE " + this.escapeTable(tableName) + " " + (aliasName ? ea(aliasName) : "") + " SET " + updateSet;
+            case "insert":
+                let valuesSets: ObjectLiteral[] = []; // todo: check if valuesSet is defined and has items if its an array
+                if (this.expressionMap.valuesSet instanceof Array && this.expressionMap.valuesSet.length > 0) {
+                    valuesSets = this.expressionMap.valuesSet;
+                } else if (this.expressionMap.valuesSet instanceof Object) {
+                    valuesSets = [this.expressionMap.valuesSet];
+                } else {
+                    throw new Error(`Cannot perform insert query because values are not defined.`);
+                }
+
+                const parameters: ObjectLiteral = {};
+                const columns = Object.keys(valuesSets[0]).map(columnName => ea(columnName));
+                const values = valuesSets.map((valueSet, key) => {
+                    return "(" + Object.keys(valueSet).map(columnName => {
+                            const paramName = ":inserted_" + key + "_" + columnName;
+                            parameters[paramName] = valueSet[columnName];
+                            return paramName;
+                        }).join(",") + ")";
+                }).join(", ");
+
+                return `INSERT INTO ${this.escapeTable(tableName)}(${columns}) VALUES ${values}`;
         }
 
         throw new Error("No query builder type is specified.");

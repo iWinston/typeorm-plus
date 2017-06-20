@@ -11,6 +11,13 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Values needs to be updated.
+     */
+    set(values: Partial<Entity>) {
+        this.expressionMap.valuesSet = values;
+    }
+
+    /**
      * Sets WHERE condition in the query builder.
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
