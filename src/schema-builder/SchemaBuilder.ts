@@ -11,6 +11,6 @@ export interface SchemaBuilder {
     /**
      * Returns queries to be executed by schema builder.
      */
-    log(): Promise<string[]>;
+    log(): Promise<(string|{ up: string, down: string })[]>;
 
 }

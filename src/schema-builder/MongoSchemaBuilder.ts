@@ -48,7 +48,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
     /**
      * Returns query to be executed by schema builder.
      */
-    log(): Promise<string[]> {
+    log(): Promise<(string|{ up: string, down: string })[]> {
         return Promise.resolve([]);
     }
 

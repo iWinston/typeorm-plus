@@ -582,7 +582,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): string[] {
+    getMemorySql():  (string|{ up: string, down: string })[] {
         throw new Error(`This operation is not supported by MongoDB driver.`);
     }
 

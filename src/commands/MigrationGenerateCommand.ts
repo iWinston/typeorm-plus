@@ -52,32 +52,47 @@ export class MigrationGenerateCommand {
 
         let connection: Connection|undefined = undefined;
         try {
-            process.env.LOGGER_CLI_SCHEMA_SYNC = false;
-            process.env.SKIP_SCHEMA_CREATION = true;
-
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            Object.assign(connectionOptions, {
+                dropSchemaOnConnection: false,
+                autoSchemaSync: false,
+                autoMigrationsRun: false,
+                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
+            });
             connection = await createConnection(connectionOptions);
             const sqlQueries = await connection.logSyncSchema();
-            let contentSqls: string[] = [];
+            const upSqls: string[] = [], downSqls: string[] = [];
 
             // mysql is exceptional here because it uses ` character in to escape names in queries, thats why for mysql
             // we are using simple quoted string instead of template string sytax
             if (connection.driver instanceof MysqlDriver) {
-                contentSqls = sqlQueries.map(query => "        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlQueries.forEach(query => {
+                    const queryString = typeof query === "string" ? query : query.up;
+                    upSqls.push("        await queryRunner.query(\"" + queryString.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                    if (typeof query !== "string" && query.down)
+                        downSqls.push("        await queryRunner.query(\"" + query.down.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                });
             } else {
-                contentSqls = sqlQueries.map(query => "        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlQueries.forEach(query => {
+                    const queryString = typeof query === "string" ? query : query.up;
+                    upSqls.push("        await queryRunner.query(`" + queryString.replace(new RegExp("`", "g"), "\\`") + "`);");
+                    if (typeof query !== "string" && query.down)
+                        downSqls.push("        await queryRunner.query(`" + query.down.replace(new RegExp("`", "g"), "\\`") + "`);");
+                });
             }
-            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, contentSqls);
+            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls);
             const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
             await CommandUtils.createFile(path, fileContent);
 
-            console.log(`Migration ${path} has been generated successfully.`);
+            if (!upSqls.length) {
+                console.log(`Migration ${path} has been generated successfully.`);
+            } else {
+                console.error(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`);
+            }
 
         } catch (err) {
-            if (connection)
-                (connection as Connection).logger.log("error", err);
-            throw err;
+            console.error(err);
 
         } finally {
             if (connection)
@@ -92,17 +107,19 @@ export class MigrationGenerateCommand {
     /**
      * Gets contents of the migration file.
      */
-    protected static getTemplate(name: string, timestamp: number, sqls: string[]): string {
+    protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
         return `import {Connection, EntityManager, MigrationInterface, QueryRunner} from "typeorm";
 
 export class ${name}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
-${sqls.join(`
+${upSqls.join(`
 `)}
     }
 
     public async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+${downSqls.join(`
+`)}
     }
 
 }

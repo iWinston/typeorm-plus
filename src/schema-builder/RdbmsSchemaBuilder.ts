@@ -80,7 +80,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Returns sql queries to be executed by schema builder.
      */
-    async log(): Promise<string[]> {
+    async log(): Promise<(string|{ up: string, down: string })[]> {
         this.queryRunner = await this.connection.createQueryRunner();
         try {
             this.tableSchemas = await this.loadTableSchemas();

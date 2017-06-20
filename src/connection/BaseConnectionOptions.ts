@@ -11,8 +11,10 @@ export interface BaseConnectionOptions {
 
     /**
      * Database type. This value is required.
+     *
+     * "?" is temporary.
      */
-    readonly type: DatabaseType;
+    readonly type?: DatabaseType;
 
     /**
      * Connection name. If connection name is not given then it will be called "default".

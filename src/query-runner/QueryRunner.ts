@@ -222,7 +222,7 @@ export interface QueryRunner {
     /**
      * Drops an index from the table.
      */
-    dropIndex(tableName: string, indexName: string): Promise<void>;
+    dropIndex(table: TableSchema|string, index: IndexSchema|string): Promise<void>;
 
     /**
      * Truncates table.
@@ -249,6 +249,6 @@ export interface QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): string[];
+    getMemorySql(): (string|{ up: string, down: string })[];
 
 }
