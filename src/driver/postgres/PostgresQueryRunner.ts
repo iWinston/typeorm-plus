@@ -12,6 +12,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {PostgresDriver} from "./PostgresDriver";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
+import {ReadStream} from "fs";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -180,8 +181,8 @@ export class PostgresQueryRunner implements QueryRunner {
         // console.log("query: ", query);
         // console.log("parameters: ", parameters);
         return new Promise<any[]>(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(query, parameters, this);
             const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
             databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.driver.connection.logger.logFailedQuery(query, parameters, this);
@@ -191,6 +192,24 @@ export class PostgresQueryRunner implements QueryRunner {
                     ok(result.rows);
                 }
             });
+        });
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        const QueryStream = this.driver.loadStreamDependency();
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        return new Promise(async (ok, fail) => {
+            const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const stream = databaseConnection.query(new QueryStream(query, parameters));
+            if (onEnd) stream.on("end", onEnd);
+            if (onError) stream.on("error", onError);
+            ok(stream);
         });
     }
 

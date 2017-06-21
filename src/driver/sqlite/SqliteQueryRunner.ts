@@ -13,6 +13,8 @@ import {RandomGenerator} from "../../util/RandomGenerator";
 import {SqliteDriver} from "./SqliteDriver";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
+import {ReadStream} from "fs";
+import {Readable} from "stream";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -133,8 +135,8 @@ export class SqliteQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise<any[]>(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(query, parameters, this);
             const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
             databaseConnection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.driver.connection.logger.logFailedQuery(query, parameters, this);
@@ -145,6 +147,13 @@ export class SqliteQueryRunner implements QueryRunner {
                 }
             });
         });
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        throw new Error(`Stream is not supported by sqlite driver.`);
     }
 
     /**

@@ -12,6 +12,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {SqlServerDriver} from "./SqlServerDriver";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
+import {ReadStream} from "fs";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -212,6 +213,63 @@ export class SqlServerQueryRunner implements QueryRunner {
                 ok(result.recordset);
                 resolveChain();
             });
+        });
+        if (this.isTransactionActive)
+            this.queryResponsibilityChain.push(promise);
+
+        return promise;
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        let waitingOkay: Function;
+        const waitingPromise = new Promise((ok) => waitingOkay = ok);
+        if (this.queryResponsibilityChain.length) {
+            const otherWaitingPromises = [...this.queryResponsibilityChain];
+            this.queryResponsibilityChain.push(waitingPromise);
+            await Promise.all(otherWaitingPromises);
+        }
+
+        const promise = new Promise<ReadStream>(async (ok, fail) => {
+
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
+            request.stream = true;
+            if (parameters && parameters.length) {
+                parameters.forEach((parameter, index) => {
+                    request.input(index, parameters![index]);
+                });
+            }
+            request.query(query, (err: any, result: any) => {
+
+                const resolveChain = () => {
+                    if (promiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(promiseIndex, 1);
+                    if (waitingPromiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
+                    waitingOkay();
+                };
+
+                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
+                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
+                if (err) {
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err, this);
+                    resolveChain();
+                    return fail(err);
+                }
+
+                ok(result.recordset);
+                resolveChain();
+            });
+            if (onEnd) request.on("done", onEnd);
+            if (onError) request.on("error", onError);
+            ok(request as ReadStream);
         });
         if (this.isTransactionActive)
             this.queryResponsibilityChain.push(promise);

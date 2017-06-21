@@ -38,6 +38,7 @@ import {
 } from "./typings";
 import {Connection} from "../../connection/Connection";
 import {EntityManager} from "../../entity-manager/EntityManager";
+import {ReadStream} from "fs";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -382,6 +383,13 @@ export class MongoQueryRunner implements QueryRunner {
      */
     query(query: string, parameters?: any[]): Promise<any> {
         throw new Error(`Executing SQL query is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        throw new Error(`Stream is not supported by MongoDB driver.`);
     }
 
     /**

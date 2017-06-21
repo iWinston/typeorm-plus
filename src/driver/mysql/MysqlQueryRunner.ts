@@ -12,6 +12,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {MysqlDriver} from "./MysqlDriver";
 import {Connection} from "../../connection/Connection";
 import {EntityManager} from "../../entity-manager/EntityManager";
+import {ReadStream} from "fs";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -155,8 +156,8 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(query, parameters, this);
             const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
             databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
                     this.driver.connection.logger.logFailedQuery(query, parameters, this);
@@ -166,6 +167,23 @@ export class MysqlQueryRunner implements QueryRunner {
 
                 ok(result);
             });
+        });
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        return new Promise(async (ok, fail) => {
+            const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const stream = databaseConnection.query(query, parameters);
+            if (onEnd) stream.on("end", onEnd);
+            if (onError) stream.on("error", onError);
+            ok(stream);
         });
     }
 

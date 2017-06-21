@@ -1,36 +1,23 @@
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {Connection} from "../connection/Connection";
 import {JoinOptions} from "./JoinOptions";
 import {PessimisticLockTransactionRequiredError} from "./error/PessimisticLockTransactionRequiredError";
 import {NoVersionOrUpdateDateColumnError} from "./error/NoVersionOrUpdateDateColumnError";
 import {OptimisticLockVersionMismatchError} from "./error/OptimisticLockVersionMismatchError";
 import {OptimisticLockCanNotBeUsedError} from "./error/OptimisticLockCanNotBeUsedError";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {LockNotSupportedOnGivenDriverError} from "./error/LockNotSupportedOnGivenDriverError";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {JoinAttribute} from "./JoinAttribute";
 import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
 import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
-import {QueryExpressionMap} from "./QueryExpressionMap";
-import {SelectQuery} from "./SelectQuery";
 import {RelationIdLoader} from "./relation-id/RelationIdLoader";
 import {RelationIdLoadResult} from "./relation-id/RelationIdLoadResult";
 import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationIdMetadataToAttributeTransformer";
 import {RelationCountLoadResult} from "./relation-count/RelationCountLoadResult";
 import {RelationCountLoader} from "./relation-count/RelationCountLoader";
 import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {UpdateQueryBuilder} from "./UpdateQueryBuilder";
-import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
-import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {QueryBuilder} from "./QueryBuilder";
-
+import {ReadStream} from "fs";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -709,6 +696,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         return result;
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    async stream(): Promise<ReadStream> {
+        const [sql, parameters] = this.getSqlAndParameters();
+        try {
+            const stream = await this.queryRunner.stream(sql, parameters);
+            stream.on("end", () => {
+                if (this.ownQueryRunner) // means we created our own query runner
+                    return this.queryRunner.release();
+                return;
+            });
+            return stream;
+
+        } finally {
+            if (this.ownQueryRunner) // means we created our own query runner
+                await this.queryRunner.release();
+        }
     }
 
     /**

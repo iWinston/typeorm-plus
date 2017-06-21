@@ -5,6 +5,7 @@ import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../schema-builder/schema/IndexSchema";
 import {Connection} from "../connection/Connection";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {ReadStream} from "fs";
 
 /**
  * Runs queries on a single database connection.
@@ -74,6 +75,11 @@ export interface QueryRunner {
      * Executes a given SQL query and returns raw database results.
      */
     query(query: string, parameters?: any[]): Promise<any>;
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>; // todo: ReadStream gonna bring problems in websql driver
 
     /**
      * Insert a new row with given values into the given table.

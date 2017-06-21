@@ -11,6 +11,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {WebsqlDriver} from "./WebsqlDriver";
 import {Connection} from "../../connection/Connection";
 import {EntityManager} from "../../entity-manager/EntityManager";
+import {ReadStream} from "fs";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -193,6 +194,13 @@ export class WebsqlQueryRunner implements QueryRunner {
                 });
             });
         });
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        throw new Error(`Stream is not supported by websqlite driver.`);
     }
 
     /**

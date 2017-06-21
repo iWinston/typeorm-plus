@@ -143,7 +143,7 @@ export class PostgresDriver implements Driver {
     }
 
     // -------------------------------------------------------------------------
-    // Public Methods
+    // Public Implemented Methods
     // -------------------------------------------------------------------------
 
     /**
@@ -374,6 +374,22 @@ export class PostgresDriver implements Driver {
 
         } else {
             return column.default;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Loads postgres query stream package.
+     */
+    loadStreamDependency() {
+        try {
+            return PlatformTools.load("pg-query-stream");
+
+        } catch (e) { // todo: better error for browser env
+            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
         }
     }
 

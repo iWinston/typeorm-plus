@@ -12,6 +12,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRun
 import {OracleDriver} from "./OracleDriver";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
+import {ReadStream} from "fs";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -185,6 +186,13 @@ export class OracleQueryRunner implements QueryRunner {
             const databaseConnection = await this.connect();
             databaseConnection.execute(query, parameters || {}, executionOptions, handler);
         });
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        throw new Error(`Stream is not supported by Oracle driver.`);
     }
 
     /**
