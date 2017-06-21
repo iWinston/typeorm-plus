@@ -200,6 +200,8 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Removes entity by a given entity id.
+     *
+     * todo: create removeByIds method ?
      */
     async removeById(id: any, options?: RemoveOptions): Promise<void> {
         return this.manager.removeById(this.metadata.target, id, options);

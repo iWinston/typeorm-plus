@@ -11,6 +11,15 @@ import {QueryRunner} from "../query-runner/QueryRunner";
  * Repository for more specific operations.
  *
  * @deprecated Don't use it yet
+ *
+ * todo: most of these methods looks like can be part of query builder functionality
+ * todo: maybe instead of SpecificRepository we should have SpecificQueryBuilder? (better name needed)
+ * todo: it can be used like createQueryBuilder().specific().setRelation
+ * todo: or maybe split specific into multiple different purpose QueryBuilders ? For example RelationQueryBuilder
+ * todo: with methods like createQueryBuilder().relation(Post, "categories").set(value).add(value).remove(value)
+ * todo: add and remove for many-to-many, set for many-to-one and value can be entity or simply entity id or id map
+ * todo: also createQueryBuilder().relation(Post, "categories").getIdsOf(postIds)
+ * todo: also createQueryBuilder().relation(Post, "categories").getCountOf(postIds)
  */
 export class SpecificRepository<Entity extends ObjectLiteral> {
 
@@ -369,6 +378,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     /**
      * Removes entity with the given id.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     *
+     * @deprecated use Repository#removeById method
      */
     async removeById(id: any): Promise<void> {
         const alias = this.metadata.tableName;
@@ -397,6 +408,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
     /**
      * Removes all entities with the given ids.
      * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
+     *
+     * @deprecated use Repository#removeById method
      */
     async removeByIds(ids: any[]): Promise<void> {
         const alias = this.metadata.tableName;
