@@ -1,10 +1,10 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
-import {EntityModel} from "../../../../src/repository/EntityModel";
+import {BaseEntity} from "../../../../src/repository/BaseEntity";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 
 @Entity()
-export class Post extends EntityModel {
+export class Post extends BaseEntity {
 
     @PrimaryGeneratedColumn()
     id: number;

@@ -97,7 +97,7 @@ export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
-export {EntityModel} from "./repository/EntityModel";
+export {BaseEntity} from "./repository/BaseEntity";
 
 // -------------------------------------------------------------------------
 // Deprecated
