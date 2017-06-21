@@ -30,6 +30,7 @@ import {SelectQueryBuilder} from "./SelectQueryBuilder";
 import {UpdateQueryBuilder} from "./UpdateQueryBuilder";
 import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
 import {InsertQueryBuilder} from "./InsertQueryBuilder";
+import {RelationQueryBuilder} from "./RelationQueryBuilder";
 
 // todo: fix problem with long aliases eg getMaxIdentifierLength
 // todo: fix replacing in .select("COUNT(post.id) AS cnt") statement
@@ -258,6 +259,22 @@ export abstract class QueryBuilder<Entity> {
             return this as any;
 
         return new DeleteQueryBuilderCls(this);
+    }
+
+    /**
+     * Sets entity's relation with which this query builder gonna work.
+     */
+    relation(entityTarget: Function|string, propertyPath: string): RelationQueryBuilder<Entity> {
+        this.expressionMap.queryType = "relation";
+        // qb.expressionMap.propertyPath = propertyPath;
+        this.setMainAlias(entityTarget);
+
+        // loading it dynamically because of circular issue
+        const RelationQueryBuilderCls = require("./RelationQueryBuilder").RelationQueryBuilder;
+        if (this instanceof RelationQueryBuilderCls)
+            return this as any;
+
+        return new RelationQueryBuilderCls(this);
     }
 
     /**

@@ -25,7 +25,6 @@ describe("repository > removeById and removeByIds methods", function() {
 
     it("remove using removeById method should delete successfully", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
-        const specificPostRepository = connection.getSpecificRepository(Post);
 
         // save a new posts
         const newPost1 = postRepository.create();
@@ -45,7 +44,7 @@ describe("repository > removeById and removeByIds methods", function() {
         ]);
 
         // remove one
-        await specificPostRepository.removeById(1);
+        await postRepository.removeById(1);
 
         // load to check
         const loadedPosts = await postRepository.find();
@@ -60,7 +59,6 @@ describe("repository > removeById and removeByIds methods", function() {
 
     it("remove using removeByIds method should delete successfully",  () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
-        const specificPostRepository = connection.getSpecificRepository(Post);
 
         // save a new posts
         const newPost1 = postRepository.create();
@@ -80,7 +78,7 @@ describe("repository > removeById and removeByIds methods", function() {
         ]);
 
         // remove multiple
-        await specificPostRepository.removeByIds([2, 3]);
+        await postRepository.removeByIds([2, 3]);
 
         // load to check
         const loadedPosts = await postRepository.find();

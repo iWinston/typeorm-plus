@@ -1,6 +1,5 @@
 import {Repository} from "./Repository";
 import {getConnection} from "../index";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {DeepPartial} from "../common/DeepPartial";
 import {SaveOptions} from "./SaveOptions";
 import {FindOneOptions} from "../find-options/FindOneOptions";

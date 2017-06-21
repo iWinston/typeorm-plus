@@ -10,7 +10,6 @@ import {CannotConnectAlreadyConnectedError} from "./error/CannotConnectAlreadyCo
 import {TreeRepository} from "../repository/TreeRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RepositoryNotTreeError} from "./error/RepositoryNotTreeError";
-import {SpecificRepository} from "../repository/SpecificRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Logger} from "../logger/Logger";
 import {EntityMetadataNotFound} from "../metadata-args/error/EntityMetadataNotFound";
@@ -23,7 +22,6 @@ import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidator";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 import {LoggerFactory} from "../logger/LoggerFactory";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
@@ -427,19 +425,7 @@ export class Connection {
     createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): Repository<Entity> {
         if (!queryRunner)
             queryRunner = this.createQueryRunner();
-        return new RepositoryFactory().createRepository(this, this.getMetadata(entityClassOrName), queryRunner);
-    }
-
-    /**
-     * Creates a new specific repository with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
-     */
-    createIsolatedSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): SpecificRepository<Entity> {
-        if (!queryRunner)
-            queryRunner = this.createQueryRunner();
-
-        return new RepositoryFactory().createSpecificRepository(this, this.getMetadata(entityClassOrName), queryRunner);
+        return new RepositoryFactory().create(this, this.getMetadata(entityClassOrName), queryRunner);
     }
 
     // -------------------------------------------------------------------------
@@ -453,19 +439,6 @@ export class Connection {
      */
     get entityManager(): EntityManager {
         return this.manager;
-    }
-
-    /**
-     * Gets specific repository for the given entity class or name.
-     * SpecificRepository is a special repository that contains specific and non standard repository methods.
-     *
-     * @deprecated don't use it, it will be refactored or removed in the future versions
-     */
-    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
-        if (!this.hasMetadata(entityClassOrName))
-            throw new RepositoryNotFoundError(this.name, entityClassOrName);
-
-        return this.getMetadata(entityClassOrName).specificRepository;
     }
 
     // -------------------------------------------------------------------------
@@ -511,8 +484,7 @@ export class Connection {
 
         // initialize repositories for all entity metadatas
         this.entityMetadatas.forEach(metadata => {
-            metadata.repository = repositoryFactory.createRepository(this, metadata);
-            metadata.specificRepository = repositoryFactory.createSpecificRepository(this, metadata);
+            metadata.repository = repositoryFactory.create(this, metadata);
         });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct

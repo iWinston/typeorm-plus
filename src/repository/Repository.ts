@@ -19,6 +19,8 @@ export class Repository<Entity extends ObjectLiteral> {
     // Protected Methods Set Dynamically
     // -------------------------------------------------------------------------
 
+    // todo: wny not to make them public?
+
     /**
      * Entity Manager used by this repository.
      */
@@ -200,11 +202,16 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Removes entity by a given entity id.
-     *
-     * todo: create removeByIds method ?
      */
     async removeById(id: any, options?: RemoveOptions): Promise<void> {
         return this.manager.removeById(this.metadata.target, id, options);
+    }
+
+    /**
+     * Removes entity by a given entity id.
+     */
+    async removeByIds(ids: any[], options?: RemoveOptions): Promise<void> {
+        return this.manager.removeByIds(this.metadata.target, ids, options);
     }
 
     /**

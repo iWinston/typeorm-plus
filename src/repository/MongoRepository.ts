@@ -1,6 +1,5 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {

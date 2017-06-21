@@ -2,7 +2,6 @@ import {TreeRepository} from "./TreeRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 import {Repository} from "./Repository";
-import {SpecificRepository} from "./SpecificRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoRepository} from "./MongoRepository";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -17,9 +16,9 @@ export class RepositoryFactory {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a regular repository.
+     * Creates a repository.
      */
-    createRepository(connection: Connection, metadata: EntityMetadata, queryRunner?: QueryRunner): Repository<any> {
+    create(connection: Connection, metadata: EntityMetadata, queryRunner?: QueryRunner): Repository<any> {
 
         if (metadata.isClosure) {
             // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
@@ -45,13 +44,6 @@ export class RepositoryFactory {
 
             return repository;
         }
-    }
-
-    /**
-     * Creates a specific repository.
-     */
-    createSpecificRepository(connection: Connection, metadata: EntityMetadata, queryRunner?: QueryRunner): SpecificRepository<any> {
-        return new SpecificRepository(connection, metadata, queryRunner);
     }
 
 }

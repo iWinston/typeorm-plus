@@ -29,7 +29,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const postSpecificRepository = connection.getSpecificRepository(Post);
 
         // save a new category
         const newCategory1 = categoryRepository.create();
@@ -47,7 +46,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await postRepository.save(newPost);
 
         // add categories to a post
-        await postSpecificRepository.addToRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory2.id]);
+        // await postSpecificRepository.addToRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory2.id]);
 
         // load a post, want to have categories count
         const loadedPost = await postRepository.findOneById(1, {
@@ -70,7 +69,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const categorySpecificRepository = connection.getSpecificRepository(Category);
 
         // save a new post
         const newPost1 = postRepository.create();
@@ -88,7 +86,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await categoryRepository.save(newCategory);
 
         // add categories to a post
-        await categorySpecificRepository.addToRelation(category => category.manyPosts, newCategory.id, [newPost1.id, newPost2.id]);
+        // await categorySpecificRepository.addToRelation(category => category.manyPosts, newCategory.id, [newPost1.id, newPost2.id]);
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {
@@ -108,7 +106,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const postSpecificRepository = connection.getSpecificRepository(Post);
 
         // save a new category
         const newCategory1 = categoryRepository.create();
@@ -132,7 +129,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await postRepository.save(newPost);
 
         // add categories to a post
-        await postSpecificRepository.removeFromRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory3.id]);
+        // await postSpecificRepository.removeFromRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory3.id]);
 
         // load a post, want to have categories count
         const loadedPost = await postRepository.findOneById(1, {
@@ -153,7 +150,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const categorySpecificRepository = connection.getSpecificRepository(Category);
 
         // save a new category
         const newPost1 = postRepository.create();
@@ -177,7 +173,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await categoryRepository.save(newCategory);
 
         // add categories to a post
-        await categorySpecificRepository.removeFromRelation(post => post.manyPosts, newCategory.id, [newPost1.id, newPost3.id]);
+        // await categorySpecificRepository.removeFromRelation(post => post.manyPosts, newCategory.id, [newPost1.id, newPost3.id]);
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {
@@ -198,8 +194,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const postSpecificRepository = connection.getSpecificRepository(Post);
-        const categorySpecificRepository = connection.getSpecificRepository(Category);
 
         // save a new category
         const newCategory1 = categoryRepository.create();
@@ -212,7 +206,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await postRepository.save(newPost);
 
         // add categories to a post
-        await postSpecificRepository.setRelation(post => post.categories, newPost.id, newCategory1.id);
+        // await postSpecificRepository.setRelation(post => post.categories, newPost.id, newCategory1.id);
 
         // load a post, want to have categories count
         const loadedPost = await postRepository.findOneById(1, {
@@ -232,7 +226,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const categorySpecificRepository = connection.getSpecificRepository(Category);
 
         // save a new category
         const newPost = postRepository.create();
@@ -245,7 +238,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await categoryRepository.save(newCategory);
 
         // add categories to a post
-        await categorySpecificRepository.setRelation(category => category.post, newCategory.id, newPost.id);
+        // await categorySpecificRepository.setRelation(category => category.post, newCategory.id, newPost.id);
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {
@@ -263,7 +256,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const postSpecificRepository = connection.getSpecificRepository(Post);
 
         // save a new category
         const newCategory1 = categoryRepository.create();
@@ -277,7 +269,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await postRepository.save(newPost);
 
         // add categories to a post
-        await postSpecificRepository.setRelation(post => post.categories, newPost.id, null);
+        // await postSpecificRepository.setRelation(post => post.categories, newPost.id, null);
 
         // load a post, want to have categories count
         const loadedPost = await postRepository.findOneById(1, {
@@ -295,7 +287,6 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
-        const categorySpecificRepository = connection.getSpecificRepository(Category);
 
         // save a new category
         const newPost = postRepository.create();
@@ -309,7 +300,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         await categoryRepository.save(newCategory);
 
         // add categories to a post
-        await categorySpecificRepository.setRelation(category => category.post, newCategory.id, null);
+        // await categorySpecificRepository.setRelation(category => category.post, newCategory.id, null);
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {

@@ -1,4 +1,3 @@
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {Repository} from "./Repository";

@@ -8,11 +8,9 @@ import {DeepPartial} from "../common/DeepPartial";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {SaveOptions} from "../repository/SaveOptions";
 import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
-import {SpecificRepository} from "../repository/SpecificRepository";
 import {MongoRepository} from "../repository/MongoRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {Repository} from "../repository/Repository";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {SubjectBuilder} from "../persistence/SubjectBuilder";
 import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
@@ -419,6 +417,21 @@ export class EntityManager {
     }
 
     /**
+     * Removes entity by a given entity ids.
+     */
+    async removeByIds<Entity>(targetOrEntity: ObjectType<Entity>|string, ids: any[], options?: RemoveOptions): Promise<void> {
+        const promises = ids.map(async id => {
+            const entity = await this.findOneById<any>(targetOrEntity, id); // this is temporary, in the future can be refactored to perform better
+            if (!entity)
+                throw new Error(`Cannot find entity to remove by a given id`);
+
+            await this.remove(entity, options);
+        });
+
+        await Promise.all(promises);
+    }
+
+    /**
      * Counts entities that match given options.
      */
     count<Entity>(entityClass: ObjectType<Entity>|string, options?: FindManyOptions<Entity>): Promise<number>;
@@ -641,47 +654,6 @@ export class EntityManager {
         }
 
         return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
-    }
-
-    /**
-     * Gets specific repository for the given entity class.
-     * If single database connection mode is used, then repository is obtained from the
-     * repository aggregator, where each repository is individually created for this entity manager.
-     * When single database connection is not used, repository is being obtained from the connection.
-     *
-     * @deprecated Don't use specific repository - it will be refactored or removed
-     */
-    getSpecificRepository<Entity>(entityClass: ObjectType<Entity>): SpecificRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity name.
-     * If single database connection mode is used, then repository is obtained from the
-     * repository aggregator, where each repository is individually created for this entity manager.
-     * When single database connection is not used, repository is being obtained from the connection.
-     *
-     * @deprecated Don't use specific repository - it will be refactored or removed
-     */
-    getSpecificRepository<Entity>(entityName: string): SpecificRepository<Entity>;
-
-    /**
-     * Gets specific repository for the given entity class or name.
-     * If single database connection mode is used, then repository is obtained from the
-     * repository aggregator, where each repository is individually created for this entity manager.
-     * When single database connection is not used, repository is being obtained from the connection.
-     *
-     * @deprecated Don't use specific repository - it will be refactored or removed
-     */
-    getSpecificRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): SpecificRepository<Entity> {
-
-        // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunner) {
-            if (this.queryRunner.isReleased)
-                throw new QueryRunnerProviderAlreadyReleasedError();
-
-            return this.connection.createIsolatedSpecificRepository(entityClassOrName, this.queryRunner);
-        }
-
-        return this.connection.getSpecificRepository<Entity>(entityClassOrName as any);
     }
 
     /**
