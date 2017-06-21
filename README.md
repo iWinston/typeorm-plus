@@ -341,14 +341,12 @@ import {createConnection} from "typeorm";
 import {Photo} from "./entity/Photo";
 
 createConnection({
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test"
     entities: [
         Photo
     ],
