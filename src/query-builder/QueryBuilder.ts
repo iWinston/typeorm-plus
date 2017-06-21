@@ -37,9 +37,6 @@ import {RelationQueryBuilder} from "./RelationQueryBuilder";
 // .loadAndMap("post.categories", "post.categories", qb => ...)
 // .loadAndMap("post.categories", Category, qb => ...)
 
-// todo: implement streaming
-// .stream(): ReadStream
-
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
@@ -149,34 +146,6 @@ export abstract class QueryBuilder<Entity> {
             this.expressionMap.selects = selection.map(selection => ({ selection: selection }));
         } else if (selection) {
             this.expressionMap.selects = [{ selection: selection, aliasName: selectionAliasName }];
-        }
-
-        // loading it dynamically because of circular issue
-        const SelectQueryBuilderCls = require("./SelectQueryBuilder").SelectQueryBuilder;
-        if (this instanceof SelectQueryBuilderCls)
-            return this as any;
-
-        return new SelectQueryBuilderCls(this);
-    }
-
-    /**
-     * Adds new selection to the SELECT query.
-     */
-    addSelect(selection: string, selectionAliasName?: string): SelectQueryBuilder<Entity>;
-
-    /**
-     * Adds new selection to the SELECT query.
-     */
-    addSelect(selection: string[]): SelectQueryBuilder<Entity>;
-
-    /**
-     * Adds new selection to the SELECT query.
-     */
-    addSelect(selection: string|string[], selectionAliasName?: string): SelectQueryBuilder<Entity> {
-        if (selection instanceof Array) {
-            this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(selection => ({ selection: selection })));
-        } else {
-            this.expressionMap.selects.push({ selection: selection, aliasName: selectionAliasName });
         }
 
         // loading it dynamically because of circular issue
@@ -319,6 +288,14 @@ export abstract class QueryBuilder<Entity> {
         sql += this.createLockExpression();
         sql = this.createLimitOffsetOracleSpecificExpression(sql);
         return sql.trim();
+    }
+
+    /**
+     * Prints sql to stdout using console.log.
+     */
+    printSql(): this {
+        console.log(this.getSql());
+        return this;
     }
 
     /**

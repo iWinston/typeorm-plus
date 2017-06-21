@@ -29,6 +29,29 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Adds new selection to the SELECT query.
+     */
+    addSelect(selection: string, selectionAliasName?: string): this;
+
+    /**
+     * Adds new selection to the SELECT query.
+     */
+    addSelect(selection: string[]): this;
+
+    /**
+     * Adds new selection to the SELECT query.
+     */
+    addSelect(selection: string|string[], selectionAliasName?: string): this {
+        if (selection instanceof Array) {
+            this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(selection => ({ selection: selection })));
+        } else {
+            this.expressionMap.selects.push({ selection: selection, aliasName: selectionAliasName });
+        }
+
+        return this;
+    }
+
+    /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
