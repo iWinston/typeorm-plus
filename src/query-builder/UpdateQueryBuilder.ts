@@ -49,16 +49,4 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
-    /**
-     * Clones query builder as it is.
-     * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
-     * you can create query builder this way: new UpdateQueryBuilder(queryBuilder) where queryBuilder
-     * is cloned QueryBuilder.
-     */
-    clone(): UpdateQueryBuilder<Entity> {
-        const qb = new UpdateQueryBuilder<Entity>(this.connection);
-        qb.expressionMap = this.expressionMap.clone();
-        return qb;
-    }
-
 }

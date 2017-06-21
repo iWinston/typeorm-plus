@@ -31,6 +31,7 @@ import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
 import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {QueryBuilder} from "./QueryBuilder";
 
+
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
@@ -708,18 +709,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         return result;
-    }
-
-    /**
-     * Clones query builder as it is.
-     * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
-     * you can create query builder this way: new SelectQueryBuilder(queryBuilder) where queryBuilder
-     * is cloned QueryBuilder.
-     */
-    clone(): SelectQueryBuilder<Entity> {
-        const qb = new SelectQueryBuilder<Entity>(this.connection);
-        qb.expressionMap = this.expressionMap.clone();
-        return qb;
     }
 
     /**

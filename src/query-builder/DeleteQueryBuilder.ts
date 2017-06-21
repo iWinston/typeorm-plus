@@ -50,16 +50,4 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
-    /**
-     * Clones query builder as it is.
-     * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
-     * you can create query builder this way: new DeleteQueryBuilder(queryBuilder) where queryBuilder
-     * is cloned QueryBuilder.
-     */
-    clone(): DeleteQueryBuilder<Entity> {
-        const qb = new DeleteQueryBuilder<Entity>(this.connection);
-        qb.expressionMap = this.expressionMap.clone();
-        return qb;
-    }
-
 }

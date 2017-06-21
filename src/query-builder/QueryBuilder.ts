@@ -1,55 +1,44 @@
-import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {Connection} from "../connection/Connection";
-import {JoinOptions} from "./JoinOptions";
-import {PessimisticLockTransactionRequiredError} from "./error/PessimisticLockTransactionRequiredError";
-import {NoVersionOrUpdateDateColumnError} from "./error/NoVersionOrUpdateDateColumnError";
-import {OptimisticLockVersionMismatchError} from "./error/OptimisticLockVersionMismatchError";
-import {OptimisticLockCanNotBeUsedError} from "./error/OptimisticLockCanNotBeUsedError";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {LockNotSupportedOnGivenDriverError} from "./error/LockNotSupportedOnGivenDriverError";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {JoinAttribute} from "./JoinAttribute";
-import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
-import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {SelectQuery} from "./SelectQuery";
-import {RelationIdLoader} from "./relation-id/RelationIdLoader";
-import {RelationIdLoadResult} from "./relation-id/RelationIdLoadResult";
-import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationIdMetadataToAttributeTransformer";
-import {RelationCountLoadResult} from "./relation-count/RelationCountLoadResult";
-import {RelationCountLoader} from "./relation-count/RelationCountLoader";
-import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {Broadcaster} from "../subscriber/Broadcaster";
 import {SelectQueryBuilder} from "./SelectQueryBuilder";
 import {UpdateQueryBuilder} from "./UpdateQueryBuilder";
 import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
 import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {RelationQueryBuilder} from "./RelationQueryBuilder";
 
+// todo: completely cover query builder with tests
+// todo: entityOrProperty can be target name. implement proper behaviour if it is.
+// todo: check in persistment if id exist on object and throw exception (can be in partial selection?)
 // todo: fix problem with long aliases eg getMaxIdentifierLength
 // todo: fix replacing in .select("COUNT(post.id) AS cnt") statement
 // todo: implement joinAlways in relations and relationId
+// todo: finish partial selection
+// todo: sugar methods like: .addCount and .selectCount, selectCountAndMap, selectSum, selectSumAndMap, ...
 // todo: implement @Select decorator
-// todo: add quoting functions
-// todo: .addCount and .addCountSelect()
-// todo: add selectAndMap
 
-// todo: tests for:
-// todo: entityOrProperty can be target name. implement proper behaviour if it is.
-// todo: think about subselect in joins syntax
-// todo: COMPLETELY COVER QUERY BUILDER WITH TESTS
+// todo: implement subselects for WHERE, FROM, SELECT
+// .fromSubSelect()
+// .whereSubSelect()
+// .addSubSelect()
+// .addSubSelectAndMap()
+// use qb => qb.select().from().where() syntax where needed
 
-// todo: SUBSELECT IMPLEMENTATION
-// .whereSubselect(qb => qb.select().from().where())
-// todo: also create qb.createSubQueryBuilder()
-// todo: check in persistment if id exist on object and throw exception (can be in partial selection?)
-// todo: STREAMING
+// todo: implement relation/entity loading and setting them into properties within a separate query
+// .loadAndMap("post.categories", "post.categories", qb => ...)
+// .loadAndMap("post.categories", Category, qb => ...)
+
+// todo: implement streaming
+// .stream(): ReadStream
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -317,14 +306,6 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Gets generated sql that will be executed.
-     * Parameters in the query are escaped for the currently used driver.
-     */
-    getSql(): string {
-        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.expressionMap.parameters)[0];
-    }
-
-    /**
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
@@ -338,6 +319,14 @@ export abstract class QueryBuilder<Entity> {
         sql += this.createLockExpression();
         sql = this.createLimitOffsetOracleSpecificExpression(sql);
         return sql.trim();
+    }
+
+    /**
+     * Gets generated sql that will be executed.
+     * Parameters in the query are escaped for the currently used driver.
+     */
+    getSql(): string {
+        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.expressionMap.parameters)[0];
     }
 
     /**
@@ -369,6 +358,25 @@ export abstract class QueryBuilder<Entity> {
             if (this.ownQueryRunner) // means we created our own query runner
                 await this.queryRunner.release();
         }
+    }
+
+    /**
+     * Creates a completely new query builder.
+     */
+    createQueryBuilder(): this {
+        return new (this.constructor as any)(this.connection);
+    }
+
+    /**
+     * Clones query builder as it is.
+     * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
+     * you can create query builder using its constructor, for example new SelectQueryBuilder(queryBuilder)
+     * where queryBuilder is cloned QueryBuilder.
+     */
+    clone(): this {
+        const qb = this.createQueryBuilder();
+        qb.expressionMap = this.expressionMap.clone();
+        return qb;
     }
 
     /**

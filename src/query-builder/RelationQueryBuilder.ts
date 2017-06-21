@@ -60,18 +60,6 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return [];
     }
 
-    /**
-     * Clones query builder as it is.
-     * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
-     * you can create query builder this way: new RelationQueryBuilder(queryBuilder) where queryBuilder
-     * is cloned QueryBuilder.
-     */
-    clone(): RelationQueryBuilder<Entity> {
-        const qb = new RelationQueryBuilder<Entity>(this.connection);
-        qb.expressionMap = this.expressionMap.clone();
-        return qb;
-    }
-
 }
 
 
