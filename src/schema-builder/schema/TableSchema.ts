@@ -3,7 +3,6 @@ import {IndexSchema} from "./IndexSchema";
 import {ForeignKeySchema} from "./ForeignKeySchema";
 import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
@@ -226,6 +225,10 @@ export class TableSchema {
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||
                     columnSchema.isGenerated !== columnMetadata.isGenerated;
         });
+    }
+
+    findColumnByName(name: string): ColumnSchema|undefined {
+        return this.columns.find(column => column.name === name);
     }
 
     // -------------------------------------------------------------------------

@@ -283,6 +283,8 @@ export class MysqlQueryRunner implements QueryRunner {
                     columnSchema.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
                     columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     columnSchema.comment = dbColumn["COLUMN_COMMENT"];
+                    columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
+                    columnSchema.scale = dbColumn["NUMERIC_SCALE"];
                     return columnSchema;
                 });
 
@@ -677,6 +679,8 @@ export class MysqlQueryRunner implements QueryRunner {
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
         let c = "`" + column.name + "` " + column.type;
+        if (column.enum)
+            c += "(" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isUnique === true)

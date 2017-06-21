@@ -42,7 +42,7 @@ export class Post {
     datetime: Date;
 
     @Column("timestamp")
-    timestamp: number;
+    timestamp: Date;
 
     @Column("time")
     time: string;
@@ -57,30 +57,33 @@ export class Post {
     varchar: string;
 
     @Column("blob")
-    blob: string;
+    blob: Buffer;
 
     @Column("text")
     text: string;
 
     @Column("tinyblob")
-    tinyblob: string;
+    tinyblob: Buffer;
 
     @Column("tinytext")
     tinytext: string;
 
     @Column("mediumblob")
-    mediumblob: string;
+    mediumblob: Buffer;
 
     @Column("mediumtext")
     mediumtext: string;
 
     @Column("longblob")
-    longblob: string;
+    longblob: Buffer;
 
     @Column("longtext")
     longtext: string;
 
-    @Column("enum")
-    enum: string[];
+    @Column("enum", { enum: ["A", "B", "C"] })
+    enum: string;
+
+    @Column("simple-array")
+    simpleArray: string[];
 
 }

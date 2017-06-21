@@ -49,6 +49,23 @@ export class ColumnSchema {
      */
     comment: string|undefined;
 
+    /**
+     * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
+     * number of digits that are stored for the values.
+     */
+    precision: number|undefined;
+
+    /**
+     * The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number
+     * of digits to the right of the decimal point and must not be greater than precision.
+     */
+    scale: number|undefined;
+
+    /**
+     * Array of possible enumerated values.
+     */
+    enum?: any[];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -61,7 +78,8 @@ export class ColumnSchema {
         isGenerated?: boolean,
         isPrimary?: boolean,
         isUnique?: boolean,
-        comment?: string
+        comment?: string,
+        enum?: any[]
     }) {
         if (options) {
             this.name = options.name || "";
@@ -72,6 +90,7 @@ export class ColumnSchema {
             this.isPrimary = options.isPrimary || false;
             this.isUnique = options.isUnique || false;
             this.comment = options.comment;
+            this.enum = options.enum;
         }
     }
 
@@ -112,6 +131,7 @@ export class ColumnSchema {
         columnSchema.type = normalizedType;
         columnSchema.isPrimary = columnMetadata.isPrimary;
         columnSchema.isUnique = columnMetadata.isUnique;
+        columnSchema.enum = columnMetadata.enum;
         return columnSchema;
     }
 

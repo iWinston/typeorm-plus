@@ -28,8 +28,7 @@ export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqli
     |"char" // mysql, postgres, mssql, oracle
     |"nchar" // mssql, oracle, sqlite
     |"varchar2" // oracle
-    |"nvarchar2" // oracle, sqlite
-    |"year"; // mysql
+    |"nvarchar2"; // oracle, sqlite
 
 /**
  * All other regular column types.
@@ -97,6 +96,7 @@ export type SimpleColumnType =
     |"interval year" // oracle
     |"interval day" // oracle
     |"interval" // postgres
+    |"year" // mysql
 
     // geometric types
     |"point" // postgres
