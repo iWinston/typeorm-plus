@@ -554,7 +554,7 @@ export abstract class QueryBuilder<Entity> {
                 }
                 return "SELECT " + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
             case "delete":
-                return "DELETE FROM " + et(tableName) + this.createWhereExpression(); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names // todo: replace aliases in where to nothing?
+                return "DELETE FROM " + et(tableName); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names // todo: replace aliases in where to nothing?
             case "update":
                 let valuesSet = this.expressionMap.valuesSet as ObjectLiteral;
                 if (!valuesSet)
@@ -564,12 +564,12 @@ export abstract class QueryBuilder<Entity> {
                 Object.keys(valuesSet).forEach(columnProperty => {
                     const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyName(columnProperty);
                     if (column) {
-                        const paramName = "updated__" + column.databaseName;
+                        const paramName = "_updated_" + column.databaseName;
                         this.setParameter(paramName, valuesSet[column.propertyName]);
                         updateSet.push(ea(column.databaseName) + "=:" + paramName);
                     }
                 });
-                return `UPDATE ${this.escapeTable(tableName)} ${aliasName ? ea(aliasName) : ""} SET ${updateSet.join(", ")}` + this.createWhereExpression(); // todo: replace aliases in where to nothing?
+                return `UPDATE ${this.escapeTable(tableName)} ${aliasName ? ea(aliasName) : ""} SET ${updateSet.join(", ")}`; // todo: replace aliases in where to nothing?
             case "insert":
                 let valuesSets: ObjectLiteral[] = []; // todo: check if valuesSet is defined and has items if its an array
                 if (this.expressionMap.valuesSet instanceof Array && this.expressionMap.valuesSet.length > 0) {
@@ -587,7 +587,7 @@ export abstract class QueryBuilder<Entity> {
                 });
                 const values = valuesSets.map((valueSet, key) => {
                     return "(" + columns.map(column => {
-                        const paramName = ":inserted_" + key + "_" + column.databaseName;
+                        const paramName = ":_inserted_" + key + "_" + column.databaseName;
                         this.setParameter(paramName, valueSet[column.propertyName]);
                         return paramName;
                     }).join(",") + ")";
