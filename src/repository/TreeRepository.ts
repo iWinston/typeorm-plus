@@ -34,7 +34,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
         const parentPropertyName = this.metadata.treeParentRelation!.propertyName;
         return this.createQueryBuilder("treeEntity")
-            .where(`treeEntity.${parentPropertyName} IS NULL`)
+            .where(`treeEntity.${parentPropertyName}Id IS NULL`)
             .getMany();
     }
 
@@ -149,7 +149,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         return rawResults.map(rawResult => {
             return {
                 id: rawResult[alias + "_" + this.metadata.primaryColumns[0].databaseName],
-                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation!.joinColumns[0].referencedColumn!.databaseName]
+                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation!.joinColumns[0].givenDatabaseName]
             };
         });
     }
@@ -159,7 +159,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const parentEntityId = this.metadata.primaryColumns[0].getEntityValue(entity);
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
         const childIds = childRelationMaps.map(relationMap => relationMap.id);
-        entity[childProperty] = entities.filter(entity => childIds.indexOf(this.metadata.primaryColumns[0].getEntityValue(entity)) !== -1);
+        entity[childProperty] = entities.filter(entity => childIds.indexOf(entity.id) !== -1);
         entity[childProperty].forEach((childEntity: any) => {
             this.buildChildrenEntityTree(childEntity, entities, relationMaps);
         });
