@@ -32,9 +32,13 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      */
     findRoots(): Promise<Entity[]> {
 
-        const parentPropertyName = this.metadata.treeParentRelation!.propertyName;
+        const parentPropertyName = this.metadata.treeParentRelation!.propertyName + "Id";
+        const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAlias(alias);
+        const escapeColumn = (column: string) => this.manager.connection.driver.escapeColumn(column);
+
         return this.createQueryBuilder("treeEntity")
-            .where(`treeEntity.${parentPropertyName}Id IS NULL`)
+            .from(this.metadata.target, "treeEntity")
+            .where(`${escapeAlias("treeEntity")}.${escapeColumn(parentPropertyName)} IS NULL`)
             .getMany();
     }
 
@@ -51,6 +55,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.tableName, closureTableAlias, joinCondition)
             .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}=${this.metadata.getEntityIdMap(entity)![this.metadata.primaryColumns[0].propertyName]}`);
+
     }
 
     /**
