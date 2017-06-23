@@ -76,8 +76,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }).join(", ");
 
         // get a table name and all column database names
-        const tableName = this.escapeTable(this.getTableName());
-        const columnNames = insertColumns.map(column => this.escapeColumn(column.databaseName)).join(", ");
+        const tableName = this.escape(this.getTableName());
+        const columnNames = insertColumns.map(column => this.escape(column.databaseName)).join(", ");
 
         // generate sql query
         return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values}`;

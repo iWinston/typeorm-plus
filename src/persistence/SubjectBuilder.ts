@@ -551,8 +551,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let databaseEntities: ObjectLiteral[] = [];
 
                 // create shortcuts for better readability
-                const ea = (alias: string) => this.connection.driver.escapeAlias(alias);
-                const ec = (column: string) => this.connection.driver.escapeColumn(column);
+                const escape = (name: string) => this.connection.driver.escape(name);
 
                 if (relation.isManyToManyOwner) {
 
@@ -560,13 +559,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // because remove by cascades is the only reason we need relational entities here
                     if (!relation.isCascadeRemove) return;
 
-                    const joinAlias = ea("persistenceJoinedRelation");
+                    const joinAlias = escape("persistenceJoinedRelation");
 
                     const joinColumnConditions = relation.joinColumns.map(joinColumn => {
                         return `${joinAlias}.${joinColumn.propertyName} = :${joinColumn.propertyName}`;
                     });
                     const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
-                        return `${joinAlias}.${inverseJoinColumn.propertyName} = ${ea(qbAlias)}.${ec(inverseJoinColumn.referencedColumn!.propertyName)}`;
+                        return `${joinAlias}.${inverseJoinColumn.propertyName} = ${escape(qbAlias)}.${escape(inverseJoinColumn.referencedColumn!.propertyName)}`;
                     });
 
                     const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
@@ -591,10 +590,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // because remove by cascades is the only reason we need relational entities here
                     if (!relation.isCascadeRemove) return;
 
-                    const joinAlias = ea("persistenceJoinedRelation");
+                    const joinAlias = escape("persistenceJoinedRelation");
 
                     const joinColumnConditions = relation.joinColumns.map(joinColumn => {
-                        return `${joinAlias}.${joinColumn.propertyName} = ${ea(qbAlias)}.${ec(joinColumn.referencedColumn!.propertyName)}`;
+                        return `${joinAlias}.${joinColumn.propertyName} = ${escape(qbAlias)}.${escape(joinColumn.referencedColumn!.propertyName)}`;
                     });
                     const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
                         return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;

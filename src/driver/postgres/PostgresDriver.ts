@@ -283,22 +283,8 @@ export class PostgresDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumn(columnName: string): string {
+    escape(columnName: string): string {
         return "\"" + columnName + "\"";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string {
-        return "\"" + aliasName + "\"";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string {
-        return "\"" + tableName + "\"";
     }
 
     /**

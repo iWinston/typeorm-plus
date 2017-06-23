@@ -284,19 +284,19 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Gets generated sql that will be executed.
+     * Parameters in the query are escaped for the currently used driver.
+     */
+    getSql(): string {
+        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.getParameters())[0];
+    }
+
+    /**
      * Prints sql to stdout using console.log.
      */
     printSql(): this {
         console.log(this.getSql());
         return this;
-    }
-
-    /**
-     * Gets generated sql that will be executed.
-     * Parameters in the query are escaped for the currently used driver.
-     */
-    getSql(): string {
-        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.expressionMap.parameters)[0];
     }
 
     /**
@@ -348,35 +348,30 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Escapes alias name using current database's escaping character.
+     * Escapes table name, column name or alias name using current database's escaping character.
      */
-    escapeAlias(name: string) {
+    escape(name: string): string {
         if (!this.expressionMap.disableEscaping)
             return name;
-        return this.connection.driver.escapeAlias(name);
-    }
-
-    /**
-     * Escapes column name using current database's escaping character.
-     */
-    escapeColumn(name: string) {
-        if (!this.expressionMap.disableEscaping)
-            return name;
-        return this.connection.driver.escapeColumn(name);
-    }
-
-    /**
-     * Escapes table name using current database's escaping character.
-     */
-    escapeTable(name: string) {
-        if (!this.expressionMap.disableEscaping)
-            return name;
-        return this.connection.driver.escapeTable(name);
+        return this.connection.driver.escape(name);
     }
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Gets name of the table where insert should be performed.
+     */
+    protected getTableName(): string {
+        if (!this.expressionMap.mainAlias)
+            throw new Error(`Entity where values should be inserted is not specified. Call "qb.into(entity)" method to specify it.`);
+
+        if (this.expressionMap.mainAlias.hasMetadata)
+            return this.expressionMap.mainAlias.metadata.tableName;
+
+        return this.expressionMap.mainAlias.tableName!;
+    }
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
@@ -401,160 +396,35 @@ export abstract class QueryBuilder<Entity> {
         return this;
     }
 
-    protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
-        const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
-
-        const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns : metadata.columns.filter(column => {
-            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
-        });
-
-        return columns.map(column => {
-            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
-            return {
-                selection: this.escapeAlias(aliasName) + "." + this.escapeColumn(column.databaseName),
-                aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
-                // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
-            };
-            // return this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName) +
-            //     " AS " + this.escapeAlias(aliasName + "_" + column.fullName);
-        });
-    }
-
-    protected findEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
-        const mainSelect = this.expressionMap.selects.find(select => select.selection === aliasName);
-        if (mainSelect)
-            return [mainSelect];
-
-        return this.expressionMap.selects.filter(select => {
-            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyName);
-        });
-    }
-
-    // todo: extract all create expression methods to separate class QueryExpressionBuilder
-
-    protected createSelectExpression() {
-
-        if (!this.expressionMap.mainAlias)
-            throw new Error("Cannot build query because main alias is not set (call qb#from method)");
-
-        // separate escaping functions are used to reduce code size and complexity below
-        const et = (aliasName: string) => this.escapeTable(aliasName);
-        const ea = (aliasName: string) => this.escapeAlias(aliasName);
-        const ec = (aliasName: string) => this.escapeColumn(aliasName);
-
-        // todo throw exception if selects or from is missing
-
-        let tableName: string;
-        const allSelects: SelectQuery[] = [];
-        const excludedSelects: SelectQuery[] = [];
-
-        const aliasName = this.expressionMap.mainAlias.name;
-
-        if (this.expressionMap.mainAlias.hasMetadata) {
-            const metadata = this.expressionMap.mainAlias.metadata;
-            tableName = metadata.tableName;
-
-            allSelects.push(...this.buildEscapedEntityColumnSelects(aliasName, metadata));
-            excludedSelects.push(...this.findEntityColumnSelects(aliasName, metadata));
-
-        } else { // if alias does not have metadata - selections will be from custom table
-            tableName = this.expressionMap.mainAlias.tableName!;
-        }
-
-        // add selects from joins
-        this.expressionMap.joinAttributes
-            .forEach(join => {
-                if (join.metadata) {
-                    allSelects.push(...this.buildEscapedEntityColumnSelects(join.alias.name!, join.metadata));
-                    excludedSelects.push(...this.findEntityColumnSelects(join.alias.name!, join.metadata));
-                } else {
-                    const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias.name);
-                    if (hasMainAlias) {
-                        allSelects.push({ selection: ea(join.alias.name!) + ".*" });
-                        excludedSelects.push({ selection: ea(join.alias.name!) });
-                    }
+    /**
+     * Replaces all entity's propertyName to name in the given statement.
+     */
+    protected replacePropertyNames(statement: string) {
+        this.expressionMap.aliases.forEach(alias => {
+            if (!alias.hasMetadata) return;
+            alias.metadata.columns.forEach(column => {
+                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =\)\,]|.{0}$)";
+                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escape(alias.name) + "." + this.escape(column.databaseName) + "$2");
+                const expression2 = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyName + "([ =\)\,]|.{0}$)";
+                statement = statement.replace(new RegExp(expression2, "gm"), "$1" + this.escape(alias.name) + "." + this.escape(column.databaseName) + "$2");
+            });
+            alias.metadata.relations.forEach(relation => {
+                [...relation.joinColumns, ...relation.inverseJoinColumns].forEach(joinColumn => {
+                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =\)\,]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escape(alias.name) + "." + this.escape(joinColumn.databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+                });
+                if (relation.joinColumns.length > 0) {
+                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =\)\,]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escape(alias.name) + "." + this.escape(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
                 }
             });
-
-        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias.hasMetadata) {
-            const metadata = this.expressionMap.mainAlias.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
-                metadata.parentEntityMetadata.columns.forEach(column => {
-                    // TODO implement partial select
-                    allSelects.push({ selection: ea(alias) + "." + ec(column.databaseName), aliasName: alias + "_" + column.databaseName });
-                });
-            }
-        }
-
-        // add selects from relation id joins
-        // this.relationIdAttributes.forEach(relationIdAttr => {
-        // });
-
-        /*if (this.enableRelationIdValues) {
-            const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.mainAlias);
-            if (!parentMetadata)
-                throw new Error("Cannot get entity metadata for the given alias " + this.aliasMap.mainAlias.name);
-
-            const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
-            metadata.manyToManyRelations.forEach(relation => {
-
-                const junctionMetadata = relation.junctionEntityMetadata;
-                junctionMetadata.columns.forEach(column => {
-                    const select = ea(this.aliasMap.mainAlias.name + "_" + junctionMetadata.table.name + "_ids") + "." +
-                        ec(column.name) + " AS " +
-                        ea(this.aliasMap.mainAlias.name + "_" + relation.name + "_ids_" + column.name);
-                    allSelects.push(select);
-                });
-            });
-        }*/
-
-        // add all other selects
-        this.expressionMap.selects
-            .filter(select => excludedSelects.indexOf(select) === -1)
-            .forEach(select => allSelects.push({ selection: this.replacePropertyNames(select.selection), aliasName: select.aliasName }));
-
-        // if still selection is empty, then simply set it to all (*)
-        if (allSelects.length === 0)
-            allSelects.push({ selection: "*" });
-
-        let lock: string = "";
-        if (this.connection.driver instanceof SqlServerDriver) {
-            switch (this.expressionMap.lockMode) {
-                case "pessimistic_read":
-                    lock = " WITH (HOLDLOCK, ROWLOCK)";
-                    break;
-                case "pessimistic_write":
-                    lock = " WITH (UPDLOCK, ROWLOCK)";
-                    break;
-            }
-        }
-
-        // create a selection query
-        const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + ea(select.aliasName) : "")).join(", ");
-        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
-            return "SELECT ROWNUM " + this.escapeAlias("RN") + "," + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
-        }
-        return "SELECT " + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
+        });
+        return statement;
     }
 
-    protected createHavingExpression() {
-        if (!this.expressionMap.havings || !this.expressionMap.havings.length) return "";
-        const conditions = this.expressionMap.havings.map((having, index) => {
-                switch (having.type) {
-                    case "and":
-                        return (index > 0 ? "AND " : "") + this.replacePropertyNames(having.condition);
-                    case "or":
-                        return (index > 0 ? "OR " : "") + this.replacePropertyNames(having.condition);
-                    default:
-                        return this.replacePropertyNames(having.condition);
-                }
-            }).join(" ");
-
-        if (!conditions.length) return "";
-        return " HAVING " + conditions;
-    }
-
+    /**
+     * Creates "WHERE" expression.
+     */
     protected createWhereExpression() {
 
         const conditions = this.expressionMap.wheres.map((where, index) => {
@@ -586,304 +456,29 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Replaces all entity's propertyName to name in the given statement.
-     */
-    protected replacePropertyNames(statement: string) {
-        this.expressionMap.aliases.forEach(alias => {
-            if (!alias.hasMetadata) return;
-            alias.metadata.columns.forEach(column => {
-                const expression = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyPath + "([ =\)\,]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.databaseName) + "$2");
-                const expression2 = "([ =\(]|^.{0})" + alias.name + "\\." + column.propertyName + "([ =\)\,]|.{0}$)";
-                statement = statement.replace(new RegExp(expression2, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(column.databaseName) + "$2");
-            });
-            alias.metadata.relations.forEach(relation => {
-                [...relation.joinColumns, ...relation.inverseJoinColumns].forEach(joinColumn => {
-                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =\)\,]|.{0}$)";
-                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(joinColumn.databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
-                });
-                if (relation.joinColumns.length > 0) {
-                    const expression = "([ =\(]|^.{0})" + alias.name + "\\." + relation.propertyPath + "([ =\)\,]|.{0}$)";
-                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + this.escapeAlias(alias.name) + "." + this.escapeColumn(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
-                }
-            });
-        });
-        return statement;
-    }
-
-    protected createJoinExpression(): string {
-
-        // separate escaping functions are used to reduce code size and complexity below
-        const et = (aliasName: string) => this.escapeTable(aliasName);
-        const ea = (aliasName: string) => this.escapeAlias(aliasName);
-        const ec = (aliasName: string) => this.escapeColumn(aliasName);
-
-        // examples:
-        // select from owning side
-        // qb.select("post")
-        //     .leftJoinAndSelect("post.category", "category");
-        // select from non-owning side
-        // qb.select("category")
-        //     .leftJoinAndSelect("category.post", "post");
-
-        const joins = this.expressionMap.joinAttributes.map(joinAttr => {
-
-            const relation = joinAttr.relation;
-            const destinationTableName = joinAttr.tableName;
-            const destinationTableAlias = joinAttr.alias.name;
-            const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
-            const parentAlias = joinAttr.parentAlias;
-
-            // if join was build without relation (e.g. without "post.category") then it means that we have direct
-            // table to join, without junction table involved. This means we simply join direct table.
-            if (!parentAlias || !relation)
-                return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) +
-                    (joinAttr.condition ? " ON " + this.replacePropertyNames(joinAttr.condition) : "");
-
-            // if real entity relation is involved
-            if (relation.isManyToOne || relation.isOneToOneOwner) {
-
-                // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
-                const condition = relation.joinColumns.map(joinColumn => {
-                    return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" +
-                        parentAlias + "." + relation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath;
-                }).join(" AND ");
-
-                return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
-
-            } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-
-                // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = relation.inverseRelation!.joinColumns.map(joinColumn => {
-                    return destinationTableAlias + "." + relation.inverseRelation!.propertyPath + "." + joinColumn.referencedColumn!.propertyPath + "=" +
-                        parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
-                }).join(" AND ");
-
-                return " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
-
-            } else { // means many-to-many
-                const junctionTableName = relation.junctionEntityMetadata!.tableName;
-
-                const junctionAlias = joinAttr.junctionAlias;
-                let junctionCondition = "", destinationCondition = "";
-
-                if (relation.isOwning) {
-
-                    junctionCondition = relation.joinColumns.map(joinColumn => {
-                        // `post_category`.`postId` = `post`.`id`
-                        return junctionAlias + "." + joinColumn.propertyPath + "=" + parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
-                    }).join(" AND ");
-
-                    destinationCondition = relation.inverseJoinColumns.map(joinColumn => {
-                        // `category`.`id` = `post_category`.`categoryId`
-                        return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" + junctionAlias + "." + joinColumn.propertyPath;
-                    }).join(" AND ");
-
-                } else {
-                    junctionCondition = relation.inverseRelation!.inverseJoinColumns.map(joinColumn => {
-                        // `post_category`.`categoryId` = `category`.`id`
-                        return junctionAlias + "." + joinColumn.propertyPath + "=" + parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
-                    }).join(" AND ");
-
-                    destinationCondition = relation.inverseRelation!.joinColumns.map(joinColumn => {
-                        // `post`.`id` = `post_category`.`postId`
-                        return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" + junctionAlias + "." + joinColumn.propertyPath;
-                    }).join(" AND ");
-                }
-
-                return " " + joinAttr.direction + " JOIN " + et(junctionTableName) + " " + ea(junctionAlias) + " ON " + this.replacePropertyNames(junctionCondition) +
-                       " " + joinAttr.direction + " JOIN " + et(destinationTableName) + " " + ea(destinationTableAlias) + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
-
-            }
-        });
-
-        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias!.hasMetadata) {
-            const metadata = this.expressionMap.mainAlias!.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
-                const condition = metadata.parentIdColumns.map(parentIdColumn => {
-                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + alias + "." + parentIdColumn.referencedColumn!.propertyPath;
-                }).join(" AND ");
-                const join = " JOIN " + et(metadata.parentEntityMetadata.tableName) + " " + ea(alias) + " ON " + this.replacePropertyNames(condition);
-                joins.push(join);
-            }
-        }
-
-        return joins.join(" ");
-    }
-
-    protected createGroupByExpression() {
-        if (!this.expressionMap.groupBys || !this.expressionMap.groupBys.length) return "";
-        return " GROUP BY " + this.replacePropertyNames(this.expressionMap.groupBys.join(", "));
-    }
-
-    protected createOrderByCombinedWithSelectExpression(parentAlias: string) {
-
-        // if table has a default order then apply it
-        let orderBys = this.expressionMap.orderBys;
-        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
-        }
-
-        const selectString = Object.keys(orderBys)
-            .map(columnName => {
-                const [alias, column, ...embeddedProperties] = columnName.split(".");
-                return this.escapeAlias(parentAlias) + "." + this.escapeColumn(alias + "_" + column + embeddedProperties.join("_"));
-            })
-            .join(", ");
-
-        const orderByString = Object.keys(orderBys)
-            .map(columnName => {
-                const [alias, column, ...embeddedProperties] = columnName.split(".");
-                return this.escapeAlias(parentAlias) + "." + this.escapeColumn(alias + "_" + column + embeddedProperties.join("_")) + " " + this.expressionMap.orderBys[columnName];
-            })
-            .join(", ");
-
-        return [selectString, orderByString];
-    }
-
-    protected createOrderByExpression() {
-
-        let orderBys = this.expressionMap.orderBys;
-
-        // if table has a default order then apply it
-        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
-        }
-
-        // if user specified a custom order then apply it
-        if (Object.keys(orderBys).length > 0)
-            return " ORDER BY " + Object.keys(orderBys)
-                    .map(columnName => {
-                        return this.replacePropertyNames(columnName) + " " + this.expressionMap.orderBys[columnName];
-                    })
-                    .join(", ");
-
-        return "";
-    }
-
-    protected createLimitOffsetOracleSpecificExpression(sql: string): string {
-         if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
-             sql = "SELECT * FROM (" + sql + ") WHERE ";
-             if (this.expressionMap.offset) {
-                 sql += this.escapeAlias("RN") + " >= " + this.expressionMap.offset;
-             }
-             if (this.expressionMap.limit) {
-                 sql += (this.expressionMap.offset ? " AND " : "") + this.escapeAlias("RN") + " <= " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
-             }
-         }
-         return sql;
-    }
-
-    protected createLimitOffsetExpression(): string {
-        if (this.connection.driver instanceof OracleDriver)
-            return "";
-
-        if (this.connection.driver instanceof SqlServerDriver) {
-
-            if (this.expressionMap.limit && this.expressionMap.offset)
-                return " OFFSET " + this.expressionMap.offset + " ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
-            if (this.expressionMap.limit)
-                return " OFFSET 0 ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
-            if (this.expressionMap.offset)
-                return " OFFSET " + this.expressionMap.offset + " ROWS";
-
-        } else {
-            if (this.expressionMap.limit && this.expressionMap.offset)
-                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
-            if (this.expressionMap.limit)
-                return " LIMIT " + this.expressionMap.limit;
-            if (this.expressionMap.offset)
-                return " OFFSET " + this.expressionMap.offset;
-        }
-
-        return "";
-    }
-
-    /**
-     * Adds lock expression to a query.
-     */
-    protected createLockExpression(): string {
-        switch (this.expressionMap.lockMode) {
-            case "pessimistic_read":
-                if (this.connection.driver instanceof MysqlDriver) {
-                    return " LOCK IN SHARE MODE";
-
-                } else if (this.connection.driver instanceof PostgresDriver) {
-                    return " FOR SHARE";
-
-                } else if (this.connection.driver instanceof SqlServerDriver) {
-                    return "";
-
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
-            case "pessimistic_write":
-                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof PostgresDriver) {
-                    return " FOR UPDATE";
-
-                } else if (this.connection.driver instanceof SqlServerDriver) {
-                    return "";
-
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
-            default:
-                return "";
-        }
-    }
-
-    /**
      * Creates "WHERE" expression and variables for the given "ids".
      */
     protected createWhereIdsExpression(ids: any[]): [string, ObjectLiteral] {
         const metadata = this.expressionMap.mainAlias!.metadata;
 
         // create shortcuts for better readability
-        const ea = (aliasName: string) => this.escapeAlias(aliasName);
-        const ec = (columnName: string) => this.escapeColumn(columnName);
-
         const alias = this.expressionMap.mainAlias!.name;
         const parameters: ObjectLiteral = {};
         const whereStrings = ids.map((id, index) => {
             const whereSubStrings: string[] = [];
-            // if (metadata.hasMultiplePrimaryKeys) {
-                metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                    whereSubStrings.push(ea(alias) + "." + ec(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                    parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
-                });
-                metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
-                    whereSubStrings.push(ea(alias) + "." + ec(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
-                    parameters["parentId_" + index + "_" + secondIndex] = parentIdColumn.getEntityValue(id);
-                });
-            // } else {
-            //     if (metadata.primaryColumns.length > 0) {
-            //         whereSubStrings.push(ea(alias) + "." + ec(metadata.firstPrimaryColumn.fullName) + "=:id_" + index);
-            //         parameters["id_" + index] = id;
-            //
-            //     } else if (metadata.parentIdColumns.length > 0) {
-            //         whereSubStrings.push(ea(alias) + "." + ec(metadata.parentIdColumns[0].fullName) + "=:parentId_" + index);
-            //         parameters["parentId_" + index] = id;
-            //     }
-            // }
+            metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
+                whereSubStrings.push(this.escape(alias) + "." + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
+                parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
+            });
+            metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
+                whereSubStrings.push(this.escape(alias) + "." + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
+                parameters["parentId_" + index + "_" + secondIndex] = parentIdColumn.getEntityValue(id);
+            });
             return whereSubStrings.join(" AND ");
         });
 
         const whereString = whereStrings.length > 1 ? "(" + whereStrings.join(" OR ") + ")" : whereStrings[0];
         return [whereString, parameters];
-    }
-
-    /**
-     * Gets name of the table where insert should be performed.
-     */
-    protected getTableName(): string {
-        if (!this.expressionMap.mainAlias)
-            throw new Error(`Entity where values should be inserted is not specified. Call "qb.into(entity)" method to specify it.`);
-
-        if (this.expressionMap.mainAlias.hasMetadata)
-            return this.expressionMap.mainAlias.metadata.tableName;
-
-        return this.expressionMap.mainAlias.tableName!;
     }
 
 }

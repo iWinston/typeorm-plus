@@ -71,7 +71,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates DELETE express used to perform insert query.
      */
     protected createDeleteExpression() {
-        const tableName = this.escapeTable(this.getTableName());
+        const tableName = this.escape(this.getTableName());
         return `DELETE FROM ${tableName}`; // todo: how do we replace aliases in where to nothing?
     }
 

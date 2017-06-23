@@ -78,12 +78,12 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (column) {
                 const paramName = "_updated_" + column.databaseName;
                 this.setParameter(paramName, valuesSet[column.propertyName]);
-                updateColumnAndValues.push(this.escapeAlias(column.databaseName) + "=:" + paramName);
+                updateColumnAndValues.push(this.escape(column.databaseName) + "=:" + paramName);
             }
         });
 
         // get a table name and all column database names
-        const tableName = this.escapeTable(this.getTableName());
+        const tableName = this.escape(this.getTableName());
 
         // generate and return sql update query
         return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}`; // todo: how do we replace aliases in where to nothing?

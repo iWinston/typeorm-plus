@@ -18,6 +18,13 @@ import {RelationCountMetadataToAttributeTransformer} from "./relation-count/Rela
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {QueryBuilder} from "./QueryBuilder";
 import {ReadStream} from "fs";
+import {LockNotSupportedOnGivenDriverError} from "./error/LockNotSupportedOnGivenDriverError";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {SelectQuery} from "./SelectQuery";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -840,9 +847,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata;
 
-        const distinctAlias = this.escapeAlias(mainAlias);
+        const distinctAlias = this.escape(mainAlias);
         let countSql = `COUNT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.escapeColumn(primaryColumn.databaseName);
+                const propertyName = this.escape(primaryColumn.databaseName);
                 if (index === 0) {
                     return `DISTINCT(${distinctAlias}.${propertyName})`;
                 } else {
@@ -905,11 +912,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 const [sql, parameters] = this/*.clone().orderBy()*/.getSqlAndParameters();
                 const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
 
-                const distinctAlias = this.escapeTable("distinctAlias");
+                const distinctAlias = this.escape("distinctAlias");
                 const metadata = this.expressionMap.mainAlias!.metadata;
                 let idsQuery = `SELECT `;
                 idsQuery += metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escapeAlias(mainAliasName + "_" + primaryColumn.databaseName);
+                    const propertyName = this.escape(mainAliasName + "_" + primaryColumn.databaseName);
                     if (index === 0) {
                         return `DISTINCT(${distinctAlias}.${propertyName}) as "ids_${primaryColumn.databaseName}"`;
                     } else {
@@ -1006,6 +1013,370 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (options.release && this.ownQueryRunner) // means we created our own query runner
                 await this.queryRunner.release();
         }
+    }
+
+    protected createSelectExpression() {
+
+        if (!this.expressionMap.mainAlias)
+            throw new Error("Cannot build query because main alias is not set (call qb#from method)");
+
+        // todo throw exception if selects or from is missing
+
+        let tableName: string;
+        const allSelects: SelectQuery[] = [];
+        const excludedSelects: SelectQuery[] = [];
+
+        const aliasName = this.expressionMap.mainAlias.name;
+
+        if (this.expressionMap.mainAlias.hasMetadata) {
+            const metadata = this.expressionMap.mainAlias.metadata;
+            tableName = metadata.tableName;
+
+            allSelects.push(...this.buildEscapedEntityColumnSelects(aliasName, metadata));
+            excludedSelects.push(...this.findEntityColumnSelects(aliasName, metadata));
+
+        } else { // if alias does not have metadata - selections will be from custom table
+            tableName = this.expressionMap.mainAlias.tableName!;
+        }
+
+        // add selects from joins
+        this.expressionMap.joinAttributes
+            .forEach(join => {
+                if (join.metadata) {
+                    allSelects.push(...this.buildEscapedEntityColumnSelects(join.alias.name!, join.metadata));
+                    excludedSelects.push(...this.findEntityColumnSelects(join.alias.name!, join.metadata));
+                } else {
+                    const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias.name);
+                    if (hasMainAlias) {
+                        allSelects.push({ selection: this.escape(join.alias.name!) + ".*" });
+                        excludedSelects.push({ selection: this.escape(join.alias.name!) });
+                    }
+                }
+            });
+
+        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias.hasMetadata) {
+            const metadata = this.expressionMap.mainAlias.metadata;
+            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
+                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
+                metadata.parentEntityMetadata.columns.forEach(column => {
+                    // TODO implement partial select
+                    allSelects.push({ selection: this.escape(alias) + "." + this.escape(column.databaseName), aliasName: alias + "_" + column.databaseName });
+                });
+            }
+        }
+
+        // add selects from relation id joins
+        // this.relationIdAttributes.forEach(relationIdAttr => {
+        // });
+
+        /*if (this.enableRelationIdValues) {
+         const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.mainAlias);
+         if (!parentMetadata)
+         throw new Error("Cannot get entity metadata for the given alias " + this.aliasMap.mainAlias.name);
+
+         const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
+         metadata.manyToManyRelations.forEach(relation => {
+
+         const junctionMetadata = relation.junctionEntityMetadata;
+         junctionMetadata.columns.forEach(column => {
+         const select = ea(this.aliasMap.mainAlias.name + "_" + junctionMetadata.table.name + "_ids") + "." +
+         ec(column.name) + " AS " +
+         ea(this.aliasMap.mainAlias.name + "_" + relation.name + "_ids_" + column.name);
+         allSelects.push(select);
+         });
+         });
+         }*/
+
+        // add all other selects
+        this.expressionMap.selects
+            .filter(select => excludedSelects.indexOf(select) === -1)
+            .forEach(select => allSelects.push({ selection: this.replacePropertyNames(select.selection), aliasName: select.aliasName }));
+
+        // if still selection is empty, then simply set it to all (*)
+        if (allSelects.length === 0)
+            allSelects.push({ selection: "*" });
+
+        let lock: string = "";
+        if (this.connection.driver instanceof SqlServerDriver) {
+            switch (this.expressionMap.lockMode) {
+                case "pessimistic_read":
+                    lock = " WITH (HOLDLOCK, ROWLOCK)";
+                    break;
+                case "pessimistic_write":
+                    lock = " WITH (UPDLOCK, ROWLOCK)";
+                    break;
+            }
+        }
+
+        // create a selection query
+        const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
+        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
+            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + this.escape(tableName) + " " + this.escape(aliasName) + lock;
+        }
+        return "SELECT " + selection + " FROM " + this.escape(tableName) + " " + this.escape(aliasName) + lock;
+    }
+
+    protected createJoinExpression(): string {
+
+        // examples:
+        // select from owning side
+        // qb.select("post")
+        //     .leftJoinAndSelect("post.category", "category");
+        // select from non-owning side
+        // qb.select("category")
+        //     .leftJoinAndSelect("category.post", "post");
+
+        const joins = this.expressionMap.joinAttributes.map(joinAttr => {
+
+            const relation = joinAttr.relation;
+            const destinationTableName = joinAttr.tableName;
+            const destinationTableAlias = joinAttr.alias.name;
+            const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
+            const parentAlias = joinAttr.parentAlias;
+
+            // if join was build without relation (e.g. without "post.category") then it means that we have direct
+            // table to join, without junction table involved. This means we simply join direct table.
+            if (!parentAlias || !relation)
+                return " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) +
+                    (joinAttr.condition ? " ON " + this.replacePropertyNames(joinAttr.condition) : "");
+
+            // if real entity relation is involved
+            if (relation.isManyToOne || relation.isOneToOneOwner) {
+
+                // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
+                const condition = relation.joinColumns.map(joinColumn => {
+                    return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" +
+                        parentAlias + "." + relation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath;
+                }).join(" AND ");
+
+                return " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
+
+            } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+
+                // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
+                const condition = relation.inverseRelation!.joinColumns.map(joinColumn => {
+                    return destinationTableAlias + "." + relation.inverseRelation!.propertyPath + "." + joinColumn.referencedColumn!.propertyPath + "=" +
+                        parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
+                }).join(" AND ");
+
+                return " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
+
+            } else { // means many-to-many
+                const junctionTableName = relation.junctionEntityMetadata!.tableName;
+
+                const junctionAlias = joinAttr.junctionAlias;
+                let junctionCondition = "", destinationCondition = "";
+
+                if (relation.isOwning) {
+
+                    junctionCondition = relation.joinColumns.map(joinColumn => {
+                        // `post_category`.`postId` = `post`.`id`
+                        return junctionAlias + "." + joinColumn.propertyPath + "=" + parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
+                    }).join(" AND ");
+
+                    destinationCondition = relation.inverseJoinColumns.map(joinColumn => {
+                        // `category`.`id` = `post_category`.`categoryId`
+                        return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" + junctionAlias + "." + joinColumn.propertyPath;
+                    }).join(" AND ");
+
+                } else {
+                    junctionCondition = relation.inverseRelation!.inverseJoinColumns.map(joinColumn => {
+                        // `post_category`.`categoryId` = `category`.`id`
+                        return junctionAlias + "." + joinColumn.propertyPath + "=" + parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
+                    }).join(" AND ");
+
+                    destinationCondition = relation.inverseRelation!.joinColumns.map(joinColumn => {
+                        // `post`.`id` = `post_category`.`postId`
+                        return destinationTableAlias + "." + joinColumn.referencedColumn!.propertyPath + "=" + junctionAlias + "." + joinColumn.propertyPath;
+                    }).join(" AND ");
+                }
+
+                return " " + joinAttr.direction + " JOIN " + this.escape(junctionTableName) + " " + this.escape(junctionAlias) + " ON " + this.replacePropertyNames(junctionCondition) +
+                    " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
+
+            }
+        });
+
+        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias!.hasMetadata) {
+            const metadata = this.expressionMap.mainAlias!.metadata;
+            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
+                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
+                const condition = metadata.parentIdColumns.map(parentIdColumn => {
+                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + alias + "." + parentIdColumn.referencedColumn!.propertyPath;
+                }).join(" AND ");
+                const join = " JOIN " + this.escape(metadata.parentEntityMetadata.tableName) + " " + this.escape(alias) + " ON " + this.replacePropertyNames(condition);
+                joins.push(join);
+            }
+        }
+
+        return joins.join(" ");
+    }
+
+    protected createGroupByExpression() {
+        if (!this.expressionMap.groupBys || !this.expressionMap.groupBys.length) return "";
+        return " GROUP BY " + this.replacePropertyNames(this.expressionMap.groupBys.join(", "));
+    }
+
+    protected createOrderByCombinedWithSelectExpression(parentAlias: string) {
+
+        // if table has a default order then apply it
+        let orderBys = this.expressionMap.orderBys;
+        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
+            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
+        }
+
+        const selectString = Object.keys(orderBys)
+            .map(columnName => {
+                const [alias, column, ...embeddedProperties] = columnName.split(".");
+                return this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"));
+            })
+            .join(", ");
+
+        const orderByString = Object.keys(orderBys)
+            .map(columnName => {
+                const [alias, column, ...embeddedProperties] = columnName.split(".");
+                return this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_")) + " " + this.expressionMap.orderBys[columnName];
+            })
+            .join(", ");
+
+        return [selectString, orderByString];
+    }
+
+    protected createOrderByExpression() {
+
+        let orderBys = this.expressionMap.orderBys;
+
+        // if table has a default order then apply it
+        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
+            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
+        }
+
+        // if user specified a custom order then apply it
+        if (Object.keys(orderBys).length > 0)
+            return " ORDER BY " + Object.keys(orderBys)
+                    .map(columnName => {
+                        return this.replacePropertyNames(columnName) + " " + this.expressionMap.orderBys[columnName];
+                    })
+                    .join(", ");
+
+        return "";
+    }
+
+    protected createLimitOffsetOracleSpecificExpression(sql: string): string {
+        if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
+            sql = "SELECT * FROM (" + sql + ") WHERE ";
+            if (this.expressionMap.offset) {
+                sql += this.escape("RN") + " >= " + this.expressionMap.offset;
+            }
+            if (this.expressionMap.limit) {
+                sql += (this.expressionMap.offset ? " AND " : "") + this.escape("RN") + " <= " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
+            }
+        }
+        return sql;
+    }
+
+    protected createLimitOffsetExpression(): string {
+        if (this.connection.driver instanceof OracleDriver)
+            return "";
+
+        if (this.connection.driver instanceof SqlServerDriver) {
+
+            if (this.expressionMap.limit && this.expressionMap.offset)
+                return " OFFSET " + this.expressionMap.offset + " ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
+            if (this.expressionMap.limit)
+                return " OFFSET 0 ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
+            if (this.expressionMap.offset)
+                return " OFFSET " + this.expressionMap.offset + " ROWS";
+
+        } else {
+            if (this.expressionMap.limit && this.expressionMap.offset)
+                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
+            if (this.expressionMap.limit)
+                return " LIMIT " + this.expressionMap.limit;
+            if (this.expressionMap.offset)
+                return " OFFSET " + this.expressionMap.offset;
+        }
+
+        return "";
+    }
+
+    /**
+     * Adds lock expression to a query.
+     */
+    protected createLockExpression(): string {
+        switch (this.expressionMap.lockMode) {
+            case "pessimistic_read":
+                if (this.connection.driver instanceof MysqlDriver) {
+                    return " LOCK IN SHARE MODE";
+
+                } else if (this.connection.driver instanceof PostgresDriver) {
+                    return " FOR SHARE";
+
+                } else if (this.connection.driver instanceof SqlServerDriver) {
+                    return "";
+
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError();
+                }
+            case "pessimistic_write":
+                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof PostgresDriver) {
+                    return " FOR UPDATE";
+
+                } else if (this.connection.driver instanceof SqlServerDriver) {
+                    return "";
+
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError();
+                }
+            default:
+                return "";
+        }
+    }
+
+    protected createHavingExpression() {
+        if (!this.expressionMap.havings || !this.expressionMap.havings.length) return "";
+        const conditions = this.expressionMap.havings.map((having, index) => {
+            switch (having.type) {
+                case "and":
+                    return (index > 0 ? "AND " : "") + this.replacePropertyNames(having.condition);
+                case "or":
+                    return (index > 0 ? "OR " : "") + this.replacePropertyNames(having.condition);
+                default:
+                    return this.replacePropertyNames(having.condition);
+            }
+        }).join(" ");
+
+        if (!conditions.length) return "";
+        return " HAVING " + conditions;
+    }
+
+    protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
+        const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
+
+        const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns : metadata.columns.filter(column => {
+            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
+        });
+
+        return columns.map(column => {
+            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
+            return {
+                selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
+                aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
+                // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
+            };
+            // return this.escapeAlias(aliasName) + "." + this.escapeColumn(column.fullName) +
+            //     " AS " + this.escapeAlias(aliasName + "_" + column.fullName);
+        });
+    }
+
+    protected findEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
+        const mainSelect = this.expressionMap.selects.find(select => select.selection === aliasName);
+        if (mainSelect)
+            return [mainSelect];
+
+        return this.expressionMap.selects.filter(select => {
+            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyName);
+        });
     }
 
 }

@@ -49,19 +49,9 @@ export interface Driver {
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]];
 
     /**
-     * Escapes a column name.
+     * Escapes a table name, column name or an alias.
      */
-    escapeColumn(columnName: string): string;
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string;
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string;
+    escape(tableName: string): string;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
