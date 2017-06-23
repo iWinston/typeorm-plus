@@ -101,6 +101,15 @@ export abstract class QueryBuilder<Entity> {
     }
 
     // -------------------------------------------------------------------------
+    // Abstract Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets generated sql query without parameters being replaced.
+     */
+    abstract getQuery(): string;
+
+    // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
 
@@ -275,22 +284,6 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Gets generated sql query without parameters being replaced.
-     */
-    getQuery(): string {
-        let sql = this.createSelectExpression();
-        sql += this.createJoinExpression();
-        sql += this.createWhereExpression();
-        sql += this.createGroupByExpression();
-        sql += this.createHavingExpression();
-        sql += this.createOrderByExpression();
-        sql += this.createLimitOffsetExpression();
-        sql += this.createLockExpression();
-        sql = this.createLimitOffsetOracleSpecificExpression(sql);
-        return sql.trim();
-    }
-
-    /**
      * Prints sql to stdout using console.log.
      */
     printSql(): this {
@@ -309,18 +302,8 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Gets sql to be executed with all parameters used in it.
      */
-    getSqlAndParameters(options?: { skipOrderBy?: boolean }): [string, any[]] {
-        let sql = this.createSelectExpression();
-        sql += this.createJoinExpression();
-        sql += this.createWhereExpression();
-        sql += this.createGroupByExpression();
-        sql += this.createHavingExpression();
-        if (!options || !options.skipOrderBy)
-            sql += this.createOrderByExpression();
-        sql += this.createLimitOffsetExpression();
-        sql += this.createLockExpression();
-        sql = this.createLimitOffsetOracleSpecificExpression(sql);
-        return this.connection.driver.escapeQueryWithParameters(sql, this.getParameters());
+    getSqlAndParameters(): [string, any[]] {
+        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.getParameters());
     }
 
     /**
@@ -548,56 +531,11 @@ export abstract class QueryBuilder<Entity> {
         }
 
         // create a selection query
-        switch (this.expressionMap.queryType) {
-            case "select":
-                const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + ea(select.aliasName) : "")).join(", ");
-                if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
-                    return "SELECT ROWNUM " + this.escapeAlias("RN") + "," + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
-                }
-                return "SELECT " + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
-            case "delete":
-                return "DELETE FROM " + et(tableName); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names // todo: replace aliases in where to nothing?
-            case "update":
-                let valuesSet = this.expressionMap.valuesSet as ObjectLiteral;
-                if (!valuesSet)
-                    throw new Error(`Cannot perform update query because updation values are not defined.`);
-
-                const updateSet: string[] = [];
-                Object.keys(valuesSet).forEach(columnProperty => {
-                    const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyName(columnProperty);
-                    if (column) {
-                        const paramName = "_updated_" + column.databaseName;
-                        this.setParameter(paramName, valuesSet[column.propertyName]);
-                        updateSet.push(ea(column.databaseName) + "=:" + paramName);
-                    }
-                });
-                return `UPDATE ${this.escapeTable(tableName)} ${aliasName ? ea(aliasName) : ""} SET ${updateSet.join(", ")}`; // todo: replace aliases in where to nothing?
-            case "insert":
-                let valuesSets: ObjectLiteral[] = []; // todo: check if valuesSet is defined and has items if its an array
-                if (this.expressionMap.valuesSet instanceof Array && this.expressionMap.valuesSet.length > 0) {
-                    valuesSets = this.expressionMap.valuesSet;
-                } else if (this.expressionMap.valuesSet instanceof Object) {
-                    valuesSets = [this.expressionMap.valuesSet];
-                } else {
-                    throw new Error(`Cannot perform insert query because values are not defined.`);
-                }
-
-                const columns: ColumnMetadata[] = [];
-                Object.keys(valuesSets[0]).forEach(columnProperty => {
-                    const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyName(columnProperty);
-                    if (column) columns.push(column);
-                });
-                const values = valuesSets.map((valueSet, key) => {
-                    return "(" + columns.map(column => {
-                        const paramName = ":_inserted_" + key + "_" + column.databaseName;
-                        this.setParameter(paramName, valueSet[column.propertyName]);
-                        return paramName;
-                    }).join(",") + ")";
-                }).join(", ");
-                return `INSERT INTO ${this.escapeTable(tableName)}(${columns.map(column => column.databaseName)}) VALUES ${values}`;
+        const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + ea(select.aliasName) : "")).join(", ");
+        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
+            return "SELECT ROWNUM " + this.escapeAlias("RN") + "," + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
         }
-
-        throw new Error("No query builder type is specified.");
+        return "SELECT " + selection + " FROM " + this.escapeTable(tableName) + " " + ea(aliasName) + lock;
     }
 
     protected createHavingExpression() {
@@ -862,6 +800,9 @@ export abstract class QueryBuilder<Entity> {
         return "";
     }
 
+    /**
+     * Adds lock expression to a query.
+     */
     protected createLockExpression(): string {
         switch (this.expressionMap.lockMode) {
             case "pessimistic_read":
@@ -930,6 +871,19 @@ export abstract class QueryBuilder<Entity> {
 
         const whereString = whereStrings.length > 1 ? "(" + whereStrings.join(" OR ") + ")" : whereStrings[0];
         return [whereString, parameters];
+    }
+
+    /**
+     * Gets name of the table where insert should be performed.
+     */
+    protected getTableName(): string {
+        if (!this.expressionMap.mainAlias)
+            throw new Error(`Entity where values should be inserted is not specified. Call "qb.into(entity)" method to specify it.`);
+
+        if (this.expressionMap.mainAlias.hasMetadata)
+            return this.expressionMap.mainAlias.metadata.tableName;
+
+        return this.expressionMap.mainAlias.tableName!;
     }
 
 }

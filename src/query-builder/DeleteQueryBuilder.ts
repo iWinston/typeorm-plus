@@ -7,6 +7,19 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     // -------------------------------------------------------------------------
+    // Public Implemented Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets generated sql query without parameters being replaced.
+     */
+    getQuery(): string {
+        let sql = this.createDeleteExpression();
+        sql += this.createWhereExpression();
+        return sql.trim();
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -48,6 +61,18 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
         this.expressionMap.wheres.push({ type: "or", condition: where });
         if (parameters) this.setParameters(parameters);
         return this;
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates DELETE express used to perform insert query.
+     */
+    protected createDeleteExpression() {
+        const tableName = this.escapeTable(this.getTableName());
+        return `DELETE FROM ${tableName}`; // todo: how do we replace aliases in where to nothing?
     }
 
 }

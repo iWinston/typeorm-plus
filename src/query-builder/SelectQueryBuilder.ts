@@ -25,6 +25,26 @@ import {ReadStream} from "fs";
 export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     // -------------------------------------------------------------------------
+    // Public Implemented Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets generated sql query without parameters being replaced.
+     */
+    getQuery(): string {
+        let sql = this.createSelectExpression();
+        sql += this.createJoinExpression();
+        sql += this.createWhereExpression();
+        sql += this.createGroupByExpression();
+        sql += this.createHavingExpression();
+        sql += this.createOrderByExpression();
+        sql += this.createLimitOffsetExpression();
+        sql += this.createLockExpression();
+        sql = this.createLimitOffsetOracleSpecificExpression(sql);
+        return sql.trim();
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -509,15 +529,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
+     *
+     * Calling order by without order set will remove all previously set order bys.
      */
-    orderBy(sort: string, order?: "ASC"|"DESC"): this;
+    orderBy(): this;
 
     /**
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort: undefined): this;
+    orderBy(sort: string, order?: "ASC"|"DESC"): this;
 
     /**
      * Sets ORDER BY condition in the query builder.
@@ -829,7 +851,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }).join(", ") + ") as \"cnt\"";
 
         const countQueryBuilder = new SelectQueryBuilder(this)
-            .orderBy(undefined)
+            .orderBy()
             .offset(undefined)
             .limit(undefined)
             .select(countSql);
@@ -880,7 +902,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.skip || this.expressionMap.take) {
                 // we are skipping order by here because its not working in subqueries anyway
                 // to make order by working we need to apply it on a distinct query
-                const [sql, parameters] = this.getSqlAndParameters({ skipOrderBy: true });
+                const [sql, parameters] = this/*.clone().orderBy()*/.getSqlAndParameters();
                 const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
 
                 const distinctAlias = this.escapeTable("distinctAlias");
