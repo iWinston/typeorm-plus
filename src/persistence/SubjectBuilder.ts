@@ -270,8 +270,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 entities = await this.connection
                     .getRepository<ObjectLiteral>(subjectGroup.target)
                     .createQueryBuilder("operateSubject", this.queryRunner)
-                    .andWhereInIds(allIds)
-                    .enableAutoRelationIdsLoad()
+                    .whereInIds(allIds)
+                    .loadAllRelationIds()
                     .getMany();
             }
 
@@ -391,7 +391,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     const qb = this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .enableAutoRelationIdsLoad();
+                        .loadAllRelationIds();
 
                     const condition = relation.joinColumns.map(joinColumn => {
                         return `${qbAlias}.${joinColumn.referencedColumn!.propertyPath} = :${joinColumn.databaseName}`;
@@ -481,7 +481,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id") // TODO relation.inverseRelation.joinColumns
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
-                        .enableAutoRelationIdsLoad()
+                        .loadAllRelationIds()
                         .getOne();
 
                     // add only if database entity exist - because in the case of inverse side of the one-to-one relation
@@ -581,7 +581,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
-                        .enableAutoRelationIdsLoad()
+                        .loadAllRelationIds()
                         .getMany();
 
                 } else if (relation.isManyToManyNotOwner) {
@@ -612,7 +612,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
-                        .enableAutoRelationIdsLoad()
+                        .loadAllRelationIds()
                         .getMany();
 
                 } else { // this case can only be a oneToMany relation
@@ -629,7 +629,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
-                        .enableAutoRelationIdsLoad()
+                        .loadAllRelationIds()
                         .getMany();
                 }
 
@@ -668,8 +668,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                     const databaseEntity = await this.connection
                                         .getRepository<ObjectLiteral>(valueMetadata.target)
                                         .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                                        .andWhereInIds([id])
-                                        .enableAutoRelationIdsLoad()
+                                        .whereInIds([id])
+                                        .loadAllRelationIds()
                                         .getOne();
 
                                     if (databaseEntity) {

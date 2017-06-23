@@ -521,7 +521,7 @@ export class EntityManager {
             }
             return id;
         });
-        qb.andWhereInIds(ids);
+        qb.whereInIds(ids);
         return qb.getMany();
     }
 
@@ -573,7 +573,7 @@ export class EntityManager {
         if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
             id = metadata.createEntityIdMap([id]);
         }
-        qb.andWhereInIds([id]);
+        qb.whereInIds([id]);
         return qb.getOne();
     }
 

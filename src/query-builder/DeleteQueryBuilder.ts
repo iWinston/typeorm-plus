@@ -63,6 +63,33 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Adds new AND WHERE with conditions for the given ids.
+     */
+    whereInIds(ids: any[]): this {
+        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
+        this.andWhere(whereExpression, parameters);
+        return this;
+    }
+
+    /**
+     * Adds new AND WHERE with conditions for the given ids.
+     */
+    andWhereInIds(ids: any[]): this {
+        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
+        this.andWhere(whereExpression, parameters);
+        return this;
+    }
+
+    /**
+     * Adds new OR WHERE with conditions for the given ids.
+     */
+    orWhereInIds(ids: any[]): this {
+        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
+        this.orWhere(whereExpression, parameters);
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

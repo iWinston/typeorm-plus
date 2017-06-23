@@ -54,6 +54,7 @@ of `QueryRunner`, e.g. `queryRunner.connection` and `queryRunner.manager`
 * now `update` method in `QueryBuilder` accepts `Partial<Entity>` and property names used in update map are 
 column property names and they are automatically mapped to column names 
 * `SpecificRepository` has been removed. Instead new `RelationQueryBuilder` was introduced.
+* `getEntitiesAndRawResults` of `QueryBuilder` has been renamed to `getRawAndEntities`
 
 ### DEPRECATIONS
 

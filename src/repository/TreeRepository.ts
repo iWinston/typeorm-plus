@@ -70,9 +70,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getEntitiesAndRawResults()
+            .getRawAndEntities()
             .then(entitiesAndScalars => {
-                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.rawResults);
+                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.raw);
                 this.buildChildrenEntityTree(entity, entitiesAndScalars.entities, relationMaps);
                 return entity;
             });
@@ -118,9 +118,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createAncestorsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getEntitiesAndRawResults()
+            .getRawAndEntities()
             .then(entitiesAndScalars => {
-                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.rawResults);
+                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.raw);
                 this.buildParentEntityTree(entity, entitiesAndScalars.entities, relationMaps);
                 return entity;
             });
