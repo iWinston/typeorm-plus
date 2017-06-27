@@ -175,6 +175,11 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query and applies given update values.
      */
+    update(): UpdateQueryBuilder<Entity>;
+
+    /**
+     * Creates UPDATE query and applies given update values.
+     */
     update(updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
 
     /**
