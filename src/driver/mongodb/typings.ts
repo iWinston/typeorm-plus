@@ -2821,7 +2821,7 @@ export interface Collection {
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
      * @deprecated use find().limit(1).next(function(err, doc){}).
      */
-    findOne(query: Object, options?: FindOneOptions): Promise<any>;
+    findOne(query: Object, options?: MongodbFindOneOptions): Promise<any>;
 
     /**
      * Fetches the first document that matches the query.
@@ -2832,7 +2832,7 @@ export interface Collection {
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
      * @deprecated use find().limit(1).next(function(err, doc){}).
      */
-    findOne(query: Object, options: FindOneOptions, callback: MongoCallback<any>): void;
+    findOne(query: Object, options: MongodbFindOneOptions, callback: MongoCallback<any>): void;
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
@@ -4278,11 +4278,11 @@ export interface FindOperatorsUnordered {
 }
 
 /**
- * FindOneOptions.
+ * MongodbFindOneOptions.
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
  */
-export interface FindOneOptions {
+export interface MongodbFindOneOptions {
 
     /**
      * Sets the limit of documents returned in the query.
