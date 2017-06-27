@@ -1,5 +1,6 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {ObjectType} from "../common/ObjectType";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -27,8 +28,9 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from(entityTarget: Function|string, aliasName: string): this {
-        return this.setMainAlias(entityTarget, aliasName);
+    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): DeleteQueryBuilder<T> {
+        this.setMainAlias(entityTarget, aliasName);
+        return (this as any) as DeleteQueryBuilder<T>;
     }
 
     /**

@@ -1,6 +1,7 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {ObjectType} from "../common/ObjectType";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -26,8 +27,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Specifies INTO which entity's table insertion will be executed.
      */
-    into(entityTarget: Function|string): this {
-        return this.setMainAlias(entityTarget);
+    into<T>(entityTarget: ObjectType<T>|string): InsertQueryBuilder<T> {
+        this.setMainAlias(entityTarget);
+        return (this as any) as InsertQueryBuilder<T>;
     }
 
     /**
@@ -68,9 +70,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         // get values needs to be inserted
         const values = valueSets.map((valueSet, key) => {
             const columnNames = insertColumns.map(column => {
-                const paramName = ":_inserted_" + key + "_" + column.databaseName;
+                const paramName = "_inserted_" + key + "_" + column.databaseName;
                 this.setParameter(paramName, valueSet[column.propertyName]);
-                return paramName;
+                return ":" + paramName;
             });
             return "(" + columnNames.join(",") + ")";
         }).join(", ");

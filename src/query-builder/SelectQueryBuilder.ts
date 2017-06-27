@@ -27,6 +27,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {QueryExpressionMap} from "./QueryExpressionMap";
+import {ObjectType} from "../common/ObjectType";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -99,8 +100,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from(entityTarget: Function|string, aliasName: string): this {
-        return this.setMainAlias(entityTarget, aliasName);
+    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T> {
+        this.setMainAlias(entityTarget, aliasName);
+        return (this as any) as SelectQueryBuilder<T>;
     }
 
     /**

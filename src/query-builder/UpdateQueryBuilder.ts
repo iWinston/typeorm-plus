@@ -26,8 +26,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Values needs to be updated.
      */
-    set(values: Partial<Entity>) {
+    set(values: Partial<Entity>): this {
         this.expressionMap.valuesSet = values;
+        return this;
     }
 
     /**

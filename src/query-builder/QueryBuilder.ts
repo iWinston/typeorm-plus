@@ -7,6 +7,7 @@ import {UpdateQueryBuilder} from "./UpdateQueryBuilder";
 import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
 import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {RelationQueryBuilder} from "./RelationQueryBuilder";
+import {ObjectType} from "../common/ObjectType";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -179,7 +180,12 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update(entity: Function|string, updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
+    update<T>(entity: ObjectType<T>, updateSet: ObjectLiteral): UpdateQueryBuilder<T>;
+
+    /**
+     * Creates UPDATE query for the given entity and applies given update values.
+     */
+    update(entity: string, updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
@@ -189,7 +195,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query and applies given update values.
      */
-    update(entityOrTableNameUpdateSet?: string|Function|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<Entity> {
+    update(entityOrTableNameUpdateSet?: string|Function|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<any> {
         const updateSet = maybeUpdateSet ? maybeUpdateSet : entityOrTableNameUpdateSet as ObjectLiteral|undefined;
 
         if (entityOrTableNameUpdateSet instanceof Function || typeof entityOrTableNameUpdateSet === "string")
