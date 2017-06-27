@@ -467,7 +467,7 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false, true)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table.name, column, false, true)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
@@ -502,7 +502,7 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
-        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column, false, true)}`;
+        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(tableName, column, false, true)}`;
         return this.query(sql);
     }
 
@@ -578,28 +578,28 @@ export class SqlServerQueryRunner implements QueryRunner {
         // to update an identy column we have to drop column and recreate it again
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
             await this.query(`ALTER TABLE "${tableSchema.name}" DROP COLUMN "${newColumn.name}"`);
-            await this.query(`ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(newColumn, false, false)}`);
+            await this.query(`ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(tableSchema.name, newColumn, false, false)}`);
         }
 
-        const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(newColumn, true, false)}`; // todo: CHANGE OR MODIFY COLUMN ????
+        const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(tableSchema.name, newColumn, true, false)}`; // todo: CHANGE OR MODIFY COLUMN ????
         await this.query(sql);
 
         if (newColumn.isUnique !== oldColumn.isUnique) {
             if (newColumn.isUnique === true) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${tableSchema.name}_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
 
             } else if (newColumn.isUnique === false) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${tableSchema.name}_${newColumn.name}"`);
 
             }
         }
         if (newColumn.default !== oldColumn.default) {
             if (newColumn.default !== null && newColumn.default !== undefined) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${newColumn.name}"`);
-                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "df_${newColumn.name}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${tableSchema.name}_${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "df_${tableSchema.name}_${newColumn.name}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`);
 
             } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${tableSchema.name}_${newColumn.name}"`);
 
             }
         }
@@ -623,7 +623,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         // drop depend constraints
         if (column.default)
-            await this.query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "df_${column.name}"`);
+            await this.query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "df_${table.name}_${column.name}"`);
 
         // drop column itself
         await this.query(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
@@ -798,7 +798,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
+    protected buildCreateColumnSql(tableName: string, column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
         let c = `"${column.name}" ${column.type}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
@@ -810,7 +810,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
             c += " COMMENT '" + column.comment + "'";
         if (createDefault) {
             if (column.default !== undefined && column.default !== null) {
-                c += ` CONSTRAINT "df_${column.name}" DEFAULT ${column.default}`;
+                c += ` CONSTRAINT "df_${tableName}_${column.name}" DEFAULT ${column.default}`;
             }
         }
         return c;

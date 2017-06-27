@@ -94,7 +94,7 @@ export class RawSqlResultsToEntityTransformer {
         let hasData = false;
         metadata.columns.forEach(column => {
             const value = rawResults[0][alias.name + "_" + column.databaseName];
-            if (value === undefined || value === null || column.isVirtual || column.isParentId || column.isDiscriminator)
+            if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
 
             column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
@@ -104,7 +104,7 @@ export class RawSqlResultsToEntityTransformer {
         if (alias.metadata.parentEntityMetadata) {
             alias.metadata.parentEntityMetadata.columns.forEach(column => {
                 const value = rawResults[0]["parentIdColumn_" + alias.metadata.parentEntityMetadata.tableName + "_" + column.databaseName];
-                if (value === undefined || value === null || column.isVirtual || column.isParentId || column.isDiscriminator)
+                if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                     return;
 
                 column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));

@@ -55,6 +55,7 @@ of `QueryRunner`, e.g. `queryRunner.connection` and `queryRunner.manager`
 column property names and they are automatically mapped to column names 
 * `SpecificRepository` has been removed. Instead new `RelationQueryBuilder` was introduced.
 * `getEntitiesAndRawResults` of `QueryBuilder` has been renamed to `getRawAndEntities`
+* in mssql all constraints are now generated using table name in their names - this is fixes issues with duplicate constraint names 
 
 ### DEPRECATIONS
 
