@@ -143,6 +143,13 @@ export class QueryExpressionMap {
      */
     subQuery: boolean = false;
 
+    /**
+     * Indicates if property names are prefixed with alias names during property replacement.
+     * By default this is enabled, however we need this because aliases are not supported in UPDATE and DELETE queries,
+     * but user can use them in WHERE expressions.
+     */
+    aliasNamePrefixingEnabled: boolean = true;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

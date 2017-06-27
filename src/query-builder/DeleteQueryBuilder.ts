@@ -1,11 +1,22 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
+import {Connection} from "../connection/Connection";
+import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
 export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner) {
+        super(connectionOrQueryBuilder as any, queryRunner);
+        this.expressionMap.aliasNamePrefixingEnabled = false;
+    }
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -28,7 +39,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): DeleteQueryBuilder<T> {
+    from<T>(entityTarget: ObjectType<T>|string, aliasName?: string): DeleteQueryBuilder<T> {
         this.setMainAlias(entityTarget, aliasName);
         return (this as any) as DeleteQueryBuilder<T>;
     }

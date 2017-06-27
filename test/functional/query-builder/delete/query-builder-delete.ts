@@ -7,7 +7,7 @@ import {expect} from "chai";
 
 const should = chai.should();
 
-describe("query builder > update", () => {
+describe("query builder > delete", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -18,35 +18,33 @@ describe("query builder > update", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should perform updation correctly", () => Promise.all(connections.map(async connection => {
+    it("should perform deletion correctly", () => Promise.all(connections.map(async connection => {
 
-        const user = new User();
-        user.name = "Alex Messer";
-
-        await connection.manager.save(user);
+        const user1 = new User();
+        user1.name = "Alex Messer";
+        await connection.manager.save(user1);
 
         await connection.createQueryBuilder()
-            .update(User)
-            .set({
-                name: "Dima Zotov"
-            })
+            .delete()
+            .from(User)
             .where("name = :name", { name: "Alex Messer" })
             .execute();
 
         const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima Zotov" });
-        expect(loadedUser1).to.exist;
-        loadedUser1!.name.should.be.equal("Dima Zotov");
+        expect(loadedUser1).to.not.exist;
+
+        const user2 = new User();
+        user2.name = "Alex Messer";
+        await connection.manager.save(user2);
 
         await connection.getRepository(User)
             .createQueryBuilder("myUser")
-            .update()
-            .set({ name: "Muhammad Mirzoev" })
+            .delete()
             .where("myUser.name = :name", { name: "Dima Zotov" })
             .execute();
 
-        const loadedUser2 = await connection.getRepository(User).findOne({ name: "Muhammad Mirzoev" });
-        expect(loadedUser2).to.exist;
-        loadedUser2!.name.should.be.equal("Muhammad Mirzoev");
+        const loadedUser2 = await connection.getRepository(User).findOne({ name: "Dima Zotov" });
+        expect(loadedUser2).to.not.exist;
 
     })));
 
