@@ -98,7 +98,8 @@ export class RawSqlResultsToEntityTransformer {
                 return;
 
             column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
-            hasData = true;
+            if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
+                hasData = true;
         });
 
         if (alias.metadata.parentEntityMetadata) {
@@ -108,7 +109,8 @@ export class RawSqlResultsToEntityTransformer {
                     return;
 
                 column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
-                hasData = true;
+                if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
+                    hasData = true;
             });
         }
         return hasData;

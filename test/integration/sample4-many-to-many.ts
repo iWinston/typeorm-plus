@@ -285,7 +285,7 @@ describe("many-to-many", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                updatedPostReloaded!.details[0].comment.should.be.equal("this is post");
+                updatedPostReloaded!.details[0].comment!.should.be.equal("this is post");
             });
         }); // todo: also check that updates throw exception in strict cascades mode
     });
@@ -481,6 +481,8 @@ describe("many-to-many", function() {
             const expectedDetails = new PostDetails();
             expectedDetails.id = details.id;
             expectedDetails.comment = details.comment;
+            expectedDetails.metadata = null;
+            expectedDetails.authorName = null;
             return postDetailsRepository.findOneById(details.id).should.eventually.eql(expectedDetails);
         });
 
@@ -488,6 +490,8 @@ describe("many-to-many", function() {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedDetails.id;
             expectedDetails.comment = savedDetails.comment;
+            expectedDetails.metadata = null;
+            expectedDetails.authorName = null;
             expectedDetails.posts = [];
             expectedDetails.posts.push(new Post());
             expectedDetails.posts[0].id = newPost.id;
@@ -553,6 +557,8 @@ describe("many-to-many", function() {
             const details = new PostDetails();
             details.id = savedDetailsId;
             details.comment = "post details comment";
+            details.metadata = null;
+            details.authorName = null;
             return postDetailsRepository.findOneById(savedDetailsId).should.eventually.eql(details);
         });
 
