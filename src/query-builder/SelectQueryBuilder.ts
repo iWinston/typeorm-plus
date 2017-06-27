@@ -25,6 +25,8 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {SelectQuery} from "./SelectQuery";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {OrderByCondition} from "../find-options/OrderByCondition";
+import {QueryExpressionMap} from "./QueryExpressionMap";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -48,12 +50,24 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         sql += this.createLimitOffsetExpression();
         sql += this.createLockExpression();
         sql = this.createLimitOffsetOracleSpecificExpression(sql);
-        return sql.trim();
+        sql = sql.trim();
+        if (this.expressionMap.subQuery)
+            sql = "(" + sql + ")";
+        return sql;
     }
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Creates a subquery - query that can be used inside other queries.
+     */
+    subQuery(): SelectQueryBuilder<any> {
+        const qb = this.createQueryBuilder();
+        qb.expressionMap.subQuery = true;
+        return qb;
+    }
 
     /**
      * Adds new selection to the SELECT query.
@@ -69,6 +83,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Adds new selection to the SELECT query.
      */
     addSelect(selection: string|string[], selectionAliasName?: string): this {
+        if (!selection)
+            return this;
+
         if (selection instanceof Array) {
             this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(selection => ({ selection: selection })));
         } else {
@@ -596,9 +613,20 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort?: string, order: "ASC"|"DESC" = "ASC"): this {
+    orderBy(order: OrderByCondition): this;
+
+    /**
+     * Sets ORDER BY condition in the query builder.
+     * If you had previously ORDER BY expression defined,
+     * calling this function will override previously set ORDER BY conditions.
+     */
+    orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC"): this {
         if (sort) {
-            this.expressionMap.orderBys = { [sort]: order };
+            if (sort instanceof Object) {
+                this.expressionMap.orderBys = sort as OrderByCondition;
+            } else {
+                this.expressionMap.orderBys = { [sort as string]: order };
+            }
         } else {
             this.expressionMap.orderBys = {};
         }
@@ -852,21 +880,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // todo throw exception if selects or from is missing
 
-        let tableName: string;
         const allSelects: SelectQuery[] = [];
         const excludedSelects: SelectQuery[] = [];
 
         const aliasName = this.expressionMap.mainAlias.name;
+        const tableName = this.getTableName();
 
         if (this.expressionMap.mainAlias.hasMetadata) {
             const metadata = this.expressionMap.mainAlias.metadata;
-            tableName = metadata.tableName;
-
             allSelects.push(...this.buildEscapedEntityColumnSelects(aliasName, metadata));
             excludedSelects.push(...this.findEntityColumnSelects(aliasName, metadata));
-
-        } else { // if alias does not have metadata - selections will be from custom table
-            tableName = this.expressionMap.mainAlias.tableName!;
         }
 
         // add selects from joins
@@ -939,11 +962,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // create a selection query
+        const from = tableName ? this.escape(tableName) : this.expressionMap.mainAlias.subQuery;
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
         if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
-            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + this.escape(tableName) + " " + this.escape(aliasName) + lock;
+            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + from + " " + this.escape(aliasName) + lock;
         }
-        return "SELECT " + selection + " FROM " + this.escape(tableName) + " " + this.escape(aliasName) + lock;
+        return "SELECT " + selection + " FROM " + from + " " + this.escape(aliasName) + lock;
     }
 
     /**
@@ -1173,31 +1197,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return " HAVING " + conditions;
     }
 
-    protected createOrderByCombinedWithSelectExpression(parentAlias: string) {
-
-        // if table has a default order then apply it
-        let orderBys = this.expressionMap.orderBys;
-        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
-        }
-
-        const selectString = Object.keys(orderBys)
-            .map(columnName => {
-                const [alias, column, ...embeddedProperties] = columnName.split(".");
-                return this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"));
-            })
-            .join(", ");
-
-        const orderByString = Object.keys(orderBys)
-            .map(columnName => {
-                const [alias, column, ...embeddedProperties] = columnName.split(".");
-                return this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_")) + " " + this.expressionMap.orderBys[columnName];
-            })
-            .join(", ");
-
-        return [selectString, orderByString];
-    }
-
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
 
@@ -1240,14 +1239,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 }
             }).join(", ") + ") as \"cnt\"";
 
-        const countQueryBuilder = new SelectQueryBuilder(this)
+        const [countQuerySql, countQueryParameters] = new SelectQueryBuilder(this)
+            .mergeExpressionMap({ ignoreParentTablesJoins: true })
             .orderBy()
             .offset(undefined)
             .limit(undefined)
-            .select(countSql);
-        countQueryBuilder.expressionMap.ignoreParentTablesJoins = true;
-
-        const [countQuerySql, countQueryParameters] = countQueryBuilder.getSqlAndParameters();
+            .select(countSql)
+            .getSqlAndParameters();
 
         try {
             const results = await this.queryRunner.query(countQuerySql, countQueryParameters);
@@ -1268,6 +1266,18 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected async executeEntitiesAndRawResults(options: { release: boolean }): Promise<{ entities: Entity[], raw: any[] }> {
         try { // we wrap everything into try/catch because in any case scenario we must release created connection
 
+            if (!this.expressionMap.mainAlias)
+                throw new Error(`Alias is not set. Use "from" method to set an alias.`);
+
+            if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write") && !this.queryRunner.isTransactionActive)
+                throw new PessimisticLockTransactionRequiredError();
+
+            if (this.expressionMap.lockMode === "optimistic") {
+                const metadata = this.expressionMap.mainAlias.metadata;
+                if (!metadata.versionColumn && !metadata.updateDateColumn)
+                    throw new NoVersionOrUpdateDateColumnError(metadata.name);
+            }
+
             const broadcaster = new Broadcaster(this.connection);
             const relationIdLoader = new RelationIdLoader(this.connection, this.queryRunner, this.expressionMap.relationIdAttributes);
             const relationCountLoader = new RelationCountLoader(this.connection, this.queryRunner, this.expressionMap.relationCountAttributes);
@@ -1276,76 +1286,50 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const relationCountMetadataTransformer = new RelationCountMetadataToAttributeTransformer(this.expressionMap);
             relationCountMetadataTransformer.transform();
 
-            if (!this.expressionMap.mainAlias)
-                throw new Error(`Alias is not set. Looks like nothing is selected. Use select*, delete, update method to set an alias.`);
-
-            if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write") && !this.queryRunner.isTransactionActive)
-                throw new PessimisticLockTransactionRequiredError();
-
-            if (this.expressionMap.lockMode === "optimistic") {
-                const metadata = this.expressionMap.mainAlias!.metadata;
-                if (!metadata.versionColumn && !metadata.updateDateColumn)
-                    throw new NoVersionOrUpdateDateColumnError(metadata.name);
-            }
-
             let rawResults: any[] = [], entities: any[] = [];
-            const mainAliasName = this.expressionMap.mainAlias.name;
+
+            // for pagination enabled (e.g. skip and take) its much more complicated - its a special process
+            // where we make two queries to find the data we need
+            // first query find ids in skip and take range
+            // and second query loads the actual data in given ids range
             if (this.expressionMap.skip || this.expressionMap.take) {
+
                 // we are skipping order by here because its not working in subqueries anyway
                 // to make order by working we need to apply it on a distinct query
-                const [sql, parameters] = this/*.clone().orderBy()*/.getSqlAndParameters();
                 const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
+                const metadata = this.expressionMap.mainAlias.metadata;
+                const mainAliasName = this.expressionMap.mainAlias.name;
 
-                const distinctAlias = this.escape("distinctAlias");
-                const metadata = this.expressionMap.mainAlias!.metadata;
-                let idsQuery = `SELECT `;
-                idsQuery += metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(mainAliasName + "_" + primaryColumn.databaseName);
-                    if (index === 0) {
-                        return `DISTINCT(${distinctAlias}.${propertyName}) as "ids_${primaryColumn.databaseName}"`;
-                    } else {
-                        return `${distinctAlias}.${propertyName}) as "ids_${primaryColumn.databaseName}"`;
-                    }
-                }).join(", ");
-                if (selects.length > 0)
-                    idsQuery += ", " + selects;
+                const querySelects = metadata.primaryColumns.map(primaryColumn => {
+                    const distinctAlias = this.escape("distinctAlias");
+                    const columnAlias = this.escape(mainAliasName + "_" + primaryColumn.propertyName);
+                    if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
+                        orderBys[columnAlias] = "ASC";
+                    return `${distinctAlias}.${columnAlias} as "ids_${mainAliasName + "_" + primaryColumn.databaseName}"`;
+                });
 
-                idsQuery += ` FROM (${sql}) ${distinctAlias}`; // TODO: WHAT TO DO WITH PARAMETERS HERE? DO THEY WORK?
+                rawResults = await new SelectQueryBuilder(this.connection, this.queryRunner)
+                    .select(`DISTINCT ${querySelects.join(", ")} `)
+                    .addSelect(selects)
+                    .from(`(${new SelectQueryBuilder(this).orderBy().getQuery()})`, "distinctAlias")
+                    .offset(this.expressionMap.skip)
+                    .limit(this.expressionMap.take)
+                    .orderBy(orderBys)
+                    .setParameters(this.getParameters())
+                    .getRawMany();
 
-                if (orderBys.length > 0) {
-                    idsQuery += " ORDER BY " + orderBys;
-                } else {
-                    idsQuery += ` ORDER BY "ids_${metadata.primaryColumns[0].databaseName}"`; // this is required for mssql driver if firstResult is used. Other drivers don't care about it
-                }
-
-                if (this.connection.driver instanceof SqlServerDriver) { // todo: temporary. need to refactor and make a proper abstraction
-
-                    if (this.expressionMap.skip || this.expressionMap.take) {
-                        idsQuery += ` OFFSET ${this.expressionMap.skip || 0} ROWS`;
-                        if (this.expressionMap.take)
-                            idsQuery += " FETCH NEXT " + this.expressionMap.take + " ROWS ONLY";
-                    }
-                } else {
-
-                    if (this.expressionMap.take)
-                        idsQuery += " LIMIT " + this.expressionMap.take;
-                    if (this.expressionMap.skip)
-                        idsQuery += " OFFSET " + this.expressionMap.skip;
-                }
-
-                let rawResults: any[] = await this.queryRunner.query(idsQuery, parameters);
                 if (rawResults.length > 0) {
                     let condition = "";
                     const parameters: ObjectLiteral = {};
                     if (metadata.hasMultiplePrimaryKeys) {
                         condition = rawResults.map(result => {
                             return metadata.primaryColumns.map(primaryColumn => {
-                                parameters["ids_" + primaryColumn.propertyName] = result["ids_" + primaryColumn.propertyName];
-                                return mainAliasName + "." + primaryColumn.propertyName + "=:ids_" + primaryColumn.propertyName;
+                                parameters["ids_" + primaryColumn.propertyName] = result["ids_" + primaryColumn.databaseName];
+                                return mainAliasName + "." + primaryColumn.propertyName + "=:ids_" + primaryColumn.databaseName;
                             }).join(" AND ");
                         }).join(" OR ");
                     } else {
-                        const ids = rawResults.map(result => result["ids_" + metadata.primaryColumns[0].propertyName]);
+                        const ids = rawResults.map(result => result["ids_" + mainAliasName + "_" + metadata.primaryColumns[0].databaseName]);
                         const areAllNumbers = ids.every((id: any) => typeof id === "number");
                         if (areAllNumbers) {
                             // fixes #190. if all numbers then its safe to perform query without parameter
@@ -1355,12 +1339,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             condition = mainAliasName + "." + metadata.primaryColumns[0].propertyName + " IN (:ids)";
                         }
                     }
-                    const clonnedQb = new SelectQueryBuilder(this);
-                    clonnedQb.expressionMap.extraAppendedAndWhereCondition = condition;
-                    const [queryWithIdsSql, queryWithIdsParameters] = clonnedQb
+                    rawResults = await new SelectQueryBuilder(this)
+                        .mergeExpressionMap({ extraAppendedAndWhereCondition: condition })
                         .setParameters(parameters)
-                        .getSqlAndParameters();
-                    rawResults = await this.queryRunner.query(queryWithIdsSql, queryWithIdsParameters);
+                        .getRawMany();
                 }
 
             } else {
@@ -1390,6 +1372,38 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (options.release && this.ownQueryRunner) // means we created our own query runner
                 await this.queryRunner.release();
         }
+    }
+
+    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition] {
+
+        // if table has a default order then apply it
+        let orderBys = this.expressionMap.orderBys;
+        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
+            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
+        }
+
+        const selectString = Object.keys(orderBys)
+            .map(columnName => {
+                const [alias, column, ...embeddedProperties] = columnName.split(".");
+                return this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"));
+            })
+            .join(", ");
+
+        const orderByObject: OrderByCondition = {};
+        Object.keys(orderBys).forEach(columnName => {
+            const [alias, column, ...embeddedProperties] = columnName.split(".");
+            orderByObject[this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"))] = this.expressionMap.orderBys[columnName];
+        });
+
+        return [selectString, orderByObject];
+    }
+
+    /**
+     * Merges into expression map given expression map properties.
+     */
+    protected mergeExpressionMap(expressionMap: Partial<QueryExpressionMap>): this {
+        Object.assign(this.expressionMap, expressionMap);
+        return this;
     }
 
 }

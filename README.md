@@ -375,14 +375,12 @@ This is not very convenient, so instead we can set up the whole directory, from 
 import {createConnection} from "typeorm";
 
 createConnection({
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test"
     entities: [
         __dirname + "/entity/*.js"
     ],

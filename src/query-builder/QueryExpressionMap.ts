@@ -138,6 +138,11 @@ export class QueryExpressionMap {
      */
     extraAppendedAndWhereCondition: string = "";
 
+    /**
+     * Indicates if query builder creates a subquery.
+     */
+    subQuery: boolean = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -152,7 +157,7 @@ export class QueryExpressionMap {
     /**
      * Creates a main alias and adds it to the current expression map.
      */
-    createMainAlias(options: { name?: string, target?: Function|string, tableName?: string, metadata?: EntityMetadata }): Alias {
+    createMainAlias(options: { name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
         const alias = this.createAlias(options as any);
 
         // if main alias is already set then remove it from the array
@@ -168,27 +173,7 @@ export class QueryExpressionMap {
     /**
      * Creates a new alias and adds it to the current expression map.
      */
-    createAlias(options: { name: string }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name: string, metadata: EntityMetadata }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name?: string, target: Function|string }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name?: string, tableName: string }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name?: string, target?: Function|string, tableName?: string, metadata?: EntityMetadata }): Alias {
+    createAlias(options: { name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
 
         let aliasName = options.name;
         if (!aliasName && options.tableName)
@@ -207,6 +192,8 @@ export class QueryExpressionMap {
             alias.metadata = this.connection.getMetadata(options.target);
         if (options.tableName)
             alias.tableName = options.tableName;
+        if (options.subQuery)
+            alias.subQuery = options.subQuery;
 
         this.aliases.push(alias);
         return alias;

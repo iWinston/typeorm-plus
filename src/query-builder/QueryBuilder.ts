@@ -373,16 +373,19 @@ export abstract class QueryBuilder<Entity> {
 
         // if table has a metadata then find it to properly escape its properties
         // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
-        if (entityTarget instanceof Function || this.connection.hasMetadata(entityTarget)) {
+        if (this.connection.hasMetadata(entityTarget)) {
             this.expressionMap.createMainAlias({
                 name: aliasName,
                 metadata: this.connection.getMetadata(entityTarget),
             });
 
         } else {
+            const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
+            const subQuery = entityTarget instanceof Function ? entityTarget(((this as any) as SelectQueryBuilder<any>).subQuery()).getQuery() : entityTarget;
             this.expressionMap.createMainAlias({
                 name: aliasName,
-                tableName: entityTarget,
+                tableName: isSubQuery === false ? entityTarget as string : undefined,
+                subQuery: isSubQuery === true ? subQuery : undefined,
             });
         }
         return this;

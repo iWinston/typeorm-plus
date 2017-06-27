@@ -114,7 +114,7 @@ export class SqliteDriver implements Driver {
 
         // validate options to make sure everything is set
         if (!this.options.database)
-            throw new DriverOptionNotSetError("storage");
+            throw new DriverOptionNotSetError("database");
 
         // load sqlite package
         this.loadDependencies();
