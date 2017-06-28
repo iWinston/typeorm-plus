@@ -1497,7 +1497,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 // transform raw results into entities
                 const rawRelationIdResults = await relationIdLoader.load(rawResults);
                 const rawRelationCountResults = await relationCountLoader.load(rawResults);
-                const transformer = new RawSqlResultsToEntityTransformer(this.connection.driver, this.expressionMap.joinAttributes, rawRelationIdResults, rawRelationCountResults);
+                const transformer = new RawSqlResultsToEntityTransformer(this.expressionMap, this.connection.driver, rawRelationIdResults, rawRelationCountResults);
                 entities = transformer.transform(rawResults, this.expressionMap.mainAlias!);
 
                 // broadcast all "after load" events

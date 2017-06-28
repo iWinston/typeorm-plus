@@ -8,6 +8,7 @@ import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {QueryExpressionMap} from "../QueryExpressionMap";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -19,8 +20,8 @@ export class RawSqlResultsToEntityTransformer {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected driver: Driver,
-                protected joinAttributes: JoinAttribute[],
+    constructor(protected expressionMap: QueryExpressionMap,
+                protected driver: Driver,
                 protected rawRelationIdResults: RelationIdLoadResult[],
                 protected rawRelationCountResults: RelationCountLoadResult[]) {
     }
@@ -126,10 +127,10 @@ export class RawSqlResultsToEntityTransformer {
         if (alias.metadata.discriminatorColumn)
             discriminatorValue = rawResults[0][alias.name + "_" + alias.metadata.discriminatorColumn!.databaseName];
 
-        this.joinAttributes.forEach(join => {
+        this.expressionMap.joinAttributes.forEach(join => {
 
             // skip joins without metadata
-            if (!join.metadata)
+            if (!this.expressionMap.selects.find(select => select.aliasName === join.alias.name) || !join.metadata)
                 return;
 
             // this check need to avoid setting properties than not belong to entity when single table inheritance used.

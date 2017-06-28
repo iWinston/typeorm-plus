@@ -4,6 +4,7 @@ import {createTestingConnections, closeTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {Post} from "./entity/Post";
+import {Category} from "./entity/Category";
 
 const should = chai.should();
 
@@ -43,12 +44,22 @@ describe.only("query builder > sub-query", () => {
         user3.registered = false;
         await connection.manager.save(user3);
 
+        const category1 = new Category();
+        category1.name = "Alex Messer";
+        await connection.manager.save(category1);
+
+        const category2 = new Category();
+        category2.name = "Dima Zotov";
+        await connection.manager.save(category2);
+
         const post1 = new Post();
         post1.title = "Alex Messer";
+        post1.categories = [category1, category2];
         await connection.manager.save(post1);
 
         const post2 = new Post();
         post2.title = "Dima Zotov";
+        post2.categories = [category1, category2];
         await connection.manager.save(post2);
 
         const post3 = new Post();
@@ -277,6 +288,27 @@ describe.only("query builder > sub-query", () => {
             { id: 1, name: "Alex Messer" },
             { id: 2, name: "Alex Messer" },
             { id: 3, name: "Alex Messer" },
+        ]);
+    })));
+
+    it("should execute sub query in joins (using provided sub query builder)", () => Promise.all(connections.map(async connection => {
+        await prepare(connection);
+
+        const subQuery = await connection
+            .createQueryBuilder()
+            .select("user.name", "name")
+            .from(User, "user")
+            .getQuery();
+
+        const posts = await connection
+            .getRepository(Post)
+            .createQueryBuilder("post")
+            .innerJoin("post.categories", "category", `category.name IN (${subQuery})`)
+            .getMany();
+
+        posts.should.be.eql([
+            { id: 1, title: "Alex Messer" },
+            { id: 2, title: "Dima Zotov" },
         ]);
     })));
 
