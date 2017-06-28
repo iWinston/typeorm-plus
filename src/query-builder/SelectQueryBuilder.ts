@@ -71,6 +71,56 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     }
 
     /**
+     * Creates SELECT query.
+     * Replaces all previous selections if they exist.
+     */
+    select(): SelectQueryBuilder<Entity>;
+
+    /**
+     * Creates SELECT query.
+     * Replaces all previous selections if they exist.
+     */
+    select(selection: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, selectionAliasName?: string): SelectQueryBuilder<Entity>;
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all previous selections if they exist.
+     */
+    select(selection: string, selectionAliasName?: string): SelectQueryBuilder<Entity>;
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all previous selections if they exist.
+     */
+    select(selection: string[]): SelectQueryBuilder<Entity>;
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all previous selections if they exist.
+     */
+    select(selection?: string|string[]|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): SelectQueryBuilder<Entity> {
+        this.expressionMap.queryType = "select";
+        if (selection instanceof Array) {
+            this.expressionMap.selects = selection.map(selection => ({ selection: selection }));
+
+        } else if (selection instanceof Function) {
+            const subQueryBuilder = selection(this.subQuery());
+            this.setParameters(subQueryBuilder.getParameters());
+            this.expressionMap.selects.push({ selection: subQueryBuilder.getQuery(), aliasName: selectionAliasName });
+
+        } else if (selection) {
+            this.expressionMap.selects = [{ selection: selection, aliasName: selectionAliasName }];
+        }
+
+        return this;
+    }
+
+    /**
+     * Adds new selection to the SELECT query.
+     */
+    addSelect(selection: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, selectionAliasName?: string): this;
+
+    /**
      * Adds new selection to the SELECT query.
      */
     addSelect(selection: string, selectionAliasName?: string): this;
@@ -83,13 +133,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Adds new selection to the SELECT query.
      */
-    addSelect(selection: string|string[], selectionAliasName?: string): this {
+    addSelect(selection: string|string[]|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): this {
         if (!selection)
             return this;
 
         if (selection instanceof Array) {
             this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(selection => ({ selection: selection })));
-        } else {
+
+        } else if (selection instanceof Function) {
+            const subQueryBuilder = selection(this.subQuery());
+            this.setParameters(subQueryBuilder.getParameters());
+            this.expressionMap.selects.push({ selection: subQueryBuilder.getQuery(), aliasName: selectionAliasName });
+
+        } else if (selection) {
             this.expressionMap.selects.push({ selection: selection, aliasName: selectionAliasName });
         }
 
@@ -99,21 +155,49 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
+     * Removes all previously set from-s.
      */
     from<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
+     * Removes all previously set from-s.
      */
     from<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
+     * Removes all previously set from-s.
      */
     from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
-        this.setMainAlias(entityTarget, aliasName);
+        const mainAlias = this.createFromAlias(entityTarget, aliasName);
+        this.expressionMap.setMainAlias(mainAlias);
+        return (this as any) as SelectQueryBuilder<T>;
+    }
+
+    /**
+     * Specifies FROM which entity's table select/update/delete will be executed.
+     * Also sets a main string alias of the selection data.
+     */
+    addFrom<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
+
+    /**
+     * Specifies FROM which entity's table select/update/delete will be executed.
+     * Also sets a main string alias of the selection data.
+     */
+    addFrom<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+
+    /**
+     * Specifies FROM which entity's table select/update/delete will be executed.
+     * Also sets a main string alias of the selection data.
+     */
+    addFrom<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+        const alias = this.createFromAlias(entityTarget, aliasName);
+        if (!this.expressionMap.mainAlias)
+            this.expressionMap.setMainAlias(alias);
+
         return (this as any) as SelectQueryBuilder<T>;
     }
 
@@ -937,13 +1021,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const allSelects: SelectQuery[] = [];
         const excludedSelects: SelectQuery[] = [];
 
-        const aliasName = this.expressionMap.mainAlias.name;
-        const tableName = this.getTableName();
-
         if (this.expressionMap.mainAlias.hasMetadata) {
             const metadata = this.expressionMap.mainAlias.metadata;
-            allSelects.push(...this.buildEscapedEntityColumnSelects(aliasName, metadata));
-            excludedSelects.push(...this.findEntityColumnSelects(aliasName, metadata));
+            allSelects.push(...this.buildEscapedEntityColumnSelects(this.expressionMap.mainAlias.name, metadata));
+            excludedSelects.push(...this.findEntityColumnSelects(this.expressionMap.mainAlias.name, metadata));
         }
 
         // add selects from joins
@@ -1016,12 +1097,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // create a selection query
-        const from = tableName ? this.escape(tableName) : this.expressionMap.mainAlias.subQuery;
+        const froms = this.expressionMap.aliases
+            .filter(alias => alias.tableName || alias.subQuery)
+            .map(alias => {
+                if (alias.subQuery)
+                    return alias.subQuery + " " + this.escape(alias.name);
+
+                return this.escape(alias.tableName!) + " " + this.escape(alias.name);
+            });
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
-        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver) {
-            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + from + " " + this.escape(aliasName) + lock;
-        }
-        return "SELECT " + selection + " FROM " + from + " " + this.escape(aliasName) + lock;
+        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver)
+            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + froms.join(", ") + lock;
+
+        return "SELECT " + selection + " FROM " + froms.join(", ") + lock;
     }
 
     /**

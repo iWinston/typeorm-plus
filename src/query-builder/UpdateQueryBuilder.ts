@@ -163,7 +163,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
         });
 
         // get a table name and all column database names
-        const tableName = this.escape(this.getTableName());
+        const tableName = this.escape(this.getMainTableName());
 
         // generate and return sql update query
         return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}`; // todo: how do we replace aliases in where to nothing?

@@ -38,6 +38,11 @@ export class QueryExpressionMap {
     selects: SelectQuery[] = [];
 
     /**
+     * FROM-s to be selected.
+     */
+    // froms: { target: string, alias: string }[] = [];
+
+    /**
      * If update query was used, it needs "update set" - properties which will be updated by this query.
      * If insert query was used, it needs "insert set" - values that needs to be inserted.
      */
@@ -164,8 +169,7 @@ export class QueryExpressionMap {
     /**
      * Creates a main alias and adds it to the current expression map.
      */
-    createMainAlias(options: { name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
-        const alias = this.createAlias(options as any);
+    setMainAlias(alias: Alias): Alias {
 
         // if main alias is already set then remove it from the array
         if (this.mainAlias)

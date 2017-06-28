@@ -8,6 +8,7 @@ import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
 import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {RelationQueryBuilder} from "./RelationQueryBuilder";
 import {ObjectType} from "../common/ObjectType";
+import {Alias} from "./Alias";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -203,8 +204,10 @@ export abstract class QueryBuilder<Entity> {
     update(entityOrTableNameUpdateSet?: string|Function|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<any> {
         const updateSet = maybeUpdateSet ? maybeUpdateSet : entityOrTableNameUpdateSet as ObjectLiteral|undefined;
 
-        if (entityOrTableNameUpdateSet instanceof Function || typeof entityOrTableNameUpdateSet === "string")
-            this.setMainAlias(entityOrTableNameUpdateSet);
+        if (entityOrTableNameUpdateSet instanceof Function || typeof entityOrTableNameUpdateSet === "string") {
+            const mainAlias = this.createFromAlias(entityOrTableNameUpdateSet);
+            this.expressionMap.setMainAlias(mainAlias);
+        }
 
         this.expressionMap.queryType = "update";
         this.expressionMap.valuesSet = updateSet;
@@ -237,7 +240,8 @@ export abstract class QueryBuilder<Entity> {
     relation(entityTarget: Function|string, propertyPath: string): RelationQueryBuilder<Entity> {
         this.expressionMap.queryType = "relation";
         // qb.expressionMap.propertyPath = propertyPath;
-        this.setMainAlias(entityTarget);
+        const mainAlias = this.createFromAlias(entityTarget);
+        this.expressionMap.setMainAlias(mainAlias);
 
         // loading it dynamically because of circular issue
         const RelationQueryBuilderCls = require("./RelationQueryBuilder").RelationQueryBuilder;
@@ -366,7 +370,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Gets name of the table where insert should be performed.
      */
-    protected getTableName(): string {
+    protected getMainTableName(): string {
         if (!this.expressionMap.mainAlias)
             throw new Error(`Entity where values should be inserted is not specified. Call "qb.into(entity)" method to specify it.`);
 
@@ -380,14 +384,17 @@ export abstract class QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    protected setMainAlias(entityTarget: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName?: string): this {
+    protected createFromAlias(entityTarget: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName?: string): Alias {
 
         // if table has a metadata then find it to properly escape its properties
         // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
         if (this.connection.hasMetadata(entityTarget)) {
-            this.expressionMap.createMainAlias({
+            const metadata = this.connection.getMetadata(entityTarget);
+
+            return this.expressionMap.createAlias({
                 name: aliasName,
                 metadata: this.connection.getMetadata(entityTarget),
+                tableName: metadata.tableName
             });
 
         } else {
@@ -401,13 +408,12 @@ export abstract class QueryBuilder<Entity> {
                 subQuery = entityTarget;
             }
             const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
-            this.expressionMap.createMainAlias({
+            return this.expressionMap.createAlias({
                 name: aliasName,
                 tableName: isSubQuery === false ? entityTarget as string : undefined,
                 subQuery: isSubQuery === true ? subQuery : undefined,
             });
         }
-        return this;
     }
 
     /**

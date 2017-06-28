@@ -28,7 +28,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Specifies INTO which entity's table insertion will be executed.
      */
     into<T>(entityTarget: ObjectType<T>|string): InsertQueryBuilder<T> {
-        this.setMainAlias(entityTarget);
+        const mainAlias = this.createFromAlias(entityTarget);
+        this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as InsertQueryBuilder<T>;
     }
 
@@ -78,7 +79,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }).join(", ");
 
         // get a table name and all column database names
-        const tableName = this.escape(this.getTableName());
+        const tableName = this.escape(this.getMainTableName());
         const columnNames = insertColumns.map(column => this.escape(column.databaseName)).join(", ");
 
         // generate sql query

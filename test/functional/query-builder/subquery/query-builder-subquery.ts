@@ -8,7 +8,11 @@ import {Post} from "./entity/Post";
 const should = chai.should();
 
 describe.only("query builder > sub-query", () => {
-    
+
+    // -------------------------------------------------------------------------
+    // Prepare
+    // -------------------------------------------------------------------------
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,6 +21,10 @@ describe.only("query builder > sub-query", () => {
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
+
+    // -------------------------------------------------------------------------
+    // Reusable functions
+    // -------------------------------------------------------------------------
 
     async function prepare(connection: Connection) {
 
@@ -47,6 +55,10 @@ describe.only("query builder > sub-query", () => {
         post3.title = "Umed Khudoiberdiev";
         await connection.manager.save(post3);
     }
+
+    // -------------------------------------------------------------------------
+    // Specifications
+    // -------------------------------------------------------------------------
 
     it("should execute sub query in where string using subQuery method", () => Promise.all(connections.map(async connection => {
         await prepare(connection);
@@ -174,7 +186,7 @@ describe.only("query builder > sub-query", () => {
         ]);
     })));
 
-    it.only("should execute sub query in from expression (using from's query builder)", () => Promise.all(connections.map(async connection => {
+    it("should execute sub query in from expression (using from's query builder)", () => Promise.all(connections.map(async connection => {
         await prepare(connection);
 
         const userQb = await connection.getRepository(User)
@@ -197,6 +209,74 @@ describe.only("query builder > sub-query", () => {
         posts.should.be.eql([
             { name: "Alex Messer" },
             { name: "Dima Zotov" },
+        ]);
+    })));
+
+    it("should execute sub query in from expression as second from expression", () => Promise.all(connections.map(async connection => {
+        await prepare(connection);
+
+        const posts = await connection
+            .createQueryBuilder()
+            .select("post")
+            .from(Post, "post")
+            .addFrom(subQuery => {
+                return subQuery
+                    .select("user.name", "name")
+                    .from(User, "user")
+                    .where("user.registered = :registered", { registered: true });
+            }, "user")
+            .where("post.title = user.name")
+            .getMany();
+
+        posts.should.be.eql([
+            { id: 1, title: "Alex Messer" },
+            { id: 2, title: "Dima Zotov" },
+        ]);
+    })));
+
+    it("should execute sub query in selects", () => Promise.all(connections.map(async connection => {
+        await prepare(connection);
+
+        const subQuery = await connection
+            .createQueryBuilder()
+            .select("user.name", "name")
+            .from(User, "user")
+            .limit(1)
+            .getQuery();
+
+        const posts = await connection
+            .createQueryBuilder()
+            .select("post.id", "id")
+            .addSelect(`(${subQuery})`, "name")
+            .from(Post, "post")
+            .getRawMany();
+
+        posts.should.be.eql([
+            { id: 1, name: "Alex Messer" },
+            { id: 2, name: "Alex Messer" },
+            { id: 3, name: "Alex Messer" },
+        ]);
+    })));
+
+    it("should execute sub query in selects (using provided sub query builder)", () => Promise.all(connections.map(async connection => {
+        await prepare(connection);
+
+        const posts = await connection
+            .createQueryBuilder()
+            .select("post.id", "id")
+            .addSelect(subQuery => {
+                return subQuery
+                    .select("user.name", "name")
+                    .from(User, "user")
+                    .limit(1);
+            }, "name")
+            .from(Post, "post")
+            .getRawMany();
+
+        posts.should.be.eql([
+            { id: 1, name: "Alex Messer" },
+            { id: 2, name: "Alex Messer" },
+            { id: 3, name: "Alex Messer" },
         ]);
     })));
 

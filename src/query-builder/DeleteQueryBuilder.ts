@@ -40,7 +40,8 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Also sets a main string alias of the selection data.
      */
     from<T>(entityTarget: ObjectType<T>|string, aliasName?: string): DeleteQueryBuilder<T> {
-        this.setMainAlias(entityTarget, aliasName);
+        const mainAlias = this.createFromAlias(entityTarget, aliasName);
+        this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as DeleteQueryBuilder<T>;
     }
 
@@ -151,7 +152,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates DELETE express used to perform insert query.
      */
     protected createDeleteExpression() {
-        const tableName = this.escape(this.getTableName());
+        const tableName = this.escape(this.getMainTableName());
         return `DELETE FROM ${tableName}`; // todo: how do we replace aliases in where to nothing?
     }
 
