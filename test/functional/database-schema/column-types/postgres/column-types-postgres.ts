@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {Post} from "./entity/Post";
+import {PostWithOptions} from "./entity/PostWithOptions";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 
@@ -190,6 +191,70 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("json")!.type.should.be.equal("json");
         tableSchema!.findColumnByName("array")!.type.should.be.equal("array");
         tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("text");
+
+    })));
+
+    it("all types should work correctly - persist and hydrate when options are specified on columns", () => Promise.all(connections.map(async connection => {
+
+        const postRepository = connection.getRepository(PostWithOptions);
+        const queryRunner = connection.createQueryRunner();
+        const tableSchema = await queryRunner.loadTableSchema("post_with_options");
+        await queryRunner.release();
+
+        const post = new PostWithOptions();
+        post.id = "1";
+        post.numeric = "50.00";
+        post.decimal = "50.00";
+        post.char = "AAA";
+        post.character = "AAA";
+        post.varchar = "This is varchar";
+        post.characterVarying = "This is character varying";
+        post.interval = "1 year 2 months 3 days 4 hours 5 minutes 6 seconds";
+        post.time = "15:30:00";
+        post.timeWithTimeZone = "15:30:00 PST";
+        post.timetz = "15:30:00 PST";
+        post.timestamp = new Date();
+        post.timestamp.setMilliseconds(0);
+        post.timestamptz = new Date();
+        post.timestamptz.setMilliseconds(0);
+        post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976";
+        await postRepository.save(post);
+
+        const loadedPost = (await postRepository.findOneById(1))!;
+        loadedPost.id.should.be.equal(post.id);
+        loadedPost.numeric.should.be.equal(post.numeric);
+        loadedPost.decimal.should.be.equal(post.decimal);
+        loadedPost.char.should.be.equal(post.char);
+        loadedPost.character.should.be.equal(post.character);
+        loadedPost.varchar.should.be.equal(post.varchar);
+        loadedPost.characterVarying.should.be.equal(post.characterVarying);
+        loadedPost.interval.years.should.be.equal(1);
+        loadedPost.interval.months.should.be.equal(2);
+        loadedPost.interval.days.should.be.equal(3);
+        loadedPost.interval.hours.should.be.equal(4);
+        loadedPost.interval.minutes.should.be.equal(5);
+        loadedPost.interval.seconds.should.be.equal(6);
+        loadedPost.time.should.be.equal(post.time);
+        loadedPost.timeWithTimeZone.should.be.equal("15:30:00-08");
+        loadedPost.timetz.should.be.equal("15:30:00-08");
+        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
+        loadedPost.timestamptz.getTime().should.be.equal(post.timestamptz.getTime());
+        loadedPost.uuid.should.be.equal(post.uuid);
+
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("character varying");
+        tableSchema!.findColumnByName("numeric")!.type.should.be.equal("numeric");
+        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("numeric");
+        tableSchema!.findColumnByName("char")!.type.should.be.equal("character(3)");
+        tableSchema!.findColumnByName("character")!.type.should.be.equal("character(3)");
+        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("character varying(30)");
+        tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying(30)");
+        tableSchema!.findColumnByName("interval")!.type.should.be.equal("interval");
+        tableSchema!.findColumnByName("time")!.type.should.be.equal("time without time zone");
+        tableSchema!.findColumnByName("timeWithTimeZone")!.type.should.be.equal("time with time zone");
+        tableSchema!.findColumnByName("timetz")!.type.should.be.equal("time with time zone");
+        tableSchema!.findColumnByName("timestamp")!.type.should.be.equal("timestamp without time zone");
+        tableSchema!.findColumnByName("timestamptz")!.type.should.be.equal("timestamp with time zone");
+        tableSchema!.findColumnByName("uuid")!.type.should.be.equal("uuid");
 
     })));
 
