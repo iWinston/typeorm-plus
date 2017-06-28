@@ -569,11 +569,11 @@ export class EntityManager {
                 `complete object with all entity ids, like this: { firstKey: value, secondKey: value }`);
         }
 
-        FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
         if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
             id = metadata.createEntityIdMap([id]);
         }
         qb.whereInIds([id]);
+        FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
         return qb.getOne();
     }
 
