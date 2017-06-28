@@ -380,7 +380,7 @@ export abstract class QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    protected setMainAlias(entityTarget: Function|string, aliasName?: string): this {
+    protected setMainAlias(entityTarget: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName?: string): this {
 
         // if table has a metadata then find it to properly escape its properties
         // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
@@ -391,8 +391,16 @@ export abstract class QueryBuilder<Entity> {
             });
 
         } else {
+            let subQuery: string = "";
+            if (entityTarget instanceof Function) {
+                const subQueryBuilder: SelectQueryBuilder<any> = (entityTarget as any)(((this as any) as SelectQueryBuilder<any>).subQuery());
+                this.setParameters(subQueryBuilder.getParameters());
+                subQuery = subQueryBuilder.getQuery();
+
+            } else {
+                subQuery = entityTarget;
+            }
             const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
-            const subQuery = entityTarget instanceof Function ? entityTarget(((this as any) as SelectQueryBuilder<any>).subQuery()).getQuery() : entityTarget;
             this.expressionMap.createMainAlias({
                 name: aliasName,
                 tableName: isSubQuery === false ? entityTarget as string : undefined,

@@ -48,8 +48,24 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: string, parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "simple", condition: where });
+    where(where: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * Sets WHERE condition in the query builder.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
+     * Additionally you can add parameters used in where expression.
+     */
+    where(where: (qb: this) => string, parameters?: ObjectLiteral): this;
+
+    /**
+     * Sets WHERE condition in the query builder.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
+     * Additionally you can add parameters used in where expression.
+     */
+    where(where: string|((qb: this) => string), parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres = [{ type: "simple", condition: typeof where === "string" ? where : where(this) }];
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -58,8 +74,20 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string, parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: where });
+    andWhere(where: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new AND WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
+    andWhere(where: (qb: this) => string, parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new AND WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
+    andWhere(where: string|((qb: this) => string), parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres.push({ type: "and", condition: typeof where === "string" ? where : where(this) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -68,8 +96,20 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: string, parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "or", condition: where });
+    orWhere(where: string, parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new OR WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
+    orWhere(where: (qb: this) => string, parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new OR WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
+    orWhere(where: string|((qb: this) => string), parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres.push({ type: "or", condition: typeof where === "string" ? where : where(this) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -79,7 +119,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     whereInIds(ids: any[]): this {
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.andWhere(whereExpression, parameters);
+        this.where(whereExpression, parameters);
         return this;
     }
 
