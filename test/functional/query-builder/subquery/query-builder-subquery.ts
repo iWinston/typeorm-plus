@@ -8,7 +8,7 @@ import {Category} from "./entity/Category";
 
 const should = chai.should();
 
-describe.only("query builder > sub-query", () => {
+describe("query builder > sub-query", () => {
 
     // -------------------------------------------------------------------------
     // Prepare
@@ -248,7 +248,7 @@ describe.only("query builder > sub-query", () => {
     it("should execute sub query in selects", () => Promise.all(connections.map(async connection => {
         await prepare(connection);
 
-        const subQuery = await connection
+        const subQuery = connection
             .createQueryBuilder()
             .select("user.name", "name")
             .from(User, "user")
@@ -294,7 +294,7 @@ describe.only("query builder > sub-query", () => {
     it("should execute sub query in joins (using provided sub query builder)", () => Promise.all(connections.map(async connection => {
         await prepare(connection);
 
-        const subQuery = await connection
+        const subQuery = connection
             .createQueryBuilder()
             .select("user.name", "name")
             .from(User, "user")
