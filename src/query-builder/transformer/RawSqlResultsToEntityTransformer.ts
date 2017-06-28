@@ -127,10 +127,10 @@ export class RawSqlResultsToEntityTransformer {
         if (alias.metadata.discriminatorColumn)
             discriminatorValue = rawResults[0][alias.name + "_" + alias.metadata.discriminatorColumn!.databaseName];
 
-        this.expressionMap.joinAttributes.forEach(join => {
+        this.expressionMap.joinAttributes.forEach(join => { // todo: we have problem here - when inner joins are used without selects it still create empty array
 
             // skip joins without metadata
-            if (!this.expressionMap.selects.find(select => select.aliasName === join.alias.name) || !join.metadata)
+            if (!join.metadata)
                 return;
 
             // this check need to avoid setting properties than not belong to entity when single table inheritance used.
