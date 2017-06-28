@@ -230,7 +230,7 @@ export class Post {
     array: number[];
 
     // -------------------------------------------------------------------------
-    // TypeOrm specific Type
+    // TypeOrm Specific Type
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
