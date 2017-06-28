@@ -891,7 +891,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     async getRawAndEntities(): Promise<{ entities: Entity[], raw: any[] }> {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
-            return this.executeEntitiesAndRawResults(queryRunner);
+            return await this.executeEntitiesAndRawResults(queryRunner);
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -946,7 +946,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
-            return this.executeCountQuery(queryRunner);
+            return await this.executeCountQuery(queryRunner);
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1463,7 +1463,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")} `)
                 .addSelect(selects)
-                .from(`(${new SelectQueryBuilder(this).orderBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)

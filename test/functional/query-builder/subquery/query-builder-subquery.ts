@@ -76,7 +76,7 @@ describe("query builder > sub-query", () => {
 
         const qb = await connection.getRepository(Post).createQueryBuilder("post");
         const posts = await qb
-            .where("post.title IN " + qb.subQuery().select("user.name").from(User, "user").where("user.registered = :registered").getQuery())
+            .where("post.title IN " + qb.subQuery().select("usr.name").from(User, "usr").where("usr.registered = :registered").getQuery())
             .setParameter("registered", true)
             .getMany();
 
@@ -93,9 +93,9 @@ describe("query builder > sub-query", () => {
             .createQueryBuilder("post")
             .where(qb => {
                 const subQuery = qb.subQuery()
-                    .select("user.name")
-                    .from(User, "user")
-                    .where("user.registered = :registered")
+                    .select("usr.name")
+                    .from(User, "usr")
+                    .where("usr.registered = :registered")
                     .getQuery();
                 return "post.title IN " + subQuery;
             })
@@ -115,9 +115,9 @@ describe("query builder > sub-query", () => {
             .createQueryBuilder("post")
             .where(qb => {
                 const subQuery = qb.subQuery()
-                    .select("user.name")
-                    .from(User, "user")
-                    .where("user.registered = :registered")
+                    .select("usr.name")
+                    .from(User, "usr")
+                    .where("usr.registered = :registered")
                     .getQuery();
                 return "post.title IN " + subQuery;
             })
@@ -134,9 +134,9 @@ describe("query builder > sub-query", () => {
         await prepare(connection);
 
         const userQb = await connection.getRepository(User)
-            .createQueryBuilder("user")
-            .select("user.name")
-            .where("user.registered = :registered", { registered: true });
+            .createQueryBuilder("usr")
+            .select("usr.name")
+            .where("usr.registered = :registered", { registered: true });
 
         const posts = await connection.getRepository(Post)
             .createQueryBuilder("post")
@@ -154,14 +154,14 @@ describe("query builder > sub-query", () => {
         await prepare(connection);
 
         const userQb = await connection.getRepository(User)
-            .createQueryBuilder("user")
-            .select("user.name", "name")
-            .where("user.registered = :registered", { registered: true });
+            .createQueryBuilder("usr")
+            .select("usr.name", "name")
+            .where("usr.registered = :registered", { registered: true });
 
         const posts = await connection
             .createQueryBuilder()
-            .select("user.name", "name")
-            .from("(" + userQb.getQuery() + ")", "user")
+            .select("usr.name", "name")
+            .from("(" + userQb.getQuery() + ")", "usr")
             .setParameters(userQb.getParameters())
             .getRawMany();
 
@@ -175,19 +175,19 @@ describe("query builder > sub-query", () => {
         await prepare(connection);
 
         const userQb = await connection.getRepository(User)
-            .createQueryBuilder("user")
-            .select("user.name", "name")
-            .where("user.registered = :registered", { registered: true });
+            .createQueryBuilder("usr")
+            .select("usr.name", "name")
+            .where("usr.registered = :registered", { registered: true });
 
         const posts = await connection
             .createQueryBuilder()
-            .select("user.name", "name")
+            .select("usr.name", "name")
             .from(subQuery => {
                 return subQuery
-                    .select("user.name", "name")
-                    .from(User, "user")
-                    .where("user.registered = :registered", { registered: true });
-            }, "user")
+                    .select("usr.name", "name")
+                    .from(User, "usr")
+                    .where("usr.registered = :registered", { registered: true });
+            }, "usr")
             .setParameters(userQb.getParameters())
             .getRawMany();
 
@@ -201,19 +201,19 @@ describe("query builder > sub-query", () => {
         await prepare(connection);
 
         const userQb = await connection.getRepository(User)
-            .createQueryBuilder("user")
-            .select("user.name", "name")
-            .where("user.registered = :registered", { registered: true });
+            .createQueryBuilder("usr")
+            .select("usr.name", "name")
+            .where("usr.registered = :registered", { registered: true });
 
         const posts = await connection
             .createQueryBuilder()
-            .select("user.name", "name")
+            .select("usr.name", "name")
             .from(subQuery => {
                 return subQuery
-                    .select("user.name", "name")
-                    .from(User, "user")
-                    .where("user.registered = :registered", { registered: true });
-            }, "user")
+                    .select("usr.name", "name")
+                    .from(User, "usr")
+                    .where("usr.registered = :registered", { registered: true });
+            }, "usr")
             .setParameters(userQb.getParameters())
             .getRawMany();
 
@@ -232,11 +232,11 @@ describe("query builder > sub-query", () => {
             .from(Post, "post")
             .addFrom(subQuery => {
                 return subQuery
-                    .select("user.name", "name")
-                    .from(User, "user")
-                    .where("user.registered = :registered", { registered: true });
-            }, "user")
-            .where("post.title = user.name")
+                    .select("usr.name", "name")
+                    .from(User, "usr")
+                    .where("usr.registered = :registered", { registered: true });
+            }, "usr")
+            .where("post.title = usr.name")
             .getMany();
 
         posts.should.be.eql([
@@ -250,8 +250,8 @@ describe("query builder > sub-query", () => {
 
         const subQuery = connection
             .createQueryBuilder()
-            .select("user.name", "name")
-            .from(User, "user")
+            .select("usr.name", "name")
+            .from(User, "usr")
             .limit(1)
             .getQuery();
 
@@ -277,8 +277,8 @@ describe("query builder > sub-query", () => {
             .select("post.id", "id")
             .addSelect(subQuery => {
                 return subQuery
-                    .select("user.name", "name")
-                    .from(User, "user")
+                    .select("usr.name", "name")
+                    .from(User, "usr")
                     .limit(1);
             }, "name")
             .from(Post, "post")
@@ -296,8 +296,8 @@ describe("query builder > sub-query", () => {
 
         const subQuery = connection
             .createQueryBuilder()
-            .select("user.name", "name")
-            .from(User, "user")
+            .select("usr.name", "name")
+            .from(User, "usr")
             .getQuery();
 
         const posts = await connection
