@@ -209,7 +209,7 @@ export class OracleQueryRunner implements QueryRunner {
             ? `INSERT INTO "${tableName}" (${columns}) VALUES (${values})`
             : `INSERT INTO "${tableName}" DEFAULT VALUES`;
         if (generatedColumn) {
-            const sql2 = `declare lastId number; begin ${insertSql} returning "id" into lastId; dbms_output.enable; dbms_output.put_line(lastId); dbms_output.get_line(:ln, :st); end;`;
+            const sql2 = `declare lastId number; begin ${insertSql} returning "${generatedColumn.databaseName}" into lastId; dbms_output.enable; dbms_output.put_line(lastId); dbms_output.get_line(:ln, :st); end;`;
             const saveResult = await this.query(sql2, parameters.concat([
                 { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.STRING, maxSize: 32767 },
                 { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.NUMBER }
