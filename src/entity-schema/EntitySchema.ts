@@ -6,7 +6,10 @@ import {RelationType} from "../metadata/types/RelationTypes";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
 import {OnDeleteType} from "../metadata/types/OnDeleteType";
 
-export interface EntitySchema {
+/**
+ * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
+ */
+export interface EntitySchema { // todo: make it-to-date
 
     /**
      * Name of the schema it extends.

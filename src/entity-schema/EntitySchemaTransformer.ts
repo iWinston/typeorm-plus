@@ -9,12 +9,19 @@ import {JoinTableOptions} from "../decorator/options/JoinTableOptions";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
 import {ColumnMode} from "../metadata-args/types/ColumnMode";
 
+/**
+ * Transforms entity schema into metadata args storage.
+ * The result will be just like entities read from decorators.
+ */
 export class EntitySchemaTransformer {
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Transforms entity schema into new metadata args storage object.
+     */
     transform(schemas: EntitySchema[]): MetadataArgsStorage {
         const metadataArgsStorage = new MetadataArgsStorage();
 
