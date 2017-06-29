@@ -2,7 +2,7 @@ import {Driver} from "../Driver";
 import {DriverUtils} from "../DriverUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";

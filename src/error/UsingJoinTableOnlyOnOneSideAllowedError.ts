@@ -1,5 +1,5 @@
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  */

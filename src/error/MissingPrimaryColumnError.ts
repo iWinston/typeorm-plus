@@ -1,4 +1,4 @@
-import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  */

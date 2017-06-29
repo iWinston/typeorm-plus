@@ -2,10 +2,10 @@ import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEnt
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {JoinOptions} from "./JoinOptions";
-import {PessimisticLockTransactionRequiredError} from "./error/PessimisticLockTransactionRequiredError";
-import {NoVersionOrUpdateDateColumnError} from "./error/NoVersionOrUpdateDateColumnError";
-import {OptimisticLockVersionMismatchError} from "./error/OptimisticLockVersionMismatchError";
-import {OptimisticLockCanNotBeUsedError} from "./error/OptimisticLockCanNotBeUsedError";
+import {PessimisticLockTransactionRequiredError} from "../error/PessimisticLockTransactionRequiredError";
+import {NoVersionOrUpdateDateColumnError} from "../error/NoVersionOrUpdateDateColumnError";
+import {OptimisticLockVersionMismatchError} from "../error/OptimisticLockVersionMismatchError";
+import {OptimisticLockCanNotBeUsedError} from "../error/OptimisticLockCanNotBeUsedError";
 import {JoinAttribute} from "./JoinAttribute";
 import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
 import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
@@ -16,7 +16,7 @@ import {RelationCountMetadataToAttributeTransformer} from "./relation-count/Rela
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {QueryBuilder} from "./QueryBuilder";
 import {ReadStream} from "fs";
-import {LockNotSupportedOnGivenDriverError} from "./error/LockNotSupportedOnGivenDriverError";
+import {LockNotSupportedOnGivenDriverError} from "../error/LockNotSupportedOnGivenDriverError";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";

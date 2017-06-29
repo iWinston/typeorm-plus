@@ -1,8 +1,8 @@
 import {ColumnOptions} from "../options/ColumnOptions";
 import {ColumnType} from "../../driver/types/ColumnTypes";
-import {ColumnTypeUndefinedError} from "../error/ColumnTypeUndefinedError";
+import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {getMetadataArgsStorage} from "../../index";
-import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
+import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**

@@ -12,9 +12,9 @@ import {Connection} from "../../../src/connection/Connection";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
 import {getConnectionManager} from "../../../src/index";
-import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
+import {NoConnectionForRepositoryError} from "../../../src/error/NoConnectionForRepositoryError";
 import {EntityManager} from "../../../src/entity-manager/EntityManager";
-import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/error/CannotGetEntityManagerNotConnectedError";
+import {CannotGetEntityManagerNotConnectedError} from "../../../src/error/CannotGetEntityManagerNotConnectedError";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
 
