@@ -3,7 +3,6 @@ import {RelationIdLoadResult} from "../relation-id/RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Alias} from "../Alias";
-import {JoinAttribute} from "../JoinAttribute";
 import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {OrmUtils} from "../../util/OrmUtils";

@@ -1,6 +1,5 @@
 import {getMetadataArgsStorage} from "../../index";
 import {RelationIdMetadataArgs} from "../../metadata-args/RelationIdMetadataArgs";
-import {QueryBuilder} from "../../query-builder/QueryBuilder";
 import {SelectQueryBuilder} from "../../query-builder/SelectQueryBuilder";
 
 /**

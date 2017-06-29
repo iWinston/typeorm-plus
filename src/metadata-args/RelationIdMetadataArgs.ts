@@ -1,4 +1,3 @@
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 /**
  * Arguments for RelationIdMetadataArgs class.

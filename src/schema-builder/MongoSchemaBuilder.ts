@@ -1,6 +1,5 @@
 import {Connection} from "../connection/Connection";
 import {SchemaBuilder} from "./SchemaBuilder";
-import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**

@@ -1,5 +1,4 @@
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {Connection} from "../connection/Connection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 

@@ -14,7 +14,6 @@ import {SqliteDriver} from "./SqliteDriver";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
-import {Readable} from "stream";
 
 /**
  * Runs queries on a single sqlite database connection.

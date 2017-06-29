@@ -45,7 +45,7 @@ export class EntityManager {
     /**
      * Custom query runner to be used for operations in this entity manager.
      */
-    protected queryRunner: QueryRunner;
+    protected queryRunner?: QueryRunner;
 
     /**
      * Stores temporarily user data.
@@ -59,8 +59,7 @@ export class EntityManager {
 
     constructor(connection: Connection, queryRunner?: QueryRunner) {
         this.connection = connection;
-        if (queryRunner)
-            this.queryRunner = queryRunner;
+        this.queryRunner = queryRunner;
     }
 
     // -------------------------------------------------------------------------

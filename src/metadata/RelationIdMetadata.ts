@@ -1,5 +1,4 @@
 import {RelationIdMetadataArgs} from "../metadata-args/RelationIdMetadataArgs";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {EntityMetadata} from "./EntityMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
