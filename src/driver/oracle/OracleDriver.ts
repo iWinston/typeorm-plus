@@ -12,6 +12,7 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {OracleConnectionOptions} from "./OracleConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -43,6 +44,12 @@ export class OracleDriver implements Driver {
      * Database connection pool created by underlying driver.
      */
     pool: any;
+
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -274,7 +281,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";
@@ -297,18 +304,7 @@ export class OracleDriver implements Driver {
         } else {
             type += column.type;
         }
-        if (column.length) {
-            type += "(" + column.length + ")";
 
-        } else if (column.precision && column.scale) {
-            type += "(" + column.precision + "," + column.scale + ")";
-
-        } else if (column.precision) {
-            type += "(" + column.precision + ")";
-
-        } else if (column.scale) {
-            type += "(" + column.scale + ")";
-        }
         return type;
     }
 

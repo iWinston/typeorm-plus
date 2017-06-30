@@ -13,6 +13,7 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -94,6 +95,20 @@ export class MysqlDriver implements Driver {
         treeLevel: "int",
         migrationName: "varchar",
         migrationTimestamp: "bigint"
+    };
+
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults = {
+        varchar: { length: 255 },
+        int: { length: 11 },
+        tinyint: { length: 4 },
+        smallint: { length: 5 },
+        mediumint: { length: 9 },
+        bigint: { length: 20 },
+        year: { length: 4 }
     };
 
     // -------------------------------------------------------------------------
@@ -216,7 +231,7 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
-        } else if (columnMetadata.type === "json") {
+        } else if (columnMetadata.type === Object) {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "simple-array") {
@@ -242,7 +257,7 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
 
-        } else if (columnMetadata.type === "json") {
+        } else if (columnMetadata.type === Object) {
             return JSON.parse(value);
 
         } else if (columnMetadata.type === "simple-array") {
@@ -255,7 +270,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
         let type = "";
         if (column.type === Number) {
             type += "int";
@@ -265,6 +280,9 @@ export class MysqlDriver implements Driver {
 
         } else if (column.type === Date) {
             type += "datetime";
+
+        } else if ((column.type as any) === Buffer) {
+            type += "blob";
 
         } else if (column.type === Boolean) {
             type += "tinyint(1)";
@@ -282,41 +300,6 @@ export class MysqlDriver implements Driver {
         // normalize shortcuts
         if (type === "integer")
             type = "int";
-
-        if (column.length) {
-            type += "(" + column.length + ")";
-
-        } else if (column.precision && column.scale) {
-            type += "(" + column.precision + "," + column.scale + ")";
-
-        } else if (column.precision) {
-            type += "(" + column.precision + ")";
-
-        } else if (column.scale) {
-            type += "(" + column.scale + ")";
-        }
-
-        // set default required length if those were not specified
-        if (type === "varchar")
-            type += "(255)";
-
-        if (type === "int")
-            type += "(11)";
-
-        if (type === "tinyint")
-            type += "(4)";
-
-        if (type === "smallint")
-            type += "(5)";
-
-        if (type === "mediumint")
-            type += "(9)";
-
-        if (type === "bigint")
-            type += "(20)";
-
-        if (type === "year")
-            type += "(4)";
 
         return type;
     }

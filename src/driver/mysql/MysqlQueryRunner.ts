@@ -294,7 +294,11 @@ export class MysqlQueryRunner implements QueryRunner {
                 .map(dbColumn => {
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
-                    columnSchema.type = dbColumn["COLUMN_TYPE"].toLowerCase();
+
+                    const type = dbColumn["COLUMN_TYPE"].toLowerCase();
+                    const endIndex = type.indexOf("(");
+                    columnSchema.type = endIndex !== -1 ? type.substr(0, endIndex) : type;
+
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
@@ -303,6 +307,18 @@ export class MysqlQueryRunner implements QueryRunner {
                     columnSchema.comment = dbColumn["COLUMN_COMMENT"];
                     columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
                     columnSchema.scale = dbColumn["NUMERIC_SCALE"];
+
+                    if (columnSchema.type === "int" || columnSchema.type === "tinyint"
+                        ||  columnSchema.type === "smallint" || columnSchema.type === "mediumint"
+                        || columnSchema.type === "bigint" || columnSchema.type === "year") {
+
+                        const length = type.substr(type.indexOf("(") + 1, type.indexOf(")"));
+                        columnSchema.length = parseInt(length);
+                    } else {
+
+                        columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                    }
+
                     return columnSchema;
                 });
 
@@ -696,7 +712,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Builds a part of query to create/change a column.
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
-        let c = "`" + column.name + "` " + column.type;
+        let c = "`" + column.name + "` " + column.getFullType(this.connection.driver);
         if (column.enum)
             c += "(" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";
         if (column.isNullable !== true)

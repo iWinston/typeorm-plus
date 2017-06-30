@@ -325,14 +325,16 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
             tableSchema.columns = dbColumns
                 .filter(dbColumn => dbColumn["table_name"] === tableSchema.name)
                 .map(dbColumn => {
-                    const columnType = dbColumn["data_type"].toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
-                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)` 
+                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)`
                         || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)` 
                         || /^uuid\_generate\_v\d\(\)/.test(dbColumn["column_default"]);
 
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["column_name"];
-                    columnSchema.type = columnType;
+                    columnSchema.type = dbColumn["data_type"].toLowerCase();
+                    columnSchema.length = dbColumn["character_maximum_length"];
+                    columnSchema.precision = dbColumn["numeric_precision"];
+                    columnSchema.scale = dbColumn["numeric_scale"];
                     columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;
                     columnSchema.isNullable = dbColumn["is_nullable"] === "YES";
                     // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
@@ -503,12 +505,12 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (!oldColumn)
             throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
 
-        if (oldColumn.type !== newColumn.type ||
+        if (oldColumn.getFullType(this.connection.driver) !== newColumn.getFullType(this.connection.driver) ||
             oldColumn.name !== newColumn.name) {
 
             let sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}"`;
-            if (oldColumn.type !== newColumn.type) {
-                sql += ` TYPE ${newColumn.type}`;
+            if (oldColumn.getFullType(this.connection.driver) !== newColumn.getFullType(this.connection.driver)) {
+                sql += ` TYPE ${newColumn.getFullType(this.connection.driver)}`;
             }
             if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
                 sql += ` RENAME TO ` + newColumn.name;
@@ -744,7 +746,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (column.isGenerated === true && column.type !== "uuid") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " SERIAL";
         if (!column.isGenerated || column.type === "uuid")
-            c += " " + column.type;
+            c += " " + column.getFullType(this.connection.driver);
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated)

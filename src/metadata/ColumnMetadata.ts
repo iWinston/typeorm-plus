@@ -48,7 +48,7 @@ export class ColumnMetadata {
     /**
      * Type's length in the database.
      */
-    length: string = "";
+    length?: number;
 
     /**
      * Indicates if this column is a primary key.
@@ -195,7 +195,7 @@ export class ColumnMetadata {
         if (options.args.options.type)
             this.type = options.args.options.type;
         if (options.args.options.length)
-            this.length = String(options.args.options.length);
+            this.length = typeof options.args.options.length === "string" ? parseInt(options.args.options.length) : options.args.options.length;
         if (options.args.options.primary)
             this.isPrimary = options.args.options.primary;
         if (options.args.options.generated)

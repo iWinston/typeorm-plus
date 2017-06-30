@@ -319,7 +319,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                                     constraint["CONSTRAINT_TYPE"] === "P" &&
                                     constraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
                         });
-
+                    // TODO fix
                     let columnType = dbColumn["DATA_TYPE"].toLowerCase();
                     if (dbColumn["DATA_TYPE"].toLowerCase() === "varchar2" && dbColumn["DATA_LENGTH"] !== null) {
                         columnType += "(" + dbColumn["DATA_LENGTH"] + ")";
@@ -512,11 +512,11 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         }
 
         if (newColumn.isNullable !== oldColumn.isNullable) {
-            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${newColumn.type} ${newColumn.isNullable ? "NULL" : "NOT NULL"}`;
+            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${newColumn.getFullType(this.connection.driver)} ${newColumn.isNullable ? "NULL" : "NOT NULL"}`;
             await this.query(sql);
 
-        } else if (newColumn.type !== oldColumn.type) { // elseif is used because
-            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${newColumn.type}`;
+        } else if (newColumn.getFullType(this.connection.driver) !== oldColumn.getFullType(this.connection.driver)) { // elseif is used because
+            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${newColumn.getFullType(this.connection.driver)}`;
             await this.query(sql);
         }
     }
@@ -696,7 +696,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(column: ColumnSchema) {
-        let c = `"${column.name}" ` + column.type;
+        let c = `"${column.name}" ` + column.getFullType(this.connection.driver);
+        if (column.length)
+            c += "(" + column.length + ")";
+        if (column.precision && column.scale)
+            c += "(" + column.precision + "," + column.scale + ")";
+        if (column.precision)
+            c += "(" + column.precision + ")";
         if (column.isNullable !== true && !column.isGenerated) // NOT NULL is not supported with GENERATED
             c += " NOT NULL";
         // if (column.isPrimary === true && addPrimary)

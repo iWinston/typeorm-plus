@@ -639,7 +639,7 @@ export class SqliteQueryRunner implements QueryRunner {
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
         } else {
-            c += " " + column.type;
+            c += " " + column.getFullType(this.connection.driver);
         }
         if (column.isNullable !== true)
             c += " NOT NULL";

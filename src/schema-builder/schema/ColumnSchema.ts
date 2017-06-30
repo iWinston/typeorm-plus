@@ -1,4 +1,5 @@
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {Driver} from "../../driver/Driver";
 
 /**
  * Table's column's schema in the database represented in this class.
@@ -47,19 +48,25 @@ export class ColumnSchema {
     /**
      * Column's comment.
      */
-    comment: string|undefined;
+    comment?: string;
+
+    /**
+     * Column type's length. Used only on some column types.
+     * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
+     */
+    length?: number;
 
     /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
      * number of digits that are stored for the values.
      */
-    precision: number|undefined;
+    precision?: number;
 
     /**
      * The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number
      * of digits to the right of the decimal point and must not be greater than precision.
      */
-    scale: number|undefined;
+    scale?: number;
 
     /**
      * Array of possible enumerated values.
@@ -73,6 +80,9 @@ export class ColumnSchema {
     constructor(options?: {
         name?: string,
         type?: string,
+        length?: number,
+        precision?: number,
+        scale?: number,
         default?: any,
         isNullable?: boolean,
         isGenerated?: boolean,
@@ -84,6 +94,9 @@ export class ColumnSchema {
         if (options) {
             this.name = options.name || "";
             this.type = options.type || "";
+            this.length = options.length;
+            this.precision = options.precision;
+            this.scale = options.scale;
             this.default = options.default;
             this.isNullable = options.isNullable || false;
             this.isGenerated = options.isGenerated || false;
@@ -105,6 +118,9 @@ export class ColumnSchema {
         const newColumnSchema = new ColumnSchema();
         newColumnSchema.name = this.name;
         newColumnSchema.type = this.type;
+        newColumnSchema.length = this.length;
+        newColumnSchema.precision = this.precision;
+        newColumnSchema.scale = this.scale;
         newColumnSchema.default = this.default;
         newColumnSchema.isNullable = this.isNullable;
         newColumnSchema.isGenerated = this.isGenerated;
@@ -112,6 +128,25 @@ export class ColumnSchema {
         newColumnSchema.isUnique = this.isUnique;
         newColumnSchema.comment = this.comment;
         return newColumnSchema;
+    }
+
+    getFullType(driver: Driver): string {
+        if (this.length) {
+            return this.type + "(" + this.length + ")";
+        } else if (this.precision && this.scale) {
+            return this.type + "(" + this.precision + "," + this.scale + ")";
+        } else if (this.precision) {
+            if (this.type === "real")
+                return this.type;
+            return this.type + "(" + this.precision + ")";
+        } else if (this.scale) {
+            return this.type + "(" + this.scale + ")";
+        }
+
+        if (driver.dataTypeDefaults && driver.dataTypeDefaults[this.type] && driver.dataTypeDefaults[this.type].length)
+            return this.type + "(" + driver.dataTypeDefaults[this.type].length + ")";
+
+        return this.type;
     }
 
     // -------------------------------------------------------------------------
@@ -124,6 +159,9 @@ export class ColumnSchema {
     static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string): ColumnSchema {
         const columnSchema = new ColumnSchema();
         columnSchema.name = columnMetadata.databaseName;
+        columnSchema.length = columnMetadata.length;
+        columnSchema.precision = columnMetadata.precision;
+        columnSchema.scale = columnMetadata.scale;
         columnSchema.default = normalizedDefault;
         columnSchema.comment = columnMetadata.comment;
         columnSchema.isGenerated = columnMetadata.isGenerated;

@@ -26,7 +26,7 @@ describe("database schema > column types > postgres", () => {
         await queryRunner.release();
 
         const post = new Post();
-        post.id = "1";
+        post.id = 1;
         post.name = "Post";
         post.integer = 2147483647;
         post.int4 = 2147483647;
@@ -114,9 +114,9 @@ describe("database schema > column types > postgres", () => {
         loadedPost.time.should.be.equal(post.time);
         loadedPost.timeWithTimeZone.should.be.equal("15:30:00-08");
         loadedPost.timetz.should.be.equal("15:30:00-08");
-        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
+        loadedPost.timestamp.valueOf().should.be.equal(post.timestamp.valueOf());
         // loadedPost.timestampWithTimeZone.getTime().should.be.equal(post.timestampWithTimeZone.getTime());
-        loadedPost.timestamptz.getTime().should.be.equal(post.timestamptz.getTime());
+        loadedPost.timestamptz.valueOf().should.be.equal(post.timestamptz.valueOf());
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.bool.should.be.equal(post.bool);
         loadedPost.point.should.be.eql({ x: 10, y: 20 });
@@ -142,7 +142,7 @@ describe("database schema > column types > postgres", () => {
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("character varying");
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
         tableSchema!.findColumnByName("name")!.type.should.be.equal("character varying");
         tableSchema!.findColumnByName("integer")!.type.should.be.equal("integer");
         tableSchema!.findColumnByName("int4")!.type.should.be.equal("integer");
@@ -157,8 +157,10 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("real")!.type.should.be.equal("real");
         tableSchema!.findColumnByName("float4")!.type.should.be.equal("real");
         tableSchema!.findColumnByName("money")!.type.should.be.equal("money");
-        tableSchema!.findColumnByName("char")!.type.should.be.equal("character(1)");
-        tableSchema!.findColumnByName("character")!.type.should.be.equal("character(1)");
+        tableSchema!.findColumnByName("char")!.type.should.be.equal("character");
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("character")!.type.should.be.equal("character");
+        tableSchema!.findColumnByName("character")!.length!.should.be.equal(1);
         tableSchema!.findColumnByName("varchar")!.type.should.be.equal("character varying");
         tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
         tableSchema!.findColumnByName("text")!.type.should.be.equal("text");
@@ -183,7 +185,8 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("cidr")!.type.should.be.equal("cidr");
         tableSchema!.findColumnByName("inet")!.type.should.be.equal("inet");
         tableSchema!.findColumnByName("macaddr")!.type.should.be.equal("macaddr");
-        tableSchema!.findColumnByName("bit")!.type.should.be.equal("bit(1)");
+        tableSchema!.findColumnByName("bit")!.type.should.be.equal("bit");
+        tableSchema!.findColumnByName("bit")!.length!.should.be.equal(1);
         tableSchema!.findColumnByName("varbit")!.type.should.be.equal("bit varying");
         tableSchema!.findColumnByName("bitVarying")!.type.should.be.equal("bit varying");
         tableSchema!.findColumnByName("uuid")!.type.should.be.equal("uuid");
@@ -202,22 +205,13 @@ describe("database schema > column types > postgres", () => {
         await queryRunner.release();
 
         const post = new PostWithOptions();
-        post.id = "1";
+        post.id = 1;
         post.numeric = "50.00";
         post.decimal = "50.00";
         post.char = "AAA";
         post.character = "AAA";
         post.varchar = "This is varchar";
         post.characterVarying = "This is character varying";
-        post.interval = "1 year 2 months 3 days 4 hours 5 minutes 6 seconds";
-        post.time = "15:30:00";
-        post.timeWithTimeZone = "15:30:00 PST";
-        post.timetz = "15:30:00 PST";
-        post.timestamp = new Date();
-        post.timestamp.setMilliseconds(0);
-        post.timestamptz = new Date();
-        post.timestamptz.setMilliseconds(0);
-        post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976";
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -228,33 +222,22 @@ describe("database schema > column types > postgres", () => {
         loadedPost.character.should.be.equal(post.character);
         loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.characterVarying.should.be.equal(post.characterVarying);
-        loadedPost.interval.years.should.be.equal(1);
-        loadedPost.interval.months.should.be.equal(2);
-        loadedPost.interval.days.should.be.equal(3);
-        loadedPost.interval.hours.should.be.equal(4);
-        loadedPost.interval.minutes.should.be.equal(5);
-        loadedPost.interval.seconds.should.be.equal(6);
-        loadedPost.time.should.be.equal(post.time);
-        loadedPost.timeWithTimeZone.should.be.equal("15:30:00-08");
-        loadedPost.timetz.should.be.equal("15:30:00-08");
-        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
-        loadedPost.timestamptz.getTime().should.be.equal(post.timestamptz.getTime());
-        loadedPost.uuid.should.be.equal(post.uuid);
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("character varying");
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
         tableSchema!.findColumnByName("numeric")!.type.should.be.equal("numeric");
+        tableSchema!.findColumnByName("numeric")!.precision!.should.be.equal(5);
+        tableSchema!.findColumnByName("numeric")!.scale!.should.be.equal(2);
         tableSchema!.findColumnByName("decimal")!.type.should.be.equal("numeric");
-        tableSchema!.findColumnByName("char")!.type.should.be.equal("character(3)");
-        tableSchema!.findColumnByName("character")!.type.should.be.equal("character(3)");
-        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("character varying(30)");
-        tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying(30)");
-        tableSchema!.findColumnByName("interval")!.type.should.be.equal("interval");
-        tableSchema!.findColumnByName("time")!.type.should.be.equal("time without time zone");
-        tableSchema!.findColumnByName("timeWithTimeZone")!.type.should.be.equal("time with time zone");
-        tableSchema!.findColumnByName("timetz")!.type.should.be.equal("time with time zone");
-        tableSchema!.findColumnByName("timestamp")!.type.should.be.equal("timestamp without time zone");
-        tableSchema!.findColumnByName("timestamptz")!.type.should.be.equal("timestamp with time zone");
-        tableSchema!.findColumnByName("uuid")!.type.should.be.equal("uuid");
+        tableSchema!.findColumnByName("decimal")!.precision!.should.be.equal(5);
+        tableSchema!.findColumnByName("decimal")!.scale!.should.be.equal(2);
+        tableSchema!.findColumnByName("char")!.type.should.be.equal("character");
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("character")!.type.should.be.equal("character");
+        tableSchema!.findColumnByName("character")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("character varying");
+        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(30);
+        tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
+        tableSchema!.findColumnByName("characterVarying")!.length!.should.be.equal(30);
 
     })));
 

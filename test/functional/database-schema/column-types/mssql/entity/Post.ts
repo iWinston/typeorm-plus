@@ -58,7 +58,7 @@ export class Post {
     @Column("char")
     char: string;
 
-    /*@Column("varchar")
+    @Column("varchar")
     varchar: string;
 
     @Column("text")
@@ -80,7 +80,7 @@ export class Post {
     varbinary: Buffer;
 
     @Column("image")
-    image: Buffer;*/
+    image: Buffer;
 
     // -------------------------------------------------------------------------
     // Numeric Types
@@ -99,7 +99,7 @@ export class Post {
     smalldatetime: Date;
 
     @Column("time")
-    time: Date;
+    time: string;
 
     @Column("datetimeoffset")
     datetimeoffset: Date;

@@ -403,9 +403,13 @@ export class SqlServerQueryRunner implements QueryRunner {
                                 dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE";
                     });
 
+
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
-                    columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase() + (dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? "(" + dbColumn["CHARACTER_MAXIMUM_LENGTH"] + ")" : ""); // todo: use normalize type?
+                    columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase();
+                    columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                    columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
+                    columnSchema.scale = dbColumn["NUMERIC_SCALE"];
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     columnSchema.isPrimary = isPrimary;
@@ -799,7 +803,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(tableName: string, column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
-        let c = `"${column.name}" ${column.type}`;
+        let c = `"${column.name}" ${column.getFullType(this.connection.driver)}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated === true && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.

@@ -3,8 +3,9 @@ import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithOptions} from "./entity/PostWithOptions";
+import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 
-describe("database schema > column types > mysql", () => {
+describe.only("database schema > column types > mysql", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -26,7 +27,7 @@ describe("database schema > column types > mysql", () => {
         await queryRunner.release();
 
         const post = new Post();
-        post.id = "1";
+        post.id = 1;
         post.name = "Post";
         post.int = 2147483647;
         post.tinyint = 127;
@@ -69,8 +70,8 @@ describe("database schema > column types > mysql", () => {
         loadedPost.double.should.be.equal(post.double);
         loadedPost.decimal.should.be.equal(post.decimal);
         loadedPost.date.should.be.equal(post.date);
-        loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
-        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
+        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
+        loadedPost.timestamp.valueOf().should.be.equal(post.timestamp.valueOf());
         loadedPost.time.should.be.equal(post.time);
         loadedPost.year.should.be.equal(post.year);
         loadedPost.char.should.be.equal(post.char);
@@ -88,23 +89,35 @@ describe("database schema > column types > mysql", () => {
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("varchar(255)");
-        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar(255)");
-        tableSchema!.findColumnByName("int")!.type.should.be.equal("int(11)");
-        tableSchema!.findColumnByName("tinyint")!.type.should.be.equal("tinyint(4)");
-        tableSchema!.findColumnByName("smallint")!.type.should.be.equal("smallint(5)");
-        tableSchema!.findColumnByName("mediumint")!.type.should.be.equal("mediumint(9)");
-        tableSchema!.findColumnByName("bigint")!.type.should.be.equal("bigint(20)");
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
+        tableSchema!.findColumnByName("id")!.length!.should.be.equal(11);
+        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
+        tableSchema!.findColumnByName("name")!.length!.should.be.equal(255);
+        tableSchema!.findColumnByName("int")!.type.should.be.equal("int");
+        tableSchema!.findColumnByName("int")!.length!.should.be.equal(11);
+        tableSchema!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
+        tableSchema!.findColumnByName("tinyint")!.length!.should.be.equal(4);
+        tableSchema!.findColumnByName("smallint")!.type.should.be.equal("smallint");
+        tableSchema!.findColumnByName("smallint")!.length!.should.be.equal(5);
+        tableSchema!.findColumnByName("mediumint")!.type.should.be.equal("mediumint");
+        tableSchema!.findColumnByName("mediumint")!.length!.should.be.equal(9);
+        tableSchema!.findColumnByName("bigint")!.type.should.be.equal("bigint");
+        tableSchema!.findColumnByName("bigint")!.length!.should.be.equal(20);
         tableSchema!.findColumnByName("float")!.type.should.be.equal("float");
         tableSchema!.findColumnByName("double")!.type.should.be.equal("double");
-        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal(10,0)");
+        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal");
+        tableSchema!.findColumnByName("decimal")!.precision!.should.be.equal(10);
+        tableSchema!.findColumnByName("decimal")!.scale!.should.be.equal(0);
         tableSchema!.findColumnByName("date")!.type.should.be.equal("date");
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
         tableSchema!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
         tableSchema!.findColumnByName("time")!.type.should.be.equal("time");
-        tableSchema!.findColumnByName("year")!.type.should.be.equal("year(4)");
-        tableSchema!.findColumnByName("char")!.type.should.be.equal("char(1)");
-        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar(255)");
+        tableSchema!.findColumnByName("year")!.type.should.be.equal("year");
+        tableSchema!.findColumnByName("year")!.length!.should.be.equal(4);
+        tableSchema!.findColumnByName("char")!.type.should.be.equal("char");
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
+        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(255);
         tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
         tableSchema!.findColumnByName("text")!.type.should.be.equal("text");
         tableSchema!.findColumnByName("tinyblob")!.type.should.be.equal("tinyblob");
@@ -113,7 +126,7 @@ describe("database schema > column types > mysql", () => {
         tableSchema!.findColumnByName("mediumtext")!.type.should.be.equal("mediumtext");
         tableSchema!.findColumnByName("longblob")!.type.should.be.equal("longblob");
         tableSchema!.findColumnByName("longtext")!.type.should.be.equal("longtext");
-        tableSchema!.findColumnByName("enum")!.type.should.be.equal("enum(\'a\',\'b\',\'c\')");
+        tableSchema!.findColumnByName("enum")!.type.should.be.equal("enum");
         tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("text");
 
     })));
@@ -126,7 +139,7 @@ describe("database schema > column types > mysql", () => {
         await queryRunner.release();
 
         const post = new PostWithOptions();
-        post.id = "1";
+        post.id = 1;
         post.name = "Post";
         post.int = 2147483647;
         post.tinyint = 127;
@@ -154,18 +167,70 @@ describe("database schema > column types > mysql", () => {
         loadedPost.char.should.be.equal(post.char);
         loadedPost.varchar.should.be.equal(post.varchar);
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("varchar(255)");
-        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar(10)");
-        tableSchema!.findColumnByName("int")!.type.should.be.equal("int(3)");
-        tableSchema!.findColumnByName("tinyint")!.type.should.be.equal("tinyint(3)");
-        tableSchema!.findColumnByName("smallint")!.type.should.be.equal("smallint(3)");
-        tableSchema!.findColumnByName("mediumint")!.type.should.be.equal("mediumint(3)");
-        tableSchema!.findColumnByName("bigint")!.type.should.be.equal("bigint(3)");
-        tableSchema!.findColumnByName("float")!.type.should.be.equal("float(5,2)");
-        tableSchema!.findColumnByName("double")!.type.should.be.equal("double(5,2)");
-        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal(5,2)");
-        tableSchema!.findColumnByName("char")!.type.should.be.equal("char(5)");
-        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar(30)");
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
+        tableSchema!.findColumnByName("id")!.length!.should.be.equal(11);
+        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
+        tableSchema!.findColumnByName("name")!.length!.should.be.equal(10);
+        tableSchema!.findColumnByName("int")!.type.should.be.equal("int");
+        tableSchema!.findColumnByName("int")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
+        tableSchema!.findColumnByName("tinyint")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("smallint")!.type.should.be.equal("smallint");
+        tableSchema!.findColumnByName("smallint")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("mediumint")!.type.should.be.equal("mediumint");
+        tableSchema!.findColumnByName("mediumint")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("bigint")!.type.should.be.equal("bigint");
+        tableSchema!.findColumnByName("bigint")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("float")!.type.should.be.equal("float");
+        tableSchema!.findColumnByName("float")!.precision!.should.be.equal(5);
+        tableSchema!.findColumnByName("float")!.scale!.should.be.equal(2);
+        tableSchema!.findColumnByName("double")!.type.should.be.equal("double");
+        tableSchema!.findColumnByName("double")!.precision!.should.be.equal(5);
+        tableSchema!.findColumnByName("double")!.scale!.should.be.equal(2);
+        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal");
+        tableSchema!.findColumnByName("decimal")!.precision!.should.be.equal(5);
+        tableSchema!.findColumnByName("decimal")!.scale!.should.be.equal(2);
+        tableSchema!.findColumnByName("char")!.type.should.be.equal("char");
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal(5);
+        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
+        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(30);
+
+    })));
+
+    it("all types should work correctly - persist and hydrate when types are not specified on columns", () => Promise.all(connections.map(async connection => {
+
+        const postRepository = connection.getRepository(PostWithoutTypes);
+        const queryRunner = connection.createQueryRunner();
+        const tableSchema = await queryRunner.loadTableSchema("post_without_types");
+        await queryRunner.release();
+
+        const post = new PostWithoutTypes();
+        post.id = 1;
+        post.name = "Post";
+        post.boolean = true;
+        post.blob = new Buffer("A");
+        post.datetime = new Date();
+        post.datetime.setMilliseconds(0);
+        post.object = { id: 1, name: "Post" };
+        await postRepository.save(post);
+
+        const loadedPost = (await postRepository.findOneById(1))!;
+        loadedPost.id.should.be.equal(post.id);
+        loadedPost.name.should.be.equal(post.name);
+        loadedPost.boolean.should.be.equal(post.boolean);
+        loadedPost.blob.toString().should.be.equal(post.blob.toString());
+        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
+        loadedPost.object.should.be.eql(post.object);
+
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
+        tableSchema!.findColumnByName("id")!.length!.should.be.equal(11);
+        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
+        tableSchema!.findColumnByName("name")!.length!.should.be.equal(255);
+        tableSchema!.findColumnByName("boolean")!.type.should.be.equal("tinyint");
+        tableSchema!.findColumnByName("boolean")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
+        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        tableSchema!.findColumnByName("object")!.type.should.be.equal("text");
 
     })));
 
