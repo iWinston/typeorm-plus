@@ -83,7 +83,10 @@
     "yargs": "^8.0.2"
   },
   "scripts": {
-    "test": "node_modules/.bin/gulp tests"
+    "test": "gulp tests",
+    "compile": "tsc",
+    "setup:config": "gulp createTravisOrmConfig",
+    "package": "gulp package"
   },
   "bin": {
     "typeorm": "./cli.js"
