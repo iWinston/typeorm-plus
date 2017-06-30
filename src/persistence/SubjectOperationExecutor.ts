@@ -1,15 +1,15 @@
-import { ObjectLiteral } from "../common/ObjectLiteral";
-import { EntityMetadata } from "../metadata/EntityMetadata";
-import { Connection } from "../connection/Connection";
-import { QueryRunner } from "../query-runner/QueryRunner";
-import { JunctionInsert, JunctionRemove, Subject } from "./Subject";
-import { OrmUtils } from "../util/OrmUtils";
-import { EntityManager } from "../entity-manager/EntityManager";
-import { PromiseUtils } from "../util/PromiseUtils";
-import { MongoDriver } from "../driver/mongodb/MongoDriver";
-import { ColumnMetadata } from "../metadata/ColumnMetadata";
-import { EmbeddedMetadata } from "../metadata/EmbeddedMetadata";
-import { Broadcaster } from "../subscriber/Broadcaster";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {Connection} from "../connection/Connection";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {JunctionInsert, JunctionRemove, Subject} from "./Subject";
+import {OrmUtils} from "../util/OrmUtils";
+import {EntityManager} from "../entity-manager/EntityManager";
+import {PromiseUtils} from "../util/PromiseUtils";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -51,8 +51,8 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-        protected transactionEntityManager: EntityManager,
-        protected queryRunner: QueryRunner) {
+                protected transactionEntityManager: EntityManager,
+                protected queryRunner: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
