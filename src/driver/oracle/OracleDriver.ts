@@ -197,8 +197,14 @@ export class OracleDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            escapedParameters.push(parameters[key.substr(1)]);
-            return key;
+            const value = parameters[key.substr(1)];
+            if (value instanceof Function) {
+                return value();
+
+            } else {
+                escapedParameters.push(value);
+                return key;
+            }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }

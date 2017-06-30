@@ -200,10 +200,13 @@ export class SqlServerDriver implements Driver {
                     escapedParameters.push(v);
                     return "@" + (escapedParameters.length - 1);
                 }).join(", ");
+            } else if (value instanceof Function) {
+                return value();
+
             } else {
                 escapedParameters.push(value);
+                return "@" + (escapedParameters.length - 1);
             }
-            return "@" + (escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }

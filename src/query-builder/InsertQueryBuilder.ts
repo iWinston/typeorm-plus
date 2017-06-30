@@ -2,6 +2,7 @@ import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectType} from "../common/ObjectType";
+import {QueryPartialEntity} from "./QueryPartialEntity";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -36,12 +37,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Values needs to be inserted into table.
      */
-    values(values: Partial<Entity>): this;
+    values(values: QueryPartialEntity<Entity>): this;
 
     /**
      * Values needs to be inserted into table.
      */
-    values(values: Partial<Entity>[]): this;
+    values(values: QueryPartialEntity<Entity>[]): this;
 
     /**
      * Values needs to be inserted into table.
@@ -72,8 +73,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const values = valueSets.map((valueSet, key) => {
             const columnNames = insertColumns.map(column => {
                 const paramName = "_inserted_" + key + "_" + column.databaseName;
-                this.setParameter(paramName, valueSet[column.propertyName]);
-                return ":" + paramName;
+
+                if (valueSet[column.propertyName] instanceof Function) { // support for SQL expressions in update query
+                    return valueSet[column.propertyName]();
+
+                } else {
+                    this.setParameter(paramName, valueSet[column.propertyName]);
+                    return ":" + paramName;
+                }
             });
             return "(" + columnNames.join(",") + ")";
         }).join(", ");

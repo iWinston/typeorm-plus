@@ -3,6 +3,8 @@ import * as chai from "chai";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
+import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
+import {expect} from "chai";
 
 const should = chai.should();
 
@@ -61,6 +63,22 @@ describe("query builder > insert", () => {
             { id: 5, name: "Bakhodur Kandikov" },
             { id: 6, name: "Muhammad Mirzoev" },
         ]);
+
+    })));
+
+    it("should be able to use sql functions", () => Promise.all(connections.map(async connection => {
+
+        await connection.createQueryBuilder()
+            .insert()
+            .into(User)
+            .values({
+                name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Dima Zotov', 1, 4)" : "SUBSTR('Dima Zotov', 1, 4)"
+            })
+            .execute();
+
+        const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
+        expect(loadedUser1).to.exist;
+        loadedUser1!.name.should.be.equal("Dima");
 
     })));
 

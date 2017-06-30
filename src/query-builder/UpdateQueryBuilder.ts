@@ -2,6 +2,7 @@ import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {QueryPartialEntity} from "./QueryPartialEntity";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -37,7 +38,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Values needs to be updated.
      */
-    set(values: Partial<Entity>): this {
+    set(values: QueryPartialEntity<Entity>): this {
         this.expressionMap.valuesSet = values;
         return this;
     }
@@ -157,8 +158,14 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyName(columnProperty);
             if (column) {
                 const paramName = "_updated_" + column.databaseName;
-                this.setParameter(paramName, valuesSet[column.propertyName]);
-                updateColumnAndValues.push(this.escape(column.databaseName) + "=:" + paramName);
+
+                if (valuesSet[column.propertyName] instanceof Function) { // support for SQL expressions in update query
+                    updateColumnAndValues.push(column.databaseName + " = " + valuesSet[column.propertyName]());
+
+                } else {
+                    this.setParameter(paramName, valuesSet[column.propertyName]);
+                    updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
+                }
             }
         });
 
