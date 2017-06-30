@@ -1,5 +1,4 @@
 import {Repository} from "./Repository";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
@@ -45,8 +44,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
 
         // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAlias(alias);
-        const escapeColumn = (column: string) => this.manager.connection.driver.escapeColumn(column);
+        const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
+        const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
 
         const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.primaryColumns[0].databaseName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
         return this.createQueryBuilder(alias)
@@ -70,9 +69,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getEntitiesAndRawResults()
+            .getRawAndEntities()
             .then(entitiesAndScalars => {
-                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.rawResults);
+                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.raw);
                 this.buildChildrenEntityTree(entity, entitiesAndScalars.entities, relationMaps);
                 return entity;
             });
@@ -93,8 +92,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
 
         // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAlias(alias);
-        const escapeColumn = (column: string) => this.manager.connection.driver.escapeColumn(column);
+        const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
+        const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
 
         const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.primaryColumns[0].databaseName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
         return this.createQueryBuilder(alias)
@@ -118,9 +117,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         // todo: throw exception if there is no column of this relation?
         return this
             .createAncestorsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getEntitiesAndRawResults()
+            .getRawAndEntities()
             .then(entitiesAndScalars => {
-                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.rawResults);
+                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.raw);
                 this.buildParentEntityTree(entity, entitiesAndScalars.entities, relationMaps);
                 return entity;
             });

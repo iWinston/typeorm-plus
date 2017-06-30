@@ -39,6 +39,7 @@ export interface DriverOptions {
 
     /**
      * Database name to connect to.
+     * Storage type or path to the database (used for SQLite databases).
      */
     database?: string;
 
@@ -51,11 +52,6 @@ export interface DriverOptions {
      * Connection SID (used for Oracle databases).
      */
     sid?: string;
-
-    /**
-     * Storage type or path to the storage (used for SQLite databases).
-     */
-    storage?: string;
 
     /**
      * Extra connection options to be passed to the underlying driver.

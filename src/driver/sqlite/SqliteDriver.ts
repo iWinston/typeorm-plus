@@ -1,9 +1,9 @@
 import {Driver} from "../Driver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {SqliteQueryRunner} from "./SqliteQueryRunner";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -114,7 +114,7 @@ export class SqliteDriver implements Driver {
 
         // validate options to make sure everything is set
         if (!this.options.database)
-            throw new DriverOptionNotSetError("storage");
+            throw new DriverOptionNotSetError("database");
 
         // load sqlite package
         this.loadDependencies();
@@ -165,7 +165,7 @@ export class SqliteDriver implements Driver {
         if (value === null || value === undefined)
             return value;
 
-        if (columnMetadata.type === Boolean) {
+        if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             return value === true ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
@@ -191,7 +191,7 @@ export class SqliteDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.type === Boolean) {
+        if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             return value ? true : false;
 
         } else if (columnMetadata.type === "datetime") {
@@ -230,10 +230,14 @@ export class SqliteDriver implements Driver {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
                 }).join(", ");
+
+            } else if (value instanceof Function) {
+                return value();
+
             } else {
                 builtParameters.push(value);
+                return "$" + builtParameters.length;
             }
-            return "$" + builtParameters.length;
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
     }
@@ -241,22 +245,8 @@ export class SqliteDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumn(columnName: string): string {
+    escape(columnName: string): string {
         return "\"" + columnName + "\"";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string {
-        return "\"" + aliasName + "\"";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string {
-        return "\"" + tableName + "\"";
     }
 
     /**

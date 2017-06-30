@@ -1,11 +1,11 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -272,10 +272,14 @@ export class PostgresDriver implements Driver {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
                 }).join(", ");
+
+            } else if (value instanceof Function) {
+                return value();
+
             } else {
                 builtParameters.push(value);
+                return "$" + builtParameters.length;
             }
-            return "$" + builtParameters.length;
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
     }
@@ -283,22 +287,8 @@ export class PostgresDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumn(columnName: string): string {
+    escape(columnName: string): string {
         return "\"" + columnName + "\"";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string {
-        return "\"" + aliasName + "\"";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string {
-        return "\"" + tableName + "\"";
     }
 
     /**

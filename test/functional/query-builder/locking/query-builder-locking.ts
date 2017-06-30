@@ -6,16 +6,16 @@ import {expect} from "chai";
 import {PostWithoutVersionAndUpdateDate} from "./entity/PostWithoutVersionAndUpdateDate";
 import {PostWithUpdateDate} from "./entity/PostWithUpdateDate";
 import {PostWithVersionAndUpdatedDate} from "./entity/PostWithVersionAndUpdatedDate";
-import {OptimisticLockVersionMismatchError} from "../../../../src/query-builder/error/OptimisticLockVersionMismatchError";
-import {OptimisticLockCanNotBeUsedError} from "../../../../src/query-builder/error/OptimisticLockCanNotBeUsedError";
-import {NoVersionOrUpdateDateColumnError} from "../../../../src/query-builder/error/NoVersionOrUpdateDateColumnError";
-import {PessimisticLockTransactionRequiredError} from "../../../../src/query-builder/error/PessimisticLockTransactionRequiredError";
+import {OptimisticLockVersionMismatchError} from "../../../../src/error/OptimisticLockVersionMismatchError";
+import {OptimisticLockCanNotBeUsedError} from "../../../../src/error/OptimisticLockCanNotBeUsedError";
+import {NoVersionOrUpdateDateColumnError} from "../../../../src/error/NoVersionOrUpdateDateColumnError";
+import {PessimisticLockTransactionRequiredError} from "../../../../src/error/PessimisticLockTransactionRequiredError";
 import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 import {SqliteDriver} from "../../../../src/driver/sqlite/SqliteDriver";
 import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
-import {LockNotSupportedOnGivenDriverError} from "../../../../src/query-builder/error/LockNotSupportedOnGivenDriverError";
+import {LockNotSupportedOnGivenDriverError} from "../../../../src/error/LockNotSupportedOnGivenDriverError";
 
 describe("query builder > locking", () => {
 

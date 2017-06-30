@@ -54,6 +54,11 @@ of `QueryRunner`, e.g. `queryRunner.connection` and `queryRunner.manager`
 * now `update` method in `QueryBuilder` accepts `Partial<Entity>` and property names used in update map are 
 column property names and they are automatically mapped to column names 
 * `SpecificRepository` has been removed. Instead new `RelationQueryBuilder` was introduced.
+* `getEntitiesAndRawResults` of `QueryBuilder` has been renamed to `getRawAndEntities`
+* in mssql all constraints are now generated using table name in their names - this is fixes issues with duplicate constraint names 
+* now when object is loaded from the database all its columns with null values will be set into entity properties as null. 
+Also after saving entity with unset properties that will be stored as nulls - their (properties) values will be set to null.
+Also now all 
 
 ### DEPRECATIONS
 

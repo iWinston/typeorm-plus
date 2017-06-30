@@ -4,7 +4,6 @@ import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {OnDeleteType} from "./types/OnDeleteType";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";

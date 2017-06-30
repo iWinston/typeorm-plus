@@ -5,7 +5,6 @@ import {IndexMetadata} from "../metadata/IndexMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {Connection} from "../connection/Connection";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Creates EntityMetadata for junction tables.

@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 const mkdirp = require("mkdirp");

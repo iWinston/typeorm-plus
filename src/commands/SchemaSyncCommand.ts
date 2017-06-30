@@ -1,4 +1,4 @@
-import {createConnections, createConnection} from "../index";
+import {createConnection, createConnections} from "../index";
 import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 

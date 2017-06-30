@@ -1,6 +1,5 @@
 import {EntitySubscriberInterface} from "./EntitySubscriberInterface";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
-import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Subject} from "../persistence/Subject";
 import {Connection} from "../connection/Connection";

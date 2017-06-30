@@ -2,7 +2,7 @@ import {Driver} from "../Driver";
 import {DriverUtils} from "../DriverUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";
@@ -158,8 +158,14 @@ export class WebsqlDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            escapedParameters.push(parameters[key.substr(1)]);
-            return "?";
+            const value = parameters[key.substr(1)];
+            if (value instanceof Function) {
+                return value();
+
+            } else {
+                escapedParameters.push(value);
+                return "?";
+            }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -167,22 +173,8 @@ export class WebsqlDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumn(columnName: string): string {
+    escape(columnName: string): string {
         return columnName; // "`" + columnName + "`";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string {
-        return aliasName; // "`" + aliasName + "`";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string {
-        return tableName; // "`" + tableName + "`";
     }
 
     /**

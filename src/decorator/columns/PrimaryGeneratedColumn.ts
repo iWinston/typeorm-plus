@@ -1,6 +1,6 @@
 import {ColumnOptions} from "../options/ColumnOptions";
 import {getMetadataArgsStorage} from "../../index";
-import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
+import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 // todo: add overloads for PrimaryGeneratedColumn(generationType: "sequence"|"uuid" = "sequence", options?: ColumnOptions)

@@ -38,6 +38,11 @@ export class QueryExpressionMap {
     selects: SelectQuery[] = [];
 
     /**
+     * FROM-s to be selected.
+     */
+    // froms: { target: string, alias: string }[] = [];
+
+    /**
      * If update query was used, it needs "update set" - properties which will be updated by this query.
      * If insert query was used, it needs "insert set" - values that needs to be inserted.
      */
@@ -138,6 +143,18 @@ export class QueryExpressionMap {
      */
     extraAppendedAndWhereCondition: string = "";
 
+    /**
+     * Indicates if query builder creates a subquery.
+     */
+    subQuery: boolean = false;
+
+    /**
+     * Indicates if property names are prefixed with alias names during property replacement.
+     * By default this is enabled, however we need this because aliases are not supported in UPDATE and DELETE queries,
+     * but user can use them in WHERE expressions.
+     */
+    aliasNamePrefixingEnabled: boolean = true;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -152,8 +169,7 @@ export class QueryExpressionMap {
     /**
      * Creates a main alias and adds it to the current expression map.
      */
-    createMainAlias(options: { name?: string, target?: Function|string, tableName?: string, metadata?: EntityMetadata }): Alias {
-        const alias = this.createAlias(options as any);
+    setMainAlias(alias: Alias): Alias {
 
         // if main alias is already set then remove it from the array
         if (this.mainAlias)
@@ -168,27 +184,7 @@ export class QueryExpressionMap {
     /**
      * Creates a new alias and adds it to the current expression map.
      */
-    createAlias(options: { name: string }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name: string, metadata: EntityMetadata }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name?: string, target: Function|string }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name?: string, tableName: string }): Alias;
-
-    /**
-     * Creates a new alias and adds it to the current expression map.
-     */
-    createAlias(options: { name?: string, target?: Function|string, tableName?: string, metadata?: EntityMetadata }): Alias {
+    createAlias(options: { name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
 
         let aliasName = options.name;
         if (!aliasName && options.tableName)
@@ -207,6 +203,8 @@ export class QueryExpressionMap {
             alias.metadata = this.connection.getMetadata(options.target);
         if (options.tableName)
             alias.tableName = options.tableName;
+        if (options.subQuery)
+            alias.subQuery = options.subQuery;
 
         this.aliases.push(alias);
         return alias;

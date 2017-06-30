@@ -1,13 +1,13 @@
 import {Connection} from "../connection/Connection";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectType} from "../common/ObjectType";
-import {QueryRunnerProviderAlreadyReleasedError} from "../query-runner/error/QueryRunnerProviderAlreadyReleasedError";
+import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {SaveOptions} from "../repository/SaveOptions";
-import {NoNeedToReleaseEntityManagerError} from "./error/NoNeedToReleaseEntityManagerError";
+import {NoNeedToReleaseEntityManagerError} from "../error/NoNeedToReleaseEntityManagerError";
 import {MongoRepository} from "../repository/MongoRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {Repository} from "../repository/Repository";
@@ -16,10 +16,10 @@ import {SubjectBuilder} from "../persistence/SubjectBuilder";
 import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
-import {CustomRepositoryNotFoundError} from "../repository/error/CustomRepositoryNotFoundError";
+import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
 import {getMetadataArgsStorage} from "../index";
 import {AbstractRepository} from "../repository/AbstractRepository";
-import {CustomRepositoryCannotInheritRepositoryError} from "../repository/error/CustomRepositoryCannotInheritRepositoryError";
+import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
@@ -34,7 +34,7 @@ export class EntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection to be used in this entity manager.
+     * Connection used by this entity manager.
      */
     connection: Connection;
 
@@ -45,7 +45,7 @@ export class EntityManager {
     /**
      * Custom query runner to be used for operations in this entity manager.
      */
-    protected queryRunner: QueryRunner;
+    protected queryRunner?: QueryRunner;
 
     /**
      * Stores temporarily user data.
@@ -59,8 +59,7 @@ export class EntityManager {
 
     constructor(connection: Connection, queryRunner?: QueryRunner) {
         this.connection = connection;
-        if (queryRunner)
-            this.queryRunner = queryRunner;
+        this.queryRunner = queryRunner;
     }
 
     // -------------------------------------------------------------------------
@@ -254,15 +253,23 @@ export class EntityManager {
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
-            // todo: throw exception if constructor in target is not set
-            if (entity instanceof Array) {
-                await Promise.all(entity.map(e => {
-                    const finalTarget = target ? target : e.constructor;
-                    return this.saveOne(finalTarget, e, options) as any;
-                }));
-            } else {
-                const finalTarget = target ? target : entity.constructor;
-                await this.saveOne(finalTarget, entity as Entity, options);
+
+            const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+            try {
+                if (entity instanceof Array) {
+                    await Promise.all(entity.map(e => {
+                        const finalTarget = target ? target : e.constructor;
+                        return this.saveOne(queryRunner, finalTarget, e, options) as any;
+                    }));
+
+                } else {
+                    const finalTarget = target ? target : entity.constructor;
+                    await this.saveOne(queryRunner, finalTarget, entity as Entity, options);
+                }
+
+            } finally {
+                if (!this.queryRunner) // release it only if its created by this method
+                    await queryRunner.release();
             }
 
             return entity;
@@ -391,14 +398,22 @@ export class EntityManager {
 
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
             // todo: throw exception if constructor in target is not set
-            if (entity instanceof Array) {
-                await Promise.all(entity.map(e => {
-                    const finalTarget = target ? target : e.constructor;
-                    return this.removeOne(finalTarget, e, options) as any;
-                }));
-            } else {
-                const finalTarget = target ? target : entity.constructor;
-                await this.removeOne(finalTarget, entity as Entity, options);
+
+            const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+            try {
+                if (entity instanceof Array) {
+                    await Promise.all(entity.map(e => {
+                        const finalTarget = target ? target : e.constructor;
+                        return this.removeOne(queryRunner, finalTarget, e, options) as any;
+                    }));
+                } else {
+                    const finalTarget = target ? target : entity.constructor;
+                    await this.removeOne(queryRunner, finalTarget, entity as Entity, options);
+                }
+
+            } finally {
+                if (!this.queryRunner) // release it only if its created by this method
+                    await queryRunner.release();
             }
 
             return entity;
@@ -521,7 +536,7 @@ export class EntityManager {
             }
             return id;
         });
-        qb.andWhereInIds(ids);
+        qb.whereInIds(ids);
         return qb.getMany();
     }
 
@@ -569,11 +584,11 @@ export class EntityManager {
                 `complete object with all entity ids, like this: { firstKey: value, secondKey: value }`);
         }
 
-        FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
         if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
             id = metadata.createEntityIdMap([id]);
         }
-        qb.andWhereInIds([id]);
+        qb.whereInIds([id]);
+        FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
         return qb.getOne();
     }
 
@@ -706,47 +721,33 @@ export class EntityManager {
     /**
      * Performs a save operation for a single entity.
      */
-    protected async saveOne(target: Function|string, entity: any, options?: SaveOptions): Promise<void> {
+    protected async saveOne(queryRunner: QueryRunner, target: Function|string, entity: any, options?: SaveOptions): Promise<void> {
         const metadata = this.connection.getMetadata(target);
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
-        try {
-            const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
-            if (options && options.data)
-                transactionEntityManager.data = options.data;
+        const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
+        if (options && options.data)
+            transactionEntityManager.data = options.data;
 
-            const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-            await databaseEntityLoader.persist(entity, metadata);
+        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+        await databaseEntityLoader.persist(entity, metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner);
-            await executor.execute(databaseEntityLoader.operateSubjects);
-
-        } finally {
-            if (!this.queryRunner) // release it only if its created by this method
-                await queryRunner.release();
-        }
+        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner);
+        await executor.execute(databaseEntityLoader.operateSubjects);
     }
 
     /**
      * Performs a remove operation for a single entity.
      */
-    protected async removeOne(target: Function|string, entity: any, options?: RemoveOptions): Promise<void> {
+    protected async removeOne(queryRunner: QueryRunner, target: Function|string, entity: any, options?: RemoveOptions): Promise<void> {
         const metadata = this.connection.getMetadata(target);
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
-        try {
-            const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
-            if (options && options.data)
-                transactionEntityManager.data = options.data;
+        const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
+        if (options && options.data)
+            transactionEntityManager.data = options.data;
 
-            const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-            await databaseEntityLoader.remove(entity, metadata);
+        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+        await databaseEntityLoader.remove(entity, metadata);
 
-            const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner);
-            await executor.execute(databaseEntityLoader.operateSubjects);
-
-        } finally {
-            if (!this.queryRunner) // release it only if its created by this method
-                await queryRunner.release();
-        }
+        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner);
+        await executor.execute(databaseEntityLoader.operateSubjects);
     }
 
 }

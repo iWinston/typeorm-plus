@@ -1,7 +1,7 @@
 import {Connection} from "./Connection";
-import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
+import {ConnectionNotFoundError} from "../error/ConnectionNotFoundError";
 import {ConnectionOptions} from "./ConnectionOptions";
-import {AlreadyHasActiveConnectionError} from "./error/AlreadyHasActiveConnectionError";
+import {AlreadyHasActiveConnectionError} from "../error/AlreadyHasActiveConnectionError";
 
 /**
  * ConnectionManager is used to store and manage multiple orm connections.

@@ -1,4 +1,4 @@
-import {MissingDriverError} from "./error/MissingDriverError";
+import {MissingDriverError} from "../error/MissingDriverError";
 import {MongoDriver} from "./mongodb/MongoDriver";
 import {WebsqlDriver} from "./websql/WebsqlDriver";
 import {SqlServerDriver} from "./sqlserver/SqlServerDriver";

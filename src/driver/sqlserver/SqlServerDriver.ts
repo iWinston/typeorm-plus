@@ -1,11 +1,11 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
 import {SqlServerQueryRunner} from "./SqlServerQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -200,10 +200,13 @@ export class SqlServerDriver implements Driver {
                     escapedParameters.push(v);
                     return "@" + (escapedParameters.length - 1);
                 }).join(", ");
+            } else if (value instanceof Function) {
+                return value();
+
             } else {
                 escapedParameters.push(value);
+                return "@" + (escapedParameters.length - 1);
             }
-            return "@" + (escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -211,22 +214,8 @@ export class SqlServerDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumn(columnName: string): string {
+    escape(columnName: string): string {
         return `"${columnName}"`;
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string {
-        return `"${aliasName}"`;
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string {
-        return `"${tableName}"`;
     }
 
     /**

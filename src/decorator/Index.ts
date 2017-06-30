@@ -35,7 +35,7 @@ export function Index(name: string, fields: (object?: any) => (any[]|{ [key: str
 /**
  * Composite index must be set on entity classes and must specify entity's fields to be indexed.
  */
-export function Index(nameOrFieldsOrOptions: string|string[]|((object: any) => any[])|IndexOptions,
+export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => any[])|IndexOptions,
                       maybeFieldsOrOptions?: ((object?: any) => (any[]|{ [key: string]: number }))|IndexOptions|string[],
                       maybeOptions?: IndexOptions): Function {
     const name = typeof nameOrFieldsOrOptions === "string" ? nameOrFieldsOrOptions : undefined;

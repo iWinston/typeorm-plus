@@ -1,11 +1,11 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {DriverOptions} from "../DriverOptions";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {MongoQueryRunner} from "./MongoQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
 import {MongoConnectionOptions} from "./MongoConnectionOptions";
@@ -136,22 +136,8 @@ export class MongoDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumn(columnName: string): string {
+    escape(columnName: string): string {
         return columnName;
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string {
-        return aliasName;
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string {
-        return tableName;
     }
 
     /**

@@ -8,6 +8,17 @@ import {QueryBuilder} from "./QueryBuilder";
 export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     // -------------------------------------------------------------------------
+    // Public Implemented Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets generated sql query without parameters being replaced.
+     */
+    getQuery(): string {
+        return "";
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 

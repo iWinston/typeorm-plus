@@ -1,5 +1,5 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {GeneratedOnlyForPrimaryError} from "../error/GeneratedOnlyForPrimaryError";
+import {GeneratedOnlyForPrimaryError} from "../../error/GeneratedOnlyForPrimaryError";
 import {getMetadataArgsStorage} from "../../index";
 import {
     ColumnType,

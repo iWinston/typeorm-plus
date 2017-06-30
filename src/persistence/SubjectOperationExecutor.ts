@@ -1039,6 +1039,15 @@ export class SubjectOperationExecutor {
             /*if (subject.metadata.hasTreeChildrenCountColumn) {
                  subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
             }*/
+
+            // set values to "null" for nullable columns that did not have values
+            subject.metadata.columns
+                .filter(column => column.isNullable && !column.isVirtual)
+                .forEach(column => {
+                    const columnValue = column.getEntityValue(subject.entity);
+                    if (columnValue === undefined)
+                        column.setEntityValue(subject.entity, null);
+                });
         });
 
         // update special columns that gets updated on each entity update

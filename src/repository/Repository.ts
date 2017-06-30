@@ -1,5 +1,4 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindOneOptions} from "../find-options/FindOneOptions";

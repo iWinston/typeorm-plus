@@ -92,6 +92,7 @@ export {NamingStrategyInterface} from "./naming-strategy/NamingStrategyInterface
 export {Repository} from "./repository/Repository";
 export {TreeRepository} from "./repository/TreeRepository";
 export {MongoRepository} from "./repository/MongoRepository";
+export {FindOneOptions} from "./find-options/FindOneOptions";
 export {FindManyOptions} from "./find-options/FindManyOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";

@@ -1,10 +1,10 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {OracleQueryRunner} from "./OracleQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -197,8 +197,14 @@ export class OracleDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            escapedParameters.push(parameters[key.substr(1)]);
-            return key;
+            const value = parameters[key.substr(1)];
+            if (value instanceof Function) {
+                return value();
+
+            } else {
+                escapedParameters.push(value);
+                return key;
+            }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -206,22 +212,8 @@ export class OracleDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumn(columnName: string): string {
+    escape(columnName: string): string {
         return `"${columnName}"`;
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAlias(aliasName: string): string {
-        return `"${aliasName}"`;
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTable(tableName: string): string {
-        return `"${tableName}"`;
     }
 
     /**

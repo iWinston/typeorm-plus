@@ -1,6 +1,6 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {MissingPrimaryColumnError} from "./error/MissingPrimaryColumnError";
-import {CircularRelationsError} from "./error/CircularRelationsError";
+import {MissingPrimaryColumnError} from "../error/MissingPrimaryColumnError";
+import {CircularRelationsError} from "../error/CircularRelationsError";
 import {DepGraph} from "../util/DepGraph";
 
 /// todo: add check if there are multiple tables with the same name

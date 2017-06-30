@@ -495,10 +495,16 @@ export class MongoEntityManager extends EntityManager {
     // Protected Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Gets query runner used to execute queries.
+     */
     protected get queryRunner(): MongoQueryRunner {
         return (this.connection.driver as MongoDriver).queryRunner!;
     }
 
+    /**
+     * Converts FindManyOptions to mongodb query.
+     */
     protected convertFindManyOptionsOrConditionsToMongodbQuery<Entity>(optionsOrConditions: FindOneOptions<Entity>|Partial<Entity>|undefined): ObjectLiteral|undefined {
         if (!optionsOrConditions)
             return undefined;
@@ -506,6 +512,9 @@ export class MongoEntityManager extends EntityManager {
         return FindOptionsUtils.isFindManyOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
     }
 
+    /**
+     * Converts FindOneOptions to mongodb query.
+     */
     protected convertFindOneOptionsOrConditionsToMongodbQuery<Entity>(optionsOrConditions: FindOneOptions<Entity>|Partial<Entity>|undefined): ObjectLiteral|undefined {
         if (!optionsOrConditions)
             return undefined;
@@ -513,6 +522,9 @@ export class MongoEntityManager extends EntityManager {
         return FindOptionsUtils.isFindOneOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
     }
 
+    /**
+     * Converts FindOptions into mongodb order by criteria.
+     */
     protected convertFindOptionsOrderToOrderCriteria<Entity, P>(order: { [P in keyof Entity]?: "ASC"|"DESC" }) {
         const orderCriteria: ObjectLiteral = {};
         Object.keys(order).forEach(key => orderCriteria[key] = [key, order[key]!.toLowerCase()]);

@@ -11,8 +11,8 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOneOptions interface.
      */
-    static isFindOneOptions(object: any): object is FindOneOptions<any> {
-        const possibleOptions: FindOneOptions<any> = object;
+    static isFindOneOptions(obj: any): obj is FindOneOptions<any> {
+        const possibleOptions: FindOneOptions<any> = obj;
         return possibleOptions &&
                 (
                     possibleOptions.where instanceof Object ||
@@ -24,8 +24,8 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindManyOptions interface.
      */
-    static isFindManyOptions(object: any): object is FindManyOptions<any> {
-        const possibleOptions: FindManyOptions<any> = object;
+    static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
+        const possibleOptions: FindManyOptions<any> = obj;
         return possibleOptions &&
                 (
                     possibleOptions.where instanceof Object ||

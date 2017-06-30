@@ -3,9 +3,9 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {Repository} from "./Repository";
 import {TreeRepository} from "./TreeRepository";
 import {ObjectType} from "../common/ObjectType";
-import {CustomRepositoryDoesNotHaveEntityError} from "./error/CustomRepositoryDoesNotHaveEntityError";
+import {CustomRepositoryDoesNotHaveEntityError} from "../error/CustomRepositoryDoesNotHaveEntityError";
 import {getMetadataArgsStorage} from "../index";
-import {CustomRepositoryNotFoundError} from "./error/CustomRepositoryNotFoundError";
+import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
@@ -67,7 +67,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
         if (!target)
             throw new CustomRepositoryDoesNotHaveEntityError(this.constructor);
 
-        return this.manager.getRepository(target).createQueryBuilder(alias);
+        return this.manager.getRepository<Entity>(target).createQueryBuilder(alias);
     }
 
     /**

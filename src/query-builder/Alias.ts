@@ -11,6 +11,11 @@ export class Alias {
      */
     tableName?: string;
 
+    /**
+     * If this alias is for sub query.
+     */
+    subQuery?: string;
+
     constructor(alias?: Alias) {
         Object.assign(this, alias || {});
     }

@@ -28,6 +28,9 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
         republicCommando.searchTerms = "star-wars,shooter";
         republicCommando.isReviewed = false;
 
+        await connection.manager.save(battlefront);
+        await connection.manager.save(republicCommando);
+
         const platform = new Platform();
         platform.name = "Windows";
         platform.slug = "windows";
