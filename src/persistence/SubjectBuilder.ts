@@ -269,7 +269,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             } else {
                 entities = await this.connection
                     .getRepository<ObjectLiteral>(subjectGroup.target)
-                    .createQueryBuilder("operateSubject", this.queryRunner)
+                    .createQueryBuilder("subject", this.queryRunner)
                     .whereInIds(allIds)
                     .loadAllRelationIds()
                     .getMany();
