@@ -31,13 +31,11 @@ export class TreeRepository<Entity> extends Repository<Entity> {
      * Roots are entities that have no ancestors. Finds them all.
      */
     findRoots(): Promise<Entity[]> {
-
         const parentPropertyName = this.metadata.treeParentRelation!.propertyName + "Id";
-        const escapeAlias = (alias: string) => this.manager.connection.driver.escapeAlias(alias);
-        const escapeColumn = (column: string) => this.manager.connection.driver.escapeColumn(column);
+        const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
+        const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
 
         return this.createQueryBuilder("treeEntity")
-            .from(this.metadata.target, "treeEntity")
             .where(`${escapeAlias("treeEntity")}.${escapeColumn(parentPropertyName)} IS NULL`)
             .getMany();
     }
