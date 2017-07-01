@@ -5,7 +5,7 @@ import {expect} from "chai";
 import {Player} from "./entity/Player";
 import {Group} from "./entity/Group";
 
-describe.only("github issues > #401 special keywords should be escaped in join queries", () => {
+describe("github issues > #401 special keywords should be escaped in join queries", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
