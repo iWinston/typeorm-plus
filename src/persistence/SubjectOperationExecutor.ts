@@ -648,7 +648,7 @@ export class SubjectOperationExecutor {
             });
 
             if (parentSubject) {
-                parentEntityId = referencedColumn.getEntityValue(parentSubject);
+                parentEntityId = referencedColumn.getEntityValue(parentSubject.entity);
                 if (!parentEntityId && parentSubject.newlyGeneratedId) { // if still not found then it means parent just inserted with generated column
                     parentEntityId = parentSubject.newlyGeneratedId;
                 }
