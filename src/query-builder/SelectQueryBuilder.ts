@@ -754,8 +754,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * If you had previously GROUP BY expression defined,
      * calling this function will override previously set GROUP BY conditions.
      */
-    groupBy(groupBy: string): this {
-        this.expressionMap.groupBys = [groupBy];
+    groupBy(): this;
+
+    /**
+     * Sets GROUP BY condition in the query builder.
+     * If you had previously GROUP BY expression defined,
+     * calling this function will override previously set GROUP BY conditions.
+     */
+    groupBy(groupBy: string): this;
+
+    /**
+     * Sets GROUP BY condition in the query builder.
+     * If you had previously GROUP BY expression defined,
+     * calling this function will override previously set GROUP BY conditions.
+     */
+    groupBy(groupBy?: string): this {
+        if (groupBy) {
+            this.expressionMap.groupBys = [groupBy];
+        } else {
+            this.expressionMap.groupBys = [];
+        }
         return this;
     }
 
@@ -1437,6 +1455,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const [countQuerySql, countQueryParameters] = this.clone()
             .mergeExpressionMap({ ignoreParentTablesJoins: true })
             .orderBy()
+            .groupBy()
             .offset(undefined)
             .limit(undefined)
             .select(countSql)
@@ -1499,7 +1518,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")} `)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().groupBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
