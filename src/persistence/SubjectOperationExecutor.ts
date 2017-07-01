@@ -82,12 +82,12 @@ export class SubjectOperationExecutor {
     // -------------------------------------------------------------------------
 
     areExecutableOperations(): boolean {
-        return this.insertSubjects.length > 0 &&
-            this.updateSubjects.length === 0 &&
-            this.removeSubjects.length === 0 &&
-            this.relationUpdateSubjects.length === 0 &&
-            this.allSubjects.every(subject => !subject.junctionInserts.length) &&
-            this.allSubjects.every(subject => !subject.junctionRemoves.length);
+        return this.insertSubjects.length > 0 ||
+            this.updateSubjects.length > 0 ||
+            this.removeSubjects.length > 0 ||
+            this.relationUpdateSubjects.length > 0 ||
+            this.allSubjects.some(subject => subject.junctionInserts.length > 0) ||
+            this.allSubjects.some(subject => subject.junctionRemoves.length > 0);
     }
 
     /**

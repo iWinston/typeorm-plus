@@ -252,7 +252,6 @@ export class EntityManager {
         const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
-
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner();
@@ -448,21 +447,74 @@ export class EntityManager {
 
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
         const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
-        const options = target ? maybeOptions : maybeEntityOrOptions as RemoveOptions;
+        const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
-            // todo: throw exception if constructor in target is not set
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+            const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
+            if (options && options.data)
+                transactionEntityManager.data = options.data;
+
             try {
+                const executors: SubjectOperationExecutor[] = [];
                 if (entity instanceof Array) {
-                    await Promise.all(entity.map(e => {
-                        const finalTarget = target ? target : e.constructor;
-                        return this.removeOne(queryRunner, finalTarget, e, options) as any;
+                    await Promise.all(entity.map(async entity => {
+                        const entityTarget = target ? target : entity.constructor;
+                        const metadata = this.connection.getMetadata(entityTarget);
+
+                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+                        await databaseEntityLoader.remove(entity, metadata);
+
+                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                        executors.push(executor);
                     }));
+
                 } else {
                     const finalTarget = target ? target : entity.constructor;
-                    await this.removeOne(queryRunner, finalTarget, entity as Entity, options);
+                    const metadata = this.connection.getMetadata(finalTarget);
+
+                    const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+                    await databaseEntityLoader.remove(entity, metadata);
+
+                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                    executors.push(executor);
+                }
+
+                const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
+                if (executorsNeedsToBeExecuted.length) {
+
+                    // start execute queries in a transaction
+                    // if transaction is already opened in this query runner then we don't touch it
+                    // if its not opened yet then we open it here, and once we finish - we close it
+                    let isTransactionStartedByItself = false;
+                    try {
+
+                        // open transaction if its not opened yet
+                        if (!queryRunner.isTransactionActive) {
+                            isTransactionStartedByItself = true;
+                            await queryRunner.startTransaction();
+                        }
+
+                        await Promise.all(executorsNeedsToBeExecuted.map(executor => {
+                            return executor.execute();
+                        }));
+
+                        // commit transaction if it was started by us
+                        if (isTransactionStartedByItself === true)
+                            await queryRunner.commitTransaction();
+
+                    } catch (error) {
+
+                        // rollback transaction if it was started by us
+                        if (isTransactionStartedByItself) {
+                            try {
+                                await queryRunner.rollbackTransaction();
+                            } catch (rollbackError) { }
+                        }
+
+                        throw error;
+                    }
                 }
 
             } finally {
@@ -766,26 +818,6 @@ export class EntityManager {
             throw new NoNeedToReleaseEntityManagerError();
 
         return this.queryRunner.release();
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Performs a remove operation for a single entity.
-     */
-    protected async removeOne(queryRunner: QueryRunner, target: Function|string, entity: any, options?: RemoveOptions): Promise<void> {
-        const metadata = this.connection.getMetadata(target);
-        const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
-        if (options && options.data)
-            transactionEntityManager.data = options.data;
-
-        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-        await databaseEntityLoader.remove(entity, metadata);
-
-        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-        await executor.execute();
     }
 
 }
