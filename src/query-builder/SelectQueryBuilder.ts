@@ -1475,7 +1475,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
                 const distinctAlias = this.escape("distinctAlias");
-                const columnAlias = this.escape(mainAliasName + "_" + primaryColumn.propertyName);
+                const columnAlias = this.escape(mainAliasName + "_" + primaryColumn.databaseName);
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
                 return `${distinctAlias}.${columnAlias} as "ids_${mainAliasName + "_" + primaryColumn.databaseName}"`;
@@ -1552,15 +1552,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         const selectString = Object.keys(orderBys)
             .map(columnName => {
-                const [alias, column, ...embeddedProperties] = columnName.split(".");
-                return this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"));
+                const [aliasName, propertyPath] = columnName.split(".");
+                const alias = this.expressionMap.findAliasByName(aliasName);
+                const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                return this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName);
             })
             .join(", ");
 
         const orderByObject: OrderByCondition = {};
         Object.keys(orderBys).forEach(columnName => {
-            const [alias, column, ...embeddedProperties] = columnName.split(".");
-            orderByObject[this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"))] = this.expressionMap.orderBys[columnName];
+            const [aliasName, propertyPath] = columnName.split(".");
+            const alias = this.expressionMap.findAliasByName(aliasName);
+            const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = this.expressionMap.orderBys[columnName];
         });
 
         return [selectString, orderByObject];
