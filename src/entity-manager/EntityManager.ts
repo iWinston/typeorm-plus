@@ -821,15 +821,6 @@ export class EntityManager {
      * Gets mongodb repository for the given entity class or name.
      */
     getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
-
-        // if single db connection is used then create its own repository with reused query runner
-        if (this.queryRunner) {
-            if (this.queryRunner.isReleased)
-                throw new QueryRunnerProviderAlreadyReleasedError();
-
-            return this.connection.createIsolatedRepository(entityClassOrName) as MongoRepository<Entity>;
-        }
-
         return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
     }
 
