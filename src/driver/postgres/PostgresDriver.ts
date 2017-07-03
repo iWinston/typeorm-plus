@@ -188,7 +188,7 @@ export class PostgresDriver implements Driver {
             const handler = (err: any) => err ? fail(err) : ok();
 
             // this is checked fact that postgres.pool.end do not release all non released connections
-            // await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+            await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
             this.pool.end(handler);
             this.pool = undefined;
             ok();
