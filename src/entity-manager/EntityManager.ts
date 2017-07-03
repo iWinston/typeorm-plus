@@ -296,11 +296,11 @@ export class EntityManager {
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
             // todo: use transaction instead if possible
-            await this.transaction(async transactionEntityManager => {
-                if (options && options.data)
-                    transactionEntityManager.data = options.data;
-
-            });
+            // await this.transaction(async transactionEntityManager => {
+            //     if (options && options.data)
+            //         transactionEntityManager.data = options.data;
+            //
+            // });
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner();
             const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);

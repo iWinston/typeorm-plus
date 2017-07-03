@@ -296,9 +296,6 @@ export class OracleDriver implements Driver {
         } else if (column.type === Boolean) {
             type += "number(1)";
 
-        } else if (column.type === Object) {
-            type += "text";
-
         } else if (column.type === "simple-array") {
             type += "text";
 

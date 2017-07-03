@@ -251,9 +251,6 @@ export class SqlServerDriver implements Driver {
             || columnMetadata.type === "datetimeoffset") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
-        } else if (columnMetadata.type === Object) {
-            return JSON.stringify(value);
-
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
 
@@ -282,9 +279,6 @@ export class SqlServerDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
 
-        } else if (columnMetadata.type === Object) {
-            return JSON.parse(value);
-
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
         }
@@ -311,9 +305,6 @@ export class SqlServerDriver implements Driver {
 
         } else if ((column.type as any) === Buffer) {
             type += "binary";
-
-        } else if (column.type === Object) {
-            type += "ntext";
 
         } else if (column.type === "simple-array") {
             type += "ntext";

@@ -232,9 +232,6 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
-        } else if (columnMetadata.type === Object) {
-            return JSON.stringify(value);
-
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         }
@@ -257,9 +254,6 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
-
-        } else if (columnMetadata.type === Object) {
-            return JSON.parse(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
@@ -287,9 +281,6 @@ export class MysqlDriver implements Driver {
 
         } else if (column.type === Boolean) {
             type += "tinyint(1)";
-
-        } else if (column.type === Object) {
-            type += "text";
 
         } else if (column.type === "simple-array") {
             type += "text";

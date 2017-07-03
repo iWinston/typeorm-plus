@@ -257,9 +257,6 @@ export class WebsqlDriver implements Driver {
         } else if (column.type === Boolean) {
             type += "boolean";
 
-        } else if (column.type === Object) {
-            type += "text";
-
         } else if (column.type === "simple-array") {
             type += "text";
 

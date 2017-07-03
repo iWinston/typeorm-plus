@@ -229,7 +229,7 @@ export class PostgresDriver implements Driver {
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
-        } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb" || columnMetadata.type === Object) {
+        } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "simple-array") {
@@ -315,9 +315,6 @@ export class PostgresDriver implements Driver {
 
         } else if (column.type === Boolean) {
             type += "boolean";
-
-        } else if (column.type === Object) {
-            type += "json";
 
         } else if (column.type === "simple-array") {
             type += "text";

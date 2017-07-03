@@ -8,16 +8,19 @@ export class PostDetails {
     id: number;
 
     @Column({
-        nullable: true
+        type: String,
+        nullable: true,
     })
     authorName: string|null;
 
     @Column({
+        type: String,
         nullable: true
     })
     comment: string|null;
 
     @Column({
+        type: String,
         nullable: true
     })
     metadata: string|null;
