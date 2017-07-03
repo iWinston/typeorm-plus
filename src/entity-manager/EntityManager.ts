@@ -59,7 +59,8 @@ export class EntityManager {
 
     constructor(connection: Connection, queryRunner?: QueryRunner) {
         this.connection = connection;
-        this.queryRunner = queryRunner;
+        if (queryRunner)
+            this.queryRunner = queryRunner;
     }
 
     // -------------------------------------------------------------------------
