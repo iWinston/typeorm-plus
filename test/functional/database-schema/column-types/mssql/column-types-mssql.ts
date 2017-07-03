@@ -217,7 +217,6 @@ describe("database schema > column types > mssql", () => {
         post.binary = new Buffer("A");
         post.datetime = new Date();
         post.datetime.setMilliseconds(0);
-        post.object = { id: 1, name: "Post" };
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -226,7 +225,6 @@ describe("database schema > column types > mssql", () => {
         loadedPost.bit.should.be.equal(post.bit);
         loadedPost.binary.toString().should.be.equal(post.binary.toString());
         loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
-        loadedPost.object.should.be.eql(post.object);
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("name")!.type.should.be.equal("nvarchar");
@@ -235,7 +233,6 @@ describe("database schema > column types > mssql", () => {
         tableSchema!.findColumnByName("binary")!.type.should.be.equal("binary");
         tableSchema!.findColumnByName("binary")!.length!.should.be.equal(1);
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
-        tableSchema!.findColumnByName("object")!.type.should.be.equal("ntext");
 
     })));
 

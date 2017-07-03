@@ -139,7 +139,6 @@ describe("database schema > column types > sqlite", () => {
         post.blob = new Buffer("A");
         post.datetime = new Date();
         post.datetime.setMilliseconds(0);
-        post.object = { id: 1, name: "Post" };
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -148,14 +147,12 @@ describe("database schema > column types > sqlite", () => {
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.blob.toString().should.be.equal(post.blob.toString());
         loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
-        loadedPost.object.should.be.eql(post.object);
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
         tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
         tableSchema!.findColumnByName("boolean")!.type.should.be.equal("boolean");
         tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
-        tableSchema!.findColumnByName("object")!.type.should.be.equal("text");
 
     })));
 

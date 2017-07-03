@@ -17,7 +17,4 @@ export class PostWithoutTypes {
     @Column()
     datetime: Date;
 
-    @Column()
-    object: Object;
-
 }

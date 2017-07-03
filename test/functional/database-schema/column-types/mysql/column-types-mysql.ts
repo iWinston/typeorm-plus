@@ -214,7 +214,6 @@ describe("database schema > column types > mysql", () => {
         post.blob = new Buffer("A");
         post.datetime = new Date();
         post.datetime.setMilliseconds(0);
-        post.object = { id: 1, name: "Post" };
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -223,7 +222,6 @@ describe("database schema > column types > mysql", () => {
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.blob.toString().should.be.equal(post.blob.toString());
         loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
-        loadedPost.object.should.be.eql(post.object);
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("id")!.length!.should.be.equal(11);
@@ -233,7 +231,6 @@ describe("database schema > column types > mysql", () => {
         tableSchema!.findColumnByName("boolean")!.length!.should.be.equal(1);
         tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
-        tableSchema!.findColumnByName("object")!.type.should.be.equal("text");
 
     })));
 
