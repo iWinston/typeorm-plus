@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 
 describe("database schema > column types > sqlite", () => {
@@ -12,10 +12,10 @@ describe("database schema > column types > sqlite", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
             schemaCreate: true,
-            // dropSchemaOnConnection: true,
+            dropSchemaOnConnection: true,
         });
     });
-    // beforeEach(() => reloadTestingDatabases(connections));
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {

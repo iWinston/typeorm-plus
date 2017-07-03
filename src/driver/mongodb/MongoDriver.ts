@@ -12,7 +12,6 @@ import {MongoConnectionOptions} from "./MongoConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
@@ -23,6 +22,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: MongoConnectionOptions;
 
     /**
      * Mongodb does not require to dynamically create query runner each time,
@@ -62,11 +66,6 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Connection options.
-     */
-    protected options: MongoConnectionOptions;
 
     /**
      * Underlying mongodb library.

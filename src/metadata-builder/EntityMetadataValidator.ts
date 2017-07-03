@@ -2,6 +2,10 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {MissingPrimaryColumnError} from "../error/MissingPrimaryColumnError";
 import {CircularRelationsError} from "../error/CircularRelationsError";
 import {DepGraph} from "../util/DepGraph";
+import {Driver} from "../driver/Driver";
+import {DataTypeNotSupportedError} from "../error/DataTypeNotSupportedError";
+import {ColumnType} from "../driver/types/ColumnTypes";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -29,15 +33,15 @@ export class EntityMetadataValidator {
     /**
      * Validates all given entity metadatas.
      */
-    validateMany(entityMetadatas: EntityMetadata[]) {
-        entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas));
+    validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
+        entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas, driver));
         this.validateDependencies(entityMetadatas);
     }
 
     /**
      * Validates given entity metadata.
      */
-    validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[]) {
+    validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[], driver: Driver) {
 
         // check if table metadata has an id
         if (!entityMetadata.isClassTableChild && !entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
@@ -63,6 +67,14 @@ export class EntityMetadataValidator {
             if (relationCount.relation.isManyToOne || relationCount.relation.isOneToOne)
                 throw new Error(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
         });
+
+        if (!(driver instanceof MongoDriver)) {
+            entityMetadata.columns.forEach(column => {
+                const normalizedColumn = driver.normalizeType(column) as ColumnType;
+                if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
+                    throw new DataTypeNotSupportedError(normalizedColumn, driver.options.type);
+            });
+        }
 
         // validate relations
         entityMetadata.relations.forEach(relation => {

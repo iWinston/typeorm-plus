@@ -228,7 +228,7 @@ describe("database schema > column types > mysql", () => {
         tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
         tableSchema!.findColumnByName("name")!.length!.should.be.equal(255);
         tableSchema!.findColumnByName("boolean")!.type.should.be.equal("tinyint");
-        tableSchema!.findColumnByName("boolean")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("boolean")!.length!.should.be.equal(4);
         tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 

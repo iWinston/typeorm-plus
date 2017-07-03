@@ -12,7 +12,6 @@ import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
@@ -72,6 +71,7 @@ export class SqliteDriver implements Driver {
         "smallint",
         "mediumint",
         "bigint",
+        "unsigned big int",
         "int2",
         "int8",
         "integer",
@@ -94,6 +94,7 @@ export class SqliteDriver implements Driver {
         "decimal",
         "boolean",
         "date",
+        "time",
         "datetime",
     ];
 
@@ -198,7 +199,7 @@ export class SqliteDriver implements Driver {
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return value;
-            
+
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             return value ? true : false;
 

@@ -13,7 +13,6 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
@@ -283,7 +282,7 @@ export class MysqlDriver implements Driver {
             type += "blob";
 
         } else if (column.type === Boolean) {
-            type += "tinyint(1)";
+            type += "tinyint";
 
         } else if (column.type === "simple-array") {
             type += "text";

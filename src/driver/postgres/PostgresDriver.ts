@@ -14,7 +14,6 @@ import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
@@ -85,6 +84,8 @@ export class PostgresDriver implements Driver {
         "char",
         "text",
         "bytea",
+        "bit",
+        "bit varying",
         "timestamp",
         "timestamp without time zone",
         "timestamp with time zone",

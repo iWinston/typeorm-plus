@@ -46,6 +46,7 @@ export type SimpleColumnType =
     |"integer" // postgres, oracle, sqlite
     |"int4" // postgres
     |"int8" // postgres, sqlite
+    |"unsigned big int" // sqlite
     |"float4" // postgres
     |"float8" // postgres
     |"smallserial" // postgres

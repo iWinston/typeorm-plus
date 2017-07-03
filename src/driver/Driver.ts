@@ -5,11 +5,17 @@ import {ColumnType} from "./types/ColumnTypes";
 import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
+import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
  */
 export interface Driver {
+
+    /**
+     * Connection options.
+     */
+    options: BaseConnectionOptions;
 
     /**
      * Gets list of supported column data types by a driver.

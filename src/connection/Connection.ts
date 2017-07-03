@@ -1,7 +1,6 @@
 import {Driver} from "../driver/Driver";
 import {Repository} from "../repository/Repository";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
-import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {ObjectType} from "../common/ObjectType";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
@@ -9,7 +8,6 @@ import {CannotExecuteNotConnectedError} from "../error/CannotExecuteNotConnected
 import {CannotConnectAlreadyConnectedError} from "../error/CannotConnectAlreadyConnectedError";
 import {TreeRepository} from "../repository/TreeRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Logger} from "../logger/Logger";
 import {EntityMetadataNotFound} from "../error/EntityMetadataNotFound";
@@ -24,7 +22,6 @@ import {ConnectionOptions} from "./ConnectionOptions";
 import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
 import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 import {LoggerFactory} from "../logger/LoggerFactory";
-import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {DriverFactory} from "../driver/DriverFactory";
 import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -451,7 +448,7 @@ export class Connection {
         Object.assign(this, { migrations: migrations });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
-        entityMetadataValidator.validateMany(this.entityMetadatas);
+        entityMetadataValidator.validateMany(this.entityMetadatas, this.driver);
     }
 
 }
