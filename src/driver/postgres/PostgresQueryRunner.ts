@@ -341,6 +341,11 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                     columnSchema.isGenerated = isGenerated;
                     columnSchema.comment = ""; // dbColumn["COLUMN_COMMENT"];
                     columnSchema.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] ===  `uk_${dbColumn["table_name"]}_${dbColumn["column_name"]}`);
+                    if (columnSchema.type === "array") {
+                        columnSchema.isArray = true;
+                        const type = dbColumn["udt_name"].substring(1);
+                        columnSchema.type = this.connection.driver.normalizeType({type: type});
+                    }
                     return columnSchema;
                 });
 

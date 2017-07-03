@@ -228,7 +228,7 @@ export class PostgresDriver implements Driver {
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
-        } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
+        } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb" || columnMetadata.type === Object) {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "simple-array") {
@@ -301,7 +301,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, array?: string|boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";
@@ -316,7 +316,7 @@ export class PostgresDriver implements Driver {
             type += "boolean";
 
         } else if (column.type === Object) {
-            type += "text";
+            type += "json";
 
         } else if (column.type === "simple-array") {
             type += "text";
@@ -326,15 +326,47 @@ export class PostgresDriver implements Driver {
         }
 
         // normalize shortcuts
-        if (type === "int") {
+        if (type === "int" || type === "int4") {
             type = "integer";
+
+        } else if (type === "int2") {
+            type = "smallint";
+
+        } else if (type === "int8") {
+            type = "bigint";
+
+        } else if (type === "decimal") {
+            type = "numeric";
+
+        } else if (type === "float8") {
+            type = "double precision";
+
+        } else if (type === "float4") {
+            type = "real";
+
+        } else if (type === "char") {
+            type = "character";
+
+        } else if (type === "varchar") {
+            type = "character varying";
+
+        } else if (type === "time") {
+            type = "time without time zone";
+
+        } else if (type === "timetz") {
+            type = "time with time zone";
+
+        } else if (type === "timestamptz") {
+            type = "timestamp with time zone";
+
+        } else if (type === "bool") {
+            type = "boolean";
+
+        } else if (type === "varbit") {
+            type = "bit varying";
 
         } else if (type === "timestamp") {
             type = "timestamp without time zone";
-        }
-
-        if (column.array) {
-            type += " ARRAY" + (typeof column.array === "string" ? column.array : "");
         }
 
         return type;

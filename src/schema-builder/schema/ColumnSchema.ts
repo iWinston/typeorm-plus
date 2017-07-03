@@ -46,6 +46,11 @@ export class ColumnSchema {
     isUnique: boolean = false;
 
     /**
+     * Indicates if column stores array.
+     */
+    isArray: boolean = false;
+
+    /**
      * Column's comment.
      */
     comment?: string;
@@ -126,27 +131,30 @@ export class ColumnSchema {
         newColumnSchema.isGenerated = this.isGenerated;
         newColumnSchema.isPrimary = this.isPrimary;
         newColumnSchema.isUnique = this.isUnique;
+        newColumnSchema.isArray = this.isArray;
         newColumnSchema.comment = this.comment;
         return newColumnSchema;
     }
 
     getFullType(driver: Driver): string {
+        let type = this.type;
+
         if (this.length) {
-            return this.type + "(" + this.length + ")";
+            type += "(" + this.length + ")";
         } else if (this.precision && this.scale) {
-            return this.type + "(" + this.precision + "," + this.scale + ")";
-        } else if (this.precision) {
-            if (this.type === "real")
-                return this.type;
-            return this.type + "(" + this.precision + ")";
+            type += "(" + this.precision + "," + this.scale + ")";
+        } else if (this.precision && this.type !== "real") {
+            type +=  "(" + this.precision + ")";
         } else if (this.scale) {
-            return this.type + "(" + this.scale + ")";
+            type +=  "(" + this.scale + ")";
+        } else  if (driver.dataTypeDefaults && driver.dataTypeDefaults[this.type] && driver.dataTypeDefaults[this.type].length) {
+            type +=  "(" + driver.dataTypeDefaults[this.type].length + ")";
         }
 
-        if (driver.dataTypeDefaults && driver.dataTypeDefaults[this.type] && driver.dataTypeDefaults[this.type].length)
-            return this.type + "(" + driver.dataTypeDefaults[this.type].length + ")";
+        if (this.isArray)
+            type += " array";
 
-        return this.type;
+        return type;
     }
 
     // -------------------------------------------------------------------------
@@ -169,6 +177,7 @@ export class ColumnSchema {
         columnSchema.type = normalizedType;
         columnSchema.isPrimary = columnMetadata.isPrimary;
         columnSchema.isUnique = columnMetadata.isUnique;
+        columnSchema.isArray = columnMetadata.isArray || false;
         columnSchema.enum = columnMetadata.enum;
         return columnSchema;
     }

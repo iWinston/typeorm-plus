@@ -5,7 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 
-describe.only("database schema > column types > mysql", () => {
+describe("database schema > column types > mysql", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -127,6 +127,9 @@ describe.only("database schema > column types > mysql", () => {
         tableSchema!.findColumnByName("longblob")!.type.should.be.equal("longblob");
         tableSchema!.findColumnByName("longtext")!.type.should.be.equal("longtext");
         tableSchema!.findColumnByName("enum")!.type.should.be.equal("enum");
+        tableSchema!.findColumnByName("enum")!.enum![0].should.be.equal("A");
+        tableSchema!.findColumnByName("enum")!.enum![1].should.be.equal("B");
+        tableSchema!.findColumnByName("enum")!.enum![2].should.be.equal("C");
         tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("text");
 
     })));

@@ -295,9 +295,9 @@ export class MysqlQueryRunner implements QueryRunner {
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
 
-                    const type = dbColumn["COLUMN_TYPE"].toLowerCase();
-                    const endIndex = type.indexOf("(");
-                    columnSchema.type = endIndex !== -1 ? type.substr(0, endIndex) : type;
+                    const columnType = dbColumn["COLUMN_TYPE"].toLowerCase();
+                    const endIndex = columnType.indexOf("(");
+                    columnSchema.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
 
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
@@ -312,11 +312,19 @@ export class MysqlQueryRunner implements QueryRunner {
                         ||  columnSchema.type === "smallint" || columnSchema.type === "mediumint"
                         || columnSchema.type === "bigint" || columnSchema.type === "year") {
 
-                        const length = type.substr(type.indexOf("(") + 1, type.indexOf(")"));
+                        const length = columnType.substring(columnType.indexOf("(") + 1, columnType.indexOf(")"));
                         columnSchema.length = parseInt(length);
-                    } else {
 
+                    } else {
                         columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                    }
+
+                    if (columnSchema.type === "enum") {
+                        const colType = dbColumn["COLUMN_TYPE"];
+                        const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
+                        columnSchema.enum = (items as string[]).map(item => {
+                            return item.substring(1, item.length - 1);
+                        });
                     }
 
                     return columnSchema;

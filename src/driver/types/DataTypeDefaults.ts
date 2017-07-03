@@ -3,5 +3,5 @@ export interface DataTypeDefaults {
         length?: number;
         precision?: number;
         scale?: number;
-    }
+    };
 }

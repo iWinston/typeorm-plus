@@ -184,7 +184,7 @@ export class SqliteDriver implements Driver {
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
-        } else if (columnMetadata.type === "json") {
+        } else if (columnMetadata.type === Object) {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "simple-array") {
@@ -210,7 +210,7 @@ export class SqliteDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
 
-        } else if (columnMetadata.type === "json") {
+        } else if (columnMetadata.type === Object) {
             return JSON.parse(value);
 
         } else if (columnMetadata.type === "simple-array") {
@@ -259,7 +259,7 @@ export class SqliteDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, array?: string|boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
         let type = "";
         if (column.type === Number || column.type === "int") {
             type += "integer";
@@ -269,6 +269,9 @@ export class SqliteDriver implements Driver {
 
         } else if (column.type === Date) {
             type += "datetime";
+
+        } else if ((column.type as any) === Buffer) {
+            type += "blob";
 
         } else if (column.type === Boolean) {
             type += "boolean";

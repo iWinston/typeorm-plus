@@ -1,7 +1,8 @@
 import "reflect-metadata";
 import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../../../utils/test-utils";
+import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 
 describe("database schema > column types > sqlite", () => {
 
@@ -11,10 +12,10 @@ describe("database schema > column types > sqlite", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            // dropSchemaOnConnection: true,
         });
     });
-    beforeEach(() => reloadTestingDatabases(connections));
+    // beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
@@ -121,6 +122,40 @@ describe("database schema > column types > sqlite", () => {
         tableSchema!.findColumnByName("date")!.type.should.be.equal("date");
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
         tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("text");
+
+    })));
+
+    it("all types should work correctly - persist and hydrate when types are not specified on columns", () => Promise.all(connections.map(async connection => {
+
+        const postRepository = connection.getRepository(PostWithoutTypes);
+        const queryRunner = connection.createQueryRunner();
+        const tableSchema = await queryRunner.loadTableSchema("post_without_types");
+        await queryRunner.release();
+
+        const post = new PostWithoutTypes();
+        post.id = 1;
+        post.name = "Post";
+        post.boolean = true;
+        post.blob = new Buffer("A");
+        post.datetime = new Date();
+        post.datetime.setMilliseconds(0);
+        post.object = { id: 1, name: "Post" };
+        await postRepository.save(post);
+
+        const loadedPost = (await postRepository.findOneById(1))!;
+        loadedPost.id.should.be.equal(post.id);
+        loadedPost.name.should.be.equal(post.name);
+        loadedPost.boolean.should.be.equal(post.boolean);
+        loadedPost.blob.toString().should.be.equal(post.blob.toString());
+        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
+        loadedPost.object.should.be.eql(post.object);
+
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
+        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
+        tableSchema!.findColumnByName("boolean")!.type.should.be.equal("boolean");
+        tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
+        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        tableSchema!.findColumnByName("object")!.type.should.be.equal("text");
 
     })));
 

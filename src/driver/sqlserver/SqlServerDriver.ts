@@ -294,7 +294,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, array?: string|boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
         let type = "";
         if (column.type === Number) {
             type += "int";

@@ -3,6 +3,7 @@ import {Post} from "./entity/Post";
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 
 describe("database schema > column types > postgres", () => {
 
@@ -192,7 +193,8 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("uuid")!.type.should.be.equal("uuid");
         tableSchema!.findColumnByName("xml")!.type.should.be.equal("xml");
         tableSchema!.findColumnByName("json")!.type.should.be.equal("json");
-        tableSchema!.findColumnByName("array")!.type.should.be.equal("array");
+        tableSchema!.findColumnByName("array")!.type.should.be.equal("integer");
+        tableSchema!.findColumnByName("array")!.isArray!.should.be.true;
         tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("text");
 
     })));
@@ -238,6 +240,37 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(30);
         tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
         tableSchema!.findColumnByName("characterVarying")!.length!.should.be.equal(30);
+
+    })));
+
+    it("all types should work correctly - persist and hydrate when types are not specified on columns", () => Promise.all(connections.map(async connection => {
+
+        const postRepository = connection.getRepository(PostWithoutTypes);
+        const queryRunner = connection.createQueryRunner();
+        const tableSchema = await queryRunner.loadTableSchema("post_without_types");
+        await queryRunner.release();
+
+        const post = new PostWithoutTypes();
+        post.id = 1;
+        post.name = "Post";
+        post.bit = true;
+        post.datetime = new Date();
+        post.datetime.setMilliseconds(0);
+        post.object = { id: 1, name: "Post" };
+        await postRepository.save(post);
+
+        const loadedPost = (await postRepository.findOneById(1))!;
+        loadedPost.id.should.be.equal(post.id);
+        loadedPost.name.should.be.equal(post.name);
+        loadedPost.bit.should.be.equal(post.bit);
+        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
+        loadedPost.object.should.be.eql(post.object);
+
+        tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
+        tableSchema!.findColumnByName("name")!.type.should.be.equal("character varying");
+        tableSchema!.findColumnByName("bit")!.type.should.be.equal("boolean");
+        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("timestamp without time zone");
+        tableSchema!.findColumnByName("object")!.type.should.be.equal("json");
 
     })));
 

@@ -103,7 +103,7 @@ export class ColumnMetadata {
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.
      */
-    array?: boolean|string;
+    isArray?: boolean;
 
     /**
      * Gets full path to this column property (including column property name).
@@ -216,8 +216,8 @@ export class ColumnMetadata {
             this.precision = options.args.options.precision;
         if (options.args.options.enum)
             this.enum = options.args.options.enum;
-        if (options.args.options.array)
-            this.array = options.args.options.array;
+        if (options.args.options.isArray)
+            this.isArray = options.args.options.isArray;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
             this.isParentId = options.args.mode === "parentId";
