@@ -469,18 +469,13 @@ export class EntityMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
-     *
-     * Ids can be a single id, multiple ids in the array, mixed id map.
-     * Result will be same - id map.
      */
     createEntityIdMap(ids: any|any[]) {
         if (!(ids instanceof Array))
             ids = [ids];
 
-        const primaryColumns = this.parentEntityMetadata ? this.primaryColumns : this.primaryColumns;
-        return primaryColumns.reduce((map, column, index) => {
-            const idMap = ids[index] instanceof Object ? ids[index] : column.createValueMap(ids[index]);
-            return Object.assign(map, idMap);
+        return this.primaryColumns.reduce((map, column, index) => {
+            return OrmUtils.mergeDeep(map, column.createValueMap(ids[index]));
         }, {});
     }
 
