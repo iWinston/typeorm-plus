@@ -4,6 +4,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnType} from "./types/ColumnTypes";
 import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
+import {EntityManager} from "../entity-manager/EntityManager";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 
 /**

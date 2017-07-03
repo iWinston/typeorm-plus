@@ -24,14 +24,14 @@ export class PostgresQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Database driver used by connection.
+     */
+    driver: PostgresDriver;
+
+    /**
      * Connection used by this query runner.
      */
     connection: Connection;
-
-    /**
-     * Entity manager isolated for this query runner.
-     */
-    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -77,9 +77,9 @@ export class PostgresQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected driver: PostgresDriver) {
+    constructor(driver: PostgresDriver) {
+        this.driver = driver;
         this.connection = driver.connection;
-        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------

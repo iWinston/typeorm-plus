@@ -24,14 +24,14 @@ export class MysqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Database driver used by connection.
+     */
+    driver: MysqlDriver;
+
+    /**
      * Connection used by this query runner.
      */
     connection: Connection;
-
-    /**
-     * Entity manager isolated for this query runner.
-     */
-    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -72,9 +72,9 @@ export class MysqlQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected driver: MysqlDriver) {
+    constructor(driver: MysqlDriver) {
+        this.driver = driver;
         this.connection = driver.connection;
-        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------

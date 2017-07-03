@@ -42,13 +42,13 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 export class MongoRepository<Entity extends ObjectLiteral> extends Repository<Entity> {
 
     // -------------------------------------------------------------------------
-    // Protected Methods Set Dynamically
+    // Public Properties
     // -------------------------------------------------------------------------
 
     /**
      * Entity Manager used by this repository.
      */
-    protected manager: MongoEntityManager;
+    readonly manager: MongoEntityManager;
 
     // -------------------------------------------------------------------------
     // Overridden Methods

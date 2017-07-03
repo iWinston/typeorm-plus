@@ -26,14 +26,14 @@ export class OracleQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Database driver used by connection.
+     */
+    driver: OracleDriver;
+
+    /**
      * Connection used by this query runner.
      */
     connection: Connection;
-
-    /**
-     * Entity manager isolated for this query runner.
-     */
-    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -74,9 +74,9 @@ export class OracleQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected driver: OracleDriver) {
+    constructor(driver: OracleDriver) {
+        this.driver = driver;
         this.connection = driver.connection;
-        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------

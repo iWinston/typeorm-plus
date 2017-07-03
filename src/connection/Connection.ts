@@ -29,6 +29,7 @@ import {DriverFactory} from "../driver/DriverFactory";
 import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Connection is a single database ORM connection to a specific DBMS database.
@@ -269,7 +270,7 @@ export class Connection {
      * Gets repository for the given entity.
      */
     getRepository<Entity>(target: ObjectType<Entity>|string): Repository<Entity> {
-        return this.getMetadata(target).repository;
+        return this.manager.getRepository(target);
     }
 
     /**
@@ -277,17 +278,7 @@ export class Connection {
      * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
      */
     getTreeRepository<Entity>(target: ObjectType<Entity>|string): TreeRepository<Entity> {
-        if (this.driver instanceof MongoDriver)
-            throw new Error(`You cannot use getTreeRepository for MongoDB connections.`);
-
-        if (!this.hasMetadata(target))
-            throw new RepositoryNotFoundError(this.name, target);
-
-        const repository = this.getMetadata(target).repository;
-        if (!(repository instanceof TreeRepository))
-            throw new RepositoryNotTreeError(target);
-
-        return repository;
+        return this.manager.getTreeRepository(target);
     }
 
     /**
@@ -298,10 +289,7 @@ export class Connection {
         if (!(this.driver instanceof MongoDriver))
             throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
 
-        if (!this.hasMetadata(target))
-            throw new RepositoryNotFoundError(this.name, target);
-
-        return this.getMetadata(target).repository as MongoRepository<Entity>;
+        return this.manager.getRepository(target) as MongoRepository<Entity>;
     }
 
     /**
@@ -315,32 +303,8 @@ export class Connection {
      * Wraps given function execution (and all operations made there) into a transaction.
      * All database operations must be executed using provided entity manager.
      */
-    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>, queryRunner?: QueryRunner): Promise<any> {
-        if (this instanceof MongoEntityManager)
-            throw new Error(`Transactions aren't supported by MongoDB.`);
-
-        if (queryRunner && queryRunner.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        const usedQueryRunner = queryRunner || this.createQueryRunner();
-        const transactionEntityManager = new EntityManagerFactory().create(this, usedQueryRunner);
-
-        try {
-            await usedQueryRunner.startTransaction();
-            const result = await runInTransaction(transactionEntityManager);
-            await usedQueryRunner.commitTransaction();
-            return result;
-
-        } catch (err) {
-            try { // we throw original error even if rollback thrown an error
-                await usedQueryRunner.rollbackTransaction();
-            } catch (rollbackError) { }
-            throw err;
-
-        } finally {
-            if (!queryRunner) // if we used a new query runner provider then release it
-                await usedQueryRunner.release();
-        }
+    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
+        return this.manager.transaction(runInTransaction);
     }
 
     /**
@@ -406,26 +370,31 @@ export class Connection {
      * This may be useful if you want to perform all db queries within one connection.
      * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
      */
-    createIsolatedManager(queryRunner?: QueryRunner): EntityManager {
-        if (queryRunner && queryRunner.manager && queryRunner.manager !== this.manager)
-            return queryRunner.manager;
+    createIsolatedManager(): EntityManager {
+        if (this.driver instanceof MongoDriver)
+            throw new Error(`You can use createIsolatedManager only for non MongoDB connections.`);
 
-        if (!queryRunner)
-            queryRunner = this.createQueryRunner();
+        // sqlite has a single query runner and does not support isolated managers
+        if (this.driver instanceof SqliteDriver)
+            return this.manager;
 
-        Object.assign(queryRunner, { manager: new EntityManagerFactory().create(this, queryRunner) });
-        return queryRunner.manager;
+        return new EntityManagerFactory().create(this, this.driver.createQueryRunner());
     }
 
     /**
      * Creates a new repository with a single opened connection to the database.
      * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
+     * After finishing with repository, don't forget to release its query runner (to release database connection back to pool).
      */
-    createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, queryRunner?: QueryRunner): Repository<Entity> {
-        if (!queryRunner)
-            queryRunner = this.createQueryRunner();
-        return new RepositoryFactory().create(this, this.getMetadata(entityClassOrName), queryRunner);
+    createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
+        if (this.driver instanceof MongoDriver)
+            throw new Error(`You can use createIsolatedRepository only for non MongoDB connections.`);
+
+        // sqlite has a single query runner and does not support isolated repositories
+        if (this.driver instanceof SqliteDriver)
+            return this.manager.getRepository(entityClassOrName);
+
+        return this.createIsolatedManager().getRepository(entityClassOrName);
     }
 
     // -------------------------------------------------------------------------
@@ -465,7 +434,6 @@ export class Connection {
     protected buildMetadatas(): void {
 
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(this);
-        const repositoryFactory = new RepositoryFactory();
         const entityMetadataValidator = new EntityMetadataValidator();
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
@@ -481,11 +449,6 @@ export class Connection {
         // create migration instances
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         Object.assign(this, { migrations: migrations });
-
-        // initialize repositories for all entity metadatas
-        this.entityMetadatas.forEach(metadata => {
-            metadata.repository = repositoryFactory.create(this, metadata);
-        });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas);

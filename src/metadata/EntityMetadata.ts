@@ -26,11 +26,6 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Repository used for this entity metadata.
-     */
-    repository: Repository<any>;
-
-    /**
      * Used to wrap lazy relations.
      */
     lazyRelationsWrapper: LazyRelationsWrapper;
