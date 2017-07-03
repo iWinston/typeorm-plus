@@ -8,7 +8,7 @@ import {Category} from "./entity/Category";
 
 const should = chai.should();
 
-describe.only("query builder > sub-query", () => {
+describe("query builder > sub-query", () => {
 
     // -------------------------------------------------------------------------
     // Prepare
