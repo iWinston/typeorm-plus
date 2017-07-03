@@ -8,7 +8,7 @@ import {Category} from "./entity/Category";
 
 const should = chai.should();
 
-describe("query builder > sub-query", () => {
+describe.only("query builder > sub-query", () => {
 
     // -------------------------------------------------------------------------
     // Prepare
@@ -253,6 +253,7 @@ describe("query builder > sub-query", () => {
             .select("usr.name", "name")
             .from(User, "usr")
             .limit(1)
+            .orderBy("usr.name")
             .getQuery();
 
         const posts = await connection
@@ -279,6 +280,7 @@ describe("query builder > sub-query", () => {
                 return subQuery
                     .select("usr.name", "name")
                     .from(User, "usr")
+                    .orderBy("usr.name")
                     .limit(1);
             }, "name")
             .from(Post, "post")
