@@ -1567,7 +1567,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // broadcast all "after load" events
             if (this.expressionMap.mainAlias.hasMetadata)
-                await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
+                await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, entities);
         }
 
         return {
