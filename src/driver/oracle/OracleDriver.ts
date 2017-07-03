@@ -257,6 +257,9 @@ export class OracleDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (value === null || value === undefined)
+            return value;
+            
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
