@@ -243,7 +243,7 @@ export class SqlServerDriver implements Driver {
             return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedDateToTimeString(value);
+            return DateUtils.mixedTimeToDate(value);
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === "datetime2"
@@ -267,7 +267,7 @@ export class SqlServerDriver implements Driver {
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return value;
-            
+
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
@@ -324,6 +324,9 @@ export class SqlServerDriver implements Driver {
         } else if (type === "float" && (column.precision && (column.precision! >= 1 && column.precision! < 25))) {
             type = "real";
         }
+
+        if (type === "double precision")
+            type = "float";
 
         return type;
     }

@@ -435,8 +435,15 @@ export class EntityMetadata {
     /**
      * Finds column with a given property name.
      */
-    findColumnWithPropertyName(propertyName: string) {
+    findColumnWithPropertyName(propertyName: string): ColumnMetadata|undefined {
         return this.columns.find(column => column.propertyName === propertyName);
+    }
+
+    /**
+     * Finds column with a given database name.
+     */
+    findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
+        return this.columns.find(column => column.databaseName === databaseName);
     }
 
     /**
