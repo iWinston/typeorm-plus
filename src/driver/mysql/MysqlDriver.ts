@@ -228,6 +228,9 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value);
 
+        } else if (columnMetadata.type === "json") {
+            return JSON.stringify(value);
+
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
@@ -253,6 +256,9 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value);
+
+        } else if (columnMetadata.type === "json") {
+            return JSON.parse(value);
 
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);

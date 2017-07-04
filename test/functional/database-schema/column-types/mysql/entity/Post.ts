@@ -1,6 +1,7 @@
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
+import {FruitEnum} from "../enum/FruitEnum";
 
 @Entity()
 export class Post {
@@ -82,6 +83,12 @@ export class Post {
 
     @Column("enum", { enum: ["A", "B", "C"] })
     enum: string;
+
+    @Column("enum", { enum: FruitEnum })
+    classEnum1: FruitEnum;
+
+    @Column("json")
+    json: Object;
 
     @Column("simple-array")
     simpleArray: string[];

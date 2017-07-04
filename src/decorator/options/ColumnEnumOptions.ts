@@ -6,6 +6,6 @@ export interface ColumnEnumOptions {
     /**
      * Array of possible enumerated values.
      */
-    enum?: any[];
+    enum?: any[]|Object;
 
 }

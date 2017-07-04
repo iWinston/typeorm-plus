@@ -214,8 +214,16 @@ export class ColumnMetadata {
             this.scale = options.args.options.scale;
         if (options.args.options.precision)
             this.precision = options.args.options.precision;
-        if (options.args.options.enum)
-            this.enum = options.args.options.enum;
+        if (options.args.options.enum) {
+            if (options.args.options.enum instanceof Object) {
+                this.enum = Object.keys(options.args.options.enum).map(key => {
+                    return (options.args.options.enum as ObjectLiteral)[key];
+                });
+
+            } else {
+                this.enum = options.args.options.enum;
+            }
+        }
         if (options.args.options.isArray)
             this.isArray = options.args.options.isArray;
         if (options.args.mode) {

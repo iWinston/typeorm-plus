@@ -69,7 +69,7 @@ export interface ColumnOptions {
     /**
      * Array of possible enumerated values.
      */
-    enum?: any[];
+    enum?: any[]|Object;
 
     /**
      * Indicates if this column is an array.

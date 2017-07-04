@@ -4,6 +4,7 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
+import {FruitEnum} from "./enum/FruitEnum";
 
 describe("database schema > column types > mysql", () => {
 
@@ -55,6 +56,8 @@ describe("database schema > column types > mysql", () => {
         post.longblob = new Buffer("This is longblob");
         post.longtext = "This is longtext";
         post.enum = "A";
+        post.classEnum1 = FruitEnum.Apple;
+        post.json = { id: 1, name: "Post" };
         post.simpleArray = ["A", "B", "C"];
         await postRepository.save(post);
 
@@ -85,6 +88,8 @@ describe("database schema > column types > mysql", () => {
         loadedPost.longblob.toString().should.be.equal(post.longblob.toString());
         loadedPost.longtext.should.be.equal(post.longtext);
         loadedPost.enum.should.be.equal(post.enum);
+        loadedPost.classEnum1.should.be.equal(post.classEnum1);
+        loadedPost.json.should.be.eql(post.json);
         loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0]);
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
@@ -130,6 +135,11 @@ describe("database schema > column types > mysql", () => {
         tableSchema!.findColumnByName("enum")!.enum![0].should.be.equal("A");
         tableSchema!.findColumnByName("enum")!.enum![1].should.be.equal("B");
         tableSchema!.findColumnByName("enum")!.enum![2].should.be.equal("C");
+        tableSchema!.findColumnByName("classEnum1")!.type.should.be.equal("enum");
+        tableSchema!.findColumnByName("classEnum1")!.enum![0].should.be.equal("apple");
+        tableSchema!.findColumnByName("classEnum1")!.enum![1].should.be.equal("pineapple");
+        tableSchema!.findColumnByName("classEnum1")!.enum![2].should.be.equal("banana");
+        tableSchema!.findColumnByName("json")!.type.should.be.equal("json");
         tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("text");
 
     })));
