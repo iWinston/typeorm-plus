@@ -390,6 +390,9 @@ export class PostgresDriver implements Driver {
         } else if (typeof column.default === "string") {
             return `'${column.default}'`;
 
+        } else if (typeof column.default === "object") {
+            return `'${JSON.stringify(column.default)}'`;
+
         } else {
             return column.default;
         }
