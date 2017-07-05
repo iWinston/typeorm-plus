@@ -3,6 +3,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {QueryPartialEntity} from "./QueryPartialEntity";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -158,12 +159,16 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyName(columnProperty);
             if (column) {
                 const paramName = "_updated_" + column.databaseName;
+                const value = valuesSet[column.propertyName];
 
-                if (valuesSet[column.propertyName] instanceof Function) { // support for SQL expressions in update query
-                    updateColumnAndValues.push(column.databaseName + " = " + valuesSet[column.propertyName]());
-
+                if (value instanceof Function) { // support for SQL expressions in update query
+                    updateColumnAndValues.push(column.databaseName + " = " + value());
                 } else {
-                    this.setParameter(paramName, valuesSet[column.propertyName]);
+                    if (this.connection.driver instanceof SqlServerDriver) {
+                        this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
+                    } else {
+                        this.setParameter(paramName, value);
+                    }
                     updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
                 }
             }

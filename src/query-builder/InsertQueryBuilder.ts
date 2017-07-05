@@ -81,7 +81,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     return value();
 
                 } else {
-                    this.setParameter(paramName, value);
+                    if (this.connection.driver instanceof SqlServerDriver) {
+                        this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
+                    } else {
+                        this.setParameter(paramName, value);
+                    }
                     return ":" + paramName;
                 }
             });

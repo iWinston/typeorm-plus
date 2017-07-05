@@ -1,3 +1,4 @@
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 /**
  * Sql server driver requires parameter types to be specified fo input parameters used in the query.
  *
@@ -5,7 +6,15 @@
  */
 export class MssqlParameter {
 
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
     public params: any[] = [];
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
 
     constructor(value: any, type: "bit");
     constructor(value: any, type: "bigint");

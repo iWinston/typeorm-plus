@@ -14,6 +14,7 @@ import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {MssqlParameter} from "./MssqlParameter";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -135,7 +136,7 @@ export class SqlServerDriver implements Driver {
     }
 
     // -------------------------------------------------------------------------
-    // Public Methods
+    // Public Implemented Methods
     // -------------------------------------------------------------------------
 
     /**
@@ -348,6 +349,60 @@ export class SqlServerDriver implements Driver {
         } else {
             return column.default;
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Sql server's parameters needs to be wrapped into special object with type information about this value.
+     * This method wraps given value into MssqlParameter based on its column definition.
+     */
+    parametrizeValue(column: ColumnMetadata, value: any) {
+
+        // if its already MssqlParameter then simply return it
+        if (value instanceof MssqlParameter)
+            return value;
+
+        const normalizedType = this.normalizeType({ type: column.type });
+        if (column.length) {
+            return new MssqlParameter(value, normalizedType as any, column.length as any);
+
+        } else if (column.precision && column.scale) {
+            return new MssqlParameter(value, normalizedType as any, column.precision, column.scale);
+
+        } else if (column.precision) {
+            return new MssqlParameter(value, normalizedType as any, column.precision);
+
+        } else if (column.scale) {
+            return new MssqlParameter(value, normalizedType as any, column.scale);
+        }
+
+        return new MssqlParameter(value, column.type as any);
+    }
+
+    /**
+     * Sql server's parameters needs to be wrapped into special object with type information about this value.
+     * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
+     */
+    parametrizeMap(tableName: string, map: ObjectLiteral): ObjectLiteral {
+
+        // find metadata for the given table
+        const metadata = this.connection.getMetadata(tableName);
+        if (!metadata) // if no metadata found then we can't proceed because we don't have columns and their types
+            return map;
+
+        return Object.keys(map).map(key => {
+            const value = map[key];
+
+            // find column metadata
+            const column = metadata.findColumnWithDatabaseName(key);
+            if (!column) // if we didn't find a column then we can't proceed because we don't have a column type
+                return value;
+
+            return this.parametrizeValue(column, value);
+        });
     }
 
     // -------------------------------------------------------------------------
