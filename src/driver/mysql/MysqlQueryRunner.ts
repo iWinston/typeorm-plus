@@ -326,7 +326,7 @@ export class MysqlQueryRunner implements QueryRunner {
                         });
                     }
 
-                    if (columnSchema.type === "datetime") {
+                    if (columnSchema.type === "datetime" || columnSchema.type === "time" || columnSchema.type === "timestamp") {
                         columnSchema.precision = dbColumn["DATETIME_PRECISION"];
                     }
 

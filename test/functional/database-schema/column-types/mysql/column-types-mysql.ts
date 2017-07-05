@@ -165,6 +165,8 @@ describe("database schema > column types > mysql", () => {
         post.char = "A";
         post.varchar = "This is varchar";
         post.datetime = new Date();
+        post.timestamp = new Date();
+        post.time = "15:30:00.256";
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -181,6 +183,8 @@ describe("database schema > column types > mysql", () => {
         loadedPost.char.should.be.equal(post.char);
         loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
+        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
+        loadedPost.time.should.be.equal(post.time);
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("id")!.length!.should.be.equal(11);
@@ -211,6 +215,10 @@ describe("database schema > column types > mysql", () => {
         tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(30);
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
         tableSchema!.findColumnByName("datetime")!.precision!.should.be.equal(6);
+        tableSchema!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
+        tableSchema!.findColumnByName("timestamp")!.precision!.should.be.equal(6);
+        tableSchema!.findColumnByName("time")!.type.should.be.equal("time");
+        tableSchema!.findColumnByName("time")!.precision!.should.be.equal(3);
 
     })));
 
