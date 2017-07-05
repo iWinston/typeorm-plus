@@ -228,7 +228,7 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
-            return DateUtils.mixedDateToUtcDatetimeString(value);
+            return DateUtils.mixedDateToDate(value, true);
 
         } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
             return JSON.stringify(value);

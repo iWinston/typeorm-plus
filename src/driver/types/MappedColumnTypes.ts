@@ -12,6 +12,11 @@ export interface MappedColumnTypes {
     createDate: ColumnType;
 
     /**
+     * Precision of datetime column. Used in MySql to define milliseconds.
+     */
+    createDatePrecision?: number;
+
+    /**
      * Default value should be used by a database for "created date" column.
      */
     createDateDefault: string;
@@ -20,6 +25,11 @@ export interface MappedColumnTypes {
      * Column type for the update date column.
      */
     updateDate: ColumnType;
+
+    /**
+     * Precision of datetime column. Used in MySql to define milliseconds.
+     */
+    updateDatePrecision?: number;
 
     /**
      * Default value should be used by a database for "updated date" column.

@@ -95,9 +95,9 @@ export class SqlServerDriver implements Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "datetime",
+        createDate: "datetime2",
         createDateDefault: "getdate()",
-        updateDate: "datetime",
+        updateDate: "datetime2",
         updateDateDefault: "getdate()",
         version: "int",
         treeLevel: "int",

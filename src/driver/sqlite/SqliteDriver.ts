@@ -184,7 +184,7 @@ export class SqliteDriver implements Driver {
             return DateUtils.mixedDateToTimeString(value);
 
         } else if (columnMetadata.type === "datetime") {
-            return DateUtils.mixedDateToUtcDatetimeString(value);
+            return DateUtils.mixedDateToUtcDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);

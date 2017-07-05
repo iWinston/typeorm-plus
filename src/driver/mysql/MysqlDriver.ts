@@ -88,9 +88,11 @@ export class MysqlDriver implements Driver {
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "datetime",
-        createDateDefault: "CURRENT_TIMESTAMP",
+        createDatePrecision: 6,
+        createDateDefault: "CURRENT_TIMESTAMP(6)",
         updateDate: "datetime",
-        updateDateDefault: "CURRENT_TIMESTAMP",
+        updateDatePrecision: 6,
+        updateDateDefault: "CURRENT_TIMESTAMP(6)",
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",
@@ -232,7 +234,7 @@ export class MysqlDriver implements Driver {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "datetime") {
-            return DateUtils.mixedDateToUtcDatetimeString(value);
+            return DateUtils.mixedDateToDate(value, true);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);

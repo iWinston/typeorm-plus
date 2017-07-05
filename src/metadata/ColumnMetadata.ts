@@ -242,11 +242,15 @@ export class ColumnMetadata {
             this.type = options.connection.driver.mappedDataTypes.createDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
+            if (!this.precision && options.connection.driver.mappedDataTypes.createDatePrecision)
+                this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
         }
         if (this.isUpdateDate) {
             this.type = options.connection.driver.mappedDataTypes.updateDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
+            if (!this.precision && options.connection.driver.mappedDataTypes.updateDatePrecision)
+                this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
         if (this.isVersion)
             this.type = options.connection.driver.mappedDataTypes.version;
