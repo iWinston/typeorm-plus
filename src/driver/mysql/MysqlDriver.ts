@@ -157,10 +157,10 @@ export class MysqlDriver implements Driver {
         
         return new Promise<void>((ok, fail) => {
             this.pool.getConnection((err: any, connection: any) => {
-                if(err){
+                if (err) {
                     fail("Mysql connection error : " + err);
                 }
-                else{
+                else {
                     ok();
                 }
             });
