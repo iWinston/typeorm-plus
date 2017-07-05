@@ -383,6 +383,7 @@ export class SqlServerQueryRunner implements QueryRunner {
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
         valuesMap = this.driver.parametrizeMap(tableName, valuesMap);
         conditions = this.driver.parametrizeMap(tableName, conditions);
+
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);

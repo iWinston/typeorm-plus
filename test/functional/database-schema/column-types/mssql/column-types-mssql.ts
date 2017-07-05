@@ -52,20 +52,16 @@ describe("database schema > column types > mssql", () => {
         post.varbinary = new Buffer("B");
         post.image = new Buffer("This is image");
         post.dateObj = new Date();
-        post.dateObj.setMilliseconds(0);
         post.date = "2017-06-21";
         post.datetime = new Date();
-        post.datetime.setMilliseconds(0);
+        post.datetime.setMilliseconds(0); // set milliseconds to zero because the SQL Server datetime type only has a 1/300 ms (~3.33̅ ms) resolution
         post.datetime2 = new Date();
-        post.datetime2.setMilliseconds(0);
         post.smalldatetime = new Date();
-        post.smalldatetime.setSeconds(0);
-        post.smalldatetime.setMilliseconds(0);
+        post.smalldatetime.setSeconds(0); // set seconds to zero because smalldatetime type rounds seconds
+        post.smalldatetime.setMilliseconds(0); // set milliseconds to zero because smalldatetime type does not stores milliseconds
         post.timeObj = new Date();
-        post.timeObj.setMilliseconds(0);
         post.time = "15:30:00";
         post.datetimeoffset = new Date();
-        post.datetimeoffset.setMilliseconds(0);
         post.simpleArray = ["A", "B", "C"];
         await postRepository.save(post);
 
@@ -95,12 +91,12 @@ describe("database schema > column types > mssql", () => {
         loadedPost.image.toString().should.be.equal(post.image.toString());
         loadedPost.dateObj.should.be.equal(DateUtils.mixedDateToDateString(post.dateObj));
         loadedPost.date.should.be.equal(post.date);
-        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
-        loadedPost.datetime2.valueOf().should.be.equal(post.datetime2.valueOf());
-        loadedPost.smalldatetime.valueOf().should.be.equal(post.smalldatetime.valueOf());
+        loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
+        loadedPost.datetime2.getTime().should.be.equal(post.datetime2.getTime());
+        loadedPost.smalldatetime.getTime().should.be.equal(post.smalldatetime.getTime());
         loadedPost.timeObj.should.be.equal(DateUtils.mixedTimeToString(post.timeObj));
         loadedPost.time.should.be.equal(post.time);
-        loadedPost.datetimeoffset.valueOf().should.be.equal(post.datetimeoffset.valueOf());
+        loadedPost.datetimeoffset.getTime().should.be.equal(post.datetimeoffset.getTime());
         loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0]);
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
@@ -225,7 +221,7 @@ describe("database schema > column types > mssql", () => {
         post.bit = true;
         post.binary = new Buffer("A");
         post.datetime = new Date();
-        post.datetime.setMilliseconds(0);
+        post.datetime.setMilliseconds(0); // set milliseconds to zero because the SQL Server datetime type only has a 1/300 ms (~3.33̅ ms) resolution
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -233,7 +229,7 @@ describe("database schema > column types > mssql", () => {
         loadedPost.name.should.be.equal(post.name);
         loadedPost.bit.should.be.equal(post.bit);
         loadedPost.binary.toString().should.be.equal(post.binary.toString());
-        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
+        loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("name")!.type.should.be.equal("nvarchar");

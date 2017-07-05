@@ -40,9 +40,9 @@ describe("database schema > column types > mysql", () => {
         post.decimal = 50;
         post.date = "2017-06-21";
         post.datetime = new Date();
-        post.datetime.setMilliseconds(0);
+        post.datetime.setMilliseconds(0); // set milliseconds to zero, because if datetime type specified without precision, milliseconds won't save in database
         post.timestamp = new Date();
-        post.timestamp.setMilliseconds(0);
+        post.timestamp.setMilliseconds(0); // set milliseconds to zero, because if datetime type specified without precision, milliseconds won't save in database
         post.time = "15:30:00";
         post.year = 2017;
         post.char = "A";
@@ -73,8 +73,8 @@ describe("database schema > column types > mysql", () => {
         loadedPost.double.should.be.equal(post.double);
         loadedPost.decimal.should.be.equal(post.decimal);
         loadedPost.date.should.be.equal(post.date);
-        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
-        loadedPost.timestamp.valueOf().should.be.equal(post.timestamp.valueOf());
+        loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
+        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
         loadedPost.time.should.be.equal(post.time);
         loadedPost.year.should.be.equal(post.year);
         loadedPost.char.should.be.equal(post.char);
@@ -164,6 +164,7 @@ describe("database schema > column types > mysql", () => {
         post.decimal = 50;
         post.char = "A";
         post.varchar = "This is varchar";
+        post.datetime = new Date();
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -179,6 +180,7 @@ describe("database schema > column types > mysql", () => {
         loadedPost.decimal.should.be.equal(post.decimal);
         loadedPost.char.should.be.equal(post.char);
         loadedPost.varchar.should.be.equal(post.varchar);
+        loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("id")!.length!.should.be.equal(11);
@@ -207,6 +209,8 @@ describe("database schema > column types > mysql", () => {
         tableSchema!.findColumnByName("char")!.length!.should.be.equal(5);
         tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
         tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(30);
+        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        tableSchema!.findColumnByName("datetime")!.precision!.should.be.equal(6);
 
     })));
 
@@ -223,7 +227,7 @@ describe("database schema > column types > mysql", () => {
         post.boolean = true;
         post.blob = new Buffer("A");
         post.datetime = new Date();
-        post.datetime.setMilliseconds(0);
+        post.datetime.setMilliseconds(0); // set milliseconds to zero, because if datetime type specified without precision, milliseconds won't save in database
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -231,7 +235,7 @@ describe("database schema > column types > mysql", () => {
         loadedPost.name.should.be.equal(post.name);
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.blob.toString().should.be.equal(post.blob.toString());
-        loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
+        loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("id")!.length!.should.be.equal(11);

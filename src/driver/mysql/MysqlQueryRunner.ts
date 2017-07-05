@@ -11,7 +11,6 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {MysqlDriver} from "./MysqlDriver";
 import {Connection} from "../../connection/Connection";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {ReadStream} from "fs";
 
 /**
@@ -325,6 +324,10 @@ export class MysqlQueryRunner implements QueryRunner {
                         columnSchema.enum = (items as string[]).map(item => {
                             return item.substring(1, item.length - 1);
                         });
+                    }
+
+                    if (columnSchema.type === "datetime") {
+                        columnSchema.precision = dbColumn["DATETIME_PRECISION"];
                     }
 
                     return columnSchema;

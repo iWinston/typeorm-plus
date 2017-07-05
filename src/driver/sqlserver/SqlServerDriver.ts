@@ -157,7 +157,7 @@ export class SqlServerDriver implements Driver {
 
         // set default useUTC option if it hasn't been set
         if (!options.options) options.options = { useUTC: false };
-        else if (!options.options.useUTC) options.options.useUTC = false; 
+        else if (!options.options.useUTC) options.options.useUTC = false;
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
@@ -393,7 +393,7 @@ export class SqlServerDriver implements Driver {
         if (!metadata) // if no metadata found then we can't proceed because we don't have columns and their types
             return map;
 
-        return Object.keys(map).map(key => {
+        return Object.keys(map).reduce((newMap, key) => {
             const value = map[key];
 
             // find column metadata
@@ -401,8 +401,9 @@ export class SqlServerDriver implements Driver {
             if (!column) // if we didn't find a column then we can't proceed because we don't have a column type
                 return value;
 
-            return this.parametrizeValue(column, value);
-        });
+            newMap[key] = this.parametrizeValue(column, value);
+            return newMap;
+        }, {} as ObjectLiteral);
     }
 
     // -------------------------------------------------------------------------
