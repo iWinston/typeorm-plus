@@ -1,6 +1,8 @@
 import {LoggerOptions} from "./LoggerOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {highlight} from "cli-highlight";
+const chalk = require("chalk");
 
 /**
  * Performs logging of the events in TypeORM.
@@ -25,8 +27,9 @@ export class Logger {
      */
     logQuery(query: string, parameters: any[]|undefined, queryRunner?: QueryRunner) {
         if (this.options.logQueries ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("log", `executing query: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`, queryRunner);
+            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC")) {
+            this.log("query", query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""), queryRunner);
+        }
     }
 
     /**
@@ -54,14 +57,14 @@ export class Logger {
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
         if (this.options.logSchemaCreation ||
             PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("info", message, queryRunner);
+            this.log("schema-build", message, queryRunner);
     }
 
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    log(level: "log"|"info"|"warn"|"error", message: any, queryRunner?: QueryRunner) {
+    log(level: "query"|"schema-build"|"log"|"info"|"warn"|"error", message: any, queryRunner?: QueryRunner) {
         if (!this.options) return;
 
         if (this.options.logger) {
@@ -69,6 +72,12 @@ export class Logger {
 
         } else {
             switch (level) {
+                case "schema-build":
+                    console.log(chalk.underline(message));
+                    break;
+                case "query":
+                    console.log(highlight(message));
+                    break;
                 case "log":
                     console.log(message);
                     break;

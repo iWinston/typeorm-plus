@@ -1,6 +1,7 @@
-import {createConnection, createConnections} from "../index";
+import {createConnection} from "../index";
 import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+const chalk = require("chalk");
 
 /**
  * Synchronizes database schema with entities.
@@ -26,32 +27,32 @@ export class SchemaSyncCommand {
 
     async handler(argv: any) {
 
-        let connection: Connection|undefined = undefined, connections: Connection[] = [];
+        let connection: Connection|undefined = undefined;
         try {
-            process.env.LOGGER_CLI_SCHEMA_SYNC = true;
-            process.env.SKIP_SCHEMA_CREATION = true;
-
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-            if (argv.connection) {
-                const connectionOptions = await connectionOptionsReader.get(argv.connection);
-                connection = await createConnection(connectionOptions); // process.cwd()
-                await connection.syncSchema(false);
-
-            } else {
-                const connectionOptions = await connectionOptionsReader.all();
-                connections = await createConnections(connectionOptions);
-                await Promise.all(connections.map(connection => connection.syncSchema(false)));
-            }
+            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            Object.assign(connectionOptions, {
+                dropSchemaOnConnection: false,
+                autoSchemaSync: false,
+                autoMigrationsRun: false,
+                logging: {
+                    logQueries: true,
+                    logFailedQueryError: true,
+                    logSchemaCreation: true
+                }
+            });
+            connection = await createConnection(connectionOptions);
+            await connection.syncSchema(false);
+            console.log(chalk.green("Schema syncronization finished successfully."));
 
         } catch (err) {
+            console.log(chalk.black.bgRed("Error during schema synchronization:"));
             console.error(err);
             // throw err;
 
         } finally {
             if (connection)
                 await connection.close();
-
-            await Promise.all(connections.map(connection => connection.close()));
         }
     }
 }

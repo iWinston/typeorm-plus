@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 const mkdirp = require("mkdirp");
+const chalk = require("chalk");
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
@@ -86,12 +87,14 @@ export class MigrationGenerateCommand {
             await CommandUtils.createFile(path, fileContent);
 
             if (upSqls.length) {
-                console.log(`Migration "${path}" has been generated successfully.`);
+                console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
+
             } else {
-                console.error(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`);
+                console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`));
             }
 
         } catch (err) {
+            console.log(chalk.black.bgRed("Error during migration generation:"));
             console.error(err);
             // throw err;
 

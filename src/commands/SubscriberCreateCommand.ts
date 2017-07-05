@@ -1,6 +1,7 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 const mkdirp = require("mkdirp");
+const chalk = require("chalk");
 
 /**
  * Generates a new subscriber.
@@ -33,22 +34,29 @@ export class SubscriberCreateCommand {
     }
 
     async handler(argv: any) {
-        const fileContent = SubscriberCreateCommand.getTemplate(argv.name);
-        const filename = argv.name + ".ts";
-        let directory = argv.dir;
 
-        // if directory is not set then try to open tsconfig and find default path there
-        if (!directory) {
-            try {
-                const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-                const connectionOptions = await connectionOptionsReader.get(argv.connection);
-                directory = connectionOptions.cli ? connectionOptions.cli.subscribersDir : undefined;
-            } catch (err) { }
+        try {
+            const fileContent = SubscriberCreateCommand.getTemplate(argv.name);
+            const filename = argv.name + ".ts";
+            let directory = argv.dir;
+
+            // if directory is not set then try to open tsconfig and find default path there
+            if (!directory) {
+                try {
+                    const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+                    const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                    directory = connectionOptions.cli ? connectionOptions.cli.subscribersDir : undefined;
+                } catch (err) { }
+            }
+
+            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            await CommandUtils.createFile(path, fileContent);
+            console.log(chalk.green(`Subscriber ${chalk.blue(path)} has been created successfully.`));
+
+        } catch (err) {
+            console.log(chalk.black.bgRed("Error during subscriber creation:"));
+            console.error(err);
         }
-
-        const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-        await CommandUtils.createFile(path, fileContent);
-        console.log(`Subscriber "${path}" has been created successfully.`);
     }
 
     // -------------------------------------------------------------------------

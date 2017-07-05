@@ -1,5 +1,7 @@
 import {createConnection} from "../index";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {Connection} from "../connection/Connection";
+const chalk = require("chalk");
 
 /**
  * Runs migration command.
@@ -25,26 +27,30 @@ export class MigrationRunCommand {
 
     async handler(argv: any) {
 
+        let connection: Connection|undefined = undefined;
         try {
-            process.env.SKIP_SCHEMA_CREATION = true;
-            process.env.SKIP_SUBSCRIBERS_LOADING = true;
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
-            const connection = await createConnection(connectionOptions);
+            Object.assign(connectionOptions, {
+                subscribers: [],
+                dropSchemaOnConnection: false,
+                autoSchemaSync: false,
+                autoMigrationsRun: false,
+                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: true }
+            });
+            connection = await createConnection(connectionOptions);
 
-            try {
-                await connection.runMigrations();
-
-            } catch (err) {
-                console.error(err);
-
-            } finally {
-                await connection.close();
-            }
+            await connection.runMigrations();
+            // console.log(chalk.green("Migrations were successfully executed.")); // todo: make log inside "runMigrations" method
 
         } catch (err) {
+            console.log(chalk.black.bgRed("Error during migration run:"));
             console.error(err);
             // throw err;
+
+        } finally {
+            if (connection)
+                await connection.close();
         }
     }
 

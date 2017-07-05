@@ -1,6 +1,7 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 const mkdirp = require("mkdirp");
+const chalk = require("chalk");
 
 /**
  * Creates a new migration file.
@@ -34,23 +35,29 @@ export class MigrationCreateCommand {
     }
 
     async handler(argv: any) {
-        const timestamp = new Date().getTime();
-        const fileContent = MigrationCreateCommand.getTemplate(argv.name, timestamp);
-        const filename = timestamp + "-" + argv.name + ".ts";
-        let directory = argv.dir;
+        try {
+            const timestamp = new Date().getTime();
+            const fileContent = MigrationCreateCommand.getTemplate(argv.name, timestamp);
+            const filename = timestamp + "-" + argv.name + ".ts";
+            let directory = argv.dir;
 
-        // if directory is not set then try to open tsconfig and find default path there
-        if (!directory) {
-            try {
-                const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-                const connectionOptions = await connectionOptionsReader.get(argv.connection);
-                directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
-            } catch (err) { }
+            // if directory is not set then try to open tsconfig and find default path there
+            if (!directory) {
+                try {
+                    const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+                    const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                    directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
+                } catch (err) { }
+            }
+
+            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            await CommandUtils.createFile(path, fileContent);
+            console.log(`Migration ${chalk.blue(path)} has been generated successfully.`);
+
+        } catch (err) {
+            console.log(chalk.black.bgRed("Error during migration creation:"));
+            console.error(err);
         }
-
-        const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-        await CommandUtils.createFile(path, fileContent);
-        console.log(`Migration "${path}" has been generated successfully.`);
     }
 
     // -------------------------------------------------------------------------

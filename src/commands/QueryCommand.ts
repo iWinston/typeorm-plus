@@ -1,6 +1,9 @@
 import {createConnection} from "../index";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {Connection} from "../connection/Connection";
+import {highlight} from "cli-highlight";
+const chalk = require("chalk");
 
 /**
  * Executes an sql query on the given connection.
@@ -24,18 +27,31 @@ export class QueryCommand {
     }
 
     async handler(argv: any) {
-        process.env.SKIP_SCHEMA_CREATION = true;
-        const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-        const connectionOptions = await connectionOptionsReader.get(argv.connection);
-        const connection = await createConnection(connectionOptions);
 
+        let connection: Connection|undefined = undefined;
         let queryRunner: QueryRunner|undefined = undefined;
         try {
+
+            // create a connection
+            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            Object.assign(connectionOptions, {
+                dropSchemaOnConnection: false,
+                autoSchemaSync: false,
+                autoMigrationsRun: false,
+                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
+            });
+            connection = await createConnection(connectionOptions);
+
+            // create a query runner and execute query using it
             queryRunner = await connection.createQueryRunner();
+            console.log(chalk.green("Running query: ") + highlight(argv._[1]));
             const queryResult = await queryRunner.query(argv._[1]);
-            console.log("Query executed. Result: " + JSON.stringify(queryResult));
+            console.log(chalk.green("Query has been executed. Result: "));
+            console.log(JSON.stringify(queryResult, undefined, 2));
 
         } catch (err) {
+            console.log(chalk.black.bgRed("Error during query execution:"));
             console.error(err);
             // throw err;
 
@@ -43,7 +59,8 @@ export class QueryCommand {
             if (queryRunner)
                 await queryRunner.release();
 
-            await connection.close();
+            if (connection)
+                await connection.close();
         }
     }
 }
