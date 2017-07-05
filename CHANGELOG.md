@@ -59,6 +59,7 @@ column property names and they are automatically mapped to column names
 * now when object is loaded from the database all its columns with null values will be set into entity properties as null. 
 Also after saving entity with unset properties that will be stored as nulls - their (properties) values will be set to null.
 Also now all 
+* create and update dates in entities now use date with fractional seconds.
 
 ### DEPRECATIONS
 
@@ -77,6 +78,7 @@ Also now all
 * now migrations generation is supported. Use `typeorm migrations:generate` command
 * `getGeneratedQuery` was renamed to `getQuery` in `QueryBuilder`
 * `getSqlWithParameters` was renamed to `getSqlAndParameters` in `QueryBuilder`
+* sql queries are highlighted in console
 
 ### OTHER API CHANGES
 
