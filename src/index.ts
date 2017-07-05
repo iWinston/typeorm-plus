@@ -75,6 +75,7 @@ export * from "./schema-builder/schema/IndexSchema";
 export * from "./schema-builder/schema/PrimaryKeySchema";
 export * from "./schema-builder/schema/TableSchema";
 export * from "./driver/mongodb/typings";
+export * from "./driver/sqlserver/MssqlParameter";
 
 export {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 export {Connection} from "./connection/Connection";
