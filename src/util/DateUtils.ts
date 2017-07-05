@@ -39,6 +39,26 @@ export class DateUtils {
     }
 
     /**
+     * Converts given value into date object.
+     */
+    static mixedDateToDate(mixedDate: Date|string, toUtc?: boolean): Date {
+        const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate;
+
+        if (toUtc)
+            return new Date(
+                date.getUTCFullYear(),
+                date.getUTCMonth(),
+                date.getUTCDate(),
+                date.getUTCHours(),
+                date.getUTCMinutes(),
+                date.getUTCSeconds(),
+                date.getUTCMilliseconds()
+            );
+
+        return date;
+    }
+
+    /**
      * Converts given value into time string in a "HH:mm:ss" format.
      */
     static mixedDateToTimeString(value: Date|any, skipSeconds: boolean = false): string|any {

@@ -10,7 +10,6 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {SqlServerDriver} from "./SqlServerDriver";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
 import {MssqlParameter} from "./MssqlParameter";
@@ -386,8 +385,8 @@ export class SqlServerQueryRunner implements QueryRunner {
             if (column.length) {
                 return new MssqlParameter(value, normalizedType as any, column.length as any);
 
-            } else if (column.scale && column.precision) {
-                return new MssqlParameter(value, normalizedType as any, column.scale, column.precision);
+            } else if (column.precision && column.scale) {
+                return new MssqlParameter(value, normalizedType as any, column.precision, column.scale);
 
             } else if (column.precision) {
                 return new MssqlParameter(value, normalizedType as any, column.precision);

@@ -4,6 +4,7 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
+import {DateUtils} from "../../../../../src/util/DateUtils";
 
 describe("database schema > column types > mssql", () => {
 
@@ -33,7 +34,7 @@ describe("database schema > column types > mssql", () => {
         post.tinyint = 127;
         post.smallint = 32767;
         post.int = 2147483647;
-        post.bigint = "9223372036854775807";
+        post.bigint = "9007199254740991";
         post.decimal = 50;
         post.dec = 100;
         post.numeric = 10;
@@ -50,6 +51,8 @@ describe("database schema > column types > mssql", () => {
         post.binary = new Buffer("A");
         post.varbinary = new Buffer("B");
         post.image = new Buffer("This is image");
+        post.dateObj = new Date();
+        post.dateObj.setMilliseconds(0);
         post.date = "2017-06-21";
         post.datetime = new Date();
         post.datetime.setMilliseconds(0);
@@ -58,6 +61,8 @@ describe("database schema > column types > mssql", () => {
         post.smalldatetime = new Date();
         post.smalldatetime.setSeconds(0);
         post.smalldatetime.setMilliseconds(0);
+        post.timeObj = new Date();
+        post.timeObj.setMilliseconds(0);
         post.time = "15:30:00";
         post.datetimeoffset = new Date();
         post.datetimeoffset.setMilliseconds(0);
@@ -88,10 +93,12 @@ describe("database schema > column types > mssql", () => {
         loadedPost.binary.toString().should.be.equal(post.binary.toString());
         loadedPost.varbinary.toString().should.be.equal(post.varbinary.toString());
         loadedPost.image.toString().should.be.equal(post.image.toString());
+        loadedPost.dateObj.should.be.equal(DateUtils.mixedDateToDateString(post.dateObj));
         loadedPost.date.should.be.equal(post.date);
         loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
         loadedPost.datetime2.valueOf().should.be.equal(post.datetime2.valueOf());
         loadedPost.smalldatetime.valueOf().should.be.equal(post.smalldatetime.valueOf());
+        loadedPost.timeObj.should.be.equal(DateUtils.mixedTimeToString(post.timeObj));
         loadedPost.time.should.be.equal(post.time);
         loadedPost.datetimeoffset.valueOf().should.be.equal(post.datetimeoffset.valueOf());
         loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0]);
@@ -129,10 +136,12 @@ describe("database schema > column types > mssql", () => {
         tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal(1);
         tableSchema!.findColumnByName("image")!.type.should.be.equal("image");
         tableSchema!.findColumnByName("date")!.type.should.be.equal("date");
+        tableSchema!.findColumnByName("dateObj")!.type.should.be.equal("date");
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
         tableSchema!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
         tableSchema!.findColumnByName("smalldatetime")!.type.should.be.equal("smalldatetime");
         tableSchema!.findColumnByName("time")!.type.should.be.equal("time");
+        tableSchema!.findColumnByName("timeObj")!.type.should.be.equal("time");
         tableSchema!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
         tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
 

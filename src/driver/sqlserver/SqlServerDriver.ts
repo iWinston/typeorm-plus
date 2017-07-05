@@ -13,7 +13,6 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
@@ -240,7 +239,7 @@ export class SqlServerDriver implements Driver {
             return value === true ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            return DateUtils.mixedDateToDate(value);
 
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToDate(value);
@@ -249,13 +248,11 @@ export class SqlServerDriver implements Driver {
             || columnMetadata.type === "datetime2"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.mixedDateToUtcDatetimeString(value);
+            return DateUtils.mixedDateToDate(value, true);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
 
-        } else if (columnMetadata.type === "float" || columnMetadata.type === "real") {  // this conversion need because when we try to save numeric value, fraction will be cropped
-            return value.toString();
         }
 
         return value;
@@ -273,7 +270,8 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === "datetime2"
-            || columnMetadata.type === "smalldatetime") {
+            || columnMetadata.type === "smalldatetime"
+            || columnMetadata.type === "datetimeoffset") {
             return DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {

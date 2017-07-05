@@ -87,6 +87,9 @@ export class Post {
     // -------------------------------------------------------------------------
 
     @Column("date")
+    dateObj: Date;
+
+    @Column("date")
     date: string;
 
     @Column("datetime")
@@ -97,6 +100,9 @@ export class Post {
 
     @Column("smalldatetime")
     smalldatetime: Date;
+
+    @Column("time")
+    timeObj: Date;
 
     @Column("time")
     time: string;
