@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {Cat} from "./entity/Cat";
 import {Dog} from "./entity/Dog";
 
-describe.only("github issues > #620 Feature Request: Flexibility in Foreign Key names", () => {
+describe("github issues > #620 Feature Request: Flexibility in Foreign Key names", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
