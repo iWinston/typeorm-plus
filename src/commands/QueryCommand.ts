@@ -3,6 +3,7 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import {highlight} from "cli-highlight";
+import {PlatformTools} from "../platform/PlatformTools";
 const chalk = require("chalk");
 
 /**
@@ -45,10 +46,10 @@ export class QueryCommand {
 
             // create a query runner and execute query using it
             queryRunner = await connection.createQueryRunner();
-            console.log(chalk.green("Running query: ") + highlight(argv._[1]));
+            console.log(chalk.green("Running query: ") + PlatformTools.highlightSql(argv._[1]));
             const queryResult = await queryRunner.query(argv._[1]);
             console.log(chalk.green("Query has been executed. Result: "));
-            console.log(JSON.stringify(queryResult, undefined, 2));
+            console.log(PlatformTools.highlightJson(JSON.stringify(queryResult, undefined, 2)));
 
         } catch (err) {
             console.log(chalk.black.bgRed("Error during query execution:"));

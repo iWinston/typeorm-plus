@@ -1,7 +1,6 @@
 import {LoggerOptions} from "./LoggerOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {highlight} from "cli-highlight";
 const chalk = require("chalk");
 
 /**
@@ -76,7 +75,7 @@ export class Logger {
                     console.log(chalk.underline(message));
                     break;
                 case "query":
-                    console.log(highlight(message));
+                    console.log(chalk.gray.underline("executing query") + ": " + PlatformTools.highlightSql(message));
                     break;
                 case "log":
                     console.log(message);
