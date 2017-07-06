@@ -110,15 +110,6 @@ export interface BaseConnectionOptions {
     readonly autoMigrationsRun?: boolean;
 
     /**
-     * Environment in which connection will run.
-     * Current environment is determined from the environment NODE_ENV variable's value.
-     * For example, if NODE_ENV is "test" and this property is set to "test",
-     * then this connection will be created. On any other NODE_ENV value it will be skipped.
-     * This option is specific to the configuration in the ormconfig.json file.
-     */
-    readonly environment?: string;
-
-    /**
      * CLI settings.
      */
     readonly cli?: {

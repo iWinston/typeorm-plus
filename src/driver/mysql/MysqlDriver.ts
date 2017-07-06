@@ -156,13 +156,12 @@ export class MysqlDriver implements Driver {
         this.pool = this.mysql.createPool(options);
         
         return new Promise<void>((ok, fail) => {
+            // (issue #610) we make first connection to database to make sure if connection credentials are wrong
+            // we give error before calling any other method that creates actual query runner
             this.pool.getConnection((err: any, connection: any) => {
-                if (err) {
-                    fail("Mysql connection error : " + err);
-                }
-                else {
-                    ok();
-                }
+                if (err) return fail(err);
+                connection.release();
+                ok();
             });
         });
         
