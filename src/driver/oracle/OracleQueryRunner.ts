@@ -10,7 +10,6 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {OracleDriver} from "./OracleDriver";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
 
@@ -512,11 +511,11 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         }
 
         if (newColumn.isNullable !== oldColumn.isNullable) {
-            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${newColumn.getFullType(this.connection.driver)} ${newColumn.isNullable ? "NULL" : "NOT NULL"}`;
+            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${this.connection.driver.createFullType(newColumn)} ${newColumn.isNullable ? "NULL" : "NOT NULL"}`;
             await this.query(sql);
 
-        } else if (newColumn.getFullType(this.connection.driver) !== oldColumn.getFullType(this.connection.driver)) { // elseif is used because
-            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${newColumn.getFullType(this.connection.driver)}`;
+        } else if (this.connection.driver.createFullType(newColumn) !== this.connection.driver.createFullType(oldColumn)) { // elseif is used because
+            const sql = `ALTER TABLE "${tableSchema.name}" MODIFY "${newColumn.name}" ${this.connection.driver.createFullType(newColumn)}`;
             await this.query(sql);
         }
     }
@@ -696,7 +695,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(column: ColumnSchema) {
-        let c = `"${column.name}" ` + column.getFullType(this.connection.driver);
+        let c = `"${column.name}" ` + this.connection.driver.createFullType(column);
         if (column.length)
             c += "(" + column.length + ")";
         if (column.precision && column.scale)

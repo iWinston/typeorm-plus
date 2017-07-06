@@ -14,7 +14,11 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"datetime2" // mssql
     |"datetimeoffset" // mssql
     |"time" // mysql, postgres, mssql
-    |"timestamp"; // mysql, postgres, mssql, oracle
+    |"time with time zone" // postgres
+    |"time without time zone" // postgres
+    |"timestamp" // mysql, postgres, mssql, oracle
+    |"timestamp without time zone" // postgres
+    |"timestamp with time zone"; // postgres, oracle
 
 /**
  * Column types where column length is used.
@@ -87,13 +91,9 @@ export type SimpleColumnType =
     |"image" // mssql
 
     // date types
-    |"timestamp without time zone" // postgres
-    |"timestamp with time zone" // postgres, oracle
     |"timestamp with local time zone" // oracle
     |"smalldatetime" // mssql
     |"date" // mysql, postgres, mssql, oracle, sqlite
-    |"time with time zone" // postgres
-    |"time without time zone" // postgres
     |"interval year" // oracle
     |"interval day" // oracle
     |"interval" // postgres

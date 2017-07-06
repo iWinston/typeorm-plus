@@ -34,4 +34,20 @@ export class PostWithOptions {
     @Column("character varying", { length: 30 })
     characterVarying: string;
 
+    // -------------------------------------------------------------------------
+    // Date Types
+    // -------------------------------------------------------------------------
+
+    @Column("timestamp", { precision: 3 })
+    timestamp: Date;
+
+    @Column("timestamp with time zone", { precision: 5 })
+    timestampWithTimeZone: Date;
+
+    @Column("time", { precision: 3 })
+    time: string;
+
+    @Column("time with time zone", { precision: 5 })
+    timeWithTimeZone: string;
+
 }

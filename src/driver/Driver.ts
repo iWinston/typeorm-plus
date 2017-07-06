@@ -6,6 +6,7 @@ import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
+import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -85,5 +86,10 @@ export interface Driver {
      * Normalizes "default" value of the column.
      */
     normalizeDefault(column: ColumnMetadata): string;
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    createFullType(column: ColumnSchema): string;
 
 }

@@ -14,6 +14,7 @@ import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -337,6 +338,27 @@ export class MysqlDriver implements Driver {
         } else {
             return column.default;
         }
+    }
+
+    createFullType(column: ColumnSchema): string {
+        let type = column.type;
+
+        if (column.length) {
+            type += "(" + column.length + ")";
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+        } else if (column.precision) {
+            type +=  "(" + column.precision + ")";
+        } else if (column.scale) {
+            type +=  "(" + column.scale + ")";
+        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
+            type +=  "(" + this.dataTypeDefaults[column.type].length + ")";
+        }
+
+        if (column.isArray)
+            type += " array";
+
+        return type;
     }
 
     // -------------------------------------------------------------------------

@@ -10,7 +10,6 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {WebsqlDriver} from "./WebsqlDriver";
 import {Connection} from "../../connection/Connection";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {ReadStream} from "fs";
 
 /**
@@ -686,7 +685,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
         } else {
-            c += " " + column.getFullType(this.connection.driver);
+            c += " " + this.connection.driver.createFullType(column);
         }
         if (column.isNullable !== true)
             c += " NOT NULL";

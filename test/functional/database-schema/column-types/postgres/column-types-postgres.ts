@@ -214,6 +214,10 @@ describe("database schema > column types > postgres", () => {
         post.character = "AAA";
         post.varchar = "This is varchar";
         post.characterVarying = "This is character varying";
+        post.timestamp = new Date();
+        post.timestampWithTimeZone = new Date();
+        post.time = "15:30:13.278";
+        post.timeWithTimeZone = "15:30:13.27801+05";
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -224,6 +228,10 @@ describe("database schema > column types > postgres", () => {
         loadedPost.character.should.be.equal(post.character);
         loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.characterVarying.should.be.equal(post.characterVarying);
+        loadedPost.timestamp.valueOf().should.be.equal(post.timestamp.valueOf());
+        loadedPost.timestampWithTimeZone.valueOf().should.be.equal(post.timestampWithTimeZone.valueOf());
+        loadedPost.time.valueOf().should.be.equal(post.time.valueOf());
+        loadedPost.timeWithTimeZone.valueOf().should.be.equal(post.timeWithTimeZone.valueOf());
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
         tableSchema!.findColumnByName("numeric")!.type.should.be.equal("numeric");
@@ -240,6 +248,14 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(30);
         tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
         tableSchema!.findColumnByName("characterVarying")!.length!.should.be.equal(30);
+        tableSchema!.findColumnByName("timestamp")!.type.should.be.equal("timestamp without time zone");
+        tableSchema!.findColumnByName("timestamp")!.precision!.should.be.equal(3);
+        tableSchema!.findColumnByName("timestampWithTimeZone")!.type.should.be.equal("timestamp with time zone");
+        tableSchema!.findColumnByName("timestampWithTimeZone")!.precision!.should.be.equal(5);
+        tableSchema!.findColumnByName("time")!.type.should.be.equal("time without time zone");
+        tableSchema!.findColumnByName("time")!.precision!.should.be.equal(3);
+        tableSchema!.findColumnByName("timeWithTimeZone")!.type.should.be.equal("time with time zone");
+        tableSchema!.findColumnByName("timeWithTimeZone")!.precision!.should.be.equal(5);
 
     })));
 

@@ -1,5 +1,4 @@
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Driver} from "../../driver/Driver";
 
 /**
  * Table's column's schema in the database represented in this class.
@@ -134,27 +133,6 @@ export class ColumnSchema {
         newColumnSchema.isArray = this.isArray;
         newColumnSchema.comment = this.comment;
         return newColumnSchema;
-    }
-
-    getFullType(driver: Driver): string {
-        let type = this.type;
-
-        if (this.length) {
-            type += "(" + this.length + ")";
-        } else if (this.precision && this.scale) {
-            type += "(" + this.precision + "," + this.scale + ")";
-        } else if (this.precision && this.type !== "real") {
-            type +=  "(" + this.precision + ")";
-        } else if (this.scale) {
-            type +=  "(" + this.scale + ")";
-        } else  if (driver.dataTypeDefaults && driver.dataTypeDefaults[this.type] && driver.dataTypeDefaults[this.type].length) {
-            type +=  "(" + driver.dataTypeDefaults[this.type].length + ")";
-        }
-
-        if (this.isArray)
-            type += " array";
-
-        return type;
     }
 
     // -------------------------------------------------------------------------

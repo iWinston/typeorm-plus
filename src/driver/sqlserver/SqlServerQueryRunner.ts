@@ -894,7 +894,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(tableName: string, column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
-        let c = `"${column.name}" ${column.getFullType(this.connection.driver)}`;
+        let c = `"${column.name}" ${this.connection.driver.createFullType(column)}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated === true && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.

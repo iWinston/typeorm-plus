@@ -723,7 +723,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Builds a part of query to create/change a column.
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
-        let c = "`" + column.name + "` " + column.getFullType(this.connection.driver);
+        let c = "`" + column.name + "` " + this.connection.driver.createFullType(column);
         if (column.enum)
             c += "(" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";
         if (column.isNullable !== true)

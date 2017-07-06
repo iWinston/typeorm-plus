@@ -10,7 +10,6 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {PostgresDriver} from "./PostgresDriver";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
 
@@ -346,6 +345,13 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                         const type = dbColumn["udt_name"].substring(1);
                         columnSchema.type = this.connection.driver.normalizeType({type: type});
                     }
+
+                    if (columnSchema.type === "time without time zone"
+                        || columnSchema.type === "time with time zone"
+                        || columnSchema.type === "timestamp without time zone"
+                        || columnSchema.type === "timestamp with time zone") {
+                        columnSchema.precision = dbColumn["datetime_precision"];
+                    }
                     return columnSchema;
                 });
 
@@ -510,12 +516,12 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (!oldColumn)
             throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
 
-        if (oldColumn.getFullType(this.connection.driver) !== newColumn.getFullType(this.connection.driver) ||
+        if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn) ||
             oldColumn.name !== newColumn.name) {
 
             let sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}"`;
-            if (oldColumn.getFullType(this.connection.driver) !== newColumn.getFullType(this.connection.driver)) {
-                sql += ` TYPE ${newColumn.getFullType(this.connection.driver)}`;
+            if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
+                sql += ` TYPE ${this.connection.driver.createFullType(newColumn)}`;
             }
             if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
                 sql += ` RENAME TO ` + newColumn.name;
@@ -751,7 +757,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (column.isGenerated === true && column.type !== "uuid") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " SERIAL";
         if (!column.isGenerated || column.type === "uuid")
-            c += " " + column.getFullType(this.connection.driver);
+            c += " " + this.connection.driver.createFullType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated)

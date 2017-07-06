@@ -11,7 +11,6 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {SqliteDriver} from "./SqliteDriver";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
 
@@ -639,7 +638,7 @@ export class SqliteQueryRunner implements QueryRunner {
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
         } else {
-            c += " " + column.getFullType(this.connection.driver);
+            c += " " + this.connection.driver.createFullType(column);
         }
         if (column.isNullable !== true)
             c += " NOT NULL";
