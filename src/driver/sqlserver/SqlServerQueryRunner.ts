@@ -502,6 +502,11 @@ export class SqlServerQueryRunner implements QueryRunner {
                     columnSchema.isGenerated = isGenerated;
                     columnSchema.isUnique = isUnique;
                     columnSchema.comment = ""; // todo: less priority, implement this later
+
+                    if (columnSchema.type === "datetime2" || columnSchema.type === "time" || columnSchema.type === "datetimeoffset") {
+                        columnSchema.precision = dbColumn["DATETIME_PRECISION"];
+                    }
+
                     return columnSchema;
                 });
 

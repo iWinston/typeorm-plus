@@ -162,6 +162,9 @@ describe("database schema > column types > mssql", () => {
         post.nvarchar = "This is nvarchar";
         post.binary = new Buffer("AAAAA");
         post.varbinary = new Buffer("BBBBB");
+        post.datetime2 = new Date();
+        post.time = new Date();
+        post.datetimeoffset = new Date();
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -180,6 +183,9 @@ describe("database schema > column types > mssql", () => {
         loadedPost.nvarchar.should.be.equal(post.nvarchar);
         loadedPost.binary.toString().should.be.equal(post.binary.toString());
         loadedPost.varbinary.toString().should.be.equal(post.varbinary.toString());
+        loadedPost.datetime2.getTime().should.be.equal(post.datetime2.getTime());
+        loadedPost.time.should.be.equal(DateUtils.mixedTimeToString(post.time));
+        loadedPost.datetimeoffset.getTime().should.be.equal(post.datetimeoffset.getTime());
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal");
@@ -205,6 +211,12 @@ describe("database schema > column types > mssql", () => {
         tableSchema!.findColumnByName("binary")!.length!.should.be.equal(5);
         tableSchema!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
         tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal(5);
+        tableSchema!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
+        tableSchema!.findColumnByName("datetime2")!.precision!.should.be.equal(5);
+        tableSchema!.findColumnByName("time")!.type.should.be.equal("time");
+        tableSchema!.findColumnByName("time")!.precision!.should.be.equal(6);
+        tableSchema!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
+        tableSchema!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(7);
 
     })));
 

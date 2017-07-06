@@ -11,6 +11,8 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"double precision" // postgres, oracle, sqlite
     |"number" // oracle
     |"datetime" // mssql, mysql, sqlite
+    |"datetime2" // mssql
+    |"datetimeoffset" // mssql
     |"time" // mysql, postgres, mssql
     |"timestamp"; // mysql, postgres, mssql, oracle
 
@@ -88,8 +90,6 @@ export type SimpleColumnType =
     |"timestamp without time zone" // postgres
     |"timestamp with time zone" // postgres, oracle
     |"timestamp with local time zone" // oracle
-    |"datetime2" // mssql
-    |"datetimeoffset" // mssql
     |"smalldatetime" // mssql
     |"date" // mysql, postgres, mssql, oracle, sqlite
     |"time with time zone" // postgres

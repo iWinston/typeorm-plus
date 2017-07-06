@@ -46,4 +46,17 @@ export class PostWithOptions {
     @Column("varbinary", { length: 5 })
     varbinary: Buffer;
 
+    // -------------------------------------------------------------------------
+    // Date Types
+    // -------------------------------------------------------------------------
+
+    @Column("datetime2", { precision: 5 })
+    datetime2: Date;
+
+    @Column("time", { precision: 6 })
+    time: Date;
+
+    @Column("datetimeoffset", { precision: 7 })
+    datetimeoffset: Date;
+
 }
