@@ -16,6 +16,7 @@ export class FindOptionsUtils {
         return possibleOptions &&
                 (
                     possibleOptions.where instanceof Object ||
+                    possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object
                 );
@@ -29,6 +30,7 @@ export class FindOptionsUtils {
         return possibleOptions &&
                 (
                     possibleOptions.where instanceof Object ||
+                    possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
                     typeof possibleOptions.skip === "number" ||
@@ -104,6 +106,11 @@ export class FindOptionsUtils {
         if (options.order)
             Object.keys(options.order).forEach(key => {
                 qb.addOrderBy(qb.alias + "." + key, (options as FindOneOptions<T>).order![key as any]);
+            });
+
+        if (options.relations)
+            options.relations.forEach(relation => {
+                qb.leftJoinAndSelect(qb.alias + "." + relation, relation);
             });
 
         if (options.join) {
