@@ -1293,19 +1293,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates "ORDER BY" part of SQL query.
      */
     protected createOrderByExpression() {
-
-        let orderBys = this.expressionMap.orderBys;
-
-        // if table has a default order then apply it
-        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
-        }
-
-        // if user specified a custom order then apply it
+        const orderBys = this.expressionMap.allOrderBys;
         if (Object.keys(orderBys).length > 0)
             return " ORDER BY " + Object.keys(orderBys)
                     .map(columnName => {
-                        return this.replacePropertyNames(columnName) + " " + this.expressionMap.orderBys[columnName];
+                        return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
                     })
                     .join(", ");
 
@@ -1517,7 +1509,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")} `)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().groupBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().groupBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
@@ -1578,10 +1570,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition] {
 
         // if table has a default order then apply it
-        let orderBys = this.expressionMap.orderBys;
-        if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
-        }
+        const orderBys = this.expressionMap.allOrderBys;
 
         const selectString = Object.keys(orderBys)
             .map(columnName => {
@@ -1597,7 +1586,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const [aliasName, propertyPath] = columnName.split(".");
             const alias = this.expressionMap.findAliasByName(aliasName);
             const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = this.expressionMap.orderBys[columnName];
+            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[columnName];
         });
 
         return [selectString, orderByObject];

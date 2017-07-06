@@ -164,6 +164,26 @@ export class QueryExpressionMap {
     }
 
     // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get all ORDER BY queries - if order by is specified by user then it uses them,
+     * otherwise it uses default entity order by if it was set.
+     */
+    get allOrderBys() {
+        if (!Object.keys(this.orderBys).length && this.mainAlias!.hasMetadata) {
+            const entityOrderBy = this.mainAlias!.metadata.orderBy || {};
+            return Object.keys(entityOrderBy).reduce((orderBy, key) => {
+                orderBy[this.mainAlias!.name + "." + key] = entityOrderBy[key];
+                return orderBy;
+            }, {} as OrderByCondition);
+        }
+
+        return this.orderBys;
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
