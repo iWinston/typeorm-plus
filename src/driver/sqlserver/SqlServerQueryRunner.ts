@@ -260,7 +260,7 @@ export class SqlServerQueryRunner implements QueryRunner {
                     if (parameter instanceof MssqlParameter) {
                         const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
                         if (mssqlParameter) {
-                            request.input(index, this.mssqlParameterToNativeParameter(parameter), parameter.value);
+                            request.input(index, mssqlParameter, parameter.value);
                         } else {
                             request.input(index, parameter.value);
                         }

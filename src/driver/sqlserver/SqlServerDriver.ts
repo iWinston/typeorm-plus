@@ -389,9 +389,9 @@ export class SqlServerDriver implements Driver {
     parametrizeMap(tableName: string, map: ObjectLiteral): ObjectLiteral {
 
         // find metadata for the given table
-        const metadata = this.connection.getMetadata(tableName);
-        if (!metadata) // if no metadata found then we can't proceed because we don't have columns and their types
+        if (!this.connection.hasMetadata(tableName)) // if no metadata found then we can't proceed because we don't have columns and their types
             return map;
+        const metadata = this.connection.getMetadata(tableName);
 
         return Object.keys(map).reduce((newMap, key) => {
             const value = map[key];

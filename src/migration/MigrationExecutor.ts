@@ -5,6 +5,8 @@ import {Migration} from "./Migration";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -242,20 +244,36 @@ export class MigrationExecutor {
      * Inserts new executed migration's data into migrations table.
      */
     protected async insertExecutedMigration(migration: Migration): Promise<void> {
-        await this.queryRunner.insert("migrations", {
-            timestamp: migration.timestamp,
-            name: migration.name,
-        });
+        if (this.connection.driver instanceof SqlServerDriver) {
+            await this.queryRunner.insert("migrations", {
+                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
+                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
+            });
+
+        } else {
+            await this.queryRunner.insert("migrations", {
+                timestamp: migration.timestamp,
+                name: migration.name,
+            });
+        }
     }
 
     /**
      * Delete previously executed migration's data from the migrations table.
      */
     protected async deleteExecutedMigration(migration: Migration): Promise<void> {
-        await this.queryRunner.delete("migrations", {
-            timestamp: migration.timestamp,
-            name: migration.name,
-        });
+        if (this.connection.driver instanceof SqlServerDriver) {
+            await this.queryRunner.delete("migrations", {
+                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
+                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
+            });
+
+        } else {
+            await this.queryRunner.delete("migrations", {
+                timestamp: migration.timestamp,
+                name: migration.name,
+            });
+        }
     }
 
 }

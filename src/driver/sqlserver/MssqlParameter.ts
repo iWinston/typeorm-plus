@@ -1,4 +1,3 @@
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 /**
  * Sql server driver requires parameter types to be specified fo input parameters used in the query.
  *
