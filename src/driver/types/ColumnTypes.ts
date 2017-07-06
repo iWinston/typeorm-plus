@@ -140,8 +140,7 @@ export type ColumnType = WithPrecisionColumnType
     |BooleanConstructor
     |DateConstructor
     |NumberConstructor
-    |StringConstructor
-    |ObjectConstructor;
+    |StringConstructor;
 
 // "string"|"text"|"number"|"integer"|"int"|"smallint"|"bigint"|"float"|"double"|
 // "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"jsonb"|"simple_array"|"uuid";
