@@ -7,7 +7,7 @@ export class RepositoryNotTreeError extends Error {
     constructor(entityClass: Function|string) {
         super();
         const targetName = typeof entityClass === "function" && (<any> entityClass).name ? (<any> entityClass).name : entityClass;
-        this.message = `Repository of the "${targetName}" class is not a TreeRepository. Try to use @ClosureTable decorator instead of @Table.`;
+        this.message = `Repository of the "${targetName}" class is not a TreeRepository. Try to use @ClosureEntity decorator instead of @Entity.`;
         this.stack = new Error().stack;
     }
 

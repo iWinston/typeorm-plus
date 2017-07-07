@@ -89,14 +89,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     async persist(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
-        const mainPersistedSubject = new Subject(metadata, entity);
-        mainPersistedSubject.canBeInserted = true;
-        mainPersistedSubject.canBeUpdated = true;
-        this.operateSubjects.push(mainPersistedSubject);
+        const mainSubject = new Subject(metadata, entity);
+        mainSubject.canBeInserted = true;
+        mainSubject.canBeUpdated = true;
+        this.operateSubjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-        this.buildCascadeUpdateAndInsertOperateSubjects(mainPersistedSubject);
+        this.buildCascadeUpdateAndInsertOperateSubjects(mainSubject);
 
         // next step is to load database entities of all operate subjects
         await this.loadOperateSubjectsDatabaseEntities();

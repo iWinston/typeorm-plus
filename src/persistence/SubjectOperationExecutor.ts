@@ -481,7 +481,7 @@ export class SubjectOperationExecutor {
                     return;
 
                 const value = column.getEntityValue(entity);
-                if (value === null || value === undefined) // todo: probably check for null should not be there
+                if (value === undefined)
                     return;
 
                 values[column.databaseName] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class

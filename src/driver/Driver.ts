@@ -19,6 +19,11 @@ export interface Driver {
     options: BaseConnectionOptions;
 
     /**
+     * Indicates if tree tables are supported by this driver.
+     */
+    treeSupport: boolean;
+
+    /**
      * Gets list of supported column data types by a driver.
      */
     supportedDataTypes: ColumnType[];

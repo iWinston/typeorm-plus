@@ -28,6 +28,7 @@ import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {EntityManagerFactory} from "./EntityManagerFactory";
+import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -63,7 +64,7 @@ export class EntityManager {
     /**
      * Once created and then reused by en repositories.
      */
-    protected repositories: { metadata: EntityMetadata, repository: Repository<any> }[] = [];
+    protected repositories: Repository<any>[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -769,25 +770,20 @@ export class EntityManager {
      */
     getRepository<Entity>(target: ObjectType<Entity>|string): Repository<Entity> {
 
+        // throw exception if there is no repository with this target registered
         if (!this.connection.hasMetadata(target))
             throw new RepositoryNotFoundError(this.connection.name, target);
 
+        // find already created repository instance and return it if found
         const metadata = this.connection.getMetadata(target);
-        let repository = this.repositories.find(repo => repo.metadata === metadata);
-        if (!repository) {
-            repository = { metadata: metadata, repository: new RepositoryFactory().create(this, metadata, this.queryRunner) };
-            this.repositories.push(repository);
-        }
+        const repository = this.repositories.find(repository => repository.metadata === metadata);
+        if (repository)
+            return repository;
 
-        // if single db connection is used then create its own repository with reused query runner
-        // if (this.queryRunner) {
-        //     if (this.queryRunner.isReleased)
-        //         throw new QueryRunnerProviderAlreadyReleasedError();
-        //
-        //     return this.connection.createIsolatedRepository(target, this.queryRunner);
-        // }
-
-        return repository.repository;
+        // if repository was not found then create it, store its instance and return it
+        const newRepository = new RepositoryFactory().create(this, metadata, this.queryRunner);
+        this.repositories.push(newRepository);
+        return newRepository;
     }
 
     /**
@@ -797,9 +793,12 @@ export class EntityManager {
      * When single database connection is not used, repository is being obtained from the connection.
      */
     getTreeRepository<Entity>(target: ObjectType<Entity>|string): TreeRepository<Entity> {
-        if (this.connection.driver instanceof MongoDriver)
-            throw new Error(`You cannot use getTreeRepository for MongoDB connections.`);
 
+        // tree tables aren't supported by some drivers (mongodb)
+        if (this.connection.driver.treeSupport === false)
+            throw new TreeRepositoryNotSupportedError(this.connection.driver);
+
+        // check if repository is real tree repository
         const repository = this.getRepository(target);
         if (!(repository instanceof TreeRepository))
             throw new RepositoryNotTreeError(target);
@@ -835,7 +834,6 @@ export class EntityManager {
             throw new CustomRepositoryNotFoundError(customRepository);
 
         const entityMetadata = entityRepositoryMetadataArgs.entity ? this.connection.getMetadata(entityRepositoryMetadataArgs.entity) : undefined;
-
         const entityRepositoryInstance = new (entityRepositoryMetadataArgs.target as any)(this, entityMetadata);
 
         // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,

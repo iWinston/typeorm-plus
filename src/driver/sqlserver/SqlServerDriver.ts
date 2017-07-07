@@ -51,6 +51,11 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Indicates if tree tables are supported by this driver.
+     */
+    treeSupport = true;
+
+    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql

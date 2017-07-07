@@ -46,6 +46,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Indicates if tree tables are supported by this driver.
+     */
+    treeSupport = false;
+
+    /**
      * Mongodb does not need to have column types because they are not used in schema sync.
      */
     supportedDataTypes: ColumnType[] = [];
