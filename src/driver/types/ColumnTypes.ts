@@ -1,3 +1,21 @@
+/**
+ * Column types where precision and scale properties are used.
+ */
+export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
+    |"int2" // postgres, sqlite
+    |"int2" // postgres, sqlite
+    |"int4" // postgres
+    |"int8" // postgres, sqlite
+    |"integer" // postgres, oracle, sqlite
+    |"tinyint" // mysql, mssql, sqlite
+    |"smallint" // mysql, postgres, mssql, oracle, sqlite
+    |"mediumint" // mysql, sqlite
+    |"bigint" // mysql, postgres, mssql, sqlite
+    |"dec" // oracle, mssql
+    |"decimal" // mysql, postgres, mssql, sqlite
+    |"numeric" // postgres, mssql, sqlite
+    |"number" // oracle
+    |"uuid"; // oracle
 
 /**
  * Column types where precision and scale properties are used.
