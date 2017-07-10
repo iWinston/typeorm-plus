@@ -942,8 +942,7 @@ export class Album {
 
     @ManyToMany(type => Photo, photo => photo.albums, {  // Note: we will create "albums" property in the Photo class below
         cascadeInsert: true, // Allow to insert a new photo on album save
-        cascadeUpdate: true, // Allow to update a photo on album save
-        cascadeRemove: true  // Allow to remove a photo on album remove
+        cascadeUpdate: true // Allow to update a photo on album save
     })
     @JoinTable()
     photos: Photo[] = []; // We initialize array for convinience here
@@ -960,14 +959,13 @@ export class Photo {
 
     @ManyToMany(type => Album, album => album.photos, {
         cascadeInsert: true, // Allow to insert a new album on photo save
-        cascadeUpdate: true, // Allow to update an album on photo save
-        cascadeRemove: true  // Allow to remove an album on photo remove
+        cascadeUpdate: true // Allow to update an album on photo save
     })
     albums: Album[] = []; // We initialize array for convinience here
 }
 ```
 
-After you run thr application, the ORM will create a **album_photos_photo_albums** *junction table*:
+After you run the application, the ORM will create a **album_photos_photo_albums** *junction table*:
 
 ```shell
 +-------------+--------------+----------------------------+
