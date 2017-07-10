@@ -237,7 +237,7 @@ export class PostgresQueryRunner implements QueryRunner {
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE "${tableName}" SET ${updateValues}${conditionString ? (" WHERE " + conditionString) : ""}`;
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const allParameters = updateParams.concat(conditionParams);

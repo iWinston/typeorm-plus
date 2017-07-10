@@ -120,13 +120,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     async remove(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently removed entity and mark that it must be removed
-        const mainRemovedSubject = new Subject(metadata, entity);
-        mainRemovedSubject.mustBeRemoved = true;
-        this.operateSubjects.push(mainRemovedSubject);
+        const mainSubject = new Subject(metadata, entity);
+        mainSubject.mustBeRemoved = true;
+        this.operateSubjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to remove alongside with main removed entity
-        this.buildCascadeRemoveOperateSubjects(mainRemovedSubject);
+        this.buildCascadeRemoveOperateSubjects(mainSubject);
 
         // next step is to load database entities for all operate subjects
         await this.loadOperateSubjectsDatabaseEntities();
@@ -161,32 +161,34 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     protected buildCascadeUpdateAndInsertOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
-            .filter(([relation, value, valueMetadata]) => {
+            .filter(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert or update cascades of the relation should be set
-                return value !== undefined && value !== null && (relation.isCascadeInsert || relation.isCascadeUpdate);
+                return  relationEntity !== undefined &&
+                        relationEntity !== null &&
+                        (relation.isCascadeInsert || relation.isCascadeUpdate);
             })
-            .forEach(([relation, value, valueMetadata]) => {
+            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
-                if (alreadyExistValueSubject) {
-                    if (alreadyExistValueSubject.canBeInserted === false)
-                        alreadyExistValueSubject.canBeInserted = relation.isCascadeInsert === true;
-                    if (alreadyExistValueSubject.canBeUpdated === false)
-                        alreadyExistValueSubject.canBeUpdated = relation.isCascadeUpdate === true;
+                const alreadyExistRelationEntitySubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
+                if (alreadyExistRelationEntitySubject) {
+                    if (alreadyExistRelationEntitySubject.canBeInserted === false) // if its not marked for insertion yet
+                        alreadyExistRelationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
+                    if (alreadyExistRelationEntitySubject.canBeUpdated === false) // if its not marked for update yet
+                        alreadyExistRelationEntitySubject.canBeUpdated = relation.isCascadeUpdate === true;
                     return;
                 }
 
                 // mark subject with what we can do with it
                 // and add to the array of subjects to load only if there is no same entity there already
-                const valueSubject = new Subject(valueMetadata, value);
-                valueSubject.canBeInserted = relation.isCascadeInsert === true;
-                valueSubject.canBeUpdated = relation.isCascadeUpdate === true;
-                this.operateSubjects.push(valueSubject);
+                const relationEntitySubject = new Subject(relationEntityMetadata, relationEntity);
+                relationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
+                relationEntitySubject.canBeUpdated = relation.isCascadeUpdate === true;
+                this.operateSubjects.push(relationEntitySubject);
 
-                // go recursively and find other entities we need to operate with
-                this.buildCascadeUpdateAndInsertOperateSubjects(valueSubject);
+                // go recursively and find other entities we need to insert/update
+                this.buildCascadeUpdateAndInsertOperateSubjects(relationEntitySubject);
             });
     }
 
@@ -196,26 +198,26 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     protected buildCascadeRemoveOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
-            .filter(([relation, value, valueMetadata]) => {
+            .filter(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert cascades of the relation should be set
-                return value !== undefined && value !== null && relation.isCascadeRemove;
+                return relationEntity !== undefined && relationEntity !== null && relation.isCascadeRemove;
             })
-            .forEach(([relation, value, valueMetadata]) => {
+            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
+                const alreadyExistValueSubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
                 if (alreadyExistValueSubject) {
                     alreadyExistValueSubject.mustBeRemoved = true;
                     return;
                 }
 
                 // add to the array of subjects to load only if there is no same entity there already
-                const valueSubject = new Subject(valueMetadata, value);
+                const valueSubject = new Subject(relationEntityMetadata, relationEntity);
                 valueSubject.mustBeRemoved = true;
                 this.operateSubjects.push(valueSubject);
 
-                // go recursively and find other entities to load by cascades in currently inserted entities
+                // go recursively and find other entities we need to remove
                 this.buildCascadeRemoveOperateSubjects(valueSubject);
             });
     }
