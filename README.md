@@ -945,7 +945,7 @@ export class Album {
         cascadeUpdate: true // Allow to update a photo on album save
     })
     @JoinTable()
-    photos: Photo[] = []; // We initialize array for convinience here
+    photos: Photo[];
 }
 ```
   
@@ -961,7 +961,7 @@ export class Photo {
         cascadeInsert: true, // Allow to insert a new album on photo save
         cascadeUpdate: true // Allow to update an album on photo save
     })
-    albums: Album[] = []; // We initialize array for convinience here
+    albums: Album[];
 }
 ```
 

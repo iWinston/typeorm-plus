@@ -863,7 +863,7 @@ export class Album {
         cascadeRemove: true  // 在移除Album时，会自动移除相册里的Photo
     })
     @JoinTable()
-    photos: Photo[] = []; // 初始化个Photo数组
+    photos: Photo[];
 }
 ```
   
@@ -880,7 +880,7 @@ export class Photo {
         cascadeUpdate: true, // 在更新Album时，会自动更新相册里的Photo 
         cascadeRemove: true  // 在移除Album时，会自动移除相册里的Photo
     })
-    albums: Album[] = []; // 初始化个Album数组
+    albums: Album[];
 }
 ```
 
