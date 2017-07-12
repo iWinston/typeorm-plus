@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
@@ -12,6 +11,8 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {PostgresDriver} from "./PostgresDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
+import {OrmUtils} from "../../util/OrmUtils";
+import {InsertResult} from "../InsertResult";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -216,19 +217,24 @@ export class PostgresQueryRunner implements QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `"${key}"`).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
+        const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
+        const generatedColumnNames = generatedColumns.map(generatedColumn => `"${generatedColumn.databaseName}"`).join(", ");
         const sql = columns.length > 0
-            ? `INSERT INTO "${tableName}"(${columns}) VALUES (${values}) ${ generatedColumn ? ` RETURNING "${generatedColumn.databaseName}"` : "" }`
-            : `INSERT INTO "${tableName}" DEFAULT VALUES ${ generatedColumn ? ` RETURNING "${generatedColumn.databaseName}"` : "" }`;
+            ? `INSERT INTO "${tableName}"(${columns}) VALUES (${values}) ${ generatedColumns.length > 0 ? ` RETURNING ${generatedColumnNames}` : "" }`
+            : `INSERT INTO "${tableName}" DEFAULT VALUES ${ generatedColumns.length > 0 ? ` RETURNING ${generatedColumnNames}` : "" }`;
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
-        if (generatedColumn)
-            return result[0][generatedColumn.databaseName];
 
-        return result;
+        return {
+            result: result,
+            generatedMap: generatedColumns.length > 0 ? generatedColumns.reduce((map, column) => {
+                return OrmUtils.mergeDeep(map, column.createValueMap(result[0][column.databaseName]));
+            }, {} as ObjectLiteral) : undefined
+        };
     }
 
     /**
@@ -404,11 +410,17 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
     }
 
     /**
+     * Creates a schema if it's not created.
+     */
+    createSchema(): Promise<void> {
+        return this.query(`CREATE SCHEMA IF NOT EXISTS "${this.schemaName}"`);
+    }
+
+    /**
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        await this.query(`CREATE SCHEMA IF NOT EXISTS "${this.schemaName}"`);
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
@@ -754,18 +766,18 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
         let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true && column.type !== "uuid") // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " SERIAL";
         if (!column.isGenerated || column.type === "uuid")
             c += " " + this.connection.driver.createFullType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isGenerated)
+        if (column.isPrimary)
             c += " PRIMARY KEY";
         if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
             c += " DEFAULT " + column.default;
         }
-        if (column.isGenerated && column.type === "uuid" && !column.default)
+        if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
             c += " DEFAULT uuid_generate_v4()";
         return c;
     }

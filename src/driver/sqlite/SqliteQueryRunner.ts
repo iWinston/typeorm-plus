@@ -365,6 +365,13 @@ export class SqliteQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a schema if it's not created.
+     */
+    createSchema(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {

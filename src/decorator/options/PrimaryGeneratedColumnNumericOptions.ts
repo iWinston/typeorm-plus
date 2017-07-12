@@ -3,7 +3,7 @@ import {PrimaryGeneratedColumnType} from "../../driver/types/ColumnTypes";
 /**
  * Describes all column's options.
  */
-export interface PrimaryGeneratedColumnOptions {
+export interface PrimaryGeneratedColumnNumericOptions {
 
     /**
      * Column type. Must be one of the value from the ColumnTypes class.

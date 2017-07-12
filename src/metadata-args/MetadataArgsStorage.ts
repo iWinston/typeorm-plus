@@ -15,6 +15,7 @@ import {DiscriminatorValueMetadataArgs} from "./DiscriminatorValueMetadataArgs";
 import {EntityRepositoryMetadataArgs} from "./EntityRepositoryMetadataArgs";
 import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
 import {MetadataUtils} from "../metadata-builder/MetadataUtils";
+import {GeneratedMetadataArgs} from "./GeneratedMetadataArgs";
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -34,6 +35,7 @@ export class MetadataArgsStorage {
     readonly entitySubscribers: EntitySubscriberMetadataArgs[] = [];
     readonly indices: IndexMetadataArgs[] = [];
     readonly columns: ColumnMetadataArgs[] = [];
+    readonly generations: GeneratedMetadataArgs[] = [];
     readonly relations: RelationMetadataArgs[] = [];
     readonly joinColumns: JoinColumnMetadataArgs[] = [];
     readonly joinTables: JoinTableMetadataArgs[] = [];
@@ -61,6 +63,14 @@ export class MetadataArgsStorage {
     filterColumns(target: (Function|string)|(Function|string)[]): ColumnMetadataArgs[] {
         return this.columns.filter(column => {
             return target instanceof Array ? target.indexOf(column.target) !== -1 : column.target === target;
+        });
+    }
+
+    findGenerated(target: Function|string, propertyName: string): GeneratedMetadataArgs|undefined;
+    findGenerated(target: (Function|string)[], propertyName: string): GeneratedMetadataArgs|undefined;
+    findGenerated(target: (Function|string)|(Function|string)[], propertyName: string): GeneratedMetadataArgs|undefined {
+        return this.generations.find(generated => {
+            return (target instanceof Array ? target.indexOf(generated.target) !== -1 : generated.target === target) && generated.propertyName === propertyName;
         });
     }
 

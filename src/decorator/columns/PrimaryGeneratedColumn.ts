@@ -1,8 +1,8 @@
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
-import {PrimaryGeneratedColumnType} from "../../driver/types/ColumnTypes";
-import {PrimaryGeneratedColumnOptions} from "../options/PrimaryGeneratedColumnOptions";
+import {PrimaryGeneratedColumnNumericOptions} from "../options/PrimaryGeneratedColumnNumericOptions";
 import {ColumnOptions} from "../options/ColumnOptions";
+import {PrimaryGeneratedColumnUUIDOptions} from "../options/PrimaryGeneratedColumnUUIDOptions";
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -12,12 +12,17 @@ export function PrimaryGeneratedColumn(): Function;
 /**
  * Column decorator is used to mark a specific class property as a table column.
  */
-export function PrimaryGeneratedColumn(options: PrimaryGeneratedColumnOptions): Function;
+export function PrimaryGeneratedColumn(options: PrimaryGeneratedColumnNumericOptions): Function;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  */
-export function PrimaryGeneratedColumn(type: PrimaryGeneratedColumnType, options?: PrimaryGeneratedColumnOptions): Function;
+export function PrimaryGeneratedColumn(strategy: "increment", options?: PrimaryGeneratedColumnNumericOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ */
+export function PrimaryGeneratedColumn(strategy: "uuid", options?: PrimaryGeneratedColumnUUIDOptions): Function;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -25,18 +30,33 @@ export function PrimaryGeneratedColumn(type: PrimaryGeneratedColumnType, options
  * This column creates an integer PRIMARY COLUMN with generated set to true.
  * This column creates is an alias for @PrimaryColumn("int", { generated: true }).
  */
-export function PrimaryGeneratedColumn(typeOrOptions?: PrimaryGeneratedColumnType|PrimaryGeneratedColumnOptions, maybeOptions?: PrimaryGeneratedColumnOptions): Function {
+export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions,
+                                       maybeOptions?: PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions): Function {
     const options: ColumnOptions = {};
 
-    if (typeof typeOrOptions === "string")  options.type = typeOrOptions;
-    if (typeOrOptions instanceof Object) Object.assign(options, typeOrOptions);
-    if (maybeOptions instanceof Object) Object.assign(options, maybeOptions);
+    if (strategyOrOptions) {
+        if (typeof strategyOrOptions === "string")
+            options.generationStrategy = strategyOrOptions as "increment"|"uuid";
+
+        if (strategyOrOptions instanceof Object)
+            Object.assign(options, strategyOrOptions);
+    } else {
+        options.generationStrategy = "increment";
+    }
+
+    if (maybeOptions instanceof Object)
+        Object.assign(options, maybeOptions);
 
     return function (object: Object, propertyName: string) {
 
         // check if there is no type in column options then set the int type - by default for auto generated column
-        if (!options.type)
-            Object.assign(options, { type: Number}  as ColumnOptions);
+        if (!options.type) {
+            if (options.generationStrategy === "increment") {
+                Object.assign(options, { type: Number}  as ColumnOptions);
+            } else {
+                Object.assign(options, { type: "uuid"}  as ColumnOptions);
+            }
+        }
 
         // implicitly set a primary and generated to column options
         Object.assign(options, { primary: true, generated: true } as ColumnOptions);

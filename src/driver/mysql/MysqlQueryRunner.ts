@@ -395,6 +395,13 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a schema if it's not created.
+     */
+    createSchema(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
      * Creates a new table from the given table schema and column schemas inside it.
      */
     async createTable(table: TableSchema): Promise<void> {
@@ -732,7 +739,7 @@ export class MysqlQueryRunner implements QueryRunner {
             c += " UNIQUE";
         if (column.isGenerated && column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";

@@ -90,6 +90,9 @@ export class Post {
     @Column("json")
     json: Object;
 
+    @Column("uuid")
+    uuid: string;
+
     @Column("simple-array")
     simpleArray: string[];
 

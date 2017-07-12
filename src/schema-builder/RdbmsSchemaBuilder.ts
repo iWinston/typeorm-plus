@@ -121,6 +121,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
+        await this.queryRunner.createSchema();
         await this.dropOldForeignKeys();
         // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
         await this.createNewTables();

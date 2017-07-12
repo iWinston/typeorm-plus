@@ -15,6 +15,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {RandomGenerator} from "../../util/RandomGenerator";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -254,6 +255,9 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToDate(value, true);
 
+        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
+            return RandomGenerator.uuid4();
+
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         }
@@ -293,35 +297,31 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
-        let type = "";
-        if (column.type === Number) {
-            type += "int";
+    normalizeType(column: { type: ColumnType, length?: number, precision?: number, scale?: number }): string {
+        if (column.type === Number || column.type === "integer") {
+            return "int";
 
         } else if (column.type === String) {
-            type += "varchar";
+            return "varchar";
 
         } else if (column.type === Date) {
-            type += "datetime";
+            return "datetime";
 
         } else if ((column.type as any) === Buffer) {
-            type += "blob";
+            return "blob";
 
         } else if (column.type === Boolean) {
-            type += "tinyint";
+            return "tinyint";
+
+        } else if (column.type === "uuid") {
+            return "varchar";
 
         } else if (column.type === "simple-array") {
-            type += "text";
+            return "text";
 
         } else {
-            type += column.type;
+            return column.type as string || "";
         }
-
-        // normalize shortcuts
-        if (type === "integer")
-            type = "int";
-
-        return type;
     }
 
     /**

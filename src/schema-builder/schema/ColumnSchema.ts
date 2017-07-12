@@ -35,6 +35,11 @@ export class ColumnSchema {
     isGenerated: boolean = false;
 
     /**
+     * Specifies generation strategy if this column will use auto increment.
+     */
+    generationStrategy?: "uuid"|"increment";
+
+    /**
      * Indicates if column is a primary key.
      */
     isPrimary: boolean = false;
@@ -90,6 +95,7 @@ export class ColumnSchema {
         default?: any,
         isNullable?: boolean,
         isGenerated?: boolean,
+        generationStrategy?: "uuid"|"increment",
         isPrimary?: boolean,
         isUnique?: boolean,
         comment?: string,
@@ -104,6 +110,7 @@ export class ColumnSchema {
             this.default = options.default;
             this.isNullable = options.isNullable || false;
             this.isGenerated = options.isGenerated || false;
+            this.generationStrategy = options.generationStrategy;
             this.isPrimary = options.isPrimary || false;
             this.isUnique = options.isUnique || false;
             this.comment = options.comment;
@@ -125,9 +132,11 @@ export class ColumnSchema {
         newColumnSchema.length = this.length;
         newColumnSchema.precision = this.precision;
         newColumnSchema.scale = this.scale;
+        newColumnSchema.enum = this.enum;
         newColumnSchema.default = this.default;
         newColumnSchema.isNullable = this.isNullable;
         newColumnSchema.isGenerated = this.isGenerated;
+        newColumnSchema.generationStrategy = this.generationStrategy;
         newColumnSchema.isPrimary = this.isPrimary;
         newColumnSchema.isUnique = this.isUnique;
         newColumnSchema.isArray = this.isArray;
@@ -151,6 +160,7 @@ export class ColumnSchema {
         columnSchema.default = normalizedDefault;
         columnSchema.comment = columnMetadata.comment;
         columnSchema.isGenerated = columnMetadata.isGenerated;
+        columnSchema.generationStrategy = columnMetadata.generationStrategy;
         columnSchema.isNullable = columnMetadata.isNullable;
         columnSchema.type = normalizedType;
         columnSchema.isPrimary = columnMetadata.isPrimary;

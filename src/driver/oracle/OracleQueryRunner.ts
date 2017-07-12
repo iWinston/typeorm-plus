@@ -380,6 +380,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
+     * Creates a schema if it's not created.
+     */
+    createSchema(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {

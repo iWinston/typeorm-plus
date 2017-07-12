@@ -188,7 +188,7 @@ export class EntityMetadata {
     /**
      * Gets the column with generated flag.
      */
-    generatedColumn?: ColumnMetadata;
+    generatedColumns: ColumnMetadata[] = [];
 
     /**
      * Gets the object id column used with mongodb database.
@@ -214,6 +214,11 @@ export class EntityMetadata {
      * Gets the discriminator column used to store entity identificator in single-table inheritance tables.
      */
     discriminatorColumn?: ColumnMetadata;
+
+    /**
+     * Gets the column which contains uuid string.
+     */
+    uuidColumns: ColumnMetadata[] = [];
 
     /**
      * Special column that stores tree level in tree entities.
@@ -477,7 +482,7 @@ export class EntityMetadata {
 
         return this.primaryColumns.reduce((map, column, index) => {
             return OrmUtils.mergeDeep(map, column.createValueMap(ids[index]));
-        }, {});
+        }, {} as ObjectLiteral);
     }
 
     /**

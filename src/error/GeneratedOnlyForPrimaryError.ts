@@ -4,7 +4,7 @@ export class GeneratedOnlyForPrimaryError extends Error {
     constructor(object: Object, propertyName: string) {
         super();
         this.message = `Column for property ${(<any>object.constructor).name}#${propertyName} cannot have a generated ` +
-            `value because its not a primary column. Try to use @PrimaryColumn decorator.`;
+            `value. Generated values supports only in PrimaryColumn decorator or UUID column type.`;
     }
 
 }

@@ -144,7 +144,7 @@ export class Subject {
      * When subject is newly persisted it may have a generated entity id.
      * In this case it should be written here.
      */
-    newlyGeneratedId?: any;
+    generatedMap?: ObjectLiteral;
 
     /**
      * When subject is newly persisted it may have a generated object id.

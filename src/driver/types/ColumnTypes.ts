@@ -14,8 +14,7 @@ export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
     |"dec" // oracle, mssql
     |"decimal" // mysql, postgres, mssql, sqlite
     |"numeric" // postgres, mssql, sqlite
-    |"number" // oracle
-    |"uuid"; // oracle
+    |"number"; // oracle
 
 /**
  * Column types where precision and scale properties are used.

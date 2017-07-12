@@ -60,6 +60,11 @@ export class ColumnMetadata {
     isGenerated: boolean = false;
 
     /**
+     * Specifies generation strategy if this column will use auto increment.
+     */
+    generationStrategy: "uuid"|"increment";
+
+    /**
      * Indicates if column value in the database should be unique or not.
      */
     isUnique: boolean = false;
@@ -199,6 +204,8 @@ export class ColumnMetadata {
             this.isPrimary = options.args.options.primary;
         if (options.args.options.generated)
             this.isGenerated = options.args.options.generated;
+        if (options.args.options.generationStrategy)
+            this.generationStrategy = options.args.options.generationStrategy;
         if (options.args.options.unique)
             this.isUnique = options.args.options.unique;
         if (options.args.options.default === null) // to make sure default: null is the same as nullable: true
@@ -371,7 +378,6 @@ export class ColumnMetadata {
                 }
             }
             return undefined;
-            // return embeddedObject ? embeddedObject[this.propertyName] : undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
@@ -380,7 +386,6 @@ export class ColumnMetadata {
             } else {
                 return entity[this.propertyName];
             }
-            // return entity[this.propertyName];
         }
     }
 

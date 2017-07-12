@@ -6,6 +6,7 @@ import {Driver} from "../driver/Driver";
 import {DataTypeNotSupportedError} from "../error/DataTypeNotSupportedError";
 import {ColumnType} from "../driver/types/ColumnTypes";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -74,6 +75,12 @@ export class EntityMetadataValidator {
                 if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
                     throw new DataTypeNotSupportedError(normalizedColumn, driver.options.type);
             });
+        }
+
+        if (driver instanceof MysqlDriver) {
+            const generatedColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy !== "uuid");
+            if (generatedColumns.length > 1)
+                throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
         }
 
         // validate relations

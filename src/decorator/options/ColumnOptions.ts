@@ -30,9 +30,13 @@ export interface ColumnOptions {
     /**
      * Specifies if this column will use auto increment (sequence, generated identity).
      * Note that only one column in entity can be marked as generated, and it must be a primary column.
-     * (todo: create validation logic for this condition)
      */
-    generated?: boolean; // |"uuid"|"sequence";
+    generated?: boolean;
+
+    /**
+     * Specifies generation strategy if this column will use auto increment.
+     */
+    generationStrategy?: "uuid"|"increment";
 
     /**
      * Specifies if column's value must be unique or not.

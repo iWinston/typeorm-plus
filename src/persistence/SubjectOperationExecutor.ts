@@ -195,8 +195,8 @@ export class SubjectOperationExecutor {
                             if (!relationId) {
 
                                 // if we don't have relation id then use special values
-                                if (referencedColumn.isGenerated) {
-                                    relationId = insertSubject.newlyGeneratedId;
+                                if (referencedColumn.isGenerated && insertSubject.generatedMap) {
+                                    relationId = referencedColumn.getEntityValue(insertSubject.generatedMap);
 
                                 } else if (referencedColumn.isObjectId) {
                                     relationId = insertSubject.generatedObjectId;
@@ -217,8 +217,8 @@ export class SubjectOperationExecutor {
                             if (!relationId) {
 
                                 // if we don't have relation id then use special values
-                                if (referencedColumn.isGenerated) {
-                                    relationId = insertSubject.newlyGeneratedId;
+                                if (referencedColumn.isGenerated && insertSubject.generatedMap) {
+                                    relationId = referencedColumn.getEntityValue(insertSubject.generatedMap);
 
                                 } else if (referencedColumn.isObjectId) {
                                     relationId = insertSubject.generatedObjectId;
@@ -255,8 +255,8 @@ export class SubjectOperationExecutor {
                             if (!relationIdOfEntityValue) {
                                 const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
                                 if (entityValueInsertSubject) {
-                                    if (joinColumn.referencedColumn!.isGenerated) {
-                                        relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                                    if (joinColumn.referencedColumn!.isGenerated && entityValueInsertSubject.generatedMap) {
+                                        relationIdOfEntityValue = joinColumn.referencedColumn!.getEntityValue(entityValueInsertSubject.generatedMap);
 
                                     } else if (joinColumn.referencedColumn!.isObjectId) {
                                         relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
@@ -273,8 +273,8 @@ export class SubjectOperationExecutor {
                         if (entityValue) {
                             conditions[column.databaseName] = entityValue;
                         } else {
-                            if (subject.newlyGeneratedId) {
-                                conditions[column.databaseName] = subject.newlyGeneratedId;
+                            if (subject.generatedMap) {
+                                conditions[column.databaseName] = column.getEntityValue(subject.generatedMap);
 
                             } else if (subject.generatedObjectId) {
                                 conditions[column.databaseName] = subject.generatedObjectId;
@@ -315,8 +315,8 @@ export class SubjectOperationExecutor {
                                     if (!relationIdOfEntityValue) {
                                         const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
                                         if (entityValueInsertSubject) {
-                                            if (columnRelationJoinColumn.referencedColumn!.isGenerated) {
-                                                relationIdOfEntityValue = entityValueInsertSubject.newlyGeneratedId;
+                                            if (columnRelationJoinColumn.referencedColumn!.isGenerated && entityValueInsertSubject.generatedMap) {
+                                                relationIdOfEntityValue = columnRelationJoinColumn.referencedColumn!.getEntityValue(entityValueInsertSubject.generatedMap);
 
                                             } else if (columnRelationJoinColumn.referencedColumn!.isObjectId) {
                                                 relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
@@ -333,8 +333,8 @@ export class SubjectOperationExecutor {
                                 if (entityValue) {
                                     conditions[column.databaseName] = entityValue;
                                 } else {
-                                    if (entityValueInsertSubject && entityValueInsertSubject.newlyGeneratedId) {
-                                        conditions[column.databaseName] = entityValueInsertSubject.newlyGeneratedId;
+                                    if (entityValueInsertSubject && entityValueInsertSubject.generatedMap) {
+                                        conditions[column.databaseName] = column.getEntityValue(entityValueInsertSubject.generatedMap);
 
                                     } else if (entityValueInsertSubject && entityValueInsertSubject.generatedObjectId) {
                                         conditions[column.databaseName] = entityValueInsertSubject.generatedObjectId;
@@ -355,8 +355,8 @@ export class SubjectOperationExecutor {
                             if (!id) {
                                 const insertSubject = this.insertSubjects.find(subject => subject.entity === columnValue);
                                 if (insertSubject) {
-                                    if (insertSubject.newlyGeneratedId) {
-                                        id = insertSubject.newlyGeneratedId;
+                                    if (insertSubject.generatedMap) {
+                                        id = joinColumn.getEntityValue(insertSubject.generatedMap);
 
                                     } else if (insertSubject.generatedObjectId) {
                                         id = insertSubject.generatedObjectId;
@@ -365,7 +365,8 @@ export class SubjectOperationExecutor {
                             }
                             updateOptions[joinColumn.databaseName] = id;
                         } else {
-                            updateOptions[joinColumn.databaseName] = columnValue || subject.newlyGeneratedId || subRelatedEntity.generatedObjectId;
+                            const generatedColumnValue = subject.generatedMap ? joinColumn.getEntityValue(subject.generatedMap) : undefined;
+                            updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue || subRelatedEntity.generatedObjectId;
                         }
 
                         const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tableName, updateOptions, conditions);
@@ -391,40 +392,33 @@ export class SubjectOperationExecutor {
         const parentEntityMetadata = subject.metadata.parentEntityMetadata;
         const metadata = subject.metadata;
         const entity = subject.entity;
-        let newlyGeneratedId: any, parentGeneratedId: any;
+        let insertResult: any, parentGeneratedId: any;
 
         // if entity uses class table inheritance then we need to separate entity into sub values that will be inserted into multiple tables
         if (metadata.isClassTableChild) { // todo: with current implementation inheritance of multiple class table children will not work
 
             // first insert entity values into parent class table
             const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects);
-            newlyGeneratedId = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tableName, parentValuesMap, parentEntityMetadata.generatedColumn);
+            insertResult = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tableName, parentValuesMap);
 
             // second insert entity values into child class table
-            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, newlyGeneratedId, undefined, alreadyInsertedSubjects);
-            const secondGeneratedId = await this.queryRunner.insert(metadata.tableName, childValuesMap, metadata.generatedColumn);
-            if (!newlyGeneratedId && secondGeneratedId) newlyGeneratedId = secondGeneratedId;
+            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, insertResult, undefined, alreadyInsertedSubjects);
+            const secondGeneratedId = await this.queryRunner.insert(metadata.tableName, childValuesMap);
+            if (!insertResult && secondGeneratedId) insertResult = secondGeneratedId;
 
         } else { // in the case when class table inheritance is not used
 
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
             // console.log("valuesMap", valuesMap);
-            newlyGeneratedId = await this.queryRunner.insert(metadata.tableName, valuesMap, metadata.generatedColumn);
+            insertResult = await this.queryRunner.insert(metadata.tableName, valuesMap);
         }
 
         if (parentGeneratedId)
             subject.parentGeneratedId = parentGeneratedId;
 
         // todo: better if insert method will return object with all generated ids, object id, etc.
-        if (newlyGeneratedId) {
-            if (metadata.generatedColumn) {
-                subject.newlyGeneratedId = newlyGeneratedId;
-
-            } else if (metadata.objectIdColumn) {
-                subject.generatedObjectId = newlyGeneratedId;
-
-            }
-        }
+        if (insertResult.generatedMap)
+            subject.generatedMap = insertResult.generatedMap;
     }
 
     private collectColumns(columns: ColumnMetadata[], entity: ObjectLiteral, object: ObjectLiteral) {
@@ -516,8 +510,8 @@ export class SubjectOperationExecutor {
                             // todo: what if reference column is not related to table inheritance?
                         }
 
-                        if (referencedColumn.isGenerated)
-                            relationValue = alreadyInsertedSubject.newlyGeneratedId;
+                        if (referencedColumn.isGenerated && alreadyInsertedSubject.generatedMap)
+                            relationValue = referencedColumn.getEntityValue(alreadyInsertedSubject.generatedMap);
                         if (referencedColumn.isObjectId)
                             relationValue = alreadyInsertedSubject.generatedObjectId;
                         // if it references to create or update date columns
@@ -577,6 +571,12 @@ export class SubjectOperationExecutor {
             values[metadata.discriminatorColumn.databaseName] = value;
         }
 
+        metadata.uuidColumns.forEach(uuidColumn => {
+            const uuid = this.connection.driver.preparePersistentValue("", uuidColumn);
+            if (uuid && !values[uuidColumn.databaseName])
+                values[uuidColumn.databaseName] = uuid;
+        });
+
         // add special column and value - tree level and tree parents (for tree-type tables)
         if (metadata.treeLevelColumn && metadata.treeParentRelation) {
             const parentEntity = metadata.treeParentRelation.getEntityValue(entity);
@@ -622,8 +622,8 @@ export class SubjectOperationExecutor {
         // todo: fix joinColumns[0] usage
 
         let newEntityId = referencedColumn.getEntityValue(subject.entity);
-        if (!newEntityId && referencedColumn.isGenerated) {
-            newEntityId = subject.newlyGeneratedId;
+        if (!newEntityId && referencedColumn.isGenerated && subject.generatedMap) {
+            newEntityId = referencedColumn.getEntityValue(subject.generatedMap);
             // we should not handle object id here because closure tables are not supported by mongodb driver.
         } // todo: implement other special column types too
 
@@ -634,7 +634,8 @@ export class SubjectOperationExecutor {
             if (!parentEntityId && referencedColumn.isGenerated) {
                 const parentInsertedSubject = this.insertSubjects.find(subject => subject.entity === parentEntity);
                 // todo: throw exception if parentInsertedSubject is not set
-                parentEntityId = parentInsertedSubject!.newlyGeneratedId;
+                if (parentInsertedSubject!.generatedMap)
+                    parentEntityId = referencedColumn.getEntityValue(parentInsertedSubject!.generatedMap!);
             } // todo: implement other special column types too
         }
 
@@ -650,8 +651,8 @@ export class SubjectOperationExecutor {
 
             if (parentSubject) {
                 parentEntityId = referencedColumn.getEntityValue(parentSubject.entity);
-                if (!parentEntityId && parentSubject.newlyGeneratedId) { // if still not found then it means parent just inserted with generated column
-                    parentEntityId = parentSubject.newlyGeneratedId;
+                if (!parentEntityId && parentSubject.generatedMap) { // if still not found then it means parent just inserted with generated column
+                    parentEntityId = referencedColumn.getEntityValue(parentSubject.generatedMap);
                 }
             }
         }
@@ -895,8 +896,8 @@ export class SubjectOperationExecutor {
                 const id = joinColumn.referencedColumn!.getEntityValue(entity);
                 if (!id && joinColumn.referencedColumn!.isGenerated) {
                     const insertSubject = this.insertSubjects.find(subject => subject.entity === entity);
-                    if (insertSubject)
-                        return insertSubject.newlyGeneratedId;
+                    if (insertSubject && insertSubject.generatedMap)
+                        return joinColumn.getEntityValue(insertSubject.generatedMap);
                 }
                 if (!id && joinColumn.referencedColumn!.isObjectId) {
                     const insertSubject = this.insertSubjects.find(subject => subject.entity === entity);
@@ -992,9 +993,15 @@ export class SubjectOperationExecutor {
             if (subject.generatedObjectId && subject.metadata.objectIdColumn)
                 subject.metadata.objectIdColumn.setEntityValue(subject.entity, subject.generatedObjectId);
 
-            subject.metadata.primaryColumns.forEach(primaryColumn => {
-                if (subject.newlyGeneratedId)
-                    primaryColumn.setEntityValue(subject.entity, subject.newlyGeneratedId);
+            subject.metadata.generatedColumns.forEach(generatedColumn => {
+                if (!subject.generatedMap)
+                    return;
+
+                const generatedValue = generatedColumn.getEntityValue(subject.generatedMap);
+                if (!generatedValue)
+                    return;
+
+                generatedColumn.setEntityValue(subject.entity, generatedValue);
             });
             subject.metadata.primaryColumns.forEach(primaryColumn => {
                 if (subject.parentGeneratedId)

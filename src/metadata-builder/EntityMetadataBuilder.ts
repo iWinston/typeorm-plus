@@ -215,6 +215,19 @@ export class EntityMetadataBuilder {
                     });
             });
 
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.columns.forEach(column => {
+                const generated = this.metadataArgsStorage.findGenerated(entityMetadata.target, column.propertyName);
+                if (generated) {
+                    column.isGenerated = true;
+                    column.generationStrategy = generated.strategy;
+                }
+            });
+
+            entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated);
+            entityMetadata.uuidColumns = entityMetadata.generatedColumns.filter(column => column.generationStrategy === "uuid");
+        });
+
         return entityMetadatas;
     }
 
@@ -334,11 +347,12 @@ export class EntityMetadataBuilder {
         entityMetadata.columns = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), entityMetadata.ownColumns);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
-        entityMetadata.generatedColumn = entityMetadata.columns.find(column => column.isGenerated);
+        entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated);
         entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.isCreateDate);
         entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.isUpdateDate);
         entityMetadata.versionColumn = entityMetadata.columns.find(column => column.isVersion);
         entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.isDiscriminator);
+        entityMetadata.uuidColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy === "uuid");
         entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.isTreeLevel);
         entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.isParentId);
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);

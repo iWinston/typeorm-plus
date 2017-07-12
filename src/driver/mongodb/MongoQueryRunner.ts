@@ -448,6 +448,13 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a schema if it's not created.
+     */
+    createSchema(): Promise<void> {
+        throw new Error(`Schema create queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Creates a new table from the given table schema and column schemas inside it.
      */
     async createTable(table: TableSchema): Promise<void> {

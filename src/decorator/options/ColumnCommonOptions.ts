@@ -15,6 +15,12 @@ export interface ColumnCommonOptions {
     primary?: boolean;
 
     /**
+     * Specifies if this column will use auto increment (sequence, generated identity).
+     * Note that only one column in entity can be marked as generated, and it must be a primary column.
+     */
+    generated?: boolean;
+
+    /**
      * Specifies if column's value must be unique or not.
      */
     unique?: boolean;
