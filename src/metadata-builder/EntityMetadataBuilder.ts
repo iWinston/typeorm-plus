@@ -225,7 +225,6 @@ export class EntityMetadataBuilder {
             });
 
             entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated);
-            entityMetadata.uuidColumns = entityMetadata.generatedColumns.filter(column => column.generationStrategy === "uuid");
         });
 
         return entityMetadatas;
@@ -352,7 +351,6 @@ export class EntityMetadataBuilder {
         entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.isUpdateDate);
         entityMetadata.versionColumn = entityMetadata.columns.find(column => column.isVersion);
         entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.isDiscriminator);
-        entityMetadata.uuidColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy === "uuid");
         entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.isTreeLevel);
         entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.isParentId);
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);

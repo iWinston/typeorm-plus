@@ -571,11 +571,15 @@ export class SubjectOperationExecutor {
             values[metadata.discriminatorColumn.databaseName] = value;
         }
 
-        metadata.uuidColumns.forEach(uuidColumn => {
-            const uuid = this.connection.driver.preparePersistentValue("", uuidColumn);
-            if (uuid && !values[uuidColumn.databaseName])
-                values[uuidColumn.databaseName] = uuid;
-        });
+        metadata.generatedColumns
+            .filter(column => column.generationStrategy === "uuid")
+            .forEach(column => {
+                if (column.isNullable && values[column.databaseName] === null)
+                    return;
+                const uuid = this.connection.driver.preparePersistentValue("", column);
+                if (uuid && !values[column.databaseName])
+                    values[column.databaseName] = uuid;
+            });
 
         // add special column and value - tree level and tree parents (for tree-type tables)
         if (metadata.treeLevelColumn && metadata.treeParentRelation) {

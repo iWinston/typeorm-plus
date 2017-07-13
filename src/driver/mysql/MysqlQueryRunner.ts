@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
@@ -12,6 +11,8 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {MysqlDriver} from "./MysqlDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
+import {OrmUtils} from "../../util/OrmUtils";
+import {InsertResult} from "../InsertResult";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -190,14 +191,25 @@ export class MysqlQueryRunner implements QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `\`${key}\``).join(", ");
         const values = keys.map(key => "?").join(",");
         const parameters = keys.map(key => keyValues[key]);
+        const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
         const sql = `INSERT INTO \`${tableName}\`(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
-        return generatedColumn ? result.insertId : undefined;
+
+        const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
+            const value = generatedColumn.isPrimary && result.insertId ? result.insertId : keyValues[generatedColumn.databaseName];
+            if (!value) return map;
+            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
+        }, {} as ObjectLiteral);
+
+        return {
+            result: result,
+            generatedMap: generatedMap
+        };
     }
 
     /**

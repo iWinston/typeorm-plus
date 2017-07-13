@@ -223,17 +223,22 @@ export class PostgresQueryRunner implements QueryRunner {
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
         const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
         const generatedColumnNames = generatedColumns.map(generatedColumn => `"${generatedColumn.databaseName}"`).join(", ");
+        const generatedColumnSql = generatedColumns.length > 0 ? ` RETURNING ${generatedColumnNames}` : "";
+
         const sql = columns.length > 0
-            ? `INSERT INTO "${tableName}"(${columns}) VALUES (${values}) ${ generatedColumns.length > 0 ? ` RETURNING ${generatedColumnNames}` : "" }`
-            : `INSERT INTO "${tableName}" DEFAULT VALUES ${ generatedColumns.length > 0 ? ` RETURNING ${generatedColumnNames}` : "" }`;
+            ? `INSERT INTO "${tableName}"(${columns}) VALUES (${values}) ${generatedColumnSql}`
+            : `INSERT INTO "${tableName}" DEFAULT VALUES ${generatedColumnSql}`;
+
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
+        const generatedMap = generatedColumns.reduce((map, column) => {
+            const valueMap = column.createValueMap(result[0][column.databaseName]);
+            return OrmUtils.mergeDeep(map, valueMap);
+        }, {} as ObjectLiteral);
 
         return {
             result: result,
-            generatedMap: generatedColumns.length > 0 ? generatedColumns.reduce((map, column) => {
-                return OrmUtils.mergeDeep(map, column.createValueMap(result[0][column.databaseName]));
-            }, {} as ObjectLiteral) : undefined
+            generatedMap: generatedColumns.length > 0 ? generatedMap : undefined
         };
     }
 

@@ -216,11 +216,6 @@ export class EntityMetadata {
     discriminatorColumn?: ColumnMetadata;
 
     /**
-     * Gets the column which contains uuid string.
-     */
-    uuidColumns: ColumnMetadata[] = [];
-
-    /**
      * Special column that stores tree level in tree entities.
      */
     treeLevelColumn?: ColumnMetadata;
