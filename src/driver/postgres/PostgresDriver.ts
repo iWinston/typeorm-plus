@@ -166,7 +166,7 @@ export class PostgresDriver implements Driver {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    connect(): Promise<void> {
+    async connect(): Promise<void> {
 
         // build connection options for the driver
         const options = Object.assign({}, {
@@ -180,7 +180,12 @@ export class PostgresDriver implements Driver {
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         this.pool = new this.postgres.Pool(options);
-        return Promise.resolve();
+
+        // create and right after creation release a query runner to make sure connection is working
+        // and settings are correct and we will be able to perform future connections to the database without errors
+        const queryRunner = await this.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.release();
     }
 
     /**
