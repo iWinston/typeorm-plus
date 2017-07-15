@@ -3,6 +3,8 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -144,16 +146,31 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string): this {
+        this.expressionMap.returning = returning;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
     /**
-     * Creates DELETE express used to perform insert query.
+     * Creates DELETE express used to perform query.
      */
     protected createDeleteExpression() {
         const tableName = this.escape(this.getMainTableName());
-        return `DELETE FROM ${tableName}`; // todo: how do we replace aliases in where to nothing?
+        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
+            return `DELETE FROM ${tableName} RETURNING ${this.expressionMap.returning}`;
+
+        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
+            return `DELETE FROM ${tableName} OUTPUT ${this.expressionMap.returning}`;
+        } else {
+            return `DELETE FROM ${tableName}`; // todo: how do we replace aliases in where to nothing?
+        }
     }
 
 }

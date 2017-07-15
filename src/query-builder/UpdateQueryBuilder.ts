@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -143,6 +144,14 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string): this {
+        this.expressionMap.returning = returning;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -178,7 +187,14 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const tableName = this.escape(this.getMainTableName());
 
         // generate and return sql update query
-        return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}`; // todo: how do we replace aliases in where to nothing?
+        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")} RETURNING ${this.expressionMap.returning}`;
+
+        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")} OUTPUT ${this.expressionMap.returning}`;
+        } else {
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}`; // todo: how do we replace aliases in where to nothing?
+        }
     }
 
     /**

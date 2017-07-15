@@ -5,6 +5,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -54,6 +55,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string): this {
+        this.expressionMap.returning = returning;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -97,7 +106,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const columnNames = insertColumns.map(column => this.escape(column.databaseName)).join(", ");
 
         // generate sql query
-        return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values}`;
+        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
+            return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+
+        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
+            return `INSERT INTO ${tableName}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
+        } else {
+            return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values}`;
+        }
     }
 
     /**
