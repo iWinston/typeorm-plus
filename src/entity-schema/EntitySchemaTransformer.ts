@@ -61,7 +61,6 @@ export class EntitySchemaTransformer {
                         name: columnSchema.name,
                         length: columnSchema.length,
                         primary: columnSchema.primary,
-                        generated: columnSchema.generated,
                         unique: columnSchema.unique,
                         nullable: columnSchema.nullable,
                         comment: columnSchema.comment,
@@ -70,6 +69,11 @@ export class EntitySchemaTransformer {
                         scale: columnSchema.scale
                     }
                 };
+
+                if (columnSchema.generated) {
+                    column.options.generated = true;
+                    column.options.generationStrategy = typeof columnSchema.generated === "string" ? columnSchema.generated : "increment";
+                }
 
                 metadataArgsStorage.columns.push(column);
             });

@@ -208,7 +208,7 @@ export class MysqlQueryRunner implements QueryRunner {
 
         return {
             result: result,
-            generatedMap: generatedMap
+            generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
         };
     }
 

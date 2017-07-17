@@ -1,6 +1,6 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export interface InsertResult {
-    result: ObjectLiteral[];
+    result: ObjectLiteral[]|undefined;
     generatedMap: ObjectLiteral|undefined;
 }

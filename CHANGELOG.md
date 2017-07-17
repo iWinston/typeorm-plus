@@ -60,6 +60,8 @@ column property names and they are automatically mapped to column names
 Also after saving entity with unset properties that will be stored as nulls - their (properties) values will be set to null.
 Also now all 
 * create and update dates in entities now use date with fractional seconds.
+* `@PrimaryGeneratedColumn` decorator now accept generation strategy as first argument (default is `increment`), instead of column type.
+  Column type must be passed in options object, e.g. `@PrimaryGeneratedColumn({ type: "bigint"})`
 
 ### DEPRECATIONS
 
@@ -79,6 +81,8 @@ Also now all
 * `getGeneratedQuery` was renamed to `getQuery` in `QueryBuilder`
 * `getSqlWithParameters` was renamed to `getSqlAndParameters` in `QueryBuilder`
 * sql queries are highlighted in console
+* added `@Generated` decorator. It can accept `strategy` option with values `increment` and `uuid`.
+  Default is `increment`. It always generates value for column, except when column defined as `nullable` and user sets `null` value in to column.
 
 ### OTHER API CHANGES
 

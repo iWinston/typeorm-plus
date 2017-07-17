@@ -103,7 +103,7 @@ export interface EntitySchema { // todo: make it-to-date
             /**
              * Specifies if this column will use AUTO_INCREMENT or not (e.g. generated number).
              */
-            generated?: boolean;
+            generated?: true|"increment"|"uuid";
 
             /**
              * Specifies if column's value must be unique or not.

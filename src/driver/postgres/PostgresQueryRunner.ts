@@ -238,7 +238,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
         return {
             result: result,
-            generatedMap: generatedColumns.length > 0 ? generatedMap : undefined
+            generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
         };
     }
 

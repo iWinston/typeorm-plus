@@ -12,6 +12,7 @@ import {PlatformTools} from "./platform/PlatformTools";
 import {TreeRepository} from "./repository/TreeRepository";
 import {MongoRepository} from "./repository/MongoRepository";
 import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
+import {PromiseUtils} from "./util/PromiseUtils";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -163,8 +164,8 @@ export async function createConnection(options?: ConnectionOptions): Promise<Con
 export async function createConnections(options?: ConnectionOptions[]): Promise<Connection[]> {
     if (!options)
         options = await new ConnectionOptionsReader().all();
-
-    return Promise.all(options.map(options => getConnectionManager().create(options).connect()));
+    const connections = options.map(options => getConnectionManager().create(options));
+    return PromiseUtils.runInSequence(connections, connection => connection.connect());
 }
 
 /**

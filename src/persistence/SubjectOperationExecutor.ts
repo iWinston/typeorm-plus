@@ -356,7 +356,7 @@ export class SubjectOperationExecutor {
                                 const insertSubject = this.insertSubjects.find(subject => subject.entity === columnValue);
                                 if (insertSubject) {
                                     if (insertSubject.generatedMap) {
-                                        id = joinColumn.getEntityValue(insertSubject.generatedMap);
+                                        id = referencedColumn.getEntityValue(insertSubject.generatedMap);
 
                                     } else if (insertSubject.generatedObjectId) {
                                         id = insertSubject.generatedObjectId;
@@ -365,7 +365,7 @@ export class SubjectOperationExecutor {
                             }
                             updateOptions[joinColumn.databaseName] = id;
                         } else {
-                            const generatedColumnValue = subject.generatedMap ? joinColumn.getEntityValue(subject.generatedMap) : undefined;
+                            const generatedColumnValue = subject.generatedMap ? referencedColumn.getEntityValue(subject.generatedMap) : undefined;
                             updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue || subRelatedEntity.generatedObjectId;
                         }
 
@@ -402,7 +402,7 @@ export class SubjectOperationExecutor {
             insertResult = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tableName, parentValuesMap);
 
             // second insert entity values into child class table
-            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, insertResult, undefined, alreadyInsertedSubjects);
+            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, insertResult.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName], undefined, alreadyInsertedSubjects);
             const secondGeneratedId = await this.queryRunner.insert(metadata.tableName, childValuesMap);
             if (!insertResult && secondGeneratedId) insertResult = secondGeneratedId;
 
@@ -414,7 +414,7 @@ export class SubjectOperationExecutor {
         }
 
         if (parentGeneratedId)
-            subject.parentGeneratedId = parentGeneratedId;
+            subject.parentGeneratedId = parentGeneratedId.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName];
 
         // todo: better if insert method will return object with all generated ids, object id, etc.
         if (insertResult.generatedMap)
@@ -901,7 +901,7 @@ export class SubjectOperationExecutor {
                 if (!id && joinColumn.referencedColumn!.isGenerated) {
                     const insertSubject = this.insertSubjects.find(subject => subject.entity === entity);
                     if (insertSubject && insertSubject.generatedMap)
-                        return joinColumn.getEntityValue(insertSubject.generatedMap);
+                        return joinColumn.referencedColumn!.getEntityValue(insertSubject.generatedMap);
                 }
                 if (!id && joinColumn.referencedColumn!.isObjectId) {
                     const insertSubject = this.insertSubjects.find(subject => subject.entity === entity);

@@ -14,6 +14,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {RandomGenerator} from "../../util/RandomGenerator";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -192,6 +193,9 @@ export class SqliteDriver implements Driver {
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToUtcDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
 
+        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
+            return RandomGenerator.uuid4();
+
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         }
@@ -280,6 +284,9 @@ export class SqliteDriver implements Driver {
 
         } else if (column.type === Boolean) {
             type += "boolean";
+
+        } else if (column.type === "uuid") {
+            return "varchar";
 
         } else if (column.type === "simple-array") {
             type += "text";

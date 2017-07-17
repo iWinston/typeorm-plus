@@ -49,6 +49,9 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
         if (!options.type && type)
             options = Object.assign({ type: type } as ColumnOptions, options);
 
+        if (options.generated)
+            options.generationStrategy = options.type === "uuid" ? "uuid" : "increment";
+
         // if we still don't have a type then we need to give error to user that type is required
         if (!options.type)
             throw new ColumnTypeUndefinedError(object, propertyName);
