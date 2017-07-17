@@ -33,6 +33,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return sql.trim();
     }
 
+    output(output: string): this {
+         return this.returning(output);
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------

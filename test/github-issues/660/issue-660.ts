@@ -44,7 +44,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
             .insert()
             .into(User)
             .values(user)
-            .returning("INSERTED.*")
+            .output("INSERTED.*")
             .disableEscaping()
             .getSql();
 
@@ -70,8 +70,8 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
 
         if (connection.driver instanceof SqlServerDriver) {
             expect(sql).to.equal("UPDATE user SET name = @0 OUTPUT INSERTED.* WHERE name = @1"); }
-        // else if (connection.driver instanceof PostgresDriver) {
-        //     expect(sql).to.equal("UPDATE user SET name = @0 RETURNING INSERTED.* WHERE name = @1"); }
+        else if (connection.driver instanceof PostgresDriver) {
+            expect(sql).to.equal("UPDATE user SET name = @0 RETURNING INSERTED.* WHERE name = @1"); }
         else { // this is arguably an error case, since .returning() is only supported by PostgreSQL and MSSQL
             expect(sql).to.equal("UPDATE user SET name = @0 WHERE name = @1"); }
     })));
@@ -90,8 +90,8 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
 
         if (connection.driver instanceof SqlServerDriver) {
             expect(sql).to.equal("DELETE FROM user OUTPUT DELETED.* WHERE name = @0"); }
-        // else if (connection.driver instanceof PostgresDriver) {
-        //     expect(sql).to.equal("DELETE FROM user RETURNING DELETED.* WHERE name = @0"); }
+        else if (connection.driver instanceof PostgresDriver) {
+            expect(sql).to.equal("DELETE FROM user RETURNING DELETED.* WHERE name = @0"); }
         else { // this is arguably an error case, since .returning() is only supported by PostgreSQL and MSSQL
             expect(sql).to.equal("DELETE FROM user WHERE name = @0"); }
     })));
