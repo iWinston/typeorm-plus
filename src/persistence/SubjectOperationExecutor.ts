@@ -195,13 +195,8 @@ export class SubjectOperationExecutor {
                             if (!relationId) {
 
                                 // if we don't have relation id then use special values
-                                if (referencedColumn.isGenerated && insertSubject.generatedMap) {
+                                if (referencedColumn.isGenerated && insertSubject.generatedMap)
                                     relationId = referencedColumn.getEntityValue(insertSubject.generatedMap);
-
-                                } else if (referencedColumn.isObjectId) {
-                                    relationId = insertSubject.generatedObjectId;
-
-                                }
                                 // todo: handle other special types too
                             }
                         }
@@ -217,12 +212,8 @@ export class SubjectOperationExecutor {
                             if (!relationId) {
 
                                 // if we don't have relation id then use special values
-                                if (referencedColumn.isGenerated && insertSubject.generatedMap) {
+                                if (referencedColumn.isGenerated && insertSubject.generatedMap)
                                     relationId = referencedColumn.getEntityValue(insertSubject.generatedMap);
-
-                                } else if (referencedColumn.isObjectId) {
-                                    relationId = insertSubject.generatedObjectId;
-                                }
                                 // todo: handle other special types too
                             }
                         }
@@ -255,13 +246,8 @@ export class SubjectOperationExecutor {
                             if (!relationIdOfEntityValue) {
                                 const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
                                 if (entityValueInsertSubject) {
-                                    if (joinColumn.referencedColumn!.isGenerated && entityValueInsertSubject.generatedMap) {
+                                    if (joinColumn.referencedColumn!.isGenerated && entityValueInsertSubject.generatedMap)
                                         relationIdOfEntityValue = joinColumn.referencedColumn!.getEntityValue(entityValueInsertSubject.generatedMap);
-
-                                    } else if (joinColumn.referencedColumn!.isObjectId) {
-                                        relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
-
-                                    }
                                 }
                             }
                             if (relationIdOfEntityValue) {
@@ -273,12 +259,8 @@ export class SubjectOperationExecutor {
                         if (entityValue) {
                             conditions[column.databaseName] = entityValue;
                         } else {
-                            if (subject.generatedMap) {
+                            if (subject.generatedMap)
                                 conditions[column.databaseName] = column.getEntityValue(subject.generatedMap);
-
-                            } else if (subject.generatedObjectId) {
-                                conditions[column.databaseName] = subject.generatedObjectId;
-                            }
                         }
                     }
                 });
@@ -317,9 +299,6 @@ export class SubjectOperationExecutor {
                                         if (entityValueInsertSubject) {
                                             if (columnRelationJoinColumn.referencedColumn!.isGenerated && entityValueInsertSubject.generatedMap) {
                                                 relationIdOfEntityValue = columnRelationJoinColumn.referencedColumn!.getEntityValue(entityValueInsertSubject.generatedMap);
-
-                                            } else if (columnRelationJoinColumn.referencedColumn!.isObjectId) {
-                                                relationIdOfEntityValue = entityValueInsertSubject.generatedObjectId;
                                             }
                                         }
                                     }
@@ -333,13 +312,8 @@ export class SubjectOperationExecutor {
                                 if (entityValue) {
                                     conditions[column.databaseName] = entityValue;
                                 } else {
-                                    if (entityValueInsertSubject && entityValueInsertSubject.generatedMap) {
+                                    if (entityValueInsertSubject && entityValueInsertSubject.generatedMap)
                                         conditions[column.databaseName] = column.getEntityValue(entityValueInsertSubject.generatedMap);
-
-                                    } else if (entityValueInsertSubject && entityValueInsertSubject.generatedObjectId) {
-                                        conditions[column.databaseName] = entityValueInsertSubject.generatedObjectId;
-
-                                    }
                                 }
                             }
                         });
@@ -355,18 +329,14 @@ export class SubjectOperationExecutor {
                             if (!id) {
                                 const insertSubject = this.insertSubjects.find(subject => subject.entity === columnValue);
                                 if (insertSubject) {
-                                    if (insertSubject.generatedMap) {
+                                    if (insertSubject.generatedMap)
                                         id = referencedColumn.getEntityValue(insertSubject.generatedMap);
-
-                                    } else if (insertSubject.generatedObjectId) {
-                                        id = insertSubject.generatedObjectId;
-                                    }
                                 }
                             }
                             updateOptions[joinColumn.databaseName] = id;
                         } else {
                             const generatedColumnValue = subject.generatedMap ? referencedColumn.getEntityValue(subject.generatedMap) : undefined;
-                            updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue || subRelatedEntity.generatedObjectId;
+                            updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue;
                         }
 
                         const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tableName, updateOptions, conditions);
@@ -512,8 +482,6 @@ export class SubjectOperationExecutor {
 
                         if (referencedColumn.isGenerated && alreadyInsertedSubject.generatedMap)
                             relationValue = referencedColumn.getEntityValue(alreadyInsertedSubject.generatedMap);
-                        if (referencedColumn.isObjectId)
-                            relationValue = alreadyInsertedSubject.generatedObjectId;
                         // if it references to create or update date columns
                         if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
                             relationValue = this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
@@ -903,11 +871,6 @@ export class SubjectOperationExecutor {
                     if (insertSubject && insertSubject.generatedMap)
                         return joinColumn.referencedColumn!.getEntityValue(insertSubject.generatedMap);
                 }
-                if (!id && joinColumn.referencedColumn!.isObjectId) {
-                    const insertSubject = this.insertSubjects.find(subject => subject.entity === entity);
-                    if (insertSubject)
-                        return insertSubject.generatedObjectId;
-                }
                 // todo: implement other special referenced column types (update date, create date, version, discriminator column, etc.)
 
                 return id;
@@ -994,8 +957,8 @@ export class SubjectOperationExecutor {
 
         // update entity columns that gets updated on each entity insert
         this.insertSubjects.forEach(subject => {
-            if (subject.generatedObjectId && subject.metadata.objectIdColumn)
-                subject.metadata.objectIdColumn.setEntityValue(subject.entity, subject.generatedObjectId);
+            // if (subject.generatedObjectId && subject.metadata.objectIdColumn)
+            //     subject.metadata.objectIdColumn.setEntityValue(subject.entity, subject.generatedObjectId);
 
             subject.metadata.generatedColumns.forEach(generatedColumn => {
                 if (!subject.generatedMap)

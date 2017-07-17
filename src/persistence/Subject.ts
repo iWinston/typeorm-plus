@@ -147,12 +147,6 @@ export class Subject {
     generatedMap?: ObjectLiteral;
 
     /**
-     * When subject is newly persisted it may have a generated object id.
-     * This value will be stored here. This is actual only for mongodb database.
-     */
-    generatedObjectId?: any;
-
-    /**
      * Generated id of the parent entity. Used in the class-table-inheritance.
      */
     parentGeneratedId?: any;

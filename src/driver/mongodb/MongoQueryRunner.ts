@@ -393,8 +393,11 @@ export class MongoQueryRunner implements QueryRunner {
         const results = await this.databaseConnection
             .collection(collectionName)
             .insertOne(keyValues);
-
-        return results.insertedId;
+        const generatedMap = this.connection.getMetadata(collectionName).objectIdColumn!.createValueMap(results.insertedId);
+        return {
+            result: results,
+            generatedMap: generatedMap
+        };
     }
 
     /**
