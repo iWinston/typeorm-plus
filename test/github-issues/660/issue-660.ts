@@ -58,8 +58,6 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
 
     it("should create an UPDATE statement, including RETURNING or OUTPUT clause as appropriate", () => Promise.all(connections.map(async connection => {
 
-        // await connection.manager.save(user);
-
         const sql = connection.createQueryBuilder()
             .update(User)
             .set({ name: "Joe Bloggs" })
@@ -74,6 +72,23 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
             expect(sql).to.equal("UPDATE user SET name = @0 RETURNING INSERTED.* WHERE name = @1"); }
         else { // this is arguably an error case, since .returning() is only supported by PostgreSQL and MSSQL
             expect(sql).to.equal("UPDATE user SET name = @0 WHERE name = @1"); }
+    })));
+
+    it("should perform update with OUTPUT correctly", () => Promise.all(connections.map(async connection => {
+
+        await connection.manager.save(user);
+
+        const updateUser = await connection.createQueryBuilder()
+            .update(User)
+            .set({ name: "Joe Bloggs" })
+            .where("name = :name", { name: user.name })
+            .output("INSERTED.*")
+            .execute();
+
+        updateUser.should.be.eql([
+            { id: 1, name: "Joe Bloggs" }
+        ]);
+
     })));
 
     it("should create a DELETE statement, including RETURNING or OUTPUT clause as appropriate", () => Promise.all(connections.map(async connection => {
