@@ -154,6 +154,10 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    output(output: string): this {
+         return this.returning(output);
+    }
+    
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
