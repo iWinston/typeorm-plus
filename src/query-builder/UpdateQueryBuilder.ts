@@ -158,7 +158,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof PostgresDriver) {
             this.expressionMap.returning = returning;
             return this;
-        } else throw new Error(`OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL`);
+        } else throw new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL");
     }
 
     // -------------------------------------------------------------------------
