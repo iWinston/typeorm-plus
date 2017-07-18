@@ -150,10 +150,15 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Optional returning/output clause.
      */
     returning(returning: string): this {
-        this.expressionMap.returning = returning;
-        return this;
+        if (this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof PostgresDriver) {
+            this.expressionMap.returning = returning;
+            return this;
+        } else throw new Error(`OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL`);
     }
 
+    /**
+     * Optional returning/output clause.
+     */
     output(output: string): this {
          return this.returning(output);
     }

@@ -34,8 +34,8 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
             expect(sql).to.equal("INSERT INTO user(name) OUTPUT inserted.* VALUES (@0)"); }
         else if (connection.driver instanceof PostgresDriver) {
             expect(sql).to.equal("INSERT INTO user(name) VALUES ($1) RETURNING *"); }
-        // else { // this is arguably an error case, since .returning() is only supported by PostgreSQL and MSSQL
-        //     expect(sql).to.equal("INSERT INTO user(name) VALUES (@0)"); }
+        else {
+            expect(new Error).to.be.an("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL"); }
     })));
 
     it("should perform insert with RETURNING or OUTPUT clause (PostgreSQL and MSSQL only)", () => Promise.all(connections.map(async connection => {
@@ -71,11 +71,11 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
             .getSql();
 
         if (connection.driver instanceof SqlServerDriver) {
-            expect(sql).to.equal("UPDATE user SET name = @0 OUTPUT inserted.* WHERE name = @1"); }
-        // else if (connection.driver instanceof PostgresDriver) {
-        //     expect(sql).to.equal("UPDATE user SET name = $1 WHERE name = $2 RETURNING *"); }
-        // else { // this is arguably an error case, since .returning() is only supported by PostgreSQL and MSSQL
-        //     expect(sql).to.equal("UPDATE user SET name = @0 WHERE name = @1"); }
+            expect(sql).to.equal("UPDATE user SET name = @0 OUTPUT inserted.* WHERE name = @1");
+        } else if (connection.driver instanceof PostgresDriver) {
+        //     expect(sql).to.equal("UPDATE user SET name = $1 WHERE name = $2 RETURNING *"); // todo: uncomment once RETURNING clause can be placed after WHERE
+        } else {
+            expect(new Error).to.be.an("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL"); }
     })));
 
     it("should perform update with RETURNING or OUTPUT clause (currently MSSQL only)", () => Promise.all(connections.map(async connection => {
@@ -86,7 +86,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
         await connection.manager.save(user);
 
         if (connection.driver instanceof SqlServerDriver) {
-            // should also be: || connection.driver instanceof PostgresDriver) but only when PostgreSQL RETURNING clause can be correctly placed after WHERE clause
+            // || connection.driver instanceof PostgresDriver) { // todo: uncomment once RETURNING clause can be placed after WHERE
             const returning = await connection.createQueryBuilder()
                 .update(User)
                 .set({ name: "Joe Bloggs" })
@@ -114,11 +114,11 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
             .getSql();
 
         if (connection.driver instanceof SqlServerDriver) {
-            expect(sql).to.equal("DELETE FROM user OUTPUT deleted.* WHERE name = @0"); }
-        // else if (connection.driver instanceof PostgresDriver) {
-        //     expect(sql).to.equal("DELETE FROM user WHERE name = $1 RETURNING *"); }
-        // else { // this is arguably an error case, since .returning() is only supported by PostgreSQL and MSSQL
-        //     expect(sql).to.equal("DELETE FROM user WHERE name = @0"); }
+            expect(sql).to.equal("DELETE FROM user OUTPUT deleted.* WHERE name = @0");
+        } else if (connection.driver instanceof PostgresDriver) {
+        //     expect(sql).to.equal("DELETE FROM user WHERE name = $1 RETURNING *"); // todo: uncomment once RETURNING clause can be placed after WHERE
+        } else {
+            expect(new Error).to.be.an("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL"); }
     })));
 
     it("should perform delete with RETURNING or OUTPUT clause (currently MSSQL only)", () => Promise.all(connections.map(async connection => {
@@ -129,7 +129,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
         await connection.manager.save(user);
 
         if (connection.driver instanceof SqlServerDriver) {
-            // should also be: || connection.driver instanceof PostgresDriver) but only when PostgreSQL RETURNING clause can be correctly placed after WHERE clause
+            // || connection.driver instanceof PostgresDriver) { // todo: uncomment once RETURNING clause can be placed after WHERE
             const returning = await connection.createQueryBuilder()
                 .delete()
                 .from(User)
