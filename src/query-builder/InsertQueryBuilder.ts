@@ -5,6 +5,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -21,6 +22,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     getQuery(): string {
         let sql = this.createInsertExpression();
         return sql.trim();
+    }
+
+    /**
+     * Optional returning/output clause.
+     */
+    output(output: string): this {
+         return this.returning(output);
     }
 
     // -------------------------------------------------------------------------
@@ -52,6 +60,16 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     values(values: ObjectLiteral|ObjectLiteral[]): this {
         this.expressionMap.valuesSet = values;
         return this;
+    }
+
+    /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string): this {
+        if (this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof PostgresDriver) {
+            this.expressionMap.returning = returning;
+            return this;
+        } else throw new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL");
     }
 
     // -------------------------------------------------------------------------
@@ -97,7 +115,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const columnNames = insertColumns.map(column => this.escape(column.databaseName)).join(", ");
 
         // generate sql query
-        return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values}`;
+        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
+            return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
+            return `INSERT INTO ${tableName}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
+        } else {
+            return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values}`;
+        }
     }
 
     /**

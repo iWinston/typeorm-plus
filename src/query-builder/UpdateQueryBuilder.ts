@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -28,8 +29,14 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     getQuery(): string {
         let sql = this.createUpdateExpression();
-        sql += this.createWhereExpression();
         return sql.trim();
+    }
+
+    /**
+     * Optional returning/output clause.
+     */
+    output(output: string): this {
+         return this.returning(output);
     }
 
     // -------------------------------------------------------------------------
@@ -143,6 +150,16 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string): this {
+        if (this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof PostgresDriver) {
+            this.expressionMap.returning = returning;
+            return this;
+        } else throw new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL");
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -176,9 +193,16 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // get a table name and all column database names
         const tableName = this.escape(this.getMainTableName());
+        const whereExpression = this.createWhereExpression();
 
         // generate and return sql update query
-        return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}`; // todo: how do we replace aliases in where to nothing?
+        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${this.expressionMap.returning}`;
+        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
+        } else {
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
+        }
     }
 
     /**

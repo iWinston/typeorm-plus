@@ -50,6 +50,11 @@ export class QueryExpressionMap {
     valuesSet?: ObjectLiteral|ObjectLiteral[];
 
     /**
+     * Optional returning (or output) clause for insert, update or delete queries.
+     */
+    returning: string = "";
+
+    /**
      * JOIN queries.
      */
     joinAttributes: JoinAttribute[] = [];
