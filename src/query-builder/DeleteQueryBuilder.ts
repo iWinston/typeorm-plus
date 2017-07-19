@@ -29,7 +29,6 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     getQuery(): string {
         let sql = this.createDeleteExpression();
-        sql += this.createWhereExpression();
         return sql.trim();
     }
 
@@ -172,13 +171,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     protected createDeleteExpression() {
         const tableName = this.escape(this.getMainTableName());
+        const whereExpression = this.createWhereExpression();
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `DELETE FROM ${tableName} RETURNING ${this.expressionMap.returning}`;
-
+            return `DELETE FROM ${tableName}${whereExpression} RETURNING ${this.expressionMap.returning}`;
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `DELETE FROM ${tableName} OUTPUT ${this.expressionMap.returning}`;
+            return `DELETE FROM ${tableName} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
         } else {
-            return `DELETE FROM ${tableName}`; // todo: how do we replace aliases in where to nothing?
+            return `DELETE FROM ${tableName}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
     }
 

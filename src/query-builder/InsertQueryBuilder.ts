@@ -117,7 +117,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         // generate sql query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
             return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values} RETURNING ${this.expressionMap.returning}`;
-
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
             return `INSERT INTO ${tableName}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
         } else {

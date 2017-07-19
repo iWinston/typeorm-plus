@@ -29,7 +29,6 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     getQuery(): string {
         let sql = this.createUpdateExpression();
-        sql += this.createWhereExpression();
         return sql.trim();
     }
 
@@ -194,15 +193,15 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // get a table name and all column database names
         const tableName = this.escape(this.getMainTableName());
+        const whereExpression = this.createWhereExpression();
 
         // generate and return sql update query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")} RETURNING ${this.expressionMap.returning}`;
-
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${this.expressionMap.returning}`;
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")} OUTPUT ${this.expressionMap.returning}`;
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
         } else {
-            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}`; // todo: how do we replace aliases in where to nothing?
+            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
     }
 
