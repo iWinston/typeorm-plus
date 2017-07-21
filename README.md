@@ -425,7 +425,7 @@ createConnection(/*...*/).then(connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    connection.manager
+    return connection.manager
             .persist(photo)
             .then(photo => {
                 console.log("Photo has been saved");
