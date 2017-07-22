@@ -84,7 +84,7 @@ export class EntityManager {
      * Wraps given function execution (and all operations made there) in a transaction.
      * All database operations must be executed using provided entity manager.
      */
-    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
+    async transaction<T>(runInTransaction: (entityManger: EntityManager) => Promise<T>): Promise<T> {
 
         if (this.connection.driver instanceof MongoDriver)
             throw new Error(`Transactions aren't supported by MongoDB.`);
