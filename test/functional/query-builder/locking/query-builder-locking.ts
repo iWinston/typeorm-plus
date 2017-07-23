@@ -275,6 +275,8 @@ describe("query builder > locking", () => {
                         .getOne().should.be.rejectedWith(LockNotSupportedOnGivenDriverError)
                 ]);
             });
+
+        return;
     })));
 
 });
