@@ -3,8 +3,9 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
+import {PostRepository} from "./repository/PostRepository";
 
-describe("transaction > single query runner", () => {
+describe.only("transaction > single query runner", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -23,6 +24,8 @@ describe("transaction > single query runner", () => {
             expect(transactionalEntityManager.getRepository(Post).queryRunner).to.exist;
             transactionalEntityManager.getRepository(Post).queryRunner!.should.be.equal(originalQueryRunner);
             transactionalEntityManager.getRepository(Post).manager.should.be.equal(transactionalEntityManager);
+
+            transactionalEntityManager.getCustomRepository(PostRepository).getManager().should.be.equal(transactionalEntityManager);
         });
 
     })));
