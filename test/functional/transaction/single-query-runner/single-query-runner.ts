@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {expect} from "chai";
 import {PostRepository} from "./repository/PostRepository";
 
-describe.only("transaction > single query runner", () => {
+describe("transaction > single query runner", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
