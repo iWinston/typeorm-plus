@@ -3,7 +3,6 @@ import {CommandUtils} from "./CommandUtils";
 import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-const mkdirp = require("mkdirp");
 const chalk = require("chalk");
 
 /**

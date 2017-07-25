@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column} from "../../../src/index";
+import {Column, PrimaryGeneratedColumn} from "../../../src/index";
 
 export class BasePost {
 

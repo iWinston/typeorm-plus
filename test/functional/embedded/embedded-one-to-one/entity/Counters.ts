@@ -1,6 +1,5 @@
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
-import {Embedded} from "../../../../../src/decorator/Embedded";
 import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
 import {User} from "./User";
 import {Subcounters} from "./Subcounters";

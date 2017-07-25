@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {Category} from "./entity/Category";
 import {Connection} from "../../../../src/connection/Connection";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
 // fix closure tables later
 describe("closure-table", () => {

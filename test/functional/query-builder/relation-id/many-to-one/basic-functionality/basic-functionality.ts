@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {
     closeTestingConnections,
@@ -11,8 +10,6 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
 import {PostCategory} from "./entity/PostCategory";
-
-const should = chai.should();
 
 describe("query builder > relation-id > many-to-one > basic-functionality", () => {
     

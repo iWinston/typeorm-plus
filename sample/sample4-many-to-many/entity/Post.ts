@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Entity, ManyToMany} from "../../../src/index";
+import {Column, Entity, ManyToMany, PrimaryGeneratedColumn} from "../../../src/index";
 import {PostDetails} from "./PostDetails";
 import {PostCategory} from "./PostCategory";
 import {PostAuthor} from "./PostAuthor";

@@ -1,5 +1,4 @@
 import {Column} from "../../../../../src/decorator/columns/Column";
-import {Embedded} from "../../../../../src/decorator/Embedded";
 import {Subcounters} from "./Subcounters";
 
 export class Counters {

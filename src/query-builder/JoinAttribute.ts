@@ -56,7 +56,7 @@ export class JoinAttribute {
 
     constructor(private connection: Connection,
                 private queryExpressionMap: QueryExpressionMap,
-                private joinAttribute?: JoinAttribute) {
+                joinAttribute?: JoinAttribute) {
         Object.assign(this, joinAttribute || {});
     }
 

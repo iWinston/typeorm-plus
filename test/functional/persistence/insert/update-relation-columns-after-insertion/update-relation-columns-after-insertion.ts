@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Connection} from "../../../../../src/connection/Connection";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 
 describe("persistence > insert > update-relation-columns-after-insertion", () => {
 

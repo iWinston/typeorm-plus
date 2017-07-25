@@ -99,7 +99,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
      * Gets custom repository's managed entity.
      * If given custom repository does not manage any entity then undefined will be returned.
      */
-    private getCustomRepositoryTarget<T>(customRepository: any): Function|string|undefined {
+    private getCustomRepositoryTarget(customRepository: any): Function|string|undefined {
         const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
             return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
         });

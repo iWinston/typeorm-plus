@@ -1,5 +1,4 @@
 import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {Embedded} from "../../../../../../../src/decorator/Embedded";
 import {Category} from "./Category";
 import {Subcounters} from "./Subcounters";
 import {OneToOne} from "../../../../../../../src/decorator/relations/OneToOne";

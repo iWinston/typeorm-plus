@@ -14,7 +14,6 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
-import {Repository} from "../repository/Repository";
 
 /**
  * Contains all entity metadata.

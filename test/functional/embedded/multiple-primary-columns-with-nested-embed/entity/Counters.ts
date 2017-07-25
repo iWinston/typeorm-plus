@@ -1,6 +1,5 @@
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Embedded} from "../../../../../src/decorator/Embedded";
 import {Subcounters} from "./Subcounters";
 
 export class Counters {

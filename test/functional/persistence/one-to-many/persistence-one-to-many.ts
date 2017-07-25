@@ -3,8 +3,7 @@ import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-import {FindManyOptions} from "../../../../src/find-options/FindManyOptions";
-import {closeTestingConnections, reloadTestingDatabases, createTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
 describe("persistence > one-to-many", function() {
 

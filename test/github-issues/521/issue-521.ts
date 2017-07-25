@@ -1,7 +1,6 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
 import {Car} from "./entity/Car";
 
 describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced", () => {
@@ -26,6 +25,7 @@ describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced
                 name: "Toyota",
             })
             .getSqlAndParameters();
+        query.should.not.be.empty;
         return parameters.length.should.eql(2);
     })));
 

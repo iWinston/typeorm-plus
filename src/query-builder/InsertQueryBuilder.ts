@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
-import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 

@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
@@ -7,8 +6,6 @@ import {User} from "./entity/User";
 import {EventMember} from "./entity/EventMember";
 import {Event} from "./entity/Event";
 import {Person} from "./entity/Person";
-
-const should = chai.should();
 
 describe("relations > multiple-primary-keys > other-cases", () => {
     

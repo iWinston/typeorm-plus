@@ -2,7 +2,6 @@ import {createConnection} from "../index";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
-import {highlight} from "cli-highlight";
 import {PlatformTools} from "../platform/PlatformTools";
 const chalk = require("chalk");
 

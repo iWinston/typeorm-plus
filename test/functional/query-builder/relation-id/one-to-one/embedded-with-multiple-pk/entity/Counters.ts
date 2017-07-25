@@ -1,5 +1,4 @@
 import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {Embedded} from "../../../../../../../src/decorator/Embedded";
 import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
 import {OneToOne} from "../../../../../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../../../../../src/decorator/relations/JoinColumn";

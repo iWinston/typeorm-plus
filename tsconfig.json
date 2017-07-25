@@ -15,7 +15,8 @@
         "noImplicitReturns": true,
         "stripInternal": true,
         "pretty": true,
-        "strictNullChecks": true
+        "strictNullChecks": true,
+        "noUnusedLocals": true
     },
     "exclude": [
         "tmp",

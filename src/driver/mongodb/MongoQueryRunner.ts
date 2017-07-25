@@ -37,7 +37,6 @@ import {
     UpdateWriteOpResult
 } from "./typings";
 import {Connection} from "../../connection/Connection";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {ReadStream} from "fs";
 
 /**

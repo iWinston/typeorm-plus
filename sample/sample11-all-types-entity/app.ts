@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {EverythingEntity} from "./entity/EverythingEntity";
 
 const options: ConnectionOptions = {

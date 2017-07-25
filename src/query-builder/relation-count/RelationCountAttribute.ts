@@ -31,7 +31,7 @@ export class RelationCountAttribute {
     // -------------------------------------------------------------------------
 
     constructor(private expressionMap: QueryExpressionMap,
-                private relationCountAttribute?: Partial<RelationCountAttribute>) {
+                relationCountAttribute?: Partial<RelationCountAttribute>) {
         Object.assign(this, relationCountAttribute || {});
     }
 

@@ -2,7 +2,6 @@ import "reflect-metadata";
 import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
-import {MigrationExecutor} from "../../src/migration/MigrationExecutor";
 
 const options: ConnectionOptions = {
     type: "mysql",

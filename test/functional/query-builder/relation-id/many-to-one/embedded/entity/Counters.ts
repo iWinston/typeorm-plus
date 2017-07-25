@@ -1,5 +1,4 @@
 import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {Embedded} from "../../../../../../../src/decorator/Embedded";
 import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
 import {Category} from "./Category";
 import {Subcounters} from "./Subcounters";

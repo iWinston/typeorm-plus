@@ -529,7 +529,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Converts FindOptions into mongodb order by criteria.
      */
-    protected convertFindOptionsOrderToOrderCriteria<Entity, P>(order: { [P in keyof Entity]?: "ASC"|"DESC" }) {
+    protected convertFindOptionsOrderToOrderCriteria(order: ObjectLiteral) {
         const orderCriteria: ObjectLiteral = {};
         Object.keys(order).forEach(key => orderCriteria[key] = [key, order[key]!.toLowerCase()]);
         return orderCriteria;

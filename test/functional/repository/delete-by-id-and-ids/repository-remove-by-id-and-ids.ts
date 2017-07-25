@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
 describe("repository > removeById and removeByIds methods", function() {
 

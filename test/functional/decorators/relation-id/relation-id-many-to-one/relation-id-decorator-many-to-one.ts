@@ -1,12 +1,9 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
-
-const should = chai.should();
 
 describe("decorators > relation-id-decorator > many-to-one", () => {
     

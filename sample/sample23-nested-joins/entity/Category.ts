@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
+import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
 import {Author} from "./Author";
 import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../src/decorator/relations/JoinTable";

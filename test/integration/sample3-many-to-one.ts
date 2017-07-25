@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
-import {getConnectionManager, createConnection} from "../../src/index";
+import {createConnection} from "../../src/index";
 import {Repository} from "../../src/repository/Repository";
 import {PostDetails} from "../../sample/sample3-many-to-one/entity/PostDetails";
 import {Post} from "../../sample/sample3-many-to-one/entity/Post";

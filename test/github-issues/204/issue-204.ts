@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Record} from "./entity/Record";
 import {Connection} from "../../../src/connection/Connection";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {RecordData} from "./entity/RecordData";
 
 describe("github issues > #204 jsonb array is not persisted correctly", () => {

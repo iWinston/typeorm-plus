@@ -1,11 +1,8 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {ConnectionMetadataBuilder} from "../../../src/connection/ConnectionMetadataBuilder";
 import {EntityMetadataValidator} from "../../../src/metadata-builder/EntityMetadataValidator";
-
-const should = chai.should();
 
 describe("entity-metadata-validator", () => {
 

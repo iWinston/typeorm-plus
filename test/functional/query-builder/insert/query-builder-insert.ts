@@ -1,12 +1,9 @@
 import "reflect-metadata";
-import * as chai from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {expect} from "chai";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
-import {expect} from "chai";
-
-const should = chai.should();
 
 describe("query builder > insert", () => {
     

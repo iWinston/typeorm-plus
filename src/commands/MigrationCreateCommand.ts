@@ -1,6 +1,5 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
-const mkdirp = require("mkdirp");
 const chalk = require("chalk");
 
 /**

@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column} from "../../../src/index";
+import {Column, PrimaryGeneratedColumn} from "../../../src/index";
 import {Index} from "../../../src/decorator/Index";
 
 @Index("my_index_with_id_and_text", ["id", "text"])

@@ -1,5 +1,4 @@
 import {Column} from "../../../../../src/decorator/columns/Column";
-import {Embedded} from "../../../../../src/decorator/Embedded";
 import {CreateDateColumn} from "../../../../../src/decorator/columns/CreateDateColumn";
 import {UpdateDateColumn} from "../../../../../src/decorator/columns/UpdateDateColumn";
 import {Subcounters} from "./Subcounters";

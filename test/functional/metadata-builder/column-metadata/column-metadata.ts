@@ -1,17 +1,10 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
-import {
-    closeTestingConnections, createTestingConnections, reloadTestingDatabases,
-    setupTestingConnections
-} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {Subcounters} from "./entity/Subcounters";
-import {getConnectionManager} from "../../../../src/index";
-
-const should = chai.should();
 
 describe("metadata-builder > ColumnMetadata", () => {
 

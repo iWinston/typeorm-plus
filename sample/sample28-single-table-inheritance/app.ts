@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Employee} from "./entity/Employee";
 import {Homesitter} from "./entity/Homesitter";
 import {Student} from "./entity/Student";

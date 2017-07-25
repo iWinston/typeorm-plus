@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
@@ -35,10 +35,10 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
 
         // also make sure that local date really was saved as a local date (including timezone)
 
-        const rawPost = await connection.manager
-            .createQueryBuilder(Post, "post")
-            .where("post.title = :title", { title: "Hello Post #1" })
-            .getRawOne();
+        // const rawPost = await connection.manager
+        //     .createQueryBuilder(Post, "post")
+        //     .where("post.title = :title", { title: "Hello Post #1" })
+        //     .getRawOne();
 
         // const date = !(rawPost["post_date"] instanceof Date) ? new Date(rawPost["post_date"]) : rawPost["post_date"];
         // date.toISOString().should.be.equal("2017-01-10T12:38:06.000Z");

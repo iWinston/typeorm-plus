@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Record} from "./entity/Record";
 import {Connection} from "../../../src/connection/Connection";
-import {createTestingConnections, closeTestingConnections} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
 describe("jsonb type", () => {
 

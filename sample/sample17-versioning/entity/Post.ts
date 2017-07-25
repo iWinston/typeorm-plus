@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
+import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
 import {VersionColumn} from "../../../src/decorator/columns/VersionColumn";
 
 @Entity("sample17_post")

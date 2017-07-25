@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Entity, OneToMany} from "../../../src/index";
+import {Column, Entity, OneToMany, PrimaryGeneratedColumn} from "../../../src/index";
 import {PostDetails} from "./PostDetails";
 
 @Entity("sample10_chapter")

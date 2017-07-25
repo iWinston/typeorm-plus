@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
 import {
     closeTestingConnections,
@@ -12,8 +11,6 @@ import {Category} from "./entity/Category";
 import {Counters} from "./entity/Counters";
 import {User} from "./entity/User";
 import {Subcounters} from "./entity/Subcounters";
-
-const should = chai.should();
 
 describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk", () => {
 

@@ -2,7 +2,6 @@ import "reflect-metadata";
 import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
-import {MigrationExecutor} from "../../src/migration/MigrationExecutor";
 import {PostRepository} from "./repository/PostRepository";
 import {AuthorRepository} from "./repository/AuthorRepository";
 import {UserRepository} from "./repository/UserRepository";
@@ -30,11 +29,13 @@ createConnection(options).then(async connection => {
         .getCustomRepository(AuthorRepository)
         .createAndSave("Umed", "Khudoiberdiev");
 
+    console.log("Author saved: ", author);
+
     const loadedAuthor = await connection
         .getCustomRepository(AuthorRepository)
         .findMyAuthor();
 
-    console.log("Author persisted! Loaded author: ", loadedAuthor);
+    console.log("Author loaded: ", loadedAuthor);
 
     // second type of custom repository
 

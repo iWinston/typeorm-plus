@@ -1,15 +1,12 @@
 import "reflect-metadata";
-import * as chai from "chai";
 import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Tag} from "./entity/Tag";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
 import {User} from "./entity/User";
-
-const should = chai.should();
 
 describe("query builder > joins", () => {
     

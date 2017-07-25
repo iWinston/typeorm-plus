@@ -1,11 +1,8 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
-import * as chai from "chai";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
-
-const should = chai.should();
 
 describe("query builder > order-by", () => {
 

@@ -1,6 +1,5 @@
 import {TreeRepository} from "./TreeRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {Connection} from "../connection/Connection";
 import {Repository} from "./Repository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoRepository} from "./MongoRepository";
