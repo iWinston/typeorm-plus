@@ -51,6 +51,41 @@ describe("mongodb > MongoRepository", () => {
 
     })));
 
+    it("should be able to use entity cursor which will return instances of entity classes", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getMongoRepository(Post);
+
+        // save few posts
+        const firstPost = new Post();
+        firstPost.title = "Post #1";
+        firstPost.text = "Everything about post #1";
+        await postRepository.save(firstPost);
+
+        const secondPost = new Post();
+        secondPost.title = "Post #2";
+        secondPost.text = "Everything about post #2";
+        await postRepository.save(secondPost);
+
+        const loadedPosts = await postRepository.find({
+            where: {
+                $or: [
+                    {
+                        title: "Post #1",
+                    },
+                    {
+                        text: "Everything about post #1"
+                    }
+                ]
+            }
+        });
+
+        loadedPosts.length.should.be.equal(1);
+        loadedPosts[0].should.be.instanceOf(Post);
+        loadedPosts[0].id.should.be.eql(firstPost.id);
+        loadedPosts[0].title.should.be.equal("Post #1");
+        loadedPosts[0].text.should.be.equal("Everything about post #1");
+
+    })));
+
     // todo: cover other methods as well
 
 });
