@@ -16,10 +16,10 @@ export class Question {
     @Column()
     uuid2: string;
 
-    @Column("varchar", { nullable: true })
+    @Column("nvarchar", { nullable: true })
     uuid3: string|null;
 
-    @Column("varchar", { nullable: true })
+    @Column("nvarchar", { nullable: true })
     @Generated("uuid")
     uuid4: string|null;
 

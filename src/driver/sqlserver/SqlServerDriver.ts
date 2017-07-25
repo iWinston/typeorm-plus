@@ -16,6 +16,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MssqlParameter} from "./MssqlParameter";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {RandomGenerator} from "../../util/RandomGenerator";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -257,9 +258,11 @@ export class SqlServerDriver implements Driver {
             || columnMetadata.type === "datetimeoffset") {
             return DateUtils.mixedDateToDate(value, true);
 
+        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
+            return RandomGenerator.uuid4();
+
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
-
         }
 
         return value;
@@ -298,42 +301,43 @@ export class SqlServerDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
-        let type = "";
         if (column.type === Number) {
-            type += "int";
+            return "int";
 
         } else if (column.type === String) {
-            type += "nvarchar";
+            return "nvarchar";
 
         } else if (column.type === Date) {
-            type += "datetime";
+            return "datetime";
 
         } else if (column.type === Boolean) {
-            type += "bit";
+            return "bit";
 
         } else if ((column.type as any) === Buffer) {
-            type += "binary";
+            return "binary";
+
+        } else if (column.type === "uuid") {
+            return "nvarchar";
 
         } else if (column.type === "simple-array") {
-            type += "ntext";
+            return "ntext";
+
+        } else if (column.type === "integer") {
+            return "int";
+
+        } else if (column.type === "dec") {
+            return "decimal";
+
+        } else if (column.type === "float" && (column.precision && (column.precision! >= 1 && column.precision! < 25))) {
+            return "real";
+
+        } else if (column.type === "double precision") {
+            return "float";
 
         } else {
-            type += column.type;
+            return column.type as string || "";
         }
 
-        // make sure aliases to have original type names
-        if (type === "integer") {
-            type = "int";
-        } else if (type === "dec") {
-            type = "decimal";
-        } else if (type === "float" && (column.precision && (column.precision! >= 1 && column.precision! < 25))) {
-            type = "real";
-        }
-
-        if (type === "double precision")
-            type = "float";
-
-        return type;
     }
 
     /**
