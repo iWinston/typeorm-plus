@@ -5,6 +5,7 @@ import {IndexSchema} from "../schema-builder/schema/IndexSchema";
 import {Connection} from "../connection/Connection";
 import {ReadStream} from "fs";
 import {InsertResult} from "../driver/InsertResult";
+import {EntityManager} from "../entity-manager/EntityManager";
 
 /**
  * Runs queries on a single database connection.
@@ -17,6 +18,11 @@ export interface QueryRunner {
      * Connection used by this query runner.
      */
     readonly connection: Connection;
+
+    /**
+     * Isolated entity manager working only with current query runner.
+     */
+    readonly manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.

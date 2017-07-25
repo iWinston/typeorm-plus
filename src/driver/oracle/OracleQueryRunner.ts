@@ -12,6 +12,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {OracleDriver} from "./OracleDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
+import {EntityManager} from "../../entity-manager/EntityManager";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -33,6 +34,11 @@ export class OracleQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Isolated entity manager working only with current query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.

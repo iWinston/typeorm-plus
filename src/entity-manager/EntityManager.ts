@@ -71,8 +71,11 @@ export class EntityManager {
 
     constructor(connection: Connection, queryRunner?: QueryRunner) {
         this.connection = connection;
-        if (queryRunner)
+        if (queryRunner) {
             this.queryRunner = queryRunner;
+            // dynamic: this.queryRunner = manager;
+            Object.assign(this.queryRunner, { manager: this });
+        }
     }
 
     // -------------------------------------------------------------------------

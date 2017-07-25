@@ -13,6 +13,7 @@ import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
 import {MssqlParameter} from "./MssqlParameter";
 import {OrmUtils} from "../../util/OrmUtils";
+import {EntityManager} from "../../entity-manager/EntityManager";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -32,6 +33,11 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Isolated entity manager working only with current query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.

@@ -37,6 +37,7 @@ import {
 } from "./typings";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
+import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -51,6 +52,11 @@ export class MongoQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Isolated entity manager working only with current query runner.
+     */
+    manager: MongoEntityManager;
 
     /**
      * Indicates if connection for this query runner is released.

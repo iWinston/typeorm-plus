@@ -359,7 +359,10 @@ export class Connection {
      * manually control your database transaction.
      */
     createQueryRunner(): QueryRunner {
-        return this.driver.createQueryRunner();
+        const queryRunner = this.driver.createQueryRunner();
+        const manager = new EntityManagerFactory().create(this, queryRunner);
+        Object.assign(queryRunner, { manager: manager });
+        return queryRunner;
     }
 
     /**
