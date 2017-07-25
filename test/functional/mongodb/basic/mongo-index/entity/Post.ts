@@ -23,7 +23,7 @@ export class Post {
     name: string;
 
     @Column()
-    @Index()
+    @Index({ unique: true })
     count: number;
 
 }
