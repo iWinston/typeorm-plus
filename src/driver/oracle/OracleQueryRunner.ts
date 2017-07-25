@@ -198,11 +198,16 @@ export class OracleQueryRunner implements QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
+    async insert(tableName: string, keyValues: ObjectLiteral): Promise<any> {
+        // todo: fix generated columns
+        let generatedColumn: ColumnMetadata|undefined;
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `"${key}"`).join(", ");
         const values = keys.map(key => ":" + key).join(", ");
         const parameters = keys.map(key => keyValues[key]);
+        const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
+        if (generatedColumns.length > 0)
+            generatedColumn = generatedColumns.find(column => column.isPrimary && column.isGenerated);
 
         const insertSql = columns.length > 0
             ? `INSERT INTO "${tableName}" (${columns}) VALUES (${values})`
@@ -343,10 +348,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
 
             // create primary key schema
             tableSchema.primaryKeys = constraints
-                .filter(constraint => 
+                .filter(constraint =>
                     constraint["TABLE_NAME"] === tableSchema.name && constraint["CONSTRAINT_TYPE"] === "P"
                 )
-                .map(constraint => 
+                .map(constraint =>
                     new PrimaryKeySchema(constraint["CONSTRAINT_NAME"], constraint["COLUMN_NAME"])
                 );
 
