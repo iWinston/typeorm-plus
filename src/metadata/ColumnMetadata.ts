@@ -3,7 +3,6 @@ import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 
@@ -419,10 +418,10 @@ export class ColumnMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(namingStrategy: NamingStrategyInterface): this {
+    build(connection: Connection): this {
         this.propertyPath = this.buildPropertyPath();
-        this.databaseName = this.buildDatabaseName(namingStrategy);
-        this.databaseNameWithoutPrefixes = namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);
+        this.databaseName = this.buildDatabaseName(connection);
+        this.databaseNameWithoutPrefixes = connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);
         return this;
     }
 
@@ -441,9 +440,9 @@ export class ColumnMetadata {
         return path + this.propertyName;
     }
 
-    protected buildDatabaseName(namingStrategy: NamingStrategyInterface): string {
+    protected buildDatabaseName(connection: Connection): string {
         const propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPropertyNames : [];
-        return namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
+        return connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
     }
 
 }

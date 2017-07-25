@@ -1,10 +1,11 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {EntityMetadata} from "./EntityMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationIdMetadata} from "./RelationIdMetadata";
 import {RelationCountMetadata} from "./RelationCountMetadata";
+import {Connection} from "../connection/Connection";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**
  * Contains all information about entity's embedded property.
@@ -141,9 +142,9 @@ export class EmbeddedMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(namingStrategy: NamingStrategyInterface): this {
-        this.embeddeds.forEach(embedded => embedded.build(namingStrategy));
-        this.prefix = this.buildPrefix();
+    build(connection: Connection): this {
+        this.embeddeds.forEach(embedded => embedded.build(connection));
+        this.prefix = this.buildPrefix(connection);
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.embeddedMetadataTree = this.buildEmbeddedMetadataTree();
         this.columnsFromTree = this.buildColumnsFromTree();
@@ -155,10 +156,13 @@ export class EmbeddedMetadata {
     // Protected Methods
     // ---------------------------------------------------------------------
 
-    protected buildPrefix(): string {
+    protected buildPrefix(connection: Connection): string {
+        if (connection.driver instanceof MongoDriver)
+            return this.propertyName;
+
         let prefixes: string[] = [];
         if (this.parentEmbeddedMetadata)
-            prefixes.push(this.parentEmbeddedMetadata.buildPrefix());
+            prefixes.push(this.parentEmbeddedMetadata.buildPrefix(connection));
 
         if (this.customPrefix === undefined) {
             prefixes.push(this.propertyName);

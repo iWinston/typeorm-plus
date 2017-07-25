@@ -187,7 +187,7 @@ export class EntityMetadataBuilder {
                         }
                     });
                     metadata.registerColumn(column);
-                    column.build(this.connection.namingStrategy);
+                    column.build(this.connection);
                     return column;
                 });
 
@@ -315,12 +315,12 @@ export class EntityMetadataBuilder {
      * Computes all entity metadata's computed properties, and all its sub-metadatas (relations, columns, embeds, etc).
      */
     protected computeEntityMetadata(entityMetadata: EntityMetadata) {
-        entityMetadata.embeddeds.forEach(embedded => embedded.build(this.connection.namingStrategy));
+        entityMetadata.embeddeds.forEach(embedded => embedded.build(this.connection));
         entityMetadata.embeddeds.forEach(embedded => {
-            embedded.columnsFromTree.forEach(column => column.build(this.connection.namingStrategy));
+            embedded.columnsFromTree.forEach(column => column.build(this.connection));
             embedded.relationsFromTree.forEach(relation => relation.build());
         });
-        entityMetadata.ownColumns.forEach(column => column.build(this.connection.namingStrategy));
+        entityMetadata.ownColumns.forEach(column => column.build(this.connection));
         entityMetadata.ownRelations.forEach(relation => relation.build());
         entityMetadata.relations = entityMetadata.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), entityMetadata.ownRelations);
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(relation => relation.isOneToOne);
