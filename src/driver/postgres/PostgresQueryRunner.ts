@@ -437,7 +437,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
             .filter(column => column.isUnique)
             .map(column => `, CONSTRAINT "uk_${table.name}_${column.name}" UNIQUE ("${column.name}")`)
             .join(" ");
-        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
         if (primaryKeyColumns.length > 0)
             sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
         sql += `)`;
@@ -783,8 +783,8 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
             c += " " + this.connection.driver.createFullType(column);
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isPrimary)
-            c += " PRIMARY KEY";
+        // if (column.isPrimary)
+        //     c += " PRIMARY KEY";
         if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
             c += " DEFAULT " + column.default;
         }
