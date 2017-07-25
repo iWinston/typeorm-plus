@@ -12,6 +12,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {RandomGenerator} from "../../util/RandomGenerator";
 
 /**
  * Organizes communication with WebSQL in the browser.
@@ -209,6 +210,9 @@ export class WebsqlDriver implements Driver {
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
+        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
+            return RandomGenerator.uuid4();
+
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
@@ -252,27 +256,30 @@ export class WebsqlDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
-        let type = "";
-        if (column.type === Number) {
-            type += "integer";
+        if (column.type === Number || column.type === "int") {
+            return "integer";
 
         } else if (column.type === String) {
-            type += "varchar";
+            return "varchar";
 
         } else if (column.type === Date) {
-            type += "datetime";
+            return "datetime";
+
+        } else if ((column.type as any) === Buffer) {
+            return "blob";
 
         } else if (column.type === Boolean) {
-            type += "boolean";
+            return "boolean";
+
+        } else if (column.type === "uuid") {
+            return "varchar";
 
         } else if (column.type === "simple-array") {
-            type += "text";
+            return "text";
 
         } else {
-            type += column.type;
+            return column.type as string || "";
         }
-
-        return type;
     }
 
     /**

@@ -196,8 +196,7 @@ describe("Connection", () => {
         after(() => closeTestingConnections(connections));
 
         it("should return sql log properly", () => Promise.all(connections.map(async connection => {
-            const sql = await connection.logSyncSchema();
-            sql.should.not.be.empty;
+            await connection.logSyncSchema();
             // console.log(sql);
         })));
 

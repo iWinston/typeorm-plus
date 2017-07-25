@@ -269,33 +269,30 @@ export class SqliteDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
-        let type = "";
         if (column.type === Number || column.type === "int") {
-            type += "integer";
+            return "integer";
 
         } else if (column.type === String) {
-            type += "varchar";
+            return "varchar";
 
         } else if (column.type === Date) {
-            type += "datetime";
+            return "datetime";
 
         } else if ((column.type as any) === Buffer) {
-            type += "blob";
+            return "blob";
 
         } else if (column.type === Boolean) {
-            type += "boolean";
+            return "boolean";
 
         } else if (column.type === "uuid") {
             return "varchar";
 
         } else if (column.type === "simple-array") {
-            type += "text";
+            return "text";
 
         } else {
-            type += column.type;
+            return column.type as string || "";
         }
-
-        return type;
     }
 
     /**
