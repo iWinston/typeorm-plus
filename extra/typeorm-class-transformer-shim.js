@@ -28,6 +28,8 @@ const class_transformer_1 = require("class-transformer"); // import {Type} from 
 /* export */
 function Column(typeOrOptions, options) {
     return function (object, propertyName) {
+        if (typeOrOptions instanceof Function)
+            class_transformer_1.Type(typeOrOptions)(object, propertyName);
     };
 }
 exports.Column = Column;
@@ -43,6 +45,15 @@ exports.CreateDateColumn = CreateDateColumn;
     };
 }
 exports.DiscriminatorColumn = DiscriminatorColumn;
+
+/* export */
+function ObjectIdColumn(typeOrOptions, options) {
+    return function (object, propertyName) {
+        if (typeOrOptions instanceof Function)
+            class_transformer_1.Type(typeOrOptions)(object, propertyName);
+    };
+}
+exports.ObjectIdColumn = ObjectIdColumn;
 
 /* export */ function PrimaryColumn(typeOrOptions, options) {
     return function (object, propertyName) {
@@ -269,9 +280,33 @@ exports.TreeChildren = TreeChildren;
 }
 exports.TreeLevelColumn = TreeLevelColumn;
 
-/* export */ function TreeParent(options) {
+/* export */ function TreeParent(typeFunction) {
     return function (object, propertyName) {
         class_transformer_1.Type(typeFunction)(object, propertyName);
     };
 }
 exports.TreeParent = TreeParent;
+
+// other
+
+/* export */ function DiscriminatorValue(options) {
+    return function (object, propertyName) {
+    };
+}
+exports.DiscriminatorValue = DiscriminatorValue;
+
+/**
+ * @deprecated
+ */
+/* export */ function Embedded(typeFunction) {
+    return function (object, propertyName) {
+        class_transformer_1.Type(typeFunction)(object, propertyName);
+    };
+}
+exports.Embedded = Embedded;
+
+/* export */ function Index() {
+    return function (object, propertyName) {
+    };
+}
+exports.Index = Index;

@@ -41,6 +41,12 @@ exports.CreateDateColumn = CreateDateColumn;
 }
 exports.DiscriminatorColumn = DiscriminatorColumn;
 
+/* export */ function ObjectIdColumn(columnOptions) {
+    return function (object, propertyName) {
+    };
+}
+exports.ObjectIdColumn = ObjectIdColumn;
+
 /* export */ function PrimaryColumn(typeOrOptions, options) {
     return function (object, propertyName) {
     };
@@ -64,6 +70,50 @@ exports.UpdateDateColumn = UpdateDateColumn;
     };
 }
 exports.VersionColumn = VersionColumn;
+
+// entities
+
+/* export */ function AbstractEntity() {
+    return function (object) {
+    };
+}
+exports.AbstractEntity = AbstractEntity;
+
+/* export */ function ClassEntityChild(tableName, options) {
+    return function (object) {
+    };
+}
+exports.ClassEntityChild = ClassEntityChild;
+
+/* export */ function ClosureEntity(name, options) {
+    return function (object) {
+    };
+}
+exports.ClosureEntity = ClosureEntity;
+
+/* export */ function EmbeddableEntity() {
+    return function (object) {
+    };
+}
+exports.EmbeddableEntity = EmbeddableEntity;
+
+/* export */ function SingleEntityChild() {
+    return function (object) {
+    };
+}
+exports.SingleEntityChild = SingleEntityChild;
+
+/* export */ function Entity(name, options) {
+    return function (object) {
+    };
+}
+exports.Entity = Entity;
+
+/* export */ function TableInheritance(type) {
+    return function (object) {
+    };
+}
+exports.TableInheritance = TableInheritance;
 
 // listeners
 
@@ -165,50 +215,6 @@ exports.RelationCount = RelationCount;
 }
 exports.RelationId = RelationId;
 
-// entities
-
-/* export */ function AbstractEntity() {
-    return function (object) {
-    };
-}
-exports.AbstractEntity = AbstractEntity;
-
-/* export */ function ClassEntityChild(tableName, options) {
-    return function (object) {
-    };
-}
-exports.ClassEntityChild = ClassEntityChild;
-
-/* export */ function ClosureEntity(name, options) {
-    return function (object) {
-    };
-}
-exports.ClosureEntity = ClosureEntity;
-
-/* export */ function EmbeddableEntity() {
-    return function (object) {
-    };
-}
-exports.EmbeddableEntity = EmbeddableEntity;
-
-/* export */ function SingleEntityChild() {
-    return function (object) {
-    };
-}
-exports.SingleEntityChild = SingleEntityChild;
-
-/* export */ function Entity(name, options) {
-    return function (object) {
-    };
-}
-exports.Entity = Entity;
-
-/* export */ function TableInheritance(type) {
-    return function (object) {
-    };
-}
-exports.TableInheritance = TableInheritance;
-
 // tables (deprecated)
 
 /* export */ function AbstractTable() {
@@ -266,3 +272,29 @@ exports.TreeLevelColumn = TreeLevelColumn;
     };
 }
 exports.TreeParent = TreeParent;
+
+// other
+
+/* export */ function DiscriminatorValue(options) {
+    return function (object, propertyName) {
+    };
+}
+exports.DiscriminatorValue = DiscriminatorValue;
+
+/**
+ * @deprecated
+ */
+/* export */ function Embedded(options) {
+    return function (object, propertyName) {
+    };
+}
+exports.Embedded = Embedded;
+
+/**
+ * @deprecated
+ */
+/* export */ function Index(options) {
+    return function (object, propertyName) {
+    };
+}
+exports.Index = Index;
