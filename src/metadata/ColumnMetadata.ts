@@ -50,6 +50,16 @@ export class ColumnMetadata {
     length?: number;
 
     /**
+     * Defines column character set.
+     */
+    charset?: string;
+
+    /**
+     * Defines column collation.
+     */
+    collation?: string;
+
+    /**
      * Indicates if this column is a primary key.
      */
     isPrimary: boolean = false;
@@ -200,6 +210,10 @@ export class ColumnMetadata {
             this.type = options.args.options.type;
         if (options.args.options.length)
             this.length = typeof options.args.options.length === "string" ? parseInt(options.args.options.length) : options.args.options.length;
+        if (options.args.options.charset)
+            this.charset = options.args.options.charset;
+        if (options.args.options.collation)
+            this.collation = options.args.options.collation;
         if (options.args.options.primary)
             this.isPrimary = options.args.options.primary;
         if (options.args.options.generated)

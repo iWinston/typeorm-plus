@@ -22,6 +22,16 @@ export interface ColumnOptions {
     length?: string|number;
 
     /**
+     * Defines column character set.
+     */
+    charset?: string;
+
+    /**
+     * Defines columns collation
+     */
+    collation?: string;
+
+    /**
      * Indicates if this column is a primary key.
      * Same can be achieved when @PrimaryColumn decorator is used.
      */

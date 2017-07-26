@@ -339,6 +339,8 @@ export class MysqlQueryRunner implements QueryRunner {
                     columnSchema.comment = dbColumn["COLUMN_COMMENT"];
                     columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
                     columnSchema.scale = dbColumn["NUMERIC_SCALE"];
+                    columnSchema.charset = dbColumn["CHARACTER_SET_NAME"];
+                    columnSchema.collation = dbColumn["COLLATION_NAME"];
 
                     if (columnSchema.type === "int" || columnSchema.type === "tinyint"
                         ||  columnSchema.type === "smallint" || columnSchema.type === "mediumint"
@@ -766,6 +768,10 @@ export class MysqlQueryRunner implements QueryRunner {
         let c = "`" + column.name + "` " + this.connection.driver.createFullType(column);
         if (column.enum)
             c += "(" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";
+        if (column.charset)
+            c += " CHARACTER SET " + column.charset;
+        if (column.collation)
+            c += " COLLATE " + column.collation;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isUnique === true)

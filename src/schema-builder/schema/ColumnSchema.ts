@@ -66,6 +66,16 @@ export class ColumnSchema {
     length?: number;
 
     /**
+     * Defines column character set.
+     */
+    charset?: string;
+
+    /**
+     * Defines column collation.
+     */
+    collation?: string;
+
+    /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
      * number of digits that are stored for the values.
      */
@@ -90,6 +100,8 @@ export class ColumnSchema {
         name?: string,
         type?: string,
         length?: number,
+        charset?: string,
+        collation?: string,
         precision?: number,
         scale?: number,
         default?: any,
@@ -105,6 +117,8 @@ export class ColumnSchema {
             this.name = options.name || "";
             this.type = options.type || "";
             this.length = options.length;
+            this.charset = options.charset;
+            this.collation = options.collation;
             this.precision = options.precision;
             this.scale = options.scale;
             this.default = options.default;
@@ -130,6 +144,8 @@ export class ColumnSchema {
         newColumnSchema.name = this.name;
         newColumnSchema.type = this.type;
         newColumnSchema.length = this.length;
+        newColumnSchema.charset = this.charset;
+        newColumnSchema.collation = this.collation;
         newColumnSchema.precision = this.precision;
         newColumnSchema.scale = this.scale;
         newColumnSchema.enum = this.enum;
@@ -155,6 +171,8 @@ export class ColumnSchema {
         const columnSchema = new ColumnSchema();
         columnSchema.name = columnMetadata.databaseName;
         columnSchema.length = columnMetadata.length;
+        columnSchema.charset = columnMetadata.charset;
+        columnSchema.collation = columnMetadata.collation;
         columnSchema.precision = columnMetadata.precision;
         columnSchema.scale = columnMetadata.scale;
         columnSchema.default = normalizedDefault;
