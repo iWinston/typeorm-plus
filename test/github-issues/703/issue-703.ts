@@ -1,0 +1,41 @@
+import "reflect-metadata";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src/connection/Connection";
+import {Post} from "./entity/Post";
+import {Category} from "./entity/Category";
+
+describe("github issues > #703 findOneById does not return an empty array on OneToMany relationship", () => {
+
+    let connections: Connection[];
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
+
+    it("should not return anything in joined relation if nothing was found", () => Promise.all(connections.map(async connection => {
+
+        const category = new Category();
+        category.firstId = 1;
+        category.secondId = 2;
+        category.name = "category about posts";
+        await connection.manager.save(category);
+
+        const post = new Post();
+        post.title = "new post";
+        post.categories = [];
+        await connection.manager.save(post);
+
+        const loadedPost = await connection.getRepository(Post).findOneById(1, {
+            relations: ["categories"]
+        });
+
+        loadedPost!.id.should.be.equal(1);
+        loadedPost!.title.should.be.equal("new post");
+        loadedPost!.categories.length.should.be.equal(0);
+
+    })));
+
+});

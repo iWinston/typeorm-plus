@@ -232,11 +232,16 @@ export class RawSqlResultsToEntityTransformer {
                 }
             };
             if (relation.isOneToOne || relation.isManyToOne) {
-                mapToProperty(properties, entity, idMaps[0]);
+                if (idMaps[0] !== undefined) {
+                    mapToProperty(properties, entity, idMaps[0]);
+                    hasData = true;
+                }
             } else {
                 mapToProperty(properties, entity, idMaps);
+                if (idMaps.length > 0) {
+                    hasData = true;
+                }
             }
-            hasData = true;
         });
 
         return hasData;
