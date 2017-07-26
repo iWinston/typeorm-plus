@@ -14,10 +14,6 @@ describe("github issues > #485 If I set the datatype of PrimaryGeneratedColumn t
             schemaCreate: true,
             dropSchemaOnConnection: true,
         });
-
-        await Promise.all(connections.map(connection => {
-            return connection.manager.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
-        }));
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

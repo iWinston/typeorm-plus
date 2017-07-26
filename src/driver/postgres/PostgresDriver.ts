@@ -185,6 +185,11 @@ export class PostgresDriver implements Driver {
         // and settings are correct and we will be able to perform future connections to the database without errors
         const queryRunner = await this.createQueryRunner();
         await queryRunner.connect();
+
+        // also if we have any column which use uuid then we need to enable extension for it
+        if (this.connection.entityMetadatas.some(metadata => metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0))
+            queryRunner.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
+
         await queryRunner.release();
     }
 
