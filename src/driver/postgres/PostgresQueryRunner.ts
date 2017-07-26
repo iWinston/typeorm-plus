@@ -14,6 +14,7 @@ import {ReadStream} from "fs";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
+import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -113,8 +114,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
                 connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
                     if (err) {
-                        this.driver.connection.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`, [], this);
-                        this.driver.connection.logger.logQueryError(err, this);
+                        this.driver.connection.logger.logQueryError(err, `SET search_path TO '${this.schemaName}', 'public';`, [], this);
                         fail(err);
                     } else {
                         ok(connection);
@@ -191,9 +191,8 @@ export class PostgresQueryRunner implements QueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this);
             databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
-                    this.driver.connection.logger.logQueryError(err, this);
-                    fail(err);
+                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    fail(new QueryFailedError(query, parameters, err));
                 } else {
                     ok(result.rows);
                 }

@@ -14,6 +14,7 @@ import {ReadStream} from "fs";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
+import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -166,9 +167,8 @@ export class MysqlQueryRunner implements QueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this);
             databaseConnection.query(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
-                    this.driver.connection.logger.logQueryError(err, this);
-                    return fail(err);
+                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    return fail(new QueryFailedError(query, parameters, err));
                 }
 
                 ok(result);

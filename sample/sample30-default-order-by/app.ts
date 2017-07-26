@@ -6,10 +6,7 @@ import {Category} from "./entity/Category";
 const options: ConnectionOptions = {
     type: "sqlite",
     database: "temp/sqlitedb.db",
-    logging: {
-        logQueries: true,
-        logSchemaCreation: true
-    },
+    logging: ["query", "error"],
     autoSchemaSync: true,
     entities: [Post, Category]
 };

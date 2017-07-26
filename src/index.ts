@@ -21,6 +21,7 @@ import {PromiseUtils} from "./util/PromiseUtils";
 export * from "./container";
 export * from "./common/ObjectType";
 export * from "./common/ObjectLiteral";
+export * from "./error/QueryFailedError";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";
 export * from "./decorator/columns/DiscriminatorColumn";
@@ -141,6 +142,13 @@ export function getConnectionManager(): ConnectionManager {
 }
 
 /**
+ * Reads connection options stored in ormconfig configuration file.
+ */
+export async function getConnectionOptions(connectionName: string = "default"): Promise<ConnectionOptions> {
+    return new ConnectionOptionsReader().get(connectionName);
+}
+
+/**
  * Creates a new connection and registers it in the manager.
  *
  * If connection options were not specified, then it will try to create connection automatically,
@@ -149,7 +157,7 @@ export function getConnectionManager(): ConnectionManager {
  */
 export async function createConnection(options?: ConnectionOptions): Promise<Connection> {
     if (!options)
-        options = await new ConnectionOptionsReader().get("default");
+        options = await getConnectionOptions();
 
     return getConnectionManager().create(options).connect();
 }

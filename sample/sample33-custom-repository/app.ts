@@ -15,9 +15,7 @@ const options: ConnectionOptions = {
     password: "admin",
     database: "test",
     autoSchemaSync: true,
-    logging: {
-        logQueries: true,
-    },
+    logging: ["query", "error"],
     entities: [Post, Author, User],
 };
 

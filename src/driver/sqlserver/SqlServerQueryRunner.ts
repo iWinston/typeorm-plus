@@ -14,6 +14,7 @@ import {ReadStream} from "fs";
 import {MssqlParameter} from "./MssqlParameter";
 import {OrmUtils} from "../../util/OrmUtils";
 import {EntityManager} from "../../entity-manager/EntityManager";
+import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -288,10 +289,9 @@ export class SqlServerQueryRunner implements QueryRunner {
                 let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                 let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
-                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err, this);
+                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
                     resolveChain();
-                    return fail(err);
+                    return fail(new QueryFailedError(query, parameters, err));
                 }
 
                 ok(result.recordset);
@@ -346,8 +346,7 @@ export class SqlServerQueryRunner implements QueryRunner {
                 let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                 let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
-                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err, this);
+                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
                     resolveChain();
                     return fail(err);
                 }
@@ -378,7 +377,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         const generatedColumnSql = generatedColumns.length > 0 ? ` OUTPUT ${generatedColumnNames}` : "";
         const sql = columns.length > 0
             ? `INSERT INTO "${tableName}"(${columns}) ${generatedColumnSql} VALUES (${values})`
-            : `INSERT INTO "${tableName}" ${generatedColumnSql} DEFAULT VALUES `;
+            : `INSERT INTO "${tableName}" DEFAULT VALUES `;
 
         const parameters = this.driver.parametrizeMap(tableName, keyValues);
         const parametersArray = Object.keys(parameters).map(key => parameters[key]);

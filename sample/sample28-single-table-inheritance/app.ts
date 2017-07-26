@@ -12,11 +12,7 @@ const options: ConnectionOptions = {
     username: "root",
     password: "admin",
     database: "test",
-    logging: {
-        // logQueries: true,
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
+    logging: ["query", "error"],
     autoSchemaSync: true,
     entities: [
         Person,

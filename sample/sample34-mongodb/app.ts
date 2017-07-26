@@ -6,10 +6,7 @@ const options: ConnectionOptions = {
     type: "mongodb",
     host: "localhost",
     database: "test",
-    logging: {
-        logQueries: true,
-        logSchemaCreation: true
-    },
+    logging: ["query", "error"],
     // autoSchemaSync: true,
     entities: [Post]
 };

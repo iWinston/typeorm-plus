@@ -21,10 +21,7 @@ const options: ConnectionOptions = {
     port: 1521,
     sid: "xe.oracle.docker",
     autoSchemaSync: true,
-    logging: {
-        logQueries: true,
-        logFailedQueryError: true
-    },
+    logging: ["query", "error"],
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };
 

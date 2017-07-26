@@ -16,6 +16,7 @@ import {ReadStream} from "fs";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
+import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -145,9 +146,8 @@ export class SqliteQueryRunner implements QueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this);
             databaseConnection.all(query, parameters, (err: any, result: any) => {
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
-                    this.driver.connection.logger.logQueryError(err, this);
-                    fail(err);
+                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    fail(new QueryFailedError(query, parameters, err));
                 } else {
                     ok(result);
                 }
@@ -180,8 +180,7 @@ export class SqliteQueryRunner implements QueryRunner {
             const databaseConnection = await this.connect();
             databaseConnection.run(sql, parameters, function (err: any): void {
                 if (err) {
-                    __this.driver.connection.logger.logFailedQuery(sql, parameters, this);
-                    __this.driver.connection.logger.logQueryError(err, this);
+                    __this.driver.connection.logger.logQueryError(err, sql, parameters, this);
                     fail(err);
                 } else {
                     const generatedMap = generatedColumns.reduce((map, generatedColumn) => {

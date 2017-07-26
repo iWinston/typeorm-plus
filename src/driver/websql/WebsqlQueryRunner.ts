@@ -14,6 +14,7 @@ import {ReadStream} from "fs";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
+import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -195,9 +196,8 @@ export class WebsqlQueryRunner implements QueryRunner {
                     ok(rows);
 
                 }, (tx: any, err: any) => {
-                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
-                    this.driver.connection.logger.logQueryError(err, this);
-                    return fail(err);
+                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    return fail(new QueryFailedError(query, parameters, err));
                 });
             });
         });
@@ -241,8 +241,7 @@ export class WebsqlQueryRunner implements QueryRunner {
                     });
 
                 }, (tx: any, err: any) => {
-                    this.driver.connection.logger.logFailedQuery(sql, parameters, this);
-                    this.driver.connection.logger.logQueryError(err, this);
+                    this.driver.connection.logger.logQueryError(err, sql, parameters, this);
                     return fail(err);
                 });
             });

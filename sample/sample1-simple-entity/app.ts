@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
+import {QueryFailedError} from "../../src/error/QueryFailedError";
 
 const options: ConnectionOptions = {
     // type: "oracle",
@@ -22,35 +23,41 @@ const options: ConnectionOptions = {
     // username: "test",
     // password: "test",
     // database: "test",
-    "type": "mssql",
-    "host": "192.168.1.6",
-    "username": "sa",
-    "password": "admin12345",
-    "database": "test",
+    // "type": "mssql",
+    // "host": "192.168.1.6",
+    // "username": "sa",
+    // "password": "admin12345",
+    // "database": "test",
     // port: 1521,
-    // type: "sqlite",
-    // database: "temp/sqlitedb.db",
-    logging: {
-        logQueries: true,
-        logFailedQueryError: false,
-        logSchemaCreation: true
-    },
+    type: "sqlite",
+    database: "temp/sqlitedb.db",
+    logging: ["query", "error"],
+    // logging: ["error", "schema", "query"],
     autoSchemaSync: true,
     entities: [Post]
 };
 
-createConnection(options).then(connection => {
+createConnection(options).then(async connection => {
 
-    let post = new Post();
-    post.text = "Hello how are you?";
-    post.title = "hello";
-    post.likesCount = 100;
+    try {
+        await connection.query("CREATE DATABASE 'aaaa' AND DIE");
 
-    let postRepository = connection.getRepository(Post);
+    } catch (err) {
+        console.log("-------------------------------");
+        console.log("ERRROR: ", err instanceof QueryFailedError);
+        console.log(err);
+    }
 
-    postRepository
-        .save(post)
-        .then(post => console.log("Post has been saved: ", post))
-        .catch(error => console.log("Cannot save. Error: ", error));
+    // let post = new Post();
+    // post.text = "Hello how are you?";
+    // post.title = "hello";
+    // post.likesCount = 100;
+
+    // let postRepository = connection.getRepository(Post);
+
+    // postRepository
+    //     .save(post)
+    //     .then(post => console.log("Post has been saved: ", post))
+    //     .catch(error => console.log("Cannot save. Error: ", error));
 
 }, error => console.log("Cannot connect: ", error));

@@ -9,11 +9,7 @@ const options: ConnectionOptions = {
     database: "temp/sqlitedb.db",
     tablesPrefix: "samples_", // pay attention on this prefix
     autoSchemaSync: true,
-    logging: {
-        logQueries: true,
-        logSchemaCreation: true,
-        logFailedQueryError: true
-    },
+    logging: ["query", "error"],
     entities: [Post, Author, Category],
 };
 

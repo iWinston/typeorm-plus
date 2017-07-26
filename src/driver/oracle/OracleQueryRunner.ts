@@ -13,6 +13,7 @@ import {OracleDriver} from "./OracleDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
 import {EntityManager} from "../../entity-manager/EntityManager";
+import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -177,9 +178,8 @@ export class OracleQueryRunner implements QueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this);
             const handler = (err: any, result: any) => {
                 if (err) {
-                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
-                    this.driver.connection.logger.logQueryError(err, this);
-                    return fail(err);
+                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    return fail(new QueryFailedError(query, parameters, err));
                 }
 
                 ok(result.rows || result.outBinds);

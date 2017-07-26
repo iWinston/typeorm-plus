@@ -11,9 +11,7 @@ const options: ConnectionOptions = {
     password: "admin",
     database: "test",
     autoSchemaSync: true,
-    logging: {
-        logQueries: true,
-    },
+    logging: ["query", "error"],
     entities: [Post, Author],
 };
 
@@ -45,9 +43,7 @@ createConnection(options).then(async connection => {
         username: "test",
         password: "test",
         database: "test",
-        logging: {
-            logQueries: true
-        },
+        logging: ["query", "error"],
         entities: [
             Post,
             Author

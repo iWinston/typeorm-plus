@@ -9,9 +9,7 @@ const options: ConnectionOptions = {
     username: "root",
     password: "admin",
     database: "test",
-    logging: {
-        logOnlyFailedQueries: true
-    },
+    logging: ["query", "error"],
     autoSchemaSync: true,
     entities: [EverythingEntity]
 };

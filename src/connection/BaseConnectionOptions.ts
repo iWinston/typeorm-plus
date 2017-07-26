@@ -3,6 +3,7 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {DatabaseType} from "../driver/types/DatabaseType";
+import {Logger} from "../logger/Logger";
 
 /**
  * BaseConnectionOptions is set of connection options shared by all database types.
@@ -80,6 +81,16 @@ export interface BaseConnectionOptions {
      * Logging options.
      */
     readonly logging?: LoggerOptions;
+
+    /**
+     * Logger instance used to log queries and events in the ORM.
+     */
+    readonly logger?: "advanced-console"|"simple-console"|"file"|Logger;
+
+    /**
+     * Maximum number of milliseconds query should be executed before logger log a warning.
+     */
+    readonly maxQueryExecutionTime?: number;
 
     /**
      * Drops the schema each time connection is being established.

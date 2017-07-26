@@ -21,12 +21,12 @@ import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidat
 import {ConnectionOptions} from "./ConnectionOptions";
 import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
 import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
-import {LoggerFactory} from "../logger/LoggerFactory";
 import {DriverFactory} from "../driver/DriverFactory";
 import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {LoggerFactory} from "../logger/LoggerFactory";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -96,7 +96,7 @@ export class Connection {
     constructor(options: ConnectionOptions) {
         this.name = options.name || "default";
         this.options = options;
-        this.logger = new LoggerFactory().create(this.options.logging || {});
+        this.logger = new LoggerFactory().create(this.options.logger, this.options.logging);
         this.driver = new DriverFactory().create(this);
         this.manager = new EntityManagerFactory().create(this);
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
