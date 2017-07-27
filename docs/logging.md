@@ -10,7 +10,7 @@
 
 You can enable all queries logging by simply setting `logging: true` in your connection options:
 
-```typescript
+```json
 {
     name: "mysql",
     type: "mysql",
@@ -24,13 +24,13 @@ You can enable all queries logging by simply setting `logging: true` in your con
 }
 ```
 
-This configuration will enable all executing queries logging and failed query errors.
+This configuration will enable all executed queries logging and failed query errors.
 
 ## Logging options
 
 You can enable different types of logging in connection options:
 
-```typescript
+```json
 { 
     host: "localhost",
     ...
@@ -40,7 +40,7 @@ You can enable different types of logging in connection options:
 
 If you want to enable only logging of failed queries then only enable `error` in configuration:
 
-```typescript
+```json
 {
     host: "localhost",
     ...
@@ -60,7 +60,7 @@ There are few other options you can use:
 You can specify as many of logging options as needed. 
 If you want to enable all logging you can simply specify `logging: "all"`:
 
-```typescript
+```json
 {
     host: "localhost",
     ...
@@ -73,7 +73,7 @@ If you want to enable all logging you can simply specify `logging: "all"`:
 If you have performance issues you can log queries that execute too much time
 by setting `maxQueryExecutionTime` option in connection options:
 
-```typescript
+```json
 {
     host: "localhost",
     ...
@@ -95,7 +95,7 @@ This logger can be used if you have problems / or don't like colorized logs
 
 You can enable any of them in connection options this way:
 
-```typescript
+```json
 {
     host: "localhost",
     ...
