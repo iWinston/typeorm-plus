@@ -179,7 +179,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 const value = valuesSet[column.propertyName];
 
                 if (value instanceof Function) { // support for SQL expressions in update query
-                    updateColumnAndValues.push(column.databaseName + " = " + value());
+                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
                 } else {
                     if (this.connection.driver instanceof SqlServerDriver) {
                         this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));

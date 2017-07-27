@@ -11,4 +11,7 @@ export class User {
     @Column()
     name: string;
 
+    @Column()
+    likesCount: number = 0;
+
 }

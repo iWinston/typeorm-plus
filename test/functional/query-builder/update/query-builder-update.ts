@@ -65,4 +65,26 @@ describe("query builder > update", () => {
 
     })));
 
+    it("should update and escape properly", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Dima";
+        user.likesCount = 1;
+
+        await connection.manager.save(user);
+
+        const qb = connection.createQueryBuilder();
+        await qb
+            .update(User)
+            .set({ likesCount: () => qb.escape(`likesCount`) + " + 1" })
+            // .set({ likesCount: 2 })
+            .where("likesCount = 1")
+            .execute();
+
+        const loadedUser1 = await connection.getRepository(User).findOne({ likesCount: 2 });
+        expect(loadedUser1).to.exist;
+        loadedUser1!.name.should.be.equal("Dima");
+
+    })));
+
 });
