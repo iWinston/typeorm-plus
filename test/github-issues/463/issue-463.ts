@@ -21,7 +21,6 @@ describe.only("github issues > #463 saving empty string array", () => {
         post.names = [];
         await connection.getRepository(Post).persist(post);
         const loadedPost = await connection.getRepository(Post).findOneById(1);
-        console.log(loadedPost);
         loadedPost!.names.length.should.be.eql(0);
     })));
 
