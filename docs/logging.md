@@ -10,17 +10,17 @@
 
 You can enable all queries logging by simply setting `logging: true` in your connection options:
 
-```json
+```typescript
 {
-    "name": "mysql",
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "test",
-    "password": "test",
-    "database": "test",
-    // ...
-    "logging": true
+    name: "mysql",
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
+    ...
+    logging: true
 }
 ```
 
@@ -30,21 +30,21 @@ This configuration will enable all executed queries logging and failed query err
 
 You can enable different types of logging in connection options:
 
-```json
+```typescript
 { 
-    "host": "localhost",
-    // ...
-    "logging": ["query", "error"]
+    host: "localhost",
+    ...
+    logging: ["query", "error"]
 }
 ```
 
 If you want to enable only logging of failed queries then only enable `error` in configuration:
 
-```json
+```typescript
 {
-    "host": "localhost",
-    // ...
-    "logging": ["error"]
+    host: "localhost",
+    ...
+    logging: ["error"]
 }
 ```
 
@@ -60,11 +60,11 @@ There are few other options you can use:
 You can specify as many of logging options as needed. 
 If you want to enable all logging you can simply specify `logging: "all"`:
 
-```json
+```typescript
 {
-    "host": "localhost",
-    // ...
-    "logging": "all"
+    host: "localhost",
+    ...
+    logging: "all"
 }
 ```
 
@@ -73,11 +73,11 @@ If you want to enable all logging you can simply specify `logging: "all"`:
 If you have performance issues you can log queries that execute too much time
 by setting `maxQueryExecutionTime` option in connection options:
 
-```json
+```typescript
 {
-    "host": "localhost",
-    // ...
-    "maxQueryExecutionTime": 1000
+    host: "localhost",
+    ...
+    maxQueryExecutionTime: 1000
 }
 ```
 
@@ -95,12 +95,12 @@ This logger can be used if you have problems / or don't like colorized logs
 
 You can enable any of them in connection options this way:
 
-```json
+```typescript
 {
-    "host": "localhost",
-    // ...
-    "logging": true,
-    "logger": "file"
+    host: "localhost",
+    ...
+    logging: true,
+    logger: "file"
 }
 ```
 
