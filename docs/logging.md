@@ -1,10 +1,10 @@
 # Logging
 
-* Enabling logging
-* Logging options
-* Log long-running sql queries
-* Changing default logger
-* Using custom logger
+* [Enabling logging](#enabling-logging)
+* [Logging options](#logging-options)
+* [Log long-running sql queries](#log-long-running-sql-queries)
+* [Changing default logger](#changing-default-logger)
+* [Using custom logger](#using-custom-logger)
 
 ## Enabling logging
 
