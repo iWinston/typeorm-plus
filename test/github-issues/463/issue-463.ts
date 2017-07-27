@@ -17,7 +17,6 @@ describe.only("github issues > #463 saving empty string array", () => {
 
     it("should not return array with single empty string if empty array was saved", () => Promise.all(connections.map(async connection => {
         const post = new Post();
-        post.id = 1;
         post.names = [];
         await connection.getRepository(Post).persist(post);
         const loadedPost = await connection.getRepository(Post).findOneById(1);
