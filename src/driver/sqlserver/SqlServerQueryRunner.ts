@@ -531,6 +531,8 @@ export class SqlServerQueryRunner implements QueryRunner {
                     columnSchema.isPrimary = isPrimary;
                     columnSchema.isGenerated = isGenerated;
                     columnSchema.isUnique = isUnique;
+                    columnSchema.charset = dbColumn["CHARACTER_SET_NAME"];
+                    columnSchema.collation = dbColumn["COLLATION_NAME"];
                     columnSchema.comment = ""; // todo: less priority, implement this later
 
                     if (columnSchema.type === "datetime2" || columnSchema.type === "time" || columnSchema.type === "datetimeoffset") {
@@ -932,6 +934,10 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      */
     protected buildCreateColumnSql(tableName: string, column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
         let c = `"${column.name}" ${this.connection.driver.createFullType(column)}`;
+        if (column.charset)
+            c += " CHARACTER SET " + column.charset;
+        if (column.collation)
+            c += " COLLATE " + column.collation;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated === true && column.generationStrategy === "increment" && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.

@@ -7,6 +7,7 @@ import {DataTypeNotSupportedError} from "../error/DataTypeNotSupportedError";
 import {ColumnType} from "../driver/types/ColumnTypes";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -81,6 +82,12 @@ export class EntityMetadataValidator {
             const generatedColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy !== "uuid");
             if (generatedColumns.length > 1)
                 throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
+        }
+
+        if (driver instanceof SqlServerDriver) {
+            const carsetColumns = entityMetadata.columns.filter(column => column.charset);
+            if (carsetColumns.length > 1)
+                throw new Error(`Character set specifying is not supported in Sql Server`);
         }
 
         // validate relations

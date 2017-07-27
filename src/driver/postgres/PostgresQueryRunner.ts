@@ -796,6 +796,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
             c += " SERIAL";
         if (!column.isGenerated || column.type === "uuid")
             c += " " + this.connection.driver.createFullType(column);
+        if (column.charset)
+            c += " CHARACTER SET " + column.charset;
+        if (column.collation)
+            c += " COLLATE " + column.collation;
         if (column.isNullable !== true)
             c += " NOT NULL";
         // if (column.isPrimary)
