@@ -1,10 +1,12 @@
 import {LoggerOptions} from "./LoggerOptions";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Logger} from "./Logger";
-import {writeFileSync} from "fs";
+import {appendFileSync} from "fs";
+import {PlatformTools} from "../platform/PlatformTools";
 
 /**
  * Performs logging of the events in TypeORM.
+ * This version of logger logs everything into ormlogs.log file.
  */
 export class FileLogger implements Logger {
 
@@ -25,7 +27,7 @@ export class FileLogger implements Logger {
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            this.write("executing query" + ": " + sql);
+            this.write("[QUERY]: " + sql);
         }
     }
 
@@ -36,8 +38,8 @@ export class FileLogger implements Logger {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write([
-                `query failed: ` + sql,
-                `error:`, error
+                `[FAILED QUERY]: ${sql}`,
+                `[QUERY ERROR]: ${error}`
             ]);
         }
     }
@@ -47,10 +49,7 @@ export class FileLogger implements Logger {
      */
     logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-        this.write([
-            `query is slow: ` + sql,
-            `execution time: ` + time
-        ]);
+        this.write(`[SLOW QUERY: ${time} ms]: ` + sql);
     }
 
     /**
@@ -66,19 +65,19 @@ export class FileLogger implements Logger {
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    log(level: "log"|"info"|"warn"|"error", message: any, queryRunner?: QueryRunner) {
+    log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("log") !== -1))
-                    this.write(message);
+                    this.write("[LOG]: " + message);
                 break;
             case "info":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("info") !== -1))
-                    this.write(message);
+                    this.write("[INFO]: " + message);
                 break;
             case "warn":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("warn") !== -1))
-                    this.write(message);
+                    this.write("[WARN]: " + message);
                 break;
         }
     }
@@ -92,7 +91,9 @@ export class FileLogger implements Logger {
      */
     protected write(strings: string|string[]) {
         strings = strings instanceof Array ? strings : [strings];
-        writeFileSync("ormlogs.log", strings.join("\r\n")); // todo: make async
+        const basePath = PlatformTools.load("app-root-path").path;
+        strings = (strings as string[]).map(str => "[" + new Date().toISOString() + "]" + str);
+        appendFileSync(basePath + "/ormlogs.log", strings.join("\r\n") + "\r\n"); // todo: use async or implement promises?
     }
 
     /**

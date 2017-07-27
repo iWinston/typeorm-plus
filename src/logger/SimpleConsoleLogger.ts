@@ -4,6 +4,7 @@ import {Logger} from "./Logger";
 
 /**
  * Performs logging of the events in TypeORM.
+ * This version of logger uses console to log events and does not use syntax highlighting.
  */
 export class SimpleConsoleLogger implements Logger {
 
@@ -61,7 +62,7 @@ export class SimpleConsoleLogger implements Logger {
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    log(level: "log"|"info"|"warn"|"error", message: any, queryRunner?: QueryRunner) {
+    log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("log") !== -1))

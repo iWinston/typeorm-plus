@@ -1,7 +1,8 @@
+.vscode/
+.idea/
 build/
 coverage/
 node_modules/
-npm-debug.log
 ormconfig.json
-.vscode
-.idea/
+ormlogs.log
+npm-debug.log

@@ -24,7 +24,7 @@ You can enable all queries logging by simply setting `logging: true` in your con
 }
 ```
 
-This configuration will enable all executing queries logging + errors of failed queries.
+This configuration will enable all executing queries logging and failed query errors.
 
 ## Logging options
 
@@ -99,8 +99,8 @@ You can enable any of them in connection options this way:
 {
     host: "localhost",
     ...
-    logger: "simple-console",
-    logging: true
+    logging: true,
+    logger: "file"
 }
 ```
 
