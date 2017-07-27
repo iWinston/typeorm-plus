@@ -72,6 +72,12 @@ export class MongoQueryRunner implements QueryRunner {
     isTransactionActive = false;
 
     /**
+     * Stores temporarily user data.
+     * Useful for sharing data with subscribers.
+     */
+    data = {};
+
+    /**
      * Real database connection from a connection pool used to perform queries.
      */
     databaseConnection: Db;

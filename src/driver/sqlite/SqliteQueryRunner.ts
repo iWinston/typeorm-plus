@@ -56,6 +56,12 @@ export class SqliteQueryRunner implements QueryRunner {
      */
     isTransactionActive = false;
 
+    /**
+     * Stores temporarily user data.
+     * Useful for sharing data with subscribers.
+     */
+    data = {};
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import {Connection} from "../connection/Connection";
 import {ReadStream} from "fs";
 import {InsertResult} from "../driver/InsertResult";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Runs queries on a single database connection.
@@ -34,6 +35,12 @@ export interface QueryRunner {
      * Indicates if transaction is in progress.
      */
     readonly isTransactionActive: boolean;
+
+    /**
+     * Stores temporarily user data.
+     * Useful for sharing data with subscribers.
+     */
+    data: ObjectLiteral;
 
     /**
      * Creates/uses database connection from the connection pool to perform further operations.

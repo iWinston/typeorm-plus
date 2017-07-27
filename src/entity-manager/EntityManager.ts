@@ -2,7 +2,6 @@ import {Connection} from "../connection/Connection";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectType} from "../common/ObjectType";
 import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
-import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
 import {RemoveOptions} from "../repository/RemoveOptions";
@@ -53,12 +52,6 @@ export class EntityManager {
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Stores temporarily user data.
-     * Useful for sharing data with subscribers.
-     */
-    protected data: ObjectLiteral = {};
 
     /**
      * Once created and then reused by en repositories.
@@ -145,23 +138,6 @@ export class EntityManager {
         } else {
             return this.connection.createQueryBuilder(entityClass as QueryRunner|undefined || this.queryRunner);
         }
-    }
-
-    /**
-     * Gets user data by a given key.
-     * Used get stored data stored in a transactional entity manager.
-     */
-    getData(key: string): any {
-        return this.data[key];
-    }
-
-    /**
-     * Sets value for the given key in user data.
-     * Used to store data in a transactional entity manager which can be accessed in subscribers then.
-     */
-    setData(key: string, value: any): this {
-        this.data[key] = value;
-        return this;
     }
 
     /**
@@ -308,7 +284,7 @@ export class EntityManager {
             const queryRunner = this.queryRunner || this.connection.createQueryRunner();
             const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
             if (options && options.data)
-                transactionEntityManager.data = options.data;
+                Object.assign(queryRunner.data, options.data);
 
             try {
                 const executors: SubjectOperationExecutor[] = [];
@@ -505,7 +481,7 @@ export class EntityManager {
             const queryRunner = this.queryRunner || this.connection.createQueryRunner();
             const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
             if (options && options.data)
-                transactionEntityManager.data = options.data;
+                Object.assign(queryRunner.data, options.data);
 
             try {
                 const executors: SubjectOperationExecutor[] = [];

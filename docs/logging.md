@@ -153,3 +153,17 @@ getConnectionOptions().then(connectionOptions => {
     }))
 });
 ```
+
+Logger methods can accept `QueryRunner` when its available. Its helpful if you want to log additional data.
+Also via query runner you can get access to additional data passed during persist/remove. For example:
+
+```typescript
+// user sends request during entity save
+postRepository.save(post, { data: { request: request } });
+
+// in logger you can access it this way:
+logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    const requestUrl = queryRunner && queryRunner.data["request"] ? "(" + queryRunner.data["request"].url + ") " : "";
+    console.log(requestUrl + "executing query: " + sql);
+}
+```
