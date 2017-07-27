@@ -161,7 +161,11 @@ export class DateUtils {
      */
     static stringToSimpleArray(value: string|any): string|any {
         if (value instanceof String || typeof value === "string") {
-            return value.split(",");
+            if (value.length > 0) {
+                return value.split(",");
+            } else {
+                return [];
+            }
         }
 
         return value;

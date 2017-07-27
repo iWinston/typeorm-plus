@@ -88,7 +88,7 @@ This code will log all queries which run more then `1 second`.
 There are several loggers TypeORM ships with 3 different types of loggers:
 
 * `advanced-console` - this is default logger which logs all messages into console using color 
-and sql syntax highlighting (using [chalk]() package)
+and sql syntax highlighting (using [chalk](https://github.com/chalk/chalk) package)
 * `simple-console` - this is simple console logger which is exactly the same as advanced, but it does not use any color highlighting.
 This logger can be used if you have problems / or don't like colorized logs
 * `file` - this logger writes all logs into `ormlogs.log` file in the root folder of your project (near `package.json` and `ormconfig.json`)
