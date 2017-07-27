@@ -12,15 +12,15 @@ You can enable all queries logging by simply setting `logging: true` in your con
 
 ```json
 {
-    name: "mysql",
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-    ...
-    logging: true
+    "name": "mysql",
+    "type": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "username": "test",
+    "password": "test",
+    "database": "test",
+    // ...
+    "logging": true
 }
 ```
 
@@ -32,9 +32,9 @@ You can enable different types of logging in connection options:
 
 ```json
 { 
-    host: "localhost",
-    ...
-    logging: ["query", "error"]
+    "host": "localhost",
+    // ...
+    "logging": ["query", "error"]
 }
 ```
 
@@ -42,9 +42,9 @@ If you want to enable only logging of failed queries then only enable `error` in
 
 ```json
 {
-    host: "localhost",
-    ...
-    logging: ["error"]
+    "host": "localhost",
+    // ...
+    "logging": ["error"]
 }
 ```
 
@@ -62,9 +62,9 @@ If you want to enable all logging you can simply specify `logging: "all"`:
 
 ```json
 {
-    host: "localhost",
-    ...
-    logging: "all"
+    "host": "localhost",
+    // ...
+    "logging": "all"
 }
 ```
 
@@ -75,10 +75,10 @@ by setting `maxQueryExecutionTime` option in connection options:
 
 ```json
 {
-    host: "localhost",
-    ...
-    maxQueryExecutionTime: 1000
-});
+    "host": "localhost",
+    // ...
+    "maxQueryExecutionTime": 1000
+}
 ```
 
 This code will log all queries which run more then `1 second`.
@@ -97,10 +97,10 @@ You can enable any of them in connection options this way:
 
 ```json
 {
-    host: "localhost",
-    ...
-    logging: true,
-    logger: "file"
+    "host": "localhost",
+    // ...
+    "logging": true,
+    "logger": "file"
 }
 ```
 
