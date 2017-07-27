@@ -2,7 +2,7 @@
 
 * [Enabling logging](#enabling-logging)
 * [Logging options](#logging-options)
-* [Log long-running sql queries](#log-long-running-sql-queries)
+* [Log long-running queries](#log-long-running-queries)
 * [Changing default logger](#changing-default-logger)
 * [Using custom logger](#using-custom-logger)
 
