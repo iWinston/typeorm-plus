@@ -2,14 +2,14 @@
 
 * [What is `ConnectionOptions`](#what_is-connectionoptions)
 * [Common connection options](#common-connection-options)
-* [`mysql` / `mariadb` connection options](#mysql-mariadb-connection-options)
+* [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
 * [`postgres` connection options](#postgres-connection-options)
-* [`sqlite` / `websql` connection options](#sqlite-websql-connection-options)
+* [`sqlite` / `websql` connection options](#sqlite--websql-connection-options)
 * [`mssql` connection options](#mssql-connection-options)
 * [`mongodb` connection options](#mongodb-connection-options)
 * [Connection options example](#connection-options-example)
     
-## What is `ConnectionOptions` interface
+## What is `ConnectionOptions`
 
 Connection options is a connection configuration object you pass to `createConnection` method
  or create in `ormconfig` file. Different drivers have their own specific connection options.
