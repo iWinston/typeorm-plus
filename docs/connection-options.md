@@ -1,13 +1,13 @@
 # Connection Options
 
-* What is `ConnectionOptions`
-* Common connection options
-* `mysql` / `mariadb` connection options
-* `postgres` connection options
-* `sqlite` / `websql` connection options
-* `mssql` connection options
-* `mongodb` connection options
-* Connection options example
+* [What is `ConnectionOptions`](#what_is-connectionoptions)
+* [Common connection options](#common-connection-options)
+* [`mysql` / `mariadb` connection options](#mysql-mariadb-connection-options)
+* [`postgres` connection options](#postgres-connection-options)
+* [`sqlite` / `websql` connection options](#sqlite-websql-connection-options)
+* [`mssql` connection options](#mssql-connection-options)
+* [`mongodb` connection options](#mongodb-connection-options)
+* [Connection options example](#connection-options-example)
     
 ## What is `ConnectionOptions` interface
 
