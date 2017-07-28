@@ -37,7 +37,7 @@ describe("query builder > update", () => {
             .createQueryBuilder("myUser")
             .update()
             .set({ name: "Muhammad Mirzoev" })
-            .where("myUser.name = :name", { name: "Dima Zotov" })
+            .where("name = :name", { name: "Dima Zotov" })
             .execute();
 
         const loadedUser2 = await connection.getRepository(User).findOne({ name: "Muhammad Mirzoev" });

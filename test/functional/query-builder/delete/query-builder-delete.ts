@@ -11,6 +11,7 @@ describe("query builder > delete", () => {
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchema: true,
+        enabledDrivers: ["sqlite"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -37,7 +38,7 @@ describe("query builder > delete", () => {
         await connection.getRepository(User)
             .createQueryBuilder("myUser")
             .delete()
-            .where("myUser.name = :name", { name: "Dima Zotov" })
+            .where("name = :name", { name: "Dima Zotov" })
             .execute();
 
         const loadedUser2 = await connection.getRepository(User).findOne({ name: "Dima Zotov" });
