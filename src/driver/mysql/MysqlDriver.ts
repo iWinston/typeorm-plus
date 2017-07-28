@@ -157,7 +157,19 @@ export class MysqlDriver implements Driver {
             user: this.options.username,
             password: this.options.password,
             database: this.options.database,
-            port: this.options.port
+            port: this.options.port,
+            charset: this.options.charset,
+            timezone: this.options.timezone,
+            connectTimeout: this.options.connectTimeout,
+            insecureAuth: this.options.insecureAuth,
+            supportBigNumbers: this.options.supportBigNumbers,
+            bigNumberStrings: this.options.bigNumberStrings,
+            dateStrings: this.options.dateStrings,
+            debug: this.options.debug,
+            trace: this.options.trace,
+            multipleStatements: this.options.multipleStatements,
+            flags: this.options.flags,
+            ssl: this.options.ssl
         }, this.options.extra || {});
 
         this.pool = this.mysql.createPool(options);

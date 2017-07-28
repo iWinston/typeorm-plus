@@ -4,7 +4,7 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 
 // skipped because there is no way to get column collation from SQLite table schema
-describe("database schema > column collation > sqlite", () => {
+describe.skip("database schema > column collation > sqlite", () => {
 
     let connections: Connection[];
     before(async () => {
