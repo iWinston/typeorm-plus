@@ -26,13 +26,18 @@ export class ConnectionOptionsEnvReader {
             password: PlatformTools.getEnvVariable("TYPEORM_PASSWORD"),
             database: PlatformTools.getEnvVariable("TYPEORM_DATABASE"),
             sid: PlatformTools.getEnvVariable("TYPEORM_SID"),
+            schema: PlatformTools.getEnvVariable("TYPEORM_SCHEMA"),
             extra: PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA")) : undefined,
             synchronize: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_SYNCHRONIZE")),
+            migrationsRun: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_RUN")),
             entities: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_ENTITIES")),
             migrations: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS")),
             subscribers: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS")),
             entitySchemas: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS")),
-            logging: PlatformTools.getEnvVariable("TYPEORM_LOGGING"),
+            logging: this.transformLogging(PlatformTools.getEnvVariable("TYPEORM_LOGGING")),
+            logger: PlatformTools.getEnvVariable("TYPEORM_LOGGER"),
+            entityPrefix: PlatformTools.getEnvVariable("TYPEORM_ENTITY_PREFIX"),
+            maxQueryExecutionTime: PlatformTools.getEnvVariable("TYPEORM_MAX_QUERY_EXECUTION_TIME"),
             cli: {
                 entitiesDir: PlatformTools.getEnvVariable("TYPEORM_ENTITIES_DIR"),
                 migrationsDir: PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_DIR"),
@@ -44,6 +49,18 @@ export class ConnectionOptionsEnvReader {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Transforms logging string into real logging value connection requires.
+     */
+    protected transformLogging(logging: string): any {
+        if (logging === "true" || logging === "TRUE" || logging === "1")
+            return true;
+        if (logging === "all")
+            return "all";
+
+        return this.stringToArray(logging);
+    }
 
     /**
      * Converts a string which contains multiple elements split by comma into a string array of strings.

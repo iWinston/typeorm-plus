@@ -2,6 +2,7 @@ import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 
 /**
  * MySQL specific connection options.
+ *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface MysqlConnectionOptions extends BaseConnectionOptions {
