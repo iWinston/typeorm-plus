@@ -1,15 +1,14 @@
 # Connection and connection options
 
-* What is `Connection` in TypeORM
+* What is `Connection`
 * Creating a new connection
-    * Creating a new connection using main api
-    * Creating connection using `ConnectionManager`
 * Creating a new connection from the configuration files
     * Loading from `ormconfig.json`
     * Loading from `ormconfig.js`
     * Loading from `ormconfig.env` or from environment variables
     * Loading from `ormconfig.yml`
     * Loading from `ormconfig.xml`
+* Using `ConnectionManager`
 * Working with connection
 * Connection usage example in sample express application
 * Using service container and typedi extensions
@@ -18,17 +17,15 @@
     * `Connection` class API
     * `ConnectionManager` class API
     
-## What is `Connection` in TypeORM
+## What is `Connection`
 
-Connection is a TypeORM class which setups a real connection with your database.
+Connection setups a real connection with your database.
 Depend on database type it may also setup a connection pool. 
-Connection (or connection pool) setup is made once its `connection` method is called.
-Disconnection (or closing all connections in the pool) is made once its `close` method is called.
-You must create TypeORM `Connection` only once in your application bootstrap.
+Connection (or connection pool) setup is made when `connect` method is called.
+Disconnection (or closing all connections in the pool) is made when `close` method is called.
+You must create connection only once in your application bootstrap.
 
 ## Creating a new connection
-
-### Creating a new connection using main api
 
 There are several ways how connection can be created. 
 The most simple and common way is to use main api `createConnection` and `createConnections` methods.
@@ -110,51 +107,6 @@ const secondConnection = getConnection("test2-connection");
 Avoid creating extra classes / services which store instance of your connections.
 This functionality is already embed into TypeORM - 
 you don't need to overengineer and create useless abstractions.
-
-### Creating connection using `ConnectionManager`
-
-You can create connection using `ConnectionManager` class. For example:
-
-```typescript
-import {getConnectionManager, ConnectionManager, Connection} from "typeorm";
-
-const connectionManager: ConnectionManager = getConnectionManager(); // or you can initialize your own connection manager like this: new ConnectionManager()
-const connection: Connection = connectionManager.create({
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-});
-await connection.connect(); // performs connection
-```
-
-This is not general way of creating connection, but it may be useful for some users.
-For example users who want to create connection and store its instance, 
-but have a control when actual "connection" will be established.
-Also you can create and maintain your own `ConnectionManager`:
-
-```typescript
-import {getConnectionManager, ConnectionManager, Connection} from "typeorm";
-
-const connectionManager = new ConnectionManager(); // or you can initialize your own connection manager like this: new ConnectionManager()
-const connection: Connection = connectionManager.create({
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-});
-await connection.connect(); // performs connection
-```
-
-But note, this way you won't be able to use `getConnection()` method anymore - 
-you'll need to store your connection manager instance and use `connectionManager.get` method to get a connection you need.
-
-Generally avoid this method and avoid unnecessary complications in your application,
-use `ConnectionManager` only if you really think you need it.
 
 ## Creating a new connection from the configuration files
 
@@ -318,7 +270,52 @@ Create `ormconfig.xml` file in root of your project. It should have following co
 
 You can use any connection options available.
 
-### Working with connection
+## Creating connection using `ConnectionManager`
+
+You can create connection using `ConnectionManager` class. For example:
+
+```typescript
+import {getConnectionManager, ConnectionManager, Connection} from "typeorm";
+
+const connectionManager: ConnectionManager = getConnectionManager(); // or you can initialize your own connection manager like this: new ConnectionManager()
+const connection: Connection = connectionManager.create({
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
+});
+await connection.connect(); // performs connection
+```
+
+This is not general way of creating connection, but it may be useful for some users.
+For example users who want to create connection and store its instance, 
+but have a control when actual "connection" will be established.
+Also you can create and maintain your own `ConnectionManager`:
+
+```typescript
+import {getConnectionManager, ConnectionManager, Connection} from "typeorm";
+
+const connectionManager = new ConnectionManager(); // or you can initialize your own connection manager like this: new ConnectionManager()
+const connection: Connection = connectionManager.create({
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
+});
+await connection.connect(); // performs connection
+```
+
+But note, this way you won't be able to use `getConnection()` method anymore - 
+you'll need to store your connection manager instance and use `connectionManager.get` method to get a connection you need.
+
+Generally avoid this method and avoid unnecessary complications in your application,
+use `ConnectionManager` only if you really think you need it.
+
+## Working with connection
 
 Once you setup connection you can use it anywhere in your app using `getConnection` method.
 For example:
