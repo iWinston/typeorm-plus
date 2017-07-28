@@ -3,19 +3,17 @@
 * [What is `Connection`](#what-is-connection)
 * [Creating a new connection](#creating-a-new-connection)
 * [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
-    * [Loading from `ormconfig.json`](#loading-from-ormconfig.json)
-    * [Loading from `ormconfig.js`](#loading-from-ormconfig.js)
-    * [Loading from `ormconfig.env` or from environment variables](#loading-from-ormconfig.env-or-from-environment-variables)
-    * [Loading from `ormconfig.yml`](#loading-from-ormconfig.yml)
-    * [Loading from `ormconfig.xml`](#loading-from-ormconfig.xml)
+    * [Loading from `ormconfig.json`](#loading-from-ormconfigjson)
+    * [Loading from `ormconfig.js`](#loading-from-ormconfigjs)
+    * [Loading from `ormconfig.env` or from environment variables](#loading-from-ormconfigenv-or-from-environment-variables)
+    * [Loading from `ormconfig.yml`](#loading-from-ormconfigyml)
+    * [Loading from `ormconfig.xml`](#loading-from-ormconfigxml)
 * [Using `ConnectionManager`](#using-connectionmanager)
-* [Working with connection](#working-with-connection)
-* [Connection usage example in sample express application](#connection-usage-example-in-sample-express-application)
-* [Using service container and typedi extensions](#using-service-container-and-typedi-extensions)
+* [Working with connection](#working-with-connection-1)
 * [API](#api)
     * [Main API](#main-api)
-    * [`Connection` class API](#connection-class-api)
-    * [`ConnectionManager` class API](#connectionmanager-class-api)
+    * [`Connection` API](#connection-api)
+    * [`ConnectionManager` API](#connectionmanager-api)
     
 ## What is `Connection`
 
@@ -272,7 +270,7 @@ Create `ormconfig.xml` file in project root (near `package.json`). It should hav
 
 You can use any connection options available.
 
-## Creating connection using `ConnectionManager`
+## Using `ConnectionManager`
 
 You can create connection using `ConnectionManager` class. For example:
 
