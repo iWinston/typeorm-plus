@@ -12,7 +12,7 @@ describe("database schema > mssql-parameters", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

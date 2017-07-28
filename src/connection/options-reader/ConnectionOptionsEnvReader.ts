@@ -27,7 +27,7 @@ export class ConnectionOptionsEnvReader {
             database: PlatformTools.getEnvVariable("TYPEORM_DATABASE"),
             sid: PlatformTools.getEnvVariable("TYPEORM_SID"),
             extra: PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA")) : undefined,
-            autoSchemaSync: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_AUTO_SCHEMA_SYNC")),
+            synchronize: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_SYNCHRONIZE")),
             entities: PlatformTools.getEnvVariable("TYPEORM_ENTITIES") ? PlatformTools.getEnvVariable("TYPEORM_ENTITIES").split(",") : [],
             migrations: PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS") ? PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS").split(",") : [],
             subscribers: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS") ? PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS").split(",") : [],

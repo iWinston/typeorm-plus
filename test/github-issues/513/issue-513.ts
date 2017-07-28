@@ -12,14 +12,14 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
         enabledDrivers: ["sqlite"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should create datetime column type for datetime in sqlite", () => Promise.all(connections.map(async connection => {
-      const dbColumns: ObjectLiteral[] = await connection.entityManager.query("PRAGMA table_info(Post)");
+      const dbColumns: ObjectLiteral[] = await connection.manager.query("PRAGMA table_info(Post)");
       expect(dbColumns).not.to.be.null;
       expect(dbColumns).not.to.be.empty;
 
@@ -41,15 +41,15 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
       post.id = 1;
       post.dateTimeColumn = now;
       
-      await connection.entityManager.persist(post);
+      await connection.manager.persist(post);
 
-      const storedPost = await connection.entityManager.findOneById(Post, post.id);
+      const storedPost = await connection.manager.findOneById(Post, post.id);
       expect(storedPost).to.not.be.null;
       storedPost!.dateTimeColumn.toDateString().should.equal(now.toDateString());
     })));
 
     it("should create datetime column type for time in sqlite", () => Promise.all(connections.map(async connection => {
-      const dbColumns: ObjectLiteral[] = await connection.entityManager.query("PRAGMA table_info(Post)");
+      const dbColumns: ObjectLiteral[] = await connection.manager.query("PRAGMA table_info(Post)");
       expect(dbColumns).not.to.be.null;
       expect(dbColumns).not.to.be.empty;
 
@@ -71,9 +71,9 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
       post.id = 2;
       post.timeColumn = now; // Should maybe use Date type?
       
-      await connection.entityManager.persist(post);
+      await connection.manager.save(post);
 
-      const storedPost = await connection.entityManager.findOneById(Post, post.id);
+      const storedPost = await connection.manager.findOneById(Post, post.id);
       expect(storedPost).to.not.be.null;
 
         const expectedTimeString = DateUtils.mixedTimeToString(now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds());

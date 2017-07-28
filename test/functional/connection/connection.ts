@@ -65,7 +65,7 @@ describe("Connection", () => {
         });
 
         it("should not be able to sync a schema", () => {
-            return connection.syncSchema().should.be.rejected; // CannotCloseNotConnectedError
+            return connection.synchronize().should.be.rejected; // CannotCloseNotConnectedError
         });
 
         it.skip("should not be able to use repositories", () => {
@@ -92,7 +92,7 @@ describe("Connection", () => {
                     database: "test",
                     entities: [],
                     entitySchemas: [],
-                    dropSchemaOnConnection: false,
+                    dropSchema: false,
                     schemaCreate: false,
                     enabledDrivers: ["mysql"],
                 });
@@ -103,7 +103,7 @@ describe("Connection", () => {
     describe("after connection is established successfully", function() {
 
         let connections: Connection[];
-        beforeEach(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
+        beforeEach(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true, dropSchema: true }).then(all => connections = all));
         afterEach(() => closeTestingConnections(connections));
 
         it("connection.isConnected should be true", () => connections.forEach(connection => {
@@ -128,7 +128,7 @@ describe("Connection", () => {
     describe("working with repositories after connection is established successfully", function() {
 
         let connections: Connection[];
-        before(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
+        before(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true, dropSchema: true }).then(all => connections = all));
         after(() => closeTestingConnections(connections));
 
         it("should be able to get simple entity repository", () => connections.forEach(connection => {
@@ -170,7 +170,7 @@ describe("Connection", () => {
     describe("generate a schema when connection.syncSchema is called", function() {
 
         let connections: Connection[];
-        before(() => createTestingConnections({ entities: [Post], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
+        before(() => createTestingConnections({ entities: [Post], schemaCreate: true, dropSchema: true }).then(all => connections = all));
         after(() => closeTestingConnections(connections));
 
         it("database should be empty after schema is synced with dropDatabase flag", () => Promise.all(connections.map(async connection => {
@@ -180,7 +180,7 @@ describe("Connection", () => {
             await postRepository.save(post);
             const loadedPost = await postRepository.findOneById(post.id);
             expect(loadedPost).to.be.eql(post);
-            await connection.syncSchema(true);
+            await connection.synchronize(true);
             const againLoadedPost = await postRepository.findOneById(post.id);
             expect(againLoadedPost).to.be.empty;
         })));
@@ -196,7 +196,7 @@ describe("Connection", () => {
         after(() => closeTestingConnections(connections));
 
         it("should return sql log properly", () => Promise.all(connections.map(async connection => {
-            await connection.logSyncSchema();
+            await connection.driver.createSchemaBuilder().log();
             // console.log(sql);
         })));
 
@@ -206,7 +206,7 @@ describe("Connection", () => {
 
         // open a close connections
         let connections: Connection[] = [];
-        before(() => createTestingConnections({ entities: [Post], schemaCreate: true, dropSchemaOnConnection: true }).then(all => {
+        before(() => createTestingConnections({ entities: [Post], schemaCreate: true, dropSchema: true }).then(all => {
             connections = all;
             return Promise.all(connections.map(connection => connection.close()));
         }));
@@ -224,10 +224,10 @@ describe("Connection", () => {
     describe("skip schema generation when skipSync option is used", function() {
 
         let connections: Connection[];
-        beforeEach(() => createTestingConnections({ entities: [View], dropSchemaOnConnection: true }).then(all => connections = all));
+        beforeEach(() => createTestingConnections({ entities: [View], dropSchema: true }).then(all => connections = all));
         afterEach(() => closeTestingConnections(connections));
         it("database should be empty after schema sync", () => Promise.all(connections.map(async connection => {
-            await connection.syncSchema(true);
+            await connection.synchronize(true);
             const queryRunner = connection.createQueryRunner();
             let schema = await queryRunner.loadTableSchemas(["view"]);
             await queryRunner.release();
@@ -244,36 +244,36 @@ describe("Connection", () => {
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
-                schemaName: "test-schema",
-                dropSchemaOnConnection: true,
+                schema: "test-schema",
+                dropSchema: true,
             });
             const connections2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
-                schemaName: "another-schema",
-                dropSchemaOnConnection: true
+                schema: "another-schema",
+                dropSchema: true
             });
             connections = [...connections1, ...connections2];
         });
         after(() => closeTestingConnections(connections));
         it("should not interfere with each other", async () => {
-            await Promise.all(connections.map(c => c.syncSchema()));
+            await Promise.all(connections.map(c => c.synchronize()));
             await closeTestingConnections(connections);
             const connections1 = await createTestingConnections({
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
-                schemaName: "test-schema",
-                dropSchemaOnConnection: false,
+                schema: "test-schema",
+                dropSchema: false,
                 schemaCreate: true
             });
             const connections2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
-                schemaName: "another-schema",
-                dropSchemaOnConnection: false,
+                schema: "another-schema",
+                dropSchema: false,
                 schemaCreate: true
             });
             connections = [...connections1, ...connections2];
@@ -287,15 +287,15 @@ describe("Connection", () => {
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
-                schemaName: "test-schema",
-                dropSchemaOnConnection: true,
+                schema: "test-schema",
+                dropSchema: true,
             });
             const connections2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
-                schemaName: "another-schema",
-                dropSchemaOnConnection: true
+                schema: "another-schema",
+                dropSchema: true
             });
             connections = [...connections1, ...connections2];
         });
@@ -303,8 +303,8 @@ describe("Connection", () => {
 
         it("schema name can be set", () => {
             return Promise.all(connections.map(async connection => {
-                await connection.syncSchema(true);
-                const schemaName = (connection.options as PostgresConnectionOptions).schemaName;
+                await connection.synchronize(true);
+                const schemaName = (connection.options as PostgresConnectionOptions).schema;
                 const comment = new CommentV1();
                 comment.title = "Change SchemaName";
                 comment.context = `To ${schemaName}`;

@@ -777,7 +777,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
      * Schema name shortcut.
      */
     protected get schemaName() {
-        return this.driver.options.schemaName || "public";
+        return this.driver.options.schema || this.driver.options.schemaName || "public";
     }
 
     /**

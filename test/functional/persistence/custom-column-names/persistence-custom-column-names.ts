@@ -21,7 +21,7 @@ describe("persistence > custom-column-names", function() {
     // clean up database before each test
     function reloadDatabase() {
         return connection
-            .syncSchema(true)
+            .synchronize(true)
             .catch(e => {
                 console.log("Error during schema re-creation: ", e);
                 throw e;

@@ -9,7 +9,7 @@ describe("github issues > #512 Table name escaping in UPDATE in QueryBuilder", (
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

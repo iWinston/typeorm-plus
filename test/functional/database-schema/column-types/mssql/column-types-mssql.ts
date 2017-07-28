@@ -14,7 +14,7 @@ describe("database schema > column types > mssql", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

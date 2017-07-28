@@ -14,7 +14,7 @@ describe("uuid-postgres", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

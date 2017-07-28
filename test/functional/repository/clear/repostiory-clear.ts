@@ -9,7 +9,7 @@ describe("repository > clear method", () => {
     before(async () => connections = await createTestingConnections({
         entities: [Post],
         schemaCreate: true,
-        dropSchemaOnConnection: true
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

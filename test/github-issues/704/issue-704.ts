@@ -9,7 +9,7 @@ describe("github issues > #704 Table alias in WHERE clause is not quoted in Post
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

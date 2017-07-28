@@ -61,7 +61,7 @@ export class MigrationGenerateCommand {
                 logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
             });
             connection = await createConnection(connectionOptions);
-            const sqlQueries = await connection.logSyncSchema();
+            const sqlQueries = await connection.driver.createSchemaBuilder().log();
             const upSqls: string[] = [], downSqls: string[] = [];
 
             // mysql is exceptional here because it uses ` character in to escape names in queries, thats why for mysql

@@ -9,7 +9,7 @@ describe("github issues > #108 Error with constraint names on postgres", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,        
+        dropSchema: true,
     }));
     after(() => closeTestingConnections(connections));
 

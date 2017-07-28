@@ -1,4 +1,3 @@
-import {DriverOptions} from "../driver/DriverOptions";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {LoggerOptions} from "../logger/LoggerOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
@@ -12,42 +11,14 @@ export interface BaseConnectionOptions {
 
     /**
      * Database type. This value is required.
-     *
-     * "?" is temporary.
      */
-    readonly type?: DatabaseType;
+    readonly type: DatabaseType;
 
     /**
      * Connection name. If connection name is not given then it will be called "default".
      * Different connections must have different names.
      */
     readonly name?: string;
-
-    /**
-     * Database options of this connection.
-     *
-     * @deprecated Define options right in the connection options section.
-     */
-    readonly driver?: DriverOptions;
-
-    /**
-     * Extra connection options to be passed to the underlying driver.
-     *
-     * todo: deprecate this and move all database-specific types into hts own connection options object.
-     */
-    readonly extra?: any;
-
-    /**
-     * Prefix to use on all tables (collections) of this connection in the database.
-     *
-     * todo: rename to entityPrefix
-     */
-    readonly tablesPrefix?: string;
-
-    /**
-     * Naming strategy to be used to name tables and columns in the database.
-     */
-    readonly namingStrategy?: NamingStrategyInterface;
 
     /**
      * Entities to be loaded for this connection.
@@ -78,6 +49,11 @@ export interface BaseConnectionOptions {
     readonly migrations?: Function[]|string[];
 
     /**
+     * Naming strategy to be used to name tables and columns in the database.
+     */
+    readonly namingStrategy?: NamingStrategyInterface;
+
+    /**
      * Logging options.
      */
     readonly logging?: LoggerOptions;
@@ -93,13 +69,6 @@ export interface BaseConnectionOptions {
     readonly maxQueryExecutionTime?: number;
 
     /**
-     * Drops the schema each time connection is being established.
-     * Be careful with this option and don't use this in production - otherwise you'll loose all production data.
-     * This option is useful during debug and development.
-     */
-    readonly dropSchemaOnConnection?: boolean;
-
-    /**
      * Indicates if database schema should be auto created on every application launch.
      * Be careful with this option and don't use this in production - otherwise you can loose production data.
      * This option is useful during debug and development.
@@ -107,18 +76,33 @@ export interface BaseConnectionOptions {
      *
      * Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
      * Instead, it syncs just by creating indices.
-     *
-     * todo: rename it simply to synchronize: boolean ?
      */
-    readonly autoSchemaSync?: boolean;
+    readonly synchronize?: boolean;
 
     /**
      * Indicates if migrations should be auto run on every application launch.
-     * Alternative to it, you can use CLI and run migration:create command.
-     *
-     * todo: rename it simply to runMigrations: boolean ?
+     * Alternative to it, you can use CLI and run migrations:run command.
      */
-    readonly autoMigrationsRun?: boolean;
+    readonly migrationsRun?: boolean;
+
+    /**
+     * Drops the schema each time connection is being established.
+     * Be careful with this option and don't use this in production - otherwise you'll loose all production data.
+     * This option is useful during debug and development.
+     */
+    readonly dropSchema?: boolean;
+
+    /**
+     * Prefix to use on all tables (collections) of this connection in the database.
+     */
+    readonly entityPrefix?: string;
+
+    /**
+     * Extra connection options to be passed to the underlying driver.
+     *
+     * todo: deprecate this and move all database-specific types into hts own connection options object.
+     */
+    readonly extra?: any;
 
     /**
      * CLI settings.
@@ -141,5 +125,25 @@ export interface BaseConnectionOptions {
         readonly subscribersDir?: string;
 
     };
+
+    /**
+     * @deprecated - Use entityPrefix instead
+     */
+    readonly tablesPrefix?: string;
+
+    /**
+     * @deprecated - Use synchronize instead
+     */
+    readonly autoSchemaSync?: boolean;
+
+    /**
+     * @deprecated - Use migrationsRun instead
+     */
+    readonly autoMigrationsRun?: boolean;
+
+    /**
+     * @deprecated - Use dropSchema instead
+     */
+    readonly dropSchemaOnConnection?: boolean;
 
 }

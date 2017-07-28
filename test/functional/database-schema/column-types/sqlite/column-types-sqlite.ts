@@ -12,7 +12,7 @@ describe("database schema > column types > sqlite", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

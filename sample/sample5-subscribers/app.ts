@@ -13,7 +13,7 @@ const options: ConnectionOptions = {
     username: "root",
     password: "admin",
     database: "test",
-    autoSchemaSync: true,
+    synchronize: true,
     entities: [Post, PostAuthor, PostCategory],
     subscribers: [EverythingSubscriber]
 };

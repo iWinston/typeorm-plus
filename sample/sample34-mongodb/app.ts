@@ -7,7 +7,7 @@ const options: ConnectionOptions = {
     host: "localhost",
     database: "test",
     logging: ["query", "error"],
-    // autoSchemaSync: true,
+    // synchronize: true,
     entities: [Post]
 };
 

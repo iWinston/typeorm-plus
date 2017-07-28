@@ -20,7 +20,7 @@ const options: ConnectionOptions = {
     password: "oracle",
     port: 1521,
     sid: "xe.oracle.docker",
-    autoSchemaSync: true,
+    synchronize: true,
     logging: ["query", "error"],
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };

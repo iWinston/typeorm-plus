@@ -11,7 +11,7 @@ describe.skip("github issues > #131 Error with single table inheritance query wi
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,        
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

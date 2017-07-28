@@ -8,16 +8,16 @@ import {User} from "../entity/User";
 @EntityRepository()
 export class UserRepository {
 
-    constructor(private entityManager: EntityManager) {
+    constructor(private manager: EntityManager) {
     }
 
     async createAndSave(firstName: string, lastName: string) {
-        const user = await this.entityManager.create(User, { firstName, lastName });
-        return this.entityManager.save(user);
+        const user = await this.manager.create(User, { firstName, lastName });
+        return this.manager.save(user);
     }
 
     async findByName(firstName: string, lastName: string) {
-        return this.entityManager.createQueryBuilder(User, "user")
+        return this.manager.createQueryBuilder(User, "user")
             .where("user.firstName = :firstName AND user.lastName = :lastName")
             .setParameters({ firstName, lastName })
             .getOne();

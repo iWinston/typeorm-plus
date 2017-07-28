@@ -16,7 +16,7 @@ describe("persistence > one-to-many", function() {
         return createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         }).then(all => connections = all);
     });
     after(() => closeTestingConnections(connections));

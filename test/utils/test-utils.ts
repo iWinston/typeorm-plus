@@ -60,12 +60,12 @@ export interface TestingOptions {
     /**
      * Indicates if schema should be dropped on connection setup.
      */
-    dropSchemaOnConnection?: boolean;
+    dropSchema?: boolean;
 
     /**
      * Schema name used for postgres driver.
      */
-    schemaName?: string;
+    schema?: string;
 
 }
 
@@ -80,10 +80,10 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
         entitySchemas: options.entitySchemas ? options.entitySchemas : [],
-        dropSchemaOnConnection: options.dropSchemaOnConnection ? options.dropSchemaOnConnection : false,
+        dropSchema: options.dropSchema ? options.dropSchema : false,
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
         enabledDrivers: [driverType],
-        schemaName: options.schemaName ? options.schemaName : undefined
+        schema: options.schema ? options.schema : undefined
     });
     if (!testingConnections.length)
         throw new Error(`Unable to run tests because connection options for "${driverType}" are not set.`);
@@ -142,8 +142,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
                 autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-                dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
-                schemaName: options && options.schemaName ? options.schemaName : undefined,
+                dropSchema: options && options.entities ? options.dropSchema : false,
+                schema: options && options.schema ? options.schema : undefined,
             });
         });
 }
@@ -167,7 +167,7 @@ export function closeTestingConnections(connections: Connection[]) {
  * Reloads all databases for all given connections.
  */
 export function reloadTestingDatabases(connections: Connection[]) {
-    return Promise.all(connections.map(connection => connection.syncSchema(true)));
+    return Promise.all(connections.map(connection => connection.synchronize(true)));
 }
 
 /**

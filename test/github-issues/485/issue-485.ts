@@ -12,7 +12,7 @@ describe("github issues > #485 If I set the datatype of PrimaryGeneratedColumn t
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

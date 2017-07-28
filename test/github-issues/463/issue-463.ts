@@ -10,7 +10,7 @@ describe("github issues > #463 saving empty string array", () => {
         entities: [__dirname + "/entity/*{.js,.ts}"],
         enabledDrivers: ["postgres"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

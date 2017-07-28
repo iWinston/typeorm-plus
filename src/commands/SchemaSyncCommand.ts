@@ -42,7 +42,7 @@ export class SchemaSyncCommand {
                 }
             });
             connection = await createConnection(connectionOptions);
-            await connection.syncSchema(false);
+            await connection.synchronize(false);
             console.log(chalk.green("Schema syncronization finished successfully."));
 
         } catch (err) {

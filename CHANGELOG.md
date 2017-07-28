@@ -64,10 +64,15 @@ Also now all
   Column type must be passed in options object, e.g. `@PrimaryGeneratedColumn({ type: "bigint"})`
 * Logger interface has changed. Custom logger supply mechanism has changed
 * Now `logging` options in connection options is simple "true", or "all", or list of logging modes can be supplied 
-
-### DEPRECATIONS
-
+* removed `driver` section in connection options. Define options right in the connection options section.
 * `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead
+* `tablesPrefix` in connection options is deprecated. Use `entityPrefix` instead
+* `autoMigrationsRun` in connection options is deprecated. Use `migrationsRun` instead
+* `autoSchemaSync` in connection options is deprecated. Use `synchronize` instead
+* `dropSchemaOnConnection` in connection options is deprecated. Use `dropSchema` instead
+* `schemaName` in connection options is deprecated. Use `schema` instead
+* `TYPEORM_AUTO_SCHEMA_SYNC` env variable is now called `TYPEORM_SYNCHRONIZE`
+* `schemaSync` method in `Connection` has been renamed to `synchronize`
 
 ### NEW FEATURES
 

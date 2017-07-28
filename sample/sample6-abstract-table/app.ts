@@ -12,7 +12,7 @@ const options: ConnectionOptions = {
     username: "root",
     password: "admin",
     database: "test",
-    autoSchemaSync: true,
+    synchronize: true,
     entities: [__dirname + "/entity/*"]
 };
 

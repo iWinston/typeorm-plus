@@ -21,7 +21,7 @@ describe("repository > find methods", () => {
         entities: [Post],
         entitySchemas: [userSchema],
         schemaCreate: true,
-        dropSchemaOnConnection: true
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

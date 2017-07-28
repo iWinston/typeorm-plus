@@ -11,7 +11,7 @@ describe("github issues > #352 double precision round to int in mssql", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
         enabledDrivers: ["mssql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));

@@ -343,7 +343,7 @@ export class EntityMetadata {
         args: TableMetadataArgs
     }) {
         const namingStrategy = options.connection.namingStrategy;
-        const tablesPrefix = options.connection.options.tablesPrefix;
+        const entityPrefix = options.connection.options.entityPrefix || options.connection.options.tablesPrefix;
         this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.target = options.args.target;
@@ -353,7 +353,7 @@ export class EntityMetadata {
         this.skipSync = options.args.skipSync || false;
         this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
         this.tableNameWithoutPrefix = this.tableType === "closure-junction" ? namingStrategy.closureJunctionTableName(this.givenTableName!) : namingStrategy.tableName(this.targetName, this.givenTableName);
-        this.tableName = tablesPrefix ? namingStrategy.prefixTableName(tablesPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
+        this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
 

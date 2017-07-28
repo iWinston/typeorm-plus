@@ -10,7 +10,7 @@ describe("driver > convert raw results to entity", () => {
     before(async () => connections = await createTestingConnections({
         entities: [Post],
         schemaCreate: true,
-        dropSchemaOnConnection: true
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

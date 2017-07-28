@@ -15,7 +15,7 @@ describe("jsonb type", () => {
     after(() => closeTestingConnections(connections));
 
     it("should make correct schema with Postgres' jsonb type", () => Promise.all(connections.map(async connection => {
-        await connection.syncSchema(true);
+        await connection.synchronize(true);
         const queryRunner = connection.createQueryRunner();
         let schema = await queryRunner.loadTableSchema("record");
         await queryRunner.release();
@@ -25,7 +25,7 @@ describe("jsonb type", () => {
     })));
 
     it("should persist jsonb correctly", () => Promise.all(connections.map(async connection => {
-        await connection.syncSchema(true);
+        await connection.synchronize(true);
         let recordRepo = connection.getRepository(Record);
         let record = new Record();
         record.data = { foo: "bar" };

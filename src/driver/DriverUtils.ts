@@ -1,5 +1,3 @@
-import {DriverOptions} from "./DriverOptions";
-
 /**
  * Common driver utility functions.
  */
@@ -13,11 +11,11 @@ export class DriverUtils {
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.
      */
-    static buildDriverOptions(options: DriverOptions, buildOptions?: { useSid: boolean }): DriverOptions {
+    static buildDriverOptions(options: any, buildOptions?: { useSid: boolean }): any {
         if (options.url) {
             const parsedUrl = this.parseConnectionUrl(options.url);
             if (buildOptions && buildOptions.useSid) {
-                const urlDriverOptions: DriverOptions = {
+                const urlDriverOptions: any = {
                     type: options.type,
                     host: parsedUrl.host,
                     username: parsedUrl.username,
@@ -28,7 +26,7 @@ export class DriverUtils {
                 return Object.assign(urlDriverOptions, options);
 
             } else {
-                const urlDriverOptions: DriverOptions = {
+                const urlDriverOptions: any = {
                     type: options.type,
                     host: parsedUrl.host,
                     username: parsedUrl.username,

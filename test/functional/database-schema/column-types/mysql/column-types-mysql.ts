@@ -14,7 +14,7 @@ describe("database schema > column types > mysql", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

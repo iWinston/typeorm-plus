@@ -1,11 +1,9 @@
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {MongoQueryRunner} from "./MongoQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
 import {MongoConnectionOptions} from "./MongoConnectionOptions";
@@ -14,6 +12,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {ConnectionOptions} from "../../connection/ConnectionOptions";
 
 /**
  * Organizes communication with MongoDB.
@@ -192,11 +191,11 @@ export class MongoDriver implements Driver {
     /**
      * Validate driver options to make sure everything is correct and driver will be able to establish connection.
      */
-    protected validateOptions(options: DriverOptions) {
-        if (!options.url) {
-            if (!options.database)
-                throw new DriverOptionNotSetError("database");
-        }
+    protected validateOptions(options: ConnectionOptions) { // todo: fix
+        // if (!options.url) {
+        //     if (!options.database)
+        //         throw new DriverOptionNotSetError("database");
+        // }
     }
 
     /**

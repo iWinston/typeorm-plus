@@ -83,7 +83,7 @@ class LoadMap {
  */
 export class PlainObjectToDatabaseEntityTransformer {
 
-    constructor(private entityManager: EntityManager) {
+    constructor(private manager: EntityManager) {
     }
 
     // -------------------------------------------------------------------------
@@ -110,7 +110,7 @@ export class PlainObjectToDatabaseEntityTransformer {
         fillLoadMap(plainObject, metadata);
         // load all entities and store them in the load map
         await Promise.all(loadMap.groupByTargetIds().map(targetWithIds => { // todo: fix type hinting
-            return this.entityManager
+            return this.manager
                 .findByIds<ObjectLiteral>(targetWithIds.target as any, targetWithIds.ids)
                 .then(entities => loadMap.fillEntities(targetWithIds.target, entities));
         }));

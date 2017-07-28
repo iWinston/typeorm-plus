@@ -6,3 +6,4 @@ node_modules/
 ormconfig.json
 ormlogs.log
 npm-debug.log
+/src/connection/BaseConnectionOptions.ts

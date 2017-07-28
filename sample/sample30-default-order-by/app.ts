@@ -7,7 +7,7 @@ const options: ConnectionOptions = {
     type: "sqlite",
     database: "temp/sqlitedb.db",
     logging: ["query", "error"],
-    autoSchemaSync: true,
+    synchronize: true,
     entities: [Post, Category]
 };
 

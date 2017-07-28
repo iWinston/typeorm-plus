@@ -26,7 +26,7 @@ describe("repository > basic methods", () => {
         entities: [Post, Blog, Category],
         entitySchemas: [userSchema, questionSchema],
         schemaCreate: true,
-        dropSchemaOnConnection: true
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

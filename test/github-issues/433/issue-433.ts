@@ -10,7 +10,7 @@ describe("github issues > #433 default value (json) is not getting set in postgr
         entities: [__dirname + "/entity/*{.js,.ts}"],
         enabledDrivers: ["postgres"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

@@ -12,7 +12,7 @@ describe("transaction > method wrapped into transaction decorator", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
         enabledDrivers: ["mysql"] // since @Transaction accepts a specific connection name we can use only one connection and its name
     }));
     beforeEach(() => reloadTestingDatabases(connections));

@@ -11,7 +11,7 @@ describe("persistence > order of persistence execution operations", () => {
         it("should throw CircularRelationsError", () => createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         }).should.be.rejected); // CircularRelationsError
 
     });
@@ -22,7 +22,7 @@ describe("persistence > order of persistence execution operations", () => {
         before(async () => connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         }));
         beforeEach(() => reloadTestingDatabases(connections));
         after(() => closeTestingConnections(connections));

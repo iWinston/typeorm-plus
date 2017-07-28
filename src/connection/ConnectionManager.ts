@@ -48,10 +48,6 @@ export class ConnectionManager {
      */
     create(options: ConnectionOptions): Connection {
 
-        // (backward compatibility) if options are set in the driver section of connection options then merge them into the option
-        if (options.driver)
-            Object.assign(options, options.driver);
-
         // check if such connection is already registered
         const existConnection = this.connections.find(connection => connection.name === (options.name || "default"));
         if (existConnection) {

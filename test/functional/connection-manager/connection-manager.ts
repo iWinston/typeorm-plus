@@ -112,7 +112,7 @@ describe("ConnectionManager", () => {
 
     describe("create connection options", function() {
 
-        it("should not drop the database if dropSchemaOnConnection was not specified", async () => {
+        it("should not drop the database if dropSchema was not specified", async () => {
             const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
@@ -134,11 +134,11 @@ describe("ConnectionManager", () => {
             await connection.close();
         });
 
-        it("should drop the database if dropSchemaOnConnection was set to true (mysql)", async () => {
+        it("should drop the database if dropSchema was set to true (mysql)", async () => {
             const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
-                dropSchemaOnConnection: true,
+                dropSchema: true,
                 entities: [Post]
             });
             const connectionManager = new ConnectionManager();
@@ -156,9 +156,9 @@ describe("ConnectionManager", () => {
             await connection.close();
          });
 
-     /*   it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+     /*   it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
-                dropSchemaOnConnection: true,
+                dropSchema: true,
                 autoSchemaSync: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
@@ -179,9 +179,9 @@ describe("ConnectionManager", () => {
             await connection.close();
          });*/
 
-    /*    it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+    /*    it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
-                dropSchemaOnConnection: true,
+                dropSchema: true,
                 autoSchemaSync: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]

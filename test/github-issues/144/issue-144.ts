@@ -9,7 +9,7 @@ describe("github issues > #144 Class Table Inheritance doesn't seem to work", ()
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,        
+        dropSchema: true,        
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

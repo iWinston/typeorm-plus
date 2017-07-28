@@ -41,7 +41,7 @@ export class SchemaLogCommand {
                 logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
             });
             connection = await createConnection(connectionOptions);
-            const sqls = await connection.logSyncSchema();
+            const sqls = await connection.driver.createSchemaBuilder().log();
             if (sqls.length === 0) {
                 console.log(chalk.yellow("Your schema is up to date - there are no queries to be executed by schema syncronization."));
 

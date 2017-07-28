@@ -30,7 +30,7 @@ describe("many-to-one", function() {
 
     // clean up database before each test
     function reloadDatabase() {
-        return connection.syncSchema(true);
+        return connection.synchronize(true);
     }
 
     let postRepository: Repository<Post>,

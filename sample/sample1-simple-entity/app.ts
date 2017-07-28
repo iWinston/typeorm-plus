@@ -34,7 +34,7 @@ const options: ConnectionOptions = {
     // logging: ["query", "error"],
     // logging: ["error", "schema", "query"],
     // maxQueryExecutionTime: 90,
-    autoSchemaSync: true,
+    synchronize: true,
     entities: [Post]
 };
 

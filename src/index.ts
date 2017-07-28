@@ -70,6 +70,10 @@ export * from "./decorator/Index";
 export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
 export * from "./decorator/EntityRepository";
+export * from "./logger/Logger";
+export * from "./logger/AdvancedConsoleLogger";
+export * from "./logger/SimpleConsoleLogger";
+export * from "./logger/FileLogger";
 export * from "./schema-builder/schema/ColumnSchema";
 export * from "./schema-builder/schema/ForeignKeySchema";
 export * from "./schema-builder/schema/IndexSchema";
@@ -82,7 +86,6 @@ export {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 export {Connection} from "./connection/Connection";
 export {ConnectionManager} from "./connection/ConnectionManager";
 export {ConnectionOptions} from "./connection/ConnectionOptions";
-export {DriverOptions} from "./driver/DriverOptions";
 export {Driver} from "./driver/Driver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";
 export {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
@@ -135,17 +138,17 @@ export function getMetadataArgsStorage(): MetadataArgsStorage {
 }
 
 /**
- * Gets a ConnectionManager which creates connections.
- */
-export function getConnectionManager(): ConnectionManager {
-    return getFromContainer(ConnectionManager);
-}
-
-/**
  * Reads connection options stored in ormconfig configuration file.
  */
 export async function getConnectionOptions(connectionName: string = "default"): Promise<ConnectionOptions> {
     return new ConnectionOptionsReader().get(connectionName);
+}
+
+/**
+ * Gets a ConnectionManager which creates connections.
+ */
+export function getConnectionManager(): ConnectionManager {
+    return getFromContainer(ConnectionManager);
 }
 
 /**

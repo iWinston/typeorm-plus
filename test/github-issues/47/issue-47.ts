@@ -11,7 +11,7 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
         enabledDrivers: ["mysql"] // we can properly test lazy-relations only on one platform
     }));
     beforeEach(() => reloadTestingDatabases(connections));
