@@ -11,7 +11,7 @@ describe("database schema > column collation > mssql", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
             schemaCreate: true,
-            dropSchemaOnConnection: true,
+            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

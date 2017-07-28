@@ -391,7 +391,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         const generatedColumnSql = generatedColumns.length > 0 ? ` OUTPUT ${generatedColumnNames}` : "";
         const sql = columns.length > 0
             ? `INSERT INTO "${tableName}"(${columns}) ${generatedColumnSql} VALUES (${values})`
-            : `INSERT INTO "${tableName}" DEFAULT VALUES `;
+            : `INSERT INTO "${tableName}" ${generatedColumnSql} DEFAULT VALUES `;
 
         const parameters = this.driver.parametrizeMap(tableName, keyValues);
         const parametersArray = Object.keys(parameters).map(key => parameters[key]);
@@ -934,8 +934,6 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      */
     protected buildCreateColumnSql(tableName: string, column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
         let c = `"${column.name}" ${this.connection.driver.createFullType(column)}`;
-        if (column.charset)
-            c += " CHARACTER SET " + column.charset;
         if (column.collation)
             c += " COLLATE " + column.collation;
         if (column.isNullable !== true)

@@ -221,6 +221,7 @@ export class EntityMetadataBuilder {
                 if (generated) {
                     column.isGenerated = true;
                     column.generationStrategy = generated.strategy;
+                    column.type = generated.strategy === "increment" ? Number : "uuid"; // TODO do not override column type, because it can be tinyint, bigint, etc. Fix later
                 }
             });
 

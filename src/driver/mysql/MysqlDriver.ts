@@ -175,6 +175,10 @@ export class MysqlDriver implements Driver {
         
     }
 
+    afterConnect(): Promise<void> {
+        return Promise.resolve();
+    }
+
     /**
      * Closes connection with the database.
      */

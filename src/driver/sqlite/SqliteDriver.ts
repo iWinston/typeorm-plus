@@ -147,6 +147,10 @@ export class SqliteDriver implements Driver {
         this.databaseConnection = await this.createDatabaseConnection();
     }
 
+    afterConnect(): Promise<void> {
+        return Promise.resolve();
+    }
+
     /**
      * Closes connection with database.
      */

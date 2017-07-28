@@ -133,6 +133,10 @@ export class WebsqlDriver implements Driver {
         return Promise.resolve();
     }
 
+    afterConnect(): Promise<void> {
+        return Promise.resolve();
+    }
+
     /**
      * Closes connection with the database.
      */

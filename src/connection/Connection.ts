@@ -142,6 +142,8 @@ export class Connection {
             // build all metadatas registered in the current connection
             this.buildMetadatas();
 
+            await this.driver.afterConnect();
+
             // if option is set - drop schema once connection is done
             if (this.options.dropSchema || this.options.dropSchemaOnConnection)
                 await this.dropDatabase();

@@ -13,13 +13,13 @@ export class Question {
     @Generated("uuid")
     uuid: string;
 
-    @Column()
+    @Column("uuid")
     uuid2: string;
 
-    @Column("varchar", { nullable: true })
+    @Column("uuid", { nullable: true })
     uuid3: string|null;
 
-    @Column("varchar", { nullable: true })
+    @Column({ nullable: true })
     @Generated("uuid")
     uuid4: string|null;
 

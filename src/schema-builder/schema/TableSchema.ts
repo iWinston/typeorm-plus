@@ -214,7 +214,7 @@ export class TableSchema {
             // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata), columnSchema.default)); // || // we included check for generated here, because generated columns already can have default values
             // console.log(columnSchema.isNullable, "!==", columnMetadata.isNullable); //  ||
             // console.log(columnSchema.isUnique, "!==", columnMetadata.isUnique); //  ||
-            // console.log(columnSchema.isGenerated, "!==", columnMetadata.isGenerated); // d;
+            // console.log(columnSchema.isGenerated, "!==", columnMetadata.isGenerated);
 
             return  columnSchema.name !== columnMetadata.databaseName ||
                     columnSchema.type !== driver.normalizeType(columnMetadata) ||

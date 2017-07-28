@@ -193,6 +193,17 @@ export class PostgresDriver implements Driver {
         await queryRunner.release();
     }
 
+    async afterConnect(): Promise<void> {
+        if (this.connection.entityMetadatas.some(metadata => metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0)) {
+            const queryRunner = await this.createQueryRunner();
+            await queryRunner.connect();
+            await queryRunner.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
+            await queryRunner.release();
+        }
+
+        return Promise.resolve();
+    }
+
     /**
      * Closes connection with database.
      */

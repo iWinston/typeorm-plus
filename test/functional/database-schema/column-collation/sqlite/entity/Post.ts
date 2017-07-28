@@ -8,7 +8,7 @@ export class Post {
     @PrimaryColumn()
     id: number;
 
-    @Column({ collation: "en_US" })
+    @Column({ collation: "RTRIM" })
     name: string;
 
 }

@@ -676,6 +676,8 @@ export class SqliteQueryRunner implements QueryRunner {
         } else {
             c += " " + this.connection.driver.createFullType(column);
         }
+        if (column.collation)
+            c += " COLLATE " + column.collation;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isUnique === true)

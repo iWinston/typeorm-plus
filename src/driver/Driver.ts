@@ -47,6 +47,11 @@ export interface Driver {
     connect(): Promise<void>;
 
     /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
+    afterConnect(): Promise<void>;
+
+    /**
      * Closes connection with database and releases all resourc.
      */
     disconnect(): Promise<void>;

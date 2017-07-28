@@ -371,6 +371,8 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                     // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
                     columnSchema.isGenerated = isGenerated;
                     columnSchema.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    columnSchema.charset = dbColumn["character_set_name"];
+                    columnSchema.collation = dbColumn["collation_name"];
                     columnSchema.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] ===  `uk_${dbColumn["table_name"]}_${dbColumn["column_name"]}`);
                     if (columnSchema.type === "array") {
                         columnSchema.isArray = true;
@@ -797,9 +799,9 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (!column.isGenerated || column.type === "uuid")
             c += " " + this.connection.driver.createFullType(column);
         if (column.charset)
-            c += " CHARACTER SET " + column.charset;
+            c += " CHARACTER SET \"" + column.charset + "\"";
         if (column.collation)
-            c += " COLLATE " + column.collation;
+            c += " COLLATE \"" + column.collation + "\"";
         if (column.isNullable !== true)
             c += " NOT NULL";
         // if (column.isPrimary)
