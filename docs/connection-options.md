@@ -1,6 +1,6 @@
 # Connection Options
 
-* [What is `ConnectionOptions`](#what_is-connectionoptions)
+* [What is `ConnectionOptions`](#what-is-connectionoptions)
 * [Common connection options](#common-connection-options)
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
 * [`postgres` connection options](#postgres-connection-options)
