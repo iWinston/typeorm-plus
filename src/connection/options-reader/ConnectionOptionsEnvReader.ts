@@ -28,10 +28,10 @@ export class ConnectionOptionsEnvReader {
             sid: PlatformTools.getEnvVariable("TYPEORM_SID"),
             extra: PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA")) : undefined,
             synchronize: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_SYNCHRONIZE")),
-            entities: PlatformTools.getEnvVariable("TYPEORM_ENTITIES") ? PlatformTools.getEnvVariable("TYPEORM_ENTITIES").split(",") : [],
-            migrations: PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS") ? PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS").split(",") : [],
-            subscribers: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS") ? PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS").split(",") : [],
-            entitySchemas: PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS") ? PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS").split(",") : [],
+            entities: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_ENTITIES")),
+            migrations: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS")),
+            subscribers: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS")),
+            entitySchemas: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_ENTITY_SCHEMAS")),
             logging: PlatformTools.getEnvVariable("TYPEORM_LOGGING"),
             cli: {
                 entitiesDir: PlatformTools.getEnvVariable("TYPEORM_ENTITIES_DIR"),
@@ -39,6 +39,19 @@ export class ConnectionOptionsEnvReader {
                 subscribersDir: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS_DIR"),
             }
         };
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Converts a string which contains multiple elements split by comma into a string array of strings.
+     */
+    protected stringToArray(variable?: string) {
+        if (!variable)
+            return [];
+        return variable.split(",").map(str => str.trim());
     }
 
 }

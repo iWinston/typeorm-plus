@@ -1,21 +1,21 @@
-# Connection and connection options
+# Working with Connection
 
-* What is `Connection`
-* Creating a new connection
-* Creating a new connection from the configuration files
-    * Loading from `ormconfig.json`
-    * Loading from `ormconfig.js`
-    * Loading from `ormconfig.env` or from environment variables
-    * Loading from `ormconfig.yml`
-    * Loading from `ormconfig.xml`
-* Using `ConnectionManager`
-* Working with connection
-* Connection usage example in sample express application
-* Using service container and typedi extensions
-* API
-    * Main API
-    * `Connection` class API
-    * `ConnectionManager` class API
+* [What is `Connection`](#what-is-connection)
+* [Creating a new connection](#creating-a-new-connection)
+* [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
+    * [Loading from `ormconfig.json`](#loading-from-ormconfig.json)
+    * [Loading from `ormconfig.js`](#loading-from-ormconfig.js)
+    * [Loading from `ormconfig.env` or from environment variables](#loading-from-ormconfig.env-or-from-environment-variables)
+    * [Loading from `ormconfig.yml`](#loading-from-ormconfig.yml)
+    * [Loading from `ormconfig.xml`](#loading-from-ormconfig.xml)
+* [Using `ConnectionManager`](#using-connectionmanager)
+* [Working with connection](#working-with-connection)
+* [Connection usage example in sample express application](#connection-usage-example-in-sample-express-application)
+* [Using service container and typedi extensions](#using-service-container-and-typedi-extensions)
+* [API](#api)
+    * [Main API](#main-api)
+    * [`Connection` class API](#connection-class-api)
+    * [`ConnectionManager` class API](#connectionmanager-class-api)
     
 ## What is `Connection`
 
@@ -23,14 +23,15 @@ Connection setups a real connection with your database.
 Depend on database type it may also setup a connection pool. 
 Connection (or connection pool) setup is made when `connect` method is called.
 Disconnection (or closing all connections in the pool) is made when `close` method is called.
-You must create connection only once in your application bootstrap.
+Generally, you must create connection only once in your application bootstrap,
+and close it after you completely finished working with database.
 
 ## Creating a new connection
 
 There are several ways how connection can be created. 
-The most simple and common way is to use main api `createConnection` and `createConnections` methods.
+The most simple and common way is to use `createConnection` and `createConnections` methods.
 
-`createConnection` creates a single connection:
+* `createConnection` creates a single connection:
 
 ```typescript
 import {createConnection, Connection} from "typeorm";
@@ -41,11 +42,11 @@ const connection: Connection = await createConnection({
     port: 3306,
     username: "test",
     password: "test",
-    database: "test",
+    database: "test"
 });
 ```
 
-`createConnections` creates multiple connection:
+* `createConnections` creates multiple connections:
 
 ```typescript
 import {createConnections, Connection} from "typeorm";
@@ -57,7 +58,7 @@ const connections: Connection[] = await createConnections([{
     port: 3306,
     username: "test",
     password: "test",
-    database: "test",
+    database: "test"
 }, {
     name: "test2-connection",
     type: "mysql",
@@ -65,12 +66,13 @@ const connections: Connection[] = await createConnections([{
     port: 3306,
     username: "test",
     password: "test",
-    database: "test2",
+    database: "test2"
 }]);
 ```
 
 Both these methods automatically call `Connection#connect` method.
-Both these methods automatically load configuration from `ormconfig` file if connection options are not specified.
+
+Both these methods automatically load configuration from `ormconfig` file if connection options not specified.
 For example:
 
 ```typescript
@@ -83,16 +85,15 @@ import {createConnection, Connection} from "typeorm";
 // or connection without name at all (which means it will be named "default" by default)
 const connection: Connection = await createConnection();
 
-// if createConnections is called instead of createConnection then it will initialize and return all connections
-// defined in ormconfig file
+// if createConnections is called instead of createConnection then 
+// it will initialize and return all connections defined in ormconfig file
 ```
 
-Different connections must have different connection names.
-Different connections cannot have same connection name.
-By default, if connection name is not specified it is equal to `default`.
-Usually use multiple connections when you have multiple databases or multiple connection configurations.
+Different connections must have different names.
+By default, if connection name is not specified it's equal to `default`.
+Usually you use multiple connections when you have multiple databases or multiple connection configurations.
 
-Once you create a connection you can obtain it anywhere, using `getConnection` method:
+Once you create a connection you can obtain it anywhere from your app, using `getConnection` method:
 
 ```typescript
 import {getConnection} from "typeorm";
@@ -104,17 +105,17 @@ const connection = getConnection();
 const secondConnection = getConnection("test2-connection");
 ```
 
-Avoid creating extra classes / services which store instance of your connections.
+Avoid creating extra classes / services to store and manager your connections.
 This functionality is already embed into TypeORM - 
 you don't need to overengineer and create useless abstractions.
 
-## Creating a new connection from the configuration files
+## Creating a new connection from the configuration file
 
 Most of the times you want to store your connection options in a separate configuration file.
 It makes it convenient and easy to manage. 
-TypeORM supports multiple configuration sources of this purpose.
+TypeORM supports multiple configuration sources for this purpose.
 You'll only need to create `ormconfig.[format]` file in root directory of your application (near `package.json`),
-write configuration there and in your app simply call `createConnection()` without any configuration passed:
+put your configuration there and in app call `createConnection()` without any configuration passed:
 
 ```typescript
 import {createConnection, Connection} from "typeorm";
@@ -125,7 +126,7 @@ const connection: Connection = await createConnection();
  
 ### Loading from `ormconfig.json`
 
-Create `ormconfig.json` file in root of your project. It should have following content:
+Create `ormconfig.json` file in project root (near `package.json`). It should have following content:
 
 ```json
 {
@@ -139,6 +140,7 @@ Create `ormconfig.json` file in root of your project. It should have following c
 ```
 
 You can specify any other options from `ConnectionOptions`.
+For more information about connection options see [ConnectionOptions](./connection-options.md) documentation.
 
 If you want to create multiple connections then simply create multiple connections in a single array:
 
@@ -164,7 +166,7 @@ If you want to create multiple connections then simply create multiple connectio
 
 ### Loading from `ormconfig.js`
 
-Create `ormconfig.js` file in root of your project. It should have following content:
+Create `ormconfig.js` file in project root (near `package.json`). It should have following content:
 
 ```javascript
 module.exports = {
@@ -182,15 +184,15 @@ If you want to create multiple connections then simply create multiple connectio
 
 ### Loading from `ormconfig.env` or from environment variables
 
-Create `ormconfig.env` file in root of your project. It should have following content:
+Create `ormconfig.env` file in project root (near `package.json`). It should have following content:
 
-```env
+```ini
 TYPEORM_CONNECTION = mysql
 TYPEORM_HOST = localhost
 TYPEORM_USERNAME = root
 TYPEORM_PASSWORD = admin
 TYPEORM_PORT = 3000
-TYPEORM_AUTO_SCHEMA_SYNC = true
+TYPEORM_SYNCHRONIZE = true
 TYPEORM_LOGGING = true
 TYPEORM_ENTITIES = entity/.*js,modules/**/entity/.*js
 ```
@@ -202,7 +204,7 @@ List of available env variables you can set:
 * TYPEORM_USERNAME
 * TYPEORM_PASSWORD
 * TYPEORM_PORT
-* TYPEORM_AUTO_SCHEMA_SYNC
+* TYPEORM_SYNCHRONIZE
 * TYPEORM_URL
 * TYPEORM_SID
 * TYPEORM_ENTITIES
@@ -223,7 +225,7 @@ If your app has multiple connections then use alternative configuration storage 
 
 ### Loading from `ormconfig.yml`
 
-Create `ormconfig.yml` file in root of your project. It should have following content:
+Create `ormconfig.yml` file in project root (near `package.json`). It should have following content:
 
 ```yaml
 default: # default connection
@@ -233,7 +235,7 @@ default: # default connection
     password: "test"
     database: "test"
     
-second-connection: # other connections
+second-connection: # other connection
     host: "localhost"
     port: 3306
     username: "test"
@@ -245,7 +247,7 @@ You can use any connection options available.
 
 ### Loading from `ormconfig.xml`
 
-Create `ormconfig.xml` file in root of your project. It should have following content:
+Create `ormconfig.xml` file in project root (near `package.json`). It should have following content:
 
 ```xml
 <connections>
@@ -340,6 +342,31 @@ but using `getConnection()` method is enough in most cases.
 Using connection you work with your entities, particularly using `EntityManager` and `Repository`.
 For more information about them see [Entity Manager and Repository](./entity-manager-and-repository.md) documentation.
 
+But generally, you don't use `Connection` so much. 
+Most of the times you only create a connection.
+There are `getRepository()` and `getManager()` functions
+you can access your connection's manager and repositories without directly using connection object.
+For example:
+
+```typescript
+import {getManager, getRepository} from "typeorm";
+import {User} from "../entity/User";
+
+export class UserController {
+    
+    @Get("/users")
+    getAll() {
+        return getManager().find(User);
+    }
+    
+    @Get("/users/:id")
+    getAll(@Param("id") userId: number) {
+        return getRepository(User).findOneById(User);
+    }
+    
+}
+```
+
 ## API
 
 ### Main API
@@ -360,7 +387,7 @@ const connection = await createConnection({
 });
 ```
 
-* `createConnections()` - Creates multiple connections and registers it in global connection manager.
+* `createConnections()` - Creates multiple connections and registers them in global connection manager.
 If connection options parameter is omitted then connection options are read from `ormconfig` file or environment variables.
 
 ```typescript
@@ -385,7 +412,7 @@ const connection = await createConnections([{
 }]);
 ```
 
-* `getConnectionManager()` - Gets connection manager which stores all created connections using `createConnection` method.
+* `getConnectionManager()` - Gets connection manager which stores all created (using `createConnection` method) connections.
 
 ```typescript
 import {getConnectionManager} from "typeorm";
@@ -394,7 +421,7 @@ const defaultConnection = getConnectionManager().get("default");
 const secondaryConnection = getConnectionManager().get("secondary");
 ```
 
-* `getConnection()` - Gets connection which is created using `createConnection` method.
+* `getConnection()` - Gets connection which was created by using `createConnection` method.
 
 ```typescript
 import {getConnection} from "typeorm";
