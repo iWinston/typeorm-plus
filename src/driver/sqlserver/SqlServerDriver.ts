@@ -159,7 +159,13 @@ export class SqlServerDriver implements Driver {
             user: this.options.username,
             password: this.options.password,
             database: this.options.database,
-            port: this.options.port
+            port: this.options.port,
+            domain: this.options.domain,
+            connectionTimeout: this.options.connectionTimeout,
+            requestTimeout: this.options.requestTimeout,
+            stream: this.options.stream,
+            pool: this.options.pool,
+            options: this.options.options,
         }, this.options.extra || {});
 
         // set default useUTC option if it hasn't been set

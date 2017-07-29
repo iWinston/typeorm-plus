@@ -50,4 +50,9 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions {
      */
     readonly schemaName?: string;
 
+    /**
+     * Object with ssl parameters
+     */
+    readonly ssl?: any
+
 }

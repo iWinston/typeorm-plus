@@ -174,7 +174,8 @@ export class PostgresDriver implements Driver {
             user: this.options.username,
             password: this.options.password,
             database: this.options.database,
-            port: this.options.port
+            port: this.options.port,
+            ssl: this.options.ssl
         }, this.options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
