@@ -255,21 +255,24 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  converted to lower case (`true`) or not. This value is ignored if you provide a `columnNameReplacer`. (default: `false`).
 
 * `options.isolationLevel` - The default isolation level that transactions will be run with. The isolation levels are
- available from `require('tedious').ISOLATION_LEVEL`. (default: `READ_COMMITTED`).
- - `READ_UNCOMMITTED`
- - `READ_COMMITTED`
- - `REPEATABLE_READ`
- - `SERIALIZABLE`
- - `SNAPSHOT`
+ available from `require('tedious').ISOLATION_LEVEL`.
+   * `READ_UNCOMMITTED`
+   * `READ_COMMITTED`
+   * `REPEATABLE_READ`
+   * `SERIALIZABLE`
+   * `SNAPSHOT`
+   
+   (default: `READ_COMMITTED`)
  
 * `options.connectionIsolationLevel` - The default isolation level for new connections. All out-of-transaction queries
  are executed with this setting. The isolation levels are available from `require('tedious').ISOLATION_LEVEL`.
- (default: `READ_COMMITTED`).
- - `READ_UNCOMMITTED`
- - `READ_COMMITTED`
- - `REPEATABLE_READ`
- - `SERIALIZABLE`
- - `SNAPSHOT`
+   * `READ_UNCOMMITTED`
+   * `READ_COMMITTED`
+   * `REPEATABLE_READ`
+   * `SERIALIZABLE`
+   * `SNAPSHOT`
+   
+   (default: `READ_COMMITTED`)
  
 * `options.readOnlyIntent` - A boolean, determining whether the connection will request read only access from a
  SQL Server Availability Group. For more information, see here. (default: `false`).
@@ -284,20 +287,23 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 * `options.rowCollectionOnDone` - A boolean, that when true will expose received rows in Requests' `done*` events.
  See done, [doneInProc](http://tediousjs.github.io/tedious/api-request.html#event_doneInProc)
  and [doneProc](http://tediousjs.github.io/tedious/api-request.html#event_doneProc). (default: `false`)
- Caution: If many row are received, enabling this option could result in excessive memory usage.
+   
+   Caution: If many row are received, enabling this option could result in excessive memory usage.
 
 * `options.rowCollectionOnRequestCompletion` - A boolean, that when true will expose received rows
  in Requests' completion callback. See [new Request](http://tediousjs.github.io/tedious/api-request.html#function_newRequest). (default: `false`)
 
- Caution: If many row are received, enabling this option could result in excessive memory usage.
+   Caution: If many row are received, enabling this option could result in excessive memory usage.
 
 * `options.tdsVersion` - The version of TDS to use. If server doesn't support specified version, negotiated version
- is used instead. The versions are available from `require('tedious').TDS_VERSION`. (default: `7_4`).
- - `7_1`
- - `7_2`
- - `7_3_A`
- - `7_3_B`
- - `7_4`
+ is used instead. The versions are available from `require('tedious').TDS_VERSION`.
+   * `7_1`
+   * `7_2`
+   * `7_3_A`
+   * `7_3_B`
+   * `7_4`
+   
+  (default: `7_4`)
 
 * `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
  details (default: `false`).
