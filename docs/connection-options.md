@@ -163,7 +163,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `schema` - Schema name. Default is "public".
 
-* `ssl` - Object with ssl parameters.
+* `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
 
 ## `sqlite` / `websql` connection options
 

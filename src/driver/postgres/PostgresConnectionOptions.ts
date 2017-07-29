@@ -53,6 +53,6 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions {
     /**
      * Object with ssl parameters
      */
-    readonly ssl?: any
+    readonly ssl?: any;
 
 }

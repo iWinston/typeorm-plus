@@ -135,7 +135,7 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions {
          * to idle time. Supercedes softIdleTimeoutMillis Default: 30000
          */
         readonly idleTimeoutMillis?: number;
-    }
+    };
 
     /**
      * Extra options
@@ -226,7 +226,7 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions {
              * (default: false).
              */
             readonly token?: boolean;
-        }
+        };
 
         /**
          * The default isolation level that transactions will be run with. The isolation levels are available
@@ -276,6 +276,6 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions {
          * The versions are available from require('tedious').TDS_VERSION. (default: 7_4).
          */
         readonly tdsVersion?: string;
-    }
+    };
 
 }
