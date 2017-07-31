@@ -100,7 +100,49 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.mongodb.MongoClient.connect(this.buildConnectionUrl(), this.options.extra, (err: any, dbConnection: any) => {
+            this.mongodb.MongoClient.connect(this.buildConnectionUrl(), {
+                poolSize: this.options.poolSize,
+                ssl: this.options.ssl,
+                sslValidate: this.options.sslValidate,
+                sslCA: this.options.sslCA,
+                sslCert: this.options.sslCert,
+                sslKey: this.options.sslKey,
+                sslPass: this.options.sslPass,
+                autoReconnect: this.options.autoReconnect,
+                noDelay: this.options.noDelay,
+                keepAlive: this.options.keepAlive,
+                connectTimeoutMS: this.options.connectTimeoutMS,
+                socketTimeoutMS: this.options.socketTimeoutMS,
+                reconnectTries: this.options.reconnectTries,
+                reconnectInterval: this.options.reconnectInterval,
+                ha: this.options.ha,
+                haInterval: this.options.haInterval,
+                replicaSet: this.options.replicaSet,
+                acceptableLatencyMS: this.options.acceptableLatencyMS,
+                secondaryAcceptableLatencyMS: this.options.secondaryAcceptableLatencyMS,
+                connectWithNoPrimary: this.options.connectWithNoPrimary,
+                authSource: this.options.authSource,
+                w: this.options.w,
+                wtimeout: this.options.wtimeout,
+                j: this.options.j,
+                forceServerObjectId: this.options.forceServerObjectId,
+                serializeFunctions: this.options.serializeFunctions,
+                ignoreUndefined: this.options.ignoreUndefined,
+                raw: this.options.raw,
+                promoteLongs: this.options.promoteLongs,
+                promoteBuffers: this.options.promoteBuffers,
+                promoteValues: this.options.promoteValues,
+                domainsEnabled: this.options.domainsEnabled,
+                bufferMaxEntries: this.options.bufferMaxEntries,
+                readPreference: this.options.readPreference,
+                pkFactory: this.options.pkFactory,
+                promiseLibrary: this.options.promiseLibrary,
+                readConcern: this.options.readConcern,
+                maxStalenessSeconds: this.options.maxStalenessSeconds,
+                appname: this.options.appname,
+                loggerLevel: this.options.loggerLevel,
+                logger: this.options.logger
+            }, (err: any, dbConnection: any) => {
                 if (err) return fail(err);
 
                 this.queryRunner = new MongoQueryRunner(this.connection, dbConnection);

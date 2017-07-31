@@ -327,6 +327,105 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `database` - Database name.
 
+* `poolSize` - Set the maximum poolSize for each individual server or proxy connection.
+
+* `ssl` - Use ssl connection (needs to have a mongod server with ssl support). Default: `false`.
+
+* `sslValidate` - Validate mongod server certificate against ca (needs to have a mongod server with ssl support,
+ 2.4 or higher). Default: `true`.
+ 
+* `sslCA` - Array of valid certificates either as Buffers or Strings (needs to have a mongod server with ssl support,
+ 2.4 or higher).
+ 
+* `sslCert` - String or buffer containing the certificate we wish to present (needs to have a mongod server with ssl
+ support, 2.4 or higher)
+ 
+* `sslKey` - String or buffer containing the certificate private key we wish to present (needs to have a mongod server
+ with ssl support, 2.4 or higher).
+ 
+* `sslPass` - String or buffer containing the certificate password (needs to have a mongod server with ssl support,
+ 2.4 or higher).
+ 
+* `autoReconnect` - Reconnect on error. Default: `true`.
+
+* `noDelay` - TCP Socket NoDelay option. Default: `true`.
+
+* `keepAlive` - The number of milliseconds to wait before initiating keepAlive on the TCP socket. Default: `30000`.
+
+* `connectTimeoutMS` - TCP Connection timeout setting. Default: `30000`.
+
+* `socketTimeoutMS` - TCP Socket timeout setting. Default: `360000`.
+
+* `reconnectTries` - Server attempt to reconnect #times. Default: `30`.
+
+* `reconnectInterval` - Server will wait #milliseconds between retries. Default: `1000`.
+
+* `ha` - Turn on high availability monitoring. Default: `true`.
+
+* `haInterval` - Time between each replicaset status check. Default: `10000,5000`.
+
+* `replicaSet` - The name of the replicaset to connect to.
+ 
+* `acceptableLatencyMS` - Sets the range of servers to pick when using NEAREST (lowest ping ms + the latency fence,
+ ex: range of 1 to (1 + 15) ms). Default: `15`.
+
+* `secondaryAcceptableLatencyMS` - Sets the range of servers to pick when using NEAREST (lowest ping ms + the latency
+ fence, ex: range of 1 to (1 + 15) ms). Default: `15`.
+ 
+* `connectWithNoPrimary` - Sets if the driver should connect even if no primary is available. Default: `false`.
+
+* `authSource` - If the database authentication is dependent on another databaseName.
+
+* `w` - The write concern.
+
+* `wtimeout` - The write concern timeout value.
+
+* `j` - Specify a journal write concern. Default: `false`.
+
+* `forceServerObjectId` - Force server to assign _id values instead of driver. Default: `false`.
+
+* `serializeFunctions` - Serialize functions on any object. Default: `false`.
+
+* `ignoreUndefined` - Specify if the BSON serializer should ignore undefined fields. Default: `false`.
+
+* `raw` - Return document results as raw BSON buffers. Default: `false`.
+
+* `promoteLongs` - Promotes Long values to number if they fit inside the 53 bits resolution. Default: `true`.
+
+* `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
+
+* `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types.
+ Default: `true`.
+ 
+* `domainsEnabled` - Enable the wrapping of the callback in the current domain, disabled by default to avoid perf hit.
+ Default: `false`.
+ 
+* `bufferMaxEntries` - Sets a cap on how many operations the driver will buffer up before giving up on getting a
+ working connection, default is -1 which is unlimited.
+ 
+* `readPreference` - The preferred read preference.
+  * `ReadPreference.PRIMARY`
+  * `ReadPreference.PRIMARY_PREFERRED`
+  * `ReadPreference.SECONDARY`
+  * `ReadPreference.SECONDARY_PREFERRED`
+  * `ReadPreference.NEAREST`
+  
+* `pkFactory` - A primary key factory object for generation of custom _id keys.
+
+* `promiseLibrary` - A Promise library class the application wishes to use such as Bluebird, must be ES6 compatible.
+
+* `readConcern` - Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
+
+* `maxStalenessSeconds` - Specify a maxStalenessSeconds value for secondary reads, minimum is 90 seconds.
+
+* `appname` - The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this
+ value in the server log upon establishing each connection. It is also recorded in the slow query log and profile
+ collections
+ 
+* `loggerLevel` - Specify the log level used by the driver logger (`error/warn/info/debug`).
+
+* `logger` - Specify a customer logger mechanism, can be used to log using your app level logger.
+
 ## Connection options example
 
 Here is small example of connection options for mysql:
