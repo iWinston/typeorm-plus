@@ -426,7 +426,7 @@ createConnection(/*...*/).then(connection => {
     photo.isPublished = true;
 
     return connection.manager
-            .persist(photo)
+            .save(photo)
             .then(photo => {
                 console.log("Photo has been saved");
             });
@@ -451,7 +451,7 @@ createConnection(/*...*/).then(async connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    await connection.manager.persist(photo);
+    await connection.manager.save(photo);
     console.log("Photo has been saved");
 
 }).catch(error => console.log(error));
@@ -501,7 +501,7 @@ createConnection(/*...*/).then(async connection => {
 
     let photoRepository = connection.getRepository(Photo);
 
-    await photoRepository.persist(photo);
+    await photoRepository.save(photo);
     console.log("Photo has been saved");
 
     let savedPhotos = await photoRepository.find();
@@ -556,7 +556,7 @@ createConnection(/*...*/).then(async connection => {
     /*...*/
     let photoToUpdate = await photoRepository.findOneById(1);
     photoToUpdate.name = "Me, my friends and polar bears";
-    await photoRepository.persist(photoToUpdate);
+    await photoRepository.save(photoToUpdate);
 
 }).catch(error => console.log(error));
 ```
@@ -677,10 +677,10 @@ createConnection(/*...*/).then(async connection => {
     let metadataRepository = connection.getRepository(PhotoMetadata);
 
     // First we should persist a photo
-    await photoRepository.persist(photo);
+    await photoRepository.save(photo);
 
     // Photo is saved. Now we need to persist a photo metadata
-    await metadataRepository.persist(metadata);
+    await metadataRepository.save(metadata);
 
     // Done
     console.log("Metadata is saved, and relation between metadata and photo is created in the database too");
@@ -841,7 +841,7 @@ createConnection(options).then(async connection => {
     let photoRepository = connection.getRepository(Photo);
 
     // Persisting a photo also persist the metadata
-    await photoRepository.persist(photo);
+    await photoRepository.save(photo);
 
     console.log("Photo is saved, photo metadata is saved too.")
 
@@ -1016,10 +1016,10 @@ let photoRepository = connection.getRepository(Photo);
 // First save a first photo
 // We only save the photos, albums are persisted
 // automatically because of cascade options
-await photoRepository.persist(photo1);
+await photoRepository.save(photo1);
 
 // Second save a first photo
-await photoRepository.persist(photo2);
+await photoRepository.save(photo2);
 
 console.log("Both photos have been saved");
 ```
