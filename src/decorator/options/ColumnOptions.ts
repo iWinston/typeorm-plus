@@ -22,14 +22,14 @@ export interface ColumnOptions {
     length?: string|number;
 
     /**
-     * Defines column character set.
+     * Indicates if column's value can be set to NULL.
      */
-    charset?: string;
+    nullable?: boolean;
 
     /**
-     * Defines columns collation
+     * Default database value.
      */
-    collation?: string;
+    default?: any;
 
     /**
      * Indicates if this column is a primary key.
@@ -38,35 +38,14 @@ export interface ColumnOptions {
     primary?: boolean;
 
     /**
-     * Specifies if this column will use auto increment (sequence, generated identity).
-     * Note that only one column in entity can be marked as generated, and it must be a primary column.
-     */
-    generated?: boolean;
-
-    /**
-     * Specifies generation strategy if this column will use auto increment.
-     */
-    generationStrategy?: "uuid"|"increment";
-
-    /**
      * Specifies if column's value must be unique or not.
      */
     unique?: boolean;
 
     /**
-     * Indicates if column's value can be set to NULL.
-     */
-    nullable?: boolean;
-
-    /**
      * Column comment. Not supported by all database types.
      */
     comment?: string;
-
-    /**
-     * Default database value.
-     */
-    default?: any;
 
     /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
@@ -81,6 +60,17 @@ export interface ColumnOptions {
     scale?: number;
 
     /**
+     * Defines a column character set.
+     * Not supported by all database types.
+     */
+    charset?: string;
+
+    /**
+     * Defines a column collation.
+     */
+    collation?: string;
+
+    /**
      * Array of possible enumerated values.
      */
     enum?: any[]|Object;
@@ -90,6 +80,23 @@ export interface ColumnOptions {
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.
      */
-    isArray?: boolean;
+    isArray?: boolean; // todo: rename to array?: boolean
+
+    /**
+     * Specifies if this column will use auto increment (sequence, generated identity).
+     * Note that only one column in entity can be marked as generated, and it must be a primary column.
+     *
+     * @deprecated - use @Generated instead
+     * todo: remove
+     */
+    generated?: boolean;
+
+    /**
+     * Specifies generation strategy if this column will use auto increment.
+     *
+     * @deprecated - use @Generated instead
+     * todo: remove
+     */
+    generationStrategy?: "uuid"|"increment";
 
 }

@@ -1,5 +1,5 @@
-import {getMetadataArgsStorage} from "../../index";
-import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
+import {getMetadataArgsStorage} from "../index";
+import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
 
 /**
  * Generated decorator is used to mark a specific class property as a generated table column.

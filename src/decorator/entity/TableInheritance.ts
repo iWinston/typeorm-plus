@@ -4,7 +4,7 @@ import {InheritanceMetadataArgs} from "../../metadata-args/InheritanceMetadataAr
 /**
  * Sets what kind of table-inheritance table will use.
  */
-export function TableInheritance(type: "single-table"|"class-table") {
+export function TableInheritance(type: "single-table"|"class-table") { // todo: create two decorators instead?
     return function (target: Function) {
         const args: InheritanceMetadataArgs = {
             target: target,
