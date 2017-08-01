@@ -1,22 +1,22 @@
 # Entities
 
-* What is Entity?
-* Entity columns
-    * Primary columns
-    * Special columns
-    * Embedded columns
-* Column types
-    * Column types for `mysql` / `mariadb`
-    * Column types for `postgres`
-    * Column types for `sqlite` / `websql`
-    * Column types for `mssql`
-    * `simple-array` column type
-    * Columns with generated values
-* Column options
-* Entity inheritance
-* Tree entities
-    * Adjacency list
-    * Closure table
+* [What is Entity?](#what-is-entity)
+* [Entity columns](#entity-columns)
+    * [Primary columns](#primary-columns)
+    * [Special columns](#special-columns)
+    * [Embedded columns](#embedded-columns)
+* [Column types](#column-types)
+    * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
+    * [Column types for `postgres`](#column-types-for-postgres)
+    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql)
+    * [Column types for `mssql`](#column-types-for-mssql)
+    * [`simple-array` column type](#simple-array-column-type)
+    * [Columns with generated values](#columns-with-generated-values)
+* [Column options](#column-options)
+* [Entity inheritance](#entity-inheritance)
+* [Tree entities](#tree-entities)
+    * [Adjacency list](#adjacency-list)
+    * [Closure table](#closure-table)
 
 ## What is Entity?
 
