@@ -175,36 +175,6 @@ export class Photo {
 }
 ```
    
-### 创建自增长/自生成/顺序化的列
-
-如果你想创建自增长/自生成/顺序化的列，需要把column的type改成integer并且给主键列加上一个属性`{ generated: true }`
-
-```typescript
-import {Entity, Column, PrimaryColumn} from "typeorm";
-
-@Entity()
-export class Photo {
-
-    @PrimaryColumn("int", { generated: true })
-    id: number;
-
-    @Column()
-    name: string;
-
-    @Column()
-    description: string;
-
-    @Column()
-    filename: string;
-
-    @Column()
-    views: number;
-
-    @Column()
-    isPublished: boolean;
-}
-```
-
 ### 使用 `@PrimaryGeneratedColumn` 装饰器
 
 现在photo表的id可能自动生成自动增长，不过还是有点麻烦，这个一个很常见的功能，所以有一个专门的装饰器`@PrimaryGeneratedColumn`来实现相同的功能。

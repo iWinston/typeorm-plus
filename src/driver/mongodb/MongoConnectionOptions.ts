@@ -231,13 +231,6 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
     readonly maxStalenessSeconds?: number;
 
     /**
-     * The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this
-     * value in the server log upon establishing each connection. It is also recorded in the slow query log and
-     * profile collections.
-     */
-    readonly appname?: string;
-
-    /**
      * Specify the log level used by the driver logger (error/warn/info/debug).
      */
     readonly loggerLevel?: "error"|"warn"|"info"|"debug";

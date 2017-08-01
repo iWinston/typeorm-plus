@@ -139,7 +139,6 @@ export class MongoDriver implements Driver {
                 promiseLibrary: this.options.promiseLibrary,
                 readConcern: this.options.readConcern,
                 maxStalenessSeconds: this.options.maxStalenessSeconds,
-                appname: this.options.appname,
                 loggerLevel: this.options.loggerLevel,
                 logger: this.options.logger
             }, (err: any, dbConnection: any) => {

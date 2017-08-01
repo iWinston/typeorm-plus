@@ -13,7 +13,6 @@ export function ObjectIdColumn(options?: ColumnOptions): Function {
         if (!options) options = {} as ColumnOptions;
         options = Object.assign(options, {
             primary: true,
-            generated: true,
             name: options.name ? options.name : "_id"
         });
 

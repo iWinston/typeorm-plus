@@ -960,16 +960,15 @@ export class SubjectOperationExecutor {
             // if (subject.generatedObjectId && subject.metadata.objectIdColumn)
             //     subject.metadata.objectIdColumn.setEntityValue(subject.entity, subject.generatedObjectId);
 
-            subject.metadata.generatedColumns.forEach(generatedColumn => {
-                if (!subject.generatedMap)
-                    return;
+            if (subject.generatedMap) {
+                subject.metadata.generatedColumns.forEach(generatedColumn => {
+                    const generatedValue = generatedColumn.getEntityValue(subject.generatedMap!);
+                    if (!generatedValue)
+                        return;
 
-                const generatedValue = generatedColumn.getEntityValue(subject.generatedMap);
-                if (!generatedValue)
-                    return;
-
-                generatedColumn.setEntityValue(subject.entity, generatedValue);
-            });
+                    generatedColumn.setEntityValue(subject.entity, generatedValue);
+                });
+            }
             subject.metadata.primaryColumns.forEach(primaryColumn => {
                 if (subject.parentGeneratedId)
                     primaryColumn.setEntityValue(subject.entity, subject.parentGeneratedId);
