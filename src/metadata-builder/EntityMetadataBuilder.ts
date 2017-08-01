@@ -180,7 +180,7 @@ export class EntityMetadataBuilder {
                             options: <ColumnOptions> {
                                 name: columnName,
                                 type: parentPrimaryColumn.type,
-                                unique: true,
+                                unique: false,
                                 nullable: false,
                                 primary: true
                             }
