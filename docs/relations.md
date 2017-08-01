@@ -9,6 +9,8 @@
 * [Eager relations](#eager-relations)
 * [Lazy relations](#lazy-relations)
 * [Self referencing](#self-referencing)
+* [`@JoinColumn` options](#join-column-options)
+* [`@JoinTable` options](#join-table-options)
 * [Having both relation and relation column](#having-both-relation-and-relation-column)
 * [How to load relations in entities](#how-to-load-relations-in-entities)
 * [Avoid relation property initializers](#avoid-relation-property-initializers)
@@ -850,6 +852,69 @@ User {
   profileId: 1
 }
 ````
+
+## `@JoinColumn` options
+
+`@JoinColumn` decorator not only defines which side of relation contain join column with foreign key, 
+but also allows to customize join column name and referenced column name. 
+
+When we set `@JoinColumn` decorator it creates column in the database automatically named `propertyName + referencedColumnName`.
+For example:
+
+```typescript
+@ManyToOne(type => Category)
+@JoinColumn() // this decorator is optional for ManyToOne decorator, but required for OneToOne decorator
+category: Category;
+```
+
+This code will create `categoryId` column in the database.
+If you want to change this name in the database you can specify custom join column name:
+
+```typescript
+@ManyToOne(type => Category)
+@JoinColumn({ name: "cat_id" })
+category: Category;
+```
+
+Join columns are always reference to some columns (using foreign key).
+By default your relation always reference to primary column of related entity.
+If you want to create relation with other columns of the related entity -
+you can specify them in `@JoinColumn` decorator as well:
+
+```typescript
+@ManyToOne(type => Category)
+@JoinColumn({ referencedColumnName: "name" })
+category: Category;
+```
+
+Relation now referenced to `name` column of the `Category` entity, instead of `id`.
+Column name for such relation will become `categoryId`
+
+## `@JoinTable` options
+
+`@JoinTable` decorator is used for `many-to-many` relations and describes join columns of the "junction" table.
+Junction table is a special separate table created automatically by ORM with columns referenced to related entities.
+You can change column names inside junction tables and their referenced columns as easy as with `@JoinColumn` decorator:
+Also you can change name of the generated "junction" table.
+
+```typescript
+@ManyToMany(type => Category)
+@JoinTable({
+    name: "question_categories" // table name for the junction table of this relation
+    joinColumn: {
+        name: "question",
+        referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+        name: "category",
+        referencedColumnName: "id"
+    }
+})
+categories: Category[];
+```
+
+If destination table has composite primary keys, 
+then array of properties must be send to `@JoinTable` decorator.
 
 ## How to load relations in entities
 
