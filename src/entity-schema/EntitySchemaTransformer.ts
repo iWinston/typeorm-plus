@@ -8,6 +8,7 @@ import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {JoinTableOptions} from "../decorator/options/JoinTableOptions";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
 import {ColumnMode} from "../metadata-args/types/ColumnMode";
+import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
 
 /**
  * Transforms entity schema into metadata args storage.
@@ -52,7 +53,7 @@ export class EntitySchemaTransformer {
                 if (columnSchema.treeLevel)
                     mode = "treeLevel";
 
-                const column: ColumnMetadataArgs = {
+                const columnAgrs: ColumnMetadataArgs = {
                     target: schema.target || schema.name,
                     mode: mode,
                     propertyName: columnName,
@@ -69,13 +70,16 @@ export class EntitySchemaTransformer {
                         scale: columnSchema.scale
                     }
                 };
+                metadataArgsStorage.columns.push(columnAgrs);
 
                 if (columnSchema.generated) {
-                    column.options.generated = true;
-                    column.options.generationStrategy = typeof columnSchema.generated === "string" ? columnSchema.generated : "increment";
+                    const generationArgs: GeneratedMetadataArgs = {
+                        target: schema.target || schema.name,
+                        propertyName: columnName,
+                        strategy: typeof columnSchema.generated === "string" ? columnSchema.generated : "increment"
+                    };
+                    metadataArgsStorage.generations.push(generationArgs);
                 }
-
-                metadataArgsStorage.columns.push(column);
             });
 
             // add relation metadata args from the schema

@@ -82,21 +82,4 @@ export interface ColumnOptions {
      */
     isArray?: boolean; // todo: rename to array?: boolean
 
-    /**
-     * Specifies if this column will use auto increment (sequence, generated identity).
-     * Note that only one column in entity can be marked as generated, and it must be a primary column.
-     *
-     * @deprecated - use @Generated instead
-     * todo: remove
-     */
-    generated?: boolean;
-
-    /**
-     * Specifies generation strategy if this column will use auto increment.
-     *
-     * @deprecated - use @Generated instead
-     * todo: remove
-     */
-    generationStrategy?: "uuid"|"increment";
-
 }

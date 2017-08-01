@@ -1,5 +1,4 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {GeneratedOnlyForPrimaryError} from "../../error/GeneratedOnlyForPrimaryError";
 import {getMetadataArgsStorage} from "../../index";
 import {
     ColumnType,
@@ -104,10 +103,6 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
             // check if there is no type in column options then set type from first function argument, or guessed one
             if (!options.type && type)
                 options = Object.assign({ type: type } as ColumnOptions, options);
-
-            // check if auto increment is not set for simple column
-            if (options.generated && options.type !== "uuid")
-                throw new GeneratedOnlyForPrimaryError(object, propertyName);
 
             // create and register a new column metadata
             const args: ColumnMetadataArgs = {

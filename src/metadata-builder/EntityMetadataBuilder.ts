@@ -217,15 +217,17 @@ export class EntityMetadataBuilder {
 
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.columns.forEach(column => {
-                const generated = this.metadataArgsStorage.findGenerated(entityMetadata.target, column.propertyName);
+                const target = column.embeddedMetadata ? column.embeddedMetadata.type : entityMetadata.target;
+                const generated = this.metadataArgsStorage.findGenerated(target, column.propertyName);
                 if (generated) {
                     column.isGenerated = true;
                     column.generationStrategy = generated.strategy;
                     column.type = generated.strategy === "increment" ? Number : "uuid"; // TODO do not override column type, because it can be tinyint, bigint, etc. Fix later
+                    column.build(this.connection);
+                    this.computeEntityMetadata(entityMetadata);
                 }
             });
 
-            entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated);
         });
 
         return entityMetadatas;

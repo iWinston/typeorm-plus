@@ -62,6 +62,8 @@ Also now all
 * create and update dates in entities now use date with fractional seconds.
 * `@PrimaryGeneratedColumn` decorator now accept generation strategy as first argument (default is `increment`), instead of column type.
   Column type must be passed in options object, e.g. `@PrimaryGeneratedColumn({ type: "bigint"})`
+* `@PrimaryColumn` now does not accept `generated` parameter in options. Use `@Generated` or `@PrimaryGeneratedColumn`
+ decorators instead  
 * Logger interface has changed. Custom logger supply mechanism has changed
 * Now `logging` options in connection options is simple "true", or "all", or list of logging modes can be supplied 
 * removed `driver` section in connection options. Define options right in the connection options section.

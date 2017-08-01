@@ -6,7 +6,6 @@ import {Driver} from "../driver/Driver";
 import {DataTypeNotSupportedError} from "../error/DataTypeNotSupportedError";
 import {ColumnType} from "../driver/types/ColumnTypes";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /// todo: add check if there are multiple tables with the same name
@@ -78,11 +77,11 @@ export class EntityMetadataValidator {
             });
         }
 
-        if (driver instanceof MysqlDriver) {
+       /* if (driver instanceof MysqlDriver) {
             const generatedColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy !== "uuid");
             if (generatedColumns.length > 1)
                 throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
-        }
+        }*/
 
         if (driver instanceof SqlServerDriver) {
             const carsetColumns = entityMetadata.columns.filter(column => column.charset);
