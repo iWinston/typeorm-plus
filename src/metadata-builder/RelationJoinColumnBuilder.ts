@@ -116,6 +116,12 @@ export class RelationJoinColumnBuilder {
                         options: {
                             name: joinColumnName,
                             type: referencedColumn.type,
+                            length: referencedColumn.length,
+                            charset: referencedColumn.charset,
+                            collation: referencedColumn.collation,
+                            precision: referencedColumn.precision,
+                            scale: referencedColumn.scale,
+                            comment: referencedColumn.comment,
                             primary: relation.isPrimary,
                             nullable: relation.isNullable,
                         }
