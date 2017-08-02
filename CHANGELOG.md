@@ -111,6 +111,12 @@ Also now all
 * fixes [#309](https://github.com/typeorm/typeorm/issues/309) - issue when `andHaving` didn't work without calling `having` on `QueryBuilder`
 * fixes issues with default value being updated by schema sync
 
+# 0.0.11
+
+* fixes [#341](https://github.com/typeorm/typeorm/issues/341) - issue when trying to create a `OneToOne` relation with 
+`referencedColumnName` where the relation is not between primary keys
+
+
 # 0.0.10
 
 * added `ObjectLiteral` and `ObjectType` into main exports
