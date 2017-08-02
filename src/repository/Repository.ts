@@ -38,6 +38,13 @@ export class Repository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
+     * Creates a new query builder that can be used to build a sql query.
+     */
+    createQueryBuilder(alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
+        return this.manager.createQueryBuilder(this.metadata.target, alias, queryRunner || this.queryRunner);
+    }
+
+    /**
      * Returns object that is managed by this repository.
      * If this repository manages entity from schema,
      * then it returns a name of that schema instead.
@@ -59,13 +66,6 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     getId(entity: Entity): any {
         return this.manager.getId(this.metadata.target, entity);
-    }
-
-    /**
-     * Creates a new query builder that can be used to build a sql query.
-     */
-    createQueryBuilder(alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
-        return this.manager.createQueryBuilder(this.metadata.target, alias, queryRunner || this.queryRunner);
     }
 
     /**

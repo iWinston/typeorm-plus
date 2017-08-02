@@ -43,22 +43,6 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     }
 
     /**
-     * Creates a query builder used to get descendants of the entities in a tree.
-     */
-    createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
-
-        // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
-        const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
-
-        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.primaryColumns[0].databaseName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
-        return this.createQueryBuilder(alias)
-            .innerJoin(this.metadata.closureJunctionTable.tableName, closureTableAlias, joinCondition)
-            .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}=${this.metadata.getEntityIdMap(entity)![this.metadata.primaryColumns[0].propertyName]}`);
-
-    }
-
-    /**
      * Gets all children (descendants) of the given entity. Returns them all in a flat array.
      */
     findDescendants(entity: Entity): Promise<Entity[]> {
@@ -92,18 +76,18 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     }
 
     /**
-     * Creates a query builder used to get ancestors of the entities in the tree.
+     * Creates a query builder used to get descendants of the entities in a tree.
      */
-    createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
+    createDescendantsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
 
         // create shortcuts for better readability
-        const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
-        const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
+        const escape = (alias: string) => this.manager.connection.driver.escape(alias);
 
-        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.primaryColumns[0].databaseName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
+        const joinCondition = `${escape(alias)}.${escape(this.metadata.primaryColumns[0].databaseName)}=${escape(closureTableAlias)}.${escape("descendant")}`;
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.tableName, closureTableAlias, joinCondition)
-            .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}=${this.metadata.getEntityIdMap(entity)![this.metadata.primaryColumns[0].propertyName]}`);
+            .where(`${escape(closureTableAlias)}.${escape("ancestor")}=${this.metadata.getEntityIdMap(entity)![this.metadata.primaryColumns[0].propertyName]}`);
+
     }
 
     /**
@@ -137,6 +121,21 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         return this
             .createAncestorsQueryBuilder("treeEntity", "treeClosure", entity)
             .getCount();
+    }
+
+    /**
+     * Creates a query builder used to get ancestors of the entities in the tree.
+     */
+    createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
+
+        // create shortcuts for better readability
+        const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
+        const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
+
+        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.primaryColumns[0].databaseName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
+        return this.createQueryBuilder(alias)
+            .innerJoin(this.metadata.closureJunctionTable.tableName, closureTableAlias, joinCondition)
+            .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}=${this.metadata.getEntityIdMap(entity)![this.metadata.primaryColumns[0].propertyName]}`);
     }
 
     /**

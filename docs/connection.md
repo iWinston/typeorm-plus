@@ -644,7 +644,7 @@ await connection.transaction(async manager => {
 });
 ```
 
-* `query` - Executes given raw SQL query.
+* `query` - Executes a raw SQL query.
 
 ```typescript
 const rawData = await connection.query(`SELECT * FROM USERS`);

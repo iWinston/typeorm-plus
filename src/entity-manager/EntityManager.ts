@@ -216,7 +216,7 @@ export class EntityManager {
     /**
      * Merges two entities into one new entity.
      */
-    merge<Entity>(entityClass: ObjectType<Entity>|string, mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity { // todo: throw exception ie tntity manager is released
+    merge<Entity>(entityClass: ObjectType<Entity>|string, mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity { // todo: throw exception if entity manager is released
         const metadata = this.connection.getMetadata(entityClass);
         const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
         entityLikes.forEach(object => plainObjectToEntityTransformer.transform(mergeIntoEntity, object, metadata));
@@ -240,31 +240,31 @@ export class EntityManager {
     }
 
     /**
-     * Persists (saves) all given entities in the database.
+     * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
     save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
-     * Persists (saves) all given entities in the database.
+     * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
     save<Entity>(targetOrEntity: Function|string, entity: Entity, options?: SaveOptions): Promise<Entity>;
 
     /**
-     * Persists (saves) all given entities in the database.
+     * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
     save<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
-     * Persists (saves) all given entities in the database.
+     * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
     save<Entity>(targetOrEntity: Function|string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
-     * Persists (saves) a given entity in the database.
+     * Saves a given entity in the database.
      */
     save<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntityOrOptions?: Entity|Entity[], maybeOptions?: SaveOptions): Promise<Entity|Entity[]> {
 
@@ -581,16 +581,19 @@ export class EntityManager {
 
     /**
      * Counts entities that match given options.
+     * Useful for pagination.
      */
     count<Entity>(entityClass: ObjectType<Entity>|string, options?: FindManyOptions<Entity>): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
+     * Useful for pagination.
      */
     count<Entity>(entityClass: ObjectType<Entity>|string, conditions?: Partial<Entity>): Promise<number>;
 
     /**
      * Counts entities that match given find options or conditions.
+     * Useful for pagination.
      */
     count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass);

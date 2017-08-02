@@ -192,7 +192,7 @@ export function getConnection(connectionName: string = "default"): Connection {
  * Gets entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getEntityManager(connectionName: string = "default"): EntityManager {
+export function getManager(connectionName: string = "default"): EntityManager {
     return getConnectionManager().get(connectionName).manager;
 }
 
@@ -215,4 +215,14 @@ export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>|string
  */
 export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
     return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
+}
+
+/**
+ * Gets entity manager from the connection.
+ * If connection name wasn't specified, then "default" connection will be retrieved.
+ *
+ * @deprecated use getManager instead
+ */
+export function getEntityManager(connectionName: string = "default"): EntityManager {
+    return getManager(connectionName);
 }
