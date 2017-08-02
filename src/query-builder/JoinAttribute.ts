@@ -119,13 +119,20 @@ export class JoinAttribute {
             return undefined;
 
         const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
-        const metadata = relationOwnerSelection.metadata.parentEntityMetadata
-            ? relationOwnerSelection.metadata.parentEntityMetadata
-            : relationOwnerSelection.metadata;
-        const relation = metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
-        if (!relation)
-            throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
-        return relation;
+        let relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+        
+        if (relation) {
+            return relation;
+        }
+
+        if (relationOwnerSelection.metadata.parentEntityMetadata) {
+            relation = relationOwnerSelection.metadata.parentEntityMetadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+            if (relation) {
+                return relation;
+            }
+        }
+
+        throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);  
     }
 
     /**
