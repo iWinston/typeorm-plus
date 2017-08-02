@@ -350,7 +350,11 @@ export class ColumnMetadata {
             return extractEmbeddedColumnValue(propertyNames, entity, {});
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            return { [this.propertyName]: entity[this.propertyName] };
+            if (this.referencedColumn) {
+                return { [this.referencedColumn.propertyName]: entity[this.referencedColumn.propertyName] };
+            }
+
+            return { [this.propertyName]: entity[this.propertyName] };            
         }
     }
 
@@ -394,6 +398,9 @@ export class ColumnMetadata {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 return relatedEntity ? this.referencedColumn.getEntityValue(relatedEntity) : undefined;
             } else {
+                if (this.referencedColumn) {
+                    return entity[this.referencedColumn.propertyName];
+                }
                 return entity[this.propertyName];
             }
         }
