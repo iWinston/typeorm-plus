@@ -1271,7 +1271,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
                 const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
                 const condition = metadata.parentIdColumns.map(parentIdColumn => {
-                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + alias + "." + parentIdColumn.referencedColumn!.propertyPath;
+                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + this.escape(alias) + "." + this.escape(parentIdColumn.referencedColumn!.propertyPath);
                 }).join(" AND ");
                 const join = " JOIN " + this.escape(metadata.parentEntityMetadata.tableName) + " " + this.escape(alias) + " ON " + this.replacePropertyNames(condition);
                 joins.push(join);
