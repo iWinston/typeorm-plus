@@ -71,10 +71,15 @@ export * from "./decorator/Generated";
 export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
 export * from "./decorator/EntityRepository";
+export * from "./find-options/FindOneOptions";
+export * from "./find-options/FindManyOptions";
 export * from "./logger/Logger";
 export * from "./logger/AdvancedConsoleLogger";
 export * from "./logger/SimpleConsoleLogger";
 export * from "./logger/FileLogger";
+export * from "./entity-manager/EntityManager";
+export * from "./repository/AbstractRepository";
+export * from "./repository/Repository";
 export * from "./schema-builder/schema/ColumnSchema";
 export * from "./schema-builder/schema/ForeignKeySchema";
 export * from "./schema-builder/schema/IndexSchema";
@@ -208,6 +213,13 @@ export function getRepository<Entity>(entityClass: ObjectType<Entity>|string, co
  */
 export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): TreeRepository<Entity> {
     return getConnectionManager().get(connectionName).getTreeRepository<Entity>(entityClass);
+}
+
+/**
+ * Gets tree repository for the given entity class.
+ */
+export function getCustomRepository<T>(customRepository: ObjectType<T>, connectionName: string = "default"): T {
+    return getConnectionManager().get(connectionName).getCustomRepository(customRepository);
 }
 
 /**
