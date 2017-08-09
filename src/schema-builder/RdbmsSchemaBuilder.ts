@@ -175,7 +175,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);
 
             // create a new table schema and sync it in the database
-            const tableSchema = new TableSchema(metadata.tableName, this.metadataColumnsToColumnSchemas(metadata.columns), true);
+            const tableSchema = new TableSchema(metadata.tableName, this.metadataColumnsToColumnSchemas(metadata.columns), true, metadata.engine);
             this.tableSchemas.push(tableSchema);
             await this.queryRunner.createTable(tableSchema);
         });
