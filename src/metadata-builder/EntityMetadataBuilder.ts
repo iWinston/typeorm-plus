@@ -217,8 +217,8 @@ export class EntityMetadataBuilder {
 
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.columns.forEach(column => {
-                const target = column.embeddedMetadata ? column.embeddedMetadata.type : entityMetadata.target;
-                const generated = this.metadataArgsStorage.findGenerated(target, column.propertyName);
+                // const target = column.embeddedMetadata ? column.embeddedMetadata.type : column.target;
+                const generated = this.metadataArgsStorage.findGenerated(column.target, column.propertyName);
                 if (generated) {
                     column.isGenerated = true;
                     column.generationStrategy = generated.strategy;
