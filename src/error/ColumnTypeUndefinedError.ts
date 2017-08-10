@@ -4,7 +4,7 @@ export class ColumnTypeUndefinedError extends Error {
     constructor(object: Object, propertyName: string) {
         super();
         this.message = `Column type for ${(<any>object.constructor).name}#${propertyName} is not defined or cannot be guessed. ` +
-            `Try to implicitly provide a column type to @Column decorator.`;
+            `Try to explicitly provide a column type to the @Column decorator.`;
     }
 
 }
