@@ -57,7 +57,7 @@ export class TableSchema {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean) {
+    constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean, engine?: string) {
         this.name = name;
         if (columns) {
             this.columns = (columns as any[]).map(column => { // as any[] is a temporary fix (some weird compiler error)
@@ -71,6 +71,8 @@ export class TableSchema {
 
         if (justCreated !== undefined)
             this.justCreated = justCreated;
+
+        this.engine = engine;
     }
 
     // -------------------------------------------------------------------------
