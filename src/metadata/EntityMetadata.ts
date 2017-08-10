@@ -486,8 +486,7 @@ export class EntityMetadata {
      * If at least one id in the given map is empty it returns false.
      */
     isEntityMapEmpty(entity: ObjectLiteral): boolean {
-        const primaryColumns = this.parentEntityMetadata ? this.primaryColumns : this.primaryColumns;
-        return !primaryColumns.every(column => {
+        return !this.primaryColumns.every(column => {
             const value = column.getEntityValue(entity);
             return value !== null && value !== undefined;
         });
@@ -503,8 +502,7 @@ export class EntityMetadata {
         if (!entity) // todo: shall it accept an empty entity? try to remove this
             return undefined;
 
-        const primaryColumns = this.parentEntityMetadata ? this.primaryColumns : this.primaryColumns;
-        const map = primaryColumns.reduce((map, column) => {
+        const map = this.primaryColumns.reduce((map, column) => {
             if (column.isObjectId)
                 return Object.assign(map, column.getEntityValueMap(entity));
 
@@ -518,8 +516,7 @@ export class EntityMetadata {
      */
     getDatabaseEntityIdMap(entity: ObjectLiteral): ObjectLiteral|undefined {
         const map: ObjectLiteral = {};
-        const primaryColumns = this.parentEntityMetadata ? this.primaryColumns : this.primaryColumns;
-        primaryColumns.forEach(column => {
+        this.primaryColumns.forEach(column => {
             const entityValue = column.getEntityValue(entity);
             if (entityValue === null || entityValue === undefined)
                 return;
