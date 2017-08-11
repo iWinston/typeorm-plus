@@ -3,7 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Product} from "./entity/Product";
 
-describe.only("github issues > #752 postgres - count query fails for empty table", () => {
+describe("github issues > #752 postgres - count query fails for empty table", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
