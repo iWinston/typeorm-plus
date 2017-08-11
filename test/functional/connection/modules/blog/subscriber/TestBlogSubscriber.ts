@@ -3,7 +3,7 @@ import {EntitySubscriberInterface} from "../../../../../../src/subscriber/Entity
 import {InsertEvent} from "../../../../../../src/subscriber/event/InsertEvent";
 
 @EventSubscriber()
-export class TestBlogSubscriber implements EntitySubscriberInterface<any> {
+export class TestBlogSubscriber implements EntitySubscriberInterface {
     
     /**
      * Called after entity insertion.

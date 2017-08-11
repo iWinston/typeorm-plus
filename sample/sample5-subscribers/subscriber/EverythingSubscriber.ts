@@ -5,7 +5,7 @@ import {RemoveEvent} from "../../../src/subscriber/event/RemoveEvent";
 import {UpdateEvent} from "../../../src/subscriber/event/UpdateEvent";
 
 @EventSubscriber()
-export class EverythingSubscriber implements EntitySubscriberInterface<any> {
+export class EverythingSubscriber implements EntitySubscriberInterface {
     
     /**
      * Called before entity insertion.

@@ -12,8 +12,26 @@
     * [`@VersionColumn`](#versioncolumn)
     * [`@Generated`](#generated)
 * [Relation decorators](#relation-decorators)
+    * [`@OneToOne`](#onetoone)
+    * [`@ManyToOne`](#manytoone)
+    * [`@OneToMany`](#onetomany)
+    * [`@ManyToMany`](#manytomany)
+    * [`@JoinColumn`](#joincolumn)
+    * [`@JoinTable`](#jointable)
+    * [`@RelationId`](#relationid)
 * [Subscriber and listener decorators](#subscriber-and-listener-decorators)
+    * [`@AfterLoad`](#afterload)
+    * [`@BeforeInsert`](#beforeinsert)
+    * [`@AfterInsert`](#afterinsert)
+    * [`@BeforeUpdate`](#beforeupdate)
+    * [`@AfterUpdate`](#afterupdate)
+    * [`@BeforeRemove`](#beforeremove)
+    * [`@AfterRemove`](#afterremove)
+    * [`@EventSubscriber`](#eventsubscriber)
 * [Other decorators](#other-decorators)
+    * [`@Index`](#index)
+    * [`@Transaction` and `@TransactionEntityManager`](#transaction-and-transactionentitymanager)
+    * [`@EntityRepository`](#entityrepository)
 
 ## Entity decorators
 
@@ -382,12 +400,17 @@ allows to customize join column name and referenced column name.
 Example:
 
 ```typescript
-@ManyToOne(type => Category)
-@JoinColumn({ 
-    name: "cat_id",
-    referencedColumnName: "name"
-})
-category: Category;
+@Entity()
+export class Post {
+    
+    @ManyToOne(type => Category)
+    @JoinColumn({ 
+        name: "cat_id",
+        referencedColumnName: "name"
+    })
+    category: Category;
+    
+}
 ```
 
 #### `@JoinTable`
@@ -399,19 +422,24 @@ Also you can change name of the generated "junction" table.
 Example:
 
 ```typescript
-@ManyToMany(type => Category)
-@JoinTable({
-    name: "question_categories"
-    joinColumn: {
-        name: "question",
-        referencedColumnName: "id"
-    },
-    inverseJoinColumn: {
-        name: "category",
-        referencedColumnName: "id"
-    }
-})
-categories: Category[];
+@Entity()
+export class Post {
+    
+    @ManyToMany(type => Category)
+    @JoinTable({
+        name: "question_categories",
+        joinColumn: {
+            name: "question",
+            referencedColumnName: "id"
+        },
+        inverseJoinColumn: {
+            name: "category",
+            referencedColumnName: "id"
+        }
+    })
+    categories: Category[];
+    
+}
 ```
 
 If destination table has composite primary keys, 
@@ -419,11 +447,315 @@ then array of properties must be send to `@JoinTable` decorator.
 
 #### `@RelationId`
 
+Loads id (or ids) of specific relation into property.
+For example if you have many-to-one `category` in your `Post` entity
+you can have category id by marking a new property with relation id decorator.
+Example:
 
+```typescript
+@Entity()
+export class Post {
+    
+    @ManyToOne(type => Category)
+    category: Category;
+    
+    @RelationId((post: Post) => post.category) // you need to specify target relation
+    categoryId: number;
+    
+}
+```
+
+This functionality works for all kind of relations including `many-to-many`:
+
+```typescript
+@Entity()
+export class Post {
+        
+    @ManyToMany(type => Category)
+    categories: Category[];
+    
+    @RelationId((post: Post) => post.categories)
+    categoryIds: number[];
+    
+}
+```
+
+Relation id is used only for representation. 
+It does not add/remove/change relations anyhow if you change relation id value.
 
 ## Subscriber and listener decorators
 
+#### `@AfterLoad`
+
+You can define method with any name in entity and mark it with `@AfterLoad` decorator
+and orm will call this method each time entity 
+is loaded using `QueryBuilder` or repository/manager find methods.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterLoad()
+    updateCounters() {
+        if (this.likesCount === undefined)
+            this.likesCount = 0;
+    }
+}
+```
+
+For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+
+#### `@BeforeInsert`
+
+You can define method with any name in entity and mark it with `@BeforeInsert` decorator
+and orm will call this method before entity inserted into the database using repository/manager `save` method.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @BeforeInsert()
+    updateDates() {
+        this.createdDate = new Date();
+    }
+}
+```
+
+For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+
+#### `@AfterInsert`
+
+You can define method with any name in entity and mark it with `@AfterInsert` decorator
+and orm will call this method after entity inserted into the database using repository/manager `save` method.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterInsert()
+    resetCounters() {
+        this.counters = 0;
+    }
+}
+```
+
+For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+
+#### `@BeforeUpdate`
+
+You can define method with any name in entity and mark it with `@BeforeUpdate` decorator
+and orm will call this method before exist entity is updated in the database using repository/manager `save` method.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @BeforeUpdate()
+    updateDates() {
+        this.updatedDate = new Date();
+    }
+}
+```
+
+For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+
+#### `@AfterUpdate`
+
+You can define method with any name in entity and mark it with `@AfterUpdate` decorator
+and orm will call this method after exist entity is updated in the database using repository/manager `save` method.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterUpdate()
+    updateCounters() {
+        this.counter = 0;
+    }
+}
+```
+
+For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+
+#### `@BeforeRemove`
+
+You can define method with any name in entity and mark it with `@BeforeRemove` decorator
+and orm will call this method before entity is removed from the database using repository/manager `remove` method.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @BeforeRemove()
+    updateStatus() {
+        this.status = "removed";
+    }
+}
+```
+
+For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+
+#### `@AfterRemove`
+
+You can define method with any name in entity and mark it with `@AfterRemove` decorator
+and orm will call this method after entity is removed from the database using repository/manager `remove` method.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterRemove()
+    updateStatus() {
+        this.status = "removed";
+    }
+}
+```
+
+For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+
+#### `@EventSubscriber`
+
+Marks class as event subscriber which can listen to specific entity events or any entity events.
+Events are firing using `QueryBuilder` and repository/manager methods.
+Example:
+
+```typescript
+@EventSubscriber()
+export class PostSubscriber implements EntitySubscriberInterface<Post> {
+
+    
+    /**
+     * Indicates that this subscriber only listen to Post events.
+     */
+    listenTo() {
+        return Post;
+    }
+    
+    /**
+     * Called before post insertion.
+     */
+    beforeInsert(event: InsertEvent<Post>) {
+        console.log(`BEFORE POST INSERTED: `, event.entity);
+    }
+
+}
+```
+
+You can implement any method from `EntitySubscriberInterface` interface.
+To listen to any entity you just omit `listenTo` method and use `any`:
+
+```typescript
+@EventSubscriber()
+export class PostSubscriber implements EntitySubscriberInterface {
+    
+    /**
+     * Called before entity insertion.
+     */
+    beforeInsert(event: InsertEvent<any>) {
+        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
+    }
+
+}
+```
+
+For move information about subscribers see documentation [here](./subscribers-and-listeners.md).
+
 ## Other decorators
+
+#### `@Index`
+
+This decorator allows to create database index for a specific column or columns.
+It also alows to mark column or columns to be unique.
+Decorator can be applied to columns or entity itself.
+It is applied on column when index on a single column is needed.
+And it applies on entity when single index on multiple columns is required.
+Examples:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @Index()
+    @Column()
+    firstName: string;
+    
+    @Index({ unique: true })
+    @Column()
+    lastName: string;
+}
+```
+```typescript
+@Entity()
+@Index(["firstName", "lastName"])
+@Index(["lastName", "middleName"])
+@Index(["firstName", "lastName", "middleName"], { unique: true })
+export class Post {
+    
+    @Column()
+    firstName: string;
+    
+    @Column()
+    lastName: string;
+    
+    @Column()
+    middleName: string;
+}
+```
+
+For move information about indices see documentation [here](./indices.md).
+
+#### `@Transaction` and `@TransactionEntityManager`
+
+This decorator is used on a method and wraps all its execution into a single database transaction.
+All database queries must be performed using provided by `@TransactionEntityManager` decorator entity manager.
+Example:
+
+```typescript
+@Controller()
+export class UserController {
+    
+    @Transaction()
+    @Post("/users")
+    save(@TransactionEntityManager() manager: EntityManager, @Body() user: User) {
+        return manager.save(user);
+    }
+    
+    
+}
+```
+
+Note: all operations inside transaction MUST use ONLY provided instance of `EntityManager`.
+Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
+
+For move information about transactions see documentation [here](./transactions.md).
+
+#### `@EntityRepository`
+
+Marks custom class as entity repository.
+Example:
+
+```typescript
+@EntityRepository()
+export class UserRepository {
+    
+    /// ... custom repository methods ...
+    
+}
+```
+
+You can obtain any custom created repository using `connection.getCustomRepository`
+or `entityManager.getCustomRepository` methods.
+
+For move information about custom entity repositories see documentation [here](./entity-manager-and-repository.md).
+
+----
 
 Note: some decorators (like `@ClosureEntity`, `@SingleEntityChild`, `@ClassEntityChild`, `@DiscriminatorColumn`, etc.) aren't 
 documented in this reference because they are treated as experimental at the moment. 

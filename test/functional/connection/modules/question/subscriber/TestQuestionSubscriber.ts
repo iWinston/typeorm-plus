@@ -3,10 +3,10 @@ import {EntitySubscriberInterface} from "../../../../../../src/subscriber/Entity
 import {InsertEvent} from "../../../../../../src/subscriber/event/InsertEvent";
 
 @EventSubscriber()
-export class TestQuestionSubscriber implements EntitySubscriberInterface<any> {
+export class TestQuestionSubscriber implements EntitySubscriberInterface {
     
     /**
-     * Called after entity insertion.
+     * Called before entity insertion.
      */
     beforeInsert(event: InsertEvent<any>) {
         console.log(`BEFORE ENTITY INSERTED: `, event.entity);
