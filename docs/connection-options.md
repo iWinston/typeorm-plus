@@ -38,7 +38,7 @@ For more information about entities refer to [Entities](./entities.md) documenta
 Accepts both entity classes and directories where from they must to be loaded.
 Directories support glob patterns.
 Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
-For more information about subscribers refer to [Subscribers](./subscribers-and-listeners.md) documentation.
+For more information about subscribers refer to [Subscribers](listeners-and-subscribers.md) documentation.
 
 * `entitySchemas` - Entity schemas to be loaded and used for this connection.
 Accepts both entity schema classes and directories where from they must to be loaded.

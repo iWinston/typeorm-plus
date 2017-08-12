@@ -504,7 +504,7 @@ export class Post {
 }
 ```
 
-For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+For more information about listeners see documentation [here](listeners-and-subscribers.md).
 
 #### `@BeforeInsert`
 
@@ -523,7 +523,7 @@ export class Post {
 }
 ```
 
-For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+For more information about listeners see documentation [here](listeners-and-subscribers.md).
 
 #### `@AfterInsert`
 
@@ -542,7 +542,7 @@ export class Post {
 }
 ```
 
-For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+For more information about listeners see documentation [here](listeners-and-subscribers.md).
 
 #### `@BeforeUpdate`
 
@@ -561,7 +561,7 @@ export class Post {
 }
 ```
 
-For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+For more information about listeners see documentation [here](listeners-and-subscribers.md).
 
 #### `@AfterUpdate`
 
@@ -580,7 +580,7 @@ export class Post {
 }
 ```
 
-For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+For more information about listeners see documentation [here](listeners-and-subscribers.md).
 
 #### `@BeforeRemove`
 
@@ -599,7 +599,7 @@ export class Post {
 }
 ```
 
-For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+For more information about listeners see documentation [here](listeners-and-subscribers.md).
 
 #### `@AfterRemove`
 
@@ -618,7 +618,7 @@ export class Post {
 }
 ```
 
-For move information about listeners see documentation [here](./subscribers-and-listeners.md).
+For more information about listeners see documentation [here](listeners-and-subscribers.md).
 
 #### `@EventSubscriber`
 
@@ -665,7 +665,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-For move information about subscribers see documentation [here](./subscribers-and-listeners.md).
+For more information about subscribers see documentation [here](listeners-and-subscribers.md).
 
 ## Other decorators
 
@@ -709,7 +709,7 @@ export class Post {
 }
 ```
 
-For move information about indices see documentation [here](./indices.md).
+For more information about indices see documentation [here](./indices.md).
 
 #### `@Transaction` and `@TransactionEntityManager`
 
@@ -734,7 +734,7 @@ export class UserController {
 Note: all operations inside transaction MUST use ONLY provided instance of `EntityManager`.
 Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
 
-For move information about transactions see documentation [here](./transactions.md).
+For more information about transactions see documentation [here](./transactions.md).
 
 #### `@EntityRepository`
 
@@ -753,7 +753,7 @@ export class UserRepository {
 You can obtain any custom created repository using `connection.getCustomRepository`
 or `entityManager.getCustomRepository` methods.
 
-For move information about custom entity repositories see documentation [here](./entity-manager-and-repository.md).
+For more information about custom entity repositories see documentation [here](./entity-manager-and-repository.md).
 
 ----
 
