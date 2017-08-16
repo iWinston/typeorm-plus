@@ -672,7 +672,7 @@ For more information about subscribers see documentation [here](listeners-and-su
 #### `@Index`
 
 This decorator allows to create database index for a specific column or columns.
-It also alows to mark column or columns to be unique.
+It also allows to mark column or columns to be unique.
 Decorator can be applied to columns or entity itself.
 It is applied on column when index on a single column is needed.
 And it applies on entity when single index on multiple columns is required.
@@ -680,7 +680,7 @@ Examples:
 
 ```typescript
 @Entity()
-export class Post {
+export class User {
     
     @Index()
     @Column()
@@ -696,7 +696,7 @@ export class Post {
 @Index(["firstName", "lastName"])
 @Index(["lastName", "middleName"])
 @Index(["firstName", "lastName", "middleName"], { unique: true })
-export class Post {
+export class User {
     
     @Column()
     firstName: string;
