@@ -122,10 +122,10 @@ export class MongoEntityManager extends EntityManager {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
         const objectIdInstance = require("mongodb").ObjectID;
         query["_id"] = { $in: ids.map(id => {
-                if (id instanceof objectIdInstance)
-                    return id;
+            if (id instanceof objectIdInstance)
+                return id;
 
-                return id[metadata.objectIdColumn!.propertyName];
+            return id[metadata.objectIdColumn!.propertyName];
             }) };
 
         const cursor = await this.createEntityCursor(entityClassOrName, query);
