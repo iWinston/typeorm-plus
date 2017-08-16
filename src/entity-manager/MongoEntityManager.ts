@@ -126,7 +126,7 @@ export class MongoEntityManager extends EntityManager {
                 return id;
 
             return id[metadata.objectIdColumn!.propertyName];
-            }) };
+        }) };
 
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
