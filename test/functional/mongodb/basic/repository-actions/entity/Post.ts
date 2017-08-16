@@ -15,6 +15,9 @@ export class Post {
     @Column()
     text: string;
 
+    @Column()
+    index: number;
+
     // @Column(() => Counters)
     // counters: Counters;
 
