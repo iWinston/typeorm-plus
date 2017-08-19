@@ -382,7 +382,7 @@ export class ColumnMetadata {
             // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
             const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral): any => {
                 const propertyName = propertyNames.shift();
-                return propertyName ? extractEmbeddedColumnValue(propertyNames, value[propertyName]) : value;
+                return propertyName && value ? extractEmbeddedColumnValue(propertyNames, value[propertyName]) : value;
             };
 
             // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
