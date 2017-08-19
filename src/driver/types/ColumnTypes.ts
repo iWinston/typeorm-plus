@@ -75,12 +75,6 @@ export type SimpleColumnType =
     |"unsigned big int" // sqlite
     |"float4" // postgres
     |"float8" // postgres
-    |"smallserial" // postgres
-    |"serial2" // postgres
-    |"serial" // postgres
-    |"serial4" // postgres
-    |"bigserial" // postgres
-    |"serial8" // postgres
     |"smallmoney" // mssql
     |"money" // postgres, mssql
 
