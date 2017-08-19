@@ -68,18 +68,20 @@ export class User {
     firstName: string;
     
     @Column()
-    @index({ unique: true[ })](#true[)
+    @Index({ unique: true })
     lastName: string;
 }
 ```
 
 ## Indices with multiple columns
 
-To create indices with multiple columns you need to put `@Index` decorator on entity itself
-and specify all column property names which should be included in index.
+To create index with multiple columns you need to put `@Index` decorator on entity itself
+and specify all column property names which should be included in the index.
 Example:
 
 ```typescript
+import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+
 @Entity()
 @Index(["firstName", "lastName"])
 @Index(["lastName", "middleName"])
