@@ -531,7 +531,7 @@ export class MongoEntityManager extends EntityManager {
      */
     protected convertFindOptionsOrderToOrderCriteria(order: ObjectLiteral) {
         const orderCriteria: ObjectLiteral = {};
-        Object.keys(order).forEach(key => orderCriteria[key] = [key, order[key]!.toLowerCase()]);
+        Object.keys(order).forEach(key => orderCriteria[key] = order[key] === "DESC" ? -1 : 1);
         return orderCriteria;
     }
 
