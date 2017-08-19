@@ -377,7 +377,7 @@ createConnection({
     port: 3306,
     username: "root",
     password: "admin",
-    database: "test"
+    database: "test",
     entities: [
         __dirname + "/entity/*.js"
     ],
