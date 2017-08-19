@@ -13,9 +13,6 @@
 	<a href="https://david-dm.org/typeorm/typeorm">
 		<img src="https://david-dm.org/typeorm/typeorm.svg">
 	</a>
-	<a href="https://david-dm.org/typeorm/typeorm#info=devDependencies">
-		<img src="https://david-dm.org/typeorm/typeorm/dev-status.svg">
-	</a>
 	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
 		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
 	</a>
