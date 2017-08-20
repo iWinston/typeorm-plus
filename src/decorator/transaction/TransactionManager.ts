@@ -4,7 +4,7 @@ import {TransactionEntityMetadataArgs} from "../../metadata-args/TransactionEnti
 /**
  * Injects transaction's entity manager into the method wrapped with @Transaction decorator.
  */
-export function TransactionEntityManager(): Function {
+export function TransactionManager(): Function {
     return function (object: Object, methodName: string, index: number) {
         const args: TransactionEntityMetadataArgs = {
             target: object.constructor,

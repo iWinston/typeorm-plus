@@ -62,7 +62,7 @@ export * from "./decorator/entity/SingleEntityChild";
 export * from "./decorator/entity/Entity";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
-export * from "./decorator/transaction/TransactionEntityManager";
+export * from "./decorator/transaction/TransactionManager";
 export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";

@@ -76,6 +76,7 @@ Also now all
 * `TYPEORM_AUTO_SCHEMA_SYNC` env variable is now called `TYPEORM_SYNCHRONIZE`
 * `schemaSync` method in `Connection` has been renamed to `synchronize`
 * `getEntityManager` has been deprecated. Use `getManager` instead.
+* `@TransactionEntityManager` is now called `@TransactionManager` now
 
 ### NEW FEATURES
 
