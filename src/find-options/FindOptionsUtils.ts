@@ -97,7 +97,7 @@ export class FindOptionsUtils {
 
         // apply all options from FindOptions
         if (options.select)
-            qb.select(options.select);
+            qb.select(options.select.map(selection => qb.alias + "." + selection));
 
         if (options.where)
             this.applyConditions(qb, options.where);
