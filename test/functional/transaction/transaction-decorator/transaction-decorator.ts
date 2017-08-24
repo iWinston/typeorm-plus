@@ -118,4 +118,28 @@ describe("transaction > method wrapped into transaction decorator", () => {
 
     })));
 
+    it("should inject repository and custom repository into method decorated with @Transaction", () => Promise.all(connections.map(async connection => {
+        const post = new Post();
+        post.title = "successfully saved post";
+
+        const category = new Category();
+        category.name = "successfully saved category";
+
+        // call controller method
+        const savedCategory = await controller.saveWithRepository.apply(controller, [post, category]);
+        
+        // controller should sucessfully call custom repository method and return the finded entity
+        expect(savedCategory).not.to.be.empty;
+        savedCategory!.should.be.eql(category);
+
+        // controller should have saved both post and category successfully
+        const loadedPost = await connection.manager.findOne(Post, { where: { title: "successfully saved post" } });
+        expect(loadedPost).not.to.be.empty;
+        loadedPost!.should.be.eql(post);
+
+        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "successfully saved category" } });
+        expect(loadedCategory).not.to.be.empty;
+        loadedCategory!.should.be.eql(category);
+    })));
+
 });
