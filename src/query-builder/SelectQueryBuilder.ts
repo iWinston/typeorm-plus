@@ -33,6 +33,8 @@ import {QueryRunner} from "../query-runner/QueryRunner";
  */
 export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
+    partialSelect: boolean = false;
+
     // -------------------------------------------------------------------------
     // Public Implemented Methods
     // -------------------------------------------------------------------------
@@ -1403,11 +1405,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
-        const hasSelectedColumn = metadata.columns.some(column => {
-            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
-        });
 
-        if (!hasMainAlias && hasSelectedColumn) {
+        if (!hasMainAlias && this.partialSelect) {
             metadata.primaryColumns.forEach(column => {
                 const selection = aliasName + "." + column.propertyName;
                 if (!this.expressionMap.selects.some(select => select.selection === selection)) {
