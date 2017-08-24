@@ -30,7 +30,7 @@
     * [`@EventSubscriber`](#eventsubscriber)
 * [Other decorators](#other-decorators)
     * [`@Index`](#index)
-    * [`@Transaction` and `@TransactionEntityManager`](#transaction-and-transactionentitymanager)
+    * [`@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`](#transaction-transactionentitymanager-and-transactionrepository)
     * [`@EntityRepository`](#entityrepository)
 
 ## Entity decorators
@@ -711,11 +711,12 @@ export class User {
 
 For more information about indices see documentation [here](./indices.md).
 
-#### `@Transaction` and `@TransactionEntityManager`
+#### `@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`
 
 This decorator is used on a method and wraps all its execution into a single database transaction.
-All database queries must be performed using provided by `@TransactionEntityManager` decorator entity manager.
-Example:
+All database queries must be performed using provided by `@TransactionEntityManager` decorator entity manager 
+or with transaction repositories injected with `@TransactionRepository` decorator.
+Examples:
 
 ```typescript
 @Controller()
@@ -731,7 +732,40 @@ export class UserController {
 }
 ```
 
-Note: all operations inside transaction MUST use ONLY provided instance of `EntityManager`.
+```typescript
+@Controller()
+export class UserController {
+    
+    @Transaction()
+    @Post("/users")
+    save(@Body() user: User, @TransactionRepository(User) userRepository: Repository<User>) {
+        return userRepository.save(user);
+    }
+    
+}
+``` 
+
+```typescript
+@EntityRepository(User)
+export class UserRepository extends Repository<User> {
+    public findByName(name: string) {
+        return this.findOne({ name });
+    }
+}
+
+@Controller()
+export class UserController {
+    
+    @Transaction()
+    @Get("/user")
+    save(@QueryParam("name") name: string, @TransactionRepository() userRepository: UserRepository) {
+        return userRepository.findByName(name);
+    }
+    
+}
+``` 
+
+Note: all operations inside transaction MUST use ONLY provided instance of `EntityManager` or injected repositories.
 Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
 
 For more information about transactions see documentation [here](./transactions.md).

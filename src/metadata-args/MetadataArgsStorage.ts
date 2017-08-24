@@ -14,6 +14,7 @@ import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
 import {DiscriminatorValueMetadataArgs} from "./DiscriminatorValueMetadataArgs";
 import {EntityRepositoryMetadataArgs} from "./EntityRepositoryMetadataArgs";
 import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
+import {TransactionRepositoryMetadataArgs} from "./TransactionRepositoryMetadataArgs";
 import {MetadataUtils} from "../metadata-builder/MetadataUtils";
 import {GeneratedMetadataArgs} from "./GeneratedMetadataArgs";
 
@@ -31,6 +32,7 @@ export class MetadataArgsStorage {
     readonly tables: TableMetadataArgs[] = [];
     readonly entityRepositories: EntityRepositoryMetadataArgs[] = [];
     readonly transactionEntityManagers: TransactionEntityMetadataArgs[] = [];
+    readonly transactionRepositories: TransactionRepositoryMetadataArgs[] = [];
     readonly namingStrategies: NamingStrategyMetadataArgs[] = [];
     readonly entitySubscribers: EntitySubscriberMetadataArgs[] = [];
     readonly indices: IndexMetadataArgs[] = [];
@@ -154,6 +156,14 @@ export class MetadataArgsStorage {
     filterTransactionEntityManagers(target: (Function|string)[]): TransactionEntityMetadataArgs[];
     filterTransactionEntityManagers(target: (Function|string)|(Function|string)[]): TransactionEntityMetadataArgs[] {
         return this.transactionEntityManagers.filter(subscriber => {
+            return target instanceof Array ? target.indexOf(subscriber.target) !== -1 : subscriber.target === target;
+        });
+    }
+    
+    filterTransactionRepository(target: Function|string): TransactionRepositoryMetadataArgs[];
+    filterTransactionRepository(target: (Function|string)[]): TransactionRepositoryMetadataArgs[];
+    filterTransactionRepository(target: (Function|string)|(Function|string)[]): TransactionRepositoryMetadataArgs[] {
+        return this.transactionRepositories.filter(subscriber => {
             return target instanceof Array ? target.indexOf(subscriber.target) !== -1 : subscriber.target === target;
         });
     }
