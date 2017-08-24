@@ -7,6 +7,8 @@ import { getConnection, getMetadataArgsStorage, Repository, MongoRepository, Tre
  * into the wrapped method.
  * If you want to control at what position in your method parameters entity manager should be injected,
  * then use @TransactionEntityManager() decorator.
+ * If you want to use repositories instead of bare entity manager,
+ * then use @TransactionRepository() decorator.
  */
 export function Transaction(connectionName: string = "default"): MethodDecorator {
     return function (target: Object, methodName: string, descriptor: PropertyDescriptor) {
