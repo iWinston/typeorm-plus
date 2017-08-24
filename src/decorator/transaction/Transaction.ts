@@ -28,8 +28,15 @@ export function Transaction(connectionName: string = "default"): MethodDecorator
                             transactionEntityManagerMetadata.methodName === methodName
                         );
 
+                    // gets all @TransactionRepository() decorator usages for this method
+                    const transactionRepositoryMetadatas = getMetadataArgsStorage()
+                        .filterTransactionRepository(target.constructor)
+                        .filter(transactionRepositoryMetadata => 
+                            transactionRepositoryMetadata.methodName === methodName
+                        );
+                        
                     // if there are @TransactionEntityManager() decorator usages the inject them
-                    if (transactionEntityManagerMetadatas.length) { 
+                    if (transactionEntityManagerMetadatas.length > 0) { 
                         argsWithInjectedTransactionManagerAndRepositories = [...args];
                         // replace method params with injection of transactionEntityManager
                         transactionEntityManagerMetadatas
@@ -37,17 +44,14 @@ export function Transaction(connectionName: string = "default"): MethodDecorator
                                 argsWithInjectedTransactionManagerAndRepositories[metadata.index] = entityManager
                             );
 
-                    } else { // otherwise inject it as a first parameter
+                    } // otherwise if there's no transaction repositories in use, inject it as a first parameter
+                    else if (transactionRepositoryMetadatas.length === 0) { 
                         argsWithInjectedTransactionManagerAndRepositories = [entityManager, ...args];
+                    } else {
+                        argsWithInjectedTransactionManagerAndRepositories = [...args];
                     }
 
-                    // gets all @TransactionRepository() decorator usages for this method
-                    const transactionRepositoryMetadatas = getMetadataArgsStorage()
-                        .filterTransactionRepository(target.constructor)
-                        .filter(transactionRepositoryMetadata => 
-                            transactionRepositoryMetadata.methodName === methodName
-                        );
-
+                    // for every usage of @TransactionRepository decorator
                     transactionRepositoryMetadatas.forEach(metadata => {
                         let repositoryInstance: any;
 
