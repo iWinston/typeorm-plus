@@ -48,7 +48,7 @@ All operations **MUST** be executed using provided transactional entity manager.
 ## Transaction decorators
 
 There are few decorators which can help you organize your transactions - 
-`@Transaction` and `@TransactionEntityManager`.
+`@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`.
 
 `@Transaction` wraps all its execution into a single database transaction,
 and `@TransactionEntityManager` provides transaction entity manager which must be used to execute queries inside this transaction.
@@ -64,11 +64,31 @@ export class UserController {
         return manager.save(user);
     }
     
-    
 }
 ```
 
 You **must** always use provided by `@TransactionEntityManager` decorator manager here as well.
+
+However, you can also inject transaction repository (which use transaction entity manager under the hood), 
+using `@TransactionRepository` decorator:
+
+```typescript
+@Controller()
+export class UserController {
+    
+    @Transaction()
+    @Post("/users")
+    save(@Body() user: User, @TransactionRepository(User) userRepository: Repository<User>) {
+        return userRepository.save(user);
+    }
+    
+}
+``` 
+
+You can inject both built-in TypeORM's repositories like `Repository`, `TreeRepository` and `MongoRepository` 
+(using `@TransactionRepository(Entity) entityRepository: Repository<Entity>` like syntax) 
+or custom repositories (classes extending built-in TypeORM's repositories classes and decorated with `@EntityRepository` decorator) 
+using the `@TransactionRepository() customRepository: CustomRepository` syntax.
 
 ## Using `QueryRunner` to create and control state of single database connection
 
