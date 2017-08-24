@@ -1,6 +1,11 @@
 import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/index";
+import {
+    PrimaryGeneratedColumn,
+    ManyToMany,
+    JoinTable
+} from "../../../../../src/index";
 import {Column} from "../../../../../src/decorator/columns/Column";
+import {Category} from "./Category";
 
 @Entity()
 export class Photo {
@@ -24,5 +29,9 @@ export class Photo {
 
     @Column()
     isPublished: boolean;
+
+    @ManyToMany(type => Category)
+    @JoinTable()
+    categories: Category[];
 
 }

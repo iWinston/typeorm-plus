@@ -1403,6 +1403,21 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
+        const hasSelectedColumn = metadata.columns.some(column => {
+            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
+        });
+
+        if (!hasMainAlias && hasSelectedColumn) {
+            metadata.primaryColumns.forEach(column => {
+                const selection = aliasName + "." + column.propertyName;
+                if (!this.expressionMap.selects.some(select => select.selection === selection)) {
+                    this.expressionMap.selects.push({
+                        selection: selection,
+                        virtual: true,
+                    });
+                }
+            });
+        }
 
         const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns : metadata.columns.filter(column => {
             return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
@@ -1414,6 +1429,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
                 aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
+                virtual: selection && selection.virtual,
             };
         });
     }
