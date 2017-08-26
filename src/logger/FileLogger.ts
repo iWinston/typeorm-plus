@@ -1,7 +1,6 @@
 import {LoggerOptions} from "./LoggerOptions";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Logger} from "./Logger";
-import {appendFileSync} from "fs";
 import {PlatformTools} from "../platform/PlatformTools";
 
 /**
@@ -93,7 +92,7 @@ export class FileLogger implements Logger {
         strings = strings instanceof Array ? strings : [strings];
         const basePath = PlatformTools.load("app-root-path").path;
         strings = (strings as string[]).map(str => "[" + new Date().toISOString() + "]" + str);
-        appendFileSync(basePath + "/ormlogs.log", strings.join("\r\n") + "\r\n"); // todo: use async or implement promises?
+        PlatformTools.appendFileSync(basePath + "/ormlogs.log", strings.join("\r\n") + "\r\n"); // todo: use async or implement promises?
     }
 
     /**

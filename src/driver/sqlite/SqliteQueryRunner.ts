@@ -12,7 +12,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {SqliteDriver} from "./SqliteDriver";
 import {Connection} from "../../connection/Connection";
-import {ReadStream} from "fs";
+import {ReadStreamWrapper} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
@@ -173,7 +173,7 @@ export class SqliteQueryRunner implements QueryRunner {
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStreamWrapper> {
         throw new Error(`Stream is not supported by sqlite driver.`);
     }
 

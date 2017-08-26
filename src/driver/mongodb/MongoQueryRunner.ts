@@ -36,7 +36,7 @@ import {
     UpdateWriteOpResult
 } from "./typings";
 import {Connection} from "../../connection/Connection";
-import {ReadStream} from "fs";
+import {ReadStreamWrapper} from "../../platform/PlatformTools";
 import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
 
 /**
@@ -392,7 +392,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStreamWrapper> {
         throw new Error(`Stream is not supported by MongoDB driver.`);
     }
 

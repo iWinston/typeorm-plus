@@ -1,8 +1,7 @@
 import {LoggerOptions} from "./LoggerOptions";
-import {PlatformTools} from "../platform/PlatformTools";
+import {PlatformTools, chalk} from "../platform/PlatformTools";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Logger} from "./Logger";
-const chalk = require("chalk");
 
 /**
  * Performs logging of the events in TypeORM.

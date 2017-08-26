@@ -1,5 +1,4 @@
-import {EventEmitter} from "events";
-import {Readable, Writable} from "stream";
+import {EventEmitterWrapper, StreamReadableWrapper, StreamWritableWrapper} from "../../platform/PlatformTools";
 
 /**
  * Creates a new MongoClient instance.
@@ -584,7 +583,7 @@ export interface ListCollectionsOptions {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html
  */
-export declare class Db extends EventEmitter {
+export declare class Db extends EventEmitterWrapper {
 
     /**
      *
@@ -1093,7 +1092,7 @@ export declare class Db extends EventEmitter {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
  */
-export declare class Server extends EventEmitter {
+export declare class Server extends EventEmitterWrapper {
 
     /**
      *
@@ -1114,7 +1113,7 @@ export declare class Server extends EventEmitter {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/ReplSet.html
  */
-export declare class ReplSet extends EventEmitter {
+export declare class ReplSet extends EventEmitterWrapper {
 
     /**
      *
@@ -1134,7 +1133,7 @@ export declare class ReplSet extends EventEmitter {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Mongos.html
  */
-export declare class Mongos extends EventEmitter {
+export declare class Mongos extends EventEmitterWrapper {
 
     /**
      *
@@ -4699,7 +4698,7 @@ export type CursorResult = any | void | boolean;
  * Creates a new Cursor instance (INTERNAL TYPE, do not instantiate directly).
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html
  */
-export declare class Cursor<T> extends Readable {
+export declare class Cursor<T> extends StreamReadableWrapper {
 
     /**
      * Cursor query sort setting.
@@ -5075,7 +5074,7 @@ export type AggregationCursorResult = any | void;
  * Creates a new Aggregation Cursor instance (INTERNAL TYPE, do not instantiate directly),
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html
  */
-export interface AggregationCursor<T> extends Readable {
+export interface AggregationCursor<T> extends StreamReadableWrapper {
 
     /**
      * Set the batch size for the cursor.
@@ -5270,7 +5269,7 @@ export interface AggregationCursor<T> extends Readable {
  * CommandCursor.
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html
  */
-export interface CommandCursor extends Readable {
+export interface CommandCursor extends StreamReadableWrapper {
 
     /**
      * Set the batch size for the cursor.
@@ -5554,7 +5553,7 @@ export interface GridFSBucketOpenUploadStreamOptions {
  * GridFSBucketReadStream.
  * @see https://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucketReadStream.html
  */
-export declare class GridFSBucketReadStream extends Readable {
+export declare class GridFSBucketReadStream extends StreamReadableWrapper {
 
     /**
      *
@@ -5598,7 +5597,7 @@ export interface GridFSBucketReadStreamOptions {
  * GridFSBucketWriteStream
  * @see https://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucketWriteStream.html
  */
-export declare class GridFSBucketWriteStream extends Writable {
+export declare class GridFSBucketWriteStream extends StreamWritableWrapper {
 
     /**
      *

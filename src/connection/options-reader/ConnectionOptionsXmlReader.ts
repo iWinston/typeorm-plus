@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {ConnectionOptions} from "../ConnectionOptions";
 
@@ -48,7 +47,7 @@ export class ConnectionOptionsXmlReader {
         const xmlParser = PlatformTools.load("xml2js").parseString;
         const xmlOptions = { trim: true, explicitRoot: false };
         return new Promise((ok, fail) => {
-            xmlParser(fs.readFileSync(path), xmlOptions, (err: any, result: any) => err ? fail(err) : ok(result));
+            xmlParser(PlatformTools.readFileSync(path), xmlOptions, (err: any, result: any) => err ? fail(err) : ok(result));
         });
     }
 
