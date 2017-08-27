@@ -196,25 +196,6 @@ export class User {
 
 For more information about mongodb refer [this documentation](./mongodb.md).
 
-#### `@ObjectIdColumn`
-
-Marks a property in your entity as ObjectID.
-This decorator is used only in MongoDB.
-Every entity in MongoDB must have ObjectID column.
-Example:
-
-```typescript
-@Entity()
-export class User {
-    
-    @ObjectIdColumn()
-    id: ObjectID;
-    
-}
-```
-
-For more information about mongodb refer [this documentation](./mongodb.md).
-
 #### `@CreateDateColumn`
 
 Special column that automatically sets entity insertion time.
