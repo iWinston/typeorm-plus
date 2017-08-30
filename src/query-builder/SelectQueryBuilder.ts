@@ -1,7 +1,6 @@
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {JoinOptions} from "./JoinOptions";
 import {PessimisticLockTransactionRequiredError} from "../error/PessimisticLockTransactionRequiredError";
 import {NoVersionOrUpdateDateColumnError} from "../error/NoVersionOrUpdateDateColumnError";
 import {OptimisticLockVersionMismatchError} from "../error/OptimisticLockVersionMismatchError";
@@ -206,29 +205,29 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoin(property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs (without selection) given entity's table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoin(entity: Function|string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs (without selection) given table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoin(tableName: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs (without selection).
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
-        this.join("INNER", entityOrProperty, aliasName, condition, options);
+    innerJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+        this.join("INNER", entityOrProperty, aliasName, condition, parameters);
         return this;
     }
 
@@ -238,29 +237,29 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoin(property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs (without selection) entity's table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoin(entity: Function|string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs (without selection) given table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoin(tableName: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs (without selection).
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
-        this.join("LEFT", entityOrProperty, aliasName, condition, options);
+    leftJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+        this.join("LEFT", entityOrProperty, aliasName, condition, parameters);
         return this;
     }
 
@@ -270,30 +269,30 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndSelect(property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs entity and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndSelect(entity: Function|string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs table and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndSelect(tableName: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    innerJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
-        this.innerJoin(entityOrProperty, aliasName, condition, options);
+        this.innerJoin(entityOrProperty, aliasName, condition, parameters);
         return this;
     }
 
@@ -303,30 +302,30 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndSelect(property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs entity and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndSelect(entity: Function|string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs table and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(tableName: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndSelect(tableName: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    leftJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
-        this.leftJoin(entityOrProperty, aliasName, condition, options);
+        this.leftJoin(entityOrProperty, aliasName, condition, parameters);
         return this;
     }
 
@@ -338,7 +337,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndMapMany(mapToProperty: string, property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -347,7 +346,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -356,7 +355,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
+    innerJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -365,9 +364,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
-        this.join("INNER", entityOrProperty, aliasName, condition, options, mapToProperty, true);
+        this.join("INNER", entityOrProperty, aliasName, condition, parameters, mapToProperty, true);
         return this;
     }
 
@@ -379,7 +378,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndMapOne(mapToProperty: string, property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -388,7 +387,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -397,7 +396,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
+    innerJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -406,9 +405,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
-        this.join("INNER", entityOrProperty, aliasName, condition, options, mapToProperty, false);
+        this.join("INNER", entityOrProperty, aliasName, condition, parameters, mapToProperty, false);
         return this;
     }
 
@@ -420,7 +419,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndMapMany(mapToProperty: string, property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -429,7 +428,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -438,7 +437,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndMapMany(mapToProperty: string, tableName: string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -447,9 +446,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
-        this.join("LEFT", entityOrProperty, aliasName, condition, options, mapToProperty, true);
+        this.join("LEFT", entityOrProperty, aliasName, condition, parameters, mapToProperty, true);
         return this;
     }
 
@@ -461,7 +460,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, property: string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoinAndMapOne(mapToProperty: string, property: string, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -470,7 +469,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -479,7 +478,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndMapOne(mapToProperty: string, tableName: string, aliasName: string, condition: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -488,9 +487,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
-        this.join("LEFT", entityOrProperty, aliasName, condition, options, mapToProperty, false);
+        this.join("LEFT", entityOrProperty, aliasName, condition, parameters, mapToProperty, false);
         return this;
     }
 
@@ -1053,12 +1052,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected join(direction: "INNER"|"LEFT", entityOrProperty: Function|string, aliasName: string, condition?: string, options?: JoinOptions, mapToProperty?: string, isMappingMany?: boolean): void {
+    protected join(direction: "INNER"|"LEFT", entityOrProperty: Function|string, aliasName: string, condition?: string, parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany?: boolean): void {
+
+        this.setParameters(parameters || {});
 
         const joinAttribute = new JoinAttribute(this.connection, this.expressionMap);
         joinAttribute.direction = direction;
         joinAttribute.mapToProperty = mapToProperty;
-        joinAttribute.options = options;
         joinAttribute.isMappingMany = isMappingMany;
         joinAttribute.entityOrProperty = entityOrProperty; // relationName
         joinAttribute.condition = condition; // joinInverseSideCondition

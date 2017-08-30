@@ -235,8 +235,20 @@ you can simply use `getConnection` method from `typeorm`:
 
 ```typescript
 import {getConnection} from "typeorm";
+import {User} from "./User";
 
 export function UsersListAction(req: Request, res: Response) {
-    // here we will have logic to return all users
+    return getConnection().getRepository(User).find();
+}
+```
+
+You even don't need `getConnection` in this example - you can directly use `getRepository` function:
+
+```typescript
+import {getRepository} from "typeorm";
+import {User} from "./User";
+
+export function UsersListAction(req: Request, res: Response) {
+    return getRepository(User).find();
 }
 ```

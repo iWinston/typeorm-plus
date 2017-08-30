@@ -1,6 +1,5 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
-import {JoinOptions} from "./JoinOptions";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
@@ -44,11 +43,6 @@ export class JoinAttribute {
      * Indicates if user maps one or many objects from the join.
      */
     isMappingMany?: boolean;
-
-    /**
-     * Extra join options.
-     */
-    options?: JoinOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
