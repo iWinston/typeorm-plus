@@ -936,16 +936,58 @@ const posts = await connection
 
 ## Building `INSERT` query
 
-TBD
+You can create `INSERT` queries using `QueryBuilder`.
+Examples:
 
+```typescript
+import {getConnection} from "typeorm";
+
+await getConnection()
+    .createQueryBuilder()
+    .insert()
+    .into(User)
+    .values([
+        { firstName: "Timber", lastName: "Saw" }, 
+        { firstName: "Phantom", lastName: "Lancer" }
+     ])
+    .execute();
+```
+     
 ## Building `UPDATE` query
 
-TBD
+You can create `UPDATE` queries using `QueryBuilder`.
+Examples:
+             
+```typescript
+import {getConnection} from "typeorm";
+
+await getConnection()
+    .createQueryBuilder()
+    .update(User)
+    .set({ firstName: "Timber", lastName: "Saw" })
+    .where("id = :id", { id: 1 })
+    .execute();
+```
 
 ## Building `DELETE` query
 
-TBD
+You can create `DELETE` queries using `QueryBuilder`.
+Examples:
+                                               
+```typescript
+import {getConnection} from "typeorm";
+
+await getConnection()
+    .createQueryBuilder()
+    .delete()
+    .from(User)
+    .where("id = :id", { id: 1 })
+    .execute();
+```
 
 ## Using `RelationQueryBuilder`
+
+You can switch between different types of query builder within any of them,
+once you do it - you will get a new instance of query builder (unlike all other methods).
 
 TBD
