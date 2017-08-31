@@ -47,10 +47,10 @@ export class RelationCountLoader {
                     return { relationCountAttribute: relationCountAttr, results: [] };
 
                 // generate query:
-                // SELECT category.post as parentId, COUNT(category.id) AS cnt FROM category category WHERE category.post IN (1, 2) GROUP BY category.post
+                // SELECT category.post as parentId, COUNT(*) AS cnt FROM category category WHERE category.post IN (1, 2) GROUP BY category.post
                 const qb = this.connection.createQueryBuilder(this.queryRunner);
                 qb.select(inverseSideTableAlias + "." + inverseSidePropertyName, "parentId")
-                    .addSelect("COUNT(" + qb.escape(inverseSideTableAlias) + "." + qb.escape(referenceColumnName) + ")", "cnt")
+                    .addSelect("COUNT(*)", "cnt")
                     .from(inverseSideTable, inverseSideTableAlias)
                     .where(inverseSideTableAlias + "." + inverseSidePropertyName + " IN (:ids)")
                     .addGroupBy(inverseSideTableAlias + "." + inverseSidePropertyName)
