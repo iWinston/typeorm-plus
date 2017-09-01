@@ -13,6 +13,7 @@ import {TreeRepository} from "./repository/TreeRepository";
 import {MongoRepository} from "./repository/MongoRepository";
 import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
+import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -204,6 +205,14 @@ export function getConnection(connectionName: string = "default"): Connection {
  */
 export function getManager(connectionName: string = "default"): EntityManager {
     return getConnectionManager().get(connectionName).manager;
+}
+
+/**
+ * Gets MongoDB entity manager from the connection.
+ * If connection name wasn't specified, then "default" connection will be retrieved.
+ */
+export function getMongoManager(connectionName: string = "default"): MongoEntityManager {
+    return getConnectionManager().get(connectionName).manager as MongoEntityManager;
 }
 
 /**
