@@ -509,7 +509,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Converts FindManyOptions to mongodb query.
      */
-    protected convertFindManyOptionsOrConditionsToMongodbQuery<Entity>(optionsOrConditions: FindOneOptions<Entity>|Partial<Entity>|undefined): ObjectLiteral|undefined {
+    protected convertFindManyOptionsOrConditionsToMongodbQuery<Entity>(optionsOrConditions: FindManyOptions<Entity>|Partial<Entity>|undefined): ObjectLiteral|undefined {
         if (!optionsOrConditions)
             return undefined;
 
