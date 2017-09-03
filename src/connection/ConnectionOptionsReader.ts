@@ -113,7 +113,7 @@ export class ConnectionOptionsReader {
 
             if (options.entities) {
                 const entities = (options.entities as any[]).map(entity => {
-                    if (typeof entity === "string" || entity.substr(0, 1) !== "/")
+                    if (typeof entity === "string" && entity.substr(0, 1) !== "/")
                         return this.baseFilePath + "/" + entity;
 
                     return entity;
@@ -122,7 +122,7 @@ export class ConnectionOptionsReader {
             }
             if (options.subscribers) {
                 const subscribers = (options.subscribers as any[]).map(subscriber => {
-                    if (typeof subscriber === "string" || subscriber.substr(0, 1) !== "/")
+                    if (typeof subscriber === "string" && subscriber.substr(0, 1) !== "/")
                         return this.baseFilePath + "/" + subscriber;
 
                     return subscriber;
@@ -131,7 +131,7 @@ export class ConnectionOptionsReader {
             }
             if (options.migrations) {
                 const migrations = (options.migrations as any[]).map(migration => {
-                    if (typeof migration === "string" || migration.substr(0, 1) !== "/")
+                    if (typeof migration === "string" && migration.substr(0, 1) !== "/")
                         return this.baseFilePath + "/" + migration;
 
                     return migration;
