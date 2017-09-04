@@ -5,7 +5,7 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {OracleConnectionOptions} from "../driver/oracle/OracleConnectionOptions";
 import {WebSqlConnectionOptions} from "../driver/websql/WebSqlConnectionOptions";
 import {MongoConnectionOptions} from "../driver/mongodb/MongoConnectionOptions";
-import {CordovaSqliteConnectionOptions} from "../driver/cordova-sqlite/CordovaSqliteConnectionOptions";
+import {CordovaConnectionOptions} from "../driver/cordova/CordovaConnectionOptions";
 
 /**
  * ConnectionOptions is an interface with settings and options for specific connection.
@@ -19,5 +19,5 @@ export type ConnectionOptions =
     SqlServerConnectionOptions|
     OracleConnectionOptions|
     WebSqlConnectionOptions|
-    CordovaSqliteConnectionOptions|
+    CordovaConnectionOptions|
     MongoConnectionOptions;

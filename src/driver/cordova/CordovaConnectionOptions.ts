@@ -3,12 +3,12 @@ import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 /**
  * Sqlite-specific connection options.
  */
-export interface CordovaSqliteConnectionOptions extends BaseConnectionOptions {
+export interface CordovaConnectionOptions extends BaseConnectionOptions {
 
     /**
      * Database type.
      */
-    readonly type: "cordova-sqlite";
+    readonly type: "cordova";
 
     /**
      * Database name.

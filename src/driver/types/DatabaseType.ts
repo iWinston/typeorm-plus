@@ -6,7 +6,7 @@ export type DatabaseType =
     "postgres"|
     "mariadb"|
     "sqlite"|
-    "cordova-sqlite"|
+    "cordova"|
     "oracle"|
     "mssql"|
     "websql"|

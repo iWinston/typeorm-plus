@@ -11,7 +11,7 @@ import {SqliteQueryRunner} from "../sqlite/SqliteQueryRunner";
  * Does not support compose primary keys with autoincrement field.
  * todo: need to throw exception for this case.
  */
-export class CordovaSqliteQueryRunner extends SqliteQueryRunner {
+export class CordovaQueryRunner extends SqliteQueryRunner {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------

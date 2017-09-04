@@ -1,5 +1,5 @@
 import {SqliteDriver} from "../sqlite/SqliteDriver";
-import {CordovaSqliteQueryRunner} from "./CordovaSqliteQueryRunner";
+import {CordovaQueryRunner} from "./CordovaQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 
@@ -9,7 +9,7 @@ interface Window {
 
 declare var window: Window;
 
-export class CordovaSqliteDriver extends SqliteDriver {
+export class CordovaDriver extends SqliteDriver {
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
             this.sqlite.openDatabase({name: this.options.database, location: "default"}, (db: any) => {
@@ -27,7 +27,7 @@ export class CordovaSqliteDriver extends SqliteDriver {
      */
     createQueryRunner(): QueryRunner {
         if (!this.queryRunner)
-            this.queryRunner = new CordovaSqliteQueryRunner(this);
+            this.queryRunner = new CordovaQueryRunner(this);
 
         return this.queryRunner;
     }
