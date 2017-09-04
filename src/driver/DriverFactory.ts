@@ -4,6 +4,7 @@ import {WebsqlDriver} from "./websql/WebsqlDriver";
 import {SqlServerDriver} from "./sqlserver/SqlServerDriver";
 import {OracleDriver} from "./oracle/OracleDriver";
 import {SqliteDriver} from "./sqlite/SqliteDriver";
+import {CordovaSqliteDriver} from "./cordova-sqlite/CordovaSqliteDriver";
 import {MysqlDriver} from "./mysql/MysqlDriver";
 import {PostgresDriver} from "./postgres/PostgresDriver";
 import {Driver} from "./Driver";
@@ -28,6 +29,8 @@ export class DriverFactory {
                 return new MysqlDriver(connection);
             case "sqlite":
                 return new SqliteDriver(connection);
+            case "cordova-sqlite":
+                return new CordovaSqliteDriver(connection);
             case "oracle":
                 return new OracleDriver(connection);
             case "mssql":
