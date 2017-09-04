@@ -79,6 +79,17 @@ export class PlatformTools {
         return undefined;
     }
 
+    static readFileSync(filename: string): any {
+        if (this.type === "browser")
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.readFileSync("${filename}").`);
+        return null;
+    }
+    
+    static appendFileSync(filename: string, data: any) {
+        if (this.type === "browser")
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.appendFileSync("${filename}").`);
+    }
+
     /**
      * Highlights sql string to be print in the console.
      */
@@ -94,3 +105,57 @@ export class PlatformTools {
     }
 
 }
+
+/**
+ * Simple version of the chalk library without color and format
+ * TODO: make it more dynamic or maybe replace it with an actual library that
+ * works in the browser
+ */
+function Chalk() {}
+
+let colors = ['underline', 'bold', 'yellow', 'gray', 'red'];
+let styles: any = {};
+
+for(let i = 0; i < colors.length; i++) {
+    styles[colors[i]] = {
+        get() {
+            return build.call(this, colors[i]);
+        }
+    };
+}
+
+const proto = Object.defineProperties(() => {}, styles);
+
+function build() {
+    const builder = function () {
+        const args = arguments;
+        let str = String(args[0]);
+        if(args.length === 0) {
+            return '';
+        }
+		if (args.length > 1) {
+            for (let a = 1; a < args.length; a++) {
+                str += ' ' + args[a];
+            }
+        }
+        return str;
+    };
+    
+    builder.__proto__ = proto;
+    return builder;
+}
+
+Object.defineProperties(Chalk.prototype, styles);
+export const chalk = new Chalk();
+
+/**
+ * These classes are needed for stream operations or
+ * in the mongodb driver. both aren't supported in the browser
+ */
+export class EventEmitter {}
+
+export class Readable {}
+
+export class Writable {}
+
+export interface ReadStream {}

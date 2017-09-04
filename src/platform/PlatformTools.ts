@@ -1,7 +1,11 @@
 import * as path from "path";
 import * as fs from "fs";
 import {highlight, Theme} from "cli-highlight";
-const chalk = require("chalk");
+export {ReadStream} from "fs";
+export {EventEmitter} from "events";
+export {Readable, Writable} from "stream";
+
+export const chalk = require("chalk");
 
 /**
  * Platform-specific tools.
@@ -69,6 +73,14 @@ export class PlatformTools {
     static fileExist(pathStr: string): boolean {
         return fs.existsSync(pathStr);
     }
+    
+    static readFileSync(filename: string): Buffer {
+        return fs.readFileSync(filename);
+    }
+
+    static appendFileSync(filename: string, data: any): void {
+        fs.appendFileSync(filename, data);
+    }
 
     /**
      * Gets environment variable.
@@ -98,5 +110,4 @@ export class PlatformTools {
     static highlightJson(json: string) {
         return highlight(json, { language: "json" });
     }
-
 }

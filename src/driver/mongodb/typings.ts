@@ -1,5 +1,4 @@
-import {EventEmitter} from "events";
-import {Readable, Writable} from "stream";
+import {EventEmitter, Readable, Writable} from "../../platform/PlatformTools";
 
 /**
  * Creates a new MongoClient instance.

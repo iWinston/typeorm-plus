@@ -6,7 +6,7 @@ export class MissingDriverError extends Error {
 
     constructor(driverType: string) {
         super();
-        this.message = `Wrong driver ${driverType} given. Supported drivers are: "mysql", "postgres", "mssql", "oracle", "mariadb", "sqlite".`;
+        this.message = `Wrong driver ${driverType} given. Supported drivers are: "cordova", "mysql", "postgres", "mssql", "oracle", "mariadb", "sqlite".`;
         this.stack = new Error().stack;
     }
 
