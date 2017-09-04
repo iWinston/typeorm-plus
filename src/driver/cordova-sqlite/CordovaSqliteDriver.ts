@@ -12,7 +12,7 @@ declare var window: Window;
 export class CordovaSqliteDriver extends SqliteDriver {
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
-            this.sqlite.openDatabase({name: this.options.database, location: 'default'}, (db: any) => {
+            this.sqlite.openDatabase({name: this.options.database, location: "default"}, (db: any) => {
                 const databaseConnection = db;
                 ok(databaseConnection);
             }, (error: any) => {

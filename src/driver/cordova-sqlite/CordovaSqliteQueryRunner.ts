@@ -36,12 +36,12 @@ export class CordovaSqliteQueryRunner extends SqliteQueryRunner {
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                     this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                if(result.rows.length === 0) {
+                if (result.rows.length === 0) {
                     ok([]);
                 }
 
                 let resultSet = [];
-                for(let i = 0; i < result.rows.length; i++) {
+                for (let i = 0; i < result.rows.length; i++) {
                     resultSet.push(result.rows.item(i));
                 }
                 
