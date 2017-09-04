@@ -11,7 +11,7 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {OracleDriver} from "./OracleDriver";
 import {Connection} from "../../connection/Connection";
-import {ReadStreamWrapper} from "../../platform/PlatformTools";
+import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
 
@@ -212,7 +212,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStreamWrapper> {
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         throw new Error(`Stream is not supported by Oracle driver.`);
     }
 

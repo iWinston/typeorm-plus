@@ -1,9 +1,9 @@
 import * as path from "path";
 import * as fs from "fs";
-import {ReadStream} from "fs";
-import {EventEmitter} from "events";
-import {Readable, Writable} from "stream";
 import {highlight, Theme} from "cli-highlight";
+export {ReadStream} from "fs";
+export {EventEmitter} from "events";
+export {Readable, Writable} from "stream";
 
 export const chalk = require("chalk");
 
@@ -111,11 +111,3 @@ export class PlatformTools {
         return highlight(json, { language: "json" });
     }
 }
-
-export class EventEmitterWrapper extends EventEmitter {}
-
-export class StreamReadableWrapper extends Readable {}
-
-export class StreamWritableWrapper extends Writable {}
-
-export interface ReadStreamWrapper extends ReadStream {}

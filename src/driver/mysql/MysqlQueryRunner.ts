@@ -10,7 +10,7 @@ import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {MysqlDriver} from "./MysqlDriver";
 import {Connection} from "../../connection/Connection";
-import {ReadStreamWrapper} from "../../platform/PlatformTools";
+import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
@@ -194,7 +194,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStreamWrapper> {
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 

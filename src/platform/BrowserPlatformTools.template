@@ -152,10 +152,10 @@ export const chalk = new Chalk();
  * These classes are needed for stream operations or
  * in the mongodb driver. both aren't supported in the browser
  */
-export class EventEmitterWrapper {}
+export class EventEmitter {}
 
-export class StreamReadableWrapper {}
+export class Readable {}
 
-export class StreamWritableWrapper {}
+export class Writable {}
 
-export interface ReadStreamWrapper {}
+export interface ReadStream {}
