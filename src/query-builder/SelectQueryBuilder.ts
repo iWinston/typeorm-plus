@@ -1439,7 +1439,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (index === 0) {
                     return `DISTINCT(${distinctAlias}.${propertyName})`;
                 } else {
-                    return `${distinctAlias}.${propertyName})`;
+                    return `${distinctAlias}.${propertyName}`;
                 }
             }).join(", ") + ") as \"cnt\"";
 
