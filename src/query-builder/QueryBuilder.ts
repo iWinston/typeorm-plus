@@ -469,17 +469,17 @@ export abstract class QueryBuilder<Entity> {
         const metadata = this.expressionMap.mainAlias!.metadata;
 
         // create shortcuts for better readability
-        const alias = this.expressionMap.mainAlias!.name;
+        const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.expressionMap.mainAlias!.name + "." : "";
         const parameters: ObjectLiteral = {};
         const whereStrings = ids.map((id, index) => {
             id = id instanceof Object ? id : metadata.createEntityIdMap(id);
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                whereSubStrings.push(this.escape(alias) + "." + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
+                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
                 parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
             });
             metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
-                whereSubStrings.push(this.escape(alias) + "." + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
+                whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
                 parameters["parentId_" + index + "_" + secondIndex] = parentIdColumn.getEntityValue(id);
             });
             return whereSubStrings.join(" AND ");
