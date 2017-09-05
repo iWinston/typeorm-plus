@@ -469,7 +469,7 @@ export abstract class QueryBuilder<Entity> {
         const metadata = this.expressionMap.mainAlias!.metadata;
 
         // create shortcuts for better readability
-        const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.expressionMap.mainAlias!.name + "." : "";
+        const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
         const parameters: ObjectLiteral = {};
         const whereStrings = ids.map((id, index) => {
             id = id instanceof Object ? id : metadata.createEntityIdMap(id);
