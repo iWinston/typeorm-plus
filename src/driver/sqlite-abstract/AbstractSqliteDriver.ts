@@ -198,7 +198,7 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     /**
-     * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * Prepares given value to a value to be hydrated, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -207,7 +207,7 @@ export class AbstractSqliteDriver implements Driver {
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             return value ? true : false;
 
-        } else if (columnMetadata.type === "datetime") {
+        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
