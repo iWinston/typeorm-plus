@@ -3,7 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Tournament} from "./entity/Tournament";
 
-describe.only("github issues > #807 Error in persisting dates", () => {
+describe("github issues > #807 Error in persisting dates", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

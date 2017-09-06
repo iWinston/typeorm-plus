@@ -4,7 +4,7 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 
-describe.only("database schema > column types > sqlite", () => {
+describe("database schema > column types > sqlite", () => {
 
     let connections: Connection[];
     before(async () => {
