@@ -249,7 +249,7 @@ export class OracleDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value);
 
-        } else if (columnMetadata.type === "datetime") {
+        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
         } else if (columnMetadata.type === "json") {

@@ -250,6 +250,9 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value);
 
+        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+            return DateUtils.mixedDateToDate(value, true);
+
         } else if (columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {

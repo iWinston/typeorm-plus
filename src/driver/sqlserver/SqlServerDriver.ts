@@ -265,7 +265,8 @@ export class SqlServerDriver implements Driver {
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === "datetime2"
             || columnMetadata.type === "smalldatetime"
-            || columnMetadata.type === "datetimeoffset") {
+            || columnMetadata.type === "datetimeoffset"
+            || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value, true);
 
         } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {

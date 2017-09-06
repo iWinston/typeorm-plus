@@ -268,7 +268,7 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
-        } else if (columnMetadata.type === "datetime") {
+        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value, true);
 
         } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
