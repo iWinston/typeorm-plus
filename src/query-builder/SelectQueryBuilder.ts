@@ -32,8 +32,6 @@ import {QueryRunner} from "../query-runner/QueryRunner";
  */
 export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
-    partialSelect: boolean = false;
-
     // -------------------------------------------------------------------------
     // Public Implemented Methods
     // -------------------------------------------------------------------------
@@ -1406,29 +1404,23 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
 
-        if (!hasMainAlias && this.partialSelect) {
-            metadata.primaryColumns.forEach(column => {
-                const selection = aliasName + "." + column.propertyName;
-                if (!this.expressionMap.selects.some(select => select.selection === selection)) {
-                    this.expressionMap.selects.push({
-                        selection: selection,
-                        virtual: true,
-                    });
-                }
-            });
-        }
-
         const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns : metadata.columns.filter(column => {
             return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
         });
 
-        return columns.map(column => {
+        // if user used partial selection and did not select some primary columns which are required to be selected
+        // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
+        // to make entity contain exactly what user selected
+        const nonSelectedPrimaryColumns = metadata.primaryColumns.filter(primaryColumn => columns.indexOf(primaryColumn) === -1);
+        const allColumns = [...columns, ...nonSelectedPrimaryColumns];
+
+        return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
             return {
                 selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
                 aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
-                virtual: selection && selection.virtual,
+                virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
         });
     }
