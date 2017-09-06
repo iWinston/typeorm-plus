@@ -37,7 +37,7 @@ describe("query builder > brackets", () => {
         await connection.manager.save(user3);
 
         const users = await connection.createQueryBuilder(User, "user")
-            .where("user.isAdmin = TRUE")
+            .where("user.isAdmin = :isAdmin", { isAdmin: true })
             .orWhere(new Brackets(qb => {
                 qb.where("user.firstName = :firstName1", { firstName1: "Timber" })
                     .andWhere("user.lastName = :lastName1", { lastName1: "Saw" });
