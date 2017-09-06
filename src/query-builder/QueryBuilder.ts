@@ -9,6 +9,7 @@ import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {RelationQueryBuilder} from "./RelationQueryBuilder";
 import {ObjectType} from "../common/ObjectType";
 import {Alias} from "./Alias";
+import {Brackets} from "./Brackets";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -261,7 +262,7 @@ export abstract class QueryBuilder<Entity> {
         const parameters: ObjectLiteral = Object.assign({}, this.expressionMap.parameters);
 
         // add discriminator column parameter if it exist
-        if (this.expressionMap.mainAlias!.hasMetadata) {
+        if (this.expressionMap.mainAlias && this.expressionMap.mainAlias.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const values = metadata.childEntityMetadatas
@@ -433,17 +434,7 @@ export abstract class QueryBuilder<Entity> {
      * Creates "WHERE" expression.
      */
     protected createWhereExpression() {
-
-        const conditions = this.expressionMap.wheres.map((where, index) => {
-            switch (where.type) {
-                case "and":
-                    return (index > 0 ? "AND " : "") + this.replacePropertyNames(where.condition);
-                case "or":
-                    return (index > 0 ? "OR " : "") + this.replacePropertyNames(where.condition);
-                default:
-                    return this.replacePropertyNames(where.condition);
-            }
-        }).join(" ");
+        const conditions = this.createWhereExpressionString();
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
@@ -460,6 +451,22 @@ export abstract class QueryBuilder<Entity> {
             return " WHERE (" + conditions + ") AND " + this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition);
 
         return " WHERE " + conditions;
+    }
+
+    /**
+     * Concatenates all added where expressions into one string.
+     */
+    protected createWhereExpressionString(): string {
+        return this.expressionMap.wheres.map((where, index) => {
+            switch (where.type) {
+                case "and":
+                    return (index > 0 ? "AND " : "") + this.replacePropertyNames(where.condition);
+                case "or":
+                    return (index > 0 ? "OR " : "") + this.replacePropertyNames(where.condition);
+                default:
+                    return this.replacePropertyNames(where.condition);
+            }
+        }).join(" ");
     }
 
     /**
@@ -487,6 +494,25 @@ export abstract class QueryBuilder<Entity> {
 
         const whereString = whereStrings.length > 1 ? "(" + whereStrings.join(" OR ") + ")" : whereStrings[0];
         return [whereString, parameters];
+    }
+
+    /**
+     * Computes given where argument - transforms to a where string all forms it can take.
+     */
+    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets) {
+        if (typeof where === "string")
+            return where;
+
+        if (where instanceof Brackets) {
+            const whereQueryBuilder = this.createQueryBuilder();
+            whereQueryBuilder.queryRunner = this.queryRunner;
+            where.whereFactory(whereQueryBuilder as any);
+            const whereString = whereQueryBuilder.createWhereExpressionString();
+            this.setParameters(whereQueryBuilder.getParameters());
+            return whereString ? "(" + whereString + ")" : "";
+        }
+
+        return where(this);
     }
 
 }
