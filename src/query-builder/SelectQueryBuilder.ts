@@ -1584,6 +1584,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         const selectString = Object.keys(orderBys)
             .map(columnName => {
+                if (columnName.indexOf(".") === -1) return;
+
                 const [aliasName, propertyPath] = columnName.split(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyName(propertyPath);
@@ -1593,6 +1595,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         const orderByObject: OrderByCondition = {};
         Object.keys(orderBys).forEach(columnName => {
+            if (columnName.indexOf(".") === -1) return;
+
             const [aliasName, propertyPath] = columnName.split(".");
             const alias = this.expressionMap.findAliasByName(aliasName);
             const column = alias.metadata.findColumnWithPropertyName(propertyPath);
