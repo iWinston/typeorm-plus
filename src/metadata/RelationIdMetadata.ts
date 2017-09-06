@@ -2,6 +2,7 @@ import {RelationIdMetadataArgs} from "../metadata-args/RelationIdMetadataArgs";
 import {EntityMetadata} from "./EntityMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Contains all information about entity's relation count.
@@ -64,6 +65,30 @@ export class RelationIdMetadata {
     }
 
     // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
+
+    /**
+     * Sets relation id value from the given entity.
+     *
+     * todo: make it to work in embeds as well.
+     */
+    setValue(entity: ObjectLiteral) {
+        const inverseEntity = this.relation.getEntityValue(entity);
+
+        if (inverseEntity instanceof Array) {
+            entity[this.propertyName] = inverseEntity.map(item => {
+               return this.relation.inverseEntityMetadata.getEntityIdMixedMap(item);
+            }).filter(item => item !== null && item !== undefined);
+
+        } else {
+            const value = this.relation.inverseEntityMetadata.getEntityIdMixedMap(inverseEntity);
+            if (value !== undefined)
+                entity[this.propertyName] = value;
+        }
+    }
+
+    // ---------------------------------------------------------------------
     // Public Builder Methods
     // ---------------------------------------------------------------------
 
@@ -79,5 +104,6 @@ export class RelationIdMetadata {
 
         this.relation = relation;
     }
+
 
 }

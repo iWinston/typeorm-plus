@@ -1015,6 +1015,14 @@ export class SubjectOperationExecutor {
                     primaryColumn.setEntityValue(subject.entity, undefined);
                 });
             });
+
+        this.allSubjects
+            .filter(subject => subject.hasEntity)
+            .forEach(subject => {
+                subject.metadata.relationIds.forEach(relationId => {
+                    relationId.setValue(subject.entity);
+                });
+            });
     }
 
 }

@@ -537,7 +537,7 @@ export class EntityMetadata {
      */
     getEntityIdMixedMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
         if (!entity) // todo: undefined entities should not go there??
-            return undefined;
+            return entity;
 
         const idMap = this.getEntityIdMap(entity);
         if (this.hasMultiplePrimaryKeys) {

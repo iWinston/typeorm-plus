@@ -72,25 +72,25 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates SELECT query.
      * Replaces all previous selections if they exist.
      */
-    select(): SelectQueryBuilder<Entity>;
+    select(): this;
 
     /**
      * Creates SELECT query.
      * Replaces all previous selections if they exist.
      */
-    select(selection: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, selectionAliasName?: string): SelectQueryBuilder<Entity>;
+    select(selection: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, selectionAliasName?: string): this;
 
     /**
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
      */
-    select(selection: string, selectionAliasName?: string): SelectQueryBuilder<Entity>;
+    select(selection: string, selectionAliasName?: string): this;
 
     /**
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
      */
-    select(selection: string[]): SelectQueryBuilder<Entity>;
+    select(selection: string[]): this;
 
     /**
      * Creates SELECT query and selects given data.
