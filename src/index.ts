@@ -60,7 +60,6 @@ export * from "./decorator/entity/ClassEntityChild";
 export * from "./decorator/entity/ClosureEntity";
 export * from "./decorator/entity/EmbeddableEntity";
 export * from "./decorator/entity/SingleEntityChild";
-export * from "./decorator/entity/Entity";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
 export * from "./decorator/transaction/TransactionManager";

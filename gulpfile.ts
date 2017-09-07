@@ -62,7 +62,8 @@ export class Gulpfile {
             "!./src/typeorm-model-shim.ts",
             "!./src/platform/PlatformTools.ts"
         ])
-            .pipe(gulp.dest("./build/browser"));
+        .pipe(gulp.dest("./build/systemjs/typeorm"))
+        .pipe(gulp.dest("./build/browser"));
     }
 
     /**
@@ -72,7 +73,7 @@ export class Gulpfile {
     browserCopyMainBrowserFile() {
         return gulp.src("./package.json", { read: false })
             .pipe(file("typeorm.ts", `export * from "./typeorm/index";`))
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/systemjs"));
     }
 
     /**
@@ -82,6 +83,7 @@ export class Gulpfile {
     browserCopyPlatformTools() {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
+            .pipe(gulp.dest("./build/systemjs/typeorm/platform"))
             .pipe(gulp.dest("./build/browser/platform"));
     }
 
@@ -96,12 +98,11 @@ export class Gulpfile {
             "lib": ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
-        const tsResult = gulp.src(["./build/browser/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
+        const tsResult = gulp.src(["./build/systemjs/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
         return [
-            // tsResult.dts.pipe(gulp.dest("./build/package")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
                 .pipe(gulp.dest("./build/browser"))
@@ -120,7 +121,6 @@ export class Gulpfile {
             .pipe(tsProject());
 
         return [
-            // tsResult.dts.pipe(gulp.dest("./build/package")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
                 .pipe(gulp.dest("./build/browser"))
@@ -136,6 +136,13 @@ export class Gulpfile {
             .pipe(uglify())
             .pipe(rename("typeorm-browser.min.js"))
             .pipe(gulp.dest("./build/browser"));
+    }
+
+    @Task()
+    browserClearPackageDirectory(cb: Function) {
+        return del([
+            "./build/systemjs/**"
+        ])
     }
 
     // -------------------------------------------------------------------------
@@ -220,6 +227,7 @@ export class Gulpfile {
         return gulp.src("./package.json")
             .pipe(replace("\"private\": true,", "\"private\": false,"))
             .pipe(gulp.dest("./build/package"))
+            .pipe(replace("\"name\": \"typeorm\",", "\"name\": \"typeorm-browser\","))
             .pipe(gulp.dest("./build/browser"));
     }
 
@@ -250,10 +258,11 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools"],
+            ["browserCopySources", "browserCopyPlatformTools", "browserCopyMainBrowserFile"],
             ["packageCompile", "browserCompile", "browserCompileSystemJS"],
             ["packageMoveCompiledFiles", "browserUglify"],
             [
+                "browserClearPackageDirectory",
                 "packageClearPackageDirectory",
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
