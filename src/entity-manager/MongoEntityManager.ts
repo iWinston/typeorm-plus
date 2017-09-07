@@ -41,6 +41,7 @@ import {DocumentToEntityTransformer} from "../query-builder/transformer/Document
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {FindOneOptions} from "../find-options/FindOneOptions";
+import {PlatformTools} from "../platform/PlatformTools";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -120,7 +121,7 @@ export class MongoEntityManager extends EntityManager {
     async findByIds<Entity>(entityClassOrName: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        const objectIdInstance = require("mongodb").ObjectID;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         query["_id"] = { $in: ids.map(id => {
             if (id instanceof objectIdInstance)
                 return id;
@@ -194,7 +195,7 @@ export class MongoEntityManager extends EntityManager {
 
         const metadata = this.connection.getMetadata(entityClassOrName);
         const cursor = this.createCursor(entityClassOrName, query);
-        const ParentCursor = require("mongodb").Cursor;
+        const ParentCursor = PlatformTools.load("mongodb").Cursor;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {
                 ParentCursor.prototype.toArray.call(this, (error: MongoError, results: Entity[]): void => {

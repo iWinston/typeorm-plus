@@ -93,7 +93,7 @@ export class PlatformTools {
     /**
      * Highlights sql string to be print in the console.
      */
-    static highlightSql(sql: string) {
+    static highlightSql(sql: string, bold: boolean = false) {
         return sql;
     }
 
@@ -104,49 +104,29 @@ export class PlatformTools {
         return json;
     }
 
-}
+    /**
+     * Logging functions needed by AdvancedConsoleLogger (but here without chalk)
+     */
+    static logInfo(prefix: string, info: any) {
+        console.info(prefix + " ", info);
+    }
 
-/**
- * Simple version of the chalk library without color and format
- * TODO: make it more dynamic or maybe replace it with an actual library that
- * works in the browser
- */
-function Chalk() {}
-
-let colors = ['underline', 'bold', 'yellow', 'gray', 'red'];
-let styles: any = {};
-
-for(let i = 0; i < colors.length; i++) {
-    styles[colors[i]] = {
-        get() {
-            return build.call(this, colors[i]);
-        }
-    };
-}
-
-const proto = Object.defineProperties(() => {}, styles);
-
-function build() {
-    const builder = function () {
-        const args = arguments;
-        let str = String(args[0]);
-        if(args.length === 0) {
-            return '';
-        }
-		if (args.length > 1) {
-            for (let a = 1; a < args.length; a++) {
-                str += ' ' + args[a];
-            }
-        }
-        return str;
-    };
+    static logError(prefix: string, error: any) {
+        console.error(prefix + " ", error);
+    }
     
-    (builder as any).__proto__ = proto;
-    return builder;
-}
+    static logWarn(prefix: string, warning: any) {
+        console.warn(prefix + " ", warning);
+    }
+    
+    static log(message: string) {
+        console.log(message);
+    }
 
-Object.defineProperties(Chalk.prototype, styles);
-export const chalk = new (Chalk as any)();
+    static warn(message: string) {
+        return message;
+    }
+}
 
 /**
  * These classes are needed for stream operations or

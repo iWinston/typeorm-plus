@@ -5,7 +5,7 @@ export {ReadStream} from "fs";
 export {EventEmitter} from "events";
 export {Readable, Writable} from "stream";
 
-export const chalk = require("chalk");
+const chalk = require("chalk");
 
 /**
  * Platform-specific tools.
@@ -92,7 +92,7 @@ export class PlatformTools {
     /**
      * Highlights sql string to be print in the console.
      */
-    static highlightSql(sql: string) {
+    static highlightSql(sql: string, bold: boolean = false) {
         const theme: Theme = {
             "keyword": chalk.blueBright,
             "literal": chalk.blueBright,
@@ -101,7 +101,13 @@ export class PlatformTools {
             "built_in": chalk.magentaBright,
             "comment": chalk.gray,
         };
-        return highlight(sql, { theme: theme, language: "sql" });
+        let highlighted = highlight(sql, { theme: theme, language: "sql" });
+
+        if (bold) {
+            return chalk.bold(highlighted);
+        }
+
+        return highlighted;
     }
 
     /**
@@ -109,5 +115,28 @@ export class PlatformTools {
      */
     static highlightJson(json: string) {
         return highlight(json, { language: "json" });
+    }
+
+    /**
+     * Logging functions needed by AdvancedConsoleLogger
+     */
+    static logInfo(prefix: string, info: any) {
+        console.log(chalk.gray.underline(prefix) + " ", info);
+    }
+
+    static logError(prefix: string, error: any) {
+        console.log(chalk.underline.red(prefix) + " ", error);
+    }
+    
+    static logWarn(prefix: string, warning: any) {
+        console.log(chalk.underline.yellow(prefix) + " ", warning);
+    }
+    
+    static log(message: string) {
+        console.log(chalk.underline(message));
+    }
+
+    static warn(message: string) {
+        return chalk.yellow(message);
     }
 }
