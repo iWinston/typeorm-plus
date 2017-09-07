@@ -203,7 +203,7 @@ export class Connection {
      * Can be used only after connection to the database is established.
      */
     async dropDatabase(): Promise<void> {
-        const queryRunner = await this.createQueryRunner();
+        const queryRunner = await this.createQueryRunner("master");
         await queryRunner.clearDatabase();
         await queryRunner.release();
     }
@@ -303,7 +303,7 @@ export class Connection {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner();
+        const usedQueryRunner = queryRunner || this.createQueryRunner("master");
 
         try {
             return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally

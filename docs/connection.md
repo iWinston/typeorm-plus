@@ -10,6 +10,7 @@
     * [Loading from `ormconfig.xml`](#loading-from-ormconfigxml)
 * [Using `ConnectionManager`](#using-connectionmanager)
 * [Working with connection](#working-with-connection-1)
+* [Replication](#replication)
 * [API](#api)
     * [Main API](#main-api)
     * [`Connection` API](#connection-api)
@@ -369,6 +370,53 @@ export class UserController {
     
 }
 ```
+
+## Replication
+
+You can setup read/write replication using TypeORM.
+Example of replication connection settings:
+
+```typescript
+{
+  type: "mysql",
+  logging: true,
+  replication: {
+    master: {
+      host: "server1",
+      port: 3306,
+      username: "test",
+      password: "test",
+      database: "test"
+    },
+    slaves: [{
+      host: "server2",
+      port: 3306,
+      username: "test",
+      password: "test",
+      database: "test"
+    }, {
+      host: "server3",
+      port: 3306,
+      username: "test",
+      password: "test",
+      database: "test"
+    }]
+  }
+}
+```
+
+All schema update and write operations are performed using `master` server.
+All simple queries performed by using find methods or select query builder are using random `slave` instance. 
+
+If you want explicitly use master in SELECT created by query builder, you can use following code:
+
+```typescript
+const postsFromMaster = await connection.createQueryBuilder(Post, "post")
+    .setQueryRunner(connection.createQueryRunner("master"))
+    .getMany();
+```
+
+Replication is supported by mysql, postgres and sql server databases.
 
 ## API
 

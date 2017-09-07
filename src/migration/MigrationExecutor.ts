@@ -24,7 +24,7 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection, queryRunner?: QueryRunner) {
-        this.queryRunner = queryRunner || connection.createQueryRunner();
+        this.queryRunner = queryRunner || connection.createQueryRunner("master");
     }
 
     // -------------------------------------------------------------------------

@@ -90,7 +90,7 @@ export class EntityManager {
         if (this.queryRunner && this.queryRunner.isTransactionActive)
             throw new Error(`Cannot start transaction because its already started`);
 
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
+        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         const transactionEntityManager = new EntityManagerFactory().create(this.connection, usedQueryRunner);
 
         try {
@@ -281,7 +281,7 @@ export class EntityManager {
             //
             // });
 
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
             const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
             if (options && options.data)
                 Object.assign(queryRunner.data, options.data);
@@ -478,7 +478,7 @@ export class EntityManager {
 
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
             const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
             if (options && options.data)
                 Object.assign(queryRunner.data, options.data);
@@ -733,7 +733,7 @@ export class EntityManager {
      */
     async clear<Entity>(entityClass: ObjectType<Entity>|string): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass);
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         try {
             return await queryRunner.truncate(metadata.tableName); // await is needed here because we are using finally
 

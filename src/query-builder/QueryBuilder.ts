@@ -304,7 +304,7 @@ export abstract class QueryBuilder<Entity> {
      */
     async execute(): Promise<any> {
         const [sql, parameters] = this.getSqlAndParameters();
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+        const queryRunner = this.obtainQueryRunner();
         try {
             return await queryRunner.query(sql, parameters);  // await is needed here because we are using finally
 
@@ -347,6 +347,13 @@ export abstract class QueryBuilder<Entity> {
         if (!this.expressionMap.disableEscaping)
             return name;
         return this.connection.driver.escape(name);
+    }
+
+    /**
+     * Sets or overrides query builder's QueryRunner.
+     */
+    setQueryRunner(queryRunner: QueryRunner) {
+        this.queryRunner = queryRunner;
     }
 
     // -------------------------------------------------------------------------
@@ -513,6 +520,13 @@ export abstract class QueryBuilder<Entity> {
         }
 
         return where(this);
+    }
+
+    /**
+     * Creates a query builder used to execute sql queries inside this query builder.
+     */
+    protected obtainQueryRunner() {
+        return this.queryRunner || this.connection.createQueryRunner("master");
     }
 
 }

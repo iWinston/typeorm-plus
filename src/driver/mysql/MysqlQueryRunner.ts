@@ -765,7 +765,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.driver.options.database!;
+        return this.driver.database!;
     }
 
     /**

@@ -777,7 +777,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.driver.options.database!;
+        return this.driver.database!;
     }
 
     /**

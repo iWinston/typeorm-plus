@@ -170,9 +170,9 @@ export class MysqlDriver implements Driver {
     async connect(): Promise<void> {
 
         if (this.options.replication) {
-            this.slaves = await this.options.replication.read.map(slave => {
+            this.slaves = await Promise.all(this.options.replication.read.map(slave => {
                 return this.createPool(this.options, slave);
-            });
+            }));
             this.master = await this.createPool(this.options, this.options.replication.write);
             this.database = this.options.replication.write.database;
 
