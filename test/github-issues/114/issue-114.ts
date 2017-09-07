@@ -4,7 +4,7 @@ import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
 
-describe("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
+describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
 
     let driver: PostgresDriver, connection: Connection;
     before(() => {

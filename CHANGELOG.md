@@ -95,6 +95,7 @@ Also now all
 * added `@Generated` decorator. It can accept `strategy` option with values `increment` and `uuid`.
   Default is `increment`. It always generates value for column, except when column defined as `nullable` and user sets `null` value in to column.
 * added logging of log-running requests
+* added replication support
 
 ### OTHER API CHANGES
 

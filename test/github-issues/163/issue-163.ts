@@ -53,8 +53,10 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
         const completePlatform = await connection
             .getRepository(Platform)
             .createQueryBuilder("platform")
-            .leftJoinAndSelect("platform.games", "games")
+            .leftJoinAndSelect("platform.games", "game")
             .where("platform.slug=:slug", { slug: "windows" })
+            .orderBy("platform.id")
+            .addOrderBy("game.id")
             .getOne();
 
         expect(completePlatform).not.to.be.empty;

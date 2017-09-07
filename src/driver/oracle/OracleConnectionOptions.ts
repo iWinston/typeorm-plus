@@ -1,49 +1,15 @@
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
 
 /**
  * Oracle-specific connection options.
  */
-export interface OracleConnectionOptions extends BaseConnectionOptions {
+export interface OracleConnectionOptions extends BaseConnectionOptions, OracleConnectionCredentialsOptions {
 
     /**
      * Database type.
      */
     readonly type: "oracle";
-
-    /**
-     * Connection url where perform connection to.
-     */
-    readonly url?: string;
-
-    /**
-     * Database host.
-     */
-    readonly host?: string;
-
-    /**
-     * Database host port.
-     */
-    readonly port?: number;
-
-    /**
-     * Database username.
-     */
-    readonly username?: string;
-
-    /**
-     * Database password.
-     */
-    readonly password?: string;
-
-    /**
-     * Database name to connect to.
-     */
-    readonly database?: string;
-
-    /**
-     * Connection SID.
-     */
-    readonly sid?: string;
 
     /**
      * Schema name. By default is "public".
@@ -54,5 +20,22 @@ export interface OracleConnectionOptions extends BaseConnectionOptions {
      * @deprecated use "schema" instead.
      */
     readonly schemaName?: string;
+
+    /**
+     * Replication setup.
+     */
+    readonly replication?: {
+
+        /**
+         * Master server used by orm to perform writes.
+         */
+        readonly master: OracleConnectionCredentialsOptions;
+
+        /**
+         * List of read-from severs (slaves).
+         */
+        readonly slaves: OracleConnectionCredentialsOptions[];
+
+    };
 
 }

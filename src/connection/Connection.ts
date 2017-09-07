@@ -203,7 +203,7 @@ export class Connection {
      * Can be used only after connection to the database is established.
      */
     async dropDatabase(): Promise<void> {
-        const queryRunner = await this.createQueryRunner();
+        const queryRunner = await this.createQueryRunner("master");
         await queryRunner.clearDatabase();
         await queryRunner.release();
     }
@@ -303,7 +303,7 @@ export class Connection {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner();
+        const usedQueryRunner = queryRunner || this.createQueryRunner("master");
 
         try {
             return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally
@@ -346,9 +346,14 @@ export class Connection {
      * Creates a query runner used for perform queries on a single database connection.
      * Using query runners you can control your queries to execute using single database connection and
      * manually control your database transaction.
+     *
+     * Mode is used in replication mode and indicates whatever you want to connect
+     * to master database or any of slave databases.
+     * If you perform writes you must use master database,
+     * if you perform reads you can use slave databases.
      */
-    createQueryRunner(): QueryRunner {
-        const queryRunner = this.driver.createQueryRunner();
+    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+        const queryRunner = this.driver.createQueryRunner(mode);
         const manager = new EntityManagerFactory().create(this, queryRunner);
         Object.assign(queryRunner, { manager: manager });
         return queryRunner;

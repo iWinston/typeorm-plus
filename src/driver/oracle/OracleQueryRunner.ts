@@ -82,13 +82,21 @@ export class OracleQueryRunner implements QueryRunner {
      */
     protected sqlsInMemory: string[] = [];
 
+    /**
+     * Mode in which query runner executes.
+     * Used for replication.
+     * If replication is not setup its value is ignored.
+     */
+    protected mode: "master"|"slave";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: OracleDriver) {
+    constructor(driver: OracleDriver, mode: "master"|"slave" = "master") {
         this.driver = driver;
         this.connection = driver.connection;
+        this.mode = mode;
     }
 
     // -------------------------------------------------------------------------
@@ -106,13 +114,18 @@ export class OracleQueryRunner implements QueryRunner {
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        this.databaseConnectionPromise = new Promise((ok, fail) => {
-            const driver = this.driver as OracleDriver;
-            driver.pool.getConnection((err: any, connection: any) => {
+        if (this.mode === "slave" && this.driver.isReplicated) {
+            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(connection => {
                 this.databaseConnection = connection;
-                err ? fail(err) : ok(connection);
+                return this.databaseConnection;
             });
-        });
+
+        } else { // master
+            this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(connection => {
+                this.databaseConnection = connection;
+                return this.databaseConnection;
+            });
+        }
 
         return this.databaseConnectionPromise;
     }

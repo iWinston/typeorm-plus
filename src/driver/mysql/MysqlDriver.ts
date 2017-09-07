@@ -5,7 +5,6 @@ import {DriverUtils} from "../DriverUtils";
 import {MysqlQueryRunner} from "./MysqlQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -16,6 +15,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {RandomGenerator} from "../../util/RandomGenerator";
+import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -32,23 +32,39 @@ export class MysqlDriver implements Driver {
     connection: Connection;
 
     /**
-     * Connection options.
-     */
-    options: MysqlConnectionOptions;
-
-    /**
      * Mysql underlying library.
      */
     mysql: any;
 
     /**
-     * Database connection pool created by underlying driver.
+     * Connection pool.
+     * Used in non-replication mode.
      */
     pool: any;
+
+    /**
+     * Pool cluster used in replication mode.
+     */
+    poolCluster: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: MysqlConnectionOptions;
+
+    /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    /**
+     * Indicates if replication is enabled.
+     */
+    isReplicated: boolean = false;
 
     /**
      * Indicates if tree tables are supported by this driver.
@@ -127,19 +143,21 @@ export class MysqlDriver implements Driver {
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as MysqlConnectionOptions;
-
-        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
-
-        // validate options to make sure everything is set
-        if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)))
-            throw new DriverOptionNotSetError("socketPath and host");
-        if (!this.options.username)
-            throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database");
+        this.isReplicated = this.options.replication ? true : false;
 
         // load mysql package
         this.loadDependencies();
+
+        // validate options to make sure everything is set
+        // todo: revisit validation with replication in mind
+        // if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)) && !this.options.socketPath)
+        //     throw new DriverOptionNotSetError("socketPath and host");
+        // if (!this.options.username)
+        //     throw new DriverOptionNotSetError("username");
+        // if (!this.options.database)
+        //     throw new DriverOptionNotSetError("database");
+        // todo: check what is going on when connection is setup without database and how to connect to a database then?
+        // todo: provide options to auto-create a database if it does not exist yet
     }
 
     // -------------------------------------------------------------------------
@@ -151,42 +169,23 @@ export class MysqlDriver implements Driver {
      */
     async connect(): Promise<void> {
 
-        // build connection options for the driver
-        const options = Object.assign({}, {
-            host: this.options.host,
-            user: this.options.username,
-            password: this.options.password,
-            database: this.options.database,
-            port: this.options.port,
-            charset: this.options.charset,
-            timezone: this.options.timezone,
-            connectTimeout: this.options.connectTimeout,
-            insecureAuth: this.options.insecureAuth,
-            supportBigNumbers: this.options.supportBigNumbers,
-            bigNumberStrings: this.options.bigNumberStrings,
-            dateStrings: this.options.dateStrings,
-            debug: this.options.debug,
-            trace: this.options.trace,
-            multipleStatements: this.options.multipleStatements,
-            flags: this.options.flags,
-            ssl: this.options.ssl
-        }, this.options.extra || {});
-
-        this.pool = this.mysql.createPool(options);
-        
-        return new Promise<void>((ok, fail) => {
-            // (issue #610) we make first connection to database to make sure if connection credentials are wrong
-            // we give error before calling any other method that creates actual query runner
-            this.pool.getConnection((err: any, connection: any) => {
-                if (err) return fail(err);
-                connection.release();
-                ok();
+        if (this.options.replication) {
+            this.poolCluster = this.mysql.createPoolCluster();
+            this.options.replication.slaves.forEach((slave, index) => {
+                this.poolCluster.add("SLAVE" + index, this.createConnectionOptions(this.options, slave));
             });
-        });
-        
-        
+            this.poolCluster.add("MASTER", this.createConnectionOptions(this.options, this.options.replication.master));
+            this.database = this.options.replication.master.database;
+
+        } else {
+            this.pool = await this.createPool(this.createConnectionOptions(this.options, this.options));
+            this.database = this.options.database;
+        }
     }
 
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
     afterConnect(): Promise<void> {
         return Promise.resolve();
     }
@@ -194,15 +193,25 @@ export class MysqlDriver implements Driver {
     /**
      * Closes connection with the database.
      */
-    disconnect(): Promise<void> {
-        if (!this.pool)
+    async disconnect(): Promise<void> {
+        if (!this.poolCluster && !this.pool)
             return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
-        return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-            this.pool.end(handler);
-            this.pool = undefined;
-        });
+        if (this.poolCluster) {
+            return new Promise<void>((ok, fail) => {
+                this.poolCluster.end((err: any) => err ? fail(err) : ok());
+                this.poolCluster = undefined;
+            });
+        }
+        if (this.pool) {
+            return new Promise<void>((ok, fail) => {
+                this.pool.end((err: any) => {
+                    if (err) return fail(err);
+                    this.pool = undefined;
+                    ok();
+                });
+            });
+        }
     }
 
     /**
@@ -215,8 +224,8 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner() {
-        return new MysqlQueryRunner(this);
+    createQueryRunner(mode: "master"|"slave" = "master") {
+        return new MysqlQueryRunner(this, mode);
     }
 
     /**
@@ -268,7 +277,7 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
-        } else if (columnMetadata.type === "datetime") {
+        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value, true);
 
         } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
@@ -382,6 +391,42 @@ export class MysqlDriver implements Driver {
         return type;
     }
 
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return new Promise<any>((ok, fail) => {
+            if (this.poolCluster) {
+                this.poolCluster.getConnection("MASTER", (err: any, dbConnection: any) => {
+                    err ? fail(err) : ok(dbConnection);
+                });
+
+            } else if (this.pool) {
+                this.pool.getConnection((err: any, dbConnection: any) => {
+                    err ? fail(err) : ok(dbConnection);
+                });
+            }
+        });
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        if (!this.poolCluster)
+            return this.obtainMasterConnection();
+
+        return new Promise<any>((ok, fail) => {
+            this.poolCluster.getConnection("SLAVE*", (err: any, dbConnection: any) => {
+                err ? fail(err) : ok(dbConnection);
+            });
+        });
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -401,6 +446,58 @@ export class MysqlDriver implements Driver {
                 throw new DriverPackageNotInstalledError("Mysql", "mysql");
             }
         }
+    }
+
+    /**
+     * Creates a new connection pool for a given database credentials.
+     */
+    protected createConnectionOptions(options: MysqlConnectionOptions, credentials: MysqlConnectionCredentialsOptions): Promise<any> {
+
+        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+
+        // build connection options for the driver
+        return Object.assign({}, {
+            charset: options.charset,
+            timezone: options.timezone,
+            connectTimeout: options.connectTimeout,
+            insecureAuth: options.insecureAuth,
+            supportBigNumbers: options.supportBigNumbers,
+            bigNumberStrings: options.bigNumberStrings,
+            dateStrings: options.dateStrings,
+            debug: options.debug,
+            trace: options.trace,
+            multipleStatements: options.multipleStatements,
+            flags: options.flags
+        }, {
+            host: credentials.host,
+            user: credentials.username,
+            password: credentials.password,
+            database: credentials.database,
+            port: credentials.port,
+            ssl: options.ssl
+        }, options.extra || {});
+    }
+
+    /**
+     * Creates a new connection pool for a given database credentials.
+     */
+    protected createPool(connectionOptions: any): Promise<any> {
+
+        // create a connection pool
+        const pool = this.mysql.createPool(connectionOptions);
+
+        // make sure connection is working fine
+        return new Promise<void>((ok, fail) => {
+            // (issue #610) we make first connection to database to make sure if connection credentials are wrong
+            // we give error before calling any other method that creates actual query runner
+            pool.getConnection((err: any, connection: any) => {
+                if (err)
+                    return pool.end(() => fail(err));
+
+                connection.release();
+                ok(pool);
+            });
+        });
     }
 
 }

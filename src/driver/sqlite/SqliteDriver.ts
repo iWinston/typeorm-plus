@@ -31,6 +31,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
         this.connection = connection;
         this.options = connection.options as SqliteConnectionOptions;
+        this.database = this.options.database;
 
         // validate options to make sure everything is set
         if (!this.options.database)
@@ -57,7 +58,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(): QueryRunner {
+    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new SqliteQueryRunner(this);
 

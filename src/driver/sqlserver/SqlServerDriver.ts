@@ -5,7 +5,6 @@ import {DriverUtils} from "../DriverUtils";
 import {SqlServerQueryRunner} from "./SqlServerQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -17,6 +16,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MssqlParameter} from "./MssqlParameter";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {RandomGenerator} from "../../util/RandomGenerator";
+import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -33,23 +33,39 @@ export class SqlServerDriver implements Driver {
     connection: Connection;
 
     /**
-     * Connection options.
-     */
-    options: SqlServerConnectionOptions;
-
-    /**
      * SQL Server library.
      */
     mssql: any;
 
     /**
-     * SQL Server pool.
+     * Pool for master database.
      */
-    connectionPool: any;
+    master: any;
+
+    /**
+     * Pool for slave databases.
+     * Used in replication.
+     */
+    slaves: any[] = [];
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: SqlServerConnectionOptions;
+
+    /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    /**
+     * Indicates if replication is enabled.
+     */
+    isReplicated: boolean = false;
 
     /**
      * Indicates if tree tables are supported by this driver.
@@ -128,18 +144,19 @@ export class SqlServerDriver implements Driver {
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as SqlServerConnectionOptions;
-        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
-
-        // validate options to make sure everything is set
-        if (!this.options.host)
-            throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
-            throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database");
+        this.isReplicated = this.options.replication ? true : false;
 
         // load mssql package
         this.loadDependencies();
+
+        // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        // validate options to make sure everything is set
+        // if (!this.options.host)
+            // throw new DriverOptionNotSetError("host");
+        // if (!this.options.username)
+        //     throw new DriverOptionNotSetError("username");
+        // if (!this.options.database)
+        //     throw new DriverOptionNotSetError("database");
     }
 
     // -------------------------------------------------------------------------
@@ -151,38 +168,24 @@ export class SqlServerDriver implements Driver {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    connect(): Promise<void> {
+    async connect(): Promise<void> {
 
-        // build connection options for the driver
-        const options = Object.assign({}, {
-            server: this.options.host,
-            user: this.options.username,
-            password: this.options.password,
-            database: this.options.database,
-            port: this.options.port,
-            domain: this.options.domain,
-            connectionTimeout: this.options.connectionTimeout,
-            requestTimeout: this.options.requestTimeout,
-            stream: this.options.stream,
-            pool: this.options.pool,
-            options: this.options.options,
-        }, this.options.extra || {});
+        if (this.options.replication) {
+            this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
+                return this.createPool(this.options, slave);
+            }));
+            this.master = await this.createPool(this.options, this.options.replication.master);
+            this.database = this.options.replication.master.database;
 
-        // set default useUTC option if it hasn't been set
-        if (!options.options) options.options = { useUTC: false };
-        else if (!options.options.useUTC) options.options.useUTC = false;
-
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
-        return new Promise<void>((ok, fail) => {
-            const connection = new this.mssql.ConnectionPool(options).connect((err: any) => {
-                if (err) return fail(err);
-                this.connectionPool = connection;
-                ok();
-            });
-        });
+        } else {
+            this.master = await this.createPool(this.options, this.options);
+            this.database = this.options.database;
+        }
     }
 
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
     afterConnect(): Promise<void> {
         return Promise.resolve();
     }
@@ -191,11 +194,13 @@ export class SqlServerDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.connectionPool)
+        if (!this.master)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
-        this.connectionPool.close();
-        this.connectionPool = undefined;
+        this.master.close();
+        this.slaves.forEach(slave => slave.close());
+        this.master = undefined;
+        this.slaves = [];
     }
 
     /**
@@ -208,8 +213,8 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner() {
-        return new SqlServerQueryRunner(this);
+    createQueryRunner(mode: "master"|"slave" = "master") {
+        return new SqlServerQueryRunner(this, mode);
     }
 
     /**
@@ -263,10 +268,13 @@ export class SqlServerDriver implements Driver {
             return DateUtils.mixedTimeToDate(value);
 
         } else if (columnMetadata.type === "datetime"
-            || columnMetadata.type === "datetime2"
             || columnMetadata.type === "smalldatetime"
+            || columnMetadata.type === Date) {
+            return DateUtils.mixedDateToDate(value, true, false);
+
+        } else if (columnMetadata.type === "datetime2"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.mixedDateToDate(value, true);
+            return DateUtils.mixedDateToDate(value, true, true);
 
         } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
             return RandomGenerator.uuid4();
@@ -392,6 +400,28 @@ export class SqlServerDriver implements Driver {
         return type;
     }
 
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return Promise.resolve(this.master);
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        if (!this.slaves.length)
+            return this.obtainMasterConnection();
+
+        const random = Math.floor(Math.random() * this.slaves.length);
+        return Promise.resolve(this.slaves[random]);
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -420,7 +450,7 @@ export class SqlServerDriver implements Driver {
             return new MssqlParameter(value, normalizedType as any, column.scale);
         }
 
-        return new MssqlParameter(value, column.type as any);
+        return new MssqlParameter(value, normalizedType as any);
     }
 
     /**
@@ -461,6 +491,43 @@ export class SqlServerDriver implements Driver {
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SQL Server", "mssql");
         }
+    }
+
+    /**
+     * Creates a new connection pool for a given database credentials.
+     */
+    protected createPool(options: SqlServerConnectionOptions, credentials: SqlServerConnectionCredentialsOptions): Promise<any> {
+
+        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+
+        // build connection options for the driver
+        const connectionOptions = Object.assign({}, {
+            connectionTimeout: this.options.connectionTimeout,
+            requestTimeout: this.options.requestTimeout,
+            stream: this.options.stream,
+            pool: this.options.pool,
+            options: this.options.options,
+        }, {
+            server: credentials.host,
+            user: credentials.username,
+            password: credentials.password,
+            database: credentials.database,
+            port: credentials.port,
+            domain: credentials.domain,
+        }, options.extra || {});
+
+        // set default useUTC option if it hasn't been set
+        if (!connectionOptions.options) connectionOptions.options = { useUTC: false };
+        else if (!connectionOptions.options.useUTC) connectionOptions.options.useUTC = false;
+
+        // pooling is enabled either when its set explicitly to true,
+        // either when its not defined at all (e.g. enabled by default)
+        return new Promise<void>((ok, fail) => {
+            const connection = new this.mssql.ConnectionPool(connectionOptions).connect((err: any) => {
+                if (err) return fail(err);
+                ok(connection);
+            });
+        });
     }
 
 }

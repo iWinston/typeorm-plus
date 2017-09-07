@@ -30,6 +30,7 @@ export class WebsqlDriver extends AbstractSqliteDriver {
         
         this.options = connection.options as WebSqlConnectionOptions;
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        this.database = this.options.database;
 
         // validate options to make sure everything is set
         // if (!this.options.host)
@@ -70,7 +71,7 @@ export class WebsqlDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(): WebsqlQueryRunner {
+    createQueryRunner(mode: "master"|"slave" = "master"): WebsqlQueryRunner {
         return new WebsqlQueryRunner(this);
     }
 

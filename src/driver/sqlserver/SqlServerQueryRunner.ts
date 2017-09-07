@@ -85,13 +85,21 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     protected sqlsInMemory: string[] = [];
 
+    /**
+     * Mode in which query runner executes.
+     * Used for replication.
+     * If replication is not setup its value is ignored.
+     */
+    protected mode: "master"|"slave";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SqlServerDriver) {
+    constructor(driver: SqlServerDriver, mode: "master"|"slave" = "master") {
         this.driver = driver;
         this.connection = driver.connection;
+        this.mode = mode;
     }
 
     // -------------------------------------------------------------------------
@@ -127,7 +135,9 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         return new Promise<void>(async (ok, fail) => {
             this.isTransactionActive = true;
-            this.databaseConnection = this.driver.connectionPool.transaction();
+
+            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+            this.databaseConnection = pool.transaction();
             this.databaseConnection.begin((err: any) => {
                 if (err) {
                     this.isTransactionActive = false;
@@ -267,7 +277,8 @@ export class SqlServerQueryRunner implements QueryRunner {
         const promise = new Promise(async (ok, fail) => {
 
             this.driver.connection.logger.logQuery(query, parameters, this);
-            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
+            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
                     if (parameter instanceof MssqlParameter) {
@@ -336,7 +347,8 @@ export class SqlServerQueryRunner implements QueryRunner {
         const promise = new Promise<ReadStream>(async (ok, fail) => {
 
             this.driver.connection.logger.logQuery(query, parameters, this);
-            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
+            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
             request.stream = true;
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {

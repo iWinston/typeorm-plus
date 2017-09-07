@@ -57,7 +57,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async build(): Promise<void> {
-        this.queryRunner = await this.connection.createQueryRunner();
+        this.queryRunner = await this.connection.createQueryRunner("master");
         this.tableSchemas = await this.loadTableSchemas();
 
         await this.queryRunner.startTransaction();
@@ -81,7 +81,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns sql queries to be executed by schema builder.
      */
     async log(): Promise<(string|{ up: string, down: string })[]> {
-        this.queryRunner = await this.connection.createQueryRunner();
+        this.queryRunner = await this.connection.createQueryRunner("master");
         try {
             this.tableSchemas = await this.loadTableSchemas();
             this.queryRunner.enableSqlMemory();

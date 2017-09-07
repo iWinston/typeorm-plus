@@ -41,11 +41,11 @@ export class DateUtils {
     /**
      * Converts given value into date object.
      */
-    static mixedDateToDate(mixedDate: Date|string, toUtc?: boolean): Date {
-        const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate;
+    static mixedDateToDate(mixedDate: Date|string, toUtc: boolean = false, useMilliseconds = true): Date {
+        let date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate;
 
         if (toUtc)
-            return new Date(
+            date = new Date(
                 date.getUTCFullYear(),
                 date.getUTCMonth(),
                 date.getUTCDate(),
@@ -54,6 +54,9 @@ export class DateUtils {
                 date.getUTCSeconds(),
                 date.getUTCMilliseconds()
             );
+
+        if (!useMilliseconds)
+            date.setUTCMilliseconds(0);
 
         return date;
     }

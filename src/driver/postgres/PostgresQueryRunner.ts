@@ -86,13 +86,21 @@ export class PostgresQueryRunner implements QueryRunner {
      */
     protected sqlsInMemory: string[] = [];
 
+    /**
+     * Mode in which query runner executes.
+     * Used for replication.
+     * If replication is not setup its value is ignored.
+     */
+    protected mode: "master"|"slave";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: PostgresDriver) {
+    constructor(driver: PostgresDriver, mode: "master"|"slave" = "master") {
         this.driver = driver;
         this.connection = driver.connection;
+        this.mode = mode;
     }
 
     // -------------------------------------------------------------------------
@@ -110,25 +118,22 @@ export class PostgresQueryRunner implements QueryRunner {
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        this.databaseConnectionPromise = new Promise((ok, fail) => {
-            this.driver.pool.connect((err: any, connection: any, release: Function) => {
-                if (err) return fail(err);
-
+        if (this.mode === "slave" && this.driver.isReplicated) {
+            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(([connection, release]: any[]) => {
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
                 this.releaseCallback = release;
-
-                connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
-                    if (err) {
-                        this.driver.connection.logger.logQueryError(err, `SET search_path TO '${this.schemaName}', 'public';`, [], this);
-                        fail(err);
-                    } else {
-                        ok(connection);
-                    }
-                });
-
+                return this.databaseConnection;
             });
-        });
+
+        } else { // master
+            this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(([connection, release]: any[]) => {
+                this.driver.connectedQueryRunners.push(this);
+                this.databaseConnection = connection;
+                this.releaseCallback = release;
+                return this.databaseConnection;
+            });
+        }
 
         return this.databaseConnectionPromise;
     }
@@ -772,7 +777,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return this.driver.options.database!;
+        return this.driver.database!;
     }
 
     /**
