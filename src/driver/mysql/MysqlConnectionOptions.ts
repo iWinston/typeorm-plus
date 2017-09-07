@@ -96,6 +96,31 @@ export interface MysqlConnectionOptions extends BaseConnectionOptions, MysqlConn
          */
         readonly slaves: MysqlConnectionCredentialsOptions[];
 
+        /**
+         * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
+         */
+        readonly canRetry?: boolean;
+
+        /**
+         * If connection fails, node's errorCount increases.
+         * When errorCount is greater than removeNodeErrorCount, remove a node in the PoolCluster. (Default: 5)
+         */
+        readonly removeNodeErrorCount?: number;
+
+        /**
+         * If connection fails, specifies the number of milliseconds before another connection attempt will be made.
+         * If set to 0, then node will be removed instead and never re-used. (Default: 0)
+         */
+        readonly restoreNodeTimeout?: number;
+
+        /**
+         * Determines how slaves are selected:
+         * RR: Select one alternately (Round-Robin).
+         * RANDOM: Select the node by random function.
+         * ORDER: Select the first node available unconditionally.
+         */
+        readonly selector?: "RR"|"RANDOM"|"ORDER";
+
     };
 
 }

@@ -113,7 +113,8 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        if (this.mode === "slave" && this.driver.isReplicated) {
+        if (this.driver.isReplicated) {
+
             this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(connection => {
                 this.databaseConnection = connection;
                 return this.databaseConnection;

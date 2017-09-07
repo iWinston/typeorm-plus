@@ -20,6 +20,8 @@ export interface Driver {
 
     /**
      * Master database used to perform all write queries.
+     *
+     * todo: probably move into query runner.
      */
     database?: string;
 

@@ -37,15 +37,15 @@ export class MysqlDriver implements Driver {
     mysql: any;
 
     /**
-     * Pool for master database.
+     * Connection pool.
+     * Used in non-replication mode.
      */
-    master: any;
+    pool: any;
 
     /**
-     * Pool for slave databases.
-     * Used in replication.
+     * Pool cluster used in replication mode.
      */
-    slaves: any[] = [];
+    poolCluster: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -170,18 +170,22 @@ export class MysqlDriver implements Driver {
     async connect(): Promise<void> {
 
         if (this.options.replication) {
-            this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
-                return this.createPool(this.options, slave);
-            }));
-            this.master = await this.createPool(this.options, this.options.replication.master);
+            this.poolCluster = this.mysql.createPoolCluster();
+            this.options.replication.slaves.forEach((slave, index) => {
+                this.poolCluster.add("SLAVE" + index, this.createConnectionOptions(this.options, slave));
+            });
+            this.poolCluster.add("MASTER", this.createConnectionOptions(this.options, this.options.replication.master));
             this.database = this.options.replication.master.database;
 
         } else {
-            this.master = await this.createPool(this.options, this.options);
+            this.pool = await this.createPool(this.createConnectionOptions(this.options, this.options));
             this.database = this.options.database;
         }
     }
 
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
     afterConnect(): Promise<void> {
         return Promise.resolve();
     }
@@ -190,13 +194,24 @@ export class MysqlDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
+        if (!this.poolCluster && !this.pool)
             return Promise.reject(new ConnectionIsNotSetError("mysql"));
 
-        await this.closePool(this.master);
-        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
-        this.master = undefined;
-        this.slaves = [];
+        if (this.poolCluster) {
+            return new Promise<void>((ok, fail) => {
+                this.poolCluster.end((err: any) => err ? fail(err) : ok());
+                this.poolCluster = undefined;
+            });
+        }
+        if (this.pool) {
+            return new Promise<void>((ok, fail) => {
+                this.pool.end((err: any) => {
+                    if (err) return fail(err);
+                    this.pool = undefined;
+                    ok();
+                });
+            });
+        }
     }
 
     /**
@@ -383,9 +398,16 @@ export class MysqlDriver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
-            this.master.getConnection((err: any, dbConnection: any) => {
-                err ? fail(err) : ok(dbConnection);
-            });
+            if (this.poolCluster) {
+                this.poolCluster.getConnection("MASTER", (err: any, dbConnection: any) => {
+                    err ? fail(err) : ok(dbConnection);
+                });
+
+            } else if (this.pool) {
+                this.pool.getConnection((err: any, dbConnection: any) => {
+                    err ? fail(err) : ok(dbConnection);
+                });
+            }
         });
     }
 
@@ -395,12 +417,11 @@ export class MysqlDriver implements Driver {
      * If replication is not setup then returns master (default) connection's database connection.
      */
     obtainSlaveConnection(): Promise<any> {
-        if (!this.slaves.length)
+        if (!this.poolCluster)
             return this.obtainMasterConnection();
 
         return new Promise<any>((ok, fail) => {
-            const random = Math.floor(Math.random() * this.slaves.length);
-            this.slaves[random].getConnection((err: any, dbConnection: any) => {
+            this.poolCluster.getConnection("SLAVE*", (err: any, dbConnection: any) => {
                 err ? fail(err) : ok(dbConnection);
             });
         });
@@ -430,12 +451,12 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a new connection pool for a given database credentials.
      */
-    protected createPool(options: MysqlConnectionOptions, credentials: MysqlConnectionCredentialsOptions): Promise<any> {
+    protected createConnectionOptions(options: MysqlConnectionOptions, credentials: MysqlConnectionCredentialsOptions): Promise<any> {
 
         credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
-        const connectionOptions = Object.assign({}, {
+        return Object.assign({}, {
             charset: options.charset,
             timezone: options.timezone,
             connectTimeout: options.connectTimeout,
@@ -455,6 +476,12 @@ export class MysqlDriver implements Driver {
             port: credentials.port,
             ssl: options.ssl
         }, options.extra || {});
+    }
+
+    /**
+     * Creates a new connection pool for a given database credentials.
+     */
+    protected createPool(connectionOptions: any): Promise<any> {
 
         // create a connection pool
         const pool = this.mysql.createPool(connectionOptions);
@@ -469,18 +496,6 @@ export class MysqlDriver implements Driver {
 
                 connection.release();
                 ok(pool);
-            });
-        });
-    }
-
-    /**
-     * Closes connection pool.
-     */
-    protected closePool(pool: any): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            pool.end((err: any) => {
-                if (err) return fail(err);
-                ok();
             });
         });
     }
