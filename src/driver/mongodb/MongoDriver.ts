@@ -24,25 +24,29 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
-     */
-    options: MongoConnectionOptions;
-
-    /**
      * Mongodb does not require to dynamically create query runner each time,
      * because it does not have a regular connection pool as RDBMS systems have.
      */
     queryRunner?: MongoQueryRunner;
 
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: MongoConnectionOptions;
+
+    /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    /**
+     * Indicates if replication is enabled.
+     */
+    isReplicated: boolean = false;
 
     /**
      * Indicates if tree tables are supported by this driver.
@@ -67,6 +71,12 @@ export class MongoDriver implements Driver {
         migrationName: "int",
         migrationTimestamp: "int",
     };
+
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -178,7 +188,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner() {
+    createQueryRunner(mode: "master"|"slave" = "master") {
         return this.queryRunner!;
     }
 
@@ -225,8 +235,29 @@ export class MongoDriver implements Driver {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
+    /**
+     * Normalizes "default" value of the column.
+     */
     createFullType(column: ColumnSchema): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        return Promise.resolve();
     }
 
     // -------------------------------------------------------------------------

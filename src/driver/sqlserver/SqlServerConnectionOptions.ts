@@ -1,49 +1,15 @@
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 
 /**
  * Microsoft Sql Server specific connection options.
  */
-export interface SqlServerConnectionOptions extends BaseConnectionOptions {
+export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlServerConnectionCredentialsOptions {
 
     /**
      * Database type.
      */
     readonly type: "mssql";
-
-    /**
-     * Connection url where perform connection to.
-     */
-    readonly url?: string;
-
-    /**
-     * Database host.
-     */
-    readonly host?: string;
-
-    /**
-     * Database host port.
-     */
-    readonly port?: number;
-
-    /**
-     * Database username.
-     */
-    readonly username?: string;
-
-    /**
-     * Database password.
-     */
-    readonly password?: string;
-
-    /**
-     * Database name to connect to.
-     */
-    readonly database?: string;
-
-    /**
-     * Once you set domain, driver will connect to SQL Server using domain login.
-     */
-    readonly domain?: string;
 
     /**
      * Connection timeout in ms (default: 15000).
@@ -276,6 +242,23 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions {
          * The versions are available from require('tedious').TDS_VERSION. (default: 7_4).
          */
         readonly tdsVersion?: string;
+    };
+
+    /**
+     * Replication setup.
+     */
+    readonly replication?: {
+
+        /**
+         * List of read-from severs (slaves).
+         */
+        readonly read: SqlServerConnectionCredentialsOptions[];
+
+        /**
+         * Master server used by orm to perform writes.
+         */
+        readonly write: SqlServerConnectionCredentialsOptions;
+
     };
 
 }

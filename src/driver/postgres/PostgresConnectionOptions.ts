@@ -1,44 +1,15 @@
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 
 /**
  * Postgres-specific connection options.
  */
-export interface PostgresConnectionOptions extends BaseConnectionOptions {
+export interface PostgresConnectionOptions extends BaseConnectionOptions, PostgresConnectionCredentialsOptions {
 
     /**
      * Database type.
      */
     readonly type: "postgres";
-
-    /**
-     * Connection url where perform connection to.
-     */
-    readonly url?: string;
-
-    /**
-     * Database host.
-     */
-    readonly host?: string;
-
-    /**
-     * Database host port.
-     */
-    readonly port?: number;
-
-    /**
-     * Database username.
-     */
-    readonly username?: string;
-
-    /**
-     * Database password.
-     */
-    readonly password?: string;
-
-    /**
-     * Database name to connect to.
-     */
-    readonly database?: string;
 
     /**
      * Schema name. By default is "public".
@@ -51,8 +22,20 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions {
     readonly schemaName?: string;
 
     /**
-     * Object with ssl parameters
+     * Replication setup.
      */
-    readonly ssl?: any;
+    readonly replication?: {
+
+        /**
+         * List of read-from severs (slaves).
+         */
+        readonly read: PostgresConnectionCredentialsOptions[];
+
+        /**
+         * Master server used by orm to perform writes.
+         */
+        readonly write: PostgresConnectionCredentialsOptions;
+
+    };
 
 }

@@ -1,46 +1,17 @@
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 
 /**
  * MySQL specific connection options.
  *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
-export interface MysqlConnectionOptions extends BaseConnectionOptions {
+export interface MysqlConnectionOptions extends BaseConnectionOptions, MysqlConnectionCredentialsOptions {
 
     /**
      * Database type.
      */
     readonly type: "mysql"|"mariadb";
-
-    /**
-     * Connection url where perform connection to.
-     */
-    readonly url?: string;
-
-    /**
-     * Database host.
-     */
-    readonly host?: string;
-
-    /**
-     * Database host port.
-     */
-    readonly port?: number;
-
-    /**
-     * Database username.
-     */
-    readonly username?: string;
-
-    /**
-     * Database password.
-     */
-    readonly password?: string;
-
-    /**
-     * Database name to connect to.
-     */
-    readonly database?: string;
 
     /**
      * The charset for the connection. This is called "collation" in the SQL-level of MySQL (like utf8_general_ci).
@@ -111,8 +82,20 @@ export interface MysqlConnectionOptions extends BaseConnectionOptions {
     readonly flags?: string[];
 
     /**
-     * Object with ssl parameters or a string containing name of ssl profile.
+     * Replication setup.
      */
-    readonly ssl?: any;
+    readonly replication?: {
+
+        /**
+         * List of read-from severs (slaves).
+         */
+        readonly read: MysqlConnectionCredentialsOptions[];
+
+        /**
+         * Master server used by orm to perform writes.
+         */
+        readonly write: MysqlConnectionCredentialsOptions;
+
+    };
 
 }

@@ -346,9 +346,14 @@ export class Connection {
      * Creates a query runner used for perform queries on a single database connection.
      * Using query runners you can control your queries to execute using single database connection and
      * manually control your database transaction.
+     *
+     * Mode is used in replication mode and indicates whatever you want to connect
+     * to master database or any of slave databases.
+     * If you perform writes you must use master database,
+     * if you perform reads you can use slave databases.
      */
-    createQueryRunner(): QueryRunner {
-        const queryRunner = this.driver.createQueryRunner();
+    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+        const queryRunner = this.driver.createQueryRunner(mode);
         const manager = new EntityManagerFactory().create(this, queryRunner);
         Object.assign(queryRunner, { manager: manager });
         return queryRunner;

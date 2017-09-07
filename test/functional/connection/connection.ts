@@ -81,7 +81,7 @@ describe("Connection", () => {
 
     });
 
-    describe("establishing connection", function() {
+    describe.skip("establishing connection", function() {
         let connection: Connection;
         it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
             expect(() => {

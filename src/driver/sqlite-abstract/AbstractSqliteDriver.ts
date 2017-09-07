@@ -28,16 +28,6 @@ export class AbstractSqliteDriver implements Driver {
     connection: Connection;
 
     /**
-     * Connection options.
-     */
-    options: BaseConnectionOptions;
-
-    /**
-     * SQLite underlying library.
-     */
-    sqlite: any;
-
-    /**
      * Sqlite has a single QueryRunner because it works on a single database connection.
      */
     queryRunner?: QueryRunner;
@@ -47,15 +37,29 @@ export class AbstractSqliteDriver implements Driver {
      */
     databaseConnection: any;
 
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: BaseConnectionOptions;
+
+    /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    /**
+     * Indicates if replication is enabled.
+     */
+    isReplicated: boolean = false;
+
+    /**
+     * SQLite underlying library.
+     */
+    sqlite: any;
 
     /**
      * Indicates if tree tables are supported by this driver.
@@ -117,6 +121,12 @@ export class AbstractSqliteDriver implements Driver {
         migrationTimestamp: "bigint",
     };
 
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -137,6 +147,9 @@ export class AbstractSqliteDriver implements Driver {
         this.databaseConnection = await this.createDatabaseConnection();
     }
 
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
     afterConnect(): Promise<void> {
         return Promise.resolve();
     }
@@ -161,7 +174,7 @@ export class AbstractSqliteDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner() {
+    createQueryRunner(mode: "master"|"slave" = "master") {
         if (!this.queryRunner)
             this.queryRunner = new AbstractSqliteQueryRunner(this);
 
@@ -307,6 +320,9 @@ export class AbstractSqliteDriver implements Driver {
         }
     }
 
+    /**
+     * Normalizes "default" value of the column.
+     */
     createFullType(column: ColumnSchema): string {
         let type = column.type;
 
@@ -328,6 +344,24 @@ export class AbstractSqliteDriver implements Driver {
         return type;
     }
 
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        return Promise.resolve();
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -339,8 +373,11 @@ export class AbstractSqliteDriver implements Driver {
         throw new Error("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
     }
 
+    /**
+     * If driver dependency is not given explicitly, then try to load it via "require".
+     */
     protected loadDependencies(): void {
-        // depencies have to be loaded in the specific driver
+        // dependencies have to be loaded in the specific driver
     }
 
 }

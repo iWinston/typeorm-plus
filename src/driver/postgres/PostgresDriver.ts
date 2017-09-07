@@ -5,7 +5,6 @@ import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstal
 import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -16,6 +15,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -32,34 +32,44 @@ export class PostgresDriver implements Driver {
     connection: Connection;
 
     /**
-     * Connection options.
-     */
-    options: PostgresConnectionOptions;
-
-    /**
      * Postgres underlying library.
      */
     postgres: any;
 
     /**
-     * Database connection pool created by underlying driver.
+     * Pool for master database.
      */
-    pool: any;
+    master: any;
+
+    /**
+     * Pool for slave databases.
+     * Used in replication.
+     */
+    slaves: any[] = [];
 
     /**
      * We store all created query runners because we need to release them.
      */
     connectedQueryRunners: QueryRunner[] = [];
 
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: PostgresConnectionOptions;
+
+    /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    /**
+     * Indicates if replication is enabled.
+     */
+    isReplicated: boolean = false;
 
     /**
      * Indicates if tree tables are supported by this driver.
@@ -132,6 +142,12 @@ export class PostgresDriver implements Driver {
         migrationTimestamp: "bigint",
     };
 
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -139,19 +155,20 @@ export class PostgresDriver implements Driver {
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as PostgresConnectionOptions;
-
-        Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
-
-        // validate options to make sure everything is set
-        if (!this.options.host)
-            throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
-            throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database");
+        this.isReplicated = this.options.replication ? true : false;
 
         // load postgres package
         this.loadDependencies();
+
+        // Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        // validate options to make sure everything is set
+        // todo: revisit validation with replication in mind
+        // if (!this.options.host)
+        //     throw new DriverOptionNotSetError("host");
+        // if (!this.options.username)
+        //     throw new DriverOptionNotSetError("username");
+        // if (!this.options.database)
+        //     throw new DriverOptionNotSetError("database");
     }
 
     // -------------------------------------------------------------------------
@@ -165,38 +182,40 @@ export class PostgresDriver implements Driver {
      */
     async connect(): Promise<void> {
 
-        // build connection options for the driver
-        const options = Object.assign({}, {
-            host: this.options.host,
-            user: this.options.username,
-            password: this.options.password,
-            database: this.options.database,
-            port: this.options.port,
-            ssl: this.options.ssl
-        }, this.options.extra || {});
+        if (this.options.replication) {
+            this.slaves = await this.options.replication.read.map(slave => {
+                return this.createPool(this.options, slave);
+            });
+            this.master = await this.createPool(this.options, this.options.replication.write);
+            this.database = this.options.replication.write.database;
 
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
-        this.pool = new this.postgres.Pool(options);
-
-        // create and right after creation release a query runner to make sure connection is working
-        // and settings are correct and we will be able to perform future connections to the database without errors
-        const queryRunner = await this.createQueryRunner();
-        await queryRunner.connect();
-
-        // also if we have any column which use uuid then we need to enable extension for it
-        if (this.connection.entityMetadatas.some(metadata => metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0))
-            queryRunner.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
-
-        await queryRunner.release();
+        } else {
+            this.master = await this.createPool(this.options, this.options);
+            this.database = this.options.database;
+        }
     }
 
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
     async afterConnect(): Promise<void> {
         if (this.connection.entityMetadatas.some(metadata => metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0)) {
-            const queryRunner = await this.createQueryRunner();
-            await queryRunner.connect();
-            await queryRunner.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
-            await queryRunner.release();
+
+            await Promise.all([this.master, ...this.slaves].map(pool => {
+                return new Promise((ok, fail) => {
+                    pool.connect((err: any, connection: any, release: Function) => {
+                        if (err) return fail(err);
+                        connection.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`, (err: any) => {
+                            if (err)  {
+                                release();
+                                return fail(err);
+                            }
+                            release();
+                            ok();
+                        });
+                    });
+                });
+            }));
         }
 
         return Promise.resolve();
@@ -205,19 +224,14 @@ export class PostgresDriver implements Driver {
     /**
      * Closes connection with database.
      */
-    disconnect(): Promise<void> {
-        if (!this.pool)
+    async disconnect(): Promise<void> {
+        if (!this.master)
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
-        return new Promise<void>(async (ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-
-            // this is checked fact that postgres.pool.end do not release all non released connections
-            await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
-            this.pool.end(handler);
-            this.pool = undefined;
-            ok();
-        });
+        await this.closePool(this.master);
+        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
+        this.master = undefined;
+        this.slaves = [];
     }
 
     /**
@@ -230,8 +244,8 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner() {
-        return new PostgresQueryRunner(this);
+    createQueryRunner(mode: "master"|"slave" = "master") {
+        return new PostgresQueryRunner(this, mode);
     }
 
     /**
@@ -426,6 +440,9 @@ export class PostgresDriver implements Driver {
         }
     }
 
+    /**
+     * Normalizes "default" value of the column.
+     */
     createFullType(column: ColumnSchema): string {
         let type = column.type;
 
@@ -460,6 +477,36 @@ export class PostgresDriver implements Driver {
         return type;
     }
 
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return new Promise((ok, fail) => {
+            this.master.connect((err: any, connection: any, release: any) => {
+                err ? fail(err) : ok([connection, release]);
+            });
+        });
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        if (!this.slaves.length)
+            return this.obtainMasterConnection();
+
+        return new Promise((ok, fail) => {
+            const random = Math.floor(Math.random() * this.slaves.length);
+            this.slaves[random].connect((err: any, connection: any, release: any) => {
+                err ? fail(err) : ok([connection, release]);
+            });
+        });
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -490,6 +537,50 @@ export class PostgresDriver implements Driver {
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg");
         }
+    }
+
+    /**
+     * Creates a new connection pool for a given database credentials.
+     */
+    protected async createPool(options: PostgresConnectionOptions, credentials: PostgresConnectionCredentialsOptions): Promise<any> {
+
+        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+
+        // build connection options for the driver
+        const connectionOptions = Object.assign({}, {
+            host: credentials.host,
+            user: credentials.username,
+            password: credentials.password,
+            database: credentials.database,
+            port: credentials.port,
+            ssl: credentials.ssl
+        }, options.extra || {});
+
+        // create a connection pool
+        const pool = new this.postgres.Pool(connectionOptions);
+
+        return new Promise((ok, fail) => {
+            pool.connect((err: any, connection: any, release: Function) => {
+                if (err) return fail(err);
+                release();
+
+                const schemaName = this.options.schema || this.options.schemaName || "public";
+                connection.query(`SET search_path TO '${schemaName}', 'public';`, (err: any) => {
+                    if (err) return fail(err);
+                    ok(pool);
+                });
+            });
+        });
+    }
+
+    /**
+     * Closes connection pool.
+     */
+    protected async closePool(pool: any): Promise<void> {
+        await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+        return new Promise<void>((ok, fail) => {
+            pool.end((err: any) => err ? fail(err) : ok());
+        });
     }
 
 }

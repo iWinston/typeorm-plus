@@ -19,6 +19,16 @@ export interface Driver {
     options: BaseConnectionOptions;
 
     /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    /**
+     * Indicates if replication is enabled.
+     */
+    isReplicated: boolean;
+
+    /**
      * Indicates if tree tables are supported by this driver.
      */
     treeSupport: boolean;
@@ -64,7 +74,7 @@ export interface Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    createQueryRunner(): QueryRunner;
+    createQueryRunner(mode: "master"|"slave"): QueryRunner;
 
     /**
      * Replaces parameters in the given sql with special escaping character
@@ -101,5 +111,19 @@ export interface Driver {
      * Normalizes "default" value of the column.
      */
     createFullType(column: ColumnSchema): string;
+
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any>;
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any>;
 
 }

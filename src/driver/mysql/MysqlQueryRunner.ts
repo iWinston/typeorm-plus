@@ -81,13 +81,21 @@ export class MysqlQueryRunner implements QueryRunner {
      */
     protected sqlsInMemory: (string|{ up: string, down: string })[] = [];
 
+    /**
+     * Mode in which query runner executes.
+     * Used for replication.
+     * If replication is not setup its value is ignored.
+     */
+    protected mode: "master"|"slave";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: MysqlDriver) {
+    constructor(driver: MysqlDriver, mode: "master"|"slave" = "master") {
         this.driver = driver;
         this.connection = driver.connection;
+        this.mode = mode;
     }
 
     // -------------------------------------------------------------------------
@@ -105,12 +113,18 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        this.databaseConnectionPromise = new Promise((ok, fail) => {
-            this.driver.pool.getConnection((err: any, dbConnection: any) => {
-                this.databaseConnection = dbConnection;
-                err ? fail(err) : ok(dbConnection);
+        if (this.mode === "slave" && this.driver.isReplicated) {
+            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(connection => {
+                this.databaseConnection = connection;
+                return this.databaseConnection;
             });
-        });
+
+        } else { // master
+            this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(connection => {
+                this.databaseConnection = connection;
+                return this.databaseConnection;
+            });
+        }
 
         return this.databaseConnectionPromise;
     }

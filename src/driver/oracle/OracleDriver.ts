@@ -4,7 +4,6 @@ import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstal
 import {OracleQueryRunner} from "./OracleQueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {Connection} from "../../connection/Connection";
@@ -14,6 +13,8 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
+import {DriverUtils} from "../DriverUtils";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -32,29 +33,39 @@ export class OracleDriver implements Driver {
     connection: Connection;
 
     /**
-     * Connection options.
-     */
-    options: OracleConnectionOptions;
-
-    /**
      * Underlying oracle library.
      */
     oracle: any;
 
     /**
-     * Database connection pool created by underlying driver.
+     * Pool for master database.
      */
-    pool: any;
+    master: any;
 
     /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
+     * Pool for slave databases.
+     * Used in replication.
      */
-    dataTypeDefaults: DataTypeDefaults;
+    slaves: any[] = [];
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: OracleConnectionOptions;
+
+    /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    /**
+     * Indicates if replication is enabled.
+     */
+    isReplicated: boolean = false;
 
     /**
      * Indicates if tree tables are supported by this driver.
@@ -113,30 +124,35 @@ export class OracleDriver implements Driver {
         migrationTimestamp: "timestamp",
     };
 
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(connection: Connection) {
         this.connection = connection;
-
-        // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
-
         this.options = connection.options as OracleConnectionOptions;
-
-        // validate options to make sure everything is set
-        if (!this.options.host)
-            throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
-            throw new DriverOptionNotSetError("username");
-        if (!this.options.sid)
-            throw new DriverOptionNotSetError("sid");
 
         // load oracle package
         this.loadDependencies();
 
         // extra oracle setup
         this.oracle.outFormat = this.oracle.OBJECT;
+
+        // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        // validate options to make sure everything is set
+        // if (!this.options.host)
+        //     throw new DriverOptionNotSetError("host");
+        // if (!this.options.username)
+        //     throw new DriverOptionNotSetError("username");
+        // if (!this.options.sid)
+        //     throw new DriverOptionNotSetError("sid");
+        //
     }
 
     // -------------------------------------------------------------------------
@@ -148,28 +164,24 @@ export class OracleDriver implements Driver {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    connect(): Promise<void> {
+    async connect(): Promise<void> {
 
-        // build connection options for the driver
-        const options = Object.assign({}, {
-            user: this.options.username,
-            password: this.options.password,
-            connectString: this.options.host + ":" + this.options.port + "/" + this.options.sid,
-        }, this.options.extra || {});
-
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
-        return new Promise<void>((ok, fail) => {
-            this.oracle.createPool(options, (err: any, pool: any) => {
-                if (err)
-                    return fail(err);
-
-                this.pool = pool;
-                ok();
+        if (this.options.replication) {
+            this.slaves = await this.options.replication.read.map(slave => {
+                return this.createPool(this.options, slave);
             });
-        });
+            this.master = await this.createPool(this.options, this.options.replication.write);
+            this.database = this.options.replication.write.database;
+
+        } else {
+            this.master = await this.createPool(this.options, this.options);
+            this.database = this.options.database;
+        }
     }
 
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
     afterConnect(): Promise<void> {
         return Promise.resolve();
     }
@@ -177,17 +189,14 @@ export class OracleDriver implements Driver {
     /**
      * Closes connection with the database.
      */
-    disconnect(): Promise<void> {
-        if (!this.pool)
+    async disconnect(): Promise<void> {
+        if (!this.master)
             return Promise.reject(new ConnectionIsNotSetError("oracle"));
 
-        return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-
-            // if pooling is used, then disconnect from it
-            this.pool.close(handler);
-            this.pool = undefined;
-        });
+        await this.closePool(this.master);
+        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
+        this.master = undefined;
+        this.slaves = [];
     }
 
     /**
@@ -200,8 +209,8 @@ export class OracleDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner() {
-        return new OracleQueryRunner(this);
+    createQueryRunner(mode: "master"|"slave" = "master") {
+        return new OracleQueryRunner(this, mode);
     }
 
     /**
@@ -360,6 +369,39 @@ export class OracleDriver implements Driver {
         return type;
     }
 
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return new Promise<any>((ok, fail) => {
+            this.master.connect((err: any, connection: any, release: Function) => {
+                if (err) return fail(err);
+                ok(connection);
+            });
+        });
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        if (!this.slaves.length)
+            return this.obtainMasterConnection();
+
+        return new Promise<any>((ok, fail) => {
+            const random = Math.floor(Math.random() * this.slaves.length);
+
+            this.slaves[random].connect((err: any, connection: any) => {
+                if (err) return fail(err);
+                ok(connection);
+            });
+        });
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -374,6 +416,42 @@ export class OracleDriver implements Driver {
         } catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb");
         }
+    }
+
+    /**
+     * Creates a new connection pool for a given database credentials.
+     */
+    protected async createPool(options: OracleConnectionOptions, credentials: OracleConnectionCredentialsOptions): Promise<any> {
+
+        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+
+        // build connection options for the driver
+        const connectionOptions = Object.assign({}, {
+            user: credentials.username,
+            password: credentials.password,
+            connectString: credentials.host + ":" + credentials.port + "/" + credentials.sid,
+        }, options.extra || {});
+
+        // pooling is enabled either when its set explicitly to true,
+        // either when its not defined at all (e.g. enabled by default)
+        return new Promise<void>((ok, fail) => {
+            this.oracle.createPool(connectionOptions, (err: any, pool: any) => {
+                if (err)
+                    return fail(err);
+                ok(pool);
+            });
+        });
+
+    }
+
+    /**
+     * Closes connection pool.
+     */
+    protected async closePool(pool: any): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            pool.close((err: any) => err ? fail(err) : ok());
+            pool = undefined;
+        });
     }
 
 }

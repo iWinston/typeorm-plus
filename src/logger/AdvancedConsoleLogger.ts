@@ -36,7 +36,7 @@ export class AdvancedConsoleLogger implements Logger {
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            console.log(chalk.underline.red(`query failed:`) + " " + chalk.bold(PlatformTools.highlightSql(sql)));
+            console.log(chalk.underline.bold.red(`query failed:`) + " " + PlatformTools.highlightSql(sql));
             console.log(chalk.underline.red(`error:`), error);
         }
     }
