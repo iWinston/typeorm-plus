@@ -27,14 +27,14 @@ export interface OracleConnectionOptions extends BaseConnectionOptions, OracleCo
     readonly replication?: {
 
         /**
-         * List of read-from severs (slaves).
-         */
-        readonly read: OracleConnectionCredentialsOptions[];
-
-        /**
          * Master server used by orm to perform writes.
          */
-        readonly write: OracleConnectionCredentialsOptions;
+        readonly master: OracleConnectionCredentialsOptions;
+
+        /**
+         * List of read-from severs (slaves).
+         */
+        readonly slaves: OracleConnectionCredentialsOptions[];
 
     };
 

@@ -250,14 +250,14 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
     readonly replication?: {
 
         /**
-         * List of read-from severs (slaves).
-         */
-        readonly read: SqlServerConnectionCredentialsOptions[];
-
-        /**
          * Master server used by orm to perform writes.
          */
-        readonly write: SqlServerConnectionCredentialsOptions;
+        readonly master: SqlServerConnectionCredentialsOptions;
+
+        /**
+         * List of read-from severs (slaves).
+         */
+        readonly slaves: SqlServerConnectionCredentialsOptions[];
 
     };
 

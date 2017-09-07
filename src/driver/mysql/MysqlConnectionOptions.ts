@@ -87,14 +87,14 @@ export interface MysqlConnectionOptions extends BaseConnectionOptions, MysqlConn
     readonly replication?: {
 
         /**
-         * List of read-from severs (slaves).
-         */
-        readonly read: MysqlConnectionCredentialsOptions[];
-
-        /**
          * Master server used by orm to perform writes.
          */
-        readonly write: MysqlConnectionCredentialsOptions;
+        readonly master: MysqlConnectionCredentialsOptions;
+
+        /**
+         * List of read-from severs (slaves).
+         */
+        readonly slaves: MysqlConnectionCredentialsOptions[];
 
     };
 

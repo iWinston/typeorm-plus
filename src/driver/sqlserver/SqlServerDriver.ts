@@ -171,11 +171,11 @@ export class SqlServerDriver implements Driver {
     async connect(): Promise<void> {
 
         if (this.options.replication) {
-            this.slaves = await Promise.all(this.options.replication.read.map(slave => {
+            this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
                 return this.createPool(this.options, slave);
             }));
-            this.master = await this.createPool(this.options, this.options.replication.write);
-            this.database = this.options.replication.write.database;
+            this.master = await this.createPool(this.options, this.options.replication.master);
+            this.database = this.options.replication.master.database;
 
         } else {
             this.master = await this.createPool(this.options, this.options);
