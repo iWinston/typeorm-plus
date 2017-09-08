@@ -22,6 +22,9 @@ describe("github issues > #838 Time zones for timestamp columns are incorrectly 
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
+            enabledDrivers: [
+                "postgres"
+            ]
         });
 
         postgresConnection = connections.find(connection => connection.driver instanceof PostgresDriver)!;
