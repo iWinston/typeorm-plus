@@ -12,21 +12,15 @@ export class User {
     @Index()
     id: number;
 
-    @Column("varchar", {
-        unique: true,
-    })
+    @Column()
     @Index()
     email: string;
 
-    @Column("varchar", {
-        unique: true,
-    })
+    @Column()
     @Index()
     username: string;
 
-    @Column("tinyint", {
-        default: 0,
-    })
+    @Column()
     @Index()
     privilege: number;
 

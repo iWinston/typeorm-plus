@@ -27,10 +27,10 @@ export class UserCredential {
     @UpdateDateColumn()
     updatedAt: string;
 
-    @Column("varchar")
+    @Column()
     password: string;
 
-    @Column("varchar")
+    @Column()
     salt: string;
 
 }
