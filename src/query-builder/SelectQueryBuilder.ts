@@ -28,6 +28,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1407,14 +1408,27 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const metadata = this.expressionMap.mainAlias!.metadata;
 
         const distinctAlias = this.escape(mainAlias);
-        let countSql = `COUNT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.escape(primaryColumn.databaseName);
-                if (index === 0) {
-                    return `DISTINCT(${distinctAlias}.${propertyName})`;
-                } else {
+        let countSql: string = "";
+        if (metadata.hasMultiplePrimaryKeys) {
+            if (this.connection.driver instanceof SqliteDriver) {
+                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                    const propertyName = this.escape(primaryColumn.databaseName);
                     return `${distinctAlias}.${propertyName}`;
-                }
+                }).join(" || ") + ")) as \"cnt\"";
+
+            } else {
+                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                    const propertyName = this.escape(primaryColumn.databaseName);
+                    return `${distinctAlias}.${propertyName}`;
+                }).join(", ") + "))) as \"cnt\"";
+            }
+
+        } else {
+            countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                const propertyName = this.escape(primaryColumn.databaseName);
+                return `${distinctAlias}.${propertyName}`;
             }).join(", ") + ") as \"cnt\"";
+        }
 
         const [countQuerySql, countQueryParameters] = this.clone()
             .mergeExpressionMap({ ignoreParentTablesJoins: true })
