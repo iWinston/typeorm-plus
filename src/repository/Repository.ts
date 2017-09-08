@@ -335,6 +335,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Clears all the data from the given table/collection (truncates/drops it).
+     *
+     * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     * @see https://stackoverflow.com/a/5972738/925151
      */
     async clear(): Promise<void> {
         return this.manager.clear(this.metadata.target);

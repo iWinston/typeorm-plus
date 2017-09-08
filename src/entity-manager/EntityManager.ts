@@ -730,6 +730,9 @@ export class EntityManager {
 
     /**
      * Clears all the data from the given table (truncates/drops it).
+     *
+     * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     * @see https://stackoverflow.com/a/5972738/925151
      */
     async clear<Entity>(entityClass: ObjectType<Entity>|string): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass);

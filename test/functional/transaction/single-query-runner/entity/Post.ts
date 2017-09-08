@@ -11,4 +11,11 @@ export class Post {
     @Column()
     title: string;
 
+    constructor(id?: number, title?: string) {
+        if (id)
+            this.id = id;
+        if (title)
+            this.title = title;
+    }
+
 }
