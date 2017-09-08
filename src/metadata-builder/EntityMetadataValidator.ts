@@ -73,7 +73,7 @@ export class EntityMetadataValidator {
             entityMetadata.columns.forEach(column => {
                 const normalizedColumn = driver.normalizeType(column) as ColumnType;
                 if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
-                    throw new DataTypeNotSupportedError(normalizedColumn, driver.options.type);
+                    throw new DataTypeNotSupportedError(column, normalizedColumn, driver.options.type);
             });
         }
 
