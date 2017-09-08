@@ -46,7 +46,7 @@ export class AdvancedConsoleLogger implements Logger {
      */
     logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-        PlatformTools.logWarn(`query is slow:`, PlatformTools.highlightSql(sql, true));
+        PlatformTools.logWarn(`query is slow:`, PlatformTools.highlightSql(sql));
         PlatformTools.logWarn(`execution time:`, time);
     }
 

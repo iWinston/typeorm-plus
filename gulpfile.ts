@@ -258,7 +258,7 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools", "browserCopyMainBrowserFile"],
+            ["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"],
             ["packageCompile", "browserCompile", "browserCompileSystemJS"],
             ["packageMoveCompiledFiles", "browserUglify"],
             [

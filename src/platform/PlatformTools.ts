@@ -92,7 +92,7 @@ export class PlatformTools {
     /**
      * Highlights sql string to be print in the console.
      */
-    static highlightSql(sql: string, bold: boolean = false) {
+    static highlightSql(sql: string) {
         const theme: Theme = {
             "keyword": chalk.blueBright,
             "literal": chalk.blueBright,
@@ -101,13 +101,7 @@ export class PlatformTools {
             "built_in": chalk.magentaBright,
             "comment": chalk.gray,
         };
-        let highlighted = highlight(sql, { theme: theme, language: "sql" });
-
-        if (bold) {
-            return chalk.bold(highlighted);
-        }
-
-        return highlighted;
+        return highlight(sql, { theme: theme, language: "sql" });
     }
 
     /**

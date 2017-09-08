@@ -93,7 +93,7 @@ export class PlatformTools {
     /**
      * Highlights sql string to be print in the console.
      */
-    static highlightSql(sql: string, bold: boolean = false) {
+    static highlightSql(sql: string) {
         return sql;
     }
 
