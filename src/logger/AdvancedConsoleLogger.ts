@@ -1,5 +1,5 @@
 import {LoggerOptions} from "./LoggerOptions";
-import {PlatformTools, chalk} from "../platform/PlatformTools";
+import {PlatformTools} from "../platform/PlatformTools";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Logger} from "./Logger";
 
@@ -26,7 +26,7 @@ export class AdvancedConsoleLogger implements Logger {
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            console.log(chalk.gray.underline("executing query") + ": " + PlatformTools.highlightSql(sql));
+            PlatformTools.logInfo("executing query:", PlatformTools.highlightSql(sql));
         }
     }
 
@@ -36,8 +36,8 @@ export class AdvancedConsoleLogger implements Logger {
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            console.log(chalk.underline.bold.red(`query failed:`) + " " + PlatformTools.highlightSql(sql));
-            console.log(chalk.underline.red(`error:`), error);
+            PlatformTools.logError(`query failed:`, PlatformTools.highlightSql(sql));
+            PlatformTools.logError(`error:`, error);
         }
     }
 
@@ -46,8 +46,8 @@ export class AdvancedConsoleLogger implements Logger {
      */
     logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-        console.log(chalk.underline.yellow(`query is slow:`) + " " + chalk.bold(PlatformTools.highlightSql(sql)));
-        console.log(chalk.underline.yellow(`execution time:`), time);
+        PlatformTools.logWarn(`query is slow:`, PlatformTools.highlightSql(sql));
+        PlatformTools.logWarn(`execution time:`, time);
     }
 
     /**
@@ -55,7 +55,7 @@ export class AdvancedConsoleLogger implements Logger {
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
         if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("schema") !== -1)) {
-            console.log(chalk.underline(message));
+            PlatformTools.log(message);
         }
     }
 
@@ -75,7 +75,7 @@ export class AdvancedConsoleLogger implements Logger {
                 break;
             case "warn":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("warn") !== -1))
-                    console.warn(chalk.yellow(message));
+                    console.warn(PlatformTools.warn(message));
                 break;
         }
     }

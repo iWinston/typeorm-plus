@@ -5,7 +5,7 @@ export {ReadStream} from "fs";
 export {EventEmitter} from "events";
 export {Readable, Writable} from "stream";
 
-export const chalk = require("chalk");
+const chalk = require("chalk");
 
 /**
  * Platform-specific tools.
@@ -109,5 +109,28 @@ export class PlatformTools {
      */
     static highlightJson(json: string) {
         return highlight(json, { language: "json" });
+    }
+
+    /**
+     * Logging functions needed by AdvancedConsoleLogger
+     */
+    static logInfo(prefix: string, info: any) {
+        console.log(chalk.gray.underline(prefix) + " ", info);
+    }
+
+    static logError(prefix: string, error: any) {
+        console.log(chalk.underline.red(prefix) + " ", error);
+    }
+    
+    static logWarn(prefix: string, warning: any) {
+        console.log(chalk.underline.yellow(prefix) + " ", warning);
+    }
+    
+    static log(message: string) {
+        console.log(chalk.underline(message));
+    }
+
+    static warn(message: string) {
+        return chalk.yellow(message);
     }
 }
