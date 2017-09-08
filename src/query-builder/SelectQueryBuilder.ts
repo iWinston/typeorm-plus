@@ -1427,7 +1427,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                 const propertyName = this.escape(primaryColumn.databaseName);
                 return `${distinctAlias}.${propertyName}`;
-            }).join(", ") + ") as \"cnt\"";
+            }).join(", ") + ")) as \"cnt\"";
         }
 
         const [countQuerySql, countQueryParameters] = this.clone()
