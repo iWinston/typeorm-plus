@@ -27,7 +27,6 @@ describe("transaction > single query runner", () => {
 
             transactionalEntityManager.getCustomRepository(PostRepository).getManager().should.be.equal(transactionalEntityManager);
         });
-
     })));
 
     it("should execute all operations in the method in a transaction (#804)", () => Promise.all(connections.map(async connection => {
