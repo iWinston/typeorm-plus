@@ -407,6 +407,8 @@ export class MysqlDriver implements Driver {
                 this.pool.getConnection((err: any, dbConnection: any) => {
                     err ? fail(err) : ok(dbConnection);
                 });
+            } else {
+                fail(new Error(`Connection is not established with mysql database`));
             }
         });
     }

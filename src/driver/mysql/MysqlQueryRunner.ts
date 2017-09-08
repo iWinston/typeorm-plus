@@ -184,25 +184,30 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const queryStartTime = +new Date();
-            databaseConnection.query(query, parameters, (err: any, result: any) => {
+            try {
+                const databaseConnection = await this.connect();
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                const queryStartTime = +new Date();
+                databaseConnection.query(query, parameters, (err: any, result: any) => {
 
-                // log slow queries if maxQueryExecution time is set
-                const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                const queryEndTime = +new Date();
-                const queryExecutionTime = queryEndTime - queryStartTime;
-                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    // log slow queries if maxQueryExecution time is set
+                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                    const queryEndTime = +new Date();
+                    const queryExecutionTime = queryEndTime - queryStartTime;
+                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                    return fail(new QueryFailedError(query, parameters, err));
-                }
+                    if (err) {
+                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        return fail(new QueryFailedError(query, parameters, err));
+                    }
 
-                ok(result);
-            });
+                    ok(result);
+                });
+
+            } catch (err) {
+                fail(err);
+            }
         });
     }
 
@@ -214,12 +219,17 @@ export class MysqlQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const stream = databaseConnection.query(query, parameters);
-            if (onEnd) stream.on("end", onEnd);
-            if (onError) stream.on("error", onError);
-            ok(stream);
+            try {
+                const databaseConnection = await this.connect();
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                const stream = databaseConnection.query(query, parameters);
+                if (onEnd) stream.on("end", onEnd);
+                if (onError) stream.on("error", onError);
+                ok(stream);
+
+            } catch (err) {
+                fail(err);
+            }
         });
     }
 

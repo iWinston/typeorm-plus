@@ -194,31 +194,36 @@ export class OracleQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const queryStartTime = +new Date();
+            try {
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                const queryStartTime = +new Date();
 
-            const handler = (err: any, result: any) => {
+                const handler = (err: any, result: any) => {
 
-                // log slow queries if maxQueryExecution time is set
-                const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                const queryEndTime = +new Date();
-                const queryExecutionTime = queryEndTime - queryStartTime;
-                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    // log slow queries if maxQueryExecution time is set
+                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                    const queryEndTime = +new Date();
+                    const queryExecutionTime = queryEndTime - queryStartTime;
+                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                    return fail(new QueryFailedError(query, parameters, err));
-                }
+                    if (err) {
+                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        return fail(new QueryFailedError(query, parameters, err));
+                    }
 
-                ok(result.rows || result.outBinds);
-            };
-            const executionOptions = {
-                autoCommit: this.isTransactionActive ? false : true
-            };
+                    ok(result.rows || result.outBinds);
+                };
+                const executionOptions = {
+                    autoCommit: this.isTransactionActive ? false : true
+                };
 
-            const databaseConnection = await this.connect();
-            databaseConnection.execute(query, parameters || {}, executionOptions, handler);
+                const databaseConnection = await this.connect();
+                databaseConnection.execute(query, parameters || {}, executionOptions, handler);
+
+            } catch (err) {
+                fail(err);
+            }
         });
     }
 

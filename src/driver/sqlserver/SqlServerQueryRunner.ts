@@ -275,53 +275,57 @@ export class SqlServerQueryRunner implements QueryRunner {
         }
 
         const promise = new Promise(async (ok, fail) => {
-
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
-            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
-            if (parameters && parameters.length) {
-                parameters.forEach((parameter, index) => {
-                    if (parameter instanceof MssqlParameter) {
-                        const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
-                        if (mssqlParameter) {
-                            request.input(index, mssqlParameter, parameter.value);
+            try {
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+                const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
+                if (parameters && parameters.length) {
+                    parameters.forEach((parameter, index) => {
+                        if (parameter instanceof MssqlParameter) {
+                            const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
+                            if (mssqlParameter) {
+                                request.input(index, mssqlParameter, parameter.value);
+                            } else {
+                                request.input(index, parameter.value);
+                            }
                         } else {
-                            request.input(index, parameter.value);
+                            request.input(index, parameter);
                         }
-                    } else {
-                        request.input(index, parameter);
-                    }
-                });
-            }
-            const queryStartTime = +new Date();
-            request.query(query, (err: any, result: any) => {
-
-                // log slow queries if maxQueryExecution time is set
-                const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                const queryEndTime = +new Date();
-                const queryExecutionTime = queryEndTime - queryStartTime;
-                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-
-                const resolveChain = () => {
-                    if (promiseIndex !== -1)
-                        this.queryResponsibilityChain.splice(promiseIndex, 1);
-                    if (waitingPromiseIndex !== -1)
-                        this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
-                    waitingOkay();
-                };
-
-                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
-                if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                    resolveChain();
-                    return fail(new QueryFailedError(query, parameters, err));
+                    });
                 }
+                const queryStartTime = +new Date();
+                request.query(query, (err: any, result: any) => {
 
-                ok(result.recordset);
-                resolveChain();
-            });
+                    // log slow queries if maxQueryExecution time is set
+                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                    const queryEndTime = +new Date();
+                    const queryExecutionTime = queryEndTime - queryStartTime;
+                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+
+                    const resolveChain = () => {
+                        if (promiseIndex !== -1)
+                            this.queryResponsibilityChain.splice(promiseIndex, 1);
+                        if (waitingPromiseIndex !== -1)
+                            this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
+                        waitingOkay();
+                    };
+
+                    let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
+                    let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
+                    if (err) {
+                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        resolveChain();
+                        return fail(new QueryFailedError(query, parameters, err));
+                    }
+
+                    ok(result.recordset);
+                    resolveChain();
+                });
+
+            } catch (err) {
+                fail(err);
+            }
         });
         if (this.isTransactionActive)
             this.queryResponsibilityChain.push(promise);

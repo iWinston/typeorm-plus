@@ -230,12 +230,17 @@ export class PostgresQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const stream = databaseConnection.query(new QueryStream(query, parameters));
-            if (onEnd) stream.on("end", onEnd);
-            if (onError) stream.on("error", onError);
-            ok(stream);
+            try {
+                const databaseConnection = await this.connect();
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                const stream = databaseConnection.query(new QueryStream(query, parameters));
+                if (onEnd) stream.on("end", onEnd);
+                if (onError) stream.on("error", onError);
+                ok(stream);
+
+            } catch (err) {
+                fail(err);
+            }
         });
     }
 

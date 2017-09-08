@@ -130,34 +130,38 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise(async (ok, fail) => {
+            try {
+                const db = await this.connect();
+                // todo(dima): check if transaction is not active
 
-            const db = await this.connect();
-            // todo(dima): check if transaction is not active
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                const queryStartTime = +new Date();
 
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const queryStartTime = +new Date();
+                db.transaction((tx: any) => {
+                    tx.executeSql(query, parameters, (tx: any, result: any) => {
 
-            db.transaction((tx: any) => {
-                tx.executeSql(query, parameters, (tx: any, result: any) => {
+                        // log slow queries if maxQueryExecution time is set
+                        const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                        const queryEndTime = +new Date();
+                        const queryExecutionTime = queryEndTime - queryStartTime;
+                        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                            this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                        const rows = Object
+                            .keys(result.rows)
+                            .filter(key => key !== "length")
+                            .map(key => result.rows[key]);
+                        ok(rows);
 
-                    const rows = Object
-                        .keys(result.rows)
-                        .filter(key => key !== "length")
-                        .map(key => result.rows[key]);
-                    ok(rows);
-
-                }, (tx: any, err: any) => {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                    return fail(new QueryFailedError(query, parameters, err));
+                    }, (tx: any, err: any) => {
+                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        return fail(new QueryFailedError(query, parameters, err));
+                    });
                 });
-            });
+
+            } catch (err) {
+                fail(err);
+            }
         });
     }
 
