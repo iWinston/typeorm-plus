@@ -91,6 +91,16 @@ export class ColumnMetadata {
     isNullable: boolean = false;
 
     /**
+     * Indicates if column is selected by query builder or not.
+     */
+    isSelect: boolean = true;
+
+    /**
+     * Indicates if column is protected from updates or not.
+     */
+    isReadonly: boolean = false;
+
+    /**
      * Column comment.
      * This feature is not supported by all databases.
      */
@@ -228,8 +238,12 @@ export class ColumnMetadata {
             this.isUnique = options.args.options.unique;
         if (options.args.options.default === null) // to make sure default: null is the same as nullable: true
             this.isNullable = true;
-        if (options.args.options.nullable)
+        if (options.args.options.nullable !== undefined)
             this.isNullable = options.args.options.nullable;
+        if (options.args.options.select !== undefined)
+            this.isSelect = options.args.options.select;
+        if (options.args.options.readonly !== undefined)
+            this.isReadonly = options.args.options.readonly;
         if (options.args.options.comment)
             this.comment = options.args.options.comment;
         if (options.args.options.default !== undefined)

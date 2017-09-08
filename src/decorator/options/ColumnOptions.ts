@@ -27,6 +27,19 @@ export interface ColumnOptions {
     nullable?: boolean;
 
     /**
+     * Indicates if column value is not updated by "save" operation.
+     * It means you'll be able to write this value only when you first time insert the object.
+     * Default value is "false".
+     */
+    readonly?: boolean;
+
+    /**
+     * Indicates if column is always selected by QueryBuilder and find operations.
+     * Default value is "true".
+     */
+    select?: boolean;
+
+    /**
      * Default database value.
      */
     default?: any;

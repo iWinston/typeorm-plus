@@ -368,17 +368,17 @@ export class SubjectOperationExecutor {
         if (metadata.isClassTableChild) { // todo: with current implementation inheritance of multiple class table children will not work
 
             // first insert entity values into parent class table
-            const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects);
+            const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects, "insert");
             insertResult = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tableName, parentValuesMap);
 
             // second insert entity values into child class table
-            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, insertResult.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName], undefined, alreadyInsertedSubjects);
+            const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, insertResult.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName], undefined, alreadyInsertedSubjects, "insert");
             const secondGeneratedId = await this.queryRunner.insert(metadata.tableName, childValuesMap);
             if (!insertResult && secondGeneratedId) insertResult = secondGeneratedId;
 
         } else { // in the case when class table inheritance is not used
 
-            const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
+            const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects, "insert");
             // console.log("valuesMap", valuesMap);
             insertResult = await this.queryRunner.insert(metadata.tableName, valuesMap);
         }
@@ -391,9 +391,11 @@ export class SubjectOperationExecutor {
             subject.generatedMap = insertResult.generatedMap;
     }
 
-    private collectColumns(columns: ColumnMetadata[], entity: ObjectLiteral, object: ObjectLiteral) {
+    private collectColumns(columns: ColumnMetadata[], entity: ObjectLiteral, object: ObjectLiteral, operation: "insert"|"update") {
         columns.forEach(column => {
             if (column.isVirtual || column.isParentId || column.isDiscriminator)
+                return;
+            if (operation === "update" && column.isReadonly)
                 return;
 
             const value = entity[column.propertyName];
@@ -404,7 +406,7 @@ export class SubjectOperationExecutor {
         });
     }
 
-    private collectEmbeds(embed: EmbeddedMetadata, entity: ObjectLiteral, object: ObjectLiteral) {
+    private collectEmbeds(embed: EmbeddedMetadata, entity: ObjectLiteral, object: ObjectLiteral, operation: "insert"|"update") {
 
         if (embed.isArray) {
             if (entity[embed.propertyName] instanceof Array) {
@@ -414,16 +416,16 @@ export class SubjectOperationExecutor {
                 entity[embed.propertyName].forEach((subEntity: any, index: number) => {
                     if (!object[embed.prefix][index])
                         object[embed.prefix][index] = {};
-                    this.collectColumns(embed.columns, subEntity, object[embed.prefix][index]);
-                    embed.embeddeds.forEach(childEmbed => this.collectEmbeds(childEmbed, subEntity, object[embed.prefix][index]));
+                    this.collectColumns(embed.columns, subEntity, object[embed.prefix][index], operation);
+                    embed.embeddeds.forEach(childEmbed => this.collectEmbeds(childEmbed, subEntity, object[embed.prefix][index], operation));
                 });
             }
         } else {
             if (entity[embed.propertyName] !== undefined) {
                 if (!object[embed.prefix])
                     object[embed.prefix] = {};
-                this.collectColumns(embed.columns, entity[embed.propertyName], object[embed.prefix]);
-                embed.embeddeds.forEach(childEmbed => this.collectEmbeds(childEmbed, entity[embed.propertyName], object[embed.prefix]));
+                this.collectColumns(embed.columns, entity[embed.propertyName], object[embed.prefix], operation);
+                embed.embeddeds.forEach(childEmbed => this.collectEmbeds(childEmbed, entity[embed.propertyName], object[embed.prefix], operation));
             }
         }
     }
@@ -431,13 +433,13 @@ export class SubjectOperationExecutor {
     /**
      * Collects columns and values for the insert operation.
      */
-    private collectColumnsAndValues(metadata: EntityMetadata, entity: ObjectLiteral, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[]): ObjectLiteral {
+    private collectColumnsAndValues(metadata: EntityMetadata, entity: ObjectLiteral, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[], operation: "insert"|"update"): ObjectLiteral {
 
         const values: ObjectLiteral = {};
 
         if (this.connection.driver instanceof MongoDriver) {
-            this.collectColumns(metadata.ownColumns, entity, values);
-            metadata.embeddeds.forEach(embed => this.collectEmbeds(embed, entity, values));
+            this.collectColumns(metadata.ownColumns, entity, values, operation);
+            metadata.embeddeds.forEach(embed => this.collectEmbeds(embed, entity, values, operation));
 
         } else {
             metadata.columns.forEach(column => {
@@ -669,8 +671,8 @@ export class SubjectOperationExecutor {
             // addEmbeddedValuesRecursively(entity, value, subject.metadata.embeddeds);
 
             const value: ObjectLiteral = {};
-            this.collectColumns(subject.metadata.ownColumns, entity, value);
-            subject.metadata.embeddeds.forEach(embed => this.collectEmbeds(embed, entity, value));
+            this.collectColumns(subject.metadata.ownColumns, entity, value, "update");
+            subject.metadata.embeddeds.forEach(embed => this.collectEmbeds(embed, entity, value, "update"));
 
             // if number of updated columns = 0 no need to update updated date and version columns
             if (Object.keys(value).length === 0)

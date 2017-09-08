@@ -1369,7 +1369,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
 
-        const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns : metadata.columns.filter(column => {
+        const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns.filter(column => column.isSelect === true) : metadata.columns.filter(column => {
             return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
         });
 
