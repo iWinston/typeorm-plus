@@ -606,10 +606,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
 
         if (oldColumn.isUnique !== newColumn.isUnique) {
             if (newColumn.isUnique === true) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${tableSchema.name}_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
 
             } else if (newColumn.isUnique === false) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${tableSchema.name}_${newColumn.name}"`);
 
             }
         }
