@@ -52,3 +52,10 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
+
+  # redis
+  # redis:
+  #   image: "redis:3.0.3"
+  #   container_name: "typeorm-redis"
+  #   ports:
+  #     - "6379:6379"

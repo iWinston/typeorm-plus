@@ -119,7 +119,13 @@ export class MysqlDriver implements Driver {
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",
-        migrationTimestamp: "bigint"
+        migrationTimestamp: "bigint",
+        cacheId: "int",
+        cacheIdentifier: "varchar",
+        cacheTime: "bigint",
+        cacheDuration: "int",
+        cacheQuery: "text",
+        cacheResult: "text",
     };
 
     /**

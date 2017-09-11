@@ -166,6 +166,23 @@ export class QueryExpressionMap {
      */
     aliasNamePrefixingEnabled: boolean = true;
 
+    /**
+     * Indicates if query result cache is enabled or not.
+     */
+    cache: boolean = false;
+
+    /**
+     * Time in milliseconds in which cache will expire.
+     * If not set then global caching time will be used.
+     */
+    cacheDuration: number;
+
+    /**
+     * Cache id.
+     * Used to identifier your cache queries.
+     */
+    cacheId: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -287,6 +304,12 @@ export class QueryExpressionMap {
         map.disableEscaping = this.disableEscaping;
         map.ignoreParentTablesJoins = this.ignoreParentTablesJoins;
         map.enableRelationIdValues = this.enableRelationIdValues;
+        map.extraAppendedAndWhereCondition = this.extraAppendedAndWhereCondition;
+        map.subQuery = this.subQuery;
+        map.aliasNamePrefixingEnabled = this.aliasNamePrefixingEnabled;
+        map.cache = this.cache;
+        map.cacheId = this.cacheId;
+        map.cacheDuration = this.cacheDuration;
         return map;
     }
 

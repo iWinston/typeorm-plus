@@ -70,6 +70,12 @@ export class MongoDriver implements Driver {
         treeLevel: "int",
         migrationName: "int",
         migrationTimestamp: "int",
+        cacheId: "int",
+        cacheIdentifier: "int",
+        cacheTime: "int",
+        cacheDuration: "int",
+        cacheQuery: "int",
+        cacheResult: "int",
     };
 
     /**

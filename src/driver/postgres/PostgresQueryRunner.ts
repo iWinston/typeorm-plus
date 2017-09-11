@@ -366,8 +366,8 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
             tableSchema.columns = dbColumns
                 .filter(dbColumn => dbColumn["table_name"] === tableSchema.name)
                 .map(dbColumn => {
-                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)`
-                        || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)` 
+                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_${dbColumn["column_name"]}_seq'::regclass)`
+                        || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_${dbColumn["column_name"]}_seq"'::regclass)` 
                         || /^uuid\_generate\_v\d\(\)/.test(dbColumn["column_default"]);
 
                     const columnSchema = new ColumnSchema();
