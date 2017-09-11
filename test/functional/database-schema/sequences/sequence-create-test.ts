@@ -19,7 +19,7 @@ describe("sequences > creating a sequence and marking the column as generated", 
 
     describe("create table and check that primary key column is marked as generated", function() {
 
-        it("should create a non unique index with 2 columns", () => Promise.all(connections.map(async connection => {
+        it("should check that the primary key column is generated automatically", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
             const tableSchema = await queryRunner.loadTableSchema("person");
