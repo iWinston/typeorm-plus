@@ -1,8 +1,18 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
+import {
+    Post,
+    PostNamedAll,
+    PostNamedTable,
+    PostNamedColumn,
+} from "./entity/Post";
+import {
+    Category,
+    CategoryNamedAll,
+    CategoryNamedTable,
+    CategoryNamedColumn,
+} from "./entity/Category";
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
@@ -23,8 +33,18 @@ describe("lazy-relations", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post, Category],
-        entitySchemas: [userSchema, profileSchema],
+        entities: [
+            Post,
+            PostNamedAll,
+            PostNamedTable,
+            PostNamedColumn,
+
+            Category,
+            CategoryNamedAll,
+            CategoryNamedTable,
+            CategoryNamedColumn,
+        ],
+        entitySchemas: [ userSchema, profileSchema ],
         schemaCreate: true,
         dropSchema: true,
         enabledDrivers: ["mysql"] // we can properly test lazy-relations only on one platform
