@@ -63,6 +63,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.queryRunner.startTransaction();
         try {
             await this.executeSchemaSyncOperationsInProperOrder();
+
+            // if cache is enabled then perform cache-synchronization as well
+            if (this.connection.queryResultCache)
+                await this.connection.queryResultCache.synchronize(this.queryRunner);
+
             await this.queryRunner.commitTransaction();
 
         } catch (error) {
@@ -86,6 +91,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.tableSchemas = await this.loadTableSchemas();
             this.queryRunner.enableSqlMemory();
             await this.executeSchemaSyncOperationsInProperOrder();
+
+            // if cache is enabled then perform cache-synchronization as well
+            if (this.connection.queryResultCache) // todo: check this functionality
+                await this.connection.queryResultCache.synchronize(this.queryRunner);
+
             return this.queryRunner.getMemorySql();
 
         } finally {

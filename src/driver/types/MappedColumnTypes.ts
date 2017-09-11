@@ -56,4 +56,34 @@ export interface MappedColumnTypes {
      */
     migrationName: ColumnType;
 
+    /**
+     * Column type for identifier column in query result cache table.
+     */
+    cacheId: ColumnType;
+
+    /**
+     * Column type for identifier column in query result cache table.
+     */
+    cacheIdentifier: ColumnType;
+
+    /**
+     * Column type for time column in query result cache table.
+     */
+    cacheTime: ColumnType;
+
+    /**
+     * Column type for duration column in query result cache table.
+     */
+    cacheDuration: ColumnType;
+
+    /**
+     * Column type for query column in query result cache table.
+     */
+    cacheQuery: ColumnType;
+
+    /**
+     * Column type for result column in query result cache table.
+     */
+    cacheResult: ColumnType;
+
 }

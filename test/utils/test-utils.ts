@@ -67,6 +67,39 @@ export interface TestingOptions {
      */
     schema?: string;
 
+    /**
+     * Schema name used for postgres driver.
+     */
+    cache?: boolean|{
+
+        /**
+         * Type of caching.
+         *
+         * - "database" means cached values will be stored in the separate table in database. This is default value.
+         * - "mongodb" means cached values will be stored in mongodb database. You must provide mongodb connection options.
+         * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
+         */
+        type?: "database"|"redis";
+
+        /**
+         * Used to provide mongodb / redis connection options.
+         */
+        options?: any;
+
+        /**
+         * If set to true then queries (using find methods and QueryBuilder's methods) will always be cached.
+         */
+        alwaysEnabled?: boolean;
+
+        /**
+         * Time in milliseconds in which cache will expire.
+         * This can be setup per-query.
+         * Default value is 1000 which is equivalent to 1 second.
+         */
+        duration?: number;
+
+    };
+
 }
 
 /**
@@ -83,6 +116,7 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         dropSchema: options.dropSchema ? options.dropSchema : false,
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
         enabledDrivers: [driverType],
+        cache: options.cache,
         schema: options.schema ? options.schema : undefined
     });
     if (!testingConnections.length)
@@ -144,6 +178,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 autoSchemaSync: options && (options.entities || options.entitySchemas) ? options.schemaCreate : false,
                 dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
                 schema: options && options.schema ? options.schema : undefined,
+                cache: options ? options.cache : undefined,
             });
         });
 }

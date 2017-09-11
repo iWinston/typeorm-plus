@@ -24,7 +24,7 @@ describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced
             .where("name = :name", {
                 name: "Toyota",
             })
-            .getSqlAndParameters();
+            .getQueryAndParameters();
         query.should.not.be.empty;
         return parameters.length.should.eql(2);
     })));

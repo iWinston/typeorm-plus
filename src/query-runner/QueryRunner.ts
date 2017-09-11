@@ -139,6 +139,8 @@ export interface QueryRunner {
      */
     createTable(table: TableSchema): Promise<void>;
 
+    // todo: create createTableIfNotExist method
+
     /**
      * Drops the table.
      */
