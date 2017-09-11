@@ -29,6 +29,7 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -892,13 +893,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets first raw result returned by execution of generated query builder sql.
      */
     async getRawOne(): Promise<any> {
-        if (this.expressionMap.lockMode === "optimistic")
-            throw new OptimisticLockCanNotBeUsedError();
-
-        this.expressionMap.queryEntity = false;
-        const results = await this.execute();
-        return results[0];
-
+        return (await this.getRawMany())[0];
     }
 
     /**
@@ -909,7 +904,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new OptimisticLockCanNotBeUsedError();
 
         this.expressionMap.queryEntity = false;
-        return this.execute();
+        const queryRunner = this.obtainQueryRunner();
+        try {
+            return await this.loadRawResults(queryRunner);
+
+        } finally {
+            if (queryRunner !== this.queryRunner) { // means we created our own query runner
+                await queryRunner.release();
+            }
+        }
     }
 
     /**
@@ -1006,7 +1009,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     async stream(): Promise<ReadStream> {
         this.expressionMap.queryEntity = false;
-        const [sql, parameters] = this.getSqlAndParameters();
+        const [sql, parameters] = this.getQueryAndParameters();
         const queryRunner = this.obtainQueryRunner();
         try {
             const releaseFn = () => {
@@ -1020,6 +1023,46 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (queryRunner !== this.queryRunner) // means we created our own query runner
                 await queryRunner.release();
         }
+    }
+
+    /**
+     * Enables or disables query result caching.
+     */
+    cache(enabled: boolean): this;
+
+    /**
+     * Enables query result caching and sets in milliseconds in which cache will expire.
+     * If not set then global caching time will be used.
+     */
+    cache(milliseconds: number): this;
+
+    /**
+     * Enables query result caching and sets cache id and milliseconds in which cache will expire.
+     */
+    cache(id: any, milliseconds?: number): this;
+
+    /**
+     * Enables or disables query result caching.
+     */
+    cache(enabledOrMillisecondsOrId: boolean|number|string, maybeMilliseconds?: number): this {
+
+        if (typeof enabledOrMillisecondsOrId === "boolean") {
+            this.expressionMap.cache = enabledOrMillisecondsOrId;
+
+        } else if (typeof enabledOrMillisecondsOrId === "number") {
+            this.expressionMap.cache = true;
+            this.expressionMap.cacheDuration = enabledOrMillisecondsOrId;
+
+        } else if (typeof enabledOrMillisecondsOrId === "string" || typeof enabledOrMillisecondsOrId === "number") {
+            this.expressionMap.cache = true;
+            this.expressionMap.cacheId = enabledOrMillisecondsOrId;
+        }
+
+        if (maybeMilliseconds) {
+            this.expressionMap.cacheDuration = maybeMilliseconds;
+        }
+
+        return this;
     }
 
     // -------------------------------------------------------------------------
@@ -1442,16 +1485,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }).join(", ") + ")) as \"cnt\"";
         }
 
-        const [countQuerySql, countQueryParameters] = this.clone()
+        const results = await this.clone()
             .mergeExpressionMap({ ignoreParentTablesJoins: true })
             .orderBy()
             .groupBy()
             .offset(undefined)
             .limit(undefined)
             .select(countSql)
-            .getSqlAndParameters();
+            .loadRawResults(queryRunner);
 
-        const results = await queryRunner.query(countQuerySql, countQueryParameters);
         if (!results || !results[0] || !results[0]["cnt"])
             return 0;
 
@@ -1508,10 +1550,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")} `)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().groupBy().orderBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().groupBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
+                .cache(this.expressionMap.cache ? this.expressionMap.cache : this.expressionMap.cacheId, this.expressionMap.cacheDuration)
                 .setParameters(this.getParameters())
                 .getRawMany();
 
@@ -1539,12 +1582,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 rawResults = await this.clone()
                     .mergeExpressionMap({ extraAppendedAndWhereCondition: condition })
                     .setParameters(parameters)
-                    .getRawMany();
+                    .loadRawResults(queryRunner);
             }
 
         } else {
-            const [sql, parameters] = this.getSqlAndParameters();
-            rawResults = await queryRunner.query(sql, parameters);
+            rawResults = await this.loadRawResults(queryRunner);
         }
 
         if (rawResults.length > 0) {
@@ -1593,6 +1635,38 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         });
 
         return [selectString, orderByObject];
+    }
+
+    /**
+     * Loads raw results from the database.
+     */
+    protected async loadRawResults(queryRunner: QueryRunner) {
+        const [sql, parameters] = this.getQueryAndParameters();
+        const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
+        let savedQueryResultCacheOptions: QueryResultCacheOptions|undefined = undefined;
+        if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
+            savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
+                identifier: this.expressionMap.cacheId,
+                query: this.getSql(),
+                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
+            }, queryRunner);
+            if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+                return JSON.parse(savedQueryResultCacheOptions.result);
+        }
+
+        const results = await queryRunner.query(sql, parameters);
+
+        if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
+            await this.connection.queryResultCache.storeInCache({
+                identifier: this.expressionMap.cacheId,
+                query: this.getSql(),
+                time: new Date().getTime(),
+                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
+                result: JSON.stringify(results)
+            }, savedQueryResultCacheOptions, queryRunner);
+        }
+
+        return results;
     }
 
     /**

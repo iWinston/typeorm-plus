@@ -25,6 +25,8 @@ import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {LoggerFactory} from "../logger/LoggerFactory";
+import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
+import {QueryResultCache} from "../cache/QueryResultCache";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -87,6 +89,11 @@ export class Connection {
      */
     readonly entityMetadatas: EntityMetadata[] = [];
 
+    /**
+     * Used to work with query result cache.
+     */
+    readonly queryResultCache?: QueryResultCache;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -98,6 +105,7 @@ export class Connection {
         this.driver = new DriverFactory().create(this);
         this.manager = new EntityManagerFactory().create(this);
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
+        this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
     }
 
     // -------------------------------------------------------------------------
@@ -133,6 +141,10 @@ export class Connection {
 
         // connect to the database via its driver
         await this.driver.connect();
+
+        // connect to the cache-specific database if cache is enabled
+        if (this.queryResultCache)
+            await this.queryResultCache.connect();
 
         // set connected status for the current connection
         Object.assign(this, { isConnected: true });
@@ -176,6 +188,11 @@ export class Connection {
             throw new CannotExecuteNotConnectedError(this.name);
 
         await this.driver.disconnect();
+
+        // disconnect from the cache-specific database if cache was enabled
+        if (this.queryResultCache)
+            await this.queryResultCache.disconnect();
+
         Object.assign(this, { isConnected: false });
     }
 

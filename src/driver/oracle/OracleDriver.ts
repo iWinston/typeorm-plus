@@ -120,8 +120,14 @@ export class OracleDriver implements Driver {
         updateDateDefault: "CURRENT_TIMESTAMP",
         version: "number",
         treeLevel: "number",
-        migrationName: "varchar",
+        migrationName: "nvarchar",
         migrationTimestamp: "timestamp",
+        cacheId: "int",
+        cacheIdentifier: "nvarchar",
+        cacheTime: "timestamp",
+        cacheDuration: "int",
+        cacheQuery: "text",
+        cacheResult: "text",
     };
 
     /**

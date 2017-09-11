@@ -46,7 +46,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
             this.queryRunner = undefined;
-            this.databaseConnection.close((err: any) => err ? fail(err) : ok());
+            this.databaseConnection.close(ok, fail);
         });
     }
     
@@ -69,7 +69,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
-            this.sqlite.openDatabase({name: this.options.database, location: "default"}, (db: any) => {
+            this.sqlite.openDatabase({name: this.options.database, location: this.options.location}, (db: any) => {
                 const databaseConnection = db;
                 ok(databaseConnection);
             }, (error: any) => {

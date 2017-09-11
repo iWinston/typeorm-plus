@@ -126,6 +126,12 @@ export class SqlServerDriver implements Driver {
         treeLevel: "int",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
+        cacheId: "int",
+        cacheIdentifier: "varchar",
+        cacheTime: "bigint",
+        cacheDuration: "int",
+        cacheQuery: "text",
+        cacheResult: "text",
     };
 
     /**
