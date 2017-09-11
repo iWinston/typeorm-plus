@@ -111,7 +111,7 @@ export class MigrationGenerateCommand {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
-        return `import {Connection, EntityManager, MigrationInterface, QueryRunner} from "typeorm";
+        return `import {MigrationInterface, QueryRunner} from "typeorm";
 
 export class ${name}${timestamp} implements MigrationInterface {
 
