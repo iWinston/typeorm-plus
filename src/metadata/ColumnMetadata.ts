@@ -489,10 +489,14 @@ export class ColumnMetadata {
         if (this.embeddedMetadata && this.embeddedMetadata.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + ".";
 
-        // if (this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
-        //     path += this.referencedColumn.propertyName + ".";
+        path += this.propertyName;
 
-        return path + this.propertyName;
+        // we add reference column to property path only if this column is virtual
+        // because if its not virtual it means user defined a real column for this relation
+        if (this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+            path += "." + this.referencedColumn.propertyName;
+
+        return path;
     }
 
     protected buildDatabaseName(connection: Connection): string {
