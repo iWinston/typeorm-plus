@@ -92,7 +92,7 @@ export class FindOptionsUtils {
     static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): SelectQueryBuilder<T> {
 
         // if options are not set then simply return query builder. This is made for simplicity of usage.
-        if (!options || !this.isFindOneOptions(options))
+        if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
             return qb;
 
         // apply all options from FindOptions
