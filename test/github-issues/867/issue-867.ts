@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {expect} from "chai";
 
-describe("github issues > #867 result of `findAndCount` is wrong when apply `skip` and `take` option", () => {
+describe.only("github issues > #867 result of `findAndCount` is wrong when apply `skip` and `take` option", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -25,7 +25,10 @@ describe("github issues > #867 result of `findAndCount` is wrong when apply `ski
         await userRepository.save(users);
         const [ foundUsers, totalCount ] = await userRepository.findAndCount({
             skip: 1,
-            take: 2
+            take: 2,
+            order: {
+                username: "ASC"
+            }
         });
         expect(totalCount).to.equal(5);
         expect(foundUsers).to.have.lengthOf(2);
