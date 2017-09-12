@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {expect} from "chai";
 
-describe.only("github issues > #867 result of `findAndCount` is wrong when apply `skip` and `take` option", () => {
+describe("github issues > #867 result of `findAndCount` is wrong when apply `skip` and `take` option", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
