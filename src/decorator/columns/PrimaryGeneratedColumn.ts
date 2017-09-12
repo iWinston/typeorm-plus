@@ -55,9 +55,9 @@ export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|Pr
         // check if there is no type in column options then set the int type - by default for auto generated column
         if (!options.type) {
             if (strategy === "increment") {
-                Object.assign(options, { type: Number}  as ColumnOptions);
+                Object.assign(options, { type: Number } as ColumnOptions);
             } else {
-                Object.assign(options, { type: "uuid"}  as ColumnOptions);
+                Object.assign(options, { type: "uuid" } as ColumnOptions);
             }
         }
 

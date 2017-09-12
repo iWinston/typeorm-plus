@@ -4,6 +4,9 @@ import {TableSchema} from "../schema-builder/schema/TableSchema";
 import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -55,8 +58,7 @@ export class DbQueryResultCache implements QueryResultCache {
             new ColumnSchema({
                 name: "identifier",
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheIdentifier }),
-                isNullable: true,
-                isUnique: true
+                isNullable: true
             }),
             new ColumnSchema({
                 name: "time",
@@ -99,13 +101,13 @@ export class DbQueryResultCache implements QueryResultCache {
         if (options.identifier) {
             return qb
                 .where(`${qb.escape("cache")}.${qb.escape("identifier")} = :identifier`)
-                .setParameters({ identifier: options.identifier })
+                .setParameters({ identifier: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.identifier, "nvarchar") : options.identifier })
                 .getRawOne();
 
         } else if (options.query) {
             return qb
                 .where(`${qb.escape("cache")}.${qb.escape("query")} = :query`)
-                .setParameters({ query: options.query })
+                .setParameters({ query: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.query, "nvarchar") : options.query })
                 .getRawOne();
         }
 
@@ -116,7 +118,7 @@ export class DbQueryResultCache implements QueryResultCache {
      * Checks if cache is expired or not.
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
-        return (savedCache.time! + savedCache.duration) < new Date().getTime();
+        return ((typeof savedCache.time === "string" ? parseInt(savedCache.time as any) : savedCache.time)! + savedCache.duration) < new Date().getTime();
     }
 
     /**
@@ -125,14 +127,25 @@ export class DbQueryResultCache implements QueryResultCache {
     async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions|undefined, queryRunner?: QueryRunner): Promise<void> {
         queryRunner = this.getQueryRunner(queryRunner);
 
+        let insertedValues: ObjectLiteral = options;
+        if (this.connection.driver instanceof SqlServerDriver) { // todo: bad abstraction, re-implement this part, probably better if we create an entity metadata for cache table
+            insertedValues = {
+                identifier: new MssqlParameter(options.identifier, "nvarchar"),
+                time: new MssqlParameter(options.time, "bigint"),
+                duration: new MssqlParameter(options.duration, "int"),
+                query: new MssqlParameter(options.query, "nvarchar"),
+                result: new MssqlParameter(options.result, "nvarchar"),
+            };
+        }
+
         if (savedCache && savedCache.identifier) { // if exist then update
-            await queryRunner.update("query-result-cache", options, { identifier: options.identifier });
+            await queryRunner.update("query-result-cache", insertedValues, { identifier: insertedValues.identifier });
 
         } else if (savedCache && savedCache.query) { // if exist then update
-            await queryRunner.update("query-result-cache", options, { query: options.query });
+            await queryRunner.update("query-result-cache", insertedValues, { query: insertedValues.query });
 
         } else { // otherwise insert
-            await queryRunner.insert("query-result-cache", options);
+            await queryRunner.insert("query-result-cache", insertedValues);
         }
     }
 
