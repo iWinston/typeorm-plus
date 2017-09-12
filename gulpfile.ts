@@ -62,7 +62,7 @@ export class Gulpfile {
             "!./src/typeorm-model-shim.ts",
             "!./src/platform/PlatformTools.ts"
         ])
-        .pipe(gulp.dest("./build/systemjs/typeorm"))
+        .pipe(gulp.dest("./build/systemjs/typeorm-browser"))
         .pipe(gulp.dest("./build/browser/src"));
     }
 
@@ -72,7 +72,7 @@ export class Gulpfile {
     @Task()
     browserCopyMainBrowserFile() {
         return gulp.src("./package.json", { read: false })
-            .pipe(file("typeorm.ts", `export * from "./typeorm/index";`))
+            .pipe(file("typeorm-browser.ts", `export * from "./typeorm-browser/index";`))
             .pipe(gulp.dest("./build/systemjs"));
     }
 
@@ -83,7 +83,7 @@ export class Gulpfile {
     browserCopyPlatformTools() {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
-            .pipe(gulp.dest("./build/systemjs/typeorm/platform"))
+            .pipe(gulp.dest("./build/systemjs/typeorm-browser/platform"))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
@@ -145,6 +145,12 @@ export class Gulpfile {
             "./build/systemjs/**",
              "./build/browser/src/**"
         ])
+    }
+
+    @Task()
+    browserCopyCliFile() {
+        return gulp.src("./build/package/cli.js")
+            .pipe(gulp.dest("./build/browser"))
     }
 
     // -------------------------------------------------------------------------
@@ -264,6 +270,7 @@ export class Gulpfile {
             ["packageCompile", "browserCompile", "browserCompileSystemJS"],
             ["packageMoveCompiledFiles", "browserUglify"],
             [
+                "browserCopyCliFile",
                 "browserClearPackageDirectory",
                 "packageClearPackageDirectory",
                 "packageReplaceReferences",
