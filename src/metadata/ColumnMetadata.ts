@@ -489,8 +489,8 @@ export class ColumnMetadata {
         if (this.embeddedMetadata && this.embeddedMetadata.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + ".";
 
-        if (this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
-            path += this.referencedColumn.propertyName + ".";
+        // if (this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+        //     path += this.referencedColumn.propertyName + ".";
 
         return path + this.propertyName;
     }
