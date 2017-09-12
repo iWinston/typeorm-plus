@@ -63,7 +63,7 @@ export class Gulpfile {
             "!./src/platform/PlatformTools.ts"
         ])
         .pipe(gulp.dest("./build/systemjs/typeorm"))
-        .pipe(gulp.dest("./build/browser"));
+        .pipe(gulp.dest("./build/browser/src"));
     }
 
     /**
@@ -84,7 +84,7 @@ export class Gulpfile {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
             .pipe(gulp.dest("./build/systemjs/typeorm/platform"))
-            .pipe(gulp.dest("./build/browser/platform"));
+            .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
     /**
@@ -116,11 +116,12 @@ export class Gulpfile {
             "lib": ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
-        const tsResult = gulp.src(["./build/browser/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
+        const tsResult = gulp.src(["./build/browser/src/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
         return [
+            tsResult.dts.pipe(gulp.dest("./build/browser")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
                 .pipe(gulp.dest("./build/browser"))
@@ -141,7 +142,8 @@ export class Gulpfile {
     @Task()
     browserClearPackageDirectory(cb: Function) {
         return del([
-            "./build/systemjs/**"
+            "./build/systemjs/**",
+             "./build/browser/src/**"
         ])
     }
 
