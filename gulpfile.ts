@@ -62,7 +62,7 @@ export class Gulpfile {
             "!./src/typeorm-model-shim.ts",
             "!./src/platform/PlatformTools.ts"
         ])
-        .pipe(gulp.dest("./build/systemjs/typeorm-browser"))
+        .pipe(gulp.dest("./build/systemjs/typeorm"))
         .pipe(gulp.dest("./build/browser/src"));
     }
 
@@ -72,7 +72,7 @@ export class Gulpfile {
     @Task()
     browserCopyMainBrowserFile() {
         return gulp.src("./package.json", { read: false })
-            .pipe(file("typeorm-browser.ts", `export * from "./typeorm-browser/index";`))
+            .pipe(file("typeorm.ts", `export * from "./typeorm/index";`))
             .pipe(gulp.dest("./build/systemjs"));
     }
 
@@ -83,7 +83,7 @@ export class Gulpfile {
     browserCopyPlatformTools() {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
-            .pipe(gulp.dest("./build/systemjs/typeorm-browser/platform"))
+            .pipe(gulp.dest("./build/systemjs/typeorm/platform"))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
