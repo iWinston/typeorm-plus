@@ -105,7 +105,7 @@ export class Gulpfile {
         return [
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/browser"))
+                .pipe(gulp.dest("./build/package"))
         ];
     }
 
@@ -121,10 +121,10 @@ export class Gulpfile {
             .pipe(tsProject());
 
         return [
-            tsResult.dts.pipe(gulp.dest("./build/browser")),
+            tsResult.dts.pipe(gulp.dest("./build/package/browser")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/browser"))
+                .pipe(gulp.dest("./build/package/browser"))
         ];
     }
 
@@ -136,14 +136,14 @@ export class Gulpfile {
         return gulp.src("./build/browser/typeorm-browser.js")
             .pipe(uglify())
             .pipe(rename("typeorm-browser.min.js"))
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     @Task()
     browserClearPackageDirectory(cb: Function) {
         return del([
             "./build/systemjs/**",
-             "./build/browser/src/**"
+             "./build/browser/**"
         ])
     }
 
@@ -228,9 +228,7 @@ export class Gulpfile {
     packagePreparePackageFile() {
         return gulp.src("./package.json")
             .pipe(replace("\"private\": true,", "\"private\": false,"))
-            .pipe(gulp.dest("./build/package"))
-            .pipe(replace("\"name\": \"typeorm\",", "\"name\": \"typeorm-browser\","))
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     /**
@@ -240,8 +238,7 @@ export class Gulpfile {
     packageCopyReadme() {
         return gulp.src("./README.md")
             .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
-            .pipe(gulp.dest("./build/package"))
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     /**
@@ -250,7 +247,7 @@ export class Gulpfile {
     @Task()
     packageCopyShims() {
         return gulp.src(["./extra/typeorm-model-shim.js", "./extra/typeorm-class-transformer-shim.js"])
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     /**
