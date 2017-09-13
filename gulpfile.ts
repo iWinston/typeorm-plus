@@ -29,11 +29,11 @@ export class Gulpfile {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a delay and resolves after 10 seconds.
+     * Creates a delay and resolves after 30 seconds.
      */
     @Task()
     wait(cb: Function) {
-        setTimeout(() => cb(), 10000);
+        setTimeout(() => cb(), 30000);
     }
 
     /**
