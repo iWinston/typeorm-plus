@@ -37,6 +37,16 @@
   },
   {
     "skip": true,
+    "name": "mssql",
+    "type": "mssql",
+    "host": "localhost",
+    "username": "sa",
+    "password": "tz$qwe;est$Admin142",
+    "database": "tempdb",
+    "logging": true
+  },
+  {
+    "skip": true,
     "name": "oracle",
     "type": "oracle",
     "host": "localhost",
