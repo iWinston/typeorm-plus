@@ -10,6 +10,8 @@ import {MigrationRevertCommand} from "./commands/MigrationRevertCommand";
 import {SubscriberCreateCommand} from "./commands/SubscriberCreateCommand";
 import {SchemaLogCommand} from "./commands/SchemaLogCommand";
 import {MigrationGenerateCommand} from "./commands/MigrationGenerateCommand";
+import {VersionCommand} from "./commands/VersionCommand";
+import {InitCommand} from "./commands/InitCommand";
 
 require("yargs")
     .usage("Usage: $0 <command> [options]")
@@ -23,6 +25,8 @@ require("yargs")
     .command(new MigrationGenerateCommand())
     .command(new MigrationRunCommand())
     .command(new MigrationRevertCommand())
+    .command(new VersionCommand())
+    .command(new InitCommand())
     .demand(1)
     .version(() => require("./package.json").version)
     .alias("v", "version")
