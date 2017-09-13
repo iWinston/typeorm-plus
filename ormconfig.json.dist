@@ -40,13 +40,13 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
     "username": "sa",
-    "password": "admin",
-    "database": "test",
+    "password": "tz$qwe;est$Admin142",
+    "database": "tempdb",
     "logging": false
   },
   {
