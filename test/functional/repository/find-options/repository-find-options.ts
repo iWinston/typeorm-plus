@@ -63,7 +63,6 @@ describe("repository > find options", () => {
         const photos = [];
         for (let i = 1; i < 10; i++) {
             const photo = new Photo();
-            photo.id = i;
             photo.name = `Me and Bears ${i}`;
             photo.description = `I am near bears ${i}`;
             photo.filename = `photo-with-bears-${i}.jpg`;
