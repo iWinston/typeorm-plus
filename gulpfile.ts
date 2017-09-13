@@ -19,7 +19,7 @@ const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
 const ts = require("gulp-typescript");
-const args = require('yargs').argv;
+const args = require("yargs").argv;
 
 @Gulpclass()
 export class Gulpfile {
@@ -27,6 +27,14 @@ export class Gulpfile {
     // -------------------------------------------------------------------------
     // General tasks
     // -------------------------------------------------------------------------
+
+    /**
+     * Creates a delay and resolves after 10 seconds.
+     */
+    @Task()
+    wait(cb: Function) {
+        setTimeout(() => cb(), 10000);
+    }
 
     /**
      * Cleans build folder.
@@ -144,7 +152,7 @@ export class Gulpfile {
         return del([
             "./build/systemjs/**",
              "./build/browser/**"
-        ])
+        ]);
     }
 
     // -------------------------------------------------------------------------
@@ -361,7 +369,26 @@ export class Gulpfile {
      */
     @SequenceTask()
     tests() {
-        return ["compile", "tslint", "coveragePost", "coverageRemap"];
+        return [
+            "compile",
+            "tslint",
+            "coveragePost",
+            "coverageRemap"
+        ];
+    }
+
+    /**
+     * Runs tests, but creates a small delay before running them to make sure to give time for docker containers to be initialized.
+     */
+    @SequenceTask("ci-tests")
+    ciTests() {
+        return [
+            "wait",
+            "compile",
+            "tslint",
+            "coveragePost",
+            "coverageRemap"
+        ];
     }
 
     /**

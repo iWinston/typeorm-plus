@@ -88,7 +88,7 @@
     "yargs": "^8.0.2"
   },
   "scripts": {
-    "test": "gulp tests",
+    "test": "gulp ci-tests",
     "compile": "tsc",
     "setup:config": "gulp createTravisOrmConfig",
     "package": "gulp package"
