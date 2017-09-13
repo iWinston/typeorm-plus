@@ -1,8 +1,5 @@
 import "reflect-metadata";
-import {
-    closeTestingConnections, createTestingConnections, reloadTestingDatabases,
-    sleep
-} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases,} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {PostWithVersion} from "./entity/PostWithVersion";
 import {expect} from "chai";
