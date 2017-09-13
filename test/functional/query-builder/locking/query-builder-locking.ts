@@ -249,7 +249,7 @@ describe("query builder > locking", () => {
         post.title = "New post";
         await connection.manager.save(post);
 
-        await sleep(1);
+        await sleep(1000);
 
         return Promise.all([
             connection.createQueryBuilder(PostWithVersionAndUpdatedDate, "post")
