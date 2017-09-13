@@ -45,7 +45,7 @@
     "type": "mssql",
     "host": "localhost",
     "username": "sa",
-    "password": "tz$qwe;est$Admin142",
+    "password": "Admin12345",
     "database": "tempdb",
     "logging": false
   },
