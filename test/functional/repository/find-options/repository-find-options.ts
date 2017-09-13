@@ -59,7 +59,6 @@ describe("repository > find options", () => {
         await connection.manager.save(category);
 
         const categories = [category];
-        const promises = [];
         const photos = [];
         for (let i = 1; i < 10; i++) {
             const photo = new Photo();
@@ -70,16 +69,14 @@ describe("repository > find options", () => {
             photo.isPublished = false;
             photo.categories = categories;
             photos.push(photo);
-            promises.push(connection.manager.save(photo));
+            await connection.manager.save(photo);
         }
-
-        await Promise.all(promises);
 
         const loadedPhoto = await connection.getRepository(Photo).findOne({
             select: ["name"],
             where: {
                 id: 5
-            },
+            }
         });
 
         const loadedPhotos1 = await connection.getRepository(Photo).find({

@@ -1,5 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {
+    closeTestingConnections, createTestingConnections, reloadTestingDatabases,
+    sleep
+} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {PostWithVersion} from "./entity/PostWithVersion";
 import {expect} from "chai";
@@ -242,10 +245,11 @@ describe("query builder > locking", () => {
     })));
 
     it("should work if both version and update date columns applied", () => Promise.all(connections.map(async connection => {
-
         const post = new PostWithVersionAndUpdatedDate();
         post.title = "New post";
         await connection.manager.save(post);
+
+        await sleep(1);
 
         return Promise.all([
             connection.createQueryBuilder(PostWithVersionAndUpdatedDate, "post")
