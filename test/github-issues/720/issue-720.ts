@@ -3,6 +3,9 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Participant} from "./entity/Participant";
 import {expect} from "chai";
+import {Message} from "./entity/Message";
+import {Translation} from "./entity/Translation";
+import {Locale} from "./entity/Locale";
 
 describe("github issues > #720 `.save()` not updating composite key with Postgres", () => {
 
@@ -66,6 +69,38 @@ describe("github issues > #720 `.save()` not updating composite key with Postgre
         expect(loadedParticipant2!.distance).to.be.equal("two");
         expect(loadedParticipant2!.price).to.be.equal("250$");
 
+    })));
+
+    it("reproducing second comment issue", () => Promise.all(connections.map(async connection => {
+
+        const message = new Message();
+        await connection.manager.save(message);
+
+        const locale = new Locale();
+        locale.code = "US";
+        locale.englishName = "USA";
+        locale.name = message;
+        await connection.manager.save(locale);
+
+        const translation = new Translation();
+        translation.message = message;
+        translation.locale = locale;
+        translation.text = "Some Text";
+        await connection.manager.save(translation);
+
+        // change its text and save again
+        translation.text = "Changed Text";
+        await connection.manager.save(translation);
+
+        const foundTranslation = await connection.manager.getRepository(Translation).findOneById({
+            locale: {
+                code: "US"
+            },
+            message: "1"
+        });
+        expect(foundTranslation).to.be.eql({
+            text: "Changed Text"
+        });
     })));
 
 });

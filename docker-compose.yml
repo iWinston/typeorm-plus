@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
 
   # mysql
@@ -37,14 +37,14 @@ services:
       POSTGRES_DB: "test"
 
   # mssql
-#  mssql:
-#    image: "microsoft/mssql-server-linux"
-#    container_name: "typeorm-mssql"
-#    ports:
-#      - "1433:1433"
-#    environment:
-#      ACCEPT_EULA: "Y"
-#      SA_PASSWORD: "admin12345"
+  mssql:
+    image: "microsoft/mssql-server-linux:rc2"
+    container_name: "typeorm-mssql"
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "Admin12345"
+      ACCEPT_EULA: "Y"
 
   # mongodb
   mongodb:

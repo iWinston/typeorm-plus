@@ -19,7 +19,7 @@ const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
 const ts = require("gulp-typescript");
-const args = require('yargs').argv;
+const args = require("yargs").argv;
 
 @Gulpclass()
 export class Gulpfile {
@@ -27,6 +27,14 @@ export class Gulpfile {
     // -------------------------------------------------------------------------
     // General tasks
     // -------------------------------------------------------------------------
+
+    /**
+     * Creates a delay and resolves after 30 seconds.
+     */
+    @Task()
+    wait(cb: Function) {
+        setTimeout(() => cb(), 30000);
+    }
 
     /**
      * Cleans build folder.
@@ -63,7 +71,7 @@ export class Gulpfile {
             "!./src/platform/PlatformTools.ts"
         ])
         .pipe(gulp.dest("./build/systemjs/typeorm"))
-        .pipe(gulp.dest("./build/browser"));
+        .pipe(gulp.dest("./build/browser/src"));
     }
 
     /**
@@ -84,7 +92,7 @@ export class Gulpfile {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
             .pipe(gulp.dest("./build/systemjs/typeorm/platform"))
-            .pipe(gulp.dest("./build/browser/platform"));
+            .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
     /**
@@ -105,7 +113,7 @@ export class Gulpfile {
         return [
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/browser"))
+                .pipe(gulp.dest("./build/package"))
         ];
     }
 
@@ -116,14 +124,15 @@ export class Gulpfile {
             "lib": ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
-        const tsResult = gulp.src(["./build/browser/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
+        const tsResult = gulp.src(["./build/browser/src/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
         return [
+            tsResult.dts.pipe(gulp.dest("./build/package/browser")),
             tsResult.js
                 .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/browser"))
+                .pipe(gulp.dest("./build/package/browser"))
         ];
     }
 
@@ -135,14 +144,15 @@ export class Gulpfile {
         return gulp.src("./build/browser/typeorm-browser.js")
             .pipe(uglify())
             .pipe(rename("typeorm-browser.min.js"))
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     @Task()
     browserClearPackageDirectory(cb: Function) {
         return del([
-            "./build/systemjs/**"
-        ])
+            "./build/systemjs/**",
+             "./build/browser/**"
+        ]);
     }
 
     // -------------------------------------------------------------------------
@@ -226,9 +236,7 @@ export class Gulpfile {
     packagePreparePackageFile() {
         return gulp.src("./package.json")
             .pipe(replace("\"private\": true,", "\"private\": false,"))
-            .pipe(gulp.dest("./build/package"))
-            .pipe(replace("\"name\": \"typeorm\",", "\"name\": \"typeorm-browser\","))
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     /**
@@ -238,8 +246,7 @@ export class Gulpfile {
     packageCopyReadme() {
         return gulp.src("./README.md")
             .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
-            .pipe(gulp.dest("./build/package"))
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     /**
@@ -248,7 +255,7 @@ export class Gulpfile {
     @Task()
     packageCopyShims() {
         return gulp.src(["./extra/typeorm-model-shim.js", "./extra/typeorm-class-transformer-shim.js"])
-            .pipe(gulp.dest("./build/browser"));
+            .pipe(gulp.dest("./build/package"));
     }
 
     /**
@@ -362,7 +369,26 @@ export class Gulpfile {
      */
     @SequenceTask()
     tests() {
-        return ["compile", "tslint", "coveragePost", "coverageRemap"];
+        return [
+            "compile",
+            "tslint",
+            "coveragePost",
+            "coverageRemap"
+        ];
+    }
+
+    /**
+     * Runs tests, but creates a small delay before running them to make sure to give time for docker containers to be initialized.
+     */
+    @SequenceTask("ci-tests")
+    ciTests() {
+        return [
+            "wait",
+            "compile",
+            "tslint",
+            "coveragePost",
+            "coverageRemap"
+        ];
     }
 
     /**

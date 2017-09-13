@@ -5,6 +5,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * This metadata contains all information about entity's column.
@@ -325,12 +326,22 @@ export class ColumnMetadata {
                     extractEmbeddedColumnValue(propertyNames, map[propertyName]);
                     return map;
                 }
+
+                // this is bugfix for #720 when increment number is bigint we need to make sure its a string
+                if (this.generationStrategy === "increment" && this.type === "bigint")
+                    value = String(value);
+
                 map[this.propertyName] = value;
                 return map;
             };
             return extractEmbeddedColumnValue(propertyNames, {});
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
+
+            // this is bugfix for #720 when increment number is bigint we need to make sure its a string
+            if (this.generationStrategy === "increment" && this.type === "bigint")
+                value = String(value);
+
             return { [this.propertyName]: value };
         }
     }
@@ -372,7 +383,14 @@ export class ColumnMetadata {
             return extractEmbeddedColumnValue(propertyNames, entity, {});
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            return { [this.propertyName]: entity[this.propertyName] };
+            if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+                const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
+                    return OrmUtils.mergeDeep(map, joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]));
+                }, {});
+                return { [this.propertyName]: map };
+            } else {
+                return { [this.propertyName]: entity[this.propertyName] };
+            }
         }
     }
 
@@ -380,7 +398,7 @@ export class ColumnMetadata {
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
-    getEntityValue(entity: ObjectLiteral): any|undefined {
+     getEntityValue(entity: ObjectLiteral): any|undefined {
         // if (entity === undefined || entity === null) return undefined; // uncomment if needed
 
         // extract column value from embeddeds of entity if column is in embedded
@@ -404,20 +422,20 @@ export class ColumnMetadata {
             if (embeddedObject) {
                 if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
-                    return relatedEntity ? this.referencedColumn.getEntityValue(relatedEntity) : undefined;
-                } else {
-                    return embeddedObject[this.propertyName];
+                    if (relatedEntity && relatedEntity instanceof Object)
+                        return this.referencedColumn.getEntityValue(relatedEntity);
                 }
+                return embeddedObject[this.propertyName];
             }
             return undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
-                return relatedEntity ? this.referencedColumn.getEntityValue(relatedEntity) : undefined;
-            } else {
-                return entity[this.propertyName];
+                if (relatedEntity && relatedEntity instanceof Object)
+                    return this.referencedColumn.getEntityValue(relatedEntity);
             }
+            return entity[this.propertyName];
         }
     }
 
@@ -471,10 +489,14 @@ export class ColumnMetadata {
         if (this.embeddedMetadata && this.embeddedMetadata.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + ".";
 
-        if (this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
-            path += this.referencedColumn.propertyName + ".";
+        path += this.propertyName;
 
-        return path + this.propertyName;
+        // we add reference column to property path only if this column is virtual
+        // because if its not virtual it means user defined a real column for this relation
+        if (this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+            path += "." + this.referencedColumn.propertyName;
+
+        return path;
     }
 
     protected buildDatabaseName(connection: Connection): string {

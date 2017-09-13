@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.1.0-alpha.40",
+  "version": "0.1.0-alpha.42",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, WebSQL, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -35,6 +35,8 @@
     "websql",
     "websql-orm"
   ],
+  "browser": "./browser",
+  "module": "index",
   "devDependencies": {
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "0.0.31",
@@ -86,7 +88,7 @@
     "yargs": "^8.0.2"
   },
   "scripts": {
-    "test": "gulp tests",
+    "test": "gulp ci-tests",
     "compile": "tsc",
     "setup:config": "gulp createTravisOrmConfig",
     "package": "gulp package"

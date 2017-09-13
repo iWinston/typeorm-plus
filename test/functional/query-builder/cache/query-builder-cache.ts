@@ -15,7 +15,7 @@ describe("query builder > cache", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         dropSchema: true,
-        // cache: true,
+        cache: true,
         // cache: {
         //     type: "redis",
         //     options: {
