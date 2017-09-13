@@ -150,8 +150,7 @@ export class Gulpfile {
     @Task()
     browserClearPackageDirectory(cb: Function) {
         return del([
-            "./build/systemjs/**",
-             "./build/browser/**"
+            "./build/systemjs/**"
         ]);
     }
 
