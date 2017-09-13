@@ -434,7 +434,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                     const columnNames = columnPositions
                         .map((pos: number) => dbIndicesInfos.find(idx => idx.attnum === pos)!["column_name"]);
 
-                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, dbIndicesInfos[0]["is_unique"]);
+                    return new IndexSchema(dbTable["table_name"], dbIndexName, columnNames, dbIndicesInfos[0]["is_unique"]);
                 });
 
             return tableSchema;
