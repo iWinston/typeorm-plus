@@ -246,6 +246,13 @@ export class MongoDriver implements Driver {
     }
 
     /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+    
+    /**
      * Normalizes "default" value of the column.
      */
     createFullType(column: ColumnSchema): string {
