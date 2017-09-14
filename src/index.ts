@@ -120,6 +120,7 @@ export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
 export {BaseEntity} from "./repository/BaseEntity";
+export {EntitySchema} from "./entity-schema/EntitySchema";
 
 // -------------------------------------------------------------------------
 // Deprecated
