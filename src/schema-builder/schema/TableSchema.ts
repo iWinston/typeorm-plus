@@ -223,7 +223,7 @@ export class TableSchema {
                     columnSchema.comment !== columnMetadata.comment ||
                     (!columnSchema.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata), columnSchema.default)) || // we included check for generated here, because generated columns already can have default values
                     columnSchema.isNullable !== columnMetadata.isNullable ||
-                    columnSchema.isUnique !== columnMetadata.isUnique ||
+                    columnSchema.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||
                     columnSchema.isGenerated !== columnMetadata.isGenerated;
         });
