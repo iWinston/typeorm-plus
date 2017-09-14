@@ -232,6 +232,7 @@ Steps to run this project:
 
         if (!packageJson.dependencies) packageJson.dependencies = {};
         Object.assign(packageJson.dependencies, {
+            mysql: "2.14.1",
             typeorm: "0.1.0-alpha.42" // require("../package.json").version
         });
 
