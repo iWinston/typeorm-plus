@@ -259,7 +259,7 @@ export class PostgresDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.valueTransformer)
-            return columnMetadata.valueTransformer.transformTo(value);
+            value = columnMetadata.valueTransformer.transformTo(value);
 
         if (value === null || value === undefined)
             return value;
@@ -295,7 +295,7 @@ export class PostgresDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.valueTransformer)
-            return columnMetadata.valueTransformer.transformFrom(value);
+            value = columnMetadata.valueTransformer.transformFrom(value);
 
         if (value === null || value === undefined)
             return value;
