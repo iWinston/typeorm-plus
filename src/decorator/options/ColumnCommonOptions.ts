@@ -53,6 +53,6 @@ export interface ColumnCommonOptions {
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
-    transformer?: ValueTransformer<any, any>;
+    transformer?: ValueTransformer;
 
 }

@@ -3,7 +3,7 @@ import {Column} from "../../../../../src/decorator/columns/Column";
 import {ValueTransformer} from "../../../../../src/decorator/options/ValueTransformer";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 
-class TagTransformer implements ValueTransformer<string[], string> {
+class TagTransformer implements ValueTransformer {
 
     to (value: string[]): string {
         return value.join(", ");
