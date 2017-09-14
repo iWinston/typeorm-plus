@@ -5,11 +5,11 @@ import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/Prima
 
 class TagTransformer implements ValueTransformer<string[], string> {
 
-    transformTo (value: string[]): string {
+    to (value: string[]): string {
         return value.join(", ");
     }
 
-    transformFrom (value: string): string[] {
+    from (value: string): string[] {
         return value.split(", ");
     }
 

@@ -262,7 +262,7 @@ export class SqlServerDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.transformTo(value);
+            value = columnMetadata.transformer.to(value);
 
         if (value === null || value === undefined)
             return value;
@@ -300,7 +300,7 @@ export class SqlServerDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.transformFrom(value);
+            value = columnMetadata.transformer.from(value);
 
         if (value === null || value === undefined)
             return value;
